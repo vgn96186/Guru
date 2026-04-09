@@ -1,6 +1,7 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
+import { View, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
 import { linearTheme as n } from '../../theme/linearTheme';
+import LinearText from '../primitives/LinearText';
 
 interface AdvancedToolsSectionProps {
   onExportBackup: () => void;
@@ -25,16 +26,22 @@ function AdvancedToolsSection({
 }: AdvancedToolsSectionProps) {
   return (
     <View style={styles.section}>
-      <Text style={styles.sectionTitle}>ADVANCED TOOLS</Text>
+      <LinearText variant="sectionTitle" tone="muted" style={styles.sectionTitle}>
+        ADVANCED TOOLS
+      </LinearText>
 
       <View style={styles.buttonGroup}>
-        <Text style={styles.groupLabel}>Database Backup (SQLite)</Text>
+        <LinearText variant="label" style={styles.groupLabel}>
+          Database Backup (SQLite)
+        </LinearText>
         <View style={styles.row}>
           <TouchableOpacity style={styles.button} onPress={onExportBackup} disabled={isExporting}>
             {isExporting ? (
               <ActivityIndicator size="small" color="#FFF" />
             ) : (
-              <Text style={styles.buttonText}>Export .db</Text>
+              <LinearText variant="body" style={styles.buttonText}>
+                Export .db
+              </LinearText>
             )}
           </TouchableOpacity>
           <TouchableOpacity
@@ -42,39 +49,53 @@ function AdvancedToolsSection({
             onPress={onImportBackup}
             disabled={isImporting}
           >
-            <Text style={[styles.buttonText, styles.outlineButtonText]}>Import .db</Text>
+            <LinearText variant="body" style={[styles.buttonText, styles.outlineButtonText]}>
+              Import .db
+            </LinearText>
           </TouchableOpacity>
         </View>
-        <Text style={styles.hint}>
+        <LinearText variant="bodySmall" tone="muted" style={styles.hint}>
           Binary backup of the entire database. Recommended for full migrations.
-        </Text>
+        </LinearText>
       </View>
 
       <View style={styles.buttonGroup}>
-        <Text style={styles.groupLabel}>Portability Backup (JSON)</Text>
+        <LinearText variant="label" style={styles.groupLabel}>
+          Portability Backup (JSON)
+        </LinearText>
         <View style={styles.row}>
           <TouchableOpacity style={styles.button} onPress={onExportJsonBackup}>
-            <Text style={styles.buttonText}>Export JSON</Text>
+            <LinearText variant="body" style={styles.buttonText}>
+              Export JSON
+            </LinearText>
           </TouchableOpacity>
           <TouchableOpacity
             style={[styles.button, styles.outlineButton]}
             onPress={onImportJsonBackup}
           >
-            <Text style={[styles.buttonText, styles.outlineButtonText]}>Import JSON</Text>
+            <LinearText variant="body" style={[styles.buttonText, styles.outlineButtonText]}>
+              Import JSON
+            </LinearText>
           </TouchableOpacity>
         </View>
-        <Text style={styles.hint}>
+        <LinearText variant="bodySmall" tone="muted" style={styles.hint}>
           Human-readable backup. Better for partial restores or sync across platforms.
-        </Text>
+        </LinearText>
       </View>
 
       <View style={styles.dangerZone}>
-        <Text style={styles.dangerLabel}>Danger Zone</Text>
+        <LinearText variant="badge" tone="error" style={styles.dangerLabel}>
+          Danger Zone
+        </LinearText>
         <TouchableOpacity style={styles.dangerButton} onPress={onClearCache}>
-          <Text style={styles.dangerButtonText}>Clear AI Content Cache</Text>
+          <LinearText variant="body" style={styles.dangerButtonText}>
+            Clear AI Content Cache
+          </LinearText>
         </TouchableOpacity>
         <TouchableOpacity style={styles.dangerButton} onPress={onResetProgress}>
-          <Text style={styles.dangerButtonText}>Reset All Study Progress</Text>
+          <LinearText variant="body" style={styles.dangerButtonText}>
+            Reset All Study Progress
+          </LinearText>
         </TouchableOpacity>
       </View>
     </View>

@@ -1,7 +1,8 @@
 import React, { useEffect, useRef } from 'react';
-import { Animated, Pressable, View, Text, StyleSheet } from 'react-native';
+import { Animated, Pressable, View, StyleSheet } from 'react-native';
 import { linearTheme as n } from '../../theme/linearTheme';
 import { cardPressTiming } from '../../motion/presets';
+import LinearText from '../primitives/LinearText';
 
 interface AgendaItemProps {
   time: string;
@@ -72,27 +73,55 @@ export default React.memo(function AgendaItem({
         style={[styles.pressSurface, { opacity: pressOpacity, transform: [{ scale: pressScale }] }]}
       >
         <View style={styles.timeWrap}>
-          <Text style={styles.timeText}>{time}</Text>
+          <LinearText variant="caption" tone="muted" style={styles.timeText}>
+            {time}
+          </LinearText>
         </View>
         <View style={[styles.card, { borderLeftColor: accent }]}>
           <View style={styles.cardTop}>
-            <Text style={styles.title} numberOfLines={2} ellipsizeMode="tail">
+            <LinearText
+              variant="body"
+              tone="primary"
+              style={styles.title}
+              numberOfLines={2}
+              ellipsizeMode="tail"
+            >
               {title}
-            </Text>
+            </LinearText>
             {priority >= 8 && (
               <View style={styles.yieldBadge}>
-                <Text style={styles.yieldText}>HY</Text>
+                <LinearText variant="badge" tone="warning" style={styles.yieldText}>
+                  HY
+                </LinearText>
               </View>
             )}
           </View>
           <View style={styles.meta}>
-            <Text style={[styles.typeBadge, { color: accent }]}>{TYPE_LABELS[type]}</Text>
-            <Text style={styles.dot}>·</Text>
-            <Text style={styles.subject}>{subjectName}</Text>
+            <LinearText
+              variant="chip"
+              tone={
+                accent === n.colors.accent
+                  ? 'accent'
+                  : accent === n.colors.success
+                    ? 'success'
+                    : 'warning'
+              }
+              style={styles.typeBadge}
+            >
+              {TYPE_LABELS[type]}
+            </LinearText>
+            <LinearText variant="chip" tone="muted" style={styles.dot}>
+              ·
+            </LinearText>
+            <LinearText variant="caption" tone="muted" style={styles.subject}>
+              {subjectName}
+            </LinearText>
           </View>
           {rationale ? (
             <View style={styles.rationaleChip}>
-              <Text style={styles.rationaleText}>{rationale}</Text>
+              <LinearText variant="caption" tone="muted" style={styles.rationaleText}>
+                {rationale}
+              </LinearText>
             </View>
           ) : null}
         </View>

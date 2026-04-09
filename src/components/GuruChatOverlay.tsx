@@ -166,11 +166,13 @@ export default function GuruChatOverlay({
       const dbStudy = await buildBoundedGuruChatStudyContext(profile, syllabusTopicId);
       const topicMeta =
         syllabusTopicId != null ? `Syllabus topic id: ${syllabusTopicId}` : undefined;
-      const merged = [topicMeta, dbStudy, contextText].filter(Boolean).join('\n\n');
+      const clippedContext = contextText ? contextText.slice(0, 4000) : undefined;
+      const merged = [topicMeta, dbStudy, clippedContext].filter(Boolean).join('\n\n');
+      // Pass history WITHOUT the current user message — chatWithGuru appends `q` as its own user message
       const { reply } = await chatWithGuru(
         q,
         topicName,
-        next.slice(-10),
+        messages.slice(-10),
         undefined,
         merged || undefined,
       );
@@ -182,11 +184,13 @@ export default function GuruChatOverlay({
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         scrollToEnd();
         // Fire-and-forget: fetch a relevant image fresh from Brave for this response
-        fetchChatRelevantImage(topicName, reply).then((url) => {
-          if (url && isMountedRef.current) {
-            setChatImages((prev) => ({ ...prev, [guruMsgIndex]: url }));
-          }
-        }).catch(() => {});
+        fetchChatRelevantImage(topicName, reply)
+          .then((url) => {
+            if (url && isMountedRef.current) {
+              setChatImages((prev) => ({ ...prev, [guruMsgIndex]: url }));
+            }
+          })
+          .catch(() => {});
       }
       if (syllabusTopicId != null && !hasPersistedTopicProgressRef.current) {
         try {
@@ -216,8 +220,9 @@ export default function GuruChatOverlay({
 
   const handleRetry = useCallback(() => {
     if (messages.length > 0 && messages[messages.length - 1].role === 'user') {
-      // Retry the last user message
       const lastUserMessage = messages[messages.length - 1].text;
+      // Remove the failed user message so it won't duplicate on resend
+      setMessages((prev) => prev.slice(0, -1));
       setInput(lastUserMessage);
       setError(null);
     }

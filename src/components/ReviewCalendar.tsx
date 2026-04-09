@@ -5,10 +5,11 @@
  */
 
 import React, { useEffect, useMemo, useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
+import { View, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { getReviewCalendarData, type ReviewDay } from '../db/queries/topics';
 import { linearTheme as n } from '../theme/linearTheme';
+import LinearText from './primitives/LinearText';
 
 function toLocalDateKey(date: Date): string {
   const y = date.getFullYear();
@@ -103,12 +104,12 @@ export default React.memo(function ReviewCalendar() {
           <Ionicons name="chevron-back" size={20} color={n.colors.textMuted} />
         </TouchableOpacity>
         <View style={styles.headerCenter}>
-          <Text style={styles.monthText}>
+          <LinearText variant="sectionTitle" tone="primary">
             {MONTHS[month]} {year}
-          </Text>
-          <Text style={styles.reviewCount}>
+          </LinearText>
+          <LinearText variant="caption" tone="muted">
             {totalReviews} review{totalReviews !== 1 ? 's' : ''} scheduled
-          </Text>
+          </LinearText>
         </View>
         <TouchableOpacity
           onPress={() => changeMonth(1)}
@@ -122,9 +123,9 @@ export default React.memo(function ReviewCalendar() {
       {/* Day of week headers */}
       <View style={styles.weekRow}>
         {DAYS_OF_WEEK.map((d, i) => (
-          <Text key={i} style={styles.dayHeader}>
+          <LinearText key={i} variant="caption" tone="muted" style={styles.dayHeader}>
             {d}
-          </Text>
+          </LinearText>
         ))}
       </View>
 
@@ -157,8 +158,10 @@ export default React.memo(function ReviewCalendar() {
                     : `${day} ${MONTHS[month]}, no reviews scheduled`
                 }
               >
-                <Text
+                <LinearText
                   numberOfLines={1}
+                  variant="bodySmall"
+                  tone="secondary"
                   style={[
                     styles.dayText,
                     isToday && styles.todayText,
@@ -167,7 +170,7 @@ export default React.memo(function ReviewCalendar() {
                   ]}
                 >
                   {day}
-                </Text>
+                </LinearText>
                 {review && (
                   <View style={styles.dotsRow}>
                     {review.count <= 3 ? (
@@ -179,12 +182,14 @@ export default React.memo(function ReviewCalendar() {
                       ))
                     ) : (
                       <>
-                        <View
-                          style={[styles.dot, isPast && { backgroundColor: n.colors.error }]}
-                        />
-                        <Text style={[styles.dotCount, isPast && { color: n.colors.error }]}>
+                        <View style={[styles.dot, isPast && { backgroundColor: n.colors.error }]} />
+                        <LinearText
+                          variant="caption"
+                          tone="accent"
+                          style={[styles.dotCount, isPast && { color: n.colors.error }]}
+                        >
                           {review.count}
-                        </Text>
+                        </LinearText>
                       </>
                     )}
                   </View>
@@ -198,7 +203,7 @@ export default React.memo(function ReviewCalendar() {
       {/* Selected day detail */}
       {selectedDay && (
         <View style={styles.detailSection}>
-          <Text style={styles.detailTitle}>
+          <LinearText variant="label" tone="primary">
             {new Date(selectedDay.date + 'T00:00:00').toLocaleDateString('en-IN', {
               weekday: 'long',
               day: 'numeric',
@@ -206,7 +211,7 @@ export default React.memo(function ReviewCalendar() {
             })}
             {' · '}
             {selectedDay.count} topic{selectedDay.count !== 1 ? 's' : ''}
-          </Text>
+          </LinearText>
           <ScrollView style={styles.detailScroll}>
             {selectedDay.topics.map((t, i) => (
               <View key={i} style={styles.topicRow}>
@@ -223,7 +228,9 @@ export default React.memo(function ReviewCalendar() {
                     },
                   ]}
                 />
-                <Text style={styles.topicName}>{t.name}</Text>
+                <LinearText variant="bodySmall" tone="secondary">
+                  {t.name}
+                </LinearText>
               </View>
             ))}
           </ScrollView>

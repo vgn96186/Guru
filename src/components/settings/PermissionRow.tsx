@@ -1,6 +1,7 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, TouchableOpacity, StyleSheet } from 'react-native';
 import { linearTheme as n } from '../../theme/linearTheme';
+import LinearText from '../primitives/LinearText';
 
 interface PermissionRowProps {
   label: string;
@@ -10,18 +11,26 @@ interface PermissionRowProps {
 
 function PermissionRow({ label, status, onFix }: PermissionRowProps) {
   const isGranted = status === 'granted';
-  
+
   return (
     <View style={styles.row}>
       <View style={styles.left}>
-        <Text style={styles.label}>{label}</Text>
-        <Text style={[styles.status, isGranted ? styles.granted : styles.denied]}>
+        <LinearText variant="body" style={styles.label}>
+          {label}
+        </LinearText>
+        <LinearText
+          variant="bodySmall"
+          tone={isGranted ? 'success' : 'error'}
+          style={[styles.status, isGranted ? styles.granted : styles.denied]}
+        >
           {isGranted ? 'Granted' : 'Missing'}
-        </Text>
+        </LinearText>
       </View>
       {!isGranted && (
         <TouchableOpacity style={styles.fixBtn} onPress={onFix}>
-          <Text style={styles.fixBtnText}>Fix</Text>
+          <LinearText variant="chip" tone="accent" style={styles.fixBtnText}>
+            Fix
+          </LinearText>
         </TouchableOpacity>
       )}
     </View>

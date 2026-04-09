@@ -1,8 +1,9 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Animated, Pressable, StyleSheet, Text, View, type LayoutChangeEvent } from 'react-native';
+import { Animated, Pressable, StyleSheet, View, type LayoutChangeEvent } from 'react-native';
 import Svg, { Circle } from 'react-native-svg';
 import { Ionicons } from '@expo/vector-icons';
 import LinearSurface from '../primitives/LinearSurface';
+import LinearText from '../primitives/LinearText';
 import { linearTheme as n } from '../../theme/linearTheme';
 import { useReducedMotion } from '../../motion';
 import { profileRepository } from '../../db/repositories';
@@ -178,11 +179,15 @@ export default function CompactQuickStatsBar({
                   origin={`${RING_SIZE / 2}, ${RING_SIZE / 2}`}
                 />
               </Svg>
-              <Text style={styles.ringPercentText}>{progressClamped}%</Text>
+              <LinearText variant="caption" tone="primary" style={styles.ringPercentText}>
+                {progressClamped}%
+              </LinearText>
             </View>
             <View style={styles.progressMeta}>
               <View style={styles.progressSummaryRow}>
-                <Text style={styles.statsLabelStrong}>{todayMinutes}/</Text>
+                <LinearText variant="caption" tone="muted" style={styles.statsLabelStrong}>
+                  {todayMinutes}/
+                </LinearText>
                 <Pressable
                   onLayout={handleGoalPillLayout}
                   style={({ pressed }) => [
@@ -193,7 +198,9 @@ export default function CompactQuickStatsBar({
                   onPress={() => setShowGoalPicker((value) => !value)}
                   hitSlop={6}
                 >
-                  <Text style={styles.goalPillText}>{dailyGoal}m</Text>
+                  <LinearText variant="chip" tone="accent" style={styles.goalPillText}>
+                    {dailyGoal}m
+                  </LinearText>
                   <Ionicons
                     name={showGoalPicker ? 'chevron-back' : 'chevron-down'}
                     size={11}
@@ -239,15 +246,25 @@ export default function CompactQuickStatsBar({
               </Animated.View>
             </View>
             <View style={styles.streakReadout}>
-              <Text style={styles.streakValue}>{streak}</Text>
-              <Text style={styles.streakUnit}>days</Text>
+              <LinearText variant="title" tone="primary" style={styles.streakValue}>
+                {streak}
+              </LinearText>
+              <LinearText variant="caption" tone="warning" style={styles.streakUnit}>
+                days
+              </LinearText>
             </View>
-            <Text style={styles.statsLabel}>streak</Text>
+            <LinearText variant="caption" tone="muted" style={styles.statsLabel}>
+              streak
+            </LinearText>
           </View>
           <View style={styles.statsBarDivider} />
           <View style={styles.statsBarItemCenter}>
-            <Text style={styles.statsValue}>Level {level}</Text>
-            <Text style={styles.statsLabel}>{completedSessions} done</Text>
+            <LinearText variant="bodySmall" tone="primary" style={styles.statsValue}>
+              Level {level}
+            </LinearText>
+            <LinearText variant="caption" tone="muted" style={styles.statsLabel}>
+              {completedSessions} done
+            </LinearText>
           </View>
         </View>
       </LinearSurface>
@@ -265,7 +282,9 @@ export default function CompactQuickStatsBar({
               style={({ pressed }) => [styles.goalChip, pressed && styles.goalChipPressed]}
               onPress={() => handleGoalChange(minutes)}
             >
-              <Text style={styles.goalChipText}>{minutes}m</Text>
+              <LinearText variant="chip" tone="secondary" style={styles.goalChipText}>
+                {minutes}m
+              </LinearText>
             </Pressable>
           ))}
         </View>

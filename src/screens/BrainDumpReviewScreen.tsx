@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, StyleSheet, FlatList, TouchableOpacity, Alert, StatusBar } from 'react-native';
+import { View, StyleSheet, FlatList, TouchableOpacity, StatusBar } from 'react-native';
 import LinearText from '../components/primitives/LinearText';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -13,6 +13,7 @@ import {
   BrainDumpLog,
 } from '../db/queries/brainDumps';
 import { ResponsiveContainer } from '../hooks/useResponsive';
+import { confirmDestructive } from '../components/dialogService';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'BrainDumpReview'>;
 
@@ -23,41 +24,31 @@ export default function BrainDumpReviewScreen({ navigation }: Props) {
     getBrainDumps().then(setDumps);
   }, []);
 
-  const handleClear = () => {
-    Alert.alert(
+  const handleClear = async () => {
+    const ok = await confirmDestructive(
       'Clear All Thoughts?',
       'This will permanently delete all parked thoughts. This cannot be undone.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Clear All',
-          style: 'destructive',
-          onPress: async () => {
-            await clearBrainDumps();
-            setDumps([]);
-            navigation.goBack();
-          },
-        },
-      ],
     );
+    if (ok) {
+      await clearBrainDumps();
+      setDumps([]);
+      navigation.goBack();
+    }
   };
 
   const handleDone = () => {
     navigation.goBack();
   };
 
-  const handleDeleteOne = (dump: BrainDumpLog) => {
-    Alert.alert('Delete Thought?', 'This parked thought will be permanently removed.', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Delete',
-        style: 'destructive',
-        onPress: async () => {
-          await deleteBrainDump(dump.id);
-          setDumps((prev) => prev.filter((item) => item.id !== dump.id));
-        },
-      },
-    ]);
+  const handleDeleteOne = async (dump: BrainDumpLog) => {
+    const ok = await confirmDestructive(
+      'Delete Thought?',
+      'This parked thought will be permanently removed.',
+    );
+    if (ok) {
+      await deleteBrainDump(dump.id);
+      setDumps((prev) => prev.filter((item) => item.id !== dump.id));
+    }
   };
 
   return (

@@ -5,16 +5,17 @@ import {
   TouchableOpacity,
   ScrollView,
   StatusBar,
-  Alert,
   ActivityIndicator,
   Modal,
 } from 'react-native';
+import ErrorBoundary from '../components/ErrorBoundary';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useNavigation, type NavigationProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import type { MenuStackParamList, TabParamList } from '../navigation/types';
 import { ResponsiveContainer } from '../hooks/useResponsive';
+import { useScrollRestoration } from '../hooks/useScrollRestoration';
 import { linearTheme as n } from '../theme/linearTheme';
 import LinearButton from '../components/primitives/LinearButton';
 import LinearSurface from '../components/primitives/LinearSurface';
@@ -91,10 +92,12 @@ import { useAppStore } from '../store/useAppStore';
 import { dbEvents, DB_EVENT_KEYS } from '../services/databaseEvents';
 import { runFullTranscriptionPipeline } from '../services/lecture/lectureSessionMonitor';
 import { Audio } from 'expo-av';
+import { showError, showWarning } from '../components/dialogService';
 
 export default function NotesHubScreen() {
   const navigation = useNavigation<Nav>();
   const tabsNavigation = navigation.getParent<NavigationProp<TabParamList>>();
+  const { onScroll, onContentSizeChange } = useScrollRestoration('notes-hub');
   const refreshProfile = useAppStore((s) => s.refreshProfile);
   const isRecoveringBackground = useAppStore((s) => s.isRecoveringBackground);
   const [isTranscribingUpload, setIsTranscribingUpload] = useState(false);
@@ -115,10 +118,6 @@ export default function NotesHubScreen() {
       }
     };
   }, []);
-
-  const showErrorAlert = (title: string, error: unknown) => {
-    Alert.alert(title, error instanceof Error ? error.message : String(error));
-  };
 
   const handlePlayPending = async (session: ExternalAppLog) => {
     if (!session.id || !session.recordingPath) return;
@@ -144,7 +143,7 @@ export default function NotesHubScreen() {
       soundRef.current = sound;
       setActivePlaybackId(session.id);
     } catch {
-      Alert.alert('Playback Error', 'Could not play this audio file.');
+      showError('Playback Error', 'Could not play this audio file.');
     }
   };
 
@@ -162,7 +161,7 @@ export default function NotesHubScreen() {
       });
       await loadData();
     } catch (e: unknown) {
-      showErrorAlert('Retry Failed', e);
+      showError(e, 'Retry Failed');
     } finally {
       setIsRetrying(null);
     }
@@ -173,7 +172,7 @@ export default function NotesHubScreen() {
     try {
       res = await DocumentPicker.getDocumentAsync({ type: ['audio/*'] });
     } catch (error: unknown) {
-      showErrorAlert('Error', error);
+      showError(error);
       return;
     }
     if (res.canceled || !res.assets[0]) return;
@@ -193,7 +192,7 @@ export default function NotesHubScreen() {
           : (resolution.matchedSubject?.name ?? resolution.normalizedSubjectName),
       );
     } catch (e: unknown) {
-      showErrorAlert('Error', e);
+      showError(e);
     } finally {
       setIsTranscribingUpload(false);
     }
@@ -202,7 +201,7 @@ export default function NotesHubScreen() {
   const handleSaveUpload = async () => {
     if (!uploadResult) return;
     if (uploadSubjectRequired && !selectedUploadSubjectName) {
-      showErrorAlert('Subject required', 'Choose the lecture subject before saving this upload.');
+      showWarning('Subject required', 'Choose the lecture subject before saving this upload.');
       return;
     }
     setIsSavingUpload(true);
@@ -234,7 +233,7 @@ export default function NotesHubScreen() {
       setSelectedUploadSubjectName(null);
       loadData();
     } catch (e: unknown) {
-      showErrorAlert('Error', e);
+      showError(e);
     } finally {
       setIsSavingUpload(false);
     }
@@ -242,49 +241,55 @@ export default function NotesHubScreen() {
   const [stats, setStats] = useState<NotesStats>({ lectureCount: 0, topicNoteCount: 0 });
   const [recentLectures, setRecentLectures] = useState<LectureHistoryItem[]>([]);
   const [topicNotes, setTopicNotes] = useState<TopicNotePreview[]>([]);
+  const [loading, setLoading] = useState(true);
 
   const loadData = useCallback(async () => {
-    const db = getDb();
-    const [lectureCountRow, topicNoteCountRow, recentTopicNotes, failed] = await Promise.all([
-      db.getFirstAsync<{ count: number }>('SELECT COUNT(*) AS count FROM lecture_notes'),
-      db.getFirstAsync<{ count: number }>(
-        `SELECT COUNT(*) AS count
-         FROM topic_progress
-         WHERE TRIM(COALESCE(user_notes, '')) <> ''`,
-      ),
-      db.getAllAsync<{
-        topic_id: number;
-        topic_name: string;
-        subject_id: number;
-        subject_name: string;
-        user_notes: string;
-      }>(
-        `SELECT t.id AS topic_id, t.name AS topic_name, s.id AS subject_id, s.name AS subject_name, p.user_notes
-         FROM topic_progress p
-         JOIN topics t ON t.id = p.topic_id
-         JOIN subjects s ON s.id = t.subject_id
-         WHERE TRIM(COALESCE(p.user_notes, '')) <> ''
-         ORDER BY COALESCE(p.last_studied_at, 0) DESC, t.name ASC
-         LIMIT 4`,
-      ),
-      getFailedOrPendingTranscriptions(),
-    ]);
+    setLoading(true);
+    try {
+      const db = getDb();
+      const [lectureCountRow, topicNoteCountRow, recentTopicNotes, failed] = await Promise.all([
+        db.getFirstAsync<{ count: number }>('SELECT COUNT(*) AS count FROM lecture_notes'),
+        db.getFirstAsync<{ count: number }>(
+          `SELECT COUNT(*) AS count
+           FROM topic_progress
+           WHERE TRIM(COALESCE(user_notes, '')) <> ''`,
+        ),
+        db.getAllAsync<{
+          topic_id: number;
+          topic_name: string;
+          subject_id: number;
+          subject_name: string;
+          user_notes: string;
+        }>(
+          `SELECT t.id AS topic_id, t.name AS topic_name, s.id AS subject_id, s.name AS subject_name, p.user_notes
+           FROM topic_progress p
+           JOIN topics t ON t.id = p.topic_id
+           JOIN subjects s ON s.id = t.subject_id
+           WHERE TRIM(COALESCE(p.user_notes, '')) <> ''
+           ORDER BY COALESCE(p.last_studied_at, 0) DESC, t.name ASC
+           LIMIT 4`,
+        ),
+        getFailedOrPendingTranscriptions(),
+      ]);
 
-    setStats({
-      lectureCount: lectureCountRow?.count ?? 0,
-      topicNoteCount: topicNoteCountRow?.count ?? 0,
-    });
-    setPendingSessions(failed);
-    void getLectureHistory(4).then(setRecentLectures);
-    setTopicNotes(
-      recentTopicNotes.map((row) => ({
-        topicId: row.topic_id,
-        topicName: row.topic_name,
-        subjectId: row.subject_id,
-        subjectName: row.subject_name,
-        userNotes: row.user_notes,
-      })),
-    );
+      setStats({
+        lectureCount: lectureCountRow?.count ?? 0,
+        topicNoteCount: topicNoteCountRow?.count ?? 0,
+      });
+      setPendingSessions(failed);
+      void getLectureHistory(4).then(setRecentLectures);
+      setTopicNotes(
+        recentTopicNotes.map((row) => ({
+          topicId: row.topic_id,
+          topicName: row.topic_name,
+          subjectId: row.subject_id,
+          subjectName: row.subject_name,
+          userNotes: row.user_notes,
+        })),
+      );
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
   useFocusEffect(
@@ -308,496 +313,520 @@ export default function NotesHubScreen() {
 
   return (
     <SafeAreaView style={styles.safe}>
-      <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
-      <ResponsiveContainer>
-        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
-          {isRecoveringBackground ? (
-            <LinearSurface padded={false} style={styles.recoveryGhostRow} pointerEvents="none">
-              <ActivityIndicator size="small" color={n.colors.textMuted} />
-              <LinearText variant="bodySmall" tone="muted" style={styles.recoveryGhostText}>
-                Recovering unsaved session…
-              </LinearText>
-            </LinearSurface>
-          ) : null}
-          <View style={styles.headerRow}>
-            <TouchableOpacity
-              onPress={() => navigation.goBack()}
-              style={styles.backBtn}
-              activeOpacity={0.7}
-              accessibilityRole="button"
-              accessibilityLabel="Go back"
-            >
-              <Ionicons name="arrow-back" size={20} color={n.colors.textPrimary} />
-            </TouchableOpacity>
-            <View style={styles.headerTextWrap}>
-              <LinearText variant="badge" tone="accent" style={styles.kicker}>
-                KNOWLEDGE VAULT
-              </LinearText>
-              <LinearText variant="display" style={styles.title}>
-                My Notes
-              </LinearText>
-              <LinearText variant="body" tone="secondary" style={styles.subtitle}>
-                Search, revisit, and reuse your lecture notes and topic notes from one place.
-              </LinearText>
-            </View>
-          </View>
-
-          {pendingSessions.length > 0 && (
-            <View style={styles.pendingSection}>
-              <View style={styles.sectionHeader}>
-                <LinearText style={[styles.sectionTitle, { color: n.colors.warning }]}>
-                  Unprocessed Recordings ({pendingSessions.length})
+      <ErrorBoundary>
+        <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
+        <ResponsiveContainer>
+          <ScrollView
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={styles.content}
+            onScroll={onScroll}
+            onContentSizeChange={onContentSizeChange}
+            scrollEventThrottle={16}
+          >
+            {loading ? (
+              <View style={styles.loadingState}>
+                <ActivityIndicator size="large" color={n.colors.accent} />
+                <LinearText style={styles.loadingText}>Loading...</LinearText>
+              </View>
+            ) : null}
+            {isRecoveringBackground ? (
+              <LinearSurface padded={false} style={styles.recoveryGhostRow} pointerEvents="none">
+                <ActivityIndicator size="small" color={n.colors.textMuted} />
+                <LinearText variant="bodySmall" tone="muted" style={styles.recoveryGhostText}>
+                  Recovering unsaved session…
+                </LinearText>
+              </LinearSurface>
+            ) : null}
+            <View style={styles.headerRow}>
+              <TouchableOpacity
+                onPress={() => navigation.goBack()}
+                style={styles.backBtn}
+                activeOpacity={0.7}
+                accessibilityRole="button"
+                accessibilityLabel="Go back"
+              >
+                <Ionicons name="arrow-back" size={20} color={n.colors.textPrimary} />
+              </TouchableOpacity>
+              <View style={styles.headerTextWrap}>
+                <LinearText variant="badge" tone="accent" style={styles.kicker}>
+                  KNOWLEDGE VAULT
+                </LinearText>
+                <LinearText variant="display" style={styles.title}>
+                  My Notes
+                </LinearText>
+                <LinearText variant="body" tone="secondary" style={styles.subtitle}>
+                  Search, revisit, and reuse your lecture notes and topic notes from one place.
                 </LinearText>
               </View>
-              <ScrollView style={styles.pendingList} nestedScrollEnabled>
-                {pendingSessions.map((session) => (
-                  <LinearSurface key={session.id} padded={false} style={styles.pendingCard}>
-                    <View style={styles.pendingInfo}>
-                      <LinearText variant="body" style={styles.pendingAppName}>
-                        {session.appName}
-                      </LinearText>
-                      <LinearText variant="caption" tone="secondary" style={styles.pendingDate}>
-                        {formatDate(session.launchedAt)}
-                      </LinearText>
-                      <LinearText variant="caption" tone="warning" style={styles.pendingStatus}>
-                        Status:{' '}
-                        <LinearText style={{ fontWeight: '700' }}>
-                          {session.transcriptionStatus?.toUpperCase()}
-                        </LinearText>
-                      </LinearText>
-                      {session.pipelineTelemetry?.currentMessage ? (
-                        <LinearText variant="caption" style={styles.pendingStage}>
-                          {session.pipelineTelemetry.currentMessage}
-                          {typeof session.pipelineTelemetry.currentPercent === 'number'
-                            ? ` (${Math.round(session.pipelineTelemetry.currentPercent)}%)`
-                            : ''}
-                        </LinearText>
-                      ) : null}
-                      {session.pipelineTelemetry?.currentDetail ? (
-                        <LinearText
-                          variant="caption"
-                          tone="secondary"
-                          style={styles.pendingDetail}
-                          numberOfLines={3}
-                        >
-                          {session.pipelineTelemetry.currentDetail}
-                        </LinearText>
-                      ) : null}
-                      {session.pipelineTelemetry?.events?.length ? (
-                        <View style={styles.pendingEvents}>
-                          {session.pipelineTelemetry.events
-                            .slice(-2)
-                            .reverse()
-                            .map((event, index) => (
-                              <LinearText
-                                key={`${event.at}-${index}`}
-                                variant="meta"
-                                tone="muted"
-                                style={styles.pendingEventText}
-                              >
-                                {formatTime(event.at)} - {event.message}
-                              </LinearText>
-                            ))}
-                        </View>
-                      ) : null}
-                      {session.transcriptionError && (
-                        <LinearText
-                          variant="caption"
-                          tone="error"
-                          style={styles.pendingError}
-                          numberOfLines={2}
-                        >
-                          {session.transcriptionError}
-                        </LinearText>
-                      )}
-                    </View>
-                    <View style={styles.pendingActions}>
-                      <TouchableOpacity
-                        style={[styles.miniActionBtn, { backgroundColor: n.colors.border }]}
-                        onPress={() => handlePlayPending(session)}
-                      >
-                        <Ionicons
-                          name={activePlaybackId === session.id ? 'stop' : 'play'}
-                          size={16}
-                          color={n.colors.textPrimary}
-                        />
-                      </TouchableOpacity>
-                      <LinearButton
-                        label={isRetrying === session.id ? 'Transcribing…' : 'Retry'}
-                        variant="primary"
-                        style={styles.retryBtn}
-                        onPress={() => handleRetry(session)}
-                        disabled={isRetrying === session.id}
-                        leftIcon={
-                          isRetrying === session.id ? (
-                            <ActivityIndicator size="small" color={n.colors.textInverse} />
-                          ) : (
-                            <Ionicons name="refresh" size={16} color={n.colors.textInverse} />
-                          )
-                        }
-                      />
-                    </View>
-                  </LinearSurface>
-                ))}
-              </ScrollView>
             </View>
-          )}
 
-          <View style={styles.statsRow}>
-            <LinearSurface padded={false} style={styles.statCard}>
-              <LinearText variant="display" style={styles.statValue}>
-                {stats.lectureCount}
-              </LinearText>
-              <LinearText variant="bodySmall" tone="secondary" style={styles.statLabel}>
-                Lecture notes
-              </LinearText>
-            </LinearSurface>
-            <LinearSurface padded={false} style={styles.statCard}>
-              <LinearText variant="display" style={styles.statValue}>
-                {stats.topicNoteCount}
-              </LinearText>
-              <LinearText variant="bodySmall" tone="secondary" style={styles.statLabel}>
-                Topic notes
-              </LinearText>
-            </LinearSurface>
-          </View>
-
-          <View style={styles.actionGrid}>
-            <LinearSurface padded={false} style={[styles.actionCard, styles.actionPrimary]}>
-              <TouchableOpacity
-                style={styles.actionTap}
-                onPress={() => navigation.navigate('NotesSearch')}
-                activeOpacity={0.85}
-                accessibilityRole="button"
-                accessibilityLabel="Search all notes"
-              >
-                <Ionicons name="search" size={20} color={n.colors.textInverse} />
-                <LinearText variant="sectionTitle" tone="inverse" style={styles.actionPrimaryTitle}>
-                  Search all notes
-                </LinearText>
-                <LinearText variant="bodySmall" tone="inverse" style={styles.actionPrimarySub}>
-                  Find any concept across transcripts and saved topic notes.
-                </LinearText>
-              </TouchableOpacity>
-            </LinearSurface>
-
-            <LinearSurface padded={false} style={styles.actionCard}>
-              <TouchableOpacity
-                style={styles.actionTap}
-                onPress={() => navigation.navigate('TranscriptHistory')}
-                activeOpacity={0.85}
-                accessibilityRole="button"
-                accessibilityLabel="Transcript Vault"
-              >
-                <Ionicons name="document-text-outline" size={20} color={n.colors.accent} />
-                <LinearText variant="sectionTitle" style={styles.actionTitle}>
-                  Transcript Vault
-                </LinearText>
-                <LinearText variant="bodySmall" tone="secondary" style={styles.actionSub}>
-                  Browse lecture notes, raw transcripts, and search your vault.
-                </LinearText>
-              </TouchableOpacity>
-            </LinearSurface>
-
-            <LinearSurface padded={false} style={styles.actionCard}>
-              <TouchableOpacity
-                style={styles.actionTap}
-                onPress={() =>
-                  tabsNavigation?.navigate('ChatTab', {
-                    screen: 'GuruChat',
-                    params: { topicName: 'General Medicine', autoFocusComposer: true },
-                  })
-                }
-                activeOpacity={0.85}
-                accessibilityRole="button"
-                accessibilityLabel="Ask Guru"
-              >
-                <Ionicons name="medkit-outline" size={20} color={n.colors.success} />
-                <LinearText variant="sectionTitle" style={styles.actionTitle}>
-                  Ask Guru
-                </LinearText>
-                <LinearText variant="bodySmall" tone="secondary" style={styles.actionSub}>
-                  Use your notes as a launch point for grounded medical questions.
-                </LinearText>
-              </TouchableOpacity>
-            </LinearSurface>
-
-            <LinearSurface padded={false} style={styles.actionCard}>
-              <TouchableOpacity
-                style={styles.actionTap}
-                onPress={handleAudioUpload}
-                disabled={isTranscribingUpload}
-                activeOpacity={0.85}
-                accessibilityRole="button"
-                accessibilityLabel={isTranscribingUpload ? 'Transcribing' : 'Upload audio'}
-              >
-                <Ionicons name="cloud-upload-outline" size={20} color={n.colors.warning} />
-                <LinearText variant="sectionTitle" style={styles.actionTitle}>
-                  {isTranscribingUpload ? 'Transcribing...' : 'Upload Audio'}
-                </LinearText>
-                <LinearText variant="bodySmall" tone="secondary" style={styles.actionSub}>
-                  Convert external lecture audio files into elite ADHD notes.
-                </LinearText>
-              </TouchableOpacity>
-            </LinearSurface>
-
-            <LinearSurface padded={false} style={styles.actionCard}>
-              <TouchableOpacity
-                style={styles.actionTap}
-                onPress={() => navigation.navigate('ManualNoteCreation')}
-                activeOpacity={0.85}
-                accessibilityRole="button"
-                accessibilityLabel="Paste transcript"
-              >
-                <Ionicons name="clipboard-outline" size={20} color={n.colors.error} />
-                <LinearText variant="sectionTitle" style={styles.actionTitle}>
-                  Paste Transcript
-                </LinearText>
-                <LinearText variant="bodySmall" tone="secondary" style={styles.actionSub}>
-                  Manually enter text to generate formatted medical notes.
-                </LinearText>
-              </TouchableOpacity>
-            </LinearSurface>
-          </View>
-
-          {emptyState ? (
-            <LinearSurface padded={false} style={styles.emptyCard}>
-              <Ionicons name="library-outline" size={28} color={n.colors.accent} />
-              <LinearText variant="title" style={styles.emptyTitle}>
-                No saved notes yet
-              </LinearText>
-              <LinearText variant="body" tone="secondary" style={styles.emptySub}>
-                Lecture returns and topic note edits will show up here once they are saved.
-              </LinearText>
-              <LinearButton
-                label="Start a lecture capture"
-                variant="primary"
-                style={styles.emptyBtn}
-                onPress={() =>
-                  tabsNavigation?.navigate('HomeTab', {
-                    screen: 'LectureMode',
-                    params: {},
-                  })
-                }
-                accessibilityRole="button"
-                accessibilityLabel="Start a lecture capture"
-              />
-            </LinearSurface>
-          ) : (
-            <>
-              <View style={styles.sectionHeader}>
-                <LinearText variant="sectionTitle" style={styles.sectionTitle}>
-                  Recent lecture notes
-                </LinearText>
-                <TouchableOpacity
-                  onPress={() => navigation.navigate('TranscriptHistory')}
-                  activeOpacity={0.7}
-                  accessibilityRole="button"
-                  accessibilityLabel="View all transcripts"
-                >
-                  <LinearText variant="label" tone="accent" style={styles.sectionLink}>
-                    View all
+            {pendingSessions.length > 0 && (
+              <View style={styles.pendingSection}>
+                <View style={styles.sectionHeader}>
+                  <LinearText style={[styles.sectionTitle, { color: n.colors.warning }]}>
+                    Unprocessed Recordings ({pendingSessions.length})
                   </LinearText>
-                </TouchableOpacity>
-              </View>
-
-              {recentLectures.length === 0 ? (
-                <LinearText variant="bodySmall" tone="muted" style={styles.sectionPlaceholder}>
-                  No lecture notes saved yet.
-                </LinearText>
-              ) : (
-                recentLectures.map((lecture) => (
-                  <TouchableOpacity
-                    key={lecture.id}
-                    style={styles.lectureCard}
-                    onPress={() => navigation.navigate('TranscriptHistory', { noteId: lecture.id })}
-                    activeOpacity={0.8}
-                    accessibilityRole="button"
-                    accessibilityLabel={`Open lecture note: ${getLectureTitle(lecture)}`}
-                  >
-                    <LinearSurface padded={false} style={styles.lectureCard}>
-                      <View style={styles.lectureMetaRow}>
-                        <LinearText
-                          variant="body"
-                          style={styles.lectureSubject}
-                          numberOfLines={2}
-                          ellipsizeMode="tail"
-                        >
-                          {getLectureTitle(lecture)}
+                </View>
+                <ScrollView style={styles.pendingList} nestedScrollEnabled>
+                  {pendingSessions.map((session) => (
+                    <LinearSurface key={session.id} padded={false} style={styles.pendingCard}>
+                      <View style={styles.pendingInfo}>
+                        <LinearText variant="body" style={styles.pendingAppName}>
+                          {session.appName}
                         </LinearText>
-                        <LinearSurface padded={false} style={styles.lectureDateBadge}>
-                          <LinearText variant="caption" tone="secondary" style={styles.lectureDate}>
-                            {formatDate(lecture.createdAt)}
+                        <LinearText variant="caption" tone="secondary" style={styles.pendingDate}>
+                          {formatDate(session.launchedAt)}
+                        </LinearText>
+                        <LinearText variant="caption" tone="warning" style={styles.pendingStatus}>
+                          Status:{' '}
+                          <LinearText style={{ fontWeight: '700' }}>
+                            {session.transcriptionStatus?.toUpperCase()}
                           </LinearText>
-                        </LinearSurface>
-                      </View>
-                      <LinearText
-                        variant="bodySmall"
-                        tone="secondary"
-                        style={styles.lecturePreview}
-                        numberOfLines={5}
-                      >
-                        {extractPreview(lecture.summary || lecture.note)}
-                      </LinearText>
-                      <View style={styles.inlineMetaRow}>
-                        {lecture.appName ? (
-                          <LinearText variant="caption" tone="muted" style={styles.inlineMeta}>
-                            via {lecture.appName}
+                        </LinearText>
+                        {session.pipelineTelemetry?.currentMessage ? (
+                          <LinearText variant="caption" style={styles.pendingStage}>
+                            {session.pipelineTelemetry.currentMessage}
+                            {typeof session.pipelineTelemetry.currentPercent === 'number'
+                              ? ` (${Math.round(session.pipelineTelemetry.currentPercent)}%)`
+                              : ''}
                           </LinearText>
-                        ) : (
-                          <View />
+                        ) : null}
+                        {session.pipelineTelemetry?.currentDetail ? (
+                          <LinearText
+                            variant="caption"
+                            tone="secondary"
+                            style={styles.pendingDetail}
+                            numberOfLines={3}
+                          >
+                            {session.pipelineTelemetry.currentDetail}
+                          </LinearText>
+                        ) : null}
+                        {session.pipelineTelemetry?.events?.length ? (
+                          <View style={styles.pendingEvents}>
+                            {session.pipelineTelemetry.events
+                              .slice(-2)
+                              .reverse()
+                              .map((event, index) => (
+                                <LinearText
+                                  key={`${event.at}-${index}`}
+                                  variant="meta"
+                                  tone="muted"
+                                  style={styles.pendingEventText}
+                                >
+                                  {formatTime(event.at)} - {event.message}
+                                </LinearText>
+                              ))}
+                          </View>
+                        ) : null}
+                        {session.transcriptionError && (
+                          <LinearText
+                            variant="caption"
+                            tone="error"
+                            style={styles.pendingError}
+                            numberOfLines={2}
+                          >
+                            {session.transcriptionError}
+                          </LinearText>
                         )}
-                        <Ionicons name="chevron-forward" size={16} color={n.colors.textMuted} />
+                      </View>
+                      <View style={styles.pendingActions}>
+                        <TouchableOpacity
+                          style={[styles.miniActionBtn, { backgroundColor: n.colors.border }]}
+                          onPress={() => handlePlayPending(session)}
+                        >
+                          <Ionicons
+                            name={activePlaybackId === session.id ? 'stop' : 'play'}
+                            size={16}
+                            color={n.colors.textPrimary}
+                          />
+                        </TouchableOpacity>
+                        <LinearButton
+                          label={isRetrying === session.id ? 'Transcribing…' : 'Retry'}
+                          variant="primary"
+                          style={styles.retryBtn}
+                          onPress={() => handleRetry(session)}
+                          disabled={isRetrying === session.id}
+                          leftIcon={
+                            isRetrying === session.id ? (
+                              <ActivityIndicator size="small" color={n.colors.textInverse} />
+                            ) : (
+                              <Ionicons name="refresh" size={16} color={n.colors.textInverse} />
+                            )
+                          }
+                        />
                       </View>
                     </LinearSurface>
-                  </TouchableOpacity>
-                ))
-              )}
-
-              <View style={styles.sectionHeader}>
-                <LinearText variant="sectionTitle" style={styles.sectionTitle}>
-                  Topic notes
-                </LinearText>
-                <TouchableOpacity
-                  onPress={() => navigation.navigate('NotesSearch')}
-                  activeOpacity={0.7}
-                  accessibilityRole="button"
-                  accessibilityLabel="Search notes"
-                >
-                  <LinearText variant="label" tone="accent" style={styles.sectionLink}>
-                    Search notes
-                  </LinearText>
-                </TouchableOpacity>
-              </View>
-
-              {topicNotes.length === 0 ? (
-                <LinearText variant="bodySmall" tone="muted" style={styles.sectionPlaceholder}>
-                  No topic notes saved yet.
-                </LinearText>
-              ) : (
-                topicNotes.map((topic) => (
-                  <TouchableOpacity
-                    key={topic.topicId}
-                    style={styles.topicCard}
-                    onPress={() => navigation.navigate('NotesSearch')}
-                    activeOpacity={0.8}
-                    accessibilityRole="button"
-                    accessibilityLabel={`Topic note: ${topic.topicName}`}
-                  >
-                    <LinearSurface padded={false} style={styles.topicCard}>
-                      <LinearText variant="badge" tone="accent" style={styles.topicSubject}>
-                        {topic.subjectName}
-                      </LinearText>
-                      <LinearText
-                        variant="body"
-                        style={styles.topicTitle}
-                        numberOfLines={3}
-                        ellipsizeMode="tail"
-                      >
-                        {topic.topicName}
-                      </LinearText>
-                      <LinearText
-                        variant="bodySmall"
-                        tone="secondary"
-                        style={styles.topicPreview}
-                        numberOfLines={4}
-                      >
-                        {extractPreview(topic.userNotes)}
-                      </LinearText>
-                    </LinearSurface>
-                  </TouchableOpacity>
-                ))
-              )}
-            </>
-          )}
-        </ScrollView>
-      </ResponsiveContainer>
-
-      {/* Upload Review Modal */}
-      <Modal
-        visible={!!uploadResult}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setUploadResult(null)}
-      >
-        <View style={styles.modalOverlay}>
-          <LinearSurface padded={false} style={styles.modalSheet}>
-            <LinearText variant="sectionTitle" style={styles.modalTitle}>
-              Lecture Transcribed
-            </LinearText>
-
-            {uploadResult && uploadResult.topics.length > 0 ? (
-              <>
-                {uploadSubjectRequired ? (
-                  <SubjectSelectionCard
-                    detectedSubjectName={uploadResult.subject}
-                    selectedSubjectName={selectedUploadSubjectName}
-                    onSelectSubject={setSelectedUploadSubjectName}
-                  />
-                ) : (
-                  <SubjectChip subject={selectedUploadSubjectName ?? uploadResult.subject} />
-                )}
-                <LinearText
-                  variant="bodySmall"
-                  tone="secondary"
-                  style={styles.modalSummary}
-                  numberOfLines={5}
-                >
-                  {uploadResult.lectureSummary}
-                </LinearText>
-                <LinearText variant="badge" tone="muted" style={styles.modalSectionLabel}>
-                  TOPICS DETECTED
-                </LinearText>
-                <TopicPillRow topics={uploadResult.topics} />
-                <LinearText variant="badge" tone="muted" style={styles.modalSectionLabel}>
-                  YOUR CONFIDENCE LEVEL
-                </LinearText>
-                <ConfidenceSelector
-                  value={uploadConfidence ?? (uploadResult.estimatedConfidence as 1 | 2 | 3)}
-                  onChange={setUploadConfidence}
-                />
-              </>
-            ) : (
-              <View style={styles.noTopicsBlock}>
-                <LinearText style={styles.noTopicsIcon}>🔇</LinearText>
-                <LinearText variant="bodySmall" tone="muted" centered style={styles.noTopicsText}>
-                  No medical topics detected in this recording.
-                </LinearText>
+                  ))}
+                </ScrollView>
               </View>
             )}
 
-            <LinearButton
-              label={isSavingUpload ? 'Saving…' : 'Save to Notes Vault'}
-              variant="primary"
-              style={[styles.modalSaveBtn, isSavingUpload && { opacity: 0.6 }]}
-              onPress={handleSaveUpload}
-              disabled={
-                isSavingUpload ||
-                !uploadResult?.topics.length ||
-                (uploadSubjectRequired && !selectedUploadSubjectName)
-              }
-              leftIcon={
-                isSavingUpload ? (
-                  <ActivityIndicator color={n.colors.textInverse} size="small" />
-                ) : undefined
-              }
-            />
-            <TouchableOpacity
-              style={styles.modalDismissBtn}
-              onPress={() => {
-                setUploadResult(null);
-                setUploadConfidence(null);
-                setUploadSubjectRequired(false);
-                setSelectedUploadSubjectName(null);
-              }}
-            >
-              <LinearText variant="bodySmall" tone="muted" style={styles.modalDismissText}>
-                Discard
+            <View style={styles.statsRow}>
+              <LinearSurface padded={false} style={styles.statCard}>
+                <LinearText variant="display" style={styles.statValue}>
+                  {stats.lectureCount}
+                </LinearText>
+                <LinearText variant="bodySmall" tone="secondary" style={styles.statLabel}>
+                  Lecture notes
+                </LinearText>
+              </LinearSurface>
+              <LinearSurface padded={false} style={styles.statCard}>
+                <LinearText variant="display" style={styles.statValue}>
+                  {stats.topicNoteCount}
+                </LinearText>
+                <LinearText variant="bodySmall" tone="secondary" style={styles.statLabel}>
+                  Topic notes
+                </LinearText>
+              </LinearSurface>
+            </View>
+
+            <View style={styles.actionGrid}>
+              <LinearSurface padded={false} style={[styles.actionCard, styles.actionPrimary]}>
+                <TouchableOpacity
+                  style={styles.actionTap}
+                  onPress={() => navigation.navigate('NotesSearch')}
+                  activeOpacity={0.85}
+                  accessibilityRole="button"
+                  accessibilityLabel="Search all notes"
+                >
+                  <Ionicons name="search" size={20} color={n.colors.textInverse} />
+                  <LinearText
+                    variant="sectionTitle"
+                    tone="inverse"
+                    style={styles.actionPrimaryTitle}
+                  >
+                    Search all notes
+                  </LinearText>
+                  <LinearText variant="bodySmall" tone="inverse" style={styles.actionPrimarySub}>
+                    Find any concept across transcripts and saved topic notes.
+                  </LinearText>
+                </TouchableOpacity>
+              </LinearSurface>
+
+              <LinearSurface padded={false} style={styles.actionCard}>
+                <TouchableOpacity
+                  style={styles.actionTap}
+                  onPress={() => navigation.navigate('TranscriptHistory')}
+                  activeOpacity={0.85}
+                  accessibilityRole="button"
+                  accessibilityLabel="Transcript Vault"
+                >
+                  <Ionicons name="document-text-outline" size={20} color={n.colors.accent} />
+                  <LinearText variant="sectionTitle" style={styles.actionTitle}>
+                    Transcript Vault
+                  </LinearText>
+                  <LinearText variant="bodySmall" tone="secondary" style={styles.actionSub}>
+                    Browse lecture notes, raw transcripts, and search your vault.
+                  </LinearText>
+                </TouchableOpacity>
+              </LinearSurface>
+
+              <LinearSurface padded={false} style={styles.actionCard}>
+                <TouchableOpacity
+                  style={styles.actionTap}
+                  onPress={() =>
+                    tabsNavigation?.navigate('ChatTab', {
+                      screen: 'GuruChat',
+                      params: { topicName: 'General Medicine', autoFocusComposer: true },
+                    })
+                  }
+                  activeOpacity={0.85}
+                  accessibilityRole="button"
+                  accessibilityLabel="Ask Guru"
+                >
+                  <Ionicons name="medkit-outline" size={20} color={n.colors.success} />
+                  <LinearText variant="sectionTitle" style={styles.actionTitle}>
+                    Ask Guru
+                  </LinearText>
+                  <LinearText variant="bodySmall" tone="secondary" style={styles.actionSub}>
+                    Use your notes as a launch point for grounded medical questions.
+                  </LinearText>
+                </TouchableOpacity>
+              </LinearSurface>
+
+              <LinearSurface padded={false} style={styles.actionCard}>
+                <TouchableOpacity
+                  style={styles.actionTap}
+                  onPress={handleAudioUpload}
+                  disabled={isTranscribingUpload}
+                  activeOpacity={0.85}
+                  accessibilityRole="button"
+                  accessibilityLabel={isTranscribingUpload ? 'Transcribing' : 'Upload audio'}
+                >
+                  <Ionicons name="cloud-upload-outline" size={20} color={n.colors.warning} />
+                  <LinearText variant="sectionTitle" style={styles.actionTitle}>
+                    {isTranscribingUpload ? 'Transcribing...' : 'Upload Audio'}
+                  </LinearText>
+                  <LinearText variant="bodySmall" tone="secondary" style={styles.actionSub}>
+                    Convert external lecture audio files into elite ADHD notes.
+                  </LinearText>
+                </TouchableOpacity>
+              </LinearSurface>
+
+              <LinearSurface padded={false} style={styles.actionCard}>
+                <TouchableOpacity
+                  style={styles.actionTap}
+                  onPress={() => navigation.navigate('ManualNoteCreation')}
+                  activeOpacity={0.85}
+                  accessibilityRole="button"
+                  accessibilityLabel="Paste transcript"
+                >
+                  <Ionicons name="clipboard-outline" size={20} color={n.colors.error} />
+                  <LinearText variant="sectionTitle" style={styles.actionTitle}>
+                    Paste Transcript
+                  </LinearText>
+                  <LinearText variant="bodySmall" tone="secondary" style={styles.actionSub}>
+                    Manually enter text to generate formatted medical notes.
+                  </LinearText>
+                </TouchableOpacity>
+              </LinearSurface>
+            </View>
+
+            {emptyState ? (
+              <LinearSurface padded={false} style={styles.emptyCard}>
+                <Ionicons name="library-outline" size={28} color={n.colors.accent} />
+                <LinearText variant="title" style={styles.emptyTitle}>
+                  No saved notes yet
+                </LinearText>
+                <LinearText variant="body" tone="secondary" style={styles.emptySub}>
+                  Lecture returns and topic note edits will show up here once they are saved.
+                </LinearText>
+                <LinearButton
+                  label="Start a lecture capture"
+                  variant="primary"
+                  style={styles.emptyBtn}
+                  onPress={() =>
+                    tabsNavigation?.navigate('HomeTab', {
+                      screen: 'LectureMode',
+                      params: {},
+                    })
+                  }
+                  accessibilityRole="button"
+                  accessibilityLabel="Start a lecture capture"
+                />
+              </LinearSurface>
+            ) : (
+              <>
+                <View style={styles.sectionHeader}>
+                  <LinearText variant="sectionTitle" style={styles.sectionTitle}>
+                    Recent lecture notes
+                  </LinearText>
+                  <TouchableOpacity
+                    onPress={() => navigation.navigate('TranscriptHistory')}
+                    activeOpacity={0.7}
+                    accessibilityRole="button"
+                    accessibilityLabel="View all transcripts"
+                  >
+                    <LinearText variant="label" tone="accent" style={styles.sectionLink}>
+                      View all
+                    </LinearText>
+                  </TouchableOpacity>
+                </View>
+
+                {recentLectures.length === 0 ? (
+                  <LinearText variant="bodySmall" tone="muted" style={styles.sectionPlaceholder}>
+                    No lecture notes saved yet.
+                  </LinearText>
+                ) : (
+                  recentLectures.map((lecture) => (
+                    <TouchableOpacity
+                      key={lecture.id}
+                      style={styles.lectureCard}
+                      onPress={() =>
+                        navigation.navigate('TranscriptHistory', { noteId: lecture.id })
+                      }
+                      activeOpacity={0.8}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Open lecture note: ${getLectureTitle(lecture)}`}
+                    >
+                      <LinearSurface padded={false} style={styles.lectureCard}>
+                        <View style={styles.lectureMetaRow}>
+                          <LinearText
+                            variant="body"
+                            style={styles.lectureSubject}
+                            numberOfLines={2}
+                            ellipsizeMode="tail"
+                          >
+                            {getLectureTitle(lecture)}
+                          </LinearText>
+                          <LinearSurface padded={false} style={styles.lectureDateBadge}>
+                            <LinearText
+                              variant="caption"
+                              tone="secondary"
+                              style={styles.lectureDate}
+                            >
+                              {formatDate(lecture.createdAt)}
+                            </LinearText>
+                          </LinearSurface>
+                        </View>
+                        <LinearText
+                          variant="bodySmall"
+                          tone="secondary"
+                          style={styles.lecturePreview}
+                          numberOfLines={5}
+                        >
+                          {extractPreview(lecture.summary || lecture.note)}
+                        </LinearText>
+                        <View style={styles.inlineMetaRow}>
+                          {lecture.appName ? (
+                            <LinearText variant="caption" tone="muted" style={styles.inlineMeta}>
+                              via {lecture.appName}
+                            </LinearText>
+                          ) : (
+                            <View />
+                          )}
+                          <Ionicons name="chevron-forward" size={16} color={n.colors.textMuted} />
+                        </View>
+                      </LinearSurface>
+                    </TouchableOpacity>
+                  ))
+                )}
+
+                <View style={styles.sectionHeader}>
+                  <LinearText variant="sectionTitle" style={styles.sectionTitle}>
+                    Topic notes
+                  </LinearText>
+                  <TouchableOpacity
+                    onPress={() => navigation.navigate('NotesSearch')}
+                    activeOpacity={0.7}
+                    accessibilityRole="button"
+                    accessibilityLabel="Search notes"
+                  >
+                    <LinearText variant="label" tone="accent" style={styles.sectionLink}>
+                      Search notes
+                    </LinearText>
+                  </TouchableOpacity>
+                </View>
+
+                {topicNotes.length === 0 ? (
+                  <LinearText variant="bodySmall" tone="muted" style={styles.sectionPlaceholder}>
+                    No topic notes saved yet.
+                  </LinearText>
+                ) : (
+                  topicNotes.map((topic) => (
+                    <TouchableOpacity
+                      key={topic.topicId}
+                      style={styles.topicCard}
+                      onPress={() => navigation.navigate('NotesSearch')}
+                      activeOpacity={0.8}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Topic note: ${topic.topicName}`}
+                    >
+                      <LinearSurface padded={false} style={styles.topicCard}>
+                        <LinearText variant="badge" tone="accent" style={styles.topicSubject}>
+                          {topic.subjectName}
+                        </LinearText>
+                        <LinearText
+                          variant="body"
+                          style={styles.topicTitle}
+                          numberOfLines={3}
+                          ellipsizeMode="tail"
+                        >
+                          {topic.topicName}
+                        </LinearText>
+                        <LinearText
+                          variant="bodySmall"
+                          tone="secondary"
+                          style={styles.topicPreview}
+                          numberOfLines={4}
+                        >
+                          {extractPreview(topic.userNotes)}
+                        </LinearText>
+                      </LinearSurface>
+                    </TouchableOpacity>
+                  ))
+                )}
+              </>
+            )}
+          </ScrollView>
+        </ResponsiveContainer>
+
+        {/* Upload Review Modal */}
+        <Modal
+          visible={!!uploadResult}
+          transparent
+          animationType="slide"
+          onRequestClose={() => setUploadResult(null)}
+        >
+          <View style={styles.modalOverlay}>
+            <LinearSurface padded={false} style={styles.modalSheet}>
+              <LinearText variant="sectionTitle" style={styles.modalTitle}>
+                Lecture Transcribed
               </LinearText>
-            </TouchableOpacity>
-          </LinearSurface>
-        </View>
-      </Modal>
+
+              {uploadResult && uploadResult.topics.length > 0 ? (
+                <>
+                  {uploadSubjectRequired ? (
+                    <SubjectSelectionCard
+                      detectedSubjectName={uploadResult.subject}
+                      selectedSubjectName={selectedUploadSubjectName}
+                      onSelectSubject={setSelectedUploadSubjectName}
+                    />
+                  ) : (
+                    <SubjectChip subject={selectedUploadSubjectName ?? uploadResult.subject} />
+                  )}
+                  <LinearText
+                    variant="bodySmall"
+                    tone="secondary"
+                    style={styles.modalSummary}
+                    numberOfLines={5}
+                  >
+                    {uploadResult.lectureSummary}
+                  </LinearText>
+                  <LinearText variant="badge" tone="muted" style={styles.modalSectionLabel}>
+                    TOPICS DETECTED
+                  </LinearText>
+                  <TopicPillRow topics={uploadResult.topics} />
+                  <LinearText variant="badge" tone="muted" style={styles.modalSectionLabel}>
+                    YOUR CONFIDENCE LEVEL
+                  </LinearText>
+                  <ConfidenceSelector
+                    value={uploadConfidence ?? (uploadResult.estimatedConfidence as 1 | 2 | 3)}
+                    onChange={setUploadConfidence}
+                  />
+                </>
+              ) : (
+                <View style={styles.noTopicsBlock}>
+                  <LinearText style={styles.noTopicsIcon}>🔇</LinearText>
+                  <LinearText variant="bodySmall" tone="muted" centered style={styles.noTopicsText}>
+                    No medical topics detected in this recording.
+                  </LinearText>
+                </View>
+              )}
+
+              <LinearButton
+                label={isSavingUpload ? 'Saving…' : 'Save to Notes Vault'}
+                variant="primary"
+                style={[styles.modalSaveBtn, isSavingUpload && { opacity: 0.6 }]}
+                onPress={handleSaveUpload}
+                disabled={
+                  isSavingUpload ||
+                  !uploadResult?.topics.length ||
+                  (uploadSubjectRequired && !selectedUploadSubjectName)
+                }
+                leftIcon={
+                  isSavingUpload ? (
+                    <ActivityIndicator color={n.colors.textInverse} size="small" />
+                  ) : undefined
+                }
+              />
+              <TouchableOpacity
+                style={styles.modalDismissBtn}
+                onPress={() => {
+                  setUploadResult(null);
+                  setUploadConfidence(null);
+                  setUploadSubjectRequired(false);
+                  setSelectedUploadSubjectName(null);
+                }}
+              >
+                <LinearText variant="bodySmall" tone="muted" style={styles.modalDismissText}>
+                  Discard
+                </LinearText>
+              </TouchableOpacity>
+            </LinearSurface>
+          </View>
+        </Modal>
+      </ErrorBoundary>
     </SafeAreaView>
   );
 }
@@ -972,4 +1001,6 @@ const styles = StyleSheet.create({
   },
   modalDismissBtn: { alignItems: 'center', paddingVertical: 8 },
   modalDismissText: {},
+  loadingState: { alignItems: 'center', justifyContent: 'center', padding: 48, flex: 1 },
+  loadingText: { color: n.colors.textMuted, fontSize: 14, marginTop: 16 },
 });

@@ -13,6 +13,7 @@ import {
   View,
 } from 'react-native';
 import LinearText from '../components/primitives/LinearText';
+import ErrorBoundary from '../components/ErrorBoundary';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
@@ -197,236 +198,239 @@ export default function ImageVaultScreen() {
 
   return (
     <SafeAreaView style={styles.safe}>
-      <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
-      <ResponsiveContainer style={styles.flex}>
-        <FlatList
-          data={visibleImages}
-          keyExtractor={(item) => item.id.toString()}
-          numColumns={2}
-          renderItem={renderImageCard}
-          columnWrapperStyle={styles.columnWrap}
-          contentContainerStyle={styles.list}
-          showsVerticalScrollIndicator={false}
-          ListHeaderComponent={
-            <>
-              <ScreenHeader
-                title="Image Vault"
-                subtitle={`${images.length} AI-generated image${images.length !== 1 ? 's' : ''} saved`}
-                containerStyle={styles.headerCompact}
-                titleStyle={styles.headerTitleCompact}
-                subtitleStyle={styles.headerSubtitleCompact}
-                searchElement={
-                  <BannerSearchBar
-                    value={searchQuery}
-                    onChangeText={setSearchQuery}
-                    placeholder="Search topic, prompt, provider..."
-                  />
-                }
-              ></ScreenHeader>
+      <ErrorBoundary>
+        <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
+        <ResponsiveContainer style={styles.flex}>
+          <FlatList
+            data={visibleImages}
+            keyExtractor={(item) => item.id.toString()}
+            numColumns={2}
+            renderItem={renderImageCard}
+            columnWrapperStyle={styles.columnWrap}
+            contentContainerStyle={styles.list}
+            showsVerticalScrollIndicator={false}
+            ListHeaderComponent={
+              <>
+                <ScreenHeader
+                  title="Image Vault"
+                  subtitle={`${images.length} AI-generated image${images.length !== 1 ? 's' : ''} saved`}
+                  containerStyle={styles.headerCompact}
+                  titleStyle={styles.headerTitleCompact}
+                  subtitleStyle={styles.headerSubtitleCompact}
+                  searchElement={
+                    <BannerSearchBar
+                      value={searchQuery}
+                      onChangeText={setSearchQuery}
+                      placeholder="Search topic, prompt, provider..."
+                    />
+                  }
+                ></ScreenHeader>
 
-              <View style={styles.summaryRow}>
-                <LinearSurface compact padded={false} style={styles.summaryCard}>
-                  <LinearText style={styles.summaryValue}>{images.length}</LinearText>
-                  <LinearText style={styles.summaryLabel}>Total</LinearText>
-                </LinearSurface>
-                <LinearSurface compact padded={false} style={styles.summaryCard}>
-                  <LinearText style={styles.summaryValue}>{illustrationCount}</LinearText>
-                  <LinearText style={styles.summaryLabel}>Illustrations</LinearText>
-                </LinearSurface>
-                <LinearSurface compact padded={false} style={styles.summaryCard}>
-                  <LinearText style={styles.summaryValue}>{chartCount}</LinearText>
-                  <LinearText style={styles.summaryLabel}>Charts</LinearText>
-                </LinearSurface>
-              </View>
-
-              <View style={styles.resultsRow}>
-                <View style={styles.resultsCopy}>
-                  <LinearText style={styles.resultsTitle}>
-                    {visibleImages.length} result{visibleImages.length !== 1 ? 's' : ''}
-                  </LinearText>
-                  <LinearText style={styles.resultsSubtitle} numberOfLines={1}>
-                    {activeFilterSummary}
-                  </LinearText>
+                <View style={styles.summaryRow}>
+                  <LinearSurface compact padded={false} style={styles.summaryCard}>
+                    <LinearText style={styles.summaryValue}>{images.length}</LinearText>
+                    <LinearText style={styles.summaryLabel}>Total</LinearText>
+                  </LinearSurface>
+                  <LinearSurface compact padded={false} style={styles.summaryCard}>
+                    <LinearText style={styles.summaryValue}>{illustrationCount}</LinearText>
+                    <LinearText style={styles.summaryLabel}>Illustrations</LinearText>
+                  </LinearSurface>
+                  <LinearSurface compact padded={false} style={styles.summaryCard}>
+                    <LinearText style={styles.summaryValue}>{chartCount}</LinearText>
+                    <LinearText style={styles.summaryLabel}>Charts</LinearText>
+                  </LinearSurface>
                 </View>
-                {hasActiveFilters || hasActiveSearch ? (
-                  <TouchableOpacity
-                    style={styles.clearFiltersBtn}
-                    onPress={() => {
-                      setSearchQuery('');
-                      setStyleFilter('all');
-                      setContextFilter('all');
-                    }}
-                  >
-                    <LinearText style={styles.clearFiltersText}>Clear</LinearText>
-                  </TouchableOpacity>
-                ) : null}
-              </View>
 
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.filterRow}
-              >
-                {STYLE_FILTERS.map((filter) => (
-                  <TouchableOpacity
-                    key={filter.id}
-                    style={[styles.filterBtn, styleFilter === filter.id && styles.filterBtnActive]}
-                    onPress={() => setStyleFilter(filter.id)}
-                    activeOpacity={0.8}
-                  >
-                    <LinearText
-                      style={[
-                        styles.filterBtnText,
-                        styleFilter === filter.id && styles.filterBtnTextActive,
-                      ]}
-                    >
-                      {filter.label}
+                <View style={styles.resultsRow}>
+                  <View style={styles.resultsCopy}>
+                    <LinearText style={styles.resultsTitle}>
+                      {visibleImages.length} result{visibleImages.length !== 1 ? 's' : ''}
                     </LinearText>
-                  </TouchableOpacity>
-                ))}
-              </ScrollView>
-
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={[styles.filterRow, styles.filterRowTight]}
-              >
-                {CONTEXT_FILTERS.map((filter) => (
-                  <TouchableOpacity
-                    key={filter.id}
-                    style={[
-                      styles.filterBtn,
-                      contextFilter === filter.id && styles.filterBtnActive,
-                    ]}
-                    onPress={() => setContextFilter(filter.id)}
-                    activeOpacity={0.8}
-                  >
-                    <LinearText
-                      style={[
-                        styles.filterBtnText,
-                        contextFilter === filter.id && styles.filterBtnTextActive,
-                      ]}
-                    >
-                      {filter.label}
+                    <LinearText style={styles.resultsSubtitle} numberOfLines={1}>
+                      {activeFilterSummary}
                     </LinearText>
-                  </TouchableOpacity>
-                ))}
-              </ScrollView>
-            </>
-          }
-          ListEmptyComponent={
-            <View style={styles.empty}>
-              <Ionicons name="images-outline" size={48} color={n.colors.textMuted} />
-              <LinearText style={styles.emptyTitle}>
-                {searchQuery || styleFilter !== 'all' || contextFilter !== 'all'
-                  ? 'No matching images'
-                  : 'No images yet'}
-              </LinearText>
-              <LinearText style={styles.emptySubtitle}>
-                {searchQuery || styleFilter !== 'all' || contextFilter !== 'all'
-                  ? 'Try a different search or filter.'
-                  : 'Generate illustrations or charts from Guru Chat or topic notes and they will appear here.'}
-              </LinearText>
-            </View>
-          }
-          refreshControl={
-            <RefreshControl
-              refreshing={refreshing}
-              onRefresh={handleRefresh}
-              tintColor={n.colors.textPrimary}
-            />
-          }
-        />
+                  </View>
+                  {hasActiveFilters || hasActiveSearch ? (
+                    <TouchableOpacity
+                      style={styles.clearFiltersBtn}
+                      onPress={() => {
+                        setSearchQuery('');
+                        setStyleFilter('all');
+                        setContextFilter('all');
+                      }}
+                    >
+                      <LinearText style={styles.clearFiltersText}>Clear</LinearText>
+                    </TouchableOpacity>
+                  ) : null}
+                </View>
 
-        <Modal
-          visible={!!selectedImage}
-          transparent
-          animationType="slide"
-          onRequestClose={() => setSelectedImage(null)}
-        >
-          <View style={styles.detailOverlay}>
-            <LinearSurface padded={false} style={styles.detailSheet}>
-              <View style={styles.detailHeader}>
-                <LinearText style={styles.detailTitle} numberOfLines={2}>
-                  {selectedImage?.topicName ?? ''}
-                </LinearText>
-                <TouchableOpacity
-                  onPress={() => setSelectedImage(null)}
-                  style={styles.detailCloseBtn}
-                  accessibilityRole="button"
-                  accessibilityLabel="Close image details"
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={styles.filterRow}
                 >
-                  <Ionicons name="close" size={20} color={n.colors.textPrimary} />
-                </TouchableOpacity>
-              </View>
-
-              <ScrollView contentContainerStyle={styles.detailScrollContent}>
-                {selectedImage ? (
-                  <>
-                    <Pressable
-                      style={styles.detailImageWrap}
-                      onPress={() => setLightboxUri(selectedImage.localUri)}
+                  {STYLE_FILTERS.map((filter) => (
+                    <TouchableOpacity
+                      key={filter.id}
+                      style={[
+                        styles.filterBtn,
+                        styleFilter === filter.id && styles.filterBtnActive,
+                      ]}
+                      onPress={() => setStyleFilter(filter.id)}
+                      activeOpacity={0.8}
                     >
-                      <Image
-                        source={{ uri: selectedImage.localUri }}
-                        style={styles.detailImage}
-                        resizeMode="cover"
-                      />
-                    </Pressable>
-
-                    <View style={styles.detailMetaWrap}>
-                      <View style={styles.detailChip}>
-                        <LinearText style={styles.detailChipText}>
-                          {STYLE_LABELS[selectedImage.style]}
-                        </LinearText>
-                      </View>
-                      <View style={styles.detailChip}>
-                        <LinearText style={styles.detailChipText}>
-                          {CONTEXT_LABELS[selectedImage.contextType]}
-                        </LinearText>
-                      </View>
-                      <View style={styles.detailChip}>
-                        <LinearText style={styles.detailChipText}>
-                          {formatRelativeDate(selectedImage.createdAt)}
-                        </LinearText>
-                      </View>
-                    </View>
-
-                    <LinearSurface padded={false} style={styles.detailInfoCard}>
-                      <LinearText style={styles.detailInfoLabel}>Provider</LinearText>
-                      <LinearText style={styles.detailInfoValue}>
-                        {selectedImage.provider} • {selectedImage.modelUsed}
+                      <LinearText
+                        style={[
+                          styles.filterBtnText,
+                          styleFilter === filter.id && styles.filterBtnTextActive,
+                        ]}
+                      >
+                        {filter.label}
                       </LinearText>
-                    </LinearSurface>
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
 
-                    <LinearSurface padded={false} style={styles.promptCard}>
-                      <View style={styles.promptHeader}>
-                        <LinearText style={styles.promptTitle}>Prompt</LinearText>
-                        <TouchableOpacity
-                          style={styles.promptCopyBtn}
-                          onPress={() => copyPrompt(selectedImage.prompt)}
-                          accessibilityRole="button"
-                          accessibilityLabel="Copy prompt"
-                        >
-                          <Ionicons name="copy-outline" size={15} color={n.colors.textSecondary} />
-                          <LinearText style={styles.promptCopyText}>Copy</LinearText>
-                        </TouchableOpacity>
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={[styles.filterRow, styles.filterRowTight]}
+                >
+                  {CONTEXT_FILTERS.map((filter) => (
+                    <TouchableOpacity
+                      key={filter.id}
+                      style={[
+                        styles.filterBtn,
+                        contextFilter === filter.id && styles.filterBtnActive,
+                      ]}
+                      onPress={() => setContextFilter(filter.id)}
+                      activeOpacity={0.8}
+                    >
+                      <LinearText
+                        style={[
+                          styles.filterBtnText,
+                          contextFilter === filter.id && styles.filterBtnTextActive,
+                        ]}
+                      >
+                        {filter.label}
+                      </LinearText>
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+              </>
+            }
+            ListEmptyComponent={
+              <View style={styles.empty}>
+                <LinearText style={styles.emptyEmoji}>🖼️</LinearText>
+                <LinearText style={styles.emptyTitle}>No Images Saved</LinearText>
+                <LinearText style={styles.emptySubtitle}>
+                  Medical images you save during study sessions will appear here.
+                </LinearText>
+              </View>
+            }
+            refreshControl={
+              <RefreshControl
+                refreshing={refreshing}
+                onRefresh={handleRefresh}
+                tintColor={n.colors.textPrimary}
+              />
+            }
+          />
+
+          <Modal
+            visible={!!selectedImage}
+            transparent
+            animationType="slide"
+            onRequestClose={() => setSelectedImage(null)}
+          >
+            <View style={styles.detailOverlay}>
+              <LinearSurface padded={false} style={styles.detailSheet}>
+                <View style={styles.detailHeader}>
+                  <LinearText style={styles.detailTitle} numberOfLines={2}>
+                    {selectedImage?.topicName ?? ''}
+                  </LinearText>
+                  <TouchableOpacity
+                    onPress={() => setSelectedImage(null)}
+                    style={styles.detailCloseBtn}
+                    accessibilityRole="button"
+                    accessibilityLabel="Close image details"
+                  >
+                    <Ionicons name="close" size={20} color={n.colors.textPrimary} />
+                  </TouchableOpacity>
+                </View>
+
+                <ScrollView contentContainerStyle={styles.detailScrollContent}>
+                  {selectedImage ? (
+                    <>
+                      <Pressable
+                        style={styles.detailImageWrap}
+                        onPress={() => setLightboxUri(selectedImage.localUri)}
+                      >
+                        <Image
+                          source={{ uri: selectedImage.localUri }}
+                          style={styles.detailImage}
+                          resizeMode="cover"
+                        />
+                      </Pressable>
+
+                      <View style={styles.detailMetaWrap}>
+                        <View style={styles.detailChip}>
+                          <LinearText style={styles.detailChipText}>
+                            {STYLE_LABELS[selectedImage.style]}
+                          </LinearText>
+                        </View>
+                        <View style={styles.detailChip}>
+                          <LinearText style={styles.detailChipText}>
+                            {CONTEXT_LABELS[selectedImage.contextType]}
+                          </LinearText>
+                        </View>
+                        <View style={styles.detailChip}>
+                          <LinearText style={styles.detailChipText}>
+                            {formatRelativeDate(selectedImage.createdAt)}
+                          </LinearText>
+                        </View>
                       </View>
-                      <LinearText style={styles.promptText}>{selectedImage.prompt}</LinearText>
-                    </LinearSurface>
-                  </>
-                ) : null}
-              </ScrollView>
-            </LinearSurface>
-          </View>
-        </Modal>
 
-        <ImageLightbox
-          visible={!!lightboxUri}
-          uri={lightboxUri}
-          onClose={() => setLightboxUri(null)}
-        />
-      </ResponsiveContainer>
+                      <LinearSurface padded={false} style={styles.detailInfoCard}>
+                        <LinearText style={styles.detailInfoLabel}>Provider</LinearText>
+                        <LinearText style={styles.detailInfoValue}>
+                          {selectedImage.provider} • {selectedImage.modelUsed}
+                        </LinearText>
+                      </LinearSurface>
+
+                      <LinearSurface padded={false} style={styles.promptCard}>
+                        <View style={styles.promptHeader}>
+                          <LinearText style={styles.promptTitle}>Prompt</LinearText>
+                          <TouchableOpacity
+                            style={styles.promptCopyBtn}
+                            onPress={() => copyPrompt(selectedImage.prompt)}
+                            accessibilityRole="button"
+                            accessibilityLabel="Copy prompt"
+                          >
+                            <Ionicons
+                              name="copy-outline"
+                              size={15}
+                              color={n.colors.textSecondary}
+                            />
+                            <LinearText style={styles.promptCopyText}>Copy</LinearText>
+                          </TouchableOpacity>
+                        </View>
+                        <LinearText style={styles.promptText}>{selectedImage.prompt}</LinearText>
+                      </LinearSurface>
+                    </>
+                  ) : null}
+                </ScrollView>
+              </LinearSurface>
+            </View>
+          </Modal>
+
+          <ImageLightbox
+            visible={!!lightboxUri}
+            uri={lightboxUri}
+            onClose={() => setLightboxUri(null)}
+          />
+        </ResponsiveContainer>
+      </ErrorBoundary>
     </SafeAreaView>
   );
 }
@@ -651,19 +655,24 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 32,
+    paddingVertical: 48,
+    marginTop: 40,
   },
+  emptyEmoji: { fontSize: 64, marginBottom: 16 },
   emptyTitle: {
     color: n.colors.textPrimary,
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: '800',
-    marginTop: 16,
+    marginTop: 0,
+    marginBottom: 8,
+    textAlign: 'center',
   },
   emptySubtitle: {
     color: n.colors.textMuted,
     fontSize: 14,
     lineHeight: 20,
     textAlign: 'center',
-    marginTop: 8,
+    marginTop: 0,
   },
   detailOverlay: {
     flex: 1,

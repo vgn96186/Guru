@@ -6,7 +6,6 @@ import {
   TouchableOpacity,
   TextInput,
   StyleSheet,
-  Alert,
   ActivityIndicator,
   Image,
   Modal,
@@ -32,7 +31,13 @@ import type {
   FlashcardsContent,
 } from '../types';
 
-import { askGuru, explainMostTestedRationale, explainTopicDeeper, generateEscalatingQuiz, explainQuizConcept } from '../services/aiService';
+import {
+  askGuru,
+  explainMostTestedRationale,
+  explainTopicDeeper,
+  generateEscalatingQuiz,
+  explainQuizConcept,
+} from '../services/aiService';
 import { fetchWikipediaImage } from '../services/imageService';
 import { isContentFlagged, setContentFlagged } from '../db/queries/aiCache';
 import GuruChatOverlay from '../components/GuruChatOverlay';
@@ -43,6 +48,7 @@ import { linearTheme as n } from '../theme/linearTheme';
 import { emphasizeHighYieldMarkdown } from '../utils/highlightMarkdown';
 import LinearSurface from '../components/primitives/LinearSurface';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { showInfo } from '../components/dialogService';
 
 interface TopicImageProps {
   topicName: string;
@@ -78,15 +84,52 @@ const TopicImage = React.memo(function TopicImage({ topicName }: TopicImageProps
 
 /** Client-side framing strip for when a resolved image URL fails to load in the UI. */
 function stripImageFraming(text: string): string {
-  const IMAGE_TYPES = 'image|imaging study|photograph|micrograph|radiograph|X-ray|CT scan|MRI|ECG|histology|slide|smear|specimen|scan|film';
+  const IMAGE_TYPES =
+    'image|imaging study|photograph|micrograph|radiograph|X-ray|CT scan|MRI|ECG|histology|slide|smear|specimen|scan|film';
   return text
-    .replace(new RegExp(`\\b(Based on|Referring to|Looking at|In|From|Examining) the (${IMAGE_TYPES}) (shown|displayed|provided|above|below|here|given)[.,]?\\s*`, 'gi'), '')
-    .replace(new RegExp(`\\b(Based on|Referring to|Looking at|In) the (provided|given|following) (${IMAGE_TYPES})[.,]?\\s*`, 'gi'), '')
-    .replace(new RegExp(`The following (${IMAGE_TYPES}) (demonstrates|shows|reveals|depicts|illustrates)[.:]?\\s*`, 'gi'), '')
-    .replace(new RegExp(`As (shown|seen|depicted|demonstrated|illustrated) in the (${IMAGE_TYPES})[.,]?\\s*`, 'gi'), '')
-    .replace(new RegExp(`The (${IMAGE_TYPES}) (shows|reveals|demonstrates|depicts|illustrates)[.:]?\\s*`, 'gi'), '')
+    .replace(
+      new RegExp(
+        `\\b(Based on|Referring to|Looking at|In|From|Examining) the (${IMAGE_TYPES}) (shown|displayed|provided|above|below|here|given)[.,]?\\s*`,
+        'gi',
+      ),
+      '',
+    )
+    .replace(
+      new RegExp(
+        `\\b(Based on|Referring to|Looking at|In) the (provided|given|following) (${IMAGE_TYPES})[.,]?\\s*`,
+        'gi',
+      ),
+      '',
+    )
+    .replace(
+      new RegExp(
+        `The following (${IMAGE_TYPES}) (demonstrates|shows|reveals|depicts|illustrates)[.:]?\\s*`,
+        'gi',
+      ),
+      '',
+    )
+    .replace(
+      new RegExp(
+        `As (shown|seen|depicted|demonstrated|illustrated) in the (${IMAGE_TYPES})[.,]?\\s*`,
+        'gi',
+      ),
+      '',
+    )
+    .replace(
+      new RegExp(
+        `The (${IMAGE_TYPES}) (shows|reveals|demonstrates|depicts|illustrates)[.:]?\\s*`,
+        'gi',
+      ),
+      '',
+    )
     .replace(new RegExp(`Consider the following (${IMAGE_TYPES})[.:]?\\s*`, 'gi'), '')
-    .replace(new RegExp(`A (${IMAGE_TYPES}) (of this patient|of the patient)? ?(shows|reveals|demonstrates|depicts)[.:]?\\s*`, 'gi'), '')
+    .replace(
+      new RegExp(
+        `A (${IMAGE_TYPES}) (of this patient|of the patient)? ?(shows|reveals|demonstrates|depicts)[.:]?\\s*`,
+        'gi',
+      ),
+      '',
+    )
     .replace(/^\s*[,.:;]\s*/, '')
     .replace(/^([a-z])/, (c) => c.toUpperCase());
 }
@@ -335,11 +378,12 @@ function ContentCard({ content, topicId, onDone, onSkip, onQuizAnswered, onQuizC
     const newFlagged = !flagged;
     setFlagged(newFlagged);
     void setContentFlagged(topicId, content.type, newFlagged);
-    if (newFlagged)
-      Alert.alert(
+    if (newFlagged) {
+      void showInfo(
         'Flagged for review',
         'This content has been flagged. You can review all flagged items in the Flagged Review section.',
       );
+    }
   }
 
   const handleQuizAnswered = useCallback(
@@ -733,7 +777,11 @@ function MustKnowCard({
  * Extracts likely medical concepts worth explaining from a quiz question + options.
  * Looks for: lab values (Na, K, Hb...), named signs/tests, drug names, and specific measurements.
  */
-function extractMedicalConcepts(question: string, options: string[], correctAnswer: string): string[] {
+function extractMedicalConcepts(
+  question: string,
+  options: string[],
+  correctAnswer: string,
+): string[] {
   const combined = `${question} ${options.join(' ')}`;
   const found: string[] = [];
 
@@ -754,7 +802,7 @@ function extractMedicalConcepts(question: string, options: string[], correctAnsw
   }
 
   // Also extract the correct answer text (without option prefix)
-  const answerText = correctAnswer.replace(/^[A-D][.)]\s*/,'').trim();
+  const answerText = correctAnswer.replace(/^[A-D][.)]\s*/, '').trim();
   if (answerText.length > 5 && answerText.length < 60 && !found.includes(answerText)) {
     found.unshift(answerText); // correct answer concept is highest priority
   }
@@ -807,7 +855,11 @@ function ConceptChip({ concept, topicName }: { concept: string; topicName: strin
         <LinearText style={{ color: n.colors.textPrimary, fontSize: 12, fontWeight: '600' }}>
           {concept.length > 35 ? `${concept.slice(0, 33)}…` : concept}
         </LinearText>
-        <Ionicons name={expanded ? 'chevron-up' : 'chevron-down'} size={12} color={n.colors.textSecondary} />
+        <Ionicons
+          name={expanded ? 'chevron-up' : 'chevron-down'}
+          size={12}
+          color={n.colors.textSecondary}
+        />
       </TouchableOpacity>
       {expanded && (
         <View
@@ -855,11 +907,7 @@ function DeepExplanationBlock({ explanation }: { explanation: string }) {
 
   return (
     <View
-      style={[
-        s.explBox,
-        s.explBoxDeep,
-        { borderLeftWidth: 3, borderLeftColor: n.colors.accent },
-      ]}
+      style={[s.explBox, s.explBoxDeep, { borderLeftWidth: 3, borderLeftColor: n.colors.accent }]}
     >
       <View style={s.inlineLabelRow}>
         <Ionicons name="school-outline" size={14} color={n.colors.accent} />
@@ -1065,7 +1113,7 @@ function QuizCard({
           question.correctIndex >= 0 &&
           question.correctIndex < question.options.length,
       ),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+
     [activeQuestions],
   );
 
@@ -1244,7 +1292,7 @@ function QuizCard({
       {isQuizImageHttpUrl(q.imageUrl) ? (
         <QuestionImage
           url={q.imageUrl!.trim()}
-          onFailed={() => setFailedImageIndices(prev => new Set([...prev, currentQ]))}
+          onFailed={() => setFailedImageIndices((prev) => new Set([...prev, currentQ]))}
         />
       ) : null}
       <LinearText style={s.questionText}>
@@ -1328,23 +1376,28 @@ function QuizCard({
         </View>
       )}
       {/* Inline concept chips — tap to explain key terms */}
-      {showExpl && (() => {
-        const concepts = extractMedicalConcepts(q.question, q.options, q.options[q.correctIndex] ?? '');
-        if (concepts.length === 0) return null;
-        return (
-          <View style={{ marginTop: 12, marginBottom: 4 }}>
-            <View style={[s.inlineLabelRow, { marginBottom: 8 }]}>
-              <Ionicons name="bulb-outline" size={13} color={n.colors.textMuted} />
-              <LinearText style={[s.explSectionTitle, { color: n.colors.textMuted }]}>
-                KEY CONCEPTS
-              </LinearText>
+      {showExpl &&
+        (() => {
+          const concepts = extractMedicalConcepts(
+            q.question,
+            q.options,
+            q.options[q.correctIndex] ?? '',
+          );
+          if (concepts.length === 0) return null;
+          return (
+            <View style={{ marginTop: 12, marginBottom: 4 }}>
+              <View style={[s.inlineLabelRow, { marginBottom: 8 }]}>
+                <Ionicons name="bulb-outline" size={13} color={n.colors.textMuted} />
+                <LinearText style={[s.explSectionTitle, { color: n.colors.textMuted }]}>
+                  KEY CONCEPTS
+                </LinearText>
+              </View>
+              {concepts.map((c, i) => (
+                <ConceptChip key={i} concept={c} topicName={content.topicName} />
+              ))}
             </View>
-            {concepts.map((c, i) => (
-              <ConceptChip key={i} concept={c} topicName={content.topicName} />
-            ))}
-          </View>
-        );
-      })()}
+          );
+        })()}
 
       {/* Deep AI explanation */}
       {showExpl && !deepExplanation && !isLoadingDeepExpl && (
@@ -1365,9 +1418,7 @@ function QuizCard({
           <LinearText style={s.deepExplLoadingText}>Guru is explaining...</LinearText>
         </View>
       )}
-      {deepExplanation && (
-        <DeepExplanationBlock explanation={deepExplanation} />
-      )}
+      {deepExplanation && <DeepExplanationBlock explanation={deepExplanation} />}
       {isLoadingEscalated && (
         <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 16, gap: 8 }}>
           <ActivityIndicator size="small" color={n.colors.accent} />
@@ -1388,7 +1439,14 @@ function QuizCard({
             gap: 12,
           }}
         >
-          <LinearText style={{ color: n.colors.textPrimary, fontWeight: '700', fontSize: 15, textAlign: 'center' }}>
+          <LinearText
+            style={{
+              color: n.colors.textPrimary,
+              fontWeight: '700',
+              fontSize: 15,
+              textAlign: 'center',
+            }}
+          >
             Round {escalatingRound + 1} complete — {score}/{validQuestions.length} correct
           </LinearText>
           <TouchableOpacity
@@ -1401,7 +1459,10 @@ function QuizCard({
             </LinearText>
           </TouchableOpacity>
           <TouchableOpacity
-            style={[s.doneBtn, { backgroundColor: n.colors.card, borderWidth: 1, borderColor: n.colors.border }]}
+            style={[
+              s.doneBtn,
+              { backgroundColor: n.colors.card, borderWidth: 1, borderColor: n.colors.border },
+            ]}
             onPress={handleFinishQuiz}
             activeOpacity={0.8}
           >

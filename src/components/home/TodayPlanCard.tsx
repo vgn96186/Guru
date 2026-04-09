@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { useNavigation, type NavigationProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import type { HomeStackParamList, TabParamList } from '../../navigation/types';
 import { linearTheme as n } from '../../theme/linearTheme';
 import LinearSurface from '../primitives/LinearSurface';
+import LinearText from '../primitives/LinearText';
 import { useAppStore } from '../../store/useAppStore';
 import { getTodaysAgendaWithTimes, type TodayTask } from '../../services/studyPlanner';
 import { dailyAgendaRepository } from '../../db/repositories';
@@ -78,9 +79,13 @@ export default function TodayPlanCard() {
       <LinearSurface style={styles.container} borderColor="rgba(255,255,255,0.10)">
         <View style={styles.headerRow}>
           <Ionicons name="compass-outline" size={18} color={n.colors.textMuted} />
-          <Text style={styles.label}>TODAY'S MISSION</Text>
+          <LinearText variant="chip" tone="muted" style={styles.label}>
+            TODAY'S MISSION
+          </LinearText>
         </View>
-        <Text style={styles.subtitle}>No plan generated yet.</Text>
+        <LinearText variant="bodySmall" tone="secondary" style={styles.subtitle}>
+          No plan generated yet.
+        </LinearText>
         <TouchableOpacity
           style={styles.generateBtn}
           onPress={handleGenerate}
@@ -92,7 +97,9 @@ export default function TodayPlanCard() {
           {isGenerating ? (
             <ActivityIndicator color={n.colors.textPrimary} size="small" />
           ) : (
-            <Text style={styles.generateBtnText}>GENERATE PLAN</Text>
+            <LinearText variant="chip" style={styles.generateBtnText}>
+              GENERATE PLAN
+            </LinearText>
           )}
         </TouchableOpacity>
       </LinearSurface>
@@ -120,20 +127,36 @@ export default function TodayPlanCard() {
       <View style={styles.activeHeader}>
         <View style={styles.headerRow}>
           <Ionicons name="compass" size={18} color={n.colors.accent} />
-          <Text style={[styles.label, { color: n.colors.accent }]}>UP NEXT</Text>
+          <LinearText
+            variant="chip"
+            tone="accent"
+            style={[styles.label, { color: n.colors.accent }]}
+          >
+            UP NEXT
+          </LinearText>
         </View>
         <View style={styles.metaRow}>
           <View style={[styles.typeBadge, { backgroundColor: `${typeColor}22` }]}>
-            <Text style={[styles.typeBadgeText, { color: typeColor }]}>{typeLabel}</Text>
+            <LinearText variant="chip" style={[styles.typeBadgeText, { color: typeColor }]}>
+              {typeLabel}
+            </LinearText>
           </View>
-          {nextTask && <Text style={styles.durationText}>{nextTask.durationMinutes}m</Text>}
+          {nextTask && (
+            <LinearText variant="caption" style={styles.durationText}>
+              {nextTask.durationMinutes}m
+            </LinearText>
+          )}
         </View>
       </View>
 
       {nextTask && (
         <View style={styles.taskBlock}>
-          <Text style={styles.taskTitle}>{nextTask.title}</Text>
-          <Text style={styles.taskWhy}>{nextTask.why}</Text>
+          <LinearText variant="sectionTitle" style={styles.taskTitle}>
+            {nextTask.title}
+          </LinearText>
+          <LinearText variant="bodySmall" tone="secondary" style={styles.taskWhy}>
+            {nextTask.why}
+          </LinearText>
         </View>
       )}
 
@@ -158,7 +181,9 @@ export default function TodayPlanCard() {
           accessibilityLabel={`Start ${nextTask.title}`}
         >
           <Ionicons name="play" size={16} color="#fff" />
-          <Text style={styles.startBtnText}>START NOW</Text>
+          <LinearText variant="chip" style={styles.startBtnText}>
+            START NOW
+          </LinearText>
         </TouchableOpacity>
       )}
 
@@ -170,9 +195,9 @@ export default function TodayPlanCard() {
           accessibilityRole="button"
           accessibilityLabel="View full schedule"
         >
-          <Text style={styles.viewFullText}>
+          <LinearText variant="caption" style={styles.viewFullText}>
             {remainingBlocks} block{remainingBlocks !== 1 ? 's' : ''} · {totalMinutes}m total
-          </Text>
+          </LinearText>
           <Ionicons name="chevron-forward" size={14} color={n.colors.textMuted} />
         </TouchableOpacity>
       </View>

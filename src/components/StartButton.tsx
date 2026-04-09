@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { TouchableOpacity, Text, View, StyleSheet, useWindowDimensions } from 'react-native';
+import { TouchableOpacity, View, StyleSheet, useWindowDimensions } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -12,6 +12,7 @@ import Animated, {
 import Svg, { Defs, RadialGradient, Stop, Circle, Ellipse } from 'react-native-svg';
 import * as Haptics from 'expo-haptics';
 import { linearTheme as n } from '../theme/linearTheme';
+import LinearText from './primitives/LinearText';
 
 const PHONE_SIZE = 156;
 const TABLET_SIZE = 220;
@@ -74,8 +75,8 @@ const StartButton = React.forwardRef<View, Props>(function StartButton(
           withTiming(1.08, { duration: BOX_STEP, easing: easeBreath }),
         ),
         -1,
-        false
-      )
+        false,
+      ),
     );
 
     breathGlow.value = withSequence(
@@ -88,8 +89,8 @@ const StartButton = React.forwardRef<View, Props>(function StartButton(
           withTiming(0.95, { duration: BOX_STEP, easing: easeBreath }),
         ),
         -1,
-        false
-      )
+        false,
+      ),
     );
 
     highlightTranslateY.value = withSequence(
@@ -102,8 +103,8 @@ const StartButton = React.forwardRef<View, Props>(function StartButton(
           withTiming(3, { duration: BOX_STEP, easing: easeBreath }),
         ),
         -1,
-        false
-      )
+        false,
+      ),
     );
 
     highlightOpacity.value = withSequence(
@@ -116,8 +117,8 @@ const StartButton = React.forwardRef<View, Props>(function StartButton(
           withTiming(0.75, { duration: BOX_STEP, easing: easeBreath }),
         ),
         -1,
-        false
-      )
+        false,
+      ),
     );
 
     return () => {
@@ -166,7 +167,11 @@ const StartButton = React.forwardRef<View, Props>(function StartButton(
       >
         <Animated.View
           pointerEvents="none"
-          style={[styles.orbVisual, { width: size, height: size, borderRadius: radius }, styleOrbBody]}
+          style={[
+            styles.orbVisual,
+            { width: size, height: size, borderRadius: radius },
+            styleOrbBody,
+          ]}
         >
           <Animated.View
             style={[
@@ -176,16 +181,37 @@ const StartButton = React.forwardRef<View, Props>(function StartButton(
             ]}
           />
 
-          <View style={[styles.orbCore, { width: size, height: size, borderRadius: radius, backgroundColor: btnColor }]}>
+          <View
+            style={[
+              styles.orbCore,
+              { width: size, height: size, borderRadius: radius, backgroundColor: btnColor },
+            ]}
+          >
             <View style={[StyleSheet.absoluteFill, { borderRadius: radius, overflow: 'hidden' }]}>
               <Svg width={size} height={size} viewBox="0 0 100 100">
                 <Defs>
-                  <RadialGradient id="startColorGrad" cx="45%" cy="45%" rx="55%" ry="55%" fx="45%" fy="45%">
+                  <RadialGradient
+                    id="startColorGrad"
+                    cx="45%"
+                    cy="45%"
+                    rx="55%"
+                    ry="55%"
+                    fx="45%"
+                    fy="45%"
+                  >
                     <Stop offset="0%" stopColor={n.colors.accent} stopOpacity="1" />
                     <Stop offset="60%" stopColor={n.colors.accent} stopOpacity="1" />
                     <Stop offset="100%" stopColor={n.colors.accent} stopOpacity="1" />
                   </RadialGradient>
-                  <RadialGradient id="startLightGrad" cx="30%" cy="28%" rx="65%" ry="65%" fx="30%" fy="28%">
+                  <RadialGradient
+                    id="startLightGrad"
+                    cx="30%"
+                    cy="28%"
+                    rx="65%"
+                    ry="65%"
+                    fx="30%"
+                    fy="28%"
+                  >
                     <Stop offset="0%" stopColor="#ffffff" stopOpacity="0.6" />
                     <Stop offset="35%" stopColor="#ffffff" stopOpacity="0.1" />
                     <Stop offset="65%" stopColor="#000000" stopOpacity="0.0" />
@@ -214,23 +240,27 @@ const StartButton = React.forwardRef<View, Props>(function StartButton(
         </Animated.View>
 
         <View pointerEvents="none" style={styles.textLayer}>
-          <Text
+          <LinearText
+            variant="body"
+            tone="inverse"
             style={[styles.label, isTablet && styles.labelTablet]}
             numberOfLines={2}
             adjustsFontSizeToFit
             minimumFontScale={0.75}
           >
             {disabled ? disabledLabel : label}
-          </Text>
+          </LinearText>
           {sublabel ? (
-            <Text
+            <LinearText
+              variant="bodySmall"
+              tone="muted"
               style={[styles.sublabel, isTablet && styles.sublabelTablet]}
               numberOfLines={2}
               adjustsFontSizeToFit
               minimumFontScale={0.85}
             >
               {sublabel}
-            </Text>
+            </LinearText>
           ) : null}
         </View>
       </TouchableOpacity>

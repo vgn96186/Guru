@@ -7,7 +7,6 @@ import {
   StyleSheet,
   StatusBar,
   Switch,
-  Alert,
   ActivityIndicator,
   Linking,
   Platform,
@@ -33,7 +32,15 @@ import * as DocumentPicker from 'expo-document-picker';
 import * as Notifications from 'expo-notifications';
 import { Audio } from 'expo-av';
 import { canDrawOverlays, requestOverlayPermission } from '../../modules/app-launcher';
-import { showDialog } from '../components/dialogService';
+import {
+  showDialog,
+  showInfo,
+  showSuccess,
+  showWarning,
+  showError,
+  confirm,
+  confirmDestructive,
+} from '../components/dialogService';
 import { useAppStore } from '../store/useAppStore';
 import {
   updateUserProfile,
@@ -132,6 +139,10 @@ import { useLiveGuruChatModels } from '../hooks/useLiveGuruChatModels';
 import { getLocalLlmRamWarning, isLocalLlmAllowedOnThisDevice } from '../services/deviceMemory';
 import ScreenHeader from '../components/ScreenHeader';
 import TranscriptionSettingsPanel from '../components/TranscriptionSettingsPanel';
+import AccountSections from './settings/sections/AccountSections';
+import StudySections from './settings/sections/StudySections';
+import StorageSections from './settings/sections/StorageSections';
+import AiProvidersSection from './settings/sections/AiProvidersSection';
 import {
   exportUnifiedBackup,
   importUnifiedBackup,
@@ -288,7 +299,7 @@ async function exportBackup(): Promise<boolean> {
       return false;
     }
   } else {
-    Alert.alert('Backup saved', `File written to:\n${filePath}`);
+    showSuccess('Backup saved', `File written to:\n${filePath}`);
     return true;
   }
 }
@@ -309,7 +320,7 @@ async function importBackup(): Promise<{ ok: boolean; message: string }> {
   }
 
   if (!backup.version || !backup.topic_progress || !backup.user_profile) {
-    return { ok: false, message: 'Invalid backup format — missing required fields' };
+    return { ok: false, message: 'Invalid backup format â€” missing required fields' };
   }
   if (backup.version > BACKUP_VERSION) {
     return { ok: false, message: 'Backup was made with a newer version of the app' };
@@ -618,7 +629,7 @@ export default function SettingsScreen() {
   const [gitlabPasteUrl, setGitlabPasteUrl] = useState('');
   const [gitlabPasteSubmitting, setGitlabPasteSubmitting] = useState(false);
   const [gitlabOauthClientId, setGitlabOauthClientId] = useState('');
-  /** Only in memory / SecureStore — never loaded from backup (confidential OAuth secret). */
+  /** Only in memory / SecureStore â€” never loaded from backup (confidential OAuth secret). */
   const [gitlabOauthClientSecret, setGitlabOauthClientSecret] = useState('');
   const [testingGitHubCopilotOAuth, setTestingGitHubCopilotOAuth] = useState(false);
   const [githubCopilotOAuthTestResult, setGithubCopilotOAuthTestResult] = useState<
@@ -708,7 +719,7 @@ export default function SettingsScreen() {
   async function testGroqKey() {
     const key = groqKey.trim() || profile?.groqApiKey || '';
     if (!key) {
-      Alert.alert('No key', 'Enter a Groq API key first.');
+      showWarning('No key', 'Enter a Groq API key first.');
       return;
     }
     setTestingGroqKey(true);
@@ -722,7 +733,7 @@ export default function SettingsScreen() {
 
   async function testQwenKey() {
     if (!profile?.qwenConnected && !qwenConnected) {
-      Alert.alert('Not connected', 'Connect Qwen OAuth first to validate the connection.');
+      showWarning('Not connected', 'Connect Qwen OAuth first to validate the connection.');
       return;
     }
     setTestingQwenKey(true);
@@ -731,7 +742,7 @@ export default function SettingsScreen() {
       const tokenResult = await getQwenAccessToken();
       if (!tokenResult || !tokenResult.accessToken) {
         setQwenKeyTestResult('fail');
-        Alert.alert('Validation failed', 'No OAuth token available. Try reconnecting Qwen.');
+        showError('No OAuth token available. Try reconnecting Qwen.');
         setTestingQwenKey(false);
         return;
       }
@@ -744,11 +755,11 @@ export default function SettingsScreen() {
       if (res.ok) markProviderValidated('qwen', tokenResult.accessToken);
       else clearProviderValidated('qwen');
       if (!res.ok) {
-        Alert.alert('Validation failed', res.message || 'Qwen API returned an error.');
+        showError(res.message || 'Qwen API returned an error.');
       }
     } catch (err: any) {
       setQwenKeyTestResult('fail');
-      Alert.alert('Validation failed', err.message || 'Unknown error');
+      showError(err.message || 'Unknown error');
     }
     setTestingQwenKey(false);
   }
@@ -756,7 +767,7 @@ export default function SettingsScreen() {
   async function testGithubModelsPat() {
     const pat = githubModelsPat.trim() || profile?.githubModelsPat || '';
     if (!pat) {
-      Alert.alert('No token', 'Enter a GitHub personal access token with Models access first.');
+      showWarning('No token', 'Enter a GitHub personal access token with Models access first.');
       return;
     }
     setTestingGithubPat(true);
@@ -771,7 +782,7 @@ export default function SettingsScreen() {
   async function testOpenRouterKey() {
     const key = orKey.trim() || profile?.openrouterKey || '';
     if (!key) {
-      Alert.alert('No key', 'Enter an OpenRouter API key first.');
+      showWarning('No key', 'Enter an OpenRouter API key first.');
       return;
     }
     setTestingOpenRouterKey(true);
@@ -797,7 +808,7 @@ export default function SettingsScreen() {
   async function testDeepseekKey() {
     const key = deepseekKey.trim() || profile?.deepseekKey || '';
     if (!key) {
-      Alert.alert('No key', 'Enter a DeepSeek API key first.');
+      showWarning('No key', 'Enter a DeepSeek API key first.');
       return;
     }
     setTestingDeepseekKey(true);
@@ -819,7 +830,7 @@ export default function SettingsScreen() {
   async function testAgentRouterKey() {
     const key = agentRouterKey.trim() || profile?.agentRouterKey || '';
     if (!key) {
-      Alert.alert('No key', 'Enter an AgentRouter key first.');
+      showWarning('No key', 'Enter an AgentRouter key first.');
       return;
     }
     setTestingAgentRouterKey(true);
@@ -861,7 +872,7 @@ export default function SettingsScreen() {
   async function testHuggingFaceKey() {
     const token = huggingFaceToken.trim() || profile?.huggingFaceToken || '';
     if (!token) {
-      Alert.alert('No token', 'Enter a Hugging Face token first.');
+      showWarning('No token', 'Enter a Hugging Face token first.');
       return;
     }
     setTestingHuggingFaceToken(true);
@@ -874,7 +885,7 @@ export default function SettingsScreen() {
   async function testDeepgramKey() {
     const key = deepgramApiKey.trim() || (profile as any)?.deepgramApiKey || '';
     if (!key) {
-      Alert.alert('No key', 'Enter a Deepgram API key first.');
+      showWarning('No key', 'Enter a Deepgram API key first.');
       return;
     }
     setTestingDeepgramKey(true);
@@ -919,7 +930,7 @@ export default function SettingsScreen() {
         setChatgptDeviceCode(null);
         setChatgptConnectingSlot(null);
         refreshProfile();
-        Alert.alert(
+        showSuccess(
           'Connected',
           `ChatGPT ${slot === 'primary' ? 'primary' : 'secondary'} account is now linked to Guru.`,
         );
@@ -927,34 +938,31 @@ export default function SettingsScreen() {
       }
       throw new Error('Device code expired. Please try again.');
     } catch (err: any) {
-      Alert.alert('Connection failed', err.message ?? 'Unknown error');
+      showError(err, 'Unknown error');
       setChatgptDeviceCode(null);
       setChatgptConnectingSlot(null);
     }
   }
 
   async function disconnectChatGpt(slot: ChatGptAccountSlot) {
-    Alert.alert('Disconnect ChatGPT?', 'This will remove stored tokens for this account slot.', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Disconnect',
-        style: 'destructive',
-        onPress: async () => {
-          await clearTokens(slot);
-          const nextAccounts = sanitizeChatGptAccountSettings(chatgptAccounts);
-          nextAccounts[slot] = { ...nextAccounts[slot], connected: false };
-          await updateUserProfile({
-            chatgptAccounts: nextAccounts,
-            chatgptConnected: isChatGptEnabled(nextAccounts),
-          });
-          setChatgptAccounts(nextAccounts);
-          refreshProfile();
-        },
-      },
-    ]);
+    const ok = await confirmDestructive(
+      'Disconnect ChatGPT?',
+      'This will remove stored tokens for this account slot.',
+      { confirmLabel: 'Disconnect' },
+    );
+    if (!ok) return;
+    await clearTokens(slot);
+    const nextAccounts = sanitizeChatGptAccountSettings(chatgptAccounts);
+    nextAccounts[slot] = { ...nextAccounts[slot], connected: false };
+    await updateUserProfile({
+      chatgptAccounts: nextAccounts,
+      chatgptConnected: isChatGptEnabled(nextAccounts),
+    });
+    setChatgptAccounts(nextAccounts);
+    refreshProfile();
   }
 
-  // ── GitHub Copilot OAuth ───────────────────────────────────────────────
+  // â”€â”€ GitHub Copilot OAuth â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   async function connectGitHubCopilot() {
     setGithubCopilotConnecting(true);
     try {
@@ -976,38 +984,35 @@ export default function SettingsScreen() {
         setGithubCopilotDeviceCode(null);
         setGithubCopilotConnecting(false);
         refreshProfile();
-        Alert.alert('Connected', 'GitHub Copilot is now linked to Guru.');
+        showSuccess('Connected', 'GitHub Copilot is now linked to Guru.');
         return;
       }
       throw new Error('Device code expired. Please try again.');
     } catch (err: any) {
-      Alert.alert('Connection failed', err.message ?? 'Unknown error');
+      showError(err, 'Unknown error');
       setGithubCopilotDeviceCode(null);
       setGithubCopilotConnecting(false);
     }
   }
 
   async function disconnectGitHubCopilot() {
-    Alert.alert('Disconnect GitHub Copilot?', 'This will remove stored tokens.', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Disconnect',
-        style: 'destructive',
-        onPress: async () => {
-          invalidateCopilotSessionToken();
-          await clearGitHubTokens();
-          await updateUserProfile({ githubCopilotConnected: false });
-          setGithubCopilotConnected(false);
-          setGithubCopilotOAuthTestResult(null);
-          refreshProfile();
-        },
-      },
-    ]);
+    const ok = await confirmDestructive(
+      'Disconnect GitHub Copilot?',
+      'This will remove stored tokens.',
+      { confirmLabel: 'Disconnect' },
+    );
+    if (!ok) return;
+    invalidateCopilotSessionToken();
+    await clearGitHubTokens();
+    await updateUserProfile({ githubCopilotConnected: false });
+    setGithubCopilotConnected(false);
+    setGithubCopilotOAuthTestResult(null);
+    refreshProfile();
   }
 
   async function validateGitHubCopilotConnection() {
     const log = '[SETTINGS_VALIDATE][github_copilot]';
-    console.info(`${log} Starting OAuth + api.githubcopilot.com probe…`);
+    console.info(`${log} Starting OAuth + api.githubcopilot.com probeâ€¦`);
     setTestingGitHubCopilotOAuth(true);
     setGithubCopilotOAuthTestResult(null);
     try {
@@ -1019,7 +1024,7 @@ export default function SettingsScreen() {
         const msg = e instanceof Error ? e.message : String(e);
         console.warn(`${log} Token failed:`, msg);
         setGithubCopilotOAuthTestResult('fail');
-        Alert.alert(
+        showWarning(
           'GitHub Copilot validate',
           `${msg}\n\nMetro: search ${log} for full details.\nIf the app shows Connected but this fails, Disconnect and sign in again.`,
         );
@@ -1029,12 +1034,12 @@ export default function SettingsScreen() {
       console.info(`${log} HTTP ${res.status} ok=${res.ok}`, res.message?.slice(0, 400) ?? '');
       setGithubCopilotOAuthTestResult(res.ok ? 'ok' : 'fail');
       if (res.ok) {
-        Alert.alert(
+        showSuccess(
           'GitHub Copilot validate',
-          `OK — HTTP ${res.status}. Copilot API accepted a minimal chat request.\n\nMetro logs: ${log}`,
+          `OK â€” HTTP ${res.status}. Copilot API accepted a minimal chat request.\n\nMetro logs: ${log}`,
         );
       } else {
-        Alert.alert(
+        showWarning(
           'GitHub Copilot validate',
           `HTTP ${res.status}\n${(res.message ?? '').slice(0, 480)}\n\nMetro: ${log}`,
         );
@@ -1044,13 +1049,12 @@ export default function SettingsScreen() {
     }
   }
 
-  // ── GitLab Duo OAuth ──────────────────────────────────────────────────
+  // â”€â”€ GitLab Duo OAuth â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   async function connectGitLabDuo() {
     if (usesDefaultGitLabClientId(gitlabOauthClientId)) {
-      Alert.alert(
+      showInfo(
         'GitLab Application ID required',
-        `Paste your OAuth Application ID in the field above (GitLab → Preferences → Applications), or set EXPO_PUBLIC_GITLAB_CLIENT_ID for your build.\n\nScopes: read_user, api (same as OpenCode GitLab Duo — enables AI Gateway).\nReconnect if you previously used ai_features only.\nRedirect URI must match exactly:\n${getRedirectUri()}`,
-        [{ text: 'OK' }],
+        `Paste your OAuth Application ID in the field above (GitLab â†’ Preferences â†’ Applications), or set EXPO_PUBLIC_GITLAB_CLIENT_ID for your build.\n\nScopes: read_user, api (same as OpenCode GitLab Duo â€” enables AI Gateway).\nReconnect if you previously used ai_features only.\nRedirect URI must match exactly:\n${getRedirectUri()}`,
       );
       return;
     }
@@ -1061,12 +1065,12 @@ export default function SettingsScreen() {
       const { url, codeVerifier, state, oauthClientId } = await buildAuthUrl(gitlabOauthClientId);
       await savePendingOAuthSession(codeVerifier, state, oauthClientId, oauthSecret);
       await Linking.openURL(url);
-      Alert.alert(
+      showInfo(
         'Sign in with GitLab',
         'Finish in the browser. The app should reopen automatically when authorization completes. If it does not, use "Paste callback URL" below with the full guru-study:// link.',
       );
     } catch (err: any) {
-      Alert.alert('Connection failed', err.message ?? 'Unknown error');
+      showError(err, 'Unknown error');
     } finally {
       setGitlabDuoConnecting(false);
     }
@@ -1075,7 +1079,7 @@ export default function SettingsScreen() {
   async function submitGitLabPasteUrl() {
     const raw = gitlabPasteUrl.trim();
     if (!raw) {
-      Alert.alert('Empty', 'Paste the full callback URL (guru-study://oauth/gitlab?...).');
+      showWarning('Empty', 'Paste the full callback URL (guru-study://oauth/gitlab?...).');
       return;
     }
     setGitlabPasteSubmitting(true);
@@ -1097,27 +1101,24 @@ export default function SettingsScreen() {
   }
 
   async function disconnectGitLabDuo() {
-    Alert.alert('Disconnect GitLab Duo?', 'This will remove stored tokens.', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Disconnect',
-        style: 'destructive',
-        onPress: async () => {
-          await clearGitLabTokens();
-          await updateUserProfile({ gitlabDuoConnected: false });
-          setGitlabDuoConnected(false);
-          setGitlabDuoOAuthTestResult(null);
-          refreshProfile();
-        },
-      },
-    ]);
+    const ok = await confirmDestructive(
+      'Disconnect GitLab Duo?',
+      'This will remove stored tokens.',
+      { confirmLabel: 'Disconnect' },
+    );
+    if (!ok) return;
+    await clearGitLabTokens();
+    await updateUserProfile({ gitlabDuoConnected: false });
+    setGitlabDuoConnected(false);
+    setGitlabDuoOAuthTestResult(null);
+    refreshProfile();
   }
 
   async function validateGitLabDuoConnection() {
     const log = '[SETTINGS_VALIDATE][gitlab_duo]';
     const instance = getGitLabInstanceUrl();
     console.info(
-      `${log} Starting OAuth + ${instance}/api/v4/ai/third_party_agents/direct_access probe…`,
+      `${log} Starting OAuth + ${instance}/api/v4/ai/third_party_agents/direct_access probeâ€¦`,
     );
     setTestingGitLabDuoOAuth(true);
     setGitlabDuoOAuthTestResult(null);
@@ -1130,19 +1131,19 @@ export default function SettingsScreen() {
         const msg = e instanceof Error ? e.message : String(e);
         console.warn(`${log} Token failed:`, msg);
         setGitlabDuoOAuthTestResult('fail');
-        Alert.alert('GitLab Duo validate', `${msg}\n\nMetro: search ${log} for details.`);
+        showWarning('GitLab Duo validate', `${msg}\n\nMetro: search ${log} for details.`);
         return;
       }
       const res = await testGitLabDuoConnection(token);
       console.info(`${log} HTTP ${res.status} ok=${res.ok}`, res.message?.slice(0, 400) ?? '');
       setGitlabDuoOAuthTestResult(res.ok ? 'ok' : 'fail');
       if (res.ok) {
-        Alert.alert(
+        showSuccess(
           'GitLab Duo validate',
-          `OK — HTTP ${res.status}. OpenCode-style direct_access (AI Gateway) accepted the token.\n\nMetro: ${log}`,
+          `OK â€” HTTP ${res.status}. OpenCode-style direct_access (AI Gateway) accepted the token.\n\nMetro: ${log}`,
         );
       } else {
-        Alert.alert(
+        showWarning(
           'GitLab Duo validate',
           `HTTP ${res.status}\n${(res.message ?? '').slice(0, 480)}\n\n403/404: need Premium/Ultimate Duo, OAuth scopes read_user+api (reconnect), or self-managed Duo + Agent Platform. Metro: ${log}`,
         );
@@ -1152,7 +1153,7 @@ export default function SettingsScreen() {
     }
   }
 
-  // ── Poe OAuth ─────────────────────────────────────────────────────────
+  // â”€â”€ Poe OAuth â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   async function connectPoe() {
     setPoeConnecting(true);
     try {
@@ -1174,31 +1175,26 @@ export default function SettingsScreen() {
         setPoeDeviceCode(null);
         setPoeConnecting(false);
         refreshProfile();
-        Alert.alert('Connected', 'Poe is now linked to Guru.');
+        showSuccess('Connected', 'Poe is now linked to Guru.');
         return;
       }
       throw new Error('Device code expired. Please try again.');
     } catch (err: any) {
-      Alert.alert('Connection failed', err.message ?? 'Unknown error');
+      showError(err, 'Unknown error');
       setPoeDeviceCode(null);
       setPoeConnecting(false);
     }
   }
 
   async function disconnectPoe() {
-    Alert.alert('Disconnect Poe?', 'This will remove stored tokens.', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Disconnect',
-        style: 'destructive',
-        onPress: async () => {
-          await clearPoeTokens();
-          await updateUserProfile({ poeConnected: false });
-          setPoeConnected(false);
-          refreshProfile();
-        },
-      },
-    ]);
+    const ok = await confirmDestructive('Disconnect Poe?', 'This will remove stored tokens.', {
+      confirmLabel: 'Disconnect',
+    });
+    if (!ok) return;
+    await clearPoeTokens();
+    await updateUserProfile({ poeConnected: false });
+    setPoeConnected(false);
+    refreshProfile();
   }
 
   async function connectQwen() {
@@ -1230,35 +1226,30 @@ export default function SettingsScreen() {
         setQwenConnected(true);
         setQwenDeviceCode(null);
         refreshProfile();
-        Alert.alert('Connected', 'Qwen OAuth is now active. Free tier: 1,000 requests/day.');
+        showSuccess('Connected', 'Qwen OAuth is now active. Free tier: 1,000 requests/day.');
       }
     } catch (err: any) {
-      Alert.alert('Connection failed', err.message ?? 'Unknown error');
+      showError(err, 'Unknown error');
       setQwenDeviceCode(null);
       setQwenConnecting(false);
     }
   }
 
   async function disconnectQwen() {
-    Alert.alert('Disconnect Qwen?', 'This will remove stored tokens.', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Disconnect',
-        style: 'destructive',
-        onPress: async () => {
-          await clearQwenTokens();
-          await updateUserProfile({ qwenConnected: false });
-          setQwenConnected(false);
-          refreshProfile();
-        },
-      },
-    ]);
+    const ok = await confirmDestructive('Disconnect Qwen?', 'This will remove stored tokens.', {
+      confirmLabel: 'Disconnect',
+    });
+    if (!ok) return;
+    await clearQwenTokens();
+    await updateUserProfile({ qwenConnected: false });
+    setQwenConnected(false);
+    refreshProfile();
   }
 
   async function testGeminiKey() {
     const key = geminiKey.trim() || profile?.geminiKey || '';
     if (!key) {
-      Alert.alert('No key', 'Enter a Google AI (Gemini) API key first.');
+      showWarning('No key', 'Enter a Google AI (Gemini) API key first.');
       return;
     }
     setTestingGeminiKey(true);
@@ -1274,7 +1265,7 @@ export default function SettingsScreen() {
     const aid = cfAccountId.trim() || profile?.cloudflareAccountId || '';
     const tok = cfApiToken.trim() || profile?.cloudflareApiToken || '';
     if (!aid || !tok) {
-      Alert.alert(
+      showWarning(
         'Missing credentials',
         'Enter your Cloudflare Account ID and API token (Workers AI permissions).',
       );
@@ -1292,7 +1283,7 @@ export default function SettingsScreen() {
   async function testFalKey() {
     const key = falApiKey.trim() || profile?.falApiKey || '';
     if (!key) {
-      Alert.alert('No key', 'Enter a fal API key first.');
+      showWarning('No key', 'Enter a fal API key first.');
       return;
     }
     setTestingFalKey(true);
@@ -1307,7 +1298,7 @@ export default function SettingsScreen() {
   async function testBraveSearchKey() {
     const key = braveSearchApiKey.trim() || profile?.braveSearchApiKey || '';
     if (!key) {
-      Alert.alert('No key', 'Enter a Brave Search API key first.');
+      showWarning('No key', 'Enter a Brave Search API key first.');
       return;
     }
     setTestingBraveSearchKey(true);
@@ -1322,7 +1313,7 @@ export default function SettingsScreen() {
   async function testGoogleCustomSearchKey() {
     const key = googleCustomSearchApiKey.trim() || profile?.googleCustomSearchApiKey || '';
     if (!key) {
-      Alert.alert('No key', 'Enter a Google Custom Search API key first.');
+      showWarning('No key', 'Enter a Google Custom Search API key first.');
       return;
     }
     setTestingGoogleCustomSearchKey(true);
@@ -1361,10 +1352,10 @@ export default function SettingsScreen() {
       setInicetDate(dates.inicetDate);
       setNeetDate(dates.neetDate);
       setFetchDatesMsg(
-        `✅ Fetched: INICET ${dates.inicetDate} · NEET-PG ${dates.neetDate}. Verify and save.`,
+        `âœ… Fetched: INICET ${dates.inicetDate} Â· NEET-PG ${dates.neetDate}. Verify and save.`,
       );
     } catch (e: any) {
-      setFetchDatesMsg(`❌ ${e?.message || 'Could not fetch dates. Try manually.'}`);
+      setFetchDatesMsg(`âŒ ${e?.message || 'Could not fetch dates. Try manually.'}`);
     } finally {
       setFetchingDates(false);
     }
@@ -1390,7 +1381,54 @@ export default function SettingsScreen() {
     });
   }
 
-  // ── Profile → local state hydration ────────────────────────────────────────
+  async function onRequestNotifications() {
+    await Notifications.requestPermissionsAsync();
+    checkPermissions();
+  }
+
+  async function onRequestMic() {
+    await Audio.requestPermissionsAsync();
+    checkPermissions();
+  }
+
+  async function onRequestLocalFiles() {
+    await PermissionsAndroid.request(LOCAL_FILE_ACCESS_PERMISSION);
+    checkPermissions();
+  }
+
+  async function onRequestOverlay() {
+    await requestOverlayPermission();
+    showInfo(
+      'Overlay Permission',
+      'Please enable Guru in the settings screen that just opened, then return to the app.',
+    );
+  }
+
+  function onOpenSystemSettings() {
+    Linking.openSettings();
+  }
+
+  function onOpenDevConsole() {
+    const { devConsole } = require('../components/DevConsole');
+    devConsole.show();
+  }
+
+  async function requestPomodoroOverlay() {
+    await requestOverlayPermission();
+    await checkPermissions();
+  }
+
+  async function signInToGDrive(clientId: string) {
+    const { signInToGDrive: _signIn } = await import('../services/gdriveBackupService');
+    return _signIn(clientId);
+  }
+
+  async function signOutGDrive() {
+    const { signOutGDrive: _signOut } = await import('../services/gdriveBackupService');
+    return _signOut();
+  }
+
+  // â"€â"€ Profile â†' local state hydration â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â”€
   const profileLoaded = useRef(false);
 
   const buildProfileHydrationSignature = useCallback(
@@ -1547,7 +1585,7 @@ export default function SettingsScreen() {
     }
   }, [buildProfileHydrationSignature, profile]);
 
-  // ── Debounced auto-save ──────────────────────────────────────────────────────
+  // â”€â”€ Debounced auto-save â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const autoSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const doAutoSave = useCallback(async () => {
@@ -1724,15 +1762,15 @@ export default function SettingsScreen() {
   async function testNotification() {
     try {
       await refreshAccountabilityNotifications();
-      Alert.alert('Done', 'Notifications scheduled! Check your notification panel.');
+      showSuccess('Done', 'Notifications scheduled! Check your notification panel.');
     } catch (e) {
-      Alert.alert('Error', 'Could not schedule notifications.');
+      showError('Error', 'Could not schedule notifications.');
     }
   }
 
   const handleSelectBackupDir = async () => {
     if (Platform.OS !== 'android') {
-      Alert.alert('Not supported', 'This feature is only available on Android.');
+      showWarning('Not supported', 'This feature is only available on Android.');
       return;
     }
     try {
@@ -1741,13 +1779,13 @@ export default function SettingsScreen() {
       if (permissions.granted) {
         await updateUserProfile({ backupDirectoryUri: permissions.directoryUri } as any);
         await refreshProfile();
-        Alert.alert(
+        showSuccess(
           'Success',
           'Backup directory configured! Your data will now stay synced there.',
         );
       }
     } catch (err) {
-      Alert.alert('Error', 'Failed to configure backup directory.');
+      showError('Error', 'Failed to configure backup directory.');
     }
   };
 
@@ -1759,12 +1797,13 @@ export default function SettingsScreen() {
     setMaintenanceBusy(key);
     try {
       const count = await task();
-      Alert.alert(
-        count > 0 ? labels.done : labels.none,
-        count > 0 ? `${count} item(s) processed.` : 'Nothing needed fixing.',
-      );
+      if (count > 0) {
+        showSuccess(labels.done, `${count} item(s) processed.`);
+      } else {
+        showInfo(labels.none, 'Nothing needed fixing.');
+      }
     } catch (err) {
-      Alert.alert(labels.failed, err instanceof Error ? err.message : 'Unknown error');
+      showError(labels.failed, err instanceof Error ? err.message : 'Unknown error');
     } finally {
       setMaintenanceBusy(null);
     }
@@ -1881,3218 +1920,252 @@ export default function SettingsScreen() {
             onBackPress={() => navigation.navigate('MenuHome')}
           />
 
-          <LinearText style={styles.categoryLabel}>AI & PROVIDERS</LinearText>
-          <SectionToggle
-            id="ai_config"
-            title="AI Configuration"
-            icon="hardware-chip-outline"
-            tint="#6C63FF"
-          >
-            {/* ── Chat Model ─────────────────────────────── */}
-            <SubSectionToggle id="ai_chat_model" title="CHAT MODEL">
-              <LinearText style={styles.hint}>
-                Default model for Guru Chat (changeable per session).
-              </LinearText>
-              <View style={styles.liveModelsRefreshRow}>
-                <TouchableOpacity
-                  style={[styles.testBtn, { marginBottom: 0, flexShrink: 1 }]}
-                  onPress={liveGuruChatModels.refresh}
-                  disabled={liveGuruChatModels.loading}
-                  activeOpacity={0.8}
-                >
-                  <LinearText style={styles.testBtnText}>
-                    {liveGuruChatModels.loading
-                      ? 'Loading live models…'
-                      : 'Refresh live model lists'}
-                  </LinearText>
-                </TouchableOpacity>
-                {liveGuruChatModels.loading && (
-                  <ActivityIndicator size="small" color={n.colors.accent} />
-                )}
-              </View>
-              <ModelDropdown
-                label="Guru Chat — default model"
-                value={guruChatDefaultModel}
-                onSelect={setGuruChatDefaultModel}
-                options={[
-                  { id: 'auto', label: formatGuruChatModelChipLabel('auto'), group: 'General' },
-                  ...(profile?.useLocalModel &&
-                  profile?.localModelPath &&
-                  isLocalLlmAllowedOnThisDevice()
-                    ? [
-                        {
-                          id: 'local',
-                          label: formatGuruChatModelChipLabel('local'),
-                          group: 'General',
-                        },
-                      ]
-                    : []),
-                  ...liveGuruChatModels.chatgpt.map((m) => ({
-                    id: `chatgpt/${m}`,
-                    label: formatGuruChatModelChipLabel(`chatgpt/${m}`),
-                    group: 'ChatGPT Codex',
-                  })),
-                  ...liveGuruChatModels.groq.map((m) => ({
-                    id: `groq/${m}`,
-                    label: formatGuruChatModelChipLabel(`groq/${m}`),
-                    group: 'Groq',
-                  })),
-                  ...liveGuruChatModels.github.map((m) => ({
-                    id: `github/${m}`,
-                    label: formatGuruChatModelChipLabel(`github/${m}`),
-                    group: 'GitHub Models',
-                  })),
-                  ...liveGuruChatModels.githubCopilot.map((m) => ({
-                    id: `github_copilot/${m}`,
-                    label: formatGuruChatModelChipLabel(`github_copilot/${m}`),
-                    group: 'GitHub Copilot',
-                  })),
-                  ...liveGuruChatModels.gitlabDuo.map((m) => ({
-                    id: `gitlab_duo/${m}`,
-                    label: formatGuruChatModelChipLabel(`gitlab_duo/${m}`),
-                    group: 'GitLab Duo',
-                  })),
-                  ...liveGuruChatModels.poe.map((m) => ({
-                    id: `poe/${m}`,
-                    label: formatGuruChatModelChipLabel(`poe/${m}`),
-                    group: 'Poe',
-                  })),
-                  ...(qwenConnected
-                    ? [
-                        {
-                          id: 'qwen/qwen3-coder-plus',
-                          label: 'Qwen Coder Plus',
-                          group: 'Qwen (Free)',
-                        },
-                      ]
-                    : []),
-                  ...liveGuruChatModels.kilo.map((m) => ({
-                    id: `kilo/${m}`,
-                    label: formatGuruChatModelChipLabel(`kilo/${m}`),
-                    group: 'Kilo',
-                  })),
-                  ...liveGuruChatModels.deepseek.map((m: string) => ({
-                    id: `deepseek/${m}`,
-                    label: formatGuruChatModelChipLabel(`deepseek/${m}`),
-                    group: 'DeepSeek',
-                  })),
-                  ...liveGuruChatModels.agentrouter.map((m: string) => ({
-                    id: `ar/${m}`,
-                    label: formatGuruChatModelChipLabel(`ar/${m}`),
-                    group: 'AgentRouter',
-                  })),
-                  ...liveGuruChatModels.openrouter.map((m) => ({
-                    id: m,
-                    label: formatGuruChatModelChipLabel(m),
-                    group: 'OpenRouter (free)',
-                  })),
-                  ...liveGuruChatModels.gemini.map((m) => ({
-                    id: `gemini/${m}`,
-                    label: formatGuruChatModelChipLabel(`gemini/${m}`),
-                    group: 'Gemini',
-                  })),
-                  ...liveGuruChatModels.cloudflare.map((m) => ({
-                    id: `cf/${m}`,
-                    label: formatGuruChatModelChipLabel(`cf/${m}`),
-                    group: 'Cloudflare',
-                  })),
-                ]}
-              />
-            </SubSectionToggle>
+          <AiProvidersSection
+            styles={styles}
+            SectionToggle={SectionToggle}
+            SubSectionToggle={SubSectionToggle}
+            navigation={navigation}
+            profile={profile}
+            liveGuruChatModels={liveGuruChatModels}
+            formatGuruChatModelChipLabel={formatGuruChatModelChipLabel}
+            guruChatDefaultModel={guruChatDefaultModel}
+            setGuruChatDefaultModel={setGuruChatDefaultModel}
+            guruMemoryNotes={guruMemoryNotes}
+            setGuruMemoryNotes={setGuruMemoryNotes}
+            chatgptConnectingSlot={chatgptConnectingSlot}
+            chatgptDeviceCode={chatgptDeviceCode}
+            chatgptAccounts={chatgptAccounts}
+            setChatgptAccounts={setChatgptAccounts}
+            disconnectChatGpt={disconnectChatGpt}
+            connectChatGpt={connectChatGpt}
+            githubCopilotConnecting={githubCopilotConnecting}
+            githubCopilotDeviceCode={githubCopilotDeviceCode}
+            githubCopilotConnected={githubCopilotConnected}
+            githubCopilotOAuthTestResult={githubCopilotOAuthTestResult}
+            validateGitHubCopilotConnection={validateGitHubCopilotConnection}
+            testingGitHubCopilotOAuth={testingGitHubCopilotOAuth}
+            disconnectGitHubCopilot={disconnectGitHubCopilot}
+            connectGitHubCopilot={connectGitHubCopilot}
+            githubCopilotPreferredModel={githubCopilotPreferredModel}
+            setGithubCopilotPreferredModel={setGithubCopilotPreferredModel}
+            gitlabOauthClientId={gitlabOauthClientId}
+            setGitlabOauthClientId={setGitlabOauthClientId}
+            gitlabOauthClientSecret={gitlabOauthClientSecret}
+            setGitlabOauthClientSecret={setGitlabOauthClientSecret}
+            gitlabDuoConnected={gitlabDuoConnected}
+            gitlabDuoOAuthTestResult={gitlabDuoOAuthTestResult}
+            validateGitLabDuoConnection={validateGitLabDuoConnection}
+            testingGitLabDuoOAuth={testingGitLabDuoOAuth}
+            gitlabDuoConnecting={gitlabDuoConnecting}
+            disconnectGitLabDuo={disconnectGitLabDuo}
+            connectGitLabDuo={connectGitLabDuo}
+            setGitlabPasteModalVisible={setGitlabPasteModalVisible}
+            gitlabDuoPreferredModel={gitlabDuoPreferredModel}
+            setGitlabDuoPreferredModel={setGitlabDuoPreferredModel}
+            gitlabPasteModalVisible={gitlabPasteModalVisible}
+            gitlabPasteUrl={gitlabPasteUrl}
+            setGitlabPasteUrl={setGitlabPasteUrl}
+            submitGitLabPasteUrl={submitGitLabPasteUrl}
+            gitlabPasteSubmitting={gitlabPasteSubmitting}
+            poeConnecting={poeConnecting}
+            poeDeviceCode={poeDeviceCode}
+            poeConnected={poeConnected}
+            disconnectPoe={disconnectPoe}
+            connectPoe={connectPoe}
+            qwenConnecting={qwenConnecting}
+            qwenDeviceCode={qwenDeviceCode}
+            qwenConnected={qwenConnected}
+            connectQwen={connectQwen}
+            disconnectQwen={disconnectQwen}
+            groqKey={groqKey}
+            setGroqKey={setGroqKey}
+            setGroqKeyTestResult={setGroqKeyTestResult}
+            clearProviderValidated={clearProviderValidated}
+            groqValidationStatus={groqValidationStatus}
+            testGroqKey={testGroqKey}
+            testingGroqKey={testingGroqKey}
+            githubModelsPat={githubModelsPat}
+            setGithubModelsPat={setGithubModelsPat}
+            setGithubPatTestResult={setGithubPatTestResult}
+            githubValidationStatus={githubValidationStatus}
+            testGithubModelsPat={testGithubModelsPat}
+            testingGithubPat={testingGithubPat}
+            orKey={orKey}
+            setOrKey={setOrKey}
+            setOpenRouterKeyTestResult={setOpenRouterKeyTestResult}
+            openRouterValidationStatus={openRouterValidationStatus}
+            testOpenRouterKey={testOpenRouterKey}
+            testingOpenRouterKey={testingOpenRouterKey}
+            kiloApiKey={kiloApiKey}
+            setKiloApiKey={setKiloApiKey}
+            setKiloKeyTestResult={setKiloKeyTestResult}
+            kiloValidationStatus={kiloValidationStatus}
+            testKiloKey={testKiloKey}
+            testingKiloKey={testingKiloKey}
+            deepseekKey={deepseekKey}
+            setDeepseekKey={setDeepseekKey}
+            setDeepseekKeyTestResult={setDeepseekKeyTestResult}
+            deepseekValidationStatus={deepseekValidationStatus}
+            testDeepseekKey={testDeepseekKey}
+            testingDeepseekKey={testingDeepseekKey}
+            agentRouterKey={agentRouterKey}
+            setAgentRouterKey={setAgentRouterKey}
+            setAgentRouterKeyTestResult={setAgentRouterKeyTestResult}
+            agentRouterValidationStatus={agentRouterValidationStatus}
+            testAgentRouterKey={testAgentRouterKey}
+            testingAgentRouterKey={testingAgentRouterKey}
+            geminiKey={geminiKey}
+            setGeminiKey={setGeminiKey}
+            setGeminiKeyTestResult={setGeminiKeyTestResult}
+            geminiValidationStatus={geminiValidationStatus}
+            testGeminiKey={testGeminiKey}
+            testingGeminiKey={testingGeminiKey}
+            preferGeminiStructuredJson={preferGeminiStructuredJson}
+            setPreferGeminiStructuredJson={setPreferGeminiStructuredJson}
+            deepgramApiKey={deepgramApiKey}
+            setDeepgramApiKey={setDeepgramApiKey}
+            setDeepgramKeyTestResult={setDeepgramKeyTestResult}
+            deepgramValidationStatus={deepgramValidationStatus}
+            testDeepgramKey={testDeepgramKey}
+            testingDeepgramKey={testingDeepgramKey}
+            cfAccountId={cfAccountId}
+            setCfAccountId={setCfAccountId}
+            setCloudflareTestResult={setCloudflareTestResult}
+            cloudflareValidationStatus={cloudflareValidationStatus}
+            testCloudflareKeys={testCloudflareKeys}
+            testingCloudflare={testingCloudflare}
+            cfApiToken={cfApiToken}
+            setCfApiToken={setCfApiToken}
+            providerOrder={providerOrder}
+            moveProvider={moveProvider}
+            updateUserProfile={updateUserProfile}
+            refreshProfile={refreshProfile}
+            falApiKey={falApiKey}
+            setFalApiKey={setFalApiKey}
+            setFalKeyTestResult={setFalKeyTestResult}
+            falValidationStatus={falValidationStatus}
+            testFalKey={testFalKey}
+            testingFalKey={testingFalKey}
+            braveSearchApiKey={braveSearchApiKey}
+            setBraveSearchApiKey={setBraveSearchApiKey}
+            setBraveSearchKeyTestResult={setBraveSearchKeyTestResult}
+            braveValidationStatus={braveValidationStatus}
+            testBraveSearchKey={testBraveSearchKey}
+            testingBraveSearchKey={testingBraveSearchKey}
+            imageGenerationOptions={imageGenerationOptions}
+            imageGenerationModel={imageGenerationModel}
+            setImageGenerationModel={setImageGenerationModel}
+            localAiEnabled={localAiEnabled}
+            localLlmReady={localLlmReady}
+            localLlmFileName={localLlmFileName}
+            localWhisperReady={localWhisperReady}
+            localWhisperFileName={localWhisperFileName}
+            localLlmAllowed={localLlmAllowed}
+            localLlmWarning={localLlmWarning}
+          />
+          <AccountSections
+            styles={styles}
+            SectionToggle={SectionToggle}
+            navigation={navigation}
+            permStatus={permStatus}
+            onRequestNotifications={onRequestNotifications}
+            onRequestMic={onRequestMic}
+            onRequestLocalFiles={onRequestLocalFiles}
+            onRequestOverlay={onRequestOverlay}
+            onOpenSystemSettings={onOpenSystemSettings}
+            onOpenDevConsole={onOpenDevConsole}
+            name={name}
+            setName={setName}
+            inicetDate={inicetDate}
+            setInicetDate={setInicetDate}
+            neetDate={neetDate}
+            setNeetDate={setNeetDate}
+            handleAutoFetchDates={handleAutoFetchDates}
+            fetchingDates={fetchingDates}
+            fetchDatesMsg={fetchDatesMsg}
+          />
 
-            {/* ── Memory ─────────────────────────────── */}
-            <View style={styles.subSectionDivider} />
-            <SubSectionToggle id="ai_memory" title="GURU MEMORY">
-              <LinearText style={styles.hint}>
-                Persistent notes Guru uses in every chat. Session memory is built automatically.
-              </LinearText>
-              <TextInput
-                style={[styles.input, styles.guruMemoryInput]}
-                placeholder="e.g. INICET May 2026 · weak in renal · prefers concise answers"
-                placeholderTextColor={n.colors.textMuted}
-                value={guruMemoryNotes}
-                onChangeText={setGuruMemoryNotes}
-                multiline
-                textAlignVertical="top"
-                autoCapitalize="sentences"
-              />
-            </SubSectionToggle>
+          <StudySections
+            styles={styles}
+            SectionToggle={SectionToggle}
+            dbmciClassStartDate={dbmciClassStartDate}
+            setDbmciClassStartDate={setDbmciClassStartDate}
+            btrStartDate={btrStartDate}
+            setBtrStartDate={setBtrStartDate}
+            homeNoveltyCooldownHours={homeNoveltyCooldownHours}
+            setHomeNoveltyCooldownHours={setHomeNoveltyCooldownHours}
+            sessionLength={sessionLength}
+            setSessionLength={setSessionLength}
+            dailyGoal={dailyGoal}
+            setDailyGoal={setDailyGoal}
+            strictMode={strictMode}
+            setStrictMode={setStrictMode}
+            notifs={notifs}
+            setNotifs={setNotifs}
+            notifHour={notifHour}
+            setNotifHour={setNotifHour}
+            guruFrequency={guruFrequency}
+            setGuruFrequency={setGuruFrequency}
+            testNotification={testNotification}
+            bodyDoubling={bodyDoubling}
+            setBodyDoubling={setBodyDoubling}
+            blockedTypes={blockedTypes}
+            setBlockedTypes={setBlockedTypes}
+            subjects={subjects}
+            focusSubjectIds={focusSubjectIds}
+            setFocusSubjectIds={setFocusSubjectIds}
+            idleTimeout={idleTimeout}
+            setIdleTimeout={setIdleTimeout}
+            breakDuration={breakDuration}
+            setBreakDuration={setBreakDuration}
+            pomodoroEnabled={pomodoroEnabled}
+            setPomodoroEnabled={setPomodoroEnabled}
+            pomodoroLectureQuizReady={pomodoroLectureQuizReady}
+            hasPomodoroOverlayPermission={hasPomodoroOverlayPermission}
+            hasPomodoroGroqKey={hasPomodoroGroqKey}
+            hasPomodoroDeepgramKey={hasPomodoroDeepgramKey}
+            requestPomodoroOverlay={requestPomodoroOverlay}
+            pomodoroInterval={pomodoroInterval}
+            setPomodoroInterval={setPomodoroInterval}
+          />
 
-            {/* ── ChatGPT OAuth ─────────────────────────────── */}
-            <View style={styles.subSectionDivider} />
-            <SubSectionToggle id="chatgpt_oauth" title="CHATGPT (SUBSCRIPTION)">
-              <LinearText style={styles.hint}>
-                Connect your ChatGPT Plus/Pro subscription through the Codex flow. Guru follows the
-                Codex models page and currently starts with GPT-5.4, then GPT-5.4-mini, before older
-                Codex alternatives.
-              </LinearText>
-              <LinearText style={styles.hint}>
-                Primary is tried first. Secondary is only tried if primary fails before producing a
-                response. Disable either slot here to skip it entirely.
-              </LinearText>
-              {chatgptConnectingSlot && chatgptDeviceCode ? (
-                <View style={{ marginTop: 8 }}>
-                  <LinearText style={[styles.label, { textAlign: 'center', marginBottom: 4 }]}>
-                    Enter this code at openai.com:
-                  </LinearText>
-                  <LinearText
-                    style={{
-                      fontSize: 28,
-                      fontWeight: '700',
-                      textAlign: 'center',
-                      color: n.colors.accent,
-                      letterSpacing: 4,
-                      marginVertical: 8,
-                      fontFamily: 'Inter_400Regular',
-                    }}
-                    selectable
-                  >
-                    {chatgptDeviceCode.user_code}
-                  </LinearText>
-                  <View
-                    style={{
-                      flexDirection: 'row',
-                      justifyContent: 'center',
-                      alignItems: 'center',
-                      gap: 8,
-                      marginTop: 4,
-                    }}
-                  >
-                    <ActivityIndicator size="small" color={n.colors.accent} />
-                    <LinearText style={[styles.hint, { marginTop: 0 }]}>
-                      Waiting for authorization for the{' '}
-                      {chatgptConnectingSlot === 'primary' ? 'primary' : 'secondary'} account...
-                    </LinearText>
-                  </View>
-                  <TouchableOpacity
-                    style={{ marginTop: 12, alignSelf: 'center' }}
-                    onPress={() => Linking.openURL(VERIFICATION_URL)}
-                    activeOpacity={0.7}
-                  >
-                    <LinearText
-                      style={{
-                        color: n.colors.accent,
-                        textDecorationLine: 'underline',
-                        fontSize: 13,
-                      }}
-                    >
-                      Open login page again
-                    </LinearText>
-                  </TouchableOpacity>
-                </View>
-              ) : null}
-              {(['primary', 'secondary'] as ChatGptAccountSlot[]).map((slot) => {
-                const slotState = chatgptAccounts[slot];
-                const isPrimary = slot === 'primary';
-                const isConnecting = chatgptConnectingSlot === slot;
-                return (
-                  <View
-                    key={slot}
-                    style={{
-                      marginTop: 12,
-                      padding: 12,
-                      borderWidth: 1,
-                      borderColor: n.colors.border,
-                      borderRadius: 12,
-                      backgroundColor: n.colors.background,
-                    }}
-                  >
-                    <View style={styles.switchRow}>
-                      <View style={{ flex: 1, paddingRight: 12 }}>
-                        <LinearText style={styles.switchLabel}>
-                          {isPrimary ? 'Primary account' : 'Secondary account'}
-                        </LinearText>
-                        <LinearText style={styles.hint}>
-                          {isPrimary
-                            ? 'Tried first whenever ChatGPT is selected in routing.'
-                            : 'Backup account used only if primary fails early.'}
-                        </LinearText>
-                      </View>
-                      <Switch
-                        value={slotState.enabled}
-                        onValueChange={(value) =>
-                          setChatgptAccounts((prev) => ({
-                            ...prev,
-                            [slot]: { ...prev[slot], enabled: value },
-                          }))
-                        }
-                        trackColor={{
-                          false: n.colors.border,
-                          true: n.colors.borderHighlight,
-                        }}
-                        thumbColor={slotState.enabled ? n.colors.accent : n.colors.textMuted}
-                      />
-                    </View>
-                    <View
-                      style={{
-                        flexDirection: 'row',
-                        alignItems: 'center',
-                        gap: 12,
-                        marginTop: 8,
-                      }}
-                    >
-                      <Ionicons
-                        name={slotState.connected ? 'checkmark-circle' : 'ellipse-outline'}
-                        size={20}
-                        color={slotState.connected ? n.colors.success : n.colors.textMuted}
-                      />
-                      <LinearText
-                        style={[
-                          styles.label,
-                          {
-                            flex: 1,
-                            color: slotState.connected ? n.colors.success : n.colors.textMuted,
-                          },
-                        ]}
-                      >
-                        {slotState.connected ? 'Connected' : 'Not connected'}
-                      </LinearText>
-                      {slotState.connected ? (
-                        <TouchableOpacity
-                          style={[
-                            styles.validateBtn,
-                            { backgroundColor: n.colors.error + '22', paddingHorizontal: 16 },
-                          ]}
-                          onPress={() => disconnectChatGpt(slot)}
-                          activeOpacity={0.8}
-                        >
-                          <LinearText
-                            style={{ color: n.colors.error, fontWeight: '600', fontSize: 13 }}
-                          >
-                            Disconnect
-                          </LinearText>
-                        </TouchableOpacity>
-                      ) : (
-                        <TouchableOpacity
-                          style={[
-                            styles.validateBtn,
-                            {
-                              paddingHorizontal: 16,
-                              backgroundColor: n.colors.accent + '22',
-                            },
-                          ]}
-                          onPress={() => connectChatGpt(slot)}
-                          disabled={chatgptConnectingSlot !== null}
-                          activeOpacity={0.8}
-                        >
-                          {isConnecting ? (
-                            <ActivityIndicator size="small" color={n.colors.accent} />
-                          ) : (
-                            <LinearText
-                              style={{
-                                color: n.colors.accent,
-                                fontWeight: '600',
-                                fontSize: 13,
-                              }}
-                            >
-                              Connect
-                            </LinearText>
-                          )}
-                        </TouchableOpacity>
-                      )}
-                    </View>
-                    {!slotState.enabled && slotState.connected ? (
-                      <LinearText style={[styles.hint, { marginTop: 8 }]}>
-                        Disabled. This connected account will be skipped by routing until
-                        re-enabled.
-                      </LinearText>
-                    ) : null}
-                  </View>
-                );
-              })}
-              {!isChatGptEnabled(chatgptAccounts) ? (
-                <LinearText style={[styles.hint, { marginTop: 10 }]}>
-                  ChatGPT is currently excluded from provider routing.
-                </LinearText>
-              ) : null}
-            </SubSectionToggle>
-
-            {/* ── GitHub Copilot OAuth ─────────────────────────────── */}
-            <View style={styles.subSectionDivider} />
-            <SubSectionToggle id="github_copilot_oauth" title="GITHUB COPILOT (OAUTH)">
-              <LinearText style={styles.hint}>
-                Connect your GitHub Copilot subscription through device code flow. Supports Copilot
-                Pro, Pro+, Business, and Enterprise.
-              </LinearText>
-              {githubCopilotConnecting && githubCopilotDeviceCode ? (
-                <View style={{ marginTop: 8 }}>
-                  <LinearText style={[styles.label, { textAlign: 'center', marginBottom: 4 }]}>
-                    Enter this code at github.com:
-                  </LinearText>
-                  <LinearText
-                    style={{
-                      fontSize: 28,
-                      fontWeight: '700',
-                      textAlign: 'center',
-                      color: n.colors.accent,
-                      letterSpacing: 4,
-                      marginVertical: 8,
-                      fontFamily: 'Inter_400Regular',
-                    }}
-                    selectable
-                  >
-                    {githubCopilotDeviceCode.user_code}
-                  </LinearText>
-                  <View
-                    style={{
-                      flexDirection: 'row',
-                      justifyContent: 'center',
-                      alignItems: 'center',
-                      gap: 8,
-                      marginTop: 4,
-                    }}
-                  >
-                    <ActivityIndicator size="small" color={n.colors.accent} />
-                    <LinearText style={[styles.hint, { marginTop: 0 }]}>
-                      Waiting for authorization...
-                    </LinearText>
-                  </View>
-                  <TouchableOpacity
-                    style={{ marginTop: 12, alignSelf: 'center' }}
-                    onPress={() => Linking.openURL(GITHUB_VERIFICATION_URL)}
-                    activeOpacity={0.7}
-                  >
-                    <LinearText
-                      style={{
-                        color: n.colors.accent,
-                        textDecorationLine: 'underline',
-                        fontSize: 13,
-                      }}
-                    >
-                      Open login page again
-                    </LinearText>
-                  </TouchableOpacity>
-                </View>
-              ) : null}
-              <View
-                style={{
-                  marginTop: 12,
-                  padding: 12,
-                  borderWidth: 1,
-                  borderColor: n.colors.border,
-                  borderRadius: 12,
-                  backgroundColor: n.colors.background,
-                }}
-              >
-                <View
-                  style={{
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    gap: 12,
-                  }}
-                >
-                  <Ionicons
-                    name={githubCopilotConnected ? 'checkmark-circle' : 'ellipse-outline'}
-                    size={20}
-                    color={githubCopilotConnected ? n.colors.success : n.colors.textMuted}
-                  />
-                  <LinearText
-                    style={[
-                      styles.label,
-                      {
-                        flex: 1,
-                        color: githubCopilotConnected ? n.colors.success : n.colors.textMuted,
-                      },
-                    ]}
-                  >
-                    {githubCopilotConnected ? 'Connected' : 'Not connected'}
-                  </LinearText>
-                  <View
-                    style={{
-                      flexDirection: 'row',
-                      flexWrap: 'wrap',
-                      gap: 8,
-                      alignItems: 'center',
-                      justifyContent: 'flex-end',
-                    }}
-                  >
-                    <TouchableOpacity
-                      style={[
-                        styles.validateBtn,
-                        githubCopilotOAuthTestResult === 'ok' && styles.validateBtnOk,
-                        githubCopilotOAuthTestResult === 'fail' && styles.validateBtnFail,
-                        { paddingHorizontal: 10 },
-                      ]}
-                      onPress={() => void validateGitHubCopilotConnection()}
-                      disabled={testingGitHubCopilotOAuth || githubCopilotConnecting}
-                      activeOpacity={0.8}
-                      accessibilityLabel="Validate GitHub Copilot connection"
-                    >
-                      {testingGitHubCopilotOAuth ? (
-                        <ActivityIndicator size="small" color={n.colors.accent} />
-                      ) : (
-                        <Ionicons
-                          name={
-                            githubCopilotOAuthTestResult === 'ok'
-                              ? 'checkmark-circle'
-                              : githubCopilotOAuthTestResult === 'fail'
-                                ? 'close-circle'
-                                : 'pulse-outline'
-                          }
-                          size={20}
-                          color={
-                            githubCopilotOAuthTestResult === 'ok'
-                              ? n.colors.success
-                              : githubCopilotOAuthTestResult === 'fail'
-                                ? n.colors.error
-                                : n.colors.accent
-                          }
-                        />
-                      )}
-                    </TouchableOpacity>
-                    {githubCopilotConnected ? (
-                      <TouchableOpacity
-                        style={[
-                          styles.validateBtn,
-                          { backgroundColor: n.colors.error + '22', paddingHorizontal: 16 },
-                        ]}
-                        onPress={disconnectGitHubCopilot}
-                        activeOpacity={0.8}
-                      >
-                        <LinearText
-                          style={{ color: n.colors.error, fontWeight: '600', fontSize: 13 }}
-                        >
-                          Disconnect
-                        </LinearText>
-                      </TouchableOpacity>
-                    ) : (
-                      <TouchableOpacity
-                        style={[
-                          styles.validateBtn,
-                          { paddingHorizontal: 16, backgroundColor: n.colors.accent + '22' },
-                        ]}
-                        onPress={connectGitHubCopilot}
-                        disabled={githubCopilotConnecting}
-                        activeOpacity={0.8}
-                      >
-                        {githubCopilotConnecting ? (
-                          <ActivityIndicator size="small" color={n.colors.accent} />
-                        ) : (
-                          <LinearText
-                            style={{ color: n.colors.accent, fontWeight: '600', fontSize: 13 }}
-                          >
-                            Connect
-                          </LinearText>
-                        )}
-                      </TouchableOpacity>
-                    )}
-                  </View>
-                </View>
-              </View>
-              <LinearText style={[styles.hint, { marginTop: 8 }]}>
-                Validate (pulse icon): checks SecureStore token + a minimal Copilot API call. Full
-                trace in Metro:{' '}
-                <LinearText style={{ fontFamily: 'Inter_400Regular' }}>
-                  [SETTINGS_VALIDATE][github_copilot]
-                </LinearText>
-              </LinearText>
-              {githubCopilotConnected ? (
-                <>
-                  <LinearText style={[styles.hint, { marginTop: 12 }]}>
-                    When Auto routing reaches GitHub Copilot, Guru tries this model first. If it
-                    fails, other catalog models are tried in order.
-                  </LinearText>
-                  <ModelDropdown
-                    label="Preferred Copilot model"
-                    value={githubCopilotPreferredModel}
-                    onSelect={setGithubCopilotPreferredModel}
-                    options={[
-                      {
-                        id: '',
-                        label: 'Default (catalog order)',
-                        group: 'GitHub Copilot',
-                      },
-                      ...GITHUB_COPILOT_MODELS.map((m) => ({
-                        id: m,
-                        label: m,
-                        group: 'GitHub Copilot',
-                      })),
-                    ]}
-                  />
-                </>
-              ) : null}
-            </SubSectionToggle>
-
-            {/* ── GitLab Duo OAuth ─────────────────────────────── */}
-            <View style={styles.subSectionDivider} />
-            <SubSectionToggle id="gitlab_duo_oauth" title="GITLAB DUO (OAUTH)">
-              <LinearText style={styles.hint}>
-                OAuth2 + PKCE against your GitLab instance. Add this redirect URI to your GitLab
-                OAuth application: {getRedirectUri()}
-              </LinearText>
-              <LinearText style={[styles.label, { marginTop: 12 }]}>Application ID</LinearText>
-              <LinearText style={styles.hint}>
-                Paste from GitLab → Preferences → Applications. Overrides
-                EXPO_PUBLIC_GITLAB_CLIENT_ID when set. Scopes: read_user, ai_features.
-              </LinearText>
-              <TextInput
-                value={gitlabOauthClientId}
-                onChangeText={setGitlabOauthClientId}
-                placeholder="Your GitLab OAuth Application ID"
-                placeholderTextColor={n.colors.textMuted}
-                autoCapitalize="none"
-                autoCorrect={false}
-                editable={!gitlabDuoConnecting}
-                style={{
-                  marginTop: 8,
-                  borderWidth: 1,
-                  borderColor: n.colors.border,
-                  borderRadius: 10,
-                  paddingHorizontal: 12,
-                  paddingVertical: 10,
-                  color: n.colors.textPrimary,
-                  fontSize: 15,
-                }}
-              />
-              <LinearText style={[styles.label, { marginTop: 12 }]}>Application secret</LinearText>
-              <LinearText style={styles.hint}>
-                Confidential apps (default on GitLab.com) require this on token exchange — paste
-                from the same Applications page. Stored only in on-device secure storage, not in
-                backups. Leave empty only if you created a non-confidential (public) OAuth app.
-              </LinearText>
-              <TextInput
-                value={gitlabOauthClientSecret}
-                onChangeText={setGitlabOauthClientSecret}
-                placeholder="OAuth application secret"
-                placeholderTextColor={n.colors.textMuted}
-                autoCapitalize="none"
-                autoCorrect={false}
-                secureTextEntry
-                editable={!gitlabDuoConnecting}
-                style={{
-                  marginTop: 8,
-                  borderWidth: 1,
-                  borderColor: n.colors.border,
-                  borderRadius: 10,
-                  paddingHorizontal: 12,
-                  paddingVertical: 10,
-                  color: n.colors.textPrimary,
-                  fontSize: 15,
-                }}
-              />
-              <View
-                style={{
-                  marginTop: 12,
-                  padding: 12,
-                  borderWidth: 1,
-                  borderColor: n.colors.border,
-                  borderRadius: 12,
-                  backgroundColor: n.colors.background,
-                }}
-              >
-                <View
-                  style={{
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    gap: 12,
-                  }}
-                >
-                  <Ionicons
-                    name={gitlabDuoConnected ? 'checkmark-circle' : 'ellipse-outline'}
-                    size={20}
-                    color={gitlabDuoConnected ? n.colors.success : n.colors.textMuted}
-                  />
-                  <LinearText
-                    style={[
-                      styles.label,
-                      {
-                        flex: 1,
-                        color: gitlabDuoConnected ? n.colors.success : n.colors.textMuted,
-                      },
-                    ]}
-                  >
-                    {gitlabDuoConnected ? 'Connected' : 'Not connected'}
-                  </LinearText>
-                  <View
-                    style={{
-                      flexDirection: 'row',
-                      flexWrap: 'wrap',
-                      gap: 8,
-                      alignItems: 'center',
-                      justifyContent: 'flex-end',
-                    }}
-                  >
-                    <TouchableOpacity
-                      style={[
-                        styles.validateBtn,
-                        gitlabDuoOAuthTestResult === 'ok' && styles.validateBtnOk,
-                        gitlabDuoOAuthTestResult === 'fail' && styles.validateBtnFail,
-                        { paddingHorizontal: 10 },
-                      ]}
-                      onPress={() => void validateGitLabDuoConnection()}
-                      disabled={testingGitLabDuoOAuth || gitlabDuoConnecting}
-                      activeOpacity={0.8}
-                      accessibilityLabel="Validate GitLab Duo connection"
-                    >
-                      {testingGitLabDuoOAuth ? (
-                        <ActivityIndicator size="small" color={n.colors.accent} />
-                      ) : (
-                        <Ionicons
-                          name={
-                            gitlabDuoOAuthTestResult === 'ok'
-                              ? 'checkmark-circle'
-                              : gitlabDuoOAuthTestResult === 'fail'
-                                ? 'close-circle'
-                                : 'pulse-outline'
-                          }
-                          size={20}
-                          color={
-                            gitlabDuoOAuthTestResult === 'ok'
-                              ? n.colors.success
-                              : gitlabDuoOAuthTestResult === 'fail'
-                                ? n.colors.error
-                                : n.colors.accent
-                          }
-                        />
-                      )}
-                    </TouchableOpacity>
-                    {gitlabDuoConnected ? (
-                      <TouchableOpacity
-                        style={[
-                          styles.validateBtn,
-                          { backgroundColor: n.colors.error + '22', paddingHorizontal: 16 },
-                        ]}
-                        onPress={disconnectGitLabDuo}
-                        activeOpacity={0.8}
-                      >
-                        <LinearText
-                          style={{ color: n.colors.error, fontWeight: '600', fontSize: 13 }}
-                        >
-                          Disconnect
-                        </LinearText>
-                      </TouchableOpacity>
-                    ) : (
-                      <>
-                        <TouchableOpacity
-                          style={[
-                            styles.validateBtn,
-                            { paddingHorizontal: 12, backgroundColor: n.colors.accent + '22' },
-                          ]}
-                          onPress={connectGitLabDuo}
-                          disabled={gitlabDuoConnecting}
-                          activeOpacity={0.8}
-                        >
-                          {gitlabDuoConnecting ? (
-                            <ActivityIndicator size="small" color={n.colors.accent} />
-                          ) : (
-                            <LinearText
-                              style={{
-                                color: n.colors.accent,
-                                fontWeight: '600',
-                                fontSize: 13,
-                              }}
-                            >
-                              Connect
-                            </LinearText>
-                          )}
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                          style={[
-                            styles.validateBtn,
-                            { paddingHorizontal: 12, backgroundColor: n.colors.border + '44' },
-                          ]}
-                          onPress={() => setGitlabPasteModalVisible(true)}
-                          disabled={gitlabDuoConnecting}
-                          activeOpacity={0.8}
-                        >
-                          <LinearText
-                            style={{
-                              color: n.colors.textPrimary,
-                              fontWeight: '600',
-                              fontSize: 13,
-                            }}
-                          >
-                            Paste URL
-                          </LinearText>
-                        </TouchableOpacity>
-                      </>
-                    )}
-                  </View>
-                </View>
-              </View>
-              <LinearText style={[styles.hint, { marginTop: 8 }]}>
-                Validate (pulse icon): checks OAuth token +{' '}
-                <LinearText style={{ fontFamily: 'Inter_400Regular' }}>
-                  POST {getGitLabInstanceUrl()}/api/v4/chat/completions
-                </LinearText>
-                . Metro:{' '}
-                <LinearText style={{ fontFamily: 'Inter_400Regular' }}>
-                  [SETTINGS_VALIDATE][gitlab_duo]
-                </LinearText>
-              </LinearText>
-              <LinearText style={[styles.hint, { marginTop: 12 }]}>
-                Default GitLab Duo model for Auto routing. If unavailable, Guru automatically tries
-                the next best model in catalog order.
-              </LinearText>
-              <ModelDropdown
-                label="Default GitLab Duo model"
-                value={gitlabDuoPreferredModel}
-                onSelect={setGitlabDuoPreferredModel}
-                options={[
-                  {
-                    id: '',
-                    label: 'Default (catalog order)',
-                    group: 'GitLab Duo',
-                  },
-                  ...GITLAB_DUO_MODELS.map((m) => ({
-                    id: m,
-                    label: m,
-                    group: 'GitLab Duo',
-                  })),
-                ]}
-              />
-              <Modal
-                visible={gitlabPasteModalVisible}
-                transparent
-                animationType="fade"
-                onRequestClose={() => setGitlabPasteModalVisible(false)}
-              >
-                <KeyboardAvoidingView
-                  behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-                  style={{ flex: 1 }}
-                >
-                  <Pressable
-                    style={styles.dropdownBackdrop}
-                    onPress={() => setGitlabPasteModalVisible(false)}
-                  >
-                    <LinearSurface
-                      padded={false}
-                      style={[styles.dropdownSheet, { minWidth: '88%' }]}
-                    >
-                      <Pressable onPress={(e) => e.stopPropagation()}>
-                        <LinearText style={styles.dropdownSheetTitle}>
-                          Paste GitLab callback URL
-                        </LinearText>
-                        <LinearText style={[styles.hint, { marginBottom: 8 }]}>
-                          After authorizing, paste the full guru-study://oauth/gitlab?... link (same
-                          device after tapping Connect).
-                        </LinearText>
-                        <TextInput
-                          value={gitlabPasteUrl}
-                          onChangeText={setGitlabPasteUrl}
-                          placeholder="guru-study://oauth/gitlab?code=..."
-                          placeholderTextColor={n.colors.textMuted}
-                          autoCapitalize="none"
-                          autoCorrect={false}
-                          multiline
-                          style={{
-                            borderWidth: 1,
-                            borderColor: n.colors.border,
-                            borderRadius: 10,
-                            padding: 12,
-                            color: n.colors.textPrimary,
-                            minHeight: 88,
-                            textAlignVertical: 'top',
-                          }}
-                        />
-                        <View
-                          style={{
-                            flexDirection: 'row',
-                            justifyContent: 'flex-end',
-                            gap: 12,
-                            marginTop: 16,
-                          }}
-                        >
-                          <TouchableOpacity
-                            onPress={() => setGitlabPasteModalVisible(false)}
-                            style={{ paddingVertical: 10, paddingHorizontal: 14 }}
-                          >
-                            <LinearText style={{ color: n.colors.textMuted, fontWeight: '600' }}>
-                              Cancel
-                            </LinearText>
-                          </TouchableOpacity>
-                          <TouchableOpacity
-                            onPress={() => void submitGitLabPasteUrl()}
-                            disabled={gitlabPasteSubmitting}
-                            style={{
-                              paddingVertical: 10,
-                              paddingHorizontal: 16,
-                              backgroundColor: n.colors.accent + '33',
-                              borderRadius: 10,
-                            }}
-                          >
-                            {gitlabPasteSubmitting ? (
-                              <ActivityIndicator size="small" color={n.colors.accent} />
-                            ) : (
-                              <LinearText style={{ color: n.colors.accent, fontWeight: '700' }}>
-                                Apply
-                              </LinearText>
-                            )}
-                          </TouchableOpacity>
-                        </View>
-                      </Pressable>
-                    </LinearSurface>
-                  </Pressable>
-                </KeyboardAvoidingView>
-              </Modal>
-            </SubSectionToggle>
-
-            {/* ── Poe OAuth ─────────────────────────────── */}
-            <View style={styles.subSectionDivider} />
-            <SubSectionToggle id="poe_oauth" title="POE (OAUTH)">
-              <LinearText style={styles.hint}>
-                Connect your Poe subscription through device code flow. Access Claude, GPT-4o,
-                Gemini and more through Poe's API.
-              </LinearText>
-              {poeConnecting && poeDeviceCode ? (
-                <View style={{ marginTop: 8 }}>
-                  <LinearText style={[styles.label, { textAlign: 'center', marginBottom: 4 }]}>
-                    Enter this code at poe.com:
-                  </LinearText>
-                  <LinearText
-                    style={{
-                      fontSize: 28,
-                      fontWeight: '700',
-                      textAlign: 'center',
-                      color: n.colors.accent,
-                      letterSpacing: 4,
-                      marginVertical: 8,
-                      fontFamily: 'Inter_400Regular',
-                    }}
-                    selectable
-                  >
-                    {poeDeviceCode.user_code}
-                  </LinearText>
-                  <View
-                    style={{
-                      flexDirection: 'row',
-                      justifyContent: 'center',
-                      alignItems: 'center',
-                      gap: 8,
-                      marginTop: 4,
-                    }}
-                  >
-                    <ActivityIndicator size="small" color={n.colors.accent} />
-                    <LinearText style={[styles.hint, { marginTop: 0 }]}>
-                      Waiting for authorization...
-                    </LinearText>
-                  </View>
-                  <TouchableOpacity
-                    style={{ marginTop: 12, alignSelf: 'center' }}
-                    onPress={() => Linking.openURL(POE_VERIFICATION_URL)}
-                    activeOpacity={0.7}
-                  >
-                    <LinearText
-                      style={{
-                        color: n.colors.accent,
-                        textDecorationLine: 'underline',
-                        fontSize: 13,
-                      }}
-                    >
-                      Open login page again
-                    </LinearText>
-                  </TouchableOpacity>
-                </View>
-              ) : null}
-              <View
-                style={{
-                  marginTop: 12,
-                  padding: 12,
-                  borderWidth: 1,
-                  borderColor: n.colors.border,
-                  borderRadius: 12,
-                  backgroundColor: n.colors.background,
-                }}
-              >
-                <View
-                  style={{
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    gap: 12,
-                  }}
-                >
-                  <Ionicons
-                    name={poeConnected ? 'checkmark-circle' : 'ellipse-outline'}
-                    size={20}
-                    color={poeConnected ? n.colors.success : n.colors.textMuted}
-                  />
-                  <LinearText
-                    style={[
-                      styles.label,
-                      {
-                        flex: 1,
-                        color: poeConnected ? n.colors.success : n.colors.textMuted,
-                      },
-                    ]}
-                  >
-                    {poeConnected ? 'Connected' : 'Not connected'}
-                  </LinearText>
-                  {poeConnected ? (
-                    <TouchableOpacity
-                      style={[
-                        styles.validateBtn,
-                        { backgroundColor: n.colors.error + '22', paddingHorizontal: 16 },
-                      ]}
-                      onPress={disconnectPoe}
-                      activeOpacity={0.8}
-                    >
-                      <LinearText
-                        style={{ color: n.colors.error, fontWeight: '600', fontSize: 13 }}
-                      >
-                        Disconnect
-                      </LinearText>
-                    </TouchableOpacity>
-                  ) : (
-                    <TouchableOpacity
-                      style={[
-                        styles.validateBtn,
-                        { paddingHorizontal: 16, backgroundColor: n.colors.accent + '22' },
-                      ]}
-                      onPress={connectPoe}
-                      disabled={poeConnecting}
-                      activeOpacity={0.8}
-                    >
-                      {poeConnecting ? (
-                        <ActivityIndicator size="small" color={n.colors.accent} />
-                      ) : (
-                        <LinearText
-                          style={{ color: n.colors.accent, fontWeight: '600', fontSize: 13 }}
-                        >
-                          Connect
-                        </LinearText>
-                      )}
-                    </TouchableOpacity>
-                  )}
-                </View>
-              </View>
-            </SubSectionToggle>
-
-            {/* ── Qwen OAuth ─────────────────────────────── */}
-            <View style={styles.subSectionDivider} />
-            <SubSectionToggle id="qwen_oauth" title="QWEN (FREE OAUTH)">
-              <LinearText style={styles.hint}>
-                Connect your Qwen.ai account for free access to qwen-coder-plus, qwen-coder-flash,
-                and qwen-vl-plus. 1,000 requests/day, 60 req/min. No API key needed.
-              </LinearText>
-              {qwenConnecting && qwenDeviceCode ? (
-                <View style={{ marginTop: 8 }}>
-                  <LinearText style={[styles.label, { textAlign: 'center', marginBottom: 4 }]}>
-                    Enter this code at chat.qwen.ai:
-                  </LinearText>
-                  <LinearText
-                    style={{
-                      fontSize: 28,
-                      fontWeight: '700',
-                      textAlign: 'center',
-                      color: n.colors.accent,
-                      letterSpacing: 4,
-                      marginVertical: 8,
-                      fontFamily: 'Inter_400Regular',
-                    }}
-                    selectable
-                  >
-                    {qwenDeviceCode.user_code}
-                  </LinearText>
-                  <View
-                    style={{
-                      flexDirection: 'row',
-                      justifyContent: 'center',
-                      alignItems: 'center',
-                      gap: 8,
-                      marginTop: 4,
-                    }}
-                  >
-                    <ActivityIndicator size="small" color={n.colors.accent} />
-                    <LinearText style={[styles.hint, { marginTop: 0 }]}>
-                      Waiting for authorization...
-                    </LinearText>
-                  </View>
-                  <TouchableOpacity
-                    style={{ marginTop: 12, alignSelf: 'center' }}
-                    onPress={() =>
-                      Linking.openURL(
-                        qwenDeviceCode.verification_uri_complete || qwenDeviceCode.verification_uri,
-                      )
-                    }
-                    activeOpacity={0.7}
-                  >
-                    <LinearText
-                      style={{
-                        color: n.colors.accent,
-                        textDecorationLine: 'underline',
-                        fontSize: 13,
-                      }}
-                    >
-                      Open login page again
-                    </LinearText>
-                  </TouchableOpacity>
-                </View>
-              ) : null}
-              <View
-                style={{
-                  marginTop: 12,
-                  padding: 12,
-                  borderWidth: 1,
-                  borderColor: n.colors.border,
-                  borderRadius: 12,
-                  backgroundColor: n.colors.background,
-                }}
-              >
-                <View
-                  style={{
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    gap: 12,
-                  }}
-                >
-                  <Ionicons
-                    name={qwenConnected ? 'checkmark-circle' : 'ellipse-outline'}
-                    size={20}
-                    color={qwenConnected ? n.colors.success : n.colors.textMuted}
-                  />
-                  <LinearText
-                    style={[
-                      styles.label,
-                      {
-                        flex: 1,
-                        color: qwenConnected ? n.colors.success : n.colors.textMuted,
-                      },
-                    ]}
-                  >
-                    {qwenConnected ? 'Connected' : 'Not connected'}
-                  </LinearText>
-                  {qwenConnected ? (
-                    <TouchableOpacity
-                      style={[
-                        styles.validateBtn,
-                        { backgroundColor: n.colors.error + '22', paddingHorizontal: 16 },
-                      ]}
-                      onPress={disconnectQwen}
-                      activeOpacity={0.8}
-                    >
-                      <LinearText
-                        style={{ color: n.colors.error, fontWeight: '600', fontSize: 13 }}
-                      >
-                        Disconnect
-                      </LinearText>
-                    </TouchableOpacity>
-                  ) : (
-                    <TouchableOpacity
-                      style={[
-                        styles.validateBtn,
-                        { paddingHorizontal: 16, backgroundColor: n.colors.accent + '22' },
-                      ]}
-                      onPress={connectQwen}
-                      disabled={qwenConnecting}
-                      activeOpacity={0.8}
-                    >
-                      {qwenConnecting ? (
-                        <ActivityIndicator size="small" color={n.colors.accent} />
-                      ) : (
-                        <LinearText
-                          style={{ color: n.colors.accent, fontWeight: '600', fontSize: 13 }}
-                        >
-                          Connect
-                        </LinearText>
-                      )}
-                    </TouchableOpacity>
-                  )}
-                </View>
-                {qwenConnected && (
-                  <View
-                    style={{
-                      flexDirection: 'row',
-                      alignItems: 'center',
-                      gap: 8,
-                      marginTop: 10,
-                      paddingTop: 10,
-                      borderTopWidth: StyleSheet.hairlineWidth,
-                      borderTopColor: n.colors.border,
-                    }}
-                  >
-                    <TouchableOpacity
-                      style={[
-                        styles.validateBtn,
-                        qwenKeyTestResult === 'ok' && styles.validateBtnOk,
-                        qwenKeyTestResult === 'fail' && styles.validateBtnFail,
-                        testingQwenKey && { opacity: 0.6 },
-                      ]}
-                      onPress={testQwenKey}
-                      disabled={testingQwenKey}
-                      activeOpacity={0.8}
-                    >
-                      {testingQwenKey ? (
-                        <ActivityIndicator size="small" color={n.colors.accent} />
-                      ) : (
-                        <Ionicons
-                          name={
-                            qwenKeyTestResult === 'ok'
-                              ? 'checkmark-circle'
-                              : qwenKeyTestResult === 'fail'
-                                ? 'close-circle'
-                                : 'cloud-outline'
-                          }
-                          size={20}
-                          color={
-                            qwenKeyTestResult === 'ok'
-                              ? n.colors.success
-                              : qwenKeyTestResult === 'fail'
-                                ? n.colors.error
-                                : n.colors.accent
-                          }
-                        />
-                      )}
-                    </TouchableOpacity>
-                    <LinearText style={[styles.hint, { flex: 1 }]}>
-                      {testingQwenKey
-                        ? 'Validating Qwen connection...'
-                        : qwenKeyTestResult === 'ok'
-                          ? 'Connection OK'
-                          : qwenKeyTestResult === 'fail'
-                            ? 'Connection failed'
-                            : 'Tap to validate connection'}
-                    </LinearText>
-                  </View>
-                )}
-              </View>
-            </SubSectionToggle>
-
-            {/* ── API Keys ─────────────────────────────── */}
-            <View style={styles.subSectionDivider} />
-            <SubSectionToggle id="ai_api_keys" title="API KEYS">
-              <Label text="Groq" />
-              <View style={styles.apiKeyRow}>
-                <TextInput
-                  style={[styles.input, styles.apiKeyInput]}
-                  placeholder="gsk_..."
-                  placeholderTextColor={n.colors.textMuted}
-                  value={groqKey}
-                  onChangeText={(value: string) => {
-                    setGroqKey(value);
-                    setGroqKeyTestResult(null);
-                    clearProviderValidated('groq');
-                  }}
-                  secureTextEntry
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                  autoComplete="off"
-                  importantForAutofill="no"
-                  textContentType="none"
-                />
-                <TouchableOpacity
-                  style={[
-                    styles.validateBtn,
-                    groqValidationStatus === 'ok' && styles.validateBtnOk,
-                    groqValidationStatus === 'fail' && styles.validateBtnFail,
-                  ]}
-                  onPress={testGroqKey}
-                  disabled={testingGroqKey}
-                  activeOpacity={0.8}
-                >
-                  {testingGroqKey ? (
-                    <ActivityIndicator size="small" color={n.colors.accent} />
-                  ) : (
-                    <Ionicons
-                      name={
-                        groqValidationStatus === 'ok'
-                          ? 'checkmark-circle'
-                          : groqValidationStatus === 'fail'
-                            ? 'close-circle'
-                            : 'flash-outline'
-                      }
-                      size={20}
-                      color={
-                        groqValidationStatus === 'ok'
-                          ? n.colors.success
-                          : groqValidationStatus === 'fail'
-                            ? n.colors.error
-                            : n.colors.accent
-                      }
-                    />
-                  )}
-                </TouchableOpacity>
-              </View>
-              <LinearText style={styles.hint}>
-                Transcription + AI generation. Free key at console.groq.com
-              </LinearText>
-              <Label text="GitHub Models" />
-              <View style={styles.apiKeyRow}>
-                <TextInput
-                  style={[styles.input, styles.apiKeyInput]}
-                  placeholder="GitHub PAT (Models read)"
-                  placeholderTextColor={n.colors.textMuted}
-                  value={githubModelsPat}
-                  onChangeText={(value: string) => {
-                    setGithubModelsPat(value);
-                    setGithubPatTestResult(null);
-                    clearProviderValidated('github');
-                  }}
-                  secureTextEntry
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                  autoComplete="off"
-                  importantForAutofill="no"
-                  textContentType="none"
-                />
-                <TouchableOpacity
-                  style={[
-                    styles.validateBtn,
-                    githubValidationStatus === 'ok' && styles.validateBtnOk,
-                    githubValidationStatus === 'fail' && styles.validateBtnFail,
-                  ]}
-                  onPress={testGithubModelsPat}
-                  disabled={testingGithubPat}
-                  activeOpacity={0.8}
-                >
-                  {testingGithubPat ? (
-                    <ActivityIndicator size="small" color={n.colors.accent} />
-                  ) : (
-                    <Ionicons
-                      name={
-                        githubValidationStatus === 'ok'
-                          ? 'checkmark-circle'
-                          : githubValidationStatus === 'fail'
-                            ? 'close-circle'
-                            : 'flash-outline'
-                      }
-                      size={20}
-                      color={
-                        githubValidationStatus === 'ok'
-                          ? n.colors.success
-                          : githubValidationStatus === 'fail'
-                            ? n.colors.error
-                            : n.colors.accent
-                      }
-                    />
-                  )}
-                </TouchableOpacity>
-              </View>
-              <LinearText style={styles.hint}>
-                Fine-grained PAT with Models (read) scope at models.github.ai
-              </LinearText>
-              <Label text="OpenRouter" />
-              <View style={styles.apiKeyRow}>
-                <TextInput
-                  style={[styles.input, styles.apiKeyInput]}
-                  placeholder="sk-or-v1-..."
-                  placeholderTextColor={n.colors.textMuted}
-                  value={orKey}
-                  onChangeText={(value: string) => {
-                    setOrKey(value);
-                    setOpenRouterKeyTestResult(null);
-                    clearProviderValidated('openrouter');
-                  }}
-                  secureTextEntry
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                  autoComplete="off"
-                  importantForAutofill="no"
-                  textContentType="none"
-                />
-                <TouchableOpacity
-                  style={[
-                    styles.validateBtn,
-                    openRouterValidationStatus === 'ok' && styles.validateBtnOk,
-                    openRouterValidationStatus === 'fail' && styles.validateBtnFail,
-                  ]}
-                  onPress={testOpenRouterKey}
-                  disabled={testingOpenRouterKey}
-                  activeOpacity={0.8}
-                >
-                  {testingOpenRouterKey ? (
-                    <ActivityIndicator size="small" color={n.colors.accent} />
-                  ) : (
-                    <Ionicons
-                      name={
-                        openRouterValidationStatus === 'ok'
-                          ? 'checkmark-circle'
-                          : openRouterValidationStatus === 'fail'
-                            ? 'close-circle'
-                            : 'flash-outline'
-                      }
-                      size={20}
-                      color={
-                        openRouterValidationStatus === 'ok'
-                          ? n.colors.success
-                          : openRouterValidationStatus === 'fail'
-                            ? n.colors.error
-                            : n.colors.accent
-                      }
-                    />
-                  )}
-                </TouchableOpacity>
-              </View>
-              <LinearText style={styles.hint}>Free model fallback. Key at openrouter.ai</LinearText>
-              <Label text="Kilo" />
-              <View style={styles.apiKeyRow}>
-                <TextInput
-                  style={[styles.input, styles.apiKeyInput]}
-                  placeholder="kilo_..."
-                  placeholderTextColor={n.colors.textMuted}
-                  value={kiloApiKey}
-                  onChangeText={(value: string) => {
-                    setKiloApiKey(value);
-                    setKiloKeyTestResult(null);
-                    clearProviderValidated('kilo');
-                  }}
-                  secureTextEntry
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                  autoComplete="off"
-                  importantForAutofill="no"
-                  textContentType="none"
-                />
-                <TouchableOpacity
-                  style={[
-                    styles.validateBtn,
-                    kiloValidationStatus === 'ok' && styles.validateBtnOk,
-                    kiloValidationStatus === 'fail' && styles.validateBtnFail,
-                  ]}
-                  onPress={testKiloKey}
-                  disabled={testingKiloKey}
-                  activeOpacity={0.8}
-                >
-                  {testingKiloKey ? (
-                    <ActivityIndicator size="small" color={n.colors.accent} />
-                  ) : (
-                    <Ionicons
-                      name={
-                        kiloValidationStatus === 'ok'
-                          ? 'checkmark-circle'
-                          : kiloValidationStatus === 'fail'
-                            ? 'close-circle'
-                            : 'flash-outline'
-                      }
-                      size={20}
-                      color={
-                        kiloValidationStatus === 'ok'
-                          ? n.colors.success
-                          : kiloValidationStatus === 'fail'
-                            ? n.colors.error
-                            : n.colors.accent
-                      }
-                    />
-                  )}
-                </TouchableOpacity>
-              </View>
-              <LinearText style={styles.hint}>
-                Gateway at api.kilo.ai (e.g. kilo-auto/balanced, xiaomi/mimo-v2-pro)
-              </LinearText>
-              <Label text="DeepSeek" />
-              <View style={styles.apiKeyRow}>
-                <TextInput
-                  style={[styles.input, styles.apiKeyInput]}
-                  placeholder="sk-..."
-                  placeholderTextColor={n.colors.textMuted}
-                  value={deepseekKey}
-                  onChangeText={(value: string) => {
-                    setDeepseekKey(value);
-                    setDeepseekKeyTestResult(null);
-                    clearProviderValidated('deepseek');
-                  }}
-                  secureTextEntry
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                  autoComplete="off"
-                  importantForAutofill="no"
-                  textContentType="none"
-                />
-                <TouchableOpacity
-                  style={[
-                    styles.validateBtn,
-                    deepseekValidationStatus === 'ok' && styles.validateBtnOk,
-                    deepseekValidationStatus === 'fail' && styles.validateBtnFail,
-                  ]}
-                  onPress={testDeepseekKey}
-                  disabled={testingDeepseekKey}
-                  activeOpacity={0.8}
-                >
-                  {testingDeepseekKey ? (
-                    <ActivityIndicator size="small" color={n.colors.accent} />
-                  ) : (
-                    <Ionicons
-                      name={
-                        deepseekValidationStatus === 'ok'
-                          ? 'checkmark-circle'
-                          : deepseekValidationStatus === 'fail'
-                            ? 'close-circle'
-                            : 'flash-outline'
-                      }
-                      size={20}
-                      color={
-                        deepseekValidationStatus === 'ok'
-                          ? n.colors.success
-                          : deepseekValidationStatus === 'fail'
-                            ? n.colors.error
-                            : n.colors.accent
-                      }
-                    />
-                  )}
-                </TouchableOpacity>
-              </View>
-              <LinearText style={styles.hint}>Key at platform.deepseek.com</LinearText>
-              <Label text="AgentRouter" />
-              <View style={styles.apiKeyRow}>
-                <TextInput
-                  style={[styles.input, styles.apiKeyInput]}
-                  placeholder="sk-..."
-                  placeholderTextColor={n.colors.textMuted}
-                  value={agentRouterKey}
-                  onChangeText={(value: string) => {
-                    setAgentRouterKey(value);
-                    setAgentRouterKeyTestResult(null);
-                    clearProviderValidated('agentrouter');
-                  }}
-                  secureTextEntry
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                  autoComplete="off"
-                  importantForAutofill="no"
-                  textContentType="none"
-                />
-                <TouchableOpacity
-                  style={[
-                    styles.validateBtn,
-                    agentRouterValidationStatus === 'ok' && styles.validateBtnOk,
-                    agentRouterValidationStatus === 'fail' && styles.validateBtnFail,
-                  ]}
-                  onPress={testAgentRouterKey}
-                  disabled={testingAgentRouterKey}
-                  activeOpacity={0.8}
-                >
-                  {testingAgentRouterKey ? (
-                    <ActivityIndicator size="small" color={n.colors.accent} />
-                  ) : (
-                    <Ionicons
-                      name={
-                        agentRouterValidationStatus === 'ok'
-                          ? 'checkmark-circle'
-                          : agentRouterValidationStatus === 'fail'
-                            ? 'close-circle'
-                            : 'flash-outline'
-                      }
-                      size={20}
-                      color={
-                        agentRouterValidationStatus === 'ok'
-                          ? n.colors.success
-                          : agentRouterValidationStatus === 'fail'
-                            ? n.colors.error
-                            : n.colors.accent
-                      }
-                    />
-                  )}
-                </TouchableOpacity>
-              </View>
-              <LinearText style={styles.hint}>
-                Free proxy. Key at agentrouter.org/console/token
-              </LinearText>
-              <Label text="Google Gemini" />
-              <View style={styles.apiKeyRow}>
-                <TextInput
-                  style={[styles.input, styles.apiKeyInput]}
-                  placeholder="AIza..."
-                  placeholderTextColor={n.colors.textMuted}
-                  value={geminiKey}
-                  onChangeText={(value: string) => {
-                    setGeminiKey(value);
-                    setGeminiKeyTestResult(null);
-                    clearProviderValidated('gemini');
-                  }}
-                  secureTextEntry
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                  autoComplete="off"
-                  importantForAutofill="no"
-                  textContentType="none"
-                />
-                <TouchableOpacity
-                  style={[
-                    styles.validateBtn,
-                    geminiValidationStatus === 'ok' && styles.validateBtnOk,
-                    geminiValidationStatus === 'fail' && styles.validateBtnFail,
-                  ]}
-                  onPress={testGeminiKey}
-                  disabled={testingGeminiKey}
-                  activeOpacity={0.8}
-                >
-                  {testingGeminiKey ? (
-                    <ActivityIndicator size="small" color={n.colors.accent} />
-                  ) : (
-                    <Ionicons
-                      name={
-                        geminiValidationStatus === 'ok'
-                          ? 'checkmark-circle'
-                          : geminiValidationStatus === 'fail'
-                            ? 'close-circle'
-                            : 'flash-outline'
-                      }
-                      size={20}
-                      color={
-                        geminiValidationStatus === 'ok'
-                          ? n.colors.success
-                          : geminiValidationStatus === 'fail'
-                            ? n.colors.error
-                            : n.colors.accent
-                      }
-                    />
-                  )}
-                </TouchableOpacity>
-              </View>
-              <LinearText style={styles.hint}>
-                Chat + image models. Key at aistudio.google.com/apikey
-              </LinearText>
-              <View style={styles.switchRow}>
-                <View style={{ flex: 1, paddingRight: 8 }}>
-                  <LinearText style={styles.switchLabel}>Structured JSON (Gemini)</LinearText>
-                  <LinearText style={styles.hint}>
-                    When on, structured AI outputs (quizzes, daily plan, lecture analysis) use
-                    Gemini native JSON + schema first if your Gemini key is set. Turn off to force
-                    text-only parsing (for debugging).
-                  </LinearText>
-                </View>
-                <Switch
-                  value={preferGeminiStructuredJson}
-                  onValueChange={setPreferGeminiStructuredJson}
-                  trackColor={{ true: n.colors.accent, false: n.colors.border }}
-                  thumbColor={n.colors.textPrimary}
-                />
-              </View>
-              <Label text="Deepgram" />
-              <View style={styles.apiKeyRow}>
-                <TextInput
-                  style={[styles.input, styles.apiKeyInput]}
-                  placeholder="dg_..."
-                  placeholderTextColor={n.colors.textMuted}
-                  value={deepgramApiKey}
-                  onChangeText={(value: string) => {
-                    setDeepgramApiKey(value);
-                    setDeepgramKeyTestResult(null);
-                    clearProviderValidated('deepgram');
-                  }}
-                  secureTextEntry
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                  autoComplete="off"
-                  importantForAutofill="no"
-                  textContentType="none"
-                />
-                <TouchableOpacity
-                  style={[
-                    styles.validateBtn,
-                    deepgramValidationStatus === 'ok' && styles.validateBtnOk,
-                    deepgramValidationStatus === 'fail' && styles.validateBtnFail,
-                  ]}
-                  onPress={testDeepgramKey}
-                  disabled={testingDeepgramKey}
-                  activeOpacity={0.8}
-                >
-                  {testingDeepgramKey ? (
-                    <ActivityIndicator size="small" color={n.colors.accent} />
-                  ) : (
-                    <Ionicons
-                      name={
-                        deepgramValidationStatus === 'ok'
-                          ? 'checkmark-circle'
-                          : deepgramValidationStatus === 'fail'
-                            ? 'close-circle'
-                            : 'flash-outline'
-                      }
-                      size={20}
-                      color={
-                        deepgramValidationStatus === 'ok'
-                          ? n.colors.success
-                          : deepgramValidationStatus === 'fail'
-                            ? n.colors.error
-                            : n.colors.accent
-                      }
-                    />
-                  )}
-                </TouchableOpacity>
-              </View>
-              <LinearText style={styles.hint}>
-                Live lecture quiz sidecar. Key at console.deepgram.com
-              </LinearText>
-              <Label text="Cloudflare Workers AI" />
-              <View style={styles.apiKeyRow}>
-                <TextInput
-                  style={[styles.input, styles.apiKeyInput]}
-                  placeholder="Account ID (32-char hex)"
-                  placeholderTextColor={n.colors.textMuted}
-                  value={cfAccountId}
-                  onChangeText={(value: string) => {
-                    setCfAccountId(value);
-                    setCloudflareTestResult(null);
-                    clearProviderValidated('cloudflare');
-                  }}
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                  autoComplete="off"
-                  textContentType="none"
-                />
-                <TouchableOpacity
-                  style={[
-                    styles.validateBtn,
-                    cloudflareValidationStatus === 'ok' && styles.validateBtnOk,
-                    cloudflareValidationStatus === 'fail' && styles.validateBtnFail,
-                  ]}
-                  onPress={testCloudflareKeys}
-                  disabled={testingCloudflare}
-                  activeOpacity={0.8}
-                >
-                  {testingCloudflare ? (
-                    <ActivityIndicator size="small" color={n.colors.accent} />
-                  ) : (
-                    <Ionicons
-                      name={
-                        cloudflareValidationStatus === 'ok'
-                          ? 'checkmark-circle'
-                          : cloudflareValidationStatus === 'fail'
-                            ? 'close-circle'
-                            : 'flash-outline'
-                      }
-                      size={20}
-                      color={
-                        cloudflareValidationStatus === 'ok'
-                          ? n.colors.success
-                          : cloudflareValidationStatus === 'fail'
-                            ? n.colors.error
-                            : n.colors.accent
-                      }
-                    />
-                  )}
-                </TouchableOpacity>
-              </View>
-              <TextInput
-                style={styles.input}
-                placeholder="API Token (Workers AI read)"
-                placeholderTextColor={n.colors.textMuted}
-                value={cfApiToken}
-                onChangeText={(value: string) => {
-                  setCfApiToken(value);
-                  setCloudflareTestResult(null);
-                  clearProviderValidated('cloudflare');
-                }}
-                secureTextEntry
-                autoCapitalize="none"
-                autoCorrect={false}
-                autoComplete="off"
-                importantForAutofill="no"
-                textContentType="none"
-              />
-              <LinearText style={styles.hint}>
-                Chat, images, and Whisper transcription via Cloudflare
-              </LinearText>
-            </SubSectionToggle>
-
-            {/* ── Routing ─────────────────────────────── */}
-            <View style={styles.subSectionDivider} />
-            <SubSectionToggle id="ai_routing" title="PROVIDER ROUTING">
-              <LinearText style={styles.hint}>
-                Reorder fallback priority. First available provider is used.
-              </LinearText>
-              {providerOrder.map((id, index) => {
-                const hasKey = (() => {
-                  switch (id) {
-                    case 'chatgpt':
-                      return isChatGptEnabled(chatgptAccounts) || !!profile?.chatgptConnected;
-                    case 'groq':
-                      return !!(groqKey.trim() || profile?.groqApiKey);
-                    case 'github':
-                      return !!(githubModelsPat.trim() || profile?.githubModelsPat);
-                    case 'kilo':
-                      return !!(kiloApiKey.trim() || profile?.kiloApiKey);
-                    case 'deepseek':
-                      return !!(deepseekKey.trim() || profile?.deepseekKey);
-                    case 'agentrouter':
-                      return !!(agentRouterKey.trim() || profile?.agentRouterKey);
-                    case 'gemini':
-                      return !!(geminiKey.trim() || profile?.geminiKey);
-                    case 'gemini_fallback':
-                      return true; // bundled key
-                    case 'openrouter':
-                      return !!(orKey.trim() || profile?.openrouterKey);
-                    case 'cloudflare':
-                      return !!(
-                        (cfAccountId.trim() || profile?.cloudflareAccountId) &&
-                        (cfApiToken.trim() || profile?.cloudflareApiToken)
-                      );
-                    case 'qwen':
-                      return !!profile?.qwenConnected || qwenConnected;
-                    case 'github_copilot':
-                      return !!profile?.githubCopilotConnected;
-                    case 'gitlab_duo':
-                      return !!profile?.gitlabDuoConnected;
-                    case 'poe':
-                      return !!profile?.poeConnected;
-                    default:
-                      return false;
-                  }
-                })();
-                const isDisabled = disabledProviders.has(id);
-                return (
-                  <LinearSurface
-                    padded={false}
-                    key={id}
-                    style={[styles.providerRow, (!hasKey || isDisabled) && { opacity: 0.45 }]}
-                  >
-                    <Pressable
-                      onPress={() => {
-                        setDisabledProviders((prev) => {
-                          const next = new Set(prev);
-                          if (next.has(id)) next.delete(id);
-                          else next.add(id);
-                          void updateUserProfile({ disabledProviders: [...next] })
-                            .then(() => refreshProfile())
-                            .catch((err) => {
-                              if (__DEV__)
-                                console.warn('[Settings] Failed to toggle provider:', err);
-                            });
-                          return next;
-                        });
-                      }}
-                      style={({ pressed }) => [
-                        styles.providerActionBtn,
-                        pressed && styles.providerActionBtnPressed,
-                      ]}
-                      accessibilityRole="switch"
-                      accessibilityState={{ checked: !isDisabled }}
-                      accessibilityLabel={`${isDisabled ? 'Enable' : 'Disable'} ${PROVIDER_DISPLAY_NAMES[id]}`}
-                    >
-                      <Ionicons
-                        name={isDisabled ? 'power' : 'power'}
-                        size={18}
-                        color={isDisabled ? n.colors.error : n.colors.success}
-                      />
-                    </Pressable>
-                    <LinearText style={styles.providerIndex}>{index + 1}</LinearText>
-                    <View
-                      style={[
-                        styles.providerDot,
-                        {
-                          backgroundColor: isDisabled
-                            ? n.colors.error
-                            : hasKey
-                              ? n.colors.success
-                              : n.colors.textMuted,
-                        },
-                      ]}
-                    />
-                    <LinearText
-                      style={[
-                        styles.providerName,
-                        { color: n.colors.textPrimary },
-                        isDisabled && { textDecorationLine: 'line-through' },
-                      ]}
-                      numberOfLines={2}
-                    >
-                      {PROVIDER_DISPLAY_NAMES[id]}
-                    </LinearText>
-                    <View style={styles.providerActions}>
-                      <Pressable
-                        disabled={index === 0}
-                        onPress={() => moveProvider(index, 0)}
-                        style={({ pressed }) => [
-                          styles.providerActionBtn,
-                          index === 0 && styles.providerActionBtnDisabled,
-                          pressed && index !== 0 && styles.providerActionBtnPressed,
-                        ]}
-                        accessibilityRole="button"
-                        accessibilityLabel={`Move ${PROVIDER_DISPLAY_NAMES[id]} to top`}
-                      >
-                        <Ionicons name="play-skip-back" size={16} color={n.colors.textPrimary} />
-                      </Pressable>
-                      <TouchableOpacity
-                        disabled={index === 0}
-                        onPress={() => moveProvider(index, index - 1)}
-                        style={[
-                          styles.providerActionBtn,
-                          index === 0 && styles.providerActionBtnDisabled,
-                        ]}
-                        activeOpacity={0.6}
-                      >
-                        <Ionicons name="chevron-up" size={18} color={n.colors.textPrimary} />
-                      </TouchableOpacity>
-                      <TouchableOpacity
-                        disabled={index === providerOrder.length - 1}
-                        onPress={() => moveProvider(index, index + 1)}
-                        style={[
-                          styles.providerActionBtn,
-                          index === providerOrder.length - 1 && styles.providerActionBtnDisabled,
-                        ]}
-                        activeOpacity={0.6}
-                      >
-                        <Ionicons name="chevron-down" size={18} color={n.colors.textPrimary} />
-                      </TouchableOpacity>
-                      <Pressable
-                        disabled={index === providerOrder.length - 1}
-                        onPress={() => moveProvider(index, providerOrder.length - 1)}
-                        style={({ pressed }) => [
-                          styles.providerActionBtn,
-                          index === providerOrder.length - 1 && styles.providerActionBtnDisabled,
-                          pressed &&
-                            index !== providerOrder.length - 1 &&
-                            styles.providerActionBtnPressed,
-                        ]}
-                        accessibilityRole="button"
-                        accessibilityLabel={`Move ${PROVIDER_DISPLAY_NAMES[id]} to bottom`}
-                      >
-                        <Ionicons name="play-skip-forward" size={16} color={n.colors.textPrimary} />
-                      </Pressable>
-                    </View>
-                  </LinearSurface>
-                );
-              })}
-              <TouchableOpacity
-                style={[styles.testBtn, { marginTop: 4, marginBottom: 12 }]}
-                onPress={() => {
-                  const reset = [...DEFAULT_PROVIDER_ORDER];
-                  setProviderOrder(reset);
-                  setDisabledProviders(new Set());
-                  void updateUserProfile({
-                    providerOrder: sanitizeProviderOrder(reset),
-                    disabledProviders: [],
-                  })
-                    .then(() => refreshProfile())
-                    .catch((err) => {
-                      if (__DEV__) console.warn('[Settings] Failed to reset provider order:', err);
-                    });
-                }}
-                activeOpacity={0.8}
-              >
-                <LinearText style={styles.testBtnText}>Reset to Default Order</LinearText>
-              </TouchableOpacity>
-            </SubSectionToggle>
-
-            {/* ── Image Generation ────────────────────── */}
-            <View style={styles.subSectionDivider} />
-            <SubSectionToggle id="ai_image_gen" title="IMAGE GENERATION">
-              <LinearText style={styles.hint}>
-                Diagrams and study images. fal uses a separate API key and does not reuse ChatGPT
-                Plus login.
-              </LinearText>
-              <LinearText style={styles.label}>fal API Key</LinearText>
-              <View style={styles.apiKeyRow}>
-                <TextInput
-                  style={[
-                    styles.input,
-                    styles.apiKeyInput,
-                    falValidationStatus === 'ok' && styles.inputSuccess,
-                    falValidationStatus === 'fail' && styles.inputError,
-                  ]}
-                  placeholder="fal key"
-                  placeholderTextColor={n.colors.textMuted}
-                  value={falApiKey}
-                  onChangeText={(value: string) => {
-                    setFalApiKey(value);
-                    setFalKeyTestResult(null);
-                    clearProviderValidated('fal');
-                  }}
-                  secureTextEntry
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                />
-                <TouchableOpacity
-                  style={[
-                    styles.validateBtn,
-                    falValidationStatus === 'ok' && styles.validateBtnOk,
-                    falValidationStatus === 'fail' && styles.validateBtnFail,
-                  ]}
-                  onPress={testFalKey}
-                  disabled={testingFalKey}
-                  activeOpacity={0.8}
-                >
-                  {testingFalKey ? (
-                    <ActivityIndicator size="small" color={n.colors.accent} />
-                  ) : (
-                    <Ionicons
-                      name={
-                        falValidationStatus === 'ok'
-                          ? 'checkmark-circle'
-                          : falValidationStatus === 'fail'
-                            ? 'close-circle'
-                            : 'flash-outline'
-                      }
-                      size={20}
-                      color={
-                        falValidationStatus === 'ok'
-                          ? n.colors.success
-                          : falValidationStatus === 'fail'
-                            ? n.colors.error
-                            : n.colors.accent
-                      }
-                    />
-                  )}
-                </TouchableOpacity>
-              </View>
-              <LinearText style={styles.hint}>
-                Validate your fal API key with fal's model catalog endpoint.
-              </LinearText>
-              <LinearText style={styles.label}>Brave Search API Key</LinearText>
-              <View style={styles.apiKeyRow}>
-                <TextInput
-                  style={[
-                    styles.input,
-                    styles.apiKeyInput,
-                    braveValidationStatus === 'ok' && styles.inputSuccess,
-                    braveValidationStatus === 'fail' && styles.inputError,
-                  ]}
-                  placeholder="brave key"
-                  placeholderTextColor={n.colors.textMuted}
-                  value={braveSearchApiKey}
-                  onChangeText={(value: string) => {
-                    setBraveSearchApiKey(value);
-                    setBraveSearchKeyTestResult(null);
-                    clearProviderValidated('brave');
-                  }}
-                  secureTextEntry
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                />
-                <TouchableOpacity
-                  style={[
-                    styles.validateBtn,
-                    braveValidationStatus === 'ok' && styles.validateBtnOk,
-                    braveValidationStatus === 'fail' && styles.validateBtnFail,
-                  ]}
-                  onPress={testBraveSearchKey}
-                  disabled={testingBraveSearchKey}
-                  activeOpacity={0.8}
-                >
-                  {testingBraveSearchKey ? (
-                    <ActivityIndicator size="small" color={n.colors.accent} />
-                  ) : (
-                    <Ionicons
-                      name={
-                        braveValidationStatus === 'ok'
-                          ? 'checkmark-circle'
-                          : braveValidationStatus === 'fail'
-                            ? 'close-circle'
-                            : 'images-outline'
-                      }
-                      size={20}
-                      color={
-                        braveValidationStatus === 'ok'
-                          ? n.colors.success
-                          : braveValidationStatus === 'fail'
-                            ? n.colors.error
-                            : n.colors.accent
-                      }
-                    />
-                  )}
-                </TouchableOpacity>
-              </View>
-              <LinearText style={styles.hint}>
-                Optional fallback for image search when MedPix, Open-i, and Wikimedia return
-                nothing.
-              </LinearText>
-              <LinearText style={styles.label}>Google Custom Search API Key</LinearText>
-              <View style={styles.apiKeyRow}>
-                <TextInput
-                  style={[
-                    styles.input,
-                    styles.apiKeyInput,
-                    googleValidationStatus === 'ok' && styles.inputSuccess,
-                    googleValidationStatus === 'fail' && styles.inputError,
-                  ]}
-                  placeholder="Google API key"
-                  placeholderTextColor={n.colors.textMuted}
-                  value={googleCustomSearchApiKey}
-                  onChangeText={(value: string) => {
-                    setGoogleCustomSearchApiKey(value);
-                    clearProviderValidated('google');
-                  }}
-                  secureTextEntry
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                />
-                <TouchableOpacity
-                  style={styles.validateBtn}
-                  onPress={testGoogleCustomSearchKey}
-                  disabled={testingGoogleCustomSearchKey}
-                  activeOpacity={0.8}
-                >
-                  {testingGoogleCustomSearchKey ? (
-                    <ActivityIndicator size="small" color={n.colors.accent} />
-                  ) : (
-                    <Ionicons
-                      name={
-                        googleCustomSearchKeyTestResult === 'ok'
-                          ? 'checkmark-circle'
-                          : googleCustomSearchKeyTestResult === 'fail'
-                            ? 'close-circle'
-                            : 'search-outline'
-                      }
-                      size={20}
-                      color={
-                        googleCustomSearchKeyTestResult === 'ok'
-                          ? n.colors.success
-                          : googleCustomSearchKeyTestResult === 'fail'
-                            ? n.colors.error
-                            : n.colors.accent
-                      }
-                    />
-                  )}
-                </TouchableOpacity>
-              </View>
-              <LinearText style={styles.hint}>
-                Uses search engine ID 5085c21a1fd974c13 (medical sites). Enables high-quality image
-                search for quizzes, flashcards, and chat.
-              </LinearText>
-              <View style={styles.modelChipRow}>
-                {imageGenerationOptions.map((opt) => (
-                  <TouchableOpacity
-                    key={opt.value}
-                    style={[
-                      styles.freqBtn,
-                      imageGenerationModel === opt.value && styles.freqBtnActive,
-                    ]}
-                    onPress={() => setImageGenerationModel(opt.value)}
-                    activeOpacity={0.8}
-                  >
-                    <LinearText
-                      style={[
-                        styles.freqText,
-                        imageGenerationModel === opt.value && styles.freqTextActive,
-                      ]}
-                    >
-                      {opt.label}
-                    </LinearText>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </SubSectionToggle>
-
-            <View style={styles.subSectionDivider} />
-            <SubSectionToggle id="ai_transcription" title="TRANSCRIPTION">
-              <LinearText style={styles.hint}>
-                Configure transcription providers and keys used by Recording Vault and external
-                lecture processing.
-              </LinearText>
-              <TranscriptionSettingsPanel embedded />
-            </SubSectionToggle>
-
-            {/* ── Local AI ────────────────────────────── */}
-            <View style={styles.subSectionDivider} />
-            <SubSectionToggle id="ai_local_ai" title="LOCAL AI">
-              <LinearText style={styles.hint}>
-                Run AI on-device for offline chat and local transcription.
-              </LinearText>
-              {localAiEnabled && (
-                <LinearText style={[styles.hint, styles.localAiEnabledHint]}>
-                  Local AI is currently enabled.
-                </LinearText>
-              )}
-              <View style={styles.localAiStatusRow}>
-                <LinearText style={[styles.localAiStatusText, styles.localAiStatusTextWrap]}>
-                  LLM model:{' '}
-                  <LinearText
-                    numberOfLines={2}
-                    style={localLlmReady ? styles.localAiModelName : styles.localAiModelMissing}
-                  >
-                    {localLlmReady ? localLlmFileName : 'Not installed'}
-                  </LinearText>
-                </LinearText>
-                {profile?.useLocalModel && localLlmReady ? (
-                  <View style={styles.localAiActiveDot} />
-                ) : null}
-              </View>
-              <View style={styles.localAiStatusRow}>
-                <LinearText style={[styles.localAiStatusText, styles.localAiStatusTextWrap]}>
-                  Whisper model:{' '}
-                  <LinearText
-                    numberOfLines={2}
-                    style={localWhisperReady ? styles.localAiModelName : styles.localAiModelMissing}
-                  >
-                    {localWhisperReady ? localWhisperFileName : 'Not installed'}
-                  </LinearText>
-                </LinearText>
-                {profile?.useLocalWhisper && localWhisperReady ? (
-                  <View style={styles.localAiActiveDot} />
-                ) : null}
-              </View>
-              {!localLlmAllowed && (
-                <LinearText style={[styles.hint, styles.localAiWarningHint]}>
-                  {localLlmWarning}
-                </LinearText>
-              )}
-              <TouchableOpacity
-                style={styles.localModelBtn}
-                activeOpacity={0.8}
-                onPress={() => navigation.navigate('LocalModel' as any)}
-              >
-                <Ionicons
-                  name="download-outline"
-                  size={18}
-                  color={n.colors.textPrimary}
-                  style={{ marginRight: 8 }}
-                />
-                <LinearText style={styles.localModelBtnText}>Manage Local AI Models</LinearText>
-              </TouchableOpacity>
-            </SubSectionToggle>
-          </SectionToggle>
-
-          <LinearText style={styles.categoryLabel}>ACCOUNT</LinearText>
-          <SectionToggle
-            id="permissions"
-            title="Permissions & Diagnostics"
-            icon="shield-checkmark-outline"
-            tint="#4CAF50"
-          >
-            <PermissionRow
-              label="Notifications"
-              status={permStatus.notifs}
-              onFix={async () => {
-                await Notifications.requestPermissionsAsync();
-                checkPermissions();
-              }}
-            />
-            <PermissionRow
-              label="Microphone (Audio)"
-              status={permStatus.mic}
-              onFix={async () => {
-                await Audio.requestPermissionsAsync();
-                checkPermissions();
-              }}
-            />
-            {Platform.OS === 'android' && (
-              <PermissionRow
-                label="Local File Access (Audio Imports)"
-                status={permStatus.localFiles}
-                onFix={async () => {
-                  await PermissionsAndroid.request(LOCAL_FILE_ACCESS_PERMISSION);
-                  checkPermissions();
-                }}
-              />
-            )}
-            {Platform.OS === 'android' && (
-              <PermissionRow
-                label="Draw Over Apps (Break Overlay)"
-                status={permStatus.overlay}
-                onFix={async () => {
-                  await requestOverlayPermission();
-                  Alert.alert(
-                    'Overlay Permission',
-                    'Please enable Guru in the settings screen that just opened, then return to the app.',
-                  );
-                }}
-              />
-            )}
-            <TouchableOpacity style={styles.diagBtn} onPress={() => Linking.openSettings()}>
-              <LinearText style={styles.diagBtnText}>Open System Settings</LinearText>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.diagBtn, { marginTop: 8 }]}
-              onPress={() => {
-                const { devConsole } = require('../components/DevConsole');
-                devConsole.show();
-              }}
-            >
-              <LinearText style={styles.diagBtnText}>Open Dev Console</LinearText>
-            </TouchableOpacity>
-          </SectionToggle>
-
-          <SectionToggle id="profile" title="Profile" icon="person-outline" tint="#8EC5FF">
-            <TouchableOpacity
-              style={[
-                styles.testBtn,
-                { marginTop: 0, marginBottom: 16, borderColor: 'rgba(63,185,80,0.08)' },
-              ]}
-              onPress={() => navigation.navigate('DeviceLink')}
-              activeOpacity={0.8}
-            >
-              <LinearText style={[styles.testBtnText, { color: n.colors.success }]}>
-                📱 Link Another Device (Sync)
-              </LinearText>
-            </TouchableOpacity>
-            <Label text="Your name" />
-            <TextInput
-              style={styles.input}
-              placeholder="Dr. ..."
-              placeholderTextColor={n.colors.textMuted}
-              value={name}
-              onChangeText={setName}
-            />
-          </SectionToggle>
-
-          <SectionToggle id="exam_dates" title="Exam Dates" icon="calendar-outline" tint="#FF9800">
-            <Label text="INICET date (YYYY-MM-DD)" />
-            <TextInput
-              style={styles.input}
-              value={inicetDate}
-              onChangeText={setInicetDate}
-              placeholderTextColor={n.colors.textMuted}
-            />
-            <Label text="NEET-PG date (YYYY-MM-DD)" />
-            <TextInput
-              style={styles.input}
-              value={neetDate}
-              onChangeText={setNeetDate}
-              placeholderTextColor={n.colors.textMuted}
-            />
-            <TouchableOpacity
-              style={[styles.autoFetchBtn, fetchingDates && styles.autoFetchBtnDisabled]}
-              onPress={handleAutoFetchDates}
-              disabled={fetchingDates}
-              activeOpacity={0.8}
-            >
-              {fetchingDates ? (
-                <ActivityIndicator size="small" color={n.colors.accent} />
-              ) : (
-                <LinearText style={styles.autoFetchBtnText}>🤖 Auto-fetch dates via AI</LinearText>
-              )}
-            </TouchableOpacity>
-            {fetchDatesMsg ? (
-              <LinearText
-                style={[
-                  styles.hint,
-                  fetchDatesMsg.startsWith('✅')
-                    ? { color: n.colors.success }
-                    : { color: n.colors.error },
-                ]}
-              >
-                {fetchDatesMsg}
-              </LinearText>
-            ) : (
-              <LinearText style={styles.hint}>
-                Uses AI to estimate upcoming exam dates. Always verify on nbe.edu.in.
-              </LinearText>
-            )}
-          </SectionToggle>
-
-          <LinearText style={styles.categoryLabel}>STUDY</LinearText>
-          <SectionToggle id="live_batch" title="Study Plan" icon="book-outline" tint="#2196F3">
-            <Label text="DBMCI One batch start date (YYYY-MM-DD)" />
-            <TextInput
-              style={styles.input}
-              value={dbmciClassStartDate}
-              onChangeText={setDbmciClassStartDate}
-              placeholder="e.g. 2025-01-06"
-              placeholderTextColor={n.colors.textMuted}
-              autoCapitalize="none"
-            />
-            <LinearText style={styles.hint}>
-              Set this to unlock the live-class position tracker in the Study Plan screen. Guru will
-              highlight which subject DBMCI One is covering today.
-            </LinearText>
-            <Label text="BTR (Back to Roots) batch start date (YYYY-MM-DD)" />
-            <TextInput
-              style={styles.input}
-              value={btrStartDate}
-              onChangeText={setBtrStartDate}
-              placeholder="e.g. 2025-09-01"
-              placeholderTextColor={n.colors.textMuted}
-              autoCapitalize="none"
-            />
-            <LinearText style={styles.hint}>
-              Set this when you start the BTR revision batch. Guru will align your daily revision
-              queue with the current BTR subject.
-            </LinearText>
-            <Label text="Home novelty cooldown (hours)" />
-            <View style={styles.frequencyRow}>
-              {[2, 4, 6, 8, 12].map((hrs) => {
-                const active = (parseInt(homeNoveltyCooldownHours, 10) || 6) === hrs;
-                return (
-                  <TouchableOpacity
-                    key={hrs}
-                    style={[styles.frequencyChip, active && styles.frequencyChipActive]}
-                    onPress={() => setHomeNoveltyCooldownHours(String(hrs))}
-                    activeOpacity={0.8}
-                  >
-                    <LinearText
-                      style={[styles.frequencyChipText, active && styles.frequencyChipTextActive]}
-                    >
-                      {hrs}h
-                    </LinearText>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
-            <LinearText style={styles.hint}>
-              Controls how quickly Home repeats the same topics in DO THIS NOW and UP NEXT. Lower =
-              more repetition, higher = more novelty.
-            </LinearText>
-          </SectionToggle>
-          <SectionToggle
-            id="study_prefs"
-            title="Study Preferences"
-            icon="school-outline"
-            tint="#E040FB"
-          >
-            <Label text="Preferred session length (minutes)" />
-            <TextInput
-              style={styles.input}
-              value={sessionLength}
-              onChangeText={setSessionLength}
-              keyboardType="number-pad"
-              placeholderTextColor={n.colors.textMuted}
-            />
-            <Label text="Daily study goal (minutes)" />
-            <TextInput
-              style={styles.input}
-              value={dailyGoal}
-              onChangeText={setDailyGoal}
-              keyboardType="number-pad"
-              placeholderTextColor={n.colors.textMuted}
-            />
-            <View style={[styles.switchRow, { marginTop: 16 }]}>
-              <View style={{ flex: 1, paddingRight: 8 }}>
-                <LinearText style={styles.switchLabel}>Strict Mode 👮</LinearText>
-                <LinearText style={styles.hint}>
-                  Nag you instantly if you leave the app or are idle. Idle time won't count towards
-                  session duration.
-                </LinearText>
-              </View>
-              <Switch
-                value={strictMode}
-                onValueChange={setStrictMode}
-                trackColor={{ true: n.colors.error, false: n.colors.border }}
-                thumbColor={n.colors.textPrimary}
-              />
-            </View>
-          </SectionToggle>
-
-          <SectionToggle
-            id="notifications"
-            title="Notifications"
-            icon="notifications-outline"
-            tint="#FFD700"
-          >
-            <View style={styles.switchRow}>
-              <View>
-                <LinearText style={styles.switchLabel}>Enable Guru's reminders</LinearText>
-                <LinearText style={styles.hint}>
-                  Guru will send personalized daily accountability messages
-                </LinearText>
-              </View>
-              <Switch
-                value={notifs}
-                onValueChange={setNotifs}
-                trackColor={{ true: n.colors.accent, false: n.colors.border }}
-                thumbColor={n.colors.textPrimary}
-              />
-            </View>
-            <Label text="Reminder hour (0–23, e.g. 7 = 7:30 AM)" />
-            <TextInput
-              style={styles.input}
-              value={notifHour}
-              onChangeText={setNotifHour}
-              keyboardType="number-pad"
-              placeholderTextColor={n.colors.textMuted}
-            />
-            <LinearText style={styles.hint}>Evening nudge fires ~11 hours after this.</LinearText>
-            <Label text="Guru presence frequency" />
-            <View style={styles.frequencyRow}>
-              {(['rare', 'normal', 'frequent', 'off'] as const).map((freq) => (
-                <TouchableOpacity
-                  key={freq}
-                  style={[styles.freqBtn, guruFrequency === freq && styles.freqBtnActive]}
-                  onPress={() => setGuruFrequency(freq)}
-                >
-                  <LinearText
-                    style={[styles.freqText, guruFrequency === freq && styles.freqTextActive]}
-                  >
-                    {freq.charAt(0).toUpperCase() + freq.slice(1)}
-                  </LinearText>
-                </TouchableOpacity>
-              ))}
-            </View>
-            <LinearText style={styles.hint}>
-              How often Guru sends ambient messages during sessions. Rare: every 30min, Normal:
-              every 20min, Frequent: every 10min.
-            </LinearText>
-            <TouchableOpacity style={styles.testBtn} onPress={testNotification} activeOpacity={0.8}>
-              <LinearText style={styles.testBtnText}>Schedule Notifications Now</LinearText>
-            </TouchableOpacity>
-          </SectionToggle>
-
-          <SectionToggle
-            id="body_doubling"
-            title="Body Doubling"
-            icon="people-outline"
-            tint="#7ED6A7"
-          >
-            <View style={styles.switchRow}>
-              <View style={{ flex: 1, paddingRight: 8 }}>
-                <LinearText style={styles.switchLabel}>Guru presence during sessions</LinearText>
-                <LinearText style={styles.hint}>
-                  Ambient toast messages and pulsing dot while you study. Helps with focus.
-                </LinearText>
-              </View>
-              <Switch
-                value={bodyDoubling}
-                onValueChange={setBodyDoubling}
-                trackColor={{ true: n.colors.accent, false: n.colors.border }}
-                thumbColor={n.colors.textPrimary}
-              />
-            </View>
-          </SectionToggle>
-
-          <SectionToggle
-            id="content"
-            title="Content Type Preferences"
-            icon="layers-outline"
-            tint="#FF6B9D"
-          >
-            <LinearText style={styles.hint}>
-              Block card types you don't want in sessions. Keypoints can't be blocked.
-            </LinearText>
-            <View style={styles.chipGrid}>
-              {ALL_CONTENT_TYPES.map(({ type, label }) => {
-                const isBlocked = blockedTypes.includes(type);
-                const isLocked = type === 'keypoints';
-                return (
-                  <TouchableOpacity
-                    key={type}
-                    style={[
-                      styles.typeChip,
-                      isBlocked && styles.typeChipBlocked,
-                      isLocked && styles.typeChipLocked,
-                    ]}
-                    onPress={() => {
-                      if (isLocked) return;
-                      setBlockedTypes((prev) =>
-                        isBlocked ? prev.filter((t) => t !== type) : [...prev, type],
-                      );
-                    }}
-                    activeOpacity={isLocked ? 1 : 0.8}
-                  >
-                    <LinearText
-                      style={[styles.typeChipText, isBlocked && styles.typeChipTextBlocked]}
-                    >
-                      {label}
-                    </LinearText>
-                    {isBlocked && <LinearText style={styles.typeChipX}> ✕</LinearText>}
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
-          </SectionToggle>
-
-          <SectionToggle
-            id="focus_subjects"
-            title="Focus Subjects"
-            icon="flask-outline"
-            tint="#2196F3"
-          >
-            <LinearText style={styles.hint}>
-              Pin subjects to limit sessions to those areas only. Clear all to study everything.
-            </LinearText>
-            <View style={styles.chipGrid}>
-              {subjects.map((s) => {
-                const isFocused = focusSubjectIds.includes(s.id);
-                return (
-                  <TouchableOpacity
-                    key={s.id}
-                    style={[
-                      styles.typeChip,
-                      isFocused && { backgroundColor: s.colorHex + '33', borderColor: s.colorHex },
-                    ]}
-                    onPress={() =>
-                      setFocusSubjectIds((prev) =>
-                        isFocused ? prev.filter((id) => id !== s.id) : [...prev, s.id],
-                      )
-                    }
-                    activeOpacity={0.8}
-                  >
-                    <LinearText style={[styles.typeChipText, isFocused && { color: s.colorHex }]}>
-                      {s.shortCode}
-                    </LinearText>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
-            {focusSubjectIds.length > 0 && (
-              <TouchableOpacity onPress={() => setFocusSubjectIds([])} style={styles.clearBtn}>
-                <LinearText style={styles.clearBtnText}>
-                  Clear focus (study all subjects)
-                </LinearText>
-              </TouchableOpacity>
-            )}
-          </SectionToggle>
-
-          <SectionToggle id="session" title="Session Timing" icon="timer-outline" tint="#FF9800">
-            <Label text="Idle timeout (minutes before auto-pause)" />
-            <TextInput
-              style={styles.input}
-              value={idleTimeout}
-              onChangeText={setIdleTimeout}
-              keyboardType="number-pad"
-              placeholderTextColor={n.colors.textMuted}
-            />
-            <Label text="Break duration between topics (minutes)" />
-            <TextInput
-              style={styles.input}
-              value={breakDuration}
-              onChangeText={setBreakDuration}
-              keyboardType="number-pad"
-              placeholderTextColor={n.colors.textMuted}
-            />
-          </SectionToggle>
-
-          <SectionToggle
-            id="pomodoro"
-            title="Pomodoro (Lecture Overlay)"
-            icon="alarm-outline"
-            tint="#F44336"
-          >
-            <View style={styles.switchRow}>
-              <View style={{ flex: 1, paddingRight: 8 }}>
-                <LinearText style={styles.switchLabel}>Enable Pomodoro Suggestion</LinearText>
-                <LinearText style={styles.hint}>
-                  Auto-expand the external lecture overlay every interval to suggest a break.
-                </LinearText>
-              </View>
-              <Switch
-                value={pomodoroEnabled}
-                onValueChange={setPomodoroEnabled}
-                trackColor={{ true: n.colors.accent, false: n.colors.border }}
-                thumbColor={n.colors.textPrimary}
-              />
-            </View>
-            <LinearText
-              style={[
-                styles.hint,
-                {
-                  color: pomodoroLectureQuizReady
-                    ? n.colors.success
-                    : pomodoroEnabled
-                      ? n.colors.error
-                      : n.colors.textMuted,
-                },
-              ]}
-            >
-              {pomodoroLectureQuizReady
-                ? 'Lecture-aware break quizzes are ready.'
-                : pomodoroEnabled
-                  ? 'Currently this will only suggest a break until overlay permission, Groq, and Deepgram are configured.'
-                  : 'Pomodoro break suggestions are off.'}
-            </LinearText>
-            {!hasPomodoroOverlayPermission && (
-              <TouchableOpacity
-                style={[
-                  styles.validateBtn,
-                  { alignSelf: 'flex-start', paddingHorizontal: 14, marginTop: 6 },
-                ]}
-                onPress={async () => {
-                  await requestOverlayPermission();
-                  await checkPermissions();
-                }}
-                activeOpacity={0.8}
-              >
-                <LinearText style={styles.testBtnText}>Grant Overlay Permission</LinearText>
-              </TouchableOpacity>
-            )}
-            <View style={[styles.chipGrid, { marginTop: 10 }]}>
-              {[
-                { label: 'Overlay', ready: hasPomodoroOverlayPermission },
-                { label: 'Groq', ready: hasPomodoroGroqKey },
-                { label: 'Deepgram', ready: hasPomodoroDeepgramKey },
-              ].map((item) => (
-                <View
-                  key={item.label}
-                  style={[
-                    styles.typeChip,
-                    {
-                      backgroundColor: item.ready ? n.colors.success + '18' : n.colors.error + '12',
-                      borderColor: item.ready ? n.colors.success : n.colors.error,
-                    },
-                  ]}
-                >
-                  <LinearText
-                    style={[
-                      styles.typeChipText,
-                      { color: item.ready ? n.colors.success : n.colors.error },
-                    ]}
-                  >
-                    {item.label}
-                  </LinearText>
-                </View>
-              ))}
-            </View>
-            <Label text="Pomodoro interval (minutes)" />
-            <TextInput
-              style={styles.input}
-              value={pomodoroInterval}
-              onChangeText={setPomodoroInterval}
-              keyboardType="number-pad"
-              placeholderTextColor={n.colors.textMuted}
-              editable={pomodoroEnabled}
-            />
-            <View style={styles.modelChipRow}>
-              {['5', '10', '20', '25', '30', '40'].map((value) => (
-                <TouchableOpacity
-                  key={value}
-                  style={[styles.freqBtn, pomodoroInterval === value && styles.freqBtnActive]}
-                  onPress={() => setPomodoroInterval(value)}
-                  disabled={!pomodoroEnabled}
-                  activeOpacity={0.8}
-                >
-                  <LinearText
-                    style={[
-                      styles.freqText,
-                      pomodoroInterval === value && styles.freqTextActive,
-                      !pomodoroEnabled && { opacity: 0.45 },
-                    ]}
-                  >
-                    {value}m
-                  </LinearText>
-                </TouchableOpacity>
-              ))}
-            </View>
-            <LinearText style={styles.hint}>
-              Suggested: 20-30 minutes. The overlay can suggest a break without quiz data, but
-              lecture-aware quiz breaks need both Groq and Deepgram.
-            </LinearText>
-          </SectionToggle>
-
-          <LinearText style={styles.categoryLabel}>STORAGE</LinearText>
-          <SectionToggle id="data" title="Data" icon="trash-outline" tint="#F44336">
-            <TouchableOpacity
-              style={styles.dangerBtn}
-              onPress={() =>
-                Alert.alert(
-                  'Clear AI Cache?',
-                  'All cached content cards will be regenerated fresh on next use.',
-                  [
-                    { text: 'Cancel', style: 'cancel' },
-                    {
-                      text: 'Clear',
-                      style: 'destructive',
-                      onPress: () => {
-                        clearAiCache();
-                        Alert.alert('Done', 'AI cache cleared.');
-                      },
-                    },
-                  ],
-                )
-              }
-              activeOpacity={0.8}
-            >
-              <LinearText style={styles.dangerBtnText}>Clear AI Content Cache</LinearText>
-            </TouchableOpacity>
-            <LinearText style={styles.hint}>
-              Forces fresh generation of all key points, quizzes, stories, etc.
-            </LinearText>
-            <TouchableOpacity
-              style={[styles.dangerBtn, { borderColor: 'rgba(241,76,76,0.08)', marginTop: 10 }]}
-              onPress={async () => {
-                const result = await showDialog({
-                  title: 'Reset all progress?',
-                  message:
-                    'This clears all topic progress, XP, streaks, and daily logs. This cannot be undone. Export a backup first.',
-                  variant: 'destructive',
-                  actions: [
-                    { id: 'cancel', label: 'Cancel', variant: 'secondary' },
-                    {
-                      id: 'reset-progress',
-                      label: 'Reset',
-                      variant: 'destructive',
-                      isDestructive: true,
-                    },
-                  ],
-                  allowDismiss: true,
-                });
-
-                if (result !== 'reset-progress') return;
-
-                resetStudyProgress();
-                refreshProfile();
-                showToast({
-                  title: 'Reset',
-                  message: 'Progress has been wiped. Start fresh!',
-                  variant: 'success',
-                });
-              }}
-              activeOpacity={0.8}
-            >
-              <LinearText style={[styles.dangerBtnText, { color: n.colors.error }]}>
-                Reset All Progress
-              </LinearText>
-            </TouchableOpacity>
-            <LinearText style={styles.hint}>
-              Wipes XP, streaks, topic statuses, and daily logs. API keys are kept.
-            </LinearText>
-          </SectionToggle>
-
-          <SectionToggle
-            id="unified_backup"
-            title="Unified Backup & Restore"
-            icon="archive-outline"
-            tint="#4CAF50"
-          >
-            <LinearText style={styles.hint}>
-              Export your entire study data (database, transcripts, images) to a single .guru backup
-              file, or restore from a previous backup.
-            </LinearText>
-            {(profile as any)?.lastAutoBackupAt && (
-              <LinearText style={styles.backupDate}>
-                Last auto-backup: {new Date((profile as any).lastAutoBackupAt).toLocaleString()}
-              </LinearText>
-            )}
-            <View style={styles.backupRow}>
-              <TouchableOpacity
-                style={[styles.backupBtn, backupBusy && styles.saveBtnDisabled]}
-                disabled={backupBusy}
-                activeOpacity={0.8}
-                onPress={async () => {
-                  setBackupBusy(true);
-                  try {
-                    const success = await exportUnifiedBackup();
-                    if (success) {
-                      const now = new Date().toISOString();
-                      updateUserProfile({ lastBackupDate: now } as any);
-                      refreshProfile();
-                    }
-                  } catch (e: any) {
-                    Alert.alert('Export failed', e?.message ?? 'Unknown error');
-                  } finally {
-                    setBackupBusy(false);
-                  }
-                }}
-              >
-                {backupBusy ? (
-                  <ActivityIndicator size="small" color={n.colors.textPrimary} />
-                ) : (
-                  <LinearText style={styles.backupBtnText}>Create Full Backup</LinearText>
-                )}
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[
-                  styles.backupBtn,
-                  { borderColor: 'rgba(63,185,80,0.08)' },
-                  backupBusy && styles.saveBtnDisabled,
-                ]}
-                disabled={backupBusy}
-                activeOpacity={0.8}
-                onPress={async () => {
-                  Alert.alert(
-                    'Restore from backup?',
-                    'This will overwrite your current data with data from the .guru backup file. You can selectively restore settings, progress, transcripts, and images.',
-                    [
-                      { text: 'Cancel', style: 'cancel' },
-                      {
-                        text: 'Restore',
-                        style: 'destructive',
-                        onPress: async () => {
-                          setBackupBusy(true);
-                          try {
-                            const res = await importUnifiedBackup();
-                            Alert.alert(res.ok ? 'Restored!' : 'Import failed', res.message);
-                            if (res.ok) refreshProfile();
-                          } catch (e: any) {
-                            Alert.alert('Import failed', e?.message ?? 'Unknown error');
-                          } finally {
-                            setBackupBusy(false);
-                          }
-                        },
-                      },
-                    ],
-                  );
-                }}
-              >
-                <LinearText style={[styles.backupBtnText, { color: n.colors.success }]}>
-                  Restore from Backup
-                </LinearText>
-              </TouchableOpacity>
-            </View>
-
-            <View style={styles.subSectionDivider} />
-            <LinearText style={styles.subSectionLabel}>Auto-Backup Frequency</LinearText>
-            <LinearText style={styles.hint}>
-              Automatically create backups when the app starts.
-            </LinearText>
-            <View style={styles.frequencyRow}>
-              {(['off', 'daily', '3days', 'weekly', 'monthly'] as AutoBackupFrequency[]).map(
-                (freq) => (
-                  <TouchableOpacity
-                    key={freq}
-                    style={[
-                      styles.frequencyChip,
-                      autoBackupFrequency === freq && styles.frequencyChipActive,
-                    ]}
-                    onPress={() => setAutoBackupFrequency(freq)}
-                    activeOpacity={0.8}
-                  >
-                    <LinearText
-                      style={[
-                        styles.frequencyChipText,
-                        autoBackupFrequency === freq && styles.frequencyChipTextActive,
-                      ]}
-                    >
-                      {freq === 'off'
-                        ? 'Off'
-                        : freq === '3days'
-                          ? '3 Days'
-                          : freq.charAt(0).toUpperCase() + freq.slice(1)}
-                    </LinearText>
-                  </TouchableOpacity>
-                ),
-              )}
-            </View>
-            <TouchableOpacity
-              style={[styles.maintenanceBtn, backupBusy && styles.saveBtnDisabled]}
-              disabled={backupBusy}
-              activeOpacity={0.8}
-              onPress={async () => {
-                Alert.alert(
-                  'Run Auto-Backup Now?',
-                  'This will create an automatic backup regardless of your frequency setting.',
-                  [
-                    { text: 'Cancel', style: 'cancel' },
-                    {
-                      text: 'Run Backup',
-                      onPress: async () => {
-                        setBackupBusy(true);
-                        try {
-                          const success = await runAutoBackup();
-                          if (success) {
-                            const now = new Date().toISOString();
-                            await profileRepository.updateProfile({ lastAutoBackupAt: now } as any);
-                            refreshProfile();
-                            Alert.alert('Auto-backup complete');
-                          } else {
-                            Alert.alert('Failed', 'Auto-backup failed. Check logs for details.');
-                          }
-                        } catch (e: any) {
-                          Alert.alert('Failed', e?.message ?? 'Unknown error');
-                        } finally {
-                          setBackupBusy(false);
-                        }
-                      },
-                    },
-                  ],
-                );
-              }}
-            >
-              <LinearText style={styles.maintenanceBtnText}>Run Auto-Backup Now</LinearText>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.maintenanceBtn, backupBusy && styles.saveBtnDisabled]}
-              disabled={backupBusy}
-              activeOpacity={0.8}
-              onPress={async () => {
-                setBackupBusy(true);
-                try {
-                  await cleanupOldBackups(5);
-                  Alert.alert('Cleanup complete', 'Old backups have been cleaned up.');
-                } catch (e: any) {
-                  Alert.alert('Cleanup failed', e?.message ?? 'Unknown error');
-                } finally {
-                  setBackupBusy(false);
-                }
-              }}
-            >
-              <LinearText style={styles.maintenanceBtnText}>Clean Up Old Backups</LinearText>
-            </TouchableOpacity>
-
-            <View style={styles.subSectionDivider} />
-            <LinearText style={styles.subSectionLabel}>Google Drive Sync</LinearText>
-            <LinearText style={styles.hint}>
-              Back up to Google Drive to sync between devices and survive app reinstalls.
-            </LinearText>
-            <LinearText style={[styles.label, { marginTop: 12 }]}>Google Web Client ID</LinearText>
-            <LinearText style={styles.hint}>
-              Paste your Google OAuth Web application client ID here once. Guru stores it in your
-              profile so future sign-ins do not require a rebuild.
-            </LinearText>
-            <TextInput
-              value={gdriveWebClientId}
-              onChangeText={setGdriveWebClientId}
-              placeholder="Your Google Web Client ID"
-              placeholderTextColor={n.colors.textMuted}
-              autoCapitalize="none"
-              autoCorrect={false}
-              editable={!backupBusy}
-              style={{
-                borderWidth: 1,
-                borderColor: n.colors.border,
-                backgroundColor: n.colors.surface,
-                color: n.colors.textPrimary,
-                borderRadius: 12,
-                paddingHorizontal: 12,
-                paddingVertical: 12,
-                marginTop: 8,
-              }}
-            />
-            {(profile as any)?.gdriveConnected ? (
-              <View>
-                <LinearText style={[styles.backupDate, { marginBottom: 8 }]}>
-                  Connected: {(profile as any)?.gdriveEmail || 'Google Account'}
-                </LinearText>
-                {(profile as any)?.gdriveLastSyncAt && (
-                  <LinearText style={styles.backupDate}>
-                    Last sync: {new Date((profile as any).gdriveLastSyncAt).toLocaleString()}
-                  </LinearText>
-                )}
-                <View style={styles.backupRow}>
-                  <TouchableOpacity
-                    style={[styles.backupBtn, backupBusy && styles.saveBtnDisabled]}
-                    disabled={backupBusy}
-                    activeOpacity={0.8}
-                    onPress={async () => {
-                      setBackupBusy(true);
-                      try {
-                        const { runAutoBackup } = await import('../services/unifiedBackupService');
-                        const success = await runAutoBackup();
-                        if (success) {
-                          refreshProfile();
-                          Alert.alert('Synced', 'Backup uploaded to Google Drive.');
-                        } else {
-                          Alert.alert('Sync failed', 'Could not create or upload backup.');
-                        }
-                      } catch (e: any) {
-                        Alert.alert('Sync failed', e?.message ?? 'Unknown error');
-                      } finally {
-                        setBackupBusy(false);
-                      }
-                    }}
-                  >
-                    <LinearText style={styles.backupBtnText}>Sync Now</LinearText>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={[
-                      styles.backupBtn,
-                      { borderColor: n.colors.error },
-                      backupBusy && styles.saveBtnDisabled,
-                    ]}
-                    disabled={backupBusy}
-                    activeOpacity={0.8}
-                    onPress={() => {
-                      Alert.alert(
-                        'Disconnect Google Drive?',
-                        'Auto-sync will stop. Your existing backups on Drive will remain.',
-                        [
-                          { text: 'Cancel', style: 'cancel' },
-                          {
-                            text: 'Disconnect',
-                            style: 'destructive',
-                            onPress: async () => {
-                              try {
-                                const { signOutGDrive } =
-                                  await import('../services/gdriveBackupService');
-                                await signOutGDrive();
-                                refreshProfile();
-                              } catch (e: any) {
-                                Alert.alert('Error', e?.message ?? 'Failed to disconnect');
-                              }
-                            },
-                          },
-                        ],
-                      );
-                    }}
-                  >
-                    <LinearText style={[styles.backupBtnText, { color: n.colors.error }]}>
-                      Disconnect
-                    </LinearText>
-                  </TouchableOpacity>
-                </View>
-              </View>
-            ) : (
-              <TouchableOpacity
-                style={[styles.backupBtn, { marginTop: 8 }, backupBusy && styles.saveBtnDisabled]}
-                disabled={backupBusy}
-                activeOpacity={0.8}
-                onPress={async () => {
-                  const resolvedGoogleClientId =
-                    gdriveWebClientId.trim() ||
-                    GOOGLE_WEB_CLIENT_ID ||
-                    profile?.gdriveWebClientId?.trim();
-                  if (!resolvedGoogleClientId) {
-                    Alert.alert(
-                      'Google Drive setup required',
-                      'Paste your Google OAuth Web application client ID in the field above, or provide EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID in your build config.',
-                    );
-                    return;
-                  }
-                  setBackupBusy(true);
-                  try {
-                    const { signInToGDrive } = await import('../services/gdriveBackupService');
-                    await updateUserProfile({ gdriveWebClientId: resolvedGoogleClientId } as any);
-                    const result = await signInToGDrive(resolvedGoogleClientId);
-                    refreshProfile();
-                    Alert.alert(
-                      'Connected!',
-                      `Signed in as ${result.email}. Your backups will now sync to Google Drive.`,
-                    );
-                  } catch (e: any) {
-                    if (e?.code !== 'SIGN_IN_CANCELLED') {
-                      const code = String(e?.code ?? '');
-                      const msg = String(e?.message ?? '');
-                      const isDeveloperError =
-                        code === '10' ||
-                        code === 'DEVELOPER_ERROR' ||
-                        msg.toLowerCase().includes('developer error');
-
-                      if (isDeveloperError) {
-                        Alert.alert(
-                          'Google Sign-In: Developer error',
-                          'Troubleshooting:\n\n1. In Google Cloud, create an Android OAuth client for package com.anonymous.gurustudy.\n2. Add SHA-1 and SHA-256 for your signing key (debug and release if needed).\n3. Keep this Web Client ID and Android client in the same Google project.\n4. Ensure OAuth consent screen is configured and your Google account is added as a test user.\n5. Uninstall/reinstall the app and retry sign-in.',
-                        );
-                      } else {
-                        Alert.alert(
-                          'Sign-in failed',
-                          e?.message ?? 'Could not connect to Google Drive',
-                        );
-                      }
-                    }
-                  } finally {
-                    setBackupBusy(false);
-                  }
-                }}
-              >
-                <LinearText style={styles.backupBtnText}>Connect Google Drive</LinearText>
-              </TouchableOpacity>
-            )}
-          </SectionToggle>
-
-          <SectionToggle
-            id="advanced"
-            title="Library Maintenance"
-            icon="construct-outline"
-            tint="#8080A0"
-          >
-            <LinearText style={styles.hint}>
-              Run repair and recovery only when you need it instead of during startup.
-            </LinearText>
-            <TouchableOpacity
-              style={[styles.maintenanceBtn, maintenanceBusy !== null && styles.saveBtnDisabled]}
-              disabled={maintenanceBusy !== null}
-              activeOpacity={0.8}
-              onPress={() =>
-                runMaintenanceTask(
-                  'retry',
-                  async () => {
-                    const { retryFailedTasks } =
-                      await import('../services/lecture/lectureSessionMonitor');
-                    const activeProfile = await getUserProfile();
-                    return retryFailedTasks(activeProfile?.groqApiKey || undefined);
-                  },
-                  {
-                    done: 'Lecture retry finished',
-                    none: 'Lecture retry checked',
-                    failed: 'Lecture retry failed',
-                  },
-                )
-              }
-            >
-              {maintenanceBusy === 'retry' ? (
-                <ActivityIndicator size="small" color={n.colors.textPrimary} />
-              ) : (
-                <LinearText style={styles.maintenanceBtnText}>
-                  Retry failed lecture processing
-                </LinearText>
-              )}
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.maintenanceBtn, maintenanceBusy !== null && styles.saveBtnDisabled]}
-              disabled={maintenanceBusy !== null}
-              activeOpacity={0.8}
-              onPress={() =>
-                runMaintenanceTask(
-                  'legacy',
-                  async () => {
-                    const { autoRepairLegacyNotes } =
-                      await import('../services/lecture/lectureSessionMonitor');
-                    return autoRepairLegacyNotes();
-                  },
-                  {
-                    done: 'Legacy notes repaired',
-                    none: 'Legacy notes checked',
-                    failed: 'Legacy note repair failed',
-                  },
-                )
-              }
-            >
-              {maintenanceBusy === 'legacy' ? (
-                <ActivityIndicator size="small" color={n.colors.textPrimary} />
-              ) : (
-                <LinearText style={styles.maintenanceBtnText}>
-                  Repair legacy lecture notes
-                </LinearText>
-              )}
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.maintenanceBtn, maintenanceBusy !== null && styles.saveBtnDisabled]}
-              disabled={maintenanceBusy !== null}
-              activeOpacity={0.8}
-              onPress={() =>
-                runMaintenanceTask(
-                  'transcripts',
-                  async () => {
-                    const { scanAndRecoverOrphanedTranscripts } =
-                      await import('../services/lecture/lectureSessionMonitor');
-                    return scanAndRecoverOrphanedTranscripts();
-                  },
-                  {
-                    done: 'Orphan transcripts recovered',
-                    none: 'Transcript folders checked',
-                    failed: 'Transcript recovery failed',
-                  },
-                )
-              }
-            >
-              {maintenanceBusy === 'transcripts' ? (
-                <ActivityIndicator size="small" color={n.colors.textPrimary} />
-              ) : (
-                <LinearText style={styles.maintenanceBtnText}>
-                  Recover orphan transcripts
-                </LinearText>
-              )}
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.maintenanceBtn, maintenanceBusy !== null && styles.saveBtnDisabled]}
-              disabled={maintenanceBusy !== null}
-              activeOpacity={0.8}
-              onPress={() =>
-                runMaintenanceTask(
-                  'recordings',
-                  async () => {
-                    const { scanAndRecoverOrphanedRecordings } =
-                      await import('../services/lecture/lectureSessionMonitor');
-                    return scanAndRecoverOrphanedRecordings();
-                  },
-                  {
-                    done: 'Orphan recordings recovered',
-                    none: 'Recording folders checked',
-                    failed: 'Recording recovery failed',
-                  },
-                )
-              }
-            >
-              {maintenanceBusy === 'recordings' ? (
-                <ActivityIndicator size="small" color={n.colors.textPrimary} />
-              ) : (
-                <LinearText style={styles.maintenanceBtnText}>Recover orphan recordings</LinearText>
-              )}
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.maintenanceBtn, maintenanceBusy !== null && styles.saveBtnDisabled]}
-              disabled={maintenanceBusy !== null}
-              activeOpacity={0.8}
-              onPress={() =>
-                runMaintenanceTask(
-                  'cleanup_artifacts',
-                  async () => {
-                    const { cleanupFailedArtifacts } =
-                      await import('../services/lecture/lectureSessionMonitor');
-                    return cleanupFailedArtifacts();
-                  },
-                  {
-                    done: 'Failed artifacts cleaned up',
-                    none: 'No failed artifacts found',
-                    failed: 'Artifact cleanup failed',
-                  },
-                )
-              }
-            >
-              {maintenanceBusy === 'cleanup_artifacts' ? (
-                <ActivityIndicator size="small" color={n.colors.textPrimary} />
-              ) : (
-                <LinearText style={styles.maintenanceBtnText}>
-                  Clean up failed AI artifacts
-                </LinearText>
-              )}
-            </TouchableOpacity>
-          </SectionToggle>
+          <StorageSections
+            styles={styles}
+            SectionToggle={SectionToggle}
+            profile={profile}
+            backupBusy={backupBusy}
+            setBackupBusy={setBackupBusy}
+            refreshProfile={refreshProfile}
+            clearAiCache={clearAiCache}
+            resetStudyProgress={resetStudyProgress}
+            exportUnifiedBackup={exportUnifiedBackup}
+            importUnifiedBackup={importUnifiedBackup}
+            updateUserProfile={updateUserProfile}
+            autoBackupFrequency={autoBackupFrequency}
+            setAutoBackupFrequency={setAutoBackupFrequency}
+            runAutoBackup={runAutoBackup}
+            cleanupOldBackups={cleanupOldBackups}
+            profileRepository={profileRepository}
+            gdriveWebClientId={gdriveWebClientId}
+            setGdriveWebClientId={setGdriveWebClientId}
+            GOOGLE_WEB_CLIENT_ID={GOOGLE_WEB_CLIENT_ID}
+            signInToGDrive={signInToGDrive}
+            signOutGDrive={signOutGDrive}
+            maintenanceBusy={maintenanceBusy}
+            runMaintenanceTask={runMaintenanceTask}
+            getUserProfile={getUserProfile}
+          />
 
           {saving && (
             <View style={[styles.saveBtn, styles.saveBtnDisabled]}>
               <ActivityIndicator size="small" color={n.colors.textPrimary} />
-              <LinearText style={[styles.saveBtnText, { marginLeft: 8 }]}>Auto-saving…</LinearText>
+              <LinearText style={[styles.saveBtnText, { marginLeft: 8 }]}>
+                Auto-savingâ€¦
+              </LinearText>
             </View>
           )}
 
-          <LinearText style={styles.footer}>Guru AI · v1.0.0</LinearText>
+          <LinearText style={styles.footer}>Guru AI Â· v1.0.0</LinearText>
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -5114,7 +2187,7 @@ function PermissionRow({
       <View style={{ flex: 1 }}>
         <LinearText style={styles.permLabel}>{label}</LinearText>
         <LinearText style={[styles.permStatus, isOk ? styles.permOk : styles.permError]}>
-          {isOk ? '✓ Active' : status === 'denied' ? '✗ Disabled' : '○ Not Set'}
+          {isOk ? 'âœ“ Active' : status === 'denied' ? 'âœ— Disabled' : 'â—‹ Not Set'}
         </LinearText>
       </View>
       {!isOk && (
@@ -5130,7 +2203,7 @@ function Label({ text }: { text: string }) {
   return <LinearText style={styles.label}>{text}</LinearText>;
 }
 
-/** Dropdown picker for model selection — replaces congested chip rows. */
+/** Dropdown picker for model selection â€” replaces congested chip rows. */
 function ModelDropdown({
   label,
   value,
@@ -5156,7 +2229,7 @@ function ModelDropdown({
         <LinearText style={styles.dropdownValue} numberOfLines={2}>
           {selectedLabel}
         </LinearText>
-        <LinearText style={styles.dropdownArrow}>▾</LinearText>
+        <LinearText style={styles.dropdownArrow}>â–¾</LinearText>
       </TouchableOpacity>
       <Modal visible={open} transparent animationType="fade" onRequestClose={() => setOpen(false)}>
         <Pressable style={styles.dropdownBackdrop} onPress={() => setOpen(false)}>
@@ -5187,7 +2260,9 @@ function ModelDropdown({
                       >
                         {opt.label}
                       </LinearText>
-                      {value === opt.id && <LinearText style={styles.dropdownCheck}>✓</LinearText>}
+                      {value === opt.id && (
+                        <LinearText style={styles.dropdownCheck}>âœ“</LinearText>
+                      )}
                     </TouchableOpacity>
                   </React.Fragment>
                 );

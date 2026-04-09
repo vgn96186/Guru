@@ -1,6 +1,7 @@
 import React from 'react';
-import { View, Text, TextInput, StyleSheet } from 'react-native';
+import { View, TextInput, StyleSheet } from 'react-native';
 import { linearTheme as n } from '../../theme/linearTheme';
+import LinearText from '../primitives/LinearText';
 
 interface StudyGoalsSectionProps {
   inicetDate: string;
@@ -29,10 +30,14 @@ function StudyGoalsSection({
 }: StudyGoalsSectionProps) {
   return (
     <View style={styles.section}>
-      <Text style={styles.sectionTitle}>STUDY GOALS</Text>
+      <LinearText variant="sectionTitle" tone="muted" style={styles.sectionTitle}>
+        STUDY GOALS
+      </LinearText>
 
       <View style={styles.inputGroup}>
-        <Text style={styles.label}>INICET Exam Date</Text>
+        <LinearText variant="label" style={styles.label}>
+          INICET Exam Date
+        </LinearText>
         <TextInput
           style={[styles.input, errorInicet && styles.inputError]}
           value={inicetDate}
@@ -40,11 +45,17 @@ function StudyGoalsSection({
           placeholder="YYYY-MM-DD"
           placeholderTextColor={n.colors.textMuted}
         />
-        {errorInicet && <Text style={styles.errorText}>{errorInicet}</Text>}
+        {errorInicet && (
+          <LinearText variant="caption" tone="warning" style={styles.errorText}>
+            {errorInicet}
+          </LinearText>
+        )}
       </View>
 
       <View style={styles.inputGroup}>
-        <Text style={styles.label}>NEET-PG Exam Date</Text>
+        <LinearText variant="label" style={styles.label}>
+          NEET-PG Exam Date
+        </LinearText>
         <TextInput
           style={[styles.input, errorNeet && styles.inputError]}
           value={neetDate}
@@ -52,12 +63,18 @@ function StudyGoalsSection({
           placeholder="YYYY-MM-DD"
           placeholderTextColor={n.colors.textMuted}
         />
-        {errorNeet && <Text style={styles.errorText}>{errorNeet}</Text>}
+        {errorNeet && (
+          <LinearText variant="caption" tone="warning" style={styles.errorText}>
+            {errorNeet}
+          </LinearText>
+        )}
       </View>
 
       <View style={styles.row}>
         <View style={[styles.inputGroup, { flex: 1, marginRight: 8 }]}>
-          <Text style={styles.label}>Session (min)</Text>
+          <LinearText variant="label" style={styles.label}>
+            Session (min)
+          </LinearText>
           <TextInput
             style={styles.input}
             value={sessionLength}
@@ -66,7 +83,9 @@ function StudyGoalsSection({
           />
         </View>
         <View style={[styles.inputGroup, { flex: 1, marginLeft: 8 }]}>
-          <Text style={styles.label}>Goal (min/day)</Text>
+          <LinearText variant="label" style={styles.label}>
+            Goal (min/day)
+          </LinearText>
           <TextInput
             style={styles.input}
             value={dailyGoal}

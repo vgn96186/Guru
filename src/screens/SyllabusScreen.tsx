@@ -6,11 +6,11 @@ import {
   StatusBar,
   FlatList,
   TouchableOpacity,
-  Alert,
   ActivityIndicator,
   InteractionManager,
   ScrollView,
 } from 'react-native';
+import { showInfo } from '../components/dialogService';
 import ReAnimated, {
   useSharedValue,
   useAnimatedStyle,
@@ -440,7 +440,7 @@ function SyllabusScreenContent() {
       `--- Topics Per Subject ---\n${summary}\n\n` +
       `--- Subjects Map ---\n${subjects.map((s: any) => `${s.id}: ${s.name}`).join('\n')}`;
 
-    Alert.alert('Database State', diag);
+    showInfo('Database State', diag);
   }
 
   const totalTopics = Array.from(coverage.values()).reduce((s, v) => s + v.total, 0);

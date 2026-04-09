@@ -1,6 +1,7 @@
 import React from 'react';
-import { View, Text, TextInput, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, TextInput, StyleSheet, TouchableOpacity } from 'react-native';
 import { linearTheme as n } from '../../theme/linearTheme';
+import LinearText from '../primitives/LinearText';
 
 interface ProfileSectionProps {
   name: string;
@@ -18,9 +19,9 @@ function ProfileSection({
   return (
     <View style={styles.container}>
       {!isSyncAvailable && (
-        <Text style={styles.syncWarning}>
+        <LinearText variant="bodySmall" tone="error" style={styles.syncWarning}>
           Tablet Sync is currently unavailable on this device (MQTT module missing).
-        </Text>
+        </LinearText>
       )}
       <TouchableOpacity
         style={[styles.linkBtn, !isSyncAvailable && styles.disabledBtn]}
@@ -29,12 +30,17 @@ function ProfileSection({
         accessibilityRole="button"
         accessibilityLabel="Link another device for sync"
       >
-        <Text style={[styles.linkBtnText, !isSyncAvailable && styles.disabledText]}>
-          📱 Link Another Device (Sync)
-        </Text>
+        <LinearText
+          variant="body"
+          style={[styles.linkBtnText, !isSyncAvailable && styles.disabledText]}
+        >
+          Link Another Device (Sync)
+        </LinearText>
       </TouchableOpacity>
 
-      <Text style={styles.label}>Your Name</Text>
+      <LinearText variant="label" style={styles.label}>
+        Your Name
+      </LinearText>
       <TextInput
         style={styles.input}
         value={name}

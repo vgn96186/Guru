@@ -343,3 +343,7 @@ Use `~/self-improving/` for execution-improvement memory. Before non-trivial wor
 1. Read `~/self-improving/memory.md`
 2. Check `~/self-improving/domains/` and `~/self-improving/projects/`
 3. Read only the smallest relevant domain or project files
+
+## Qwen Added Memories
+
+- Guru is a personal-use app for Vishnu only. No onboarding or first-run tutorial is needed. Skip any onboarding-related work.

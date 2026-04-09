@@ -22,6 +22,7 @@ export interface MindMapNode {
   color: string | null;
   isCenter: boolean;
   aiGenerated: boolean;
+  explanation: string | null;
   createdAt: number;
 }
 
@@ -31,6 +32,7 @@ export interface MindMapEdge {
   sourceNodeId: number;
   targetNodeId: number;
   label: string | null;
+  isCrossLink: boolean;
   createdAt: number;
 }
 
@@ -65,6 +67,7 @@ function toNode(row: any): MindMapNode {
     color: row.color,
     isCenter: !!row.is_center,
     aiGenerated: !!row.ai_generated,
+    explanation: row.explanation ?? null,
     createdAt: row.created_at,
   };
 }
@@ -76,6 +79,7 @@ function toEdge(row: any): MindMapEdge {
     sourceNodeId: row.source_node_id,
     targetNodeId: row.target_node_id,
     label: row.label,
+    isCrossLink: !!row.is_cross_link,
     createdAt: row.created_at,
   };
 }
@@ -158,9 +162,7 @@ export async function bulkUpdateNodePositions(
   mapId: number,
   positions: Array<{ id: number; x: number; y: number }>,
 ): Promise<void> {
-  if (positions.length === 0) {
-    return;
-  }
+  if (positions.length === 0) return;
 
   const db = getDb();
   for (const position of positions) {
@@ -179,9 +181,16 @@ export async function updateNodeLabel(nodeId: number, label: string): Promise<vo
   await db.runAsync('UPDATE mind_map_nodes SET label = ? WHERE id = ?', [label, nodeId]);
 }
 
+export async function updateNodeExplanation(nodeId: number, explanation: string): Promise<void> {
+  const db = getDb();
+  await db.runAsync('UPDATE mind_map_nodes SET explanation = ? WHERE id = ?', [
+    explanation,
+    nodeId,
+  ]);
+}
+
 export async function deleteNode(nodeId: number): Promise<void> {
   const db = getDb();
-  // Edges cascade-delete via FK
   await db.runAsync('DELETE FROM mind_map_nodes WHERE id = ?', [nodeId]);
 }
 
@@ -190,12 +199,13 @@ export async function addEdge(
   sourceNodeId: number,
   targetNodeId: number,
   label?: string,
+  isCrossLink?: boolean,
 ): Promise<number> {
   const db = getDb();
   const now = nowTs();
   const result = await db.runAsync(
-    'INSERT INTO mind_map_edges (map_id, source_node_id, target_node_id, label, created_at) VALUES (?, ?, ?, ?, ?)',
-    [mapId, sourceNodeId, targetNodeId, label ?? null, now],
+    'INSERT INTO mind_map_edges (map_id, source_node_id, target_node_id, label, is_cross_link, created_at) VALUES (?, ?, ?, ?, ?, ?)',
+    [mapId, sourceNodeId, targetNodeId, label ?? null, isCrossLink ? 1 : 0, now],
   );
   await touchMindMap(mapId);
   return result.lastInsertRowId;
@@ -225,7 +235,14 @@ export async function loadFullMindMap(mapId: number): Promise<MindMapFull | null
   };
 }
 
-/** Bulk insert nodes + edges from AI generation. Returns inserted node IDs keyed by temp label. */
+/** Delete all nodes and edges for a map (used before regeneration). */
+export async function clearMindMapContents(mapId: number): Promise<void> {
+  const db = getDb();
+  await db.runAsync('DELETE FROM mind_map_edges WHERE map_id = ?', [mapId]);
+  await db.runAsync('DELETE FROM mind_map_nodes WHERE map_id = ?', [mapId]);
+}
+
+/** Bulk insert nodes + edges from AI generation. Returns inserted node IDs. */
 export async function bulkInsertNodesAndEdges(
   mapId: number,
   nodes: Array<{
@@ -236,7 +253,7 @@ export async function bulkInsertNodesAndEdges(
     isCenter?: boolean;
     topicId?: number;
   }>,
-  edges: Array<{ sourceIndex: number; targetIndex: number; label?: string }>,
+  edges: Array<{ sourceIndex: number; targetIndex: number; label?: string; isCrossLink?: boolean }>,
 ): Promise<number[]> {
   const db = getDb();
   const now = nowTs();
@@ -256,12 +273,28 @@ export async function bulkInsertNodesAndEdges(
     const tgtId = nodeIds[e.targetIndex];
     if (srcId != null && tgtId != null) {
       await db.runAsync(
-        'INSERT INTO mind_map_edges (map_id, source_node_id, target_node_id, label, created_at) VALUES (?, ?, ?, ?, ?)',
-        [mapId, srcId, tgtId, e.label ?? null, now],
+        'INSERT INTO mind_map_edges (map_id, source_node_id, target_node_id, label, is_cross_link, created_at) VALUES (?, ?, ?, ?, ?, ?)',
+        [mapId, srcId, tgtId, e.label ?? null, e.isCrossLink ? 1 : 0, now],
       );
     }
   }
 
   await touchMindMap(mapId);
   return nodeIds;
+}
+
+/** Find syllabus topic IDs matching a label (fuzzy). Returns up to 3 matches. */
+export async function findTopicsByLabel(
+  label: string,
+): Promise<Array<{ id: number; name: string; subjectName: string }>> {
+  const db = getDb();
+  const rows = await db.getAllAsync<{ id: number; name: string; subject_name: string }>(
+    `SELECT t.id, t.name, s.name as subject_name
+     FROM topics t JOIN subjects s ON t.subject_id = s.id
+     WHERE LOWER(t.name) LIKE ?
+     ORDER BY t.inicet_priority DESC
+     LIMIT 3`,
+    [`%${label.toLowerCase()}%`],
+  );
+  return rows.map((r) => ({ id: r.id, name: r.name, subjectName: r.subject_name }));
 }

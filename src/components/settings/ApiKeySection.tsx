@@ -1,6 +1,7 @@
 import React from 'react';
-import { View, Text, TextInput, StyleSheet } from 'react-native';
+import { View, TextInput, StyleSheet } from 'react-native';
 import { linearTheme as n } from '../../theme/linearTheme';
+import LinearText from '../primitives/LinearText';
 
 interface ApiKeySectionProps {
   groqKey: string;
@@ -17,10 +18,14 @@ function ApiKeySection({
 }: ApiKeySectionProps) {
   return (
     <View style={styles.section}>
-      <Text style={styles.sectionTitle}>AI API KEYS</Text>
+      <LinearText variant="sectionTitle" tone="muted" style={styles.sectionTitle}>
+        AI API KEYS
+      </LinearText>
 
       <View style={styles.inputGroup}>
-        <Text style={styles.label}>Groq API Key (Fastest)</Text>
+        <LinearText variant="label" style={styles.label}>
+          Groq API Key (Fastest)
+        </LinearText>
         <TextInput
           style={styles.input}
           value={groqKey}
@@ -31,11 +36,15 @@ function ApiKeySection({
           autoCapitalize="none"
           autoCorrect={false}
         />
-        <Text style={styles.hint}>Used for high-speed transcription and note generation.</Text>
+        <LinearText variant="bodySmall" tone="muted" style={styles.hint}>
+          Used for high-speed transcription and note generation.
+        </LinearText>
       </View>
 
       <View style={styles.inputGroup}>
-        <Text style={styles.label}>OpenRouter API Key (Fallback)</Text>
+        <LinearText variant="label" style={styles.label}>
+          OpenRouter API Key (Fallback)
+        </LinearText>
         <TextInput
           style={styles.input}
           value={openRouterKey}
@@ -46,7 +55,9 @@ function ApiKeySection({
           autoCapitalize="none"
           autoCorrect={false}
         />
-        <Text style={styles.hint}>Fallback for complex reasoning when Groq is unavailable.</Text>
+        <LinearText variant="bodySmall" tone="muted" style={styles.hint}>
+          Fallback for complex reasoning when Groq is unavailable.
+        </LinearText>
       </View>
     </View>
   );

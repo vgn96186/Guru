@@ -5,7 +5,6 @@ import {
   TouchableOpacity,
   FlatList,
   StatusBar,
-  Alert,
   Modal,
   ActivityIndicator,
 } from 'react-native';
@@ -30,6 +29,7 @@ import {
 } from '../db/queries/questionBank';
 import type { QuestionBankItem, QuestionFilters } from '../types';
 import { emphasizeHighYieldMarkdown } from '../utils/highlightMarkdown';
+import { confirmDestructive, showInfo } from '../components/dialogService';
 
 type FilterMode = 'all' | 'due' | 'bookmarked' | 'mastered';
 
@@ -99,18 +99,15 @@ export default function QuestionBankScreen() {
   );
 
   const handleDelete = useCallback(
-    (id: number) => {
-      Alert.alert('Delete Question', 'Remove this question from your bank?', [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            await deleteQuestion(id);
-            loadData();
-          },
-        },
-      ]);
+    async (id: number) => {
+      const ok = await confirmDestructive(
+        'Delete Question',
+        'Remove this question from your bank?',
+      );
+      if (ok) {
+        await deleteQuestion(id);
+        loadData();
+      }
     },
     [loadData],
   );
@@ -119,7 +116,7 @@ export default function QuestionBankScreen() {
   const startPractice = useCallback(async () => {
     const set = await getPracticeSet(10);
     if (set.length === 0) {
-      Alert.alert('No Questions', 'Add some questions first by studying topics or taking quizzes.');
+      showInfo('No Questions', 'Add some questions first by studying topics or taking quizzes.');
       return;
     }
     setPracticeQuestions(set);
@@ -147,7 +144,7 @@ export default function QuestionBankScreen() {
       // End of practice
       setPracticeActive(false);
       loadData();
-      Alert.alert('Practice Complete', `Score: ${practiceScore}/${practiceQuestions.length}`);
+      showInfo('Practice Complete', `Score: ${practiceScore}/${practiceQuestions.length}`);
       return;
     }
     setPracticeIndex((i) => i + 1);

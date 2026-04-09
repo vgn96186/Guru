@@ -1046,7 +1046,17 @@ DROP TABLE ai_cache_old;`,
     sql: `ALTER TABLE user_profile ADD COLUMN disabled_providers TEXT NOT NULL DEFAULT '[]'`,
     description: 'Add per-provider disable toggles',
   },
+  {
+    version: 159,
+    sql: `ALTER TABLE mind_map_nodes ADD COLUMN explanation TEXT`,
+    description: 'Add cached AI explanation text to mind map nodes',
+  },
+  {
+    version: 160,
+    sql: `ALTER TABLE mind_map_edges ADD COLUMN is_cross_link INTEGER NOT NULL DEFAULT 0`,
+    description: 'Flag cross-link edges for distinct visual rendering',
+  },
 ];
 
 /** Latest schema version. Bump when adding new migrations. */
-export const LATEST_VERSION = 158;
+export const LATEST_VERSION = 160;

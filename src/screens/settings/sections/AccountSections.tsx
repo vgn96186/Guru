@@ -1,9 +1,10 @@
 import React from 'react';
-import { ActivityIndicator, Platform, Text, TouchableOpacity } from 'react-native';
+import { ActivityIndicator, Platform, TouchableOpacity } from 'react-native';
 import SettingsPermissionRow from '../components/SettingsPermissionRow';
 import ProfileSection from './ProfileSection';
 import SettingsLabel from '../components/SettingsLabel';
 import LinearTextInput from '../../../components/primitives/LinearTextInput';
+import LinearText from '../../../components/primitives/LinearText';
 import { linearTheme } from '../../../theme/linearTheme';
 
 export default function AccountSections(props: any) {
@@ -31,7 +32,9 @@ export default function AccountSections(props: any) {
 
   return (
     <>
-      <Text style={styles.categoryLabel}>ACCOUNT</Text>
+      <LinearText variant="sectionTitle" tone="muted" style={styles.categoryLabel}>
+        ACCOUNT
+      </LinearText>
       <SectionToggle
         id="permissions"
         title="Permissions & Diagnostics"
@@ -43,7 +46,11 @@ export default function AccountSections(props: any) {
           status={permStatus.notifs}
           onFix={onRequestNotifications}
         />
-        <SettingsPermissionRow label="Microphone (Audio)" status={permStatus.mic} onFix={onRequestMic} />
+        <SettingsPermissionRow
+          label="Microphone (Audio)"
+          status={permStatus.mic}
+          onFix={onRequestMic}
+        />
         {Platform.OS === 'android' && (
           <SettingsPermissionRow
             label="Local File Access (Audio Imports)"
@@ -59,10 +66,14 @@ export default function AccountSections(props: any) {
           />
         )}
         <TouchableOpacity style={styles.diagBtn} onPress={onOpenSystemSettings}>
-          <Text style={styles.diagBtnText}>Open System Settings</Text>
+          <LinearText variant="body" style={styles.diagBtnText}>
+            Open System Settings
+          </LinearText>
         </TouchableOpacity>
         <TouchableOpacity style={[styles.diagBtn, { marginTop: 8 }]} onPress={onOpenDevConsole}>
-          <Text style={styles.diagBtnText}>Open Dev Console</Text>
+          <LinearText variant="body" style={styles.diagBtnText}>
+            Open Dev Console
+          </LinearText>
         </TouchableOpacity>
       </SectionToggle>
 
@@ -98,11 +109,14 @@ export default function AccountSections(props: any) {
           {fetchingDates ? (
             <ActivityIndicator size="small" color={linearTheme.colors.accent} />
           ) : (
-            <Text style={styles.autoFetchBtnText}>🤖 Auto-fetch dates via AI</Text>
+            <LinearText variant="body" style={styles.autoFetchBtnText}>
+              🤖 Auto-fetch dates via AI
+            </LinearText>
           )}
         </TouchableOpacity>
         {fetchDatesMsg ? (
-          <Text
+          <LinearText
+            variant="body"
             style={[
               styles.hint,
               fetchDatesMsg.startsWith('✅')
@@ -111,11 +125,11 @@ export default function AccountSections(props: any) {
             ]}
           >
             {fetchDatesMsg}
-          </Text>
+          </LinearText>
         ) : (
-          <Text style={styles.hint}>
+          <LinearText variant="body" tone="muted" style={styles.hint}>
             Uses AI to estimate upcoming exam dates. Always verify on nbe.edu.in.
-          </Text>
+          </LinearText>
         )}
       </SectionToggle>
     </>

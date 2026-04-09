@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { View, ScrollView, TouchableOpacity, StyleSheet, StatusBar, Alert } from 'react-native';
+import { View, ScrollView, TouchableOpacity, StyleSheet, StatusBar } from 'react-native';
 import LinearText from '../components/primitives/LinearText';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { getFlaggedContent, setContentFlagged, type FlaggedItem } from '../db/queries/aiCache';
@@ -10,6 +10,7 @@ import { ResponsiveContainer } from '../hooks/useResponsive';
 import { emphasizeHighYieldMarkdown } from '../utils/highlightMarkdown';
 import ScreenHeader from '../components/ScreenHeader';
 import LinearSurface from '../components/primitives/LinearSurface';
+import { confirmDestructive } from '../components/dialogService';
 
 function renderPreview(item: FlaggedItem) {
   const c = item.content;
@@ -140,23 +141,15 @@ export default function FlaggedReviewScreen() {
     };
   }, []);
 
-  const handleUnflag = useCallback((item: FlaggedItem) => {
-    Alert.alert(
+  const handleUnflag = useCallback(async (item: FlaggedItem) => {
+    const ok = await confirmDestructive(
       'Remove flag?',
       `Unflag "${item.topicName}" (${CONTENT_TYPE_LABELS[item.contentType]})?`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Unflag',
-          style: 'destructive',
-          onPress: async () => {
-            await setContentFlagged(item.topicId, item.contentType, false);
-            const nextItems = await getFlaggedContent();
-            setItems(nextItems);
-          },
-        },
-      ],
     );
+    if (!ok) return;
+    await setContentFlagged(item.topicId, item.contentType, false);
+    const nextItems = await getFlaggedContent();
+    setItems(nextItems);
   }, []);
 
   const toggleExpand = useCallback((key: string) => {

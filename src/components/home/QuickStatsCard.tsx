@@ -1,9 +1,10 @@
 import React, { useCallback, useState } from 'react';
-import { Pressable, View, Text, StyleSheet } from 'react-native';
+import { Pressable, View, StyleSheet } from 'react-native';
 import Svg, { Circle } from 'react-native-svg';
 import { Ionicons } from '@expo/vector-icons';
 import { linearTheme as n } from '../../theme/linearTheme';
 import LinearSurface from '../primitives/LinearSurface';
+import LinearText from '../primitives/LinearText';
 import { profileRepository } from '../../db/repositories';
 import { useAppStore } from '../../store/useAppStore';
 
@@ -59,7 +60,9 @@ export default React.memo(function QuickStatsCard({
           size={18}
           color={done ? n.colors.success : n.colors.accent}
         />
-        <Text style={[styles.label, done && { color: n.colors.success }]}>DAILY PROGRESS</Text>
+        <LinearText variant="chip" tone={done ? 'success' : 'accent'} style={styles.label}>
+          DAILY PROGRESS
+        </LinearText>
       </View>
 
       <View style={styles.progressRow}>
@@ -88,26 +91,37 @@ export default React.memo(function QuickStatsCard({
             />
           </Svg>
           <View style={[StyleSheet.absoluteFill, styles.ringLabel]} pointerEvents="none">
-            <Text style={[styles.ringPercent, done && { color: n.colors.success }]}>
+            <LinearText
+              variant="title"
+              tone={done ? 'success' : 'primary'}
+              style={styles.ringPercent}
+            >
               {progressClamped}%
-            </Text>
+            </LinearText>
           </View>
         </View>
 
         <View style={styles.copy}>
-          <Text style={styles.minutesBig}>
+          <LinearText variant="display" tone="primary" style={styles.minutesBig}>
             {todayMinutes}
-            <Text style={styles.minutesUnit}> min</Text>
-          </Text>
+            <LinearText variant="body" tone="muted" style={styles.minutesUnit}>
+              {' '}
+              min
+            </LinearText>
+          </LinearText>
           <View style={styles.goalToggle}>
             {done ? (
               <View style={styles.doneRow}>
                 <Ionicons name="checkmark-circle" size={14} color={n.colors.success} />
-                <Text style={styles.doneLabel}>Goal reached</Text>
+                <LinearText variant="bodySmall" tone="success" style={styles.doneLabel}>
+                  Goal reached
+                </LinearText>
               </View>
             ) : (
               <View style={styles.goalInline}>
-                <Text style={styles.minutesLeft}>{minutesLeft} min left</Text>
+                <LinearText variant="bodySmall" tone="secondary" style={styles.minutesLeft}>
+                  {minutesLeft} min left
+                </LinearText>
                 <Pressable
                   style={({ pressed }) => [
                     styles.goalBadge,
@@ -118,7 +132,9 @@ export default React.memo(function QuickStatsCard({
                   hitSlop={6}
                 >
                   <Ionicons name="flag" size={11} color={n.colors.accent} />
-                  <Text style={styles.goalBadgeText}>{dailyGoal}m</Text>
+                  <LinearText variant="chip" tone="accent" style={styles.goalBadgeText}>
+                    {dailyGoal}m
+                  </LinearText>
                 </Pressable>
                 {showGoalPicker &&
                   GOAL_PRESETS.filter((m) => m !== dailyGoal).map((m) => (
@@ -127,7 +143,9 @@ export default React.memo(function QuickStatsCard({
                       style={({ pressed }) => [styles.goalChip, pressed && styles.goalChipPressed]}
                       onPress={() => handleGoalChange(m)}
                     >
-                      <Text style={styles.goalChipText}>{m >= 60 ? `${m / 60}h` : `${m}m`}</Text>
+                      <LinearText variant="chip" tone="secondary" style={styles.goalChipText}>
+                        {m >= 60 ? `${m / 60}h` : `${m}m`}
+                      </LinearText>
                     </Pressable>
                   ))}
               </View>
@@ -174,7 +192,15 @@ function MetaChip({
   return (
     <View style={[styles.metaChip, { backgroundColor: bgColor }]}>
       <Ionicons name={icon} size={14} color={color} />
-      <Text style={[styles.metaChipText, { color }]}>{label}</Text>
+      <LinearText
+        variant="chip"
+        tone={
+          color === n.colors.warning ? 'warning' : color === n.colors.success ? 'success' : 'accent'
+        }
+        style={[styles.metaChipText, { color }]}
+      >
+        {label}
+      </LinearText>
     </View>
   );
 }

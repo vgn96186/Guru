@@ -1,6 +1,7 @@
 import React from 'react';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { StyleSheet, TouchableOpacity, View } from 'react-native';
 import { linearTheme } from '../../../theme/linearTheme';
+import LinearText from '../../../components/primitives/LinearText';
 
 export default function SettingsPermissionRow({
   label,
@@ -16,14 +17,21 @@ export default function SettingsPermissionRow({
   return (
     <View style={styles.permRow}>
       <View style={{ flex: 1 }}>
-        <Text style={styles.permLabel}>{label}</Text>
-        <Text style={[styles.permStatus, isOk ? styles.permOk : styles.permError]}>
+        <LinearText variant="label" style={styles.permLabel}>
+          {label}
+        </LinearText>
+        <LinearText
+          variant="caption"
+          style={[styles.permStatus, isOk ? styles.permOk : styles.permError]}
+        >
           {isOk ? '✓ Active' : status === 'denied' ? '✗ Disabled' : '○ Not Set'}
-        </Text>
+        </LinearText>
       </View>
       {!isOk && (
         <TouchableOpacity style={styles.fixBtn} onPress={onFix}>
-          <Text style={styles.fixBtnText}>Fix</Text>
+          <LinearText variant="caption" style={styles.fixBtnText}>
+            Fix
+          </LinearText>
         </TouchableOpacity>
       )}
     </View>
@@ -38,7 +46,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: linearTheme.colors.border,
   },
-  permLabel: { color: linearTheme.colors.textPrimary, fontSize: 14, fontWeight: '600' },
+  permLabel: { fontSize: 14, fontWeight: '600' },
   permStatus: { fontSize: 12, marginTop: 2 },
   permOk: { color: linearTheme.colors.success },
   permError: { color: linearTheme.colors.error },

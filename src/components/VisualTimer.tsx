@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { View, StyleSheet, Text } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 import Svg, { Circle, G } from 'react-native-svg';
 import Animated, {
   useSharedValue,
@@ -9,6 +9,7 @@ import Animated, {
   interpolateColor,
 } from 'react-native-reanimated';
 import { linearTheme as n } from '../theme/linearTheme';
+import LinearText from './primitives/LinearText';
 
 // Create animated wrapper for Svg Circle
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
@@ -90,7 +91,9 @@ export default function VisualTimer({
       </Svg>
       {/* Time Text Overlay */}
       <View style={[styles.textContainer, StyleSheet.absoluteFill]}>
-        <Text style={styles.timeText}>{timeString}</Text>
+        <LinearText variant="sectionTitle" tone="primary" style={styles.timeText}>
+          {timeString}
+        </LinearText>
       </View>
     </View>
   );

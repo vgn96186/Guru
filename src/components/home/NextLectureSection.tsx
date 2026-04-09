@@ -1,8 +1,9 @@
 import React, { useCallback, useState } from 'react';
-import { View, Text, StyleSheet, Pressable, InteractionManager } from 'react-native';
+import { View, StyleSheet, Pressable, InteractionManager } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import LinearSurface from '../primitives/LinearSurface';
+import LinearText from '../primitives/LinearText';
 import { linearTheme as n } from '../../theme/linearTheme';
 import {
   getNextLectures,
@@ -88,7 +89,9 @@ export default function NextLectureSection({ onLectureCompleted }: NextLectureSe
 
         return (
           <View key={info.batchId} style={styles.sectionWrap}>
-            <Text style={styles.sectionLabel}>{info.batchShortName} LECTURE</Text>
+            <LinearText variant="chip" tone="muted" style={styles.sectionLabel}>
+              {info.batchShortName} LECTURE
+            </LinearText>
             <Pressable
               onPress={() => handleCardPress(info)}
               style={({ pressed }) => [styles.cardPressable, pressed && styles.cardPressed]}
@@ -100,13 +103,18 @@ export default function NextLectureSection({ onLectureCompleted }: NextLectureSe
                 <View style={styles.lectureRow}>
                   <View style={[styles.subjectDot, { backgroundColor: subColor }]} />
                   <View style={styles.lectureInfo}>
-                    <Text style={styles.lectureTitle} numberOfLines={1}>
+                    <LinearText
+                      variant="body"
+                      tone="primary"
+                      style={styles.lectureTitle}
+                      numberOfLines={1}
+                    >
                       {info.lecture.title}
-                    </Text>
-                    <Text style={styles.lectureSubtitle}>
+                    </LinearText>
+                    <LinearText variant="caption" tone="muted" style={styles.lectureSubtitle}>
                       Lecture {info.lecture.index} • {info.completedCount}/{info.totalCount} ({pct}
                       %)
-                    </Text>
+                    </LinearText>
                   </View>
                   <Pressable
                     style={({ pressed }) => [

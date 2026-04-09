@@ -1,6 +1,7 @@
 import React from 'react';
-import { View, Text, TextInput, StyleSheet, Switch, TouchableOpacity } from 'react-native';
+import { View, TextInput, StyleSheet, Switch, TouchableOpacity } from 'react-native';
 import { linearTheme as n } from '../../theme/linearTheme';
+import LinearText from '../primitives/LinearText';
 
 interface NotificationSectionProps {
   enabled: boolean;
@@ -14,45 +15,68 @@ interface NotificationSectionProps {
 }
 
 function NotificationSection({
-  enabled, onEnabledChange, hour, onHourChange,
-  frequency, onFrequencyChange, onTest, error
+  enabled,
+  onEnabledChange,
+  hour,
+  onHourChange,
+  frequency,
+  onFrequencyChange,
+  onTest,
+  error,
 }: NotificationSectionProps) {
   return (
     <View style={styles.container}>
       <View style={styles.switchRow}>
         <View style={{ flex: 1 }}>
-          <Text style={styles.label}>Enable Guru's reminders</Text>
-          <Text style={styles.hint}>Personalized daily accountability messages</Text>
+          <LinearText variant="label" style={styles.label}>
+            Enable Guru's reminders
+          </LinearText>
+          <LinearText variant="caption" tone="muted" style={styles.hint}>
+            Personalized daily accountability messages
+          </LinearText>
         </View>
         <Switch value={enabled} onValueChange={onEnabledChange} />
       </View>
 
-      <Text style={styles.label}>Reminder hour (0–23, e.g. 7 = 7:30 AM)</Text>
+      <LinearText variant="label" style={styles.label}>
+        Reminder hour (0-23, e.g. 7 = 7:30 AM)
+      </LinearText>
       <TextInput
         style={[styles.input, !!error && styles.inputError]}
         value={hour}
         onChangeText={onHourChange}
         keyboardType="number-pad"
       />
-      {!!error && <Text style={styles.errorText}>{error}</Text>}
+      {!!error && (
+        <LinearText variant="caption" tone="error" style={styles.errorText}>
+          {error}
+        </LinearText>
+      )}
 
-      <Text style={styles.label}>Guru presence frequency</Text>
+      <LinearText variant="label" style={styles.label}>
+        Guru presence frequency
+      </LinearText>
       <View style={styles.frequencyRow}>
-        {(['rare', 'normal', 'frequent', 'off'] as const).map(freq => (
+        {(['rare', 'normal', 'frequent', 'off'] as const).map((freq) => (
           <TouchableOpacity
             key={freq}
             style={[styles.freqBtn, frequency === freq && styles.freqBtnActive]}
             onPress={() => onFrequencyChange(freq)}
           >
-            <Text style={[styles.freqText, frequency === freq && styles.freqTextActive]}>
+            <LinearText
+              variant="bodySmall"
+              style={[styles.freqText, frequency === freq && styles.freqTextActive]}
+            >
               {freq.charAt(0).toUpperCase() + freq.slice(1)}
-            </Text>
+            </LinearText>
           </TouchableOpacity>
         ))}
       </View>
-      
+
       <TouchableOpacity style={styles.testBtn} onPress={onTest}>
-        <Text style={styles.testBtnText}>Schedule Notifications Now</Text>
+        <LinearText variant="body" tone="accent" style={styles.testBtnText}>
+          Schedule Notifications Now
+        </LinearText>
       </TouchableOpacity>
     </View>
   );
@@ -62,7 +86,12 @@ export default React.memo(NotificationSection);
 
 const styles = StyleSheet.create({
   container: { gap: 12 },
-  switchRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
+  switchRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
   label: { color: n.colors.textPrimary, fontSize: 13, fontWeight: '700' },
   hint: { color: n.colors.textSecondary, fontSize: 11, marginTop: 2 },
   input: {

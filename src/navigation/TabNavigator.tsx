@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  Alert,
   Animated,
   BackHandler,
   Dimensions,
@@ -74,6 +73,7 @@ import {
   type LectureAnalysis,
 } from '../services/transcriptionService';
 import { resolveLectureSubjectRequirement } from '../services/lecture/lectureSubjectRequirement';
+import { showInfo, showSuccess, showError } from '../components/dialogService';
 import { getSubjectByName } from '../db/queries/topics';
 import { saveLectureTranscript } from '../db/queries/aiCache';
 import { getDb } from '../db/database';
@@ -432,10 +432,7 @@ export default function TabNavigator() {
         localWhisperPath,
       });
     } catch (error: any) {
-      Alert.alert(
-        'Could not open app',
-        error?.message ?? 'Please ensure the lecture app is installed.',
-      );
+      void showError(error, 'Could not open app');
     }
   }
 
@@ -517,7 +514,7 @@ export default function TabNavigator() {
     try {
       res = await DocumentPicker.getDocumentAsync({ type: ['audio/*'] });
     } catch (error: any) {
-      Alert.alert('Error', error?.message ?? 'Could not open the audio picker.');
+      void showError(error, 'Could not open the audio picker.');
       return;
     }
     if (res.canceled || !res.assets[0]) return;
@@ -541,7 +538,7 @@ export default function TabNavigator() {
           : (resolution.matchedSubject?.name ?? resolution.normalizedSubjectName),
       );
     } catch (e: any) {
-      Alert.alert('Error', e.message);
+      void showError(e.message, 'Error');
     } finally {
       setIsTranscribingUpload(false);
       setUploadProgressMsg('');
@@ -551,7 +548,7 @@ export default function TabNavigator() {
   const handleSaveUploadedAudio = useCallback(async () => {
     if (!uploadReview) return;
     if (uploadSubjectRequired && !selectedUploadSubjectName) {
-      Alert.alert('Subject required', 'Choose the lecture subject before saving this upload.');
+      void showInfo('Subject required', 'Choose the lecture subject before saving this upload.');
       return;
     }
 
@@ -582,9 +579,9 @@ export default function TabNavigator() {
       setUploadConfidence(null);
       setUploadSubjectRequired(false);
       setSelectedUploadSubjectName(null);
-      Alert.alert('Success', 'Audio transcribed and added to notes vault.');
+      void showSuccess('Success', 'Audio transcribed and added to notes vault.');
     } catch (e: any) {
-      Alert.alert('Error', e.message);
+      void showError(e.message, 'Error');
     } finally {
       setIsSavingUpload(false);
     }
@@ -847,6 +844,10 @@ export default function TabNavigator() {
           groqKey={groqKey}
           bottomOffset={66 + bottomInset + 12}
           onDone={() => setReturnSheet(null)}
+          onCreateMindMap={(topicName) => {
+            setReturnSheet(null);
+            navigation.navigate('MenuTab', { screen: 'MindMap', params: { topicName } });
+          }}
         />
       ) : null}
 

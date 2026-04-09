@@ -1,6 +1,7 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, StyleSheet, TouchableOpacity } from 'react-native';
 import { linearTheme as n } from '../../theme/linearTheme';
+import LinearText from '../primitives/LinearText';
 import type { ContentType, Subject } from '../../types';
 
 interface ContentPreferencesSectionProps {
@@ -24,8 +25,12 @@ function ContentPreferencesSection({
 }: ContentPreferencesSectionProps) {
   return (
     <View style={styles.container}>
-      <Text style={styles.subTitle}>Focus Subjects</Text>
-      <Text style={styles.hint}>Pin subjects to limit sessions to those areas only.</Text>
+      <LinearText variant="title" style={styles.subTitle}>
+        Focus Subjects
+      </LinearText>
+      <LinearText variant="caption" tone="muted" style={styles.hint}>
+        Pin subjects to limit sessions to those areas only.
+      </LinearText>
       <View style={styles.chipGrid}>
         {subjects.map((s) => {
           const isFocused = focusSubjectIds.includes(s.id);
@@ -38,23 +43,32 @@ function ContentPreferencesSection({
               ]}
               onPress={() => onFocusSubjectToggle(s.id)}
             >
-              <Text style={[styles.chipText, isFocused && { color: s.colorHex }]}>
+              <LinearText
+                variant="chip"
+                style={[styles.chipText, isFocused && { color: s.colorHex }]}
+              >
                 {s.shortCode}
-              </Text>
+              </LinearText>
             </TouchableOpacity>
           );
         })}
       </View>
       {focusSubjectIds.length > 0 && (
         <TouchableOpacity onPress={onClearFocus} style={styles.clearBtn}>
-          <Text style={styles.clearBtnText}>Clear focus (study all)</Text>
+          <LinearText variant="bodySmall" tone="accent" style={styles.clearBtnText}>
+            Clear focus (study all)
+          </LinearText>
         </TouchableOpacity>
       )}
 
       <View style={styles.divider} />
 
-      <Text style={styles.subTitle}>Card Type Preferences</Text>
-      <Text style={styles.hint}>Block types you don't want in sessions.</Text>
+      <LinearText variant="title" style={styles.subTitle}>
+        Card Type Preferences
+      </LinearText>
+      <LinearText variant="caption" tone="muted" style={styles.hint}>
+        Block types you don't want in sessions.
+      </LinearText>
       <View style={styles.chipGrid}>
         {allContentTypes.map(({ type, label }) => {
           const isBlocked = blockedTypes.includes(type);
@@ -66,8 +80,18 @@ function ContentPreferencesSection({
               onPress={() => !isLocked && onContentTypeToggle(type)}
               disabled={isLocked}
             >
-              <Text style={[styles.chipText, isBlocked && styles.chipTextBlocked]}>{label}</Text>
-              {isBlocked && <Text style={styles.chipX}> ✕</Text>}
+              <LinearText
+                variant="chip"
+                style={[styles.chipText, isBlocked && styles.chipTextBlocked]}
+              >
+                {label}
+              </LinearText>
+              {isBlocked && (
+                <LinearText variant="badge" tone="error" style={styles.chipX}>
+                  {' '}
+                  ✕
+                </LinearText>
+              )}
             </TouchableOpacity>
           );
         })}

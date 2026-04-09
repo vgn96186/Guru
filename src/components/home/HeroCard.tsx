@@ -1,7 +1,8 @@
 import React, { useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, Animated, Easing } from 'react-native';
+import { View, StyleSheet, Animated, Easing } from 'react-native';
 import { decorativeIdleDelayMs, useReducedMotion } from '../../motion';
 import { linearTheme as n } from '../../theme/linearTheme';
+import LinearText from '../primitives/LinearText';
 
 interface HeroCardProps {
   daysToInicet: number;
@@ -67,22 +68,32 @@ export default React.memo(function HeroCard({
       accessibilityRole="summary"
       accessibilityLabel={`Exam countdown: INICET in ${daysToInicet} days, NEET-PG in ${daysToNeetPg} days.`}
     >
-      <Text style={styles.label}>EXAM COUNTDOWN</Text>
+      <LinearText variant="chip" tone="muted" style={styles.label}>
+        EXAM COUNTDOWN
+      </LinearText>
       <View style={styles.row}>
         <View style={styles.examBlock}>
-          <Text style={styles.examLabel}>INICET</Text>
+          <LinearText variant="caption" tone="muted" style={styles.examLabel}>
+            INICET
+          </LinearText>
           <Animated.Text style={[styles.examDays, getUrgentDayStyle(isInicetUrgent)]}>
             {daysToInicet}
           </Animated.Text>
-          <Text style={styles.examUnit}>days</Text>
+          <LinearText variant="caption" tone="muted" style={styles.examUnit}>
+            days
+          </LinearText>
         </View>
         <View style={styles.divider} />
         <View style={styles.examBlock}>
-          <Text style={styles.examLabel}>NEET-PG</Text>
+          <LinearText variant="caption" tone="muted" style={styles.examLabel}>
+            NEET-PG
+          </LinearText>
           <Animated.Text style={[styles.examDays, getUrgentDayStyle(isNeetUrgent)]}>
             {daysToNeetPg}
           </Animated.Text>
-          <Text style={styles.examUnit}>days</Text>
+          <LinearText variant="caption" tone="muted" style={styles.examUnit}>
+            days
+          </LinearText>
         </View>
       </View>
     </View>

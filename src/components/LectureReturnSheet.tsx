@@ -38,6 +38,7 @@ interface Props {
   bottomOffset?: number;
   onDone: () => void;
   onStudyNow?: () => void;
+  onCreateMindMap?: (topicName: string) => void;
 }
 
 export default function LectureReturnSheet(props: Props) {
@@ -738,6 +739,18 @@ export default function LectureReturnSheet(props: Props) {
                       ✓ Just Mark as Studied (+{analysis.topics.length * 8} XP)
                     </Text>
                   </TouchableOpacity>
+                  {props.onCreateMindMap && (
+                    <TouchableOpacity
+                      style={styles.outlineBtn}
+                      onPress={() => {
+                        const topic = analysis.subject || analysis.topics[0] || appName;
+                        props.onCreateMindMap!(topic);
+                      }}
+                      activeOpacity={0.85}
+                    >
+                      <Text style={styles.outlineBtnText}>🧠 Create Mind Map</Text>
+                    </TouchableOpacity>
+                  )}
                 </>
               )}
 

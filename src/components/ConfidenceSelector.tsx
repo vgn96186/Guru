@@ -1,6 +1,7 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, TouchableOpacity, StyleSheet } from 'react-native';
 import { linearTheme as n } from '../theme/linearTheme';
+import LinearText from './primitives/LinearText';
 
 const LABELS: Record<1 | 2 | 3, string> = { 1: 'Introduced', 2: 'Understood', 3: 'Confident' };
 const COLORS: Record<1 | 2 | 3, string> = {
@@ -28,9 +29,13 @@ export default React.memo(function ConfidenceSelector({ value, onChange }: Props
             ]}
             onPress={() => onChange(lvl)}
           >
-            <Text style={[styles.optionText, selected && { color: COLORS[lvl] }]}>
+            <LinearText
+              variant="label"
+              tone={selected ? 'primary' : 'muted'}
+              style={[selected && { color: COLORS[lvl] }]}
+            >
               {LABELS[lvl]}
-            </Text>
+            </LinearText>
           </TouchableOpacity>
         );
       })}

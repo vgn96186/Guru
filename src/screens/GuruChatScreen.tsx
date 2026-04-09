@@ -1,7 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   Animated,
   Easing,
   FlatList,
@@ -21,6 +20,7 @@ import {
 } from 'react-native';
 import { ImageLightbox } from '../components/ImageLightbox';
 import { ResilientImage } from '../components/ResilientImage';
+import ErrorBoundary from '../components/ErrorBoundary';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import {
@@ -48,6 +48,7 @@ import {
   type MedicalGroundingSource,
   getApiKeys,
 } from '../services/aiService';
+import { showInfo, showError, confirm, confirmDestructive } from '../components/dialogService';
 import { useAppStore } from '../store/useAppStore';
 import {
   createGuruChatThread,
@@ -618,7 +619,11 @@ const chatSkeletonStyles = StyleSheet.create({
 });
 
 export default function GuruChatScreen() {
-  return <GuruChatScreenContent />;
+  return (
+    <ErrorBoundary>
+      <GuruChatScreenContent />
+    </ErrorBoundary>
+  );
 }
 
 function GuruChatScreenContent() {
@@ -1101,13 +1106,13 @@ function GuruChatScreenContent() {
         await Linking.openURL(url);
       }
     } catch {
-      Alert.alert('Could not open source', 'The source link could not be opened.');
+      void showInfo('Could not open source', 'The source link could not be opened.');
     }
   }
 
   const copyMessage = useCallback(async (text: string) => {
     Clipboard.setString(text);
-    Alert.alert('Copied', 'Message copied to clipboard.');
+    void showInfo('Copied', 'Message copied to clipboard.');
   }, []);
 
   const openThread = useCallback(
@@ -1162,27 +1167,20 @@ function GuruChatScreenContent() {
 
   const handleDeleteThread = useCallback(
     async (thread: GuruChatThread) => {
-      Alert.alert('Delete chat', 'Delete this conversation from history?', [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            await deleteGuruChatThread(thread.id);
-            if (thread.id === currentThreadId) {
-              const fallback =
-                (await getLatestGuruChatThread(topicName, syllabusTopicId)) ??
-                (await createGuruChatThread(topicName, syllabusTopicId));
-              setCurrentThread(fallback);
-              setMessages([]);
-              setBannerVisible(true);
-              setExpandedSourcesMessageId(null);
-              setSessionSummary('');
-            }
-            await refreshThreads();
-          },
-        },
-      ]);
+      const ok = await confirmDestructive('Delete chat', 'Delete this conversation from history?');
+      if (!ok) return;
+      await deleteGuruChatThread(thread.id);
+      if (thread.id === currentThreadId) {
+        const fallback =
+          (await getLatestGuruChatThread(topicName, syllabusTopicId)) ??
+          (await createGuruChatThread(topicName, syllabusTopicId));
+        setCurrentThread(fallback);
+        setMessages([]);
+        setBannerVisible(true);
+        setExpandedSourcesMessageId(null);
+        setSessionSummary('');
+      }
+      await refreshThreads();
     },
     [currentThreadId, refreshThreads, syllabusTopicId, topicName],
   );
@@ -1214,10 +1212,7 @@ function GuruChatScreenContent() {
         );
         scrollToLatest(0);
       } catch (error) {
-        Alert.alert(
-          'Image generation failed',
-          error instanceof Error ? error.message : String(error),
-        );
+        void showError(error, 'Image generation failed');
       } finally {
         setImageJobKey(null);
       }
@@ -1453,23 +1448,20 @@ function GuruChatScreenContent() {
   async function handleRegenerateReply() {
     if (loading) return;
     if (!lastUserPrompt) {
-      Alert.alert('Nothing to regenerate', 'Send a message first.');
+      void showInfo('Nothing to regenerate', 'Send a message first.');
       return;
     }
     await handleSend(lastUserPrompt);
   }
 
-  function startNewChat() {
+  async function startNewChat() {
     if (messages.length > 0) {
-      Alert.alert('New chat', 'Start a new conversation? Current messages will be cleared.', [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'New chat',
-          onPress: () => {
-            void createAndSwitchToNewThread();
-          },
-        },
-      ]);
+      const ok = await confirm(
+        'New chat',
+        'Start a new conversation? Current messages will be cleared.',
+      );
+      if (!ok) return;
+      void createAndSwitchToNewThread();
     } else {
       void createAndSwitchToNewThread();
     }
@@ -1852,22 +1844,15 @@ function GuruChatScreenContent() {
           pressed && styles.pressed,
         ]}
         android_ripple={{ color: `${n.colors.accent}22` }}
-        onPress={() => {
+        onPress={async () => {
           if (messages.length > 0 && model.id !== chosenModel) {
-            Alert.alert(
+            const ok = await confirm(
               'Switch model?',
               "Switching models mid-conversation may lose context. The new model won't remember earlier messages.",
-              [
-                { text: 'Cancel', style: 'cancel' },
-                {
-                  text: 'Switch',
-                  onPress: () => {
-                    applyChosenModel(model.id);
-                    setShowModelPicker(false);
-                  },
-                },
-              ],
             );
+            if (!ok) return;
+            applyChosenModel(model.id);
+            setShowModelPicker(false);
           } else {
             applyChosenModel(model.id);
             setShowModelPicker(false);

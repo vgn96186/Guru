@@ -19,6 +19,7 @@ import {
   StyleSheet,
   View,
   type ImageStyle,
+  type StyleProp,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { linearTheme as n } from '../theme/linearTheme';
@@ -34,7 +35,7 @@ const RETRY_DELAYS_MS = [1000, 3000];
 // ─── Component ───────────────────────────────────────────────────────────────
 export interface ResilientImageProps {
   uri: string;
-  style?: ImageStyle | ImageStyle[];
+  style?: StyleProp<ImageStyle>;
   resizeMode?: 'contain' | 'cover' | 'stretch' | 'repeat' | 'center';
   onPress?: () => void;
   onLongPress?: () => void;

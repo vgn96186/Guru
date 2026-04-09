@@ -1,6 +1,7 @@
 import React from 'react';
-import { Modal, Pressable, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Modal, Pressable, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { linearTheme } from '../../../theme/linearTheme';
+import LinearText from '../../../components/primitives/LinearText';
 import SettingsLabel from './SettingsLabel';
 
 export interface SettingsModelOption {
@@ -31,21 +32,29 @@ export default function SettingsModelDropdown({
         onPress={() => setOpen(true)}
         activeOpacity={0.8}
       >
-        <Text style={styles.dropdownValue} numberOfLines={2}>
+        <LinearText variant="body" style={styles.dropdownValue} numberOfLines={2}>
           {selectedLabel}
-        </Text>
-        <Text style={styles.dropdownArrow}>▾</Text>
+        </LinearText>
+        <LinearText variant="body" tone="muted" style={styles.dropdownArrow}>
+          ▾
+        </LinearText>
       </TouchableOpacity>
       <Modal visible={open} transparent animationType="fade" onRequestClose={() => setOpen(false)}>
         <Pressable style={styles.dropdownBackdrop} onPress={() => setOpen(false)}>
           <View style={styles.dropdownSheet}>
-            <Text style={styles.dropdownSheetTitle}>{label}</Text>
+            <LinearText variant="title" style={styles.dropdownSheetTitle}>
+              {label}
+            </LinearText>
             <ScrollView style={{ maxHeight: 400 }} showsVerticalScrollIndicator>
               {options.map((opt, idx) => {
                 const showGroup = opt.group && (idx === 0 || options[idx - 1]?.group !== opt.group);
                 return (
                   <React.Fragment key={opt.id}>
-                    {showGroup && <Text style={styles.dropdownGroupLabel}>{opt.group}</Text>}
+                    {showGroup && (
+                      <LinearText variant="caption" tone="accent" style={styles.dropdownGroupLabel}>
+                        {opt.group}
+                      </LinearText>
+                    )}
                     <TouchableOpacity
                       style={[styles.dropdownItem, value === opt.id && styles.dropdownItemActive]}
                       onPress={() => {
@@ -54,7 +63,8 @@ export default function SettingsModelDropdown({
                       }}
                       activeOpacity={0.7}
                     >
-                      <Text
+                      <LinearText
+                        variant="body"
                         style={[
                           styles.dropdownItemText,
                           value === opt.id && styles.dropdownItemTextActive,
@@ -62,8 +72,12 @@ export default function SettingsModelDropdown({
                         numberOfLines={2}
                       >
                         {opt.label}
-                      </Text>
-                      {value === opt.id && <Text style={styles.dropdownCheck}>✓</Text>}
+                      </LinearText>
+                      {value === opt.id && (
+                        <LinearText tone="accent" style={styles.dropdownCheck}>
+                          ✓
+                        </LinearText>
+                      )}
                     </TouchableOpacity>
                   </React.Fragment>
                 );
@@ -91,13 +105,12 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   dropdownValue: {
-    color: linearTheme.colors.textPrimary,
     fontSize: 14,
     lineHeight: 20,
     fontWeight: '600',
     flex: 1,
   },
-  dropdownArrow: { color: linearTheme.colors.textMuted, fontSize: 16, marginLeft: 8 },
+  dropdownArrow: { fontSize: 16, marginLeft: 8 },
   dropdownBackdrop: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.6)',
@@ -111,7 +124,6 @@ const styles = StyleSheet.create({
     maxHeight: '80%',
   },
   dropdownSheetTitle: {
-    color: linearTheme.colors.textPrimary,
     fontSize: 16,
     fontWeight: '800',
     paddingHorizontal: 16,
@@ -120,7 +132,6 @@ const styles = StyleSheet.create({
     borderBottomColor: linearTheme.colors.border,
   },
   dropdownGroupLabel: {
-    color: linearTheme.colors.accent,
     fontSize: 12,
     fontWeight: '700',
     letterSpacing: 0.5,
@@ -137,7 +148,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
   },
   dropdownItemActive: { backgroundColor: linearTheme.colors.primaryTintSoft },
-  dropdownItemText: { color: linearTheme.colors.textPrimary, fontSize: 14, lineHeight: 20, flex: 1 },
+  dropdownItemText: { fontSize: 14, lineHeight: 20, flex: 1 },
   dropdownItemTextActive: { color: linearTheme.colors.accent, fontWeight: '700' },
-  dropdownCheck: { color: linearTheme.colors.accent, fontSize: 16, fontWeight: '700', marginLeft: 8 },
+  dropdownCheck: { fontSize: 16, fontWeight: '700', marginLeft: 8 },
 });

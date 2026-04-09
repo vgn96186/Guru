@@ -1,13 +1,5 @@
 import React, { useState } from 'react';
-import {
-  View,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  Alert,
-  Platform,
-  StatusBar,
-} from 'react-native';
+import { View, StyleSheet, ScrollView, TouchableOpacity, Platform, StatusBar } from 'react-native';
 import LinearText from '../components/primitives/LinearText';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
@@ -19,6 +11,7 @@ import {
   requestNotificationPermissions,
   cancelAllNotifications,
 } from '../services/notificationService';
+import { showWarning, showInfo } from '../components/dialogService';
 import { profileRepository } from '../db/repositories';
 import { useAppStore } from '../store/useAppStore';
 import { ResponsiveContainer } from '../hooks/useResponsive';
@@ -50,7 +43,7 @@ export default function DoomscrollGuideScreen() {
   async function activateHarassment() {
     const hasPerm = await requestNotificationPermissions();
     if (!hasPerm) {
-      Alert.alert('Permissions Needed', 'You need to enable notifications to use Harassment Mode.');
+      showWarning('Permissions Needed', 'You need to enable notifications to use Harassment Mode.');
       return;
     }
 
@@ -58,10 +51,9 @@ export default function DoomscrollGuideScreen() {
     await scheduleHarassment(selectedTone);
     setHarassmentActive(true);
 
-    Alert.alert(
+    showInfo(
       'Harassment Mode Activated 🚨',
       'If you close this app and go doomscroll, I will start blowing up your phone with notifications every 3 minutes starting soon. The only way to stop it is to come back and study.',
-      [{ text: 'I understand the consequences' }],
     );
   }
 
@@ -69,7 +61,7 @@ export default function DoomscrollGuideScreen() {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     await cancelAllNotifications();
     setHarassmentActive(false);
-    Alert.alert('Deactivated', 'Harassment mode has been turned off.');
+    showInfo('Deactivated', 'Harassment mode has been turned off.');
   }
 
   return (
@@ -201,7 +193,7 @@ export default function DoomscrollGuideScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#0A0A0A' },
+  safe: { flex: 1, backgroundColor: n.colors.background },
   container: { padding: 24, paddingBottom: 40, alignItems: 'center' },
   emoji: { fontSize: 56, marginBottom: 16 },
   title: {
@@ -251,7 +243,7 @@ const styles = StyleSheet.create({
   },
   toneBtnActive: { borderColor: n.colors.accent, backgroundColor: '#6C63FF22' },
   toneIcon: { fontSize: 20, marginBottom: 4 },
-  toneBtnText: { color: '#666', fontSize: 11, fontWeight: '700' },
+  toneBtnText: { color: n.colors.textMuted, fontSize: 11, fontWeight: '700' },
   toneBtnTextActive: { color: n.colors.accent },
 
   btn: { backgroundColor: n.colors.error, padding: 16, borderRadius: 12, alignItems: 'center' },
@@ -269,8 +261,8 @@ const styles = StyleSheet.create({
 
   osBox: { backgroundColor: n.colors.border, padding: 16, borderRadius: 12 },
   osTitle: { color: n.colors.accent, fontSize: 16, fontWeight: '700', marginBottom: 8 },
-  osStep: { color: '#E0E0E0', fontSize: 14, marginBottom: 6, lineHeight: 20 },
+  osStep: { color: n.colors.textSecondary, fontSize: 14, marginBottom: 6, lineHeight: 20 },
 
   backBtn: { marginTop: 16, padding: 16 },
-  backBtnText: { color: '#666', fontSize: 16, fontWeight: '600' },
+  backBtnText: { color: n.colors.textMuted, fontSize: 16, fontWeight: '600' },
 });

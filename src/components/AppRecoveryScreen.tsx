@@ -1,7 +1,8 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { linearTheme as n } from '../theme/linearTheme';
+import LinearText from './primitives/LinearText';
 
 interface Props {
   title: string;
@@ -44,11 +45,17 @@ export default function AppRecoveryScreen({
 
         <View style={styles.badge}>
           <Ionicons name="shield-checkmark-outline" size={14} color={n.colors.accent} />
-          <Text style={styles.badgeText}>{statusLabel}</Text>
+          <LinearText variant="badge" tone="accent">
+            {statusLabel}
+          </LinearText>
         </View>
 
-        <Text style={styles.title}>{title}</Text>
-        <Text style={styles.sub}>{message}</Text>
+        <LinearText variant="title" tone="primary">
+          {title}
+        </LinearText>
+        <LinearText variant="body" tone="secondary">
+          {message}
+        </LinearText>
 
         {tips.length > 0 ? (
           <View style={styles.tipCard}>
@@ -59,7 +66,9 @@ export default function AppRecoveryScreen({
                   size={16}
                   color={index === 0 ? n.colors.textSecondary : n.colors.success}
                 />
-                <Text style={styles.tipText}>{tip}</Text>
+                <LinearText variant="body" tone="secondary">
+                  {tip}
+                </LinearText>
               </View>
             ))}
           </View>
@@ -67,10 +76,12 @@ export default function AppRecoveryScreen({
 
         {safeDetail ? (
           <View style={styles.errorBox}>
-            <Text style={styles.errorLabel}>Technical note</Text>
-            <Text style={styles.errorValue} numberOfLines={3}>
+            <LinearText variant="label" tone="muted">
+              Technical note
+            </LinearText>
+            <LinearText variant="bodySmall" tone="secondary" numberOfLines={3}>
               {safeDetail}
-            </Text>
+            </LinearText>
           </View>
         ) : null}
 
@@ -80,7 +91,9 @@ export default function AppRecoveryScreen({
           accessibilityRole="button"
           accessibilityLabel={primaryAccessibilityLabel}
         >
-          <Text style={styles.primaryBtnText}>{primaryLabel}</Text>
+          <LinearText variant="body" tone="inverse">
+            {primaryLabel}
+          </LinearText>
         </TouchableOpacity>
 
         {secondaryLabel && onSecondary ? (
@@ -90,7 +103,9 @@ export default function AppRecoveryScreen({
             accessibilityRole="button"
             accessibilityLabel={secondaryAccessibilityLabel ?? secondaryLabel}
           >
-            <Text style={styles.secondaryBtnText}>{secondaryLabel}</Text>
+            <LinearText variant="body" tone="secondary">
+              {secondaryLabel}
+            </LinearText>
           </TouchableOpacity>
         ) : null}
       </View>

@@ -8,7 +8,6 @@ import {
   StyleSheet,
   StatusBar,
   BackHandler,
-  Alert,
   Vibration,
   Animated,
 } from 'react-native';
@@ -25,13 +24,16 @@ import * as FileSystem from 'expo-file-system/legacy';
 import { transcribeAudio, isMeaningfulLectureAnalysis } from '../services/transcriptionService';
 import { moveFileToRecovery } from '../services/transcriptStorage';
 import { enqueueRequest } from '../services/offlineQueue';
+import { saveLectureChunk } from '../services/lecture/persistence';
+import { generateADHDNote } from '../services/transcription/noteGeneration';
+import type { LectureAnalysis } from '../services/transcriptionService';
 
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RouteProp } from '@react-navigation/native';
 import type { HomeStackParamList } from '../navigation/types';
 import { STREAK_MIN_MINUTES } from '../constants/gamification';
 import { getAllSubjects, getTopicsBySubject } from '../db/queries/topics';
-import { saveLectureTranscript, saveLectureNote } from '../db/queries/aiCache';
+import { saveLectureNote } from '../db/queries/aiCache';
 import { createSession, endSession, updateSessionProgress } from '../db/queries/sessions';
 import { profileRepository } from '../db/repositories';
 import { linearTheme as n } from '../theme/linearTheme';
@@ -43,9 +45,10 @@ import FocusAudioPlayer from '../components/FocusAudioPlayer';
 import { useFaceTracking } from '../hooks/useFaceTracking';
 import { useAppStateTransition } from '../hooks/useAppStateTransition';
 import type { Subject, TopicWithProgress } from '../types';
-import { ResponsiveContainer } from '../hooks/useResponsive';
 import { getDb } from '../db/database';
+import { ResponsiveContainer } from '../hooks/useResponsive';
 import { BUNDLED_GROQ_KEY, BUNDLED_HF_TOKEN } from '../config/appConfig';
+import { showInfo, showSuccess, showError, confirmDestructive } from '../components/dialogService';
 
 type Nav = NativeStackNavigationProp<HomeStackParamList, 'LectureMode'>;
 type Route = RouteProp<HomeStackParamList, 'LectureMode'>;
@@ -517,7 +520,7 @@ export default function LectureModeScreen() {
       }
     } catch (err) {
       console.error('[LectureMode] Failed to save note:', err);
-      Alert.alert('Error', 'Failed to save note. Please try again.');
+      showError('Failed to save note. Please try again.');
     }
   }
 
@@ -527,7 +530,7 @@ export default function LectureModeScreen() {
       try {
         const { status } = await Audio.requestPermissionsAsync();
         if (status !== 'granted') {
-          Alert.alert('Microphone Access', 'Need microphone to auto-transcribe lectures.');
+          showInfo('Microphone Access', 'Need microphone to auto-transcribe lectures.');
         } else {
           await Audio.setAudioModeAsync({
             allowsRecordingIOS: true,
@@ -585,7 +588,7 @@ export default function LectureModeScreen() {
       if (__DEV__) console.log('[LectureMode] Fresh recording started:', newRec.getURI());
     } catch (err) {
       if (__DEV__) console.error('[LectureMode] Failed to start recording:', err);
-      Alert.alert('Recording Error', 'Could not start microphone. Check permissions.');
+      showError('Could not start microphone. Check permissions.');
     }
   }, []);
 
@@ -620,37 +623,54 @@ export default function LectureModeScreen() {
           const analysis = await transcribeAudio({ audioFilePath: uri });
           const transcriptionTime = Date.now() - startTime;
 
-          // Save lecture with enhanced metadata
-          await applyLectureAnalysis(analysis, {
-            recordingPath: uri,
-            recordingDurationSeconds: Math.round(recordingDuration),
-            transcriptionConfidence: analysis.estimatedConfidence
-              ? analysis.estimatedConfidence / 3
-              : null, // Convert 1-3 to 0-1
-            processingMetricsJson: JSON.stringify({
-              transcriptionMs: transcriptionTime,
-              totalMs: transcriptionTime,
-              modelUsed: analysis.modelUsed || 'unknown',
-            }),
-            retryCount: recordingRetryCount,
+          if (!isMeaningfulLectureAnalysis(analysis)) {
+            throw new Error('No usable lecture content was detected in this recording.');
+          }
+
+          // Build note text (ADHD-style if possible, fallback to formatted note)
+          const conceptsText =
+            analysis.keyConcepts.length > 0
+              ? '\n\n💡 **Key Concepts**\n' +
+                analysis.keyConcepts.map((c: string) => `• ${c}`).join('\n')
+              : '';
+          const hyText =
+            analysis.highYieldPoints.length > 0
+              ? '\n\n🚀 **High-Yield**\n' +
+                analysis.highYieldPoints.map((p: string) => `• ${p}`).join('\n')
+              : '';
+          const quickNote = `🎯 **Subject**: ${analysis.subject}\n📌 **Topics**: ${analysis.topics.join(', ')}\n\n📝 **Summary**: ${analysis.lectureSummary}${conceptsText}${hyText}`;
+
+          // Use shared pipeline — same 5-level matching + XP as Pipeline A
+          const result = await saveLectureChunk({
+            analysis,
+            subjectId: selectedSubjectId,
+            appName: 'LectureMode',
+            durationMinutes: Math.round(recordingDuration / 60),
+            quickNote,
+            embedding: analysis.embedding,
+            recordingPath: uri, // Keep recording file (not deleted)
           });
 
-          // Clean up recording file after successful save
-          await FileSystem.deleteAsync(uri, { idempotent: true });
-        } catch (err) {
-          console.warn('[LectureMode] Chunk transcription failed, moving to recovery:', err);
-          const recoveryUri = await moveFileToRecovery(uri);
+          // Enhance note in background with ADHD-style formatting
+          void enhanceNoteInBackground(result.noteId);
 
-          // Create a recovery log entry to track this chunk in the unified pipeline
-          const { startExternalAppSession } = await import('../db/queries/externalLogs');
-          const recoveryLogId = await startExternalAppSession('Hostage Mode (Chunk)', recoveryUri);
+          setNotes((n) => [...n, quickNote]);
+          setProofOfLifeActive(false);
+
+          if (__DEV__) {
+            console.log(
+              `[LectureMode] Chunk saved: ${result.topicsMatched} topics matched, ${result.xpAwarded} XP awarded`,
+            );
+          }
+        } catch (err) {
+          console.warn('[LectureMode] Chunk processing failed, moving to recovery:', err);
+          const recoveryUri = await moveFileToRecovery(uri);
 
           await enqueueRequest('transcribe', {
             audioFilePath: recoveryUri,
-            appName: 'Hostage Mode (Chunk)',
+            appName: 'LectureMode',
             durationMinutes: 3,
-            logId: recoveryLogId,
-            recordingDurationSeconds: Math.round(recordingDuration),
+            recordingPath: recoveryUri,
             retryCount: recordingRetryCount + 1,
             error: err instanceof Error ? err.message : String(err),
           });
@@ -667,8 +687,8 @@ export default function LectureModeScreen() {
         void startRecording();
       }
     }
-    // `applyLectureAnalysis` is a stable local helper for this screen flow; keeping it
-    // out of the dependency list avoids a declaration-order cycle in this file.
+    // `saveLectureChunk` and `enhanceNoteInBackground` are stable; keeping them
+    // out of deps avoids declaration-order cycles.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [recordingRetryCount, startRecording]);
 
@@ -705,133 +725,37 @@ export default function LectureModeScreen() {
     void processRecording();
   }, [onBreak, isTranscribing, processRecording]);
 
-  async function applyLectureAnalysis(
-    analysis: {
-      topics: string[];
-      estimatedConfidence: 1 | 2 | 3;
-      subject: string;
-      lectureSummary: string;
-      keyConcepts: string[];
-      highYieldPoints: string[];
-      transcript?: string;
-      embedding?: number[];
-      modelUsed?: string;
-    },
-    metadata: {
-      recordingPath?: string;
-      recordingDurationSeconds?: number;
-      transcriptionConfidence?: number | null;
-      processingMetricsJson?: string;
-      retryCount?: number;
-      lastError?: string;
-    } = {},
-  ) {
-    if (!isMeaningfulLectureAnalysis(analysis)) {
-      throw new Error('No usable lecture content was detected in this recording.');
-    }
-
-    const conceptsText =
-      analysis.keyConcepts.length > 0
-        ? '\n\n💡 **Key Concepts**\n' + analysis.keyConcepts.map((c: string) => `• ${c}`).join('\n')
-        : '';
-    const hyText =
-      analysis.highYieldPoints.length > 0
-        ? '\n\n🚀 **High-Yield**\n' +
-          analysis.highYieldPoints.map((p: string) => `• ${p}`).join('\n')
-        : '';
-
-    const noteText = `🎯 **Subject**: ${analysis.subject}\n📌 **Topics**: ${analysis.topics.join(', ')}\n\n📝 **Summary**: ${analysis.lectureSummary}${conceptsText}${hyText}`;
-
-    // Save lecture transcript with enhanced metadata
-    const lectureNoteId = await saveLectureTranscript({
-      subjectId: selectedSubjectId,
-      subjectName: analysis.subject,
-      note: noteText,
-      transcript: analysis.transcript,
-      summary: analysis.lectureSummary,
-      topics: analysis.topics,
-      confidence: analysis.estimatedConfidence,
-      embedding: analysis.embedding,
-      ...metadata,
-    });
-
-    // Automatically mark topics as studied based on lecture content
-    if (selectedSubjectId && analysis.topics.length > 0) {
-      await markTopicsAsStudied(selectedSubjectId, analysis.topics, lectureNoteId);
-    }
-
-    setNotes((n) => [...n, noteText]);
-    setProofOfLifeActive(false);
-  }
-
   /**
-   * Mark topics as studied based on lecture content
-   * Uses deduplication to avoid double-counting
+   * Background note enhancement — generates ADHD-style formatted study note
+   * and updates the lecture_notes table with the enhanced version.
    */
-  async function markTopicsAsStudied(
-    subjectId: number,
-    topicNames: string[],
-    lectureNoteId: number,
-  ) {
+  async function enhanceNoteInBackground(noteId: number) {
     try {
       const db = getDb();
+      const note = await db.getFirstAsync<{
+        id: number;
+        summary: string | null;
+        topics_json: string | null;
+        note: string;
+      }>('SELECT id, summary, topics_json, note FROM lecture_notes WHERE id = ?', [noteId]);
 
-      // Subject doesn't have topics directly, we need to fetch them
-      const subjectTopics = await getTopicsBySubject(subjectId);
+      if (!note) return;
 
-      // Match topic names (case-insensitive, partial match)
-      const matchedTopicIds = new Set<number>();
-      for (const topicName of topicNames) {
-        const normalizedName = topicName.toLowerCase().trim();
-        const match = subjectTopics.find(
-          (t) =>
-            t.name.toLowerCase().includes(normalizedName) ||
-            normalizedName.includes(t.name.toLowerCase()),
-        );
-        if (match) {
-          matchedTopicIds.add(match.id);
-        }
-      }
+      const analysis: LectureAnalysis = {
+        lectureSummary: note.summary || '',
+        topics: note.topics_json ? JSON.parse(note.topics_json) : [],
+        keyConcepts: [],
+        highYieldPoints: [],
+        subject: '',
+        estimatedConfidence: 1,
+      };
 
-      // Mark each unique topic as studied
-      for (const topicId of matchedTopicIds) {
-        try {
-          // Check if already marked from this lecture (deduplication)
-          const existing = await db.getFirstAsync<{ id: number }>(
-            `SELECT id FROM lecture_learned_topics WHERE lecture_note_id = ? AND topic_id = ?`,
-            [lectureNoteId, topicId],
-          );
-
-          if (!existing) {
-            await db.runAsync(
-              `INSERT INTO lecture_learned_topics (lecture_note_id, topic_id, confidence_at_time) 
-               VALUES (?, ?, ?)`,
-              [lectureNoteId, topicId, 2], // Default confidence
-            );
-
-            // Update topic_progress status to 'seen' if it was 'unseen'
-            await db.runAsync(
-              `UPDATE topic_progress 
-               SET status = 'seen', times_studied = times_studied + 1, last_studied_at = ?
-               WHERE topic_id = ? AND status = 'unseen'`,
-              [Date.now(), topicId],
-            );
-          }
-        } catch (err) {
-          console.warn('[LectureMode] Failed to mark topic as studied:', topicId, err);
-        }
-      }
-
-      if (matchedTopicIds.size > 0) {
-        if (__DEV__) {
-          console.log(
-            `[LectureMode] Marked ${matchedTopicIds.size} topics as studied from lecture`,
-          );
-        }
-        await refreshProfile();
+      const enhancedNote = await generateADHDNote(analysis);
+      if (enhancedNote) {
+        await db.runAsync('UPDATE lecture_notes SET note = ? WHERE id = ?', [enhancedNote, noteId]);
       }
     } catch (err) {
-      console.error('[LectureMode] Failed to update topic progress:', err);
+      console.warn('[LectureMode] Background note enhancement failed:', err);
     }
   }
 
@@ -850,11 +774,37 @@ export default function LectureModeScreen() {
       setIsTranscribing(true);
       const analysis = await transcribeAudio({ audioFilePath: tempUri });
 
-      await applyLectureAnalysis(analysis);
-      Alert.alert('Transcription Complete', analysis.lectureSummary || 'Done');
+      if (!isMeaningfulLectureAnalysis(analysis)) {
+        throw new Error('No usable lecture content was detected.');
+      }
+
+      const conceptsText =
+        analysis.keyConcepts.length > 0
+          ? '\n\n💡 **Key Concepts**\n' +
+            analysis.keyConcepts.map((c: string) => `• ${c}`).join('\n')
+          : '';
+      const hyText =
+        analysis.highYieldPoints.length > 0
+          ? '\n\n🚀 **High-Yield**\n' +
+            analysis.highYieldPoints.map((p: string) => `• ${p}`).join('\n')
+          : '';
+      const quickNote = `🎯 **Subject**: ${analysis.subject}\n📌 **Topics**: ${analysis.topics.join(', ')}\n\n📝 **Summary**: ${analysis.lectureSummary}${conceptsText}${hyText}`;
+
+      const result = await saveLectureChunk({
+        analysis,
+        subjectId: selectedSubjectId,
+        appName: 'Imported',
+        durationMinutes: 0,
+        quickNote,
+        embedding: analysis.embedding,
+      });
+
+      void enhanceNoteInBackground(result.noteId);
+
+      setNotes((n) => [...n, quickNote]);
+      showSuccess('Transcription Complete', analysis.lectureSummary || 'Done');
     } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Failed to transcribe imported audio.';
-      Alert.alert('Transcription Failed', msg);
+      showError(err, 'Failed to transcribe imported audio.');
       if (__DEV__) console.error('Import transcription failed:', err);
     } finally {
       setIsTranscribing(false);
@@ -866,7 +816,7 @@ export default function LectureModeScreen() {
     const huggingFaceToken = profile?.huggingFaceToken?.trim() || BUNDLED_HF_TOKEN;
     const hasLocalWhisper = !!(profile?.useLocalWhisper && profile?.localWhisperPath);
     if (!isRecordingEnabled && !groqKey && !huggingFaceToken && !hasLocalWhisper) {
-      Alert.alert(
+      showInfo(
         'Transcription Required',
         'Add Groq or Hugging Face credentials, or enable Local Whisper in Settings to use Auto-Scribe.',
       );
@@ -875,20 +825,36 @@ export default function LectureModeScreen() {
     setIsRecordingEnabled(!isRecordingEnabled);
   }
 
-  function confirmStopLecture() {
-    Alert.alert('Stop lecture?', 'Are you actually done, or just avoiding it?', [
-      { text: 'Keep watching', style: 'cancel' },
-      { text: 'Stop', onPress: stopLecture, style: 'destructive' },
-    ]);
+  async function confirmStopLecture() {
+    const ok = await confirmDestructive(
+      'Stop lecture?',
+      'Are you actually done, or just avoiding it?',
+      {
+        confirmLabel: 'Stop',
+        cancelLabel: 'Keep watching',
+      },
+    );
+    if (ok) {
+      stopLecture();
+    }
   }
 
   // Block Back Button
   useEffect(() => {
     const handler = BackHandler.addEventListener('hardwareBackPress', () => {
-      Alert.alert('Ready to wrap up?', 'You can always come back and continue later.', [
-        { text: 'Keep watching', style: 'cancel' },
-        { text: 'Finish', onPress: stopLecture, style: 'destructive' },
-      ]);
+      (async () => {
+        const ok = await confirmDestructive(
+          'Ready to wrap up?',
+          'You can always come back and continue later.',
+          {
+            confirmLabel: 'Finish',
+            cancelLabel: 'Keep watching',
+          },
+        );
+        if (ok) {
+          stopLecture();
+        }
+      })();
       return true;
     });
     backHandlerRef.current = handler;

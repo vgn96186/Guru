@@ -1,9 +1,10 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
-import { Animated, Easing, PanResponder, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Animated, Easing, PanResponder, Pressable, StyleSheet, View } from 'react-native';
 import type { DimensionValue } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { linearTheme as n } from '../theme/linearTheme';
+import LinearText from './primitives/LinearText';
 import {
   clearLocalModelDownload,
   getLocalModelDownloadSnapshot,
@@ -249,22 +250,24 @@ export function InstallModelProgressOverlay() {
           onPress={() => setDownloadMinimized(false)}
         >
           <View style={[styles.miniDot, { backgroundColor: accentColor }]} />
-          <Text style={styles.miniLabel}>
+          <LinearText variant="label" tone="secondary">
             {mountedSnapshot.type === 'whisper' ? 'Speech' : 'Study AI'}
-          </Text>
-          <Text style={styles.miniText}>{Math.round(mountedSnapshot.progress)}%</Text>
+          </LinearText>
+          <LinearText variant="label" tone="primary">
+            {Math.round(mountedSnapshot.progress)}%
+          </LinearText>
           <View style={styles.miniBarTrack}>
             <View
               style={[styles.miniBarFill, { width: progressWidth, backgroundColor: accentColor }]}
             />
           </View>
-          <Text style={styles.miniMeta} numberOfLines={1}>
+          <LinearText variant="meta" tone="muted" numberOfLines={1}>
             {mountedSnapshot.stage === 'verifying'
               ? 'Verifying'
               : downloadedText && totalText
                 ? `${downloadedText} / ${totalText}`
                 : getStageLabel(mountedSnapshot)}
-          </Text>
+          </LinearText>
         </Pressable>
       </Animated.View>
     );
@@ -291,12 +294,14 @@ export function InstallModelProgressOverlay() {
             ]}
           >
             <View style={[styles.pillDot, { backgroundColor: accentColor }]} />
-            <Text style={styles.pillText}>
+            <LinearText variant="label" tone="primary">
               {mountedSnapshot.type === 'whisper' ? 'Offline Speech' : 'Offline Study AI'}
-            </Text>
+            </LinearText>
           </View>
           <View style={styles.rowRight}>
-            <Text style={styles.percent}>{Math.round(mountedSnapshot.progress)}%</Text>
+            <LinearText variant="label" tone="secondary">
+              {Math.round(mountedSnapshot.progress)}%
+            </LinearText>
             {isActive ? (
               <>
                 <Pressable
@@ -330,10 +335,12 @@ export function InstallModelProgressOverlay() {
           </View>
         </View>
 
-        <Text style={styles.title}>{getStageLabel(mountedSnapshot)}</Text>
-        <Text style={styles.subtitle} numberOfLines={1}>
+        <LinearText variant="body" tone="primary">
+          {getStageLabel(mountedSnapshot)}
+        </LinearText>
+        <LinearText variant="bodySmall" tone="secondary" numberOfLines={1}>
           {mountedSnapshot.modelName}
-        </Text>
+        </LinearText>
 
         <View style={styles.progressTrack}>
           <View
@@ -353,11 +360,15 @@ export function InstallModelProgressOverlay() {
         </View>
 
         {downloadedText && totalText ? (
-          <Text style={styles.meta}>
+          <LinearText variant="caption" tone="muted">
             {downloadedText} of {totalText}
-          </Text>
+          </LinearText>
         ) : null}
-        {isActive ? <Text style={styles.gestureHint}>Swipe up to minimize</Text> : null}
+        {isActive ? (
+          <LinearText variant="caption" tone="muted">
+            Swipe up to minimize
+          </LinearText>
+        ) : null}
       </View>
     </Animated.View>
   );

@@ -6,7 +6,6 @@ import {
   ScrollView,
   StyleSheet,
   ActivityIndicator,
-  Alert,
   StatusBar,
 } from 'react-native';
 import LinearText from '../components/primitives/LinearText';
@@ -34,6 +33,7 @@ import ScreenHeader from '../components/ScreenHeader';
 import SubjectSelectionCard from '../components/SubjectSelectionCard';
 import LinearButton from '../components/primitives/LinearButton';
 import LinearSurface from '../components/primitives/LinearSurface';
+import { showError, showWarning } from '../components/dialogService';
 
 export default function ManualNoteCreationScreen(
   _props: NativeStackScreenProps<MenuStackParamList, 'ManualNoteCreation'>,
@@ -50,7 +50,7 @@ export default function ManualNoteCreationScreen(
   const handleGenerate = async () => {
     const text = transcript.trim();
     if (!text) {
-      Alert.alert('Error', 'Please paste a transcript to process.');
+      showWarning('Error', 'Please paste a transcript to process.');
       return;
     }
     setIsProcessing(true);
@@ -72,7 +72,7 @@ export default function ManualNoteCreationScreen(
           : (resolution.matchedSubject?.name ?? resolution.normalizedSubjectName),
       );
     } catch (e: unknown) {
-      Alert.alert('Error', e instanceof Error ? e.message : String(e));
+      showError(e);
     } finally {
       setIsProcessing(false);
     }
@@ -81,7 +81,7 @@ export default function ManualNoteCreationScreen(
   const handleSave = async () => {
     if (!result) return;
     if (subjectSelectionRequired && !selectedSubjectName) {
-      Alert.alert('Subject required', 'Choose the lecture subject before saving this note.');
+      showWarning('Subject required', 'Choose the lecture subject before saving this note.');
       return;
     }
     setIsSaving(true);
@@ -127,7 +127,7 @@ export default function ManualNoteCreationScreen(
       showToast('Note saved and topics updated', 'success');
       navigation.goBack();
     } catch (e: unknown) {
-      Alert.alert('Error', e instanceof Error ? e.message : String(e));
+      showError(e);
     } finally {
       setIsSaving(false);
     }

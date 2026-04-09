@@ -156,8 +156,7 @@ function normalizeMindMapResponse(raw: unknown): unknown {
     }
   }
 
-  // ── Pattern: { "topic": "X", "center": { "label": "X", ... }, "branches": [...] }
-  // where center is an object with description but the label is what we need
+  // ── Pattern: { "center": { "label": "X", ... }, "branches": [...] }
   if (obj.center && typeof obj.center === 'object' && !Array.isArray(obj.center)) {
     const cl = extractLabel(obj.center);
     const nr = obj.branches ?? obj.nodes ?? obj.children ?? obj.topics ?? obj.items ?? obj.concepts;
@@ -192,6 +191,7 @@ interface LayoutEdge {
   sourceIndex: number;
   targetIndex: number;
   label?: string;
+  isCrossLink?: boolean;
 }
 
 export interface MindMapLayout {
@@ -209,7 +209,8 @@ function layoutFromAIResponse(resp: MindMapAIResponse): MindMapLayout {
   nodes.push({ label: resp.centerLabel, x: 0, y: 0, isCenter: true });
   labelToIndex.set(resp.centerLabel, 0);
 
-  // NotebookLM horizontal rightward-branching tree settings
+  // Horizontal rightward-branching tree — spacing is placeholder;
+  // the real layout engine (mindMapLayout.ts) recomputes x/y from actual widths.
   const HORIZONTAL_SPACING = 350;
   const VERTICAL_SPACING_L1 = 120;
   const VERTICAL_SPACING_L2 = 80;
@@ -273,7 +274,12 @@ function layoutFromAIResponse(resp: MindMapAIResponse): MindMapLayout {
       for (const link of branch.crossLinks) {
         const tgtIdx = labelToIndex.get(link.targetLabel);
         if (srcIdx != null && tgtIdx != null) {
-          edges.push({ sourceIndex: srcIdx, targetIndex: tgtIdx, label: link.relation });
+          edges.push({
+            sourceIndex: srcIdx,
+            targetIndex: tgtIdx,
+            label: link.relation,
+            isCrossLink: true,
+          });
         }
       }
     }
@@ -285,11 +291,30 @@ function layoutFromAIResponse(resp: MindMapAIResponse): MindMapLayout {
 // ── JSON example for prompts ──────────────────────────────────────────────
 
 const JSON_EXAMPLE = `{
-  "centerLabel": "Example Topic",
+  "centerLabel": "Diabetes Mellitus",
   "nodes": [
-    { "label": "Branch 1" },
-    { "label": "Branch 2" },
-    { "label": "Branch 3" }
+    {
+      "label": "Pathophysiology",
+      "children": [
+        { "label": "Insulin Resistance" },
+        { "label": "Beta Cell Failure" },
+        { "label": "Glucotoxicity" }
+      ]
+    },
+    {
+      "label": "Clinical Features",
+      "children": [
+        { "label": "Polyuria/Polydipsia" },
+        { "label": "Weight Loss" }
+      ]
+    },
+    {
+      "label": "Diagnosis",
+      "children": [
+        { "label": "HbA1c ≥6.5%" },
+        { "label": "FBS ≥126 mg/dL" }
+      ]
+    }
   ]
 }`;
 
@@ -329,7 +354,6 @@ async function parseMindMapJson(rawText: string): Promise<MindMapAIResponse> {
       try {
         parsed = JSON.parse(cleaned.slice(start));
       } catch {
-        // Fall through to the generic parseStructuredJson
         return parseStructuredJson(rawText, MindMapAIResponseSchema);
       }
     } else {
@@ -362,37 +386,54 @@ async function parseMindMapJson(rawText: string): Promise<MindMapAIResponse> {
 export async function generateMindMap(
   topic: string,
   subject?: string,
-  depth: 'compact' | 'rich' = 'compact',
+  depth: 'compact' | 'rich' = 'rich',
 ): Promise<MindMapLayout> {
-  const nodeCount = depth === 'rich' ? '15-20' : '5-8';
+  const branchCount = depth === 'rich' ? '5-7' : '4-6';
+  const childNote =
+    depth === 'rich'
+      ? 'Each branch MUST have 2-4 children with concise, high-yield sub-concepts.'
+      : 'Each branch should have 1-3 children where useful.';
 
   const messages: Message[] = [
     {
       role: 'system',
-      content: `You are Guru, a NEET-PG/INICET medical concept mapping expert. Generate a mind map as JSON.
-Rules:
+      content: `You are Guru, a NEET-PG/INICET medical study expert. Your job is to generate a **comprehensive mind map** that helps a student learn a topic from scratch and master it for the exam.
+
+PURPOSE: The student uses these mind maps to build a complete mental model of a topic before diving into MCQs. The map must cover all dimensions the exam can test.
+
+STRUCTURE RULES:
 - Center the map on the given topic.
-- Generate ${nodeCount} main branches ONLY. Do NOT include sub-branches.
-- CRITICAL STRUCTURING: Organize the map realistically using established medical frameworks!
-  - For Diseases: 'Etiology/Patho', 'Clinical Features', 'Investigations/Diagnosis', 'Management', 'Complications'.
-  - For Pharmacology: 'Mechanism', 'Indications', 'Adverse Effects', 'Contraindications'.
-  - For Anatomy/Physiology: Structural/Functional breakdown.
-- Do not just list random associations.
-- Labels must be incredibly concise (2-5 words) and represent highly-testable NEET-PG categories.
-- You MUST use EXACTLY these key names: "centerLabel" (center topic), "nodes" (branches array), "label" (node name).
-- Return ONLY valid JSON matching this exact schema:
+- Generate ${branchCount} main branches. ${childNote}
+- CRITICAL: Use established medical frameworks to organize branches:
+  - Diseases → Etiology/Risk Factors, Pathophysiology, Clinical Features, Investigations, Diagnosis, Management (Medical + Surgical), Complications, Prognosis
+  - Pharmacology → Classification, Mechanism of Action, Pharmacokinetics, Indications, Adverse Effects, Contraindications, Drug Interactions
+  - Anatomy → Blood Supply, Nerve Supply, Relations, Applied Anatomy, Clinical Correlates
+  - Physiology → Normal Mechanism, Regulation, Clinical Tests, Disorders
+  - Microbiology → Morphology, Culture, Pathogenesis, Lab Diagnosis, Treatment, Prophylaxis
+  Pick the framework that fits. Do NOT just list random associations.
+
+CONTENT RULES:
+- Labels: 2-6 words max. Be specific and exam-relevant.
+- Include buzzwords, classic triads/pentads, gold-standard tests, first-line drugs, pathognomonic signs.
+- Prioritize high-yield, frequently-tested facts over obscure details.
+- Do NOT include generic filler like "Overview" or "Introduction".
+
+FORMAT: Return ONLY valid JSON using EXACTLY these keys:
+- "centerLabel": the topic name
+- "nodes": array of branches, each with "label" and optionally "children" array
+- Children have "label" and optionally "relation" (edge label)
+
+Example:
 ${JSON_EXAMPLE}`,
     },
     {
       role: 'user',
       content: subject
-        ? `Create a strictly-structured, high-yield medical mind map for "${topic}" in ${subject}. Return JSON only.`
-        : `Create a strictly-structured, high-yield medical mind map for "${topic}". Return JSON only.`,
+        ? `Create a comprehensive, exam-ready mind map for "${topic}" in ${subject}. Cover all testable dimensions. Return JSON only.`
+        : `Create a comprehensive, exam-ready mind map for "${topic}". Cover all testable dimensions. Return JSON only.`,
     },
   ];
 
-  // Use generateTextWithRouting (full provider fallback chain) then parse
-  // with our custom normalizer that handles many AI output variations.
   const { text, modelUsed } = await generateTextWithRouting(messages);
 
   if (__DEV__) {
@@ -412,22 +453,29 @@ export async function expandNode(
   const messages: Message[] = [
     {
       role: 'system',
-      content: `You are Guru, an elite NEET-PG/INICET tutor. Expand a specific mind map node into sub-branches.
-Rules:
-- The overall map is about: "${rootTopic}".
-- The user tapped the node labeled: "${nodeLabel}". Generate 4-6 high-yield child branches specifically for this aspect of the topic.
-- Do NOT nest children. Keep it completely flat — just first-level sub-branches.
-- INJECT HIGH-YIELD FACTS: Focus strictly on exam-tested buzzwords, classic triads, first-line drugs, gold standard tests, and critical side effects. Do not generate generic filler.
-- Labels must be concise (2-5 words).
-- You MUST use EXACTLY these key names: "centerLabel" for the tapped node label, "nodes" for the sub-branches array, "label" for each node name.
-- Return ONLY valid JSON matching this exact schema:
+      content: `You are Guru, an elite NEET-PG/INICET tutor. Expand a mind map node into detailed sub-branches to deepen the student's understanding.
+
+CONTEXT: The overall map is about "${rootTopic}". The student tapped "${nodeLabel}" to learn more.
+
+RULES:
+- Generate 3-5 high-yield child branches that break this concept down further.
+- Keep it flat — first-level sub-branches only, no nesting.
+- Focus on exam-tested specifics: buzzwords, classic associations, first-line treatments, gold standard tests, pathognomonic findings, important numbers/values.
+- Labels: 2-6 words, specific and testable.
+- Do NOT duplicate concepts already on the map: ${existingLabels.slice(0, 20).join(', ')}
+
+FORMAT: Return ONLY valid JSON:
+- "centerLabel": "${nodeLabel}"
+- "nodes": array of sub-branches with "label"
+
+Example:
 ${JSON_EXAMPLE}`,
     },
     {
       role: 'user',
       content: subject
-        ? `Map topic: "${rootTopic}" (${subject}). Expand the node "${nodeLabel}" with clinical buzzwords and high-yield facts. Return JSON only.`
-        : `Map topic: "${rootTopic}". Expand the node "${nodeLabel}" with clinical buzzwords and high-yield facts. Return JSON only.`,
+        ? `Map: "${rootTopic}" (${subject}). Drill into "${nodeLabel}" with exam-critical details. Return JSON only.`
+        : `Map: "${rootTopic}". Drill into "${nodeLabel}" with exam-critical details. Return JSON only.`,
     },
   ];
 
@@ -444,20 +492,19 @@ export async function explainMindMapNode(
   const messages: Message[] = [
     {
       role: 'system',
-      content: `You are Guru, a medical tutor helping a beginner learner.
+      content: `You are Guru, a medical tutor explaining a mind map concept to a student learning from scratch.
 Rules:
-- Explain the tapped concept in plain language.
-- Use 1-2 very short sentences only.
-- First sentence: what it means.
-- Second sentence: why it matters in the bigger topic.
-- Avoid jargon unless you immediately decode it.
+- Give a clear, concise explanation in 2-3 short sentences.
+- First: what this concept means in simple terms.
+- Then: why it matters for the exam / how it connects to the bigger topic.
+- Include one high-yield fact or buzzword if relevant.
 - No bullet points, no markdown, no JSON, no code fences.`,
     },
     {
       role: 'user',
       content: parentLabel
-        ? `Main topic: "${rootTopic}". Tapped node: "${nodeLabel}". Parent branch: "${parentLabel}". Give a very short explanation.`
-        : `Main topic: "${rootTopic}". Tapped node: "${nodeLabel}". Give a very short explanation.`,
+        ? `Topic: "${rootTopic}". Node: "${nodeLabel}" (under "${parentLabel}"). Explain briefly.`
+        : `Topic: "${rootTopic}". Node: "${nodeLabel}". Explain briefly.`,
     },
   ];
 

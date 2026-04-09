@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { linearTheme as n } from '../theme/linearTheme';
-import { Modal, Pressable, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Modal, Pressable, StyleSheet, TouchableOpacity, View } from 'react-native';
+import LinearText from './primitives/LinearText';
 import { theme } from '../constants/theme';
 import { type DialogAction, type DialogRequest, registerDialogListener } from './dialogService';
 
@@ -123,15 +124,20 @@ export function DialogHost() {
         {activeDialog ? (
           <View style={[styles.dialog, { borderColor: variantPalette.border }]}>
             <View style={[styles.badge, { backgroundColor: variantPalette.pillBg }]}>
-              <Text style={[styles.badgeText, { color: variantPalette.pillText }]}>
+              <LinearText
+                variant="badge"
+                style={[styles.badgeText, { color: variantPalette.pillText }]}
+              >
                 {(activeDialog.variant ?? 'default').toUpperCase()}
-              </Text>
+              </LinearText>
             </View>
-            <Text accessibilityRole="header" style={styles.title}>
+            <LinearText accessibilityRole="header" variant="title" style={styles.title}>
               {activeDialog.title}
-            </Text>
+            </LinearText>
             {activeDialog.message ? (
-              <Text style={styles.message}>{activeDialog.message}</Text>
+              <LinearText variant="body" style={styles.message}>
+                {activeDialog.message}
+              </LinearText>
             ) : null}
             <View style={styles.actions}>
               {activeDialog.actions.map((action) => {
@@ -143,9 +149,9 @@ export function DialogHost() {
                     style={style.container}
                     disabled={Boolean(loadingActionId)}
                   >
-                    <Text style={style.text}>
+                    <LinearText variant="body" style={style.text}>
                       {loadingActionId === action.id ? 'Working...' : action.label}
-                    </Text>
+                    </LinearText>
                   </TouchableOpacity>
                 );
               })}

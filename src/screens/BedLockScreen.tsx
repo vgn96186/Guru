@@ -6,9 +6,9 @@ import {
   StatusBar,
   Animated,
   Vibration,
-  Alert,
   ActivityIndicator,
 } from 'react-native';
+import { Accelerometer } from 'expo-sensors';
 import LinearText from '../components/primitives/LinearText';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
@@ -17,6 +17,7 @@ import type { RootStackParamList } from '../navigation/types';
 import * as Haptics from 'expo-haptics';
 import { linearTheme as n } from '../theme/linearTheme';
 import { ResponsiveContainer } from '../hooks/useResponsive';
+import { confirmDestructive } from '../components/dialogService';
 
 const POSITION_CHECK_INTERVAL = 1000; // Check every second
 const STANDING_THRESHOLD = 0.7; // Z-axis value when standing (phone upright)
@@ -35,40 +36,58 @@ export default function BedLockScreen() {
   const shakeAnim = useRef(new Animated.Value(0)).current;
   const progressAnim = useRef(new Animated.Value(0)).current;
 
-  // Mock accelerometer data (in real app, use expo-sensors)
+  // Real accelerometer data from expo-sensors
   useEffect(() => {
-    let interval: NodeJS.Timeout;
+    let subscription: any;
 
-    if (phase === 'detecting' || phase === 'lying') {
-      interval = setInterval(() => {
-        // Simulate accelerometer readings
-        // In real implementation: Accelerometer.addListener(data => setPositionZ(data.z))
-        const mockZ = phase === 'lying' ? 0.1 : Math.random() * 0.5; // Simulate lying flat
-        setPositionZ(mockZ);
+    if (phase === 'detecting') {
+      // Start listening to accelerometer
+      Accelerometer.setUpdateInterval(POSITION_CHECK_INTERVAL);
+      subscription = Accelerometer.addListener((data) => {
+        setPositionZ(data.z);
 
-        if (mockZ < LYING_THRESHOLD && phase === 'detecting') {
+        if (data.z < LYING_THRESHOLD) {
           setPhase('lying');
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
         }
-      }, POSITION_CHECK_INTERVAL);
-    } else if (phase === 'situp' || phase === 'stand') {
-      interval = setInterval(() => {
-        // Simulate sitting up
-        const mockZ = 0.5 + Math.random() * 0.3; // Simulate upright position
-        setPositionZ(mockZ);
+      });
+    }
+
+    return () => {
+      if (subscription) subscription.remove();
+    };
+  }, [phase]);
+
+  // Sit-up / stand phase: track sustained upright position
+  useEffect(() => {
+    let subscription: any;
+
+    if (phase === 'situp' || phase === 'stand') {
+      Accelerometer.setUpdateInterval(500);
+      subscription = Accelerometer.addListener((data) => {
+        setPositionZ(data.z);
 
         setProgress((prev) => {
-          const newProgress = mockZ > STANDING_THRESHOLD ? prev + 20 : Math.max(0, prev - 10);
+          const newProgress = data.z > STANDING_THRESHOLD ? prev + 20 : Math.max(0, prev - 10);
           if (newProgress >= 100) {
             setPhase('unlocked');
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
           }
           return Math.min(100, newProgress);
         });
-      }, 500);
+      });
     }
 
-    return () => clearInterval(interval);
+    return () => {
+      if (subscription) subscription.remove();
+    };
+  }, [phase]);
+
+  // Stop accelerometer when unlocked or idle
+  useEffect(() => {
+    if (phase === 'unlocked' || phase === 'detecting') {
+      Accelerometer.removeAllListeners();
+    }
   }, [phase]);
 
   // Pulsing animation for lying phase
@@ -118,11 +137,13 @@ export default function BedLockScreen() {
     };
   }, [phase]);
 
-  function handleForceUnlock() {
-    Alert.alert('Cheating?', "You're still lying down. Your future patients deserve better.", [
-      { text: "I'll Sit Up", style: 'cancel' },
-      { text: 'I Give Up', style: 'destructive', onPress: () => navigation.goBack() },
-    ]);
+  async function handleForceUnlock() {
+    const ok = await confirmDestructive(
+      'Need a Break?',
+      "You're still lying down. Consider resting properly and coming back fresh.",
+      { confirmLabel: 'Exit', cancelLabel: "I'll Sit Up" },
+    );
+    if (ok) navigation.goBack();
   }
 
   function handleStartSitUp() {
@@ -135,7 +156,7 @@ export default function BedLockScreen() {
       <SafeAreaView style={styles.safe}>
         <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
         <ResponsiveContainer style={styles.center}>
-          <ActivityIndicator size="large" color="#6C63FF" />
+          <ActivityIndicator size="large" color={n.colors.accent} />
           <LinearText style={styles.detectingText}>Detecting position...</LinearText>
         </ResponsiveContainer>
       </SafeAreaView>
@@ -151,7 +172,7 @@ export default function BedLockScreen() {
           <LinearText style={styles.shameTitle}>You're Lying Down</LinearText>
           <LinearText style={styles.shameSub}>
             {shameCount > 3
-              ? `Still in bed after ${shameCount} nudges. Your NEET exam doesn't care about your comfort.`
+              ? `Still resting after ${shameCount} nudges. A fresh mind studies better — but if you're ready, let's go.`
               : 'Phone detected horizontal position. Time to get up, Doctor.'}
           </LinearText>
 
@@ -169,7 +190,7 @@ export default function BedLockScreen() {
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.cheatBtn} onPress={handleForceUnlock}>
-            <LinearText style={styles.cheatBtnText}>Unlock Anyway (Cheating)</LinearText>
+            <LinearText style={styles.cheatBtnText}>Exit Anyway</LinearText>
           </TouchableOpacity>
         </ResponsiveContainer>
       </SafeAreaView>

@@ -1,14 +1,18 @@
 import React from 'react';
-import { StyleSheet, Text } from 'react-native';
+import { StyleSheet } from 'react-native';
 import { linearTheme } from '../../../theme/linearTheme';
+import LinearText from '../../../components/primitives/LinearText';
 
 export default function SettingsLabel({ text }: { text: string }) {
-  return <Text style={styles.label}>{text}</Text>;
+  return (
+    <LinearText variant="label" tone="secondary" style={styles.label}>
+      {text}
+    </LinearText>
+  );
 }
 
 const styles = StyleSheet.create({
   label: {
-    color: linearTheme.colors.textSecondary,
     fontSize: 13,
     marginBottom: 6,
     marginTop: 8,

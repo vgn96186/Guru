@@ -1,7 +1,8 @@
 import React from 'react';
-import { StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import { StyleSheet, View, useWindowDimensions } from 'react-native';
 import Markdown from 'react-native-markdown-display';
 import { linearTheme as n } from '../theme/linearTheme';
+import LinearText from './primitives/LinearText';
 
 interface MarkdownRenderProps {
   content: string;
@@ -36,9 +37,15 @@ export const MarkdownRender = React.memo(function MarkdownRender({
   const rules = React.useMemo(
     () => ({
       strong: (node: any, children: React.ReactNode, _parent: any, styles: any) => (
-        <Text key={node.key} textBreakStrategy="simple" style={[baseTextStyle.text, styles.strong]}>
+        <LinearText
+          key={node.key}
+          variant="body"
+          tone="warning"
+          textBreakStrategy="simple"
+          style={[baseTextStyle.text, styles.strong]}
+        >
           {children}
-        </Text>
+        </LinearText>
       ),
       text: (
         node: any,
@@ -50,9 +57,11 @@ export const MarkdownRender = React.memo(function MarkdownRender({
         const isInsideStrong =
           Array.isArray(parent) && parent.some((entry) => entry.type === 'strong');
         return (
-          <Text
+          <LinearText
             key={node.key}
             textBreakStrategy="simple"
+            variant="body"
+            tone="muted"
             style={[
               baseTextStyle.text,
               inheritedStyles,
@@ -61,7 +70,7 @@ export const MarkdownRender = React.memo(function MarkdownRender({
             ]}
           >
             {node.content}
-          </Text>
+          </LinearText>
         );
       },
     }),

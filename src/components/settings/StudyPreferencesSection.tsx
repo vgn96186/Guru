@@ -1,6 +1,7 @@
 import React from 'react';
-import { View, Text, StyleSheet, Switch } from 'react-native';
+import { View, StyleSheet, Switch } from 'react-native';
 import { linearTheme as n } from '../../theme/linearTheme';
+import LinearText from '../primitives/LinearText';
 
 interface StudyPreferencesSectionProps {
   strictMode: boolean;
@@ -12,32 +13,47 @@ interface StudyPreferencesSectionProps {
 }
 
 function StudyPreferencesSection({
-  strictMode, onStrictModeChange,
-  visualTimers, onVisualTimersChange,
-  bodyDoubling, onBodyDoublingChange
+  strictMode,
+  onStrictModeChange,
+  visualTimers,
+  onVisualTimersChange,
+  bodyDoubling,
+  onBodyDoublingChange,
 }: StudyPreferencesSectionProps) {
   return (
     <View style={styles.container}>
       <View style={styles.switchRow}>
         <View style={{ flex: 1 }}>
-          <Text style={styles.label}>Strict Mode 👮</Text>
-          <Text style={styles.hint}>Nag you instantly if you leave the app or are idle.</Text>
+          <LinearText variant="label" style={styles.label}>
+            Strict Mode
+          </LinearText>
+          <LinearText variant="caption" tone="muted" style={styles.hint}>
+            Nag you instantly if you leave the app or are idle.
+          </LinearText>
         </View>
         <Switch value={strictMode} onValueChange={onStrictModeChange} />
       </View>
 
       <View style={styles.switchRow}>
         <View style={{ flex: 1 }}>
-          <Text style={styles.label}>Visual Timers 🍅</Text>
-          <Text style={styles.hint}>Circular timers during breaks instead of plain text.</Text>
+          <LinearText variant="label" style={styles.label}>
+            Visual Timers
+          </LinearText>
+          <LinearText variant="caption" tone="muted" style={styles.hint}>
+            Circular timers during breaks instead of plain text.
+          </LinearText>
         </View>
         <Switch value={visualTimers} onValueChange={onVisualTimersChange} />
       </View>
 
       <View style={styles.switchRow}>
         <View style={{ flex: 1 }}>
-          <Text style={styles.label}>Guru presence (Body Doubling)</Text>
-          <Text style={styles.hint}>Ambient messages and pulsing dot while you study.</Text>
+          <LinearText variant="label" style={styles.label}>
+            Guru presence (Body Doubling)
+          </LinearText>
+          <LinearText variant="caption" tone="muted" style={styles.hint}>
+            Ambient messages and pulsing dot while you study.
+          </LinearText>
         </View>
         <Switch value={bodyDoubling} onValueChange={onBodyDoublingChange} />
       </View>

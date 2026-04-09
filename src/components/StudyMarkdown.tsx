@@ -1,6 +1,7 @@
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { linearTheme as n } from '../theme/linearTheme';
+import LinearText from './primitives/LinearText';
 
 interface StudyMarkdownProps {
   content: string;
@@ -56,17 +57,19 @@ function parseInline(text: string): InlineToken[] {
 
 function InlineText({ text, style }: { text: string; style: any }) {
   return (
-    <Text style={style} textBreakStrategy="simple">
+    <LinearText style={style} textBreakStrategy="simple" variant="body" tone="muted">
       {parseInline(text).map((token, index) => (
-        <Text
+        <LinearText
           key={`${token.text}-${index}`}
           textBreakStrategy="simple"
+          variant="body"
+          tone={token.bold ? 'warning' : 'muted'}
           style={[token.bold && styles.bold, token.italic && styles.italic]}
         >
           {token.text}
-        </Text>
+        </LinearText>
       ))}
-    </Text>
+    </LinearText>
   );
 }
 
@@ -122,9 +125,14 @@ export default function StudyMarkdown({ content, compact = false }: StudyMarkdow
       flushParagraph();
       elements.push(
         <View key={`bullet-${elements.length}`} style={styles.listRow}>
-          <Text style={[styles.marker, compact && styles.markerCompact]} textBreakStrategy="simple">
+          <LinearText
+            variant="body"
+            tone="accent"
+            style={[styles.marker, compact && styles.markerCompact]}
+            textBreakStrategy="simple"
+          >
             {'\u2022'}
-          </Text>
+          </LinearText>
           <InlineText
             text={bulletMatch[2]}
             style={[styles.text, compact && styles.textCompact, styles.listText]}
@@ -139,9 +147,14 @@ export default function StudyMarkdown({ content, compact = false }: StudyMarkdow
       flushParagraph();
       elements.push(
         <View key={`ordered-${elements.length}`} style={styles.listRow}>
-          <Text style={[styles.marker, compact && styles.markerCompact]} textBreakStrategy="simple">
+          <LinearText
+            variant="body"
+            tone="accent"
+            style={[styles.marker, compact && styles.markerCompact]}
+            textBreakStrategy="simple"
+          >
             {orderedMatch[1]}.
-          </Text>
+          </LinearText>
           <InlineText
             text={orderedMatch[2]}
             style={[styles.text, compact && styles.textCompact, styles.listText]}

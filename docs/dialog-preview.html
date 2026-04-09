@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Guru Dialog Preview — Linear Theme</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: #000000;
+    color: #F2F2F2;
+    min-height: 100vh;
+    padding: 40px 20px;
+  }
+
+  h1 {
+    font-size: 28px;
+    font-weight: 800;
+    text-align: center;
+    margin-bottom: 8px;
+    letter-spacing: -0.5px;
+  }
+
+  .subtitle {
+    text-align: center;
+    color: #8A8A8E;
+    font-size: 14px;
+    margin-bottom: 40px;
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+    gap: 32px;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+
+  .card-label {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #8A8A8E;
+    margin-bottom: 12px;
+    text-align: center;
+  }
+
+  /* Overlay backdrop */
+  .dialog-wrapper {
+    position: relative;
+    border-radius: 16px;
+    overflow: hidden;
+    border: 1px solid rgba(255,255,255,0.06);
+    background: #05070C;
+  }
+
+  .dialog-backdrop {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 280px;
+    background: rgba(0,0,0,0.6);
+    padding: 24px;
+  }
+
+  /* Dialog box */
+  .dialog {
+    width: 100%;
+    max-width: 320px;
+    background: rgba(9, 12, 18, 0.95);
+    border-radius: 16px;
+    border-width: 1px;
+    border-style: solid;
+    padding: 24px 20px 20px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+
+  /* Variant badge */
+  .badge {
+    align-self: flex-start;
+    padding: 3px 10px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.6px;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+
+  /* Title */
+  .dialog-title {
+    font-size: 17px;
+    font-weight: 700;
+    line-height: 24px;
+    color: #F2F2F2;
+    margin-bottom: 8px;
+  }
+
+  /* Message */
+  .dialog-message {
+    font-size: 14px;
+    line-height: 20px;
+    color: #A0A0A5;
+    margin-bottom: 20px;
+  }
+
+  /* Actions */
+  .actions {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+  }
+
+  .btn {
+    padding: 10px 16px;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 700;
+    font-family: 'Inter', sans-serif;
+    cursor: pointer;
+    border: 1px solid transparent;
+    transition: all 0.15s ease;
+    user-select: none;
+  }
+
+  .btn:active { transform: scale(0.97); }
+
+  .btn-primary {
+    background: rgba(22, 29, 54, 0.9);
+    color: #8B93E0;
+    border-color: rgba(94, 106, 210, 0.3);
+  }
+  .btn-primary:hover { background: rgba(94, 106, 210, 0.15); }
+
+  .btn-secondary {
+    background: rgba(255,255,255,0.06);
+    color: #A0A0A5;
+    border-color: rgba(255,255,255,0.08);
+  }
+  .btn-secondary:hover { background: rgba(255,255,255,0.1); }
+
+  .btn-destructive {
+    background: rgba(241, 76, 76, 0.1);
+    color: #F14C4C;
+    border-color: rgba(241, 76, 76, 0.25);
+  }
+  .btn-destructive:hover { background: rgba(241, 76, 76, 0.18); }
+
+  /* ── Variant: default ── */
+  .dialog-default {
+    border-color: rgba(255,255,255,0.15);
+  }
+  .dialog-default .badge {
+    background: rgba(94, 106, 210, 0.12);
+    color: #8B93E0;
+  }
+
+  /* ── Variant: success ── */
+  .dialog-success {
+    border-color: rgba(63, 185, 80, 0.3);
+  }
+  .dialog-success .badge {
+    background: rgba(63, 185, 80, 0.1);
+    color: #3FB950;
+  }
+
+  /* ── Variant: warning ── */
+  .dialog-warning {
+    border-color: rgba(217, 119, 6, 0.3);
+  }
+  .dialog-warning .badge {
+    background: rgba(217, 119, 6, 0.1);
+    color: #D97706;
+  }
+
+  /* ── Variant: error ── */
+  .dialog-error {
+    border-color: rgba(241, 76, 76, 0.3);
+  }
+  .dialog-error .badge {
+    background: rgba(241, 76, 76, 0.1);
+    color: #F14C4C;
+  }
+
+  /* ── Variant: focus ── */
+  .dialog-focus {
+    border-color: rgba(94, 106, 210, 0.3);
+  }
+  .dialog-focus .badge {
+    background: rgba(94, 106, 210, 0.12);
+    color: #8B93E0;
+  }
+
+  /* ── Variant: destructive ── */
+  .dialog-destructive {
+    border-color: rgba(241, 76, 76, 0.4);
+  }
+  .dialog-destructive .badge {
+    background: rgba(241, 76, 76, 0.12);
+    color: #F14C4C;
+  }
+
+  /* Divider */
+  .divider {
+    height: 1px;
+    background: rgba(255,255,255,0.08);
+    margin: 0 0 16px;
+  }
+
+  /* Code block */
+  .code-block {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 10px;
+    padding: 14px 16px;
+    margin-top: 20px;
+    max-width: 1200px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .code-block h3 {
+    font-size: 13px;
+    font-weight: 700;
+    color: #8A8A8E;
+    margin-bottom: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .code-block pre {
+    font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+    font-size: 13px;
+    line-height: 1.7;
+    color: #A0A0A5;
+    white-space: pre;
+    overflow-x: auto;
+  }
+
+  .code-block .keyword { color: #C678DD; }
+  .code-block .string { color: #98C379; }
+  .code-block .func { color: #61AFEF; }
+  .code-block .comment { color: #5C6370; font-style: italic; }
+  .code-block .prop { color: #E06C75; }
+  .code-block .param { color: #D19A66; }
+</style>
+</head>
+<body>
+
+<h1>Guru Dialog System</h1>
+<p class="subtitle">Linear-themed glassmorphic dialogs — all variants</p>
+
+<div class="grid">
+
+  <!-- DEFAULT -->
+  <div>
+    <div class="card-label">default — info / general</div>
+    <div class="dialog-wrapper">
+      <div class="dialog-backdrop">
+        <div class="dialog dialog-default">
+          <span class="badge">DEFAULT</span>
+          <div class="dialog-title">Clear AI Cache?</div>
+          <div class="dialog-message">All cached content cards will be regenerated fresh on next use.</div>
+          <div class="actions">
+            <button class="btn btn-secondary">Cancel</button>
+            <button class="btn btn-primary">Clear</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SUCCESS -->
+  <div>
+    <div class="card-label">success — operation completed</div>
+    <div class="dialog-wrapper">
+      <div class="dialog-backdrop">
+        <div class="dialog dialog-success">
+          <span class="badge">SUCCESS</span>
+          <div class="dialog-title">Backup Complete</div>
+          <div class="dialog-message">Your study data has been backed up to Google Drive successfully.</div>
+          <div class="actions">
+            <button class="btn btn-primary">OK</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- WARNING -->
+  <div>
+    <div class="card-label">warning — caution needed</div>
+    <div class="dialog-wrapper">
+      <div class="dialog-backdrop">
+        <div class="dialog dialog-warning">
+          <span class="badge">WARNING</span>
+          <div class="dialog-title">No Valid Transcripts</div>
+          <div class="dialog-message">Selected transcripts are too short to process. Choose longer recordings.</div>
+          <div class="actions">
+            <button class="btn btn-primary">Got it</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ERROR -->
+  <div>
+    <div class="card-label">error — something failed</div>
+    <div class="dialog-wrapper">
+      <div class="dialog-backdrop">
+        <div class="dialog dialog-error">
+          <span class="badge">ERROR</span>
+          <div class="dialog-title">Something went wrong</div>
+          <div class="dialog-message">Failed to expand node: Network request timed out. Please try again.</div>
+          <div class="actions">
+            <button class="btn btn-primary">OK</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FOCUS / CONFIRM -->
+  <div>
+    <div class="card-label">focus — confirmation (confirm)</div>
+    <div class="dialog-wrapper">
+      <div class="dialog-backdrop">
+        <div class="dialog dialog-focus">
+          <span class="badge">FOCUS</span>
+          <div class="dialog-title">Run Auto-Backup Now?</div>
+          <div class="dialog-message">This will create an automatic backup regardless of your frequency setting.</div>
+          <div class="actions">
+            <button class="btn btn-secondary">Cancel</button>
+            <button class="btn btn-primary">Run Backup</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DESTRUCTIVE -->
+  <div>
+    <div class="card-label">destructive — dangerous action</div>
+    <div class="dialog-wrapper">
+      <div class="dialog-backdrop">
+        <div class="dialog dialog-destructive">
+          <span class="badge">DESTRUCTIVE</span>
+          <div class="dialog-title">Reset all progress?</div>
+          <div class="dialog-message">This clears all topic progress, XP, streaks, and daily logs. This cannot be undone.</div>
+          <div class="actions">
+            <button class="btn btn-secondary">Cancel</button>
+            <button class="btn btn-destructive">Reset</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Code examples -->
+<div class="code-block">
+  <h3>Migration Examples</h3>
+  <pre><span class="comment">// ❌ Before (native Alert)</span>
+<span class="keyword">Alert</span>.<span class="func">alert</span>(<span class="string">'Reset all progress?'</span>, <span class="string">'This cannot be undone.'</span>, [
+  { text: <span class="string">'Cancel'</span>, style: <span class="string">'cancel'</span> },
+  { text: <span class="string">'Reset'</span>, style: <span class="string">'destructive'</span>, onPress: resetProgress },
+]);
+
+<span class="comment">// ✅ After (themed dialog)</span>
+<span class="keyword">const</span> ok = <span class="keyword">await</span> <span class="func">confirmDestructive</span>(
+  <span class="string">'Reset all progress?'</span>,
+  <span class="string">'This clears all topic progress, XP, streaks, and daily logs. This cannot be undone.'</span>
+);
+<span class="keyword">if</span> (!ok) <span class="keyword">return</span>;
+<span class="func">resetStudyProgress</span>();
+
+
+<span class="comment">// ❌ Before</span>
+<span class="keyword">Alert</span>.<span class="func">alert</span>(<span class="string">'Connected'</span>, <span class="string">'Google Drive is now active.'</span>);
+
+<span class="comment">// ✅ After</span>
+<span class="func">showSuccess</span>(<span class="string">'Connected'</span>, <span class="string">'Google Drive is now active.'</span>);
+
+
+<span class="comment">// ❌ Before</span>
+<span class="keyword">Alert</span>.<span class="func">alert</span>(<span class="string">'AI Error'</span>, err.message);
+
+<span class="comment">// ✅ After</span>
+<span class="func">showError</span>(err, <span class="string">'Failed to expand node'</span>);
+
+
+<span class="comment">// ❌ Before — complex 3-button alert</span>
+<span class="keyword">Alert</span>.<span class="func">alert</span>(<span class="string">'Title'</span>, <span class="string">'Message'</span>, [
+  { text: <span class="string">'Cancel'</span> },
+  { text: <span class="string">'Backup'</span>, onPress: doBackup },
+  { text: <span class="string">'Skip'</span>, onPress: skip },
+]);
+
+<span class="comment">// ✅ After — full showDialog</span>
+<span class="keyword">await</span> <span class="func">showDialog</span>({
+  <span class="prop">title</span>: <span class="string">'Title'</span>,
+  <span class="prop">message</span>: <span class="string">'Message'</span>,
+  <span class="prop">variant</span>: <span class="string">'focus'</span>,
+  <span class="prop">actions</span>: [
+    { <span class="prop">id</span>: <span class="string">'cancel'</span>, <span class="prop">label</span>: <span class="string">'Cancel'</span>, <span class="prop">variant</span>: <span class="string">'secondary'</span> },
+    { <span class="prop">id</span>: <span class="string">'backup'</span>, <span class="prop">label</span>: <span class="string">'Backup'</span>, <span class="prop">variant</span>: <span class="string">'primary'</span>, <span class="func">onPress</span>: doBackup },
+    { <span class="prop">id</span>: <span class="string">'skip'</span>, <span class="prop">label</span>: <span class="string">'Skip'</span>, <span class="prop">variant</span>: <span class="string">'secondary'</span>, <span class="func">onPress</span>: skip },
+  ],
+  <span class="prop">allowDismiss</span>: <span class="keyword">true</span>,
+});</pre>
+</div>
+
+</body>
+</html>

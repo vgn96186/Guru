@@ -6,7 +6,6 @@ import {
   StatusBar,
   Vibration,
   Animated,
-  Alert,
   Dimensions,
 } from 'react-native';
 import LinearText from '../components/primitives/LinearText';
@@ -19,6 +18,7 @@ import * as Haptics from 'expo-haptics';
 import { ResponsiveContainer } from '../hooks/useResponsive';
 import { useAppStateTransition } from '../hooks/useAppStateTransition';
 import { linearTheme as n } from '../theme/linearTheme';
+import { confirmDestructive } from '../components/dialogService';
 
 const MAX_OPENS_BEFORE_SHAME = 3;
 const DELAY_SECONDS = 30;
@@ -148,28 +148,29 @@ export default function DoomscrollInterceptor() {
     }
   }, [delayRemaining, isBlocking, progressAnim]);
 
-  const shameMessages = [
+  const accountabilityMessages = [
     {
-      title: 'Really?',
+      title: 'Pause for a Moment',
       subtitle: "You've opened {app} {count} times today without studying.",
-      quote: 'Your future patients are watching.',
+      quote: 'Your future patients are counting on this, Vishnu.',
       color: n.colors.accent,
     },
     {
-      title: 'PATHETIC',
+      title: "Let's Refocus",
       subtitle: "{count} attempts to avoid studying. You're better than this.",
       quote: 'The algorithm is winning. Fight back.',
       color: n.colors.error,
     },
     {
-      title: 'DISAPPOINTMENT',
+      title: 'One More Scroll...',
       subtitle: '{count} times. A doctor needs discipline, not dopamine.',
-      quote: "You're choosing pixels over patients.",
+      quote: "Pixels won't get you through NEET. You will.",
       color: '#FF5722',
     },
   ];
 
-  const currentShame = shameMessages[Math.min(shameLevel, shameMessages.length - 1)];
+  const currentMessage =
+    accountabilityMessages[Math.min(shameLevel, accountabilityMessages.length - 1)];
 
   function handleGoBackToStudy() {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -183,23 +184,17 @@ export default function DoomscrollInterceptor() {
     } as any);
   }
 
-  function handleForceProceed() {
-    Alert.alert(
+  async function handleForceProceed() {
+    const ok = await confirmDestructive(
       "You're Giving Up?",
       `Opening ${blockAppName} means losing 50 XP and breaking your streak momentum.`,
-      [
-        { text: "I'll Study Instead", style: 'cancel', onPress: () => setIsBlocking(false) },
-        {
-          text: 'Take the Penalty',
-          style: 'destructive',
-          onPress: async () => {
-            // In real implementation: deduct XP and update profile
-            setIsBlocking(false);
-            navigation.goBack();
-          },
-        },
-      ],
+      { confirmLabel: 'Take the Penalty', cancelLabel: "I'll Study Instead" },
     );
+    if (ok) {
+      // In real implementation: deduct XP and update profile
+      setIsBlocking(false);
+      navigation.goBack();
+    }
   }
 
   if (!isBlocking) {
@@ -252,7 +247,7 @@ export default function DoomscrollInterceptor() {
   }
 
   return (
-    <SafeAreaView style={[styles.safe, { backgroundColor: '#0A0A14' }]}>
+    <SafeAreaView style={[styles.safe, { backgroundColor: n.colors.surface }]}>
       <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
       <ResponsiveContainer>
         <Animated.View
@@ -285,32 +280,32 @@ export default function DoomscrollInterceptor() {
                 },
               ]}
             />
-            <View style={[styles.lockIcon, { borderColor: currentShame.color }]}>
+            <View style={[styles.lockIcon, { borderColor: currentMessage.color }]}>
               <LinearText style={styles.lockEmoji}>🚫</LinearText>
             </View>
           </View>
 
-          {/* Shame Message */}
-          <LinearText style={[styles.shameTitle, { color: currentShame.color }]}>
-            {currentShame.title}
+          {/* Accountability Message */}
+          <LinearText style={[styles.shameTitle, { color: currentMessage.color }]}>
+            {currentMessage.title}
           </LinearText>
           <LinearText style={styles.shameSubtitle}>
-            {currentShame.subtitle
+            {currentMessage.subtitle
               .replace('{app}', blockAppName)
               .replace('{count}', String(doomscrollAttempts))}
           </LinearText>
 
           {/* Quote Box */}
-          <View style={[styles.quoteBox, { borderLeftColor: currentShame.color }]}>
-            <LinearText style={styles.quoteText}>"{currentShame.quote}"</LinearText>
+          <View style={[styles.quoteBox, { borderLeftColor: currentMessage.color }]}>
+            <LinearText style={styles.quoteText}>"{currentMessage.quote}"</LinearText>
           </View>
 
           {/* Countdown or Unlocked State */}
           {delayRemaining > 0 ? (
             <View style={styles.countdownContainer}>
-              <LinearText style={styles.countdownLabel}>⏳ Shame Delay</LinearText>
+              <LinearText style={styles.countdownLabel}>⏳ Cool Down</LinearText>
               <View style={styles.countdownCircle}>
-                <LinearText style={[styles.countdownNumber, { color: currentShame.color }]}>
+                <LinearText style={[styles.countdownNumber, { color: currentMessage.color }]}>
                   {delayRemaining}
                 </LinearText>
                 <LinearText style={styles.countdownUnit}>sec</LinearText>
@@ -326,7 +321,7 @@ export default function DoomscrollInterceptor() {
                         inputRange: [0, 1],
                         outputRange: ['0%', '100%'],
                       }),
-                      backgroundColor: currentShame.color,
+                      backgroundColor: currentMessage.color,
                     },
                   ]}
                 />
@@ -364,7 +359,9 @@ export default function DoomscrollInterceptor() {
           {delayRemaining === 0 && (
             <TouchableOpacity
               style={[styles.button, styles.dangerButton]}
-              onPress={handleForceProceed}
+              onPress={async () => {
+                await handleForceProceed();
+              }}
             >
               <LinearText style={styles.dangerButtonText}>
                 Open {blockAppName} Anyway (-50 XP)
@@ -393,7 +390,7 @@ export default function DoomscrollInterceptor() {
 const styles = StyleSheet.create({
   safe: {
     flex: 1,
-    backgroundColor: '#0A0A14',
+    backgroundColor: n.colors.surface,
   },
   container: {
     flex: 1,
@@ -455,7 +452,7 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: '#1A0505',
+    backgroundColor: n.colors.errorSurface,
     borderWidth: 3,
     alignItems: 'center',
     justifyContent: 'center',

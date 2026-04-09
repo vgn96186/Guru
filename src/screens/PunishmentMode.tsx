@@ -1,13 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import {
-  View,
-  TouchableOpacity,
-  StyleSheet,
-  StatusBar,
-  Vibration,
-  Animated,
-  Alert,
-} from 'react-native';
+import { View, TouchableOpacity, StyleSheet, StatusBar, Vibration, Animated } from 'react-native';
+import { confirmDestructive } from '../components/dialogService';
 import LinearText from '../components/primitives/LinearText';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
@@ -29,7 +22,7 @@ export default function PunishmentMode() {
   const profile = useAppStore((s) => s.profile);
   const [isActive, setIsActive] = useState(true);
   const [minutesIdle, setMinutesIdle] = useState(0);
-  const [shameLevel, setShameLevel] = useState(0);
+  const [urgencyLevel, setUrgencyLevel] = useState(0);
   const [lastStudyTime, setLastStudyTime] = useState(0);
   const [showGuiltScreen, setShowGuiltScreen] = useState(true);
   const [reducedIntensity, setReducedIntensity] = useState(false);
@@ -63,21 +56,21 @@ export default function PunishmentMode() {
       );
       setLastStudyTime(todayMinutes);
 
-      // Calculate shame level based on goal progress
+      // Calculate urgency level based on goal progress
       const progress = todayMinutes / goalMinutes;
       if (progress < 0.1)
-        setShameLevel(3); // < 10% = maximum shame
+        setUrgencyLevel(3); // < 10% = highest urgency
       else if (progress < 0.5)
-        setShameLevel(2); // < 50% = high shame
+        setUrgencyLevel(2); // < 50% = high urgency
       else if (progress < 0.8)
-        setShameLevel(1); // < 80% = mild shame
-      else setShameLevel(0); // Good progress
+        setUrgencyLevel(1); // < 80% = mild urgency
+      else setUrgencyLevel(0); // Good progress
     });
   }, []);
 
-  // Harassment mode - periodic vibrations
+  // Nudge mode - periodic vibrations
   useEffect(() => {
-    if (!isActive || shameLevel === 0) return;
+    if (!isActive || urgencyLevel === 0) return;
 
     const fullPatterns = [
       [0, 500, 200, 500], // Level 1
@@ -91,11 +84,11 @@ export default function PunishmentMode() {
     ];
 
     const patterns = reducedIntensity ? reducedPatterns : fullPatterns;
-    const pattern = patterns[Math.min(shameLevel - 1, patterns.length - 1)];
+    const pattern = patterns[Math.min(urgencyLevel - 1, patterns.length - 1)];
     // Sum the pattern durations to know when vibration finishes
     const patternDurationMs = pattern.reduce((sum, ms) => sum + ms, 0);
 
-    const harassmentTimer = setInterval(
+    const nudgeTimer = setInterval(
       () => {
         // Guard: skip if a previous vibration pattern is still playing
         if (vibrationPendingRef.current) return;
@@ -110,17 +103,17 @@ export default function PunishmentMode() {
         }, patternDurationMs);
 
         setHasVibrated(true);
-        // Show guilt screen again
+        // Show nudge screen again
         setShowGuiltScreen(true);
       },
-      HARASSMENT_INTERVAL / Math.max(1, shameLevel),
-    ); // More frequent for higher shame
+      HARASSMENT_INTERVAL / Math.max(1, urgencyLevel),
+    ); // More frequent for higher urgency
 
     return () => {
-      clearInterval(harassmentTimer);
+      clearInterval(nudgeTimer);
       vibrationPendingRef.current = false;
     };
-  }, [isActive, shameLevel, reducedIntensity]);
+  }, [isActive, urgencyLevel, reducedIntensity]);
 
   // Idle time tracking
   useEffect(() => {
@@ -146,8 +139,8 @@ export default function PunishmentMode() {
       pulseLoop.start();
 
       let shakeLoop: Animated.CompositeAnimation | undefined;
-      // Shake for high shame levels
-      if (shameLevel >= 2) {
+      // Shake for high urgency levels
+      if (urgencyLevel >= 2) {
         shakeLoop = Animated.loop(
           Animated.sequence([
             Animated.timing(shakeAnim, { toValue: 5, duration: 100, useNativeDriver: true }),
@@ -163,31 +156,31 @@ export default function PunishmentMode() {
         shakeLoop?.stop();
       };
     }
-  }, [showGuiltScreen, shameLevel]);
+  }, [showGuiltScreen, urgencyLevel]);
 
-  const shameMessages = [
-    null, // Level 0 - no shame
+  const accountabilityMessages = [
+    null, // Level 0 - no nudge
     {
-      title: 'Lazy Day?',
+      title: 'Gentle Nudge',
       subtitle: "You've studied {minutes}min today. Goal: {goal}min.",
       quote: 'A little effort now saves a lot of panic later.',
       color: n.colors.warning,
     },
     {
-      title: 'GET UP',
+      title: "Let's Go",
       subtitle: '{minutes}min studied. {idle}min idle. Your books are collecting dust.',
       quote: 'Your competitors are studying RIGHT NOW.',
       color: n.colors.error,
     },
     {
-      title: 'PATHETIC',
+      title: 'Time to Reset',
       subtitle: "Only {minutes}min today. You've been idle for {idle}min.",
-      quote: "You promised yourself you'd be a doctor. Prove it.",
+      quote: 'You chose this path for a reason. One card at a time.',
       color: n.colors.error,
     },
   ];
 
-  const currentShame = shameMessages[shameLevel];
+  const currentMessage = accountabilityMessages[urgencyLevel];
 
   function handleStartStudying() {
     setIsActive(false);
@@ -212,19 +205,12 @@ export default function PunishmentMode() {
     });
   }
 
-  function handleDisable() {
-    Alert.alert('Giving Up?', 'Disable punishment mode and accept your laziness?', [
-      { text: "I'll Study", style: 'cancel' },
-      {
-        text: 'I Accept Defeat',
-        style: 'destructive',
-        onPress: () => {
-          setIsActive(false);
-          setShowGuiltScreen(false);
-          // Could track "gave up" statistic here
-        },
-      },
-    ]);
+  async function handleDisable() {
+    const ok = await confirmDestructive('Reduce Intensity?', 'Switch to a gentler reminder mode?');
+    if (ok) {
+      setIsActive(false);
+      setShowGuiltScreen(false);
+    }
   }
 
   function handleSnooze() {
@@ -234,7 +220,7 @@ export default function PunishmentMode() {
     snoozeTimerRef.current = setTimeout(() => setShowGuiltScreen(true), 10 * 60 * 1000);
   }
 
-  if (!showGuiltScreen || !currentShame) {
+  if (!showGuiltScreen || !currentMessage) {
     return (
       <SafeAreaView style={styles.safe}>
         <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
@@ -257,20 +243,20 @@ export default function PunishmentMode() {
             <LinearText style={styles.shameEmoji}>😤</LinearText>
           </Animated.View>
 
-          <LinearText style={[styles.title, { color: currentShame.color }]}>
-            {currentShame.title}
+          <LinearText style={[styles.title, { color: currentMessage.color }]}>
+            {currentMessage.title}
           </LinearText>
 
           <LinearText style={styles.subtitle}>
-            {currentShame.subtitle
+            {currentMessage.subtitle
               .replace('{minutes}', String(lastStudyTime))
               .replace('{goal}', String(profile?.dailyGoalMinutes ?? 120))
               .replace('{idle}', String(minutesIdle))}
           </LinearText>
 
-          <LinearSurface padded={false} borderColor={currentShame.color} style={styles.guiltBox}>
-            <LinearText style={[styles.quote, { color: currentShame.color }]}>
-              "{currentShame.quote}"
+          <LinearSurface padded={false} borderColor={currentMessage.color} style={styles.guiltBox}>
+            <LinearText style={[styles.quote, { color: currentMessage.color }]}>
+              "{currentMessage.quote}"
             </LinearText>
           </LinearSurface>
 
@@ -282,7 +268,7 @@ export default function PunishmentMode() {
                   styles.progressFill,
                   {
                     width: `${Math.min(100, (lastStudyTime / (profile?.dailyGoalMinutes ?? 120)) * 100)}%`,
-                    backgroundColor: currentShame.color,
+                    backgroundColor: currentMessage.color,
                   },
                 ]}
               />
@@ -297,7 +283,7 @@ export default function PunishmentMode() {
             style={styles.studyBtn}
             onPress={handleStartStudying}
             label="📚 START STUDYING NOW"
-            textStyle={{ color: currentShame.color }}
+            textStyle={{ color: currentMessage.color }}
           />
 
           <LinearButton
@@ -313,12 +299,12 @@ export default function PunishmentMode() {
             </TouchableOpacity>
 
             <TouchableOpacity style={styles.disableBtn} onPress={handleDisable}>
-              <LinearText style={styles.disableBtnText}>❌ Give Up</LinearText>
+              <LinearText style={styles.disableBtnText}>❌ Reduce Intensity</LinearText>
             </TouchableOpacity>
           </View>
 
           <LinearText style={styles.footerText}>
-            Punishment Level {shameLevel}/3 • Idle: {minutesIdle}min
+            Nudge Level {urgencyLevel}/3 • Idle: {minutesIdle}min
           </LinearText>
 
           {hasVibrated && !reducedIntensity && (

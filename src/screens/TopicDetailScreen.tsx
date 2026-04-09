@@ -7,7 +7,6 @@ import {
   StyleSheet,
   StatusBar,
   TextInput,
-  Alert,
   Animated,
   Easing,
   Image,
@@ -38,6 +37,13 @@ import {
   type GeneratedStudyImageStyle,
 } from '../db/queries/generatedStudyImages';
 import { generateStudyImage } from '../services/studyImageService';
+import {
+  showInfo,
+  showSuccess,
+  showError,
+  confirm,
+  confirmDestructive,
+} from '../components/dialogService';
 
 function TopicImage({ topicName }: { topicName: string }) {
   const [imageUrl, setImageUrl] = useState<string | null>(null);
@@ -259,11 +265,14 @@ export default function TopicDetailScreen() {
     searchQuery,
   ]);
 
-  function confirmDiscardUnsavedNotes(onDiscard: () => void) {
-    Alert.alert('Discard changes?', 'You have unsaved notes.', [
-      { text: 'Keep editing', style: 'cancel' },
-      { text: 'Discard', style: 'destructive', onPress: onDiscard },
-    ]);
+  async function confirmDiscardUnsavedNotes(onDiscard: () => void) {
+    const ok = await confirmDestructive('Discard changes?', 'You have unsaved notes.', {
+      confirmLabel: 'Discard',
+      cancelLabel: 'Keep editing',
+    });
+    if (ok) {
+      onDiscard();
+    }
   }
 
   function openTopicPage(topic: TopicWithProgress) {
@@ -342,10 +351,7 @@ export default function TopicDetailScreen() {
         [topic.id]: [image, ...(prev[topic.id] ?? [])],
       }));
     } catch (error) {
-      Alert.alert(
-        'Image generation failed',
-        error instanceof Error ? error.message : String(error),
-      );
+      await showError(error, 'Image generation failed');
     } finally {
       setImageJobKey(null);
     }
@@ -428,7 +434,7 @@ export default function TopicDetailScreen() {
   function launchBatch(topics: TopicWithProgress[], actionType: 'study' | 'review' | 'deep_dive') {
     const ids = topics.slice(0, actionType === 'review' ? 4 : 3).map((topic) => topic.id);
     if (ids.length === 0) {
-      Alert.alert('Nothing to study', 'There are no matching topics in this bucket yet.');
+      void showInfo('Nothing to study', 'There are no matching topics in this bucket yet.');
       return;
     }
     navigation.getParent<NavigationProp<TabParamList>>()?.navigate('HomeTab', {
@@ -910,22 +916,16 @@ export default function TopicDetailScreen() {
                         styles.notesCancel,
                         { backgroundColor: theme.colors.errorSurface, marginTop: 12 },
                       ]}
-                      onPress={() => {
-                        Alert.alert(
+                      onPress={async () => {
+                        const ok = await confirmDestructive(
                           'Clear AI Cache?',
                           'This will remove cached AI content for this topic. It will be regenerated next time you study it.',
-                          [
-                            { text: 'Cancel', style: 'cancel' },
-                            {
-                              text: 'Clear',
-                              style: 'destructive',
-                              onPress: async () => {
-                                await clearTopicCache(item.id);
-                                Alert.alert('Success', 'AI content cache cleared for this topic.');
-                              },
-                            },
-                          ],
+                          { confirmLabel: 'Clear' },
                         );
+                        if (ok) {
+                          await clearTopicCache(item.id);
+                          await showSuccess('Success', 'AI content cache cleared for this topic.');
+                        }
                       }}
                     >
                       <Text style={[styles.notesCancelText, { color: theme.colors.error }]}>

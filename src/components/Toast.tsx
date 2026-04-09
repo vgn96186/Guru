@@ -12,10 +12,11 @@
  */
 
 import React, { useEffect, useRef, useState, useCallback } from 'react';
-import { Animated, Text, TouchableOpacity, StyleSheet, Dimensions, View } from 'react-native';
+import { Animated, TouchableOpacity, StyleSheet, Dimensions, View } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { theme } from '../constants/theme';
+import LinearText from './primitives/LinearText';
 
 export type ToastType = 'info' | 'success' | 'error' | 'warning' | 'focus';
 export type ToastVariant = ToastType;
@@ -196,21 +197,37 @@ const ToastItem = React.memo(
         >
           <View style={styles.content}>
             <View style={[styles.badge, { backgroundColor: palette.pillColor }]}>
-              <Text style={[styles.badgeText, { color: palette.pillTextColor }]}>
+              <LinearText
+                variant="badge"
+                tone={
+                  payload.type === 'success'
+                    ? 'success'
+                    : payload.type === 'error'
+                      ? 'error'
+                      : payload.type === 'warning'
+                        ? 'warning'
+                        : payload.type === 'focus'
+                          ? 'accent'
+                          : 'secondary'
+                }
+                style={styles.badgeText}
+              >
                 {payload.type.toUpperCase()}
-              </Text>
+              </LinearText>
             </View>
             {payload.title ? (
-              <Text style={[styles.title, { color: palette.textColor }]} numberOfLines={2}>
+              <LinearText variant="title" tone="primary" style={styles.title} numberOfLines={2}>
                 {payload.title}
-              </Text>
+              </LinearText>
             ) : null}
-            <Text style={[styles.text, { color: palette.textColor }]} numberOfLines={3}>
+            <LinearText variant="bodySmall" tone="primary" style={styles.text} numberOfLines={3}>
               {payload.message}
-            </Text>
+            </LinearText>
           </View>
           {payload.onPress && (
-            <Text style={[styles.tapHint, { color: palette.hintColor }]}>Tap to act</Text>
+            <LinearText variant="caption" tone="secondary" style={styles.tapHint}>
+              Tap to act
+            </LinearText>
           )}
         </TouchableOpacity>
       </Animated.View>

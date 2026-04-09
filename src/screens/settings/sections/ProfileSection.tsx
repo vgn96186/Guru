@@ -1,8 +1,9 @@
 import React from 'react';
-import { Text, TouchableOpacity } from 'react-native';
+import { TouchableOpacity } from 'react-native';
 import type { Ionicons } from '@expo/vector-icons';
 import { linearTheme } from '../../../theme/linearTheme';
 import LinearTextInput from '../../../components/primitives/LinearTextInput';
+import LinearText from '../../../components/primitives/LinearText';
 import SettingsLabel from '../components/SettingsLabel';
 
 type SectionToggleProps = {
@@ -36,9 +37,12 @@ export default function ProfileSection({
         onPress={onNavigateDeviceLink}
         activeOpacity={0.8}
       >
-        <Text style={[styles.testBtnText, { color: linearTheme.colors.success }]}>
+        <LinearText
+          variant="body"
+          style={[styles.testBtnText, { color: linearTheme.colors.success }]}
+        >
           📱 Link Another Device (Sync)
-        </Text>
+        </LinearText>
       </TouchableOpacity>
       <SettingsLabel text="Your name" />
       <LinearTextInput

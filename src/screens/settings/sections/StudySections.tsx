@@ -1,7 +1,8 @@
 import React from 'react';
-import { Switch, Text, TouchableOpacity, View } from 'react-native';
+import { Switch, TouchableOpacity, View } from 'react-native';
 import SettingsLabel from '../components/SettingsLabel';
 import LinearTextInput from '../../../components/primitives/LinearTextInput';
+import LinearText from '../../../components/primitives/LinearText';
 import { linearTheme } from '../../../theme/linearTheme';
 import { ALL_CONTENT_TYPES } from '../types';
 
@@ -52,7 +53,9 @@ export default function StudySections(props: any) {
 
   return (
     <>
-      <Text style={styles.categoryLabel}>STUDY</Text>
+      <LinearText style={styles.categoryLabel} variant="sectionTitle" tone="muted">
+        STUDY
+      </LinearText>
       <SectionToggle id="live_batch" title="Study Plan" icon="book-outline" tint="#2196F3">
         <SettingsLabel text="DBMCI One batch start date (YYYY-MM-DD)" />
         <LinearTextInput
@@ -63,10 +66,10 @@ export default function StudySections(props: any) {
           placeholderTextColor={linearTheme.colors.textMuted}
           autoCapitalize="none"
         />
-        <Text style={styles.hint}>
+        <LinearText style={styles.hint} variant="body" tone="muted">
           Set this to unlock the live-class position tracker in the Study Plan screen. Guru will
           highlight which subject DBMCI One is covering today.
-        </Text>
+        </LinearText>
         <SettingsLabel text="BTR (Back to Roots) batch start date (YYYY-MM-DD)" />
         <LinearTextInput
           style={styles.input}
@@ -76,10 +79,10 @@ export default function StudySections(props: any) {
           placeholderTextColor={linearTheme.colors.textMuted}
           autoCapitalize="none"
         />
-        <Text style={styles.hint}>
-          Set this when you start the BTR revision batch. Guru will align your daily revision
-          queue with the current BTR subject.
-        </Text>
+        <LinearText style={styles.hint} variant="body" tone="muted">
+          Set this when you start the BTR revision batch. Guru will align your daily revision queue
+          with the current BTR subject.
+        </LinearText>
         <SettingsLabel text="Home novelty cooldown (hours)" />
         <View style={styles.frequencyRow}>
           {[2, 4, 6, 8, 12].map((hrs) => {
@@ -91,20 +94,28 @@ export default function StudySections(props: any) {
                 onPress={() => setHomeNoveltyCooldownHours(String(hrs))}
                 activeOpacity={0.8}
               >
-                <Text style={[styles.frequencyChipText, active && styles.frequencyChipTextActive]}>
+                <LinearText
+                  style={[styles.frequencyChipText, active && styles.frequencyChipTextActive]}
+                  variant="body"
+                >
                   {hrs}h
-                </Text>
+                </LinearText>
               </TouchableOpacity>
             );
           })}
         </View>
-        <Text style={styles.hint}>
-          Controls how quickly Home repeats the same topics in DO THIS NOW and UP NEXT. Lower =
-          more repetition, higher = more novelty.
-        </Text>
+        <LinearText style={styles.hint} variant="body" tone="muted">
+          Controls how quickly Home repeats the same topics in DO THIS NOW and UP NEXT. Lower = more
+          repetition, higher = more novelty.
+        </LinearText>
       </SectionToggle>
 
-      <SectionToggle id="study_prefs" title="Study Preferences" icon="school-outline" tint="#E040FB">
+      <SectionToggle
+        id="study_prefs"
+        title="Study Preferences"
+        icon="school-outline"
+        tint="#E040FB"
+      >
         <SettingsLabel text="Preferred session length (minutes)" />
         <LinearTextInput
           style={styles.input}
@@ -123,11 +134,13 @@ export default function StudySections(props: any) {
         />
         <View style={[styles.switchRow, { marginTop: 16 }]}>
           <View style={{ flex: 1, paddingRight: 8 }}>
-            <Text style={styles.switchLabel}>Strict Mode 👮</Text>
-            <Text style={styles.hint}>
+            <LinearText style={styles.switchLabel} variant="label">
+              Strict Mode 👮
+            </LinearText>
+            <LinearText style={styles.hint} variant="body" tone="muted">
               Nag you instantly if you leave the app or are idle. Idle time won't count towards
               session duration.
-            </Text>
+            </LinearText>
           </View>
           <Switch
             value={strictMode}
@@ -138,11 +151,20 @@ export default function StudySections(props: any) {
         </View>
       </SectionToggle>
 
-      <SectionToggle id="notifications" title="Notifications" icon="notifications-outline" tint="#FFD700">
+      <SectionToggle
+        id="notifications"
+        title="Notifications"
+        icon="notifications-outline"
+        tint="#FFD700"
+      >
         <View style={styles.switchRow}>
           <View>
-            <Text style={styles.switchLabel}>Enable Guru's reminders</Text>
-            <Text style={styles.hint}>Guru will send personalized daily accountability messages</Text>
+            <LinearText style={styles.switchLabel} variant="label">
+              Enable Guru's reminders
+            </LinearText>
+            <LinearText style={styles.hint} variant="body" tone="muted">
+              Guru will send personalized daily accountability messages
+            </LinearText>
           </View>
           <Switch
             value={notifs}
@@ -159,7 +181,9 @@ export default function StudySections(props: any) {
           keyboardType="number-pad"
           placeholderTextColor={linearTheme.colors.textMuted}
         />
-        <Text style={styles.hint}>Evening nudge fires ~11 hours after this.</Text>
+        <LinearText style={styles.hint} variant="body" tone="muted">
+          Evening nudge fires ~11 hours after this.
+        </LinearText>
         <SettingsLabel text="Guru presence frequency" />
         <View style={styles.frequencyRow}>
           {(['rare', 'normal', 'frequent', 'off'] as const).map((freq) => (
@@ -168,28 +192,35 @@ export default function StudySections(props: any) {
               style={[styles.freqBtn, guruFrequency === freq && styles.freqBtnActive]}
               onPress={() => setGuruFrequency(freq)}
             >
-              <Text style={[styles.freqText, guruFrequency === freq && styles.freqTextActive]}>
+              <LinearText
+                style={[styles.freqText, guruFrequency === freq && styles.freqTextActive]}
+                variant="body"
+              >
                 {freq.charAt(0).toUpperCase() + freq.slice(1)}
-              </Text>
+              </LinearText>
             </TouchableOpacity>
           ))}
         </View>
-        <Text style={styles.hint}>
-          How often Guru sends ambient messages during sessions. Rare: every 30min, Normal:
-          every 20min, Frequent: every 10min.
-        </Text>
+        <LinearText style={styles.hint} variant="body" tone="muted">
+          How often Guru sends ambient messages during sessions. Rare: every 30min, Normal: every
+          20min, Frequent: every 10min.
+        </LinearText>
         <TouchableOpacity style={styles.testBtn} onPress={testNotification} activeOpacity={0.8}>
-          <Text style={styles.testBtnText}>Schedule Notifications Now</Text>
+          <LinearText style={styles.testBtnText} variant="body">
+            Schedule Notifications Now
+          </LinearText>
         </TouchableOpacity>
       </SectionToggle>
 
       <SectionToggle id="body_doubling" title="Body Doubling" icon="people-outline" tint="#7ED6A7">
         <View style={styles.switchRow}>
           <View style={{ flex: 1, paddingRight: 8 }}>
-            <Text style={styles.switchLabel}>Guru presence during sessions</Text>
-            <Text style={styles.hint}>
+            <LinearText style={styles.switchLabel} variant="label">
+              Guru presence during sessions
+            </LinearText>
+            <LinearText style={styles.hint} variant="body" tone="muted">
               Ambient toast messages and pulsing dot while you study. Helps with focus.
-            </Text>
+            </LinearText>
           </View>
           <Switch
             value={bodyDoubling}
@@ -200,8 +231,15 @@ export default function StudySections(props: any) {
         </View>
       </SectionToggle>
 
-      <SectionToggle id="content" title="Content Type Preferences" icon="layers-outline" tint="#FF6B9D">
-        <Text style={styles.hint}>Block card types you don't want in sessions. Keypoints can't be blocked.</Text>
+      <SectionToggle
+        id="content"
+        title="Content Type Preferences"
+        icon="layers-outline"
+        tint="#FF6B9D"
+      >
+        <LinearText style={styles.hint} variant="body" tone="muted">
+          Block card types you don't want in sessions. Keypoints can't be blocked.
+        </LinearText>
         <View style={styles.chipGrid}>
           {ALL_CONTENT_TYPES.map(({ type, label }) => {
             const isBlocked = blockedTypes.includes(type);
@@ -209,7 +247,11 @@ export default function StudySections(props: any) {
             return (
               <TouchableOpacity
                 key={type}
-                style={[styles.typeChip, isBlocked && styles.typeChipBlocked, isLocked && styles.typeChipLocked]}
+                style={[
+                  styles.typeChip,
+                  isBlocked && styles.typeChipBlocked,
+                  isLocked && styles.typeChipLocked,
+                ]}
                 onPress={() => {
                   if (isLocked) return;
                   setBlockedTypes((prev: any) =>
@@ -218,8 +260,18 @@ export default function StudySections(props: any) {
                 }}
                 activeOpacity={isLocked ? 1 : 0.8}
               >
-                <Text style={[styles.typeChipText, isBlocked && styles.typeChipTextBlocked]}>{label}</Text>
-                {isBlocked && <Text style={styles.typeChipX}> ✕</Text>}
+                <LinearText
+                  style={[styles.typeChipText, isBlocked && styles.typeChipTextBlocked]}
+                  variant="body"
+                >
+                  {label}
+                </LinearText>
+                {isBlocked && (
+                  <LinearText style={styles.typeChipX} variant="body">
+                    {' '}
+                    ✕
+                  </LinearText>
+                )}
               </TouchableOpacity>
             );
           })}
@@ -227,16 +279,19 @@ export default function StudySections(props: any) {
       </SectionToggle>
 
       <SectionToggle id="focus_subjects" title="Focus Subjects" icon="flask-outline" tint="#2196F3">
-        <Text style={styles.hint}>
+        <LinearText style={styles.hint} variant="body" tone="muted">
           Pin subjects to limit sessions to those areas only. Clear all to study everything.
-        </Text>
+        </LinearText>
         <View style={styles.chipGrid}>
           {subjects.map((s: any) => {
             const isFocused = focusSubjectIds.includes(s.id);
             return (
               <TouchableOpacity
                 key={s.id}
-                style={[styles.typeChip, isFocused && { backgroundColor: s.colorHex + '33', borderColor: s.colorHex }]}
+                style={[
+                  styles.typeChip,
+                  isFocused && { backgroundColor: s.colorHex + '33', borderColor: s.colorHex },
+                ]}
                 onPress={() =>
                   setFocusSubjectIds((prev: any) =>
                     isFocused ? prev.filter((id: any) => id !== s.id) : [...prev, s.id],
@@ -244,14 +299,21 @@ export default function StudySections(props: any) {
                 }
                 activeOpacity={0.8}
               >
-                <Text style={[styles.typeChipText, isFocused && { color: s.colorHex }]}>{s.shortCode}</Text>
+                <LinearText
+                  style={[styles.typeChipText, isFocused && { color: s.colorHex }]}
+                  variant="body"
+                >
+                  {s.shortCode}
+                </LinearText>
               </TouchableOpacity>
             );
           })}
         </View>
         {focusSubjectIds.length > 0 && (
           <TouchableOpacity onPress={() => setFocusSubjectIds([])} style={styles.clearBtn}>
-            <Text style={styles.clearBtnText}>Clear focus (study all subjects)</Text>
+            <LinearText style={styles.clearBtnText} variant="body">
+              Clear focus (study all subjects)
+            </LinearText>
           </TouchableOpacity>
         )}
       </SectionToggle>
@@ -275,13 +337,20 @@ export default function StudySections(props: any) {
         />
       </SectionToggle>
 
-      <SectionToggle id="pomodoro" title="Pomodoro (Lecture Overlay)" icon="alarm-outline" tint="#F44336">
+      <SectionToggle
+        id="pomodoro"
+        title="Pomodoro (Lecture Overlay)"
+        icon="alarm-outline"
+        tint="#F44336"
+      >
         <View style={styles.switchRow}>
           <View style={{ flex: 1, paddingRight: 8 }}>
-            <Text style={styles.switchLabel}>Enable Pomodoro Suggestion</Text>
-            <Text style={styles.hint}>
+            <LinearText style={styles.switchLabel} variant="label">
+              Enable Pomodoro Suggestion
+            </LinearText>
+            <LinearText style={styles.hint} variant="body" tone="muted">
               Auto-expand the external lecture overlay every interval to suggest a break.
-            </Text>
+            </LinearText>
           </View>
           <Switch
             value={pomodoroEnabled}
@@ -290,7 +359,7 @@ export default function StudySections(props: any) {
             thumbColor={linearTheme.colors.textPrimary}
           />
         </View>
-        <Text
+        <LinearText
           style={[
             styles.hint,
             {
@@ -301,23 +370,30 @@ export default function StudySections(props: any) {
                   : linearTheme.colors.textMuted,
             },
           ]}
+          variant="body"
+          tone="muted"
         >
           {pomodoroLectureQuizReady
             ? 'Lecture-aware break quizzes are ready.'
             : pomodoroEnabled
               ? 'Currently this will only suggest a break until overlay permission, Groq, and Deepgram are configured.'
               : 'Pomodoro break suggestions are off.'}
-        </Text>
+        </LinearText>
         {!hasPomodoroOverlayPermission && (
           <TouchableOpacity
-            style={[styles.validateBtn, { alignSelf: 'flex-start', paddingHorizontal: 14, marginTop: 6 }]}
+            style={[
+              styles.validateBtn,
+              { alignSelf: 'flex-start', paddingHorizontal: 14, marginTop: 6 },
+            ]}
             onPress={requestPomodoroOverlay}
             activeOpacity={0.8}
           >
-            <Text style={styles.testBtnText}>Grant Overlay Permission</Text>
+            <LinearText style={styles.testBtnText} variant="body">
+              Grant Overlay Permission
+            </LinearText>
           </TouchableOpacity>
         )}
-        <View style={[styles.chipGrid, { marginTop: 10 }]}> 
+        <View style={[styles.chipGrid, { marginTop: 10 }]}>
           {[
             { label: 'Overlay', ready: hasPomodoroOverlayPermission },
             { label: 'Groq', ready: hasPomodoroGroqKey },
@@ -335,9 +411,15 @@ export default function StudySections(props: any) {
                 },
               ]}
             >
-              <Text style={[styles.typeChipText, { color: item.ready ? linearTheme.colors.success : linearTheme.colors.error }]}>
+              <LinearText
+                style={[
+                  styles.typeChipText,
+                  { color: item.ready ? linearTheme.colors.success : linearTheme.colors.error },
+                ]}
+                variant="body"
+              >
                 {item.label}
-              </Text>
+              </LinearText>
             </View>
           ))}
         </View>
@@ -359,22 +441,23 @@ export default function StudySections(props: any) {
               disabled={!pomodoroEnabled}
               activeOpacity={0.8}
             >
-              <Text
+              <LinearText
                 style={[
                   styles.freqText,
                   pomodoroInterval === value && styles.freqTextActive,
                   !pomodoroEnabled && { opacity: 0.45 },
                 ]}
+                variant="body"
               >
                 {value}m
-              </Text>
+              </LinearText>
             </TouchableOpacity>
           ))}
         </View>
-        <Text style={styles.hint}>
+        <LinearText style={styles.hint} variant="body" tone="muted">
           Suggested: 20-30 minutes. The overlay can suggest a break without quiz data, but
           lecture-aware quiz breaks need both Groq and Deepgram.
-        </Text>
+        </LinearText>
       </SectionToggle>
     </>
   );

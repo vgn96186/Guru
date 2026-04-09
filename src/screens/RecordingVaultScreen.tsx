@@ -13,7 +13,6 @@ import {
   FlatList,
   StyleSheet,
   StatusBar,
-  Alert,
   ActivityIndicator,
   AppState,
 } from 'react-native';
@@ -36,6 +35,13 @@ import { transcribeAudio } from '../services/transcription/transcribeAudio';
 import { saveLecturePersistence } from '../services/lecture/persistence';
 import { profileRepository } from '../db/repositories';
 import { getApiKeys } from '../services/ai/config';
+import {
+  showInfo,
+  showSuccess,
+  showError,
+  confirm,
+  confirmDestructive,
+} from '../components/dialogService';
 import { ResponsiveContainer } from '../hooks/useResponsive';
 import { linearTheme as n } from '../theme/linearTheme';
 import ScreenHeader from '../components/ScreenHeader';
@@ -230,22 +236,18 @@ export default function RecordingVaultScreen() {
     [processRecording],
   );
 
-  const handleDelete = useCallback((item: RecordingFile) => {
-    Alert.alert('Delete Recording', `Delete "${item.name}"? This cannot be undone.`, [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Delete',
-        style: 'destructive',
-        onPress: async () => {
-          try {
-            await deleteRecording(item.path);
-            setRecordings((prev) => prev.filter((r) => r.path !== item.path));
-          } catch {
-            Alert.alert('Error', 'Could not delete the file.');
-          }
-        },
-      },
-    ]);
+  const handleDelete = useCallback(async (item: RecordingFile) => {
+    const ok = await confirmDestructive(
+      'Delete Recording',
+      `Delete "${item.name}"? This cannot be undone.`,
+    );
+    if (!ok) return;
+    try {
+      await deleteRecording(item.path);
+      setRecordings((prev) => prev.filter((r) => r.path !== item.path));
+    } catch {
+      void showError('Could not delete the file.');
+    }
   }, []);
 
   const resetProcessing = useCallback(() => {
@@ -278,30 +280,26 @@ export default function RecordingVaultScreen() {
     setSelectedPaths(new Set());
   }, []);
 
-  const handleBatchDelete = useCallback(() => {
+  const handleBatchDelete = useCallback(async () => {
     const count = selectedPaths.size;
-    Alert.alert(`Delete ${count} recording${count !== 1 ? 's' : ''}?`, 'This cannot be undone.', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Delete All',
-        style: 'destructive',
-        onPress: async () => {
-          const paths = [...selectedPaths];
-          let deleted = 0;
-          for (const p of paths) {
-            try {
-              await deleteRecording(p);
-              deleted++;
-            } catch {
-              /* skip failures */
-            }
-          }
-          setRecordings((prev) => prev.filter((r) => !selectedPaths.has(r.path)));
-          setSelectedPaths(new Set());
-          Alert.alert('Done', `Deleted ${deleted} recording${deleted !== 1 ? 's' : ''}.`);
-        },
-      },
-    ]);
+    const ok = await confirmDestructive(
+      `Delete ${count} recording${count !== 1 ? 's' : ''}?`,
+      'This cannot be undone.',
+    );
+    if (!ok) return;
+    const paths = [...selectedPaths];
+    let deleted = 0;
+    for (const p of paths) {
+      try {
+        await deleteRecording(p);
+        deleted++;
+      } catch {
+        /* skip failures */
+      }
+    }
+    setRecordings((prev) => prev.filter((r) => !selectedPaths.has(r.path)));
+    setSelectedPaths(new Set());
+    void showSuccess('Done', `Deleted ${deleted} recording${deleted !== 1 ? 's' : ''}.`);
   }, [selectedPaths]);
 
   const formatDate = (d: Date | null) => {
@@ -451,7 +449,7 @@ export default function RecordingVaultScreen() {
 
       // Check if already saved
       if (savedFolders.some((f) => f.uri === treeUri)) {
-        Alert.alert('Already added', 'This folder is already being scanned.');
+        void showInfo('Already added', 'This folder is already being scanned.');
         void loadRecordings();
         return;
       }
@@ -462,18 +460,21 @@ export default function RecordingVaultScreen() {
       void loadRecordings();
 
       if (entries.length > 0) {
-        Alert.alert(
+        void showSuccess(
           'Folder added',
           `Found ${entries.length} recording${entries.length !== 1 ? 's' : ''}.`,
         );
       } else {
-        Alert.alert('Folder added', 'No .m4a files found yet. It will be scanned on each refresh.');
+        void showInfo(
+          'Folder added',
+          'No .m4a files found yet. It will be scanned on each refresh.',
+        );
       }
     } catch (e: any) {
       const msg = e?.message ?? String(e);
       console.warn('[RecordingVault] pickFolderAndScan error:', msg);
       if (msg.includes('timed out')) return;
-      Alert.alert('Error', `Could not open folder picker.\n\n${msg}`);
+      void showError(msg, 'Could not open folder picker.');
     }
   }, [savedFolders, persistFolders, loadRecordings]);
 
@@ -494,26 +495,19 @@ export default function RecordingVaultScreen() {
         appName: 'Recording Vault Upload',
       });
     } catch (e: any) {
-      Alert.alert('Upload failed', e?.message ?? 'Could not process the selected audio file.');
+      void showError(e, 'Upload failed');
     } finally {
       setIsUploadingAudio(false);
     }
   }, [processRecording]);
 
   const handleRemoveFolder = useCallback(
-    (folder: SavedFolder) => {
-      Alert.alert('Remove folder?', folder.label, [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Remove',
-          style: 'destructive',
-          onPress: async () => {
-            const updated = savedFolders.filter((f) => f.uri !== folder.uri);
-            await persistFolders(updated);
-            void loadRecordings();
-          },
-        },
-      ]);
+    async (folder: SavedFolder) => {
+      const ok = await confirmDestructive('Remove folder?', folder.label);
+      if (!ok) return;
+      const updated = savedFolders.filter((f) => f.uri !== folder.uri);
+      await persistFolders(updated);
+      void loadRecordings();
     },
     [savedFolders, persistFolders, loadRecordings],
   );

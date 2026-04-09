@@ -1,13 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import {
-  View,
-  TouchableOpacity,
-  StyleSheet,
-  StatusBar,
-  Animated,
-  Alert,
-  ScrollView,
-} from 'react-native';
+import { View, TouchableOpacity, StyleSheet, StatusBar, Animated, ScrollView } from 'react-native';
 import LinearText from '../components/primitives/LinearText';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
@@ -24,6 +16,7 @@ import { ResponsiveContainer } from '../hooks/useResponsive';
 import type { Subject } from '../types';
 import { emphasizeHighYieldMarkdown } from '../utils/highlightMarkdown';
 import ScreenHeader from '../components/ScreenHeader';
+import { showInfo, confirmDestructive } from '../components/dialogService';
 
 const BOSS_HP = 100;
 const PLAYER_HP = 3;
@@ -81,7 +74,7 @@ export default function BossBattleScreen() {
       }
 
       if (subjectQs.length < 5) {
-        Alert.alert(
+        await showInfo(
           'Not enough questions',
           `Study more ${subjectName} topics to unlock this boss! (Need 5+ questions, have ${subjectQs.length})`,
         );
@@ -138,22 +131,27 @@ export default function BossBattleScreen() {
     nextQuestion();
   }
 
-  function handleRetreat() {
-    Alert.alert('Retreat?', 'Leave this boss fight and return later.', [
-      { text: 'Stay', style: 'cancel' },
-      { text: 'Retreat', style: 'destructive', onPress: () => navigation.goBack() },
-    ]);
+  async function handleRetreat() {
+    const ok = await confirmDestructive('Retreat?', 'Leave this boss fight and return later.', {
+      confirmLabel: 'Retreat',
+      cancelLabel: 'Stay',
+    });
+    if (ok) {
+      navigation.goBack();
+    }
   }
 
-  function nextQuestion() {
+  async function nextQuestion() {
     if (currentQ + 1 < questions.length) {
       setCurrentQ((c) => c + 1);
     } else {
       // Ran out of questions but boss still alive?
       // Stalemate / Retreat
-      Alert.alert('Out of ammo!', 'You ran out of questions before defeating the boss. Retreat!', [
-        { text: 'Run Away', onPress: () => navigation.goBack() },
-      ]);
+      await showInfo(
+        'Out of ammo!',
+        'You ran out of questions before defeating the boss. Retreat!',
+      );
+      navigation.goBack();
     }
   }
 

@@ -7,10 +7,11 @@ import {
   TouchableOpacity,
   StyleSheet,
   StatusBar,
-  Alert,
   useWindowDimensions,
   InteractionManager,
 } from 'react-native';
+import { showInfo } from '../components/dialogService';
+import ErrorBoundary from '../components/ErrorBoundary';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useNavigation, type NavigationProp } from '@react-navigation/native';
@@ -194,14 +195,20 @@ export default function HomeScreen() {
 
   if (!ready) {
     return (
-      <SafeAreaView style={styles.safe}>
-        <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
-        <HomeSkeleton />
-      </SafeAreaView>
+      <ErrorBoundary>
+        <SafeAreaView style={styles.safe}>
+          <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
+          <HomeSkeleton />
+        </SafeAreaView>
+      </ErrorBoundary>
     );
   }
 
-  return <HomeScreenContent />;
+  return (
+    <ErrorBoundary>
+      <HomeScreenContent />
+    </ErrorBoundary>
+  );
 }
 
 function HomeScreenContent() {
@@ -352,16 +359,10 @@ function HomeScreenContent() {
             ?.navigate('BreakEnforcer', { durationSeconds: msg.durationSeconds });
         if (msg.type === 'LECTURE_STARTED') {
           const sub = await getSubjectById(msg.subjectId!);
-          Alert.alert(
+          showInfo(
             'Lecture Detected',
             `Tablet started ${sub?.name || 'lecture'}. Entering Hostage Mode.`,
-            [
-              {
-                text: 'Okay',
-                onPress: () => navigation.navigate('LectureMode', { subjectId: msg.subjectId }),
-              },
-            ],
-          );
+          ).then(() => navigation.navigate('LectureMode', { subjectId: msg.subjectId }));
         }
       },
     );
@@ -539,8 +540,19 @@ function HomeScreenContent() {
 
                 <View style={styles.rightColumn}>
                   {/* DO THIS NOW with shuffle */}
-                  <View style={styles.section} accessibilityRole="summary" accessibilityLabel="Do this now">
-                    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+                  <View
+                    style={styles.section}
+                    accessibilityRole="summary"
+                    accessibilityLabel="Do this now"
+                  >
+                    <View
+                      style={{
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        marginBottom: 8,
+                      }}
+                    >
                       <LinearText variant="label" tone="muted" style={styles.sectionLabel}>
                         DO THIS NOW
                       </LinearText>
@@ -548,12 +560,22 @@ function HomeScreenContent() {
                         <TouchableOpacity
                           onPress={() => setWeakTopicOffset((o) => (o + 1) % weakTopics.length)}
                           activeOpacity={0.7}
-                          style={{ flexDirection: 'row', alignItems: 'center', gap: 4, paddingVertical: 2, paddingHorizontal: 6 }}
+                          style={{
+                            flexDirection: 'row',
+                            alignItems: 'center',
+                            gap: 4,
+                            paddingVertical: 2,
+                            paddingHorizontal: 6,
+                          }}
                           accessibilityRole="button"
                           accessibilityLabel="Shuffle topic suggestion"
                         >
                           <Ionicons name="shuffle" size={14} color={n.colors.accent} />
-                          <LinearText variant="meta" tone="accent" style={{ fontSize: 11, fontWeight: '700' }}>
+                          <LinearText
+                            variant="meta"
+                            tone="accent"
+                            style={{ fontSize: 11, fontWeight: '700' }}
+                          >
                             Shuffle
                           </LinearText>
                         </TouchableOpacity>
@@ -574,7 +596,8 @@ function HomeScreenContent() {
                           No weak topic highlighted — start a session or open Study Plan.
                         </LinearText>
                       </TouchableOpacity>
-                    ) : (() => {
+                    ) : (
+                      (() => {
                         const t = weakTopics[weakTopicOffset % weakTopics.length];
                         return (
                           <LinearSurface compact key={t.id} style={styles.agendaItemWrap}>
@@ -600,7 +623,7 @@ function HomeScreenContent() {
                           </LinearSurface>
                         );
                       })()
-                    }
+                    )}
                   </View>
                   <Section label="UP NEXT" accessibilityLabel="Up next">
                     {todayTasks.length === 0 ? (

@@ -14,8 +14,8 @@ import {
   Modal,
   StyleSheet,
   Clipboard,
-  Alert,
 } from 'react-native';
+import { showInfo } from './dialogService';
 import { linearTheme as n } from '../theme/linearTheme';
 
 export interface LogEntry {
@@ -131,7 +131,7 @@ export default function DevConsole() {
       )
       .join('\n');
     Clipboard.setString(text);
-    Alert.alert('Copied', `${filtered.length} log entries copied to clipboard.`);
+    showInfo('Copied', `${filtered.length} log entries copied to clipboard.`);
   };
 
   if (!visible) return null;

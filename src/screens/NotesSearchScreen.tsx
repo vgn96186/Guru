@@ -1,13 +1,5 @@
 import React, { useState } from 'react';
-import {
-  View,
-  TextInput,
-  FlatList,
-  TouchableOpacity,
-  StyleSheet,
-  StatusBar,
-  Alert,
-} from 'react-native';
+import { View, TextInput, FlatList, TouchableOpacity, StyleSheet, StatusBar } from 'react-native';
 import LinearText from '../components/primitives/LinearText';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, type NavigationProp } from '@react-navigation/native';
@@ -26,6 +18,7 @@ import type { Subject } from '../types';
 import { buildLectureDisplayTitle } from '../services/lecture/lectureIdentity';
 import BannerSearchBar from '../components/BannerSearchBar';
 import ScreenHeader from '../components/ScreenHeader';
+import { confirmDestructive } from '../components/dialogService';
 
 interface TopicNoteResult {
   type: 'topic';
@@ -129,40 +122,30 @@ export default function NotesSearchScreen() {
     });
   }
 
-  function removeLectureNote(id: number) {
-    Alert.alert(
+  async function removeLectureNote(id: number) {
+    const ok = await confirmDestructive(
       'Delete transcript?',
       'This will permanently delete the lecture note and transcript.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            await deleteLectureNote(id);
-            await search(query);
-          },
-        },
-      ],
     );
+    if (ok) {
+      await deleteLectureNote(id);
+      await search(query);
+    }
   }
 
-  function removeTopicNote(topicId: number) {
-    Alert.alert('Delete topic note?', 'This clears your saved note for this topic.', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Delete',
-        style: 'destructive',
-        onPress: async () => {
-          const db = getDb();
-          await db.runAsync('UPDATE topic_progress SET user_notes = ? WHERE topic_id = ?', [
-            '',
-            topicId,
-          ]);
-          await search(query);
-        },
-      },
-    ]);
+  async function removeTopicNote(topicId: number) {
+    const ok = await confirmDestructive(
+      'Delete topic note?',
+      'This clears your saved note for this topic.',
+    );
+    if (ok) {
+      const db = getDb();
+      await db.runAsync('UPDATE topic_progress SET user_notes = ? WHERE topic_id = ?', [
+        '',
+        topicId,
+      ]);
+      await search(query);
+    }
   }
 
   function openResult(item: SearchResult) {
@@ -185,39 +168,32 @@ export default function NotesSearchScreen() {
     }
   }
 
-  function batchDeleteSelected() {
+  async function batchDeleteSelected() {
     if (selectedKeys.length === 0) return;
     const keysToDelete = [...selectedKeys];
-    Alert.alert(
+    const ok = await confirmDestructive(
       `Delete ${keysToDelete.length} note${keysToDelete.length !== 1 ? 's' : ''}?`,
       'This action cannot be undone.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            const db = getDb();
-            for (const key of keysToDelete) {
-              if (key.startsWith('lec-')) {
-                const id = Number(key.replace('lec-', ''));
-                if (!Number.isNaN(id)) await deleteLectureNote(id);
-              } else if (key.startsWith('topic-')) {
-                const id = Number(key.replace('topic-', ''));
-                if (!Number.isNaN(id)) {
-                  await db.runAsync('UPDATE topic_progress SET user_notes = ? WHERE topic_id = ?', [
-                    '',
-                    id,
-                  ]);
-                }
-              }
-            }
-            setSelectedKeys([]);
-            await search(query);
-          },
-        },
-      ],
     );
+    if (ok) {
+      const db = getDb();
+      for (const key of keysToDelete) {
+        if (key.startsWith('lec-')) {
+          const id = Number(key.replace('lec-', ''));
+          if (!Number.isNaN(id)) await deleteLectureNote(id);
+        } else if (key.startsWith('topic-')) {
+          const id = Number(key.replace('topic-', ''));
+          if (!Number.isNaN(id)) {
+            await db.runAsync('UPDATE topic_progress SET user_notes = ? WHERE topic_id = ?', [
+              '',
+              id,
+            ]);
+          }
+        }
+      }
+      setSelectedKeys([]);
+      await search(query);
+    }
   }
 
   function renderItem({ item }: { item: SearchResult }) {
@@ -430,10 +406,10 @@ const styles = StyleSheet.create({
   deletePillText: { color: '#F28B8B', fontSize: 12, fontWeight: '700' },
   tapHint: { color: n.colors.accent, fontSize: 12, marginTop: 8, fontWeight: '600' },
   emptyContainer: { alignItems: 'center', marginTop: 60 },
-  emptySub: { color: '#666', textAlign: 'center', marginTop: 8, fontSize: 14 },
+  emptySub: { color: n.colors.textMuted, textAlign: 'center', marginTop: 8, fontSize: 14 },
   topic: { color: n.colors.accent, fontWeight: '700', marginBottom: 4 },
   note: { color: n.colors.textMuted, lineHeight: 20 },
-  empty: { color: '#666', textAlign: 'center', marginTop: 40 },
+  empty: { color: n.colors.textMuted, textAlign: 'center', marginTop: 40 },
   lectureHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4 },
   lectureBadge: {
     color: n.colors.success,

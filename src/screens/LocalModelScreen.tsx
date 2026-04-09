@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, StatusBar, Alert, ScrollView } from 'react-native';
+import { View, StyleSheet, StatusBar, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as FileSystem from 'expo-file-system/legacy';
 import { useAppStore } from '../store/useAppStore';
@@ -16,6 +16,13 @@ import {
   getLocalModelFilePath,
   validateLocalModelFile,
 } from '../services/localModelFiles';
+import {
+  showInfo,
+  showSuccess,
+  showWarning,
+  showError,
+  confirmDestructive,
+} from '../components/dialogService';
 
 const RECOMMENDED_MODELS = [
   {
@@ -187,7 +194,7 @@ export default function LocalModelScreen() {
         else setLocalWhisperPath(targetUri);
         if (isLlm) setDownloadingLlm(false);
         else setDownloadingWhisper(false);
-        Alert.alert('Already Downloaded', `${model.name} is already on your device.`);
+        void showInfo('Already Downloaded', `${model.name} is already on your device.`);
         return;
       }
 
@@ -209,12 +216,12 @@ export default function LocalModelScreen() {
           setLocalWhisperPath(res.uri);
           setExistingWhisperFiles((prev) => new Set([...prev, model.id]));
         }
-        Alert.alert('Success', `${model.name} downloaded successfully!`);
+        void showSuccess('Success', `${model.name} downloaded successfully!`);
       } else {
         throw new Error('Download failed');
       }
     } catch (e: unknown) {
-      Alert.alert('Error', e instanceof Error ? e.message : 'Failed to download model');
+      void showError(e, 'Failed to download model');
     } finally {
       if (type === 'llm') {
         setDownloadingLlm(false);
@@ -241,28 +248,20 @@ export default function LocalModelScreen() {
   };
 
   const handleDelete = async (type: 'llm' | 'whisper') => {
-    Alert.alert(
+    const ok = await confirmDestructive(
       'Delete Model',
       'Are you sure you want to delete this model? Free up storage but requires re-download to use.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            if (type === 'llm' && localModelPath) {
-              await deleteLocalModelFile(localModelPath);
-              setLocalModelPath(null);
-              setUseLocalModel(false);
-            } else if (type === 'whisper' && localWhisperPath) {
-              await deleteLocalModelFile(localWhisperPath);
-              setLocalWhisperPath(null);
-              setUseLocalWhisper(false);
-            }
-          },
-        },
-      ],
     );
+    if (!ok) return;
+    if (type === 'llm' && localModelPath) {
+      await deleteLocalModelFile(localModelPath);
+      setLocalModelPath(null);
+      setUseLocalModel(false);
+    } else if (type === 'whisper' && localWhisperPath) {
+      await deleteLocalModelFile(localWhisperPath);
+      setLocalWhisperPath(null);
+      setUseLocalWhisper(false);
+    }
   };
 
   return (
@@ -313,9 +312,9 @@ export default function LocalModelScreen() {
                   variant={useLocalModel && !localLlmBlocked ? 'primary' : 'glass'}
                   style={[styles.toggleBtn, localLlmBlocked && styles.toggleBtnDisabled]}
                   textStyle={[localLlmBlocked && styles.toggleBtnTextDisabled]}
-                  onPress={() => {
+                  onPress={async () => {
                     if (localLlmBlocked) {
-                      Alert.alert(
+                      void showWarning(
                         'Requires More RAM',
                         localLlmWarning ?? 'This device cannot safely run the local text model.',
                       );

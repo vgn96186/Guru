@@ -1,9 +1,10 @@
 import React from 'react';
-import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { getAllSubjects } from '../db/queries/topics';
 import type { Subject } from '../types';
 import { linearTheme as n } from '../theme/linearTheme';
 import LinearSurface from './primitives/LinearSurface';
+import LinearText from './primitives/LinearText';
 
 interface Props {
   detectedSubjectName?: string | null;
@@ -38,17 +39,23 @@ export default function SubjectSelectionCard({
 
   return (
     <LinearSurface padded={false} borderColor={`${n.colors.warning}55`} style={styles.card}>
-      <Text style={styles.title}>Subject required</Text>
-      <Text style={styles.body}>
+      <LinearText variant="sectionTitle" tone="primary">
+        Subject required
+      </LinearText>
+      <LinearText variant="body" tone="secondary">
         Choose the lecture subject before saving so topics get filed correctly.
-      </Text>
+      </LinearText>
       {!!detectedSubjectName?.trim() && (
-        <Text style={styles.detectedText}>Detected: {detectedSubjectName}</Text>
+        <LinearText variant="caption" tone="muted">
+          Detected: {detectedSubjectName}
+        </LinearText>
       )}
       {isLoading ? (
         <View style={styles.loadingRow}>
           <ActivityIndicator color={n.colors.accent} size="small" />
-          <Text style={styles.loadingText}>Loading subjects…</Text>
+          <LinearText variant="bodySmall" tone="secondary">
+            Loading subjects…
+          </LinearText>
         </View>
       ) : (
         <View style={styles.chipGrid}>
@@ -63,9 +70,9 @@ export default function SubjectSelectionCard({
                 accessibilityRole="button"
                 accessibilityLabel={subject.name}
               >
-                <Text style={[styles.chipText, isSelected && styles.chipTextSelected]}>
+                <LinearText variant="label" tone={isSelected ? 'accent' : 'primary'}>
                   {subject.name}
-                </Text>
+                </LinearText>
               </TouchableOpacity>
             );
           })}

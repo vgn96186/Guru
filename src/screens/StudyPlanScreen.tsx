@@ -5,7 +5,6 @@ import {
   ScrollView,
   StyleSheet,
   StatusBar,
-  Alert,
   ActivityIndicator,
   InteractionManager,
 } from 'react-native';
@@ -42,6 +41,7 @@ import { SUBJECTS_SEED } from '../constants/syllabus';
 import { getCurrentLecturePosition } from '../services/lecturePositionService';
 import LinearSurface from '../components/primitives/LinearSurface';
 import LinearText from '../components/primitives/LinearText';
+import { confirmDestructive } from '../components/dialogService';
 
 const SUBJECT_MAP = new Map(SUBJECTS_SEED.map((s) => [s.shortCode, s]));
 const DBMCI_TOTAL_DAYS = 137;
@@ -411,20 +411,13 @@ function BTRProgressCard({
               )}
               {isBtrWatched ? (
                 <TouchableOpacity
-                  onPress={() =>
-                    Alert.alert(
+                  onPress={async () => {
+                    const ok = await confirmDestructive(
                       'Unmark BTR lecture?',
                       `This removes the BTR lecture marker for ${subject.name}. Topic study progress is not affected.`,
-                      [
-                        { text: 'Cancel', style: 'cancel' },
-                        {
-                          text: 'Unmark',
-                          style: 'destructive',
-                          onPress: () => handleUnmark(subject.id),
-                        },
-                      ],
-                    )
-                  }
+                    );
+                    if (ok) handleUnmark(subject.id);
+                  }}
                   hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                 >
                   <LinearText style={[dbmciStyles.markBtn, { color: n.colors.textMuted }]}>
@@ -433,18 +426,15 @@ function BTRProgressCard({
                 </TouchableOpacity>
               ) : (
                 <TouchableOpacity
-                  onPress={() =>
-                    Alert.alert(
+                  onPress={async () => {
+                    const ok = await confirmDestructive(
                       'Mark BTR lecture as watched?',
                       hasOrganicStudyOnly
                         ? `Some ${subject.name} topics already have study progress (from quizzes/sessions). This will mark the BTR lecture as watched and set remaining unseen topics to "seen".`
                         : 'This marks all unseen leaf topics as "seen" for this subject. Watching ≠ mastery — Guru will then queue them for quiz and review.',
-                      [
-                        { text: 'Cancel', style: 'cancel' },
-                        { text: 'Mark Watched', onPress: () => handleMarkDone(subject.id) },
-                      ],
-                    )
-                  }
+                    );
+                    if (ok) handleMarkDone(subject.id);
+                  }}
                   hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                 >
                   <LinearText style={dbmciStyles.markBtn}>

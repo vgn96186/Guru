@@ -1,11 +1,12 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Animated, InteractionManager, StyleSheet, Text, View } from 'react-native';
+import { Animated, InteractionManager, StyleSheet, View } from 'react-native';
 import { BUNDLED_HF_TOKEN } from '../../config/appConfig';
 import { useAiRuntimeStatus } from '../../hooks/useAiRuntimeStatus';
 import { linearTheme as n } from '../../theme/linearTheme';
 import type { UserProfile } from '../../types';
 import { getApiKeys } from '../../services/ai/config';
 import { isLocalLlmUsable } from '../../services/deviceMemory';
+import LinearText from '../primitives/LinearText';
 
 export function AiStatusIndicator({ profile }: { profile: NonNullable<UserProfile | null> }) {
   const runtime = useAiRuntimeStatus();
@@ -89,9 +90,9 @@ export function AiStatusIndicator({ profile }: { profile: NonNullable<UserProfil
             style={[styles.bannerGlow, { backgroundColor: n.colors.accent, opacity: glowOpacity }]}
           />
           <View style={[styles.bannerDot, { backgroundColor: n.colors.accent }]} />
-          <Text style={[styles.bannerText, { color: n.colors.accent }]} numberOfLines={1}>
+          <LinearText variant="meta" tone="accent" style={styles.bannerText} numberOfLines={1}>
             {activeBanner}
-          </Text>
+          </LinearText>
         </View>
       )}
       <View style={styles.tagRow}>
@@ -99,7 +100,9 @@ export function AiStatusIndicator({ profile }: { profile: NonNullable<UserProfil
           onlineProviders.map((p) => (
             <View key={p.name} style={styles.tag}>
               <View style={[styles.tagDot, { backgroundColor: n.colors.success }]} />
-              <Text style={styles.tagText}>{p.name}</Text>
+              <LinearText variant="meta" tone="secondary" style={styles.tagText}>
+                {p.name}
+              </LinearText>
             </View>
           ))
         ) : (
@@ -110,9 +113,9 @@ export function AiStatusIndicator({ profile }: { profile: NonNullable<UserProfil
                 { backgroundColor: hasAnyStt ? n.colors.warning : n.colors.error },
               ]}
             />
-            <Text style={[styles.tagText, { color: n.colors.error }]}>
+            <LinearText variant="meta" tone="error" style={styles.tagText}>
               {hasAnyStt ? 'STT only' : 'No AI'}
-            </Text>
+            </LinearText>
           </View>
         )}
       </View>

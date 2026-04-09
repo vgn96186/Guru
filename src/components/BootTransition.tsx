@@ -64,7 +64,7 @@ export default function BootTransition() {
   const [displayMessage, setDisplayMessage] = React.useState('Guru is waking up...');
 
   useEffect(() => {
-    if (bootPhase === 'done') return;
+    if (bootPhase === 'done' || bootPhase === 'calming') return;
     const msg = bootPhase === 'booting' ? 'Guru is waking up...' : 'Loading progress...';
     setDisplayMessage(getRandomVariation(msg));
     const interval = setInterval(() => {
@@ -181,32 +181,32 @@ export default function BootTransition() {
       const normalCore = { duration: 1800, easing: Easing.inOut(Easing.ease) };
       const normalEmit = { duration: 3500, easing: Easing.out(Easing.quad) };
 
+      // Stagger cancellations to avoid worklet thread flooding (microstutter fix)
       cancelAnimation(scaleCore);
       cancelAnimation(opacityCore);
-      scaleCore.value = withRepeat(withTiming(1.06, normalCore), -1, true);
-      opacityCore.value = withRepeat(withTiming(1, normalCore), -1, true);
-
       cancelAnimation(opacityGlow);
-      opacityGlow.value = withRepeat(withTiming(0.5, normalCore), -1, true);
+      scaleCore.value = withDelay(50, withRepeat(withTiming(1.06, normalCore), -1, true));
+      opacityCore.value = withDelay(50, withRepeat(withTiming(1, normalCore), -1, true));
+      opacityGlow.value = withDelay(50, withRepeat(withTiming(0.5, normalCore), -1, true));
 
       cancelAnimation(scaleRing1);
       cancelAnimation(opacityRing1);
-      scaleRing1.value = withDelay(0, withRepeat(withTiming(3.0, normalEmit), -1, false));
-      opacityRing1.value = withDelay(0, withRepeat(withTiming(0, normalEmit), -1, false));
+      scaleRing1.value = withDelay(100, withRepeat(withTiming(3.0, normalEmit), -1, false));
+      opacityRing1.value = withDelay(100, withRepeat(withTiming(0, normalEmit), -1, false));
 
       cancelAnimation(scaleRing2);
       cancelAnimation(opacityRing2);
-      scaleRing2.value = withDelay(1200, withRepeat(withTiming(4.5, normalEmit), -1, false));
-      opacityRing2.value = withDelay(1200, withRepeat(withTiming(0, normalEmit), -1, false));
+      scaleRing2.value = withDelay(1100, withRepeat(withTiming(4.5, normalEmit), -1, false));
+      opacityRing2.value = withDelay(1100, withRepeat(withTiming(0, normalEmit), -1, false));
 
       cancelAnimation(scaleRing3);
       cancelAnimation(opacityRing3);
       scaleRing3.value = withDelay(
-        2400,
+        2300,
         withRepeat(withTiming(6.5, { ...normalEmit, duration: 4000 }), -1, false),
       );
       opacityRing3.value = withDelay(
-        2400,
+        2300,
         withRepeat(withTiming(0, { ...normalEmit, duration: 4000 }), -1, false),
       );
     }, delay);

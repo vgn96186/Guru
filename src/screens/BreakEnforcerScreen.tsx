@@ -134,7 +134,7 @@ export default function BreakEnforcerScreen() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: n.colors.background },
-  safeError: { flex: 1, backgroundColor: '#FF0000' },
+  safeError: { flex: 1, backgroundColor: n.colors.error },
   container: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32 },
   emoji: { fontSize: 80, marginBottom: 24 },
   title: {
@@ -180,7 +180,7 @@ const styles = StyleSheet.create({
     fontVariant: ['tabular-nums'],
     marginBottom: 24,
   },
-  footerText: { color: '#666', fontSize: 14, fontStyle: 'italic', marginTop: 32 },
+  footerText: { color: n.colors.textMuted, fontSize: 14, fontStyle: 'italic', marginTop: 32 },
   manualResumeBtn: {
     marginTop: 24,
     paddingHorizontal: 24,

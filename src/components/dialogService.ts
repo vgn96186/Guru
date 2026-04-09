@@ -1,5 +1,8 @@
 import { Alert } from 'react-native';
 
+// Re-export Alert temporarily — used only by dialogService fallback.
+// All app code should use showDialog / showInfo / showSuccess / showWarning / showError / confirm / confirmDestructive.
+
 export type DialogVariant = 'default' | 'success' | 'warning' | 'error' | 'focus' | 'destructive';
 
 export type DialogAction = {
@@ -87,6 +90,77 @@ export function showError(error: unknown, fallbackMessage?: string) {
     actions: [{ id: 'ok', label: 'OK', variant: 'primary' }],
     allowDismiss: true,
   });
+}
+
+/** Simple informational dialog (variant: default) */
+export function showInfo(title: string, message?: string) {
+  return showDialog({
+    title,
+    message,
+    variant: 'default',
+    actions: [{ id: 'ok', label: 'OK', variant: 'primary' }],
+    allowDismiss: true,
+  });
+}
+
+/** Success notification dialog */
+export function showSuccess(title: string, message?: string) {
+  return showDialog({
+    title,
+    message,
+    variant: 'success',
+    actions: [{ id: 'ok', label: 'OK', variant: 'primary' }],
+    allowDismiss: true,
+  });
+}
+
+/** Warning dialog */
+export function showWarning(title: string, message?: string) {
+  return showDialog({
+    title,
+    message,
+    variant: 'warning',
+    actions: [{ id: 'ok', label: 'OK', variant: 'primary' }],
+    allowDismiss: true,
+  });
+}
+
+/** Confirmation dialog — returns true if the user confirmed */
+export async function confirm(
+  title: string,
+  message?: string,
+  opts?: { confirmLabel?: string; cancelLabel?: string },
+): Promise<boolean> {
+  const result = await showDialog({
+    title,
+    message,
+    variant: 'focus',
+    actions: [
+      { id: 'cancel', label: opts?.cancelLabel ?? 'Cancel', variant: 'secondary' },
+      { id: 'confirm', label: opts?.confirmLabel ?? 'OK', variant: 'primary' },
+    ],
+    allowDismiss: true,
+  });
+  return result === 'confirm';
+}
+
+/** Destructive confirmation dialog — returns true if the user confirmed */
+export async function confirmDestructive(
+  title: string,
+  message?: string,
+  opts?: { confirmLabel?: string; cancelLabel?: string },
+): Promise<boolean> {
+  const result = await showDialog({
+    title,
+    message,
+    variant: 'destructive',
+    actions: [
+      { id: 'cancel', label: opts?.cancelLabel ?? 'Cancel', variant: 'secondary' },
+      { id: 'confirm', label: opts?.confirmLabel ?? 'Delete', variant: 'destructive' },
+    ],
+    allowDismiss: false,
+  });
+  return result === 'confirm';
 }
 
 export function __resetDialogServiceForTests() {

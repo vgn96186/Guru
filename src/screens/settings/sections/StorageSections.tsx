@@ -1,8 +1,16 @@
 import React from 'react';
-import { ActivityIndicator, Alert, Text, TouchableOpacity, View } from 'react-native';
-import { showDialog } from '../../../components/dialogService';
+import { ActivityIndicator, TouchableOpacity, View } from 'react-native';
+import {
+  showDialog,
+  showError,
+  showSuccess,
+  showWarning,
+  showInfo,
+  confirmDestructive,
+} from '../../../components/dialogService';
 import { showToast } from '../../../components/Toast';
 import LinearTextInput from '../../../components/primitives/LinearTextInput';
+import LinearText from '../../../components/primitives/LinearText';
 import { linearTheme, linearTheme as n } from '../../../theme/linearTheme';
 import type { AutoBackupFrequency } from '../../../services/unifiedBackupService';
 
@@ -36,7 +44,9 @@ export default function StorageSections(props: any) {
 
   return (
     <>
-      <Text style={styles.categoryLabel}>STORAGE</Text>
+      <LinearText variant="sectionTitle" tone="muted" style={styles.categoryLabel}>
+        STORAGE
+      </LinearText>
       <SectionToggle id="data" title="Data" icon="trash-outline" tint="#F44336">
         <TouchableOpacity
           style={styles.dangerBtn}
@@ -68,11 +78,13 @@ export default function StorageSections(props: any) {
           }}
           activeOpacity={0.8}
         >
-          <Text style={styles.dangerBtnText}>Clear AI Content Cache</Text>
+          <LinearText variant="body" style={styles.dangerBtnText}>
+            Clear AI Content Cache
+          </LinearText>
         </TouchableOpacity>
-        <Text style={styles.hint}>
+        <LinearText variant="body" tone="muted" style={styles.hint}>
           Forces fresh generation of all key points, quizzes, stories, etc.
-        </Text>
+        </LinearText>
         <TouchableOpacity
           style={[
             styles.dangerBtn,
@@ -108,13 +120,16 @@ export default function StorageSections(props: any) {
           }}
           activeOpacity={0.8}
         >
-          <Text style={[styles.dangerBtnText, { color: linearTheme.colors.error }]}>
+          <LinearText
+            variant="body"
+            style={[styles.dangerBtnText, { color: linearTheme.colors.error }]}
+          >
             Reset All Progress
-          </Text>
+          </LinearText>
         </TouchableOpacity>
-        <Text style={styles.hint}>
+        <LinearText variant="body" tone="muted" style={styles.hint}>
           Wipes XP, streaks, topic statuses, and daily logs. API keys are kept.
-        </Text>
+        </LinearText>
       </SectionToggle>
 
       <SectionToggle
@@ -123,14 +138,14 @@ export default function StorageSections(props: any) {
         icon="archive-outline"
         tint="#4CAF50"
       >
-        <Text style={styles.hint}>
+        <LinearText variant="body" tone="muted" style={styles.hint}>
           Export your entire study data (database, transcripts, images) to a single .guru backup
           file, or restore from a previous backup.
-        </Text>
+        </LinearText>
         {profile?.lastAutoBackupAt && (
-          <Text style={styles.backupDate}>
+          <LinearText variant="caption" style={styles.backupDate}>
             Last auto-backup: {new Date(profile.lastAutoBackupAt).toLocaleString()}
-          </Text>
+          </LinearText>
         )}
         <View style={styles.backupRow}>
           <TouchableOpacity
@@ -147,7 +162,7 @@ export default function StorageSections(props: any) {
                   refreshProfile();
                 }
               } catch (e: any) {
-                Alert.alert('Export failed', e?.message ?? 'Unknown error');
+                showError(e, 'Unknown error');
               } finally {
                 setBackupBusy(false);
               }
@@ -156,7 +171,9 @@ export default function StorageSections(props: any) {
             {backupBusy ? (
               <ActivityIndicator size="small" color={linearTheme.colors.textPrimary} />
             ) : (
-              <Text style={styles.backupBtnText}>Create Full Backup</Text>
+              <LinearText variant="body" style={styles.backupBtnText}>
+                Create Full Backup
+              </LinearText>
             )}
           </TouchableOpacity>
           <TouchableOpacity
@@ -168,40 +185,45 @@ export default function StorageSections(props: any) {
             disabled={backupBusy}
             activeOpacity={0.8}
             onPress={async () => {
-              Alert.alert(
+              const ok = await confirmDestructive(
                 'Restore from backup?',
                 'This will overwrite your current data with data from the .guru backup file. You can selectively restore settings, progress, transcripts, and images.',
-                [
-                  { text: 'Cancel', style: 'cancel' },
-                  {
-                    text: 'Restore',
-                    style: 'destructive',
-                    onPress: async () => {
-                      setBackupBusy(true);
-                      try {
-                        const res = await importUnifiedBackup();
-                        Alert.alert(res.ok ? 'Restored!' : 'Import failed', res.message);
-                        if (res.ok) refreshProfile();
-                      } catch (e: any) {
-                        Alert.alert('Import failed', e?.message ?? 'Unknown error');
-                      } finally {
-                        setBackupBusy(false);
-                      }
-                    },
-                  },
-                ],
+                { confirmLabel: 'Restore' },
               );
+              if (!ok) return;
+
+              setBackupBusy(true);
+              try {
+                const res = await importUnifiedBackup();
+                if (res.ok) {
+                  showSuccess('Restored!', res.message);
+                  refreshProfile();
+                } else {
+                  showError(res.message, 'Import failed');
+                }
+              } catch (e: any) {
+                showError(e, 'Import failed');
+              } finally {
+                setBackupBusy(false);
+              }
             }}
           >
-            <Text style={[styles.backupBtnText, { color: linearTheme.colors.success }]}>
+            <LinearText
+              variant="body"
+              style={[styles.backupBtnText, { color: linearTheme.colors.success }]}
+            >
               Restore from Backup
-            </Text>
+            </LinearText>
           </TouchableOpacity>
         </View>
 
         <View style={styles.subSectionDivider} />
-        <Text style={styles.subSectionLabel}>Auto-Backup Frequency</Text>
-        <Text style={styles.hint}>Automatically create backups when the app starts.</Text>
+        <LinearText variant="label" style={styles.subSectionLabel}>
+          Auto-Backup Frequency
+        </LinearText>
+        <LinearText variant="body" tone="muted" style={styles.hint}>
+          Automatically create backups when the app starts.
+        </LinearText>
         <View style={styles.frequencyRow}>
           {(['off', 'daily', '3days', 'weekly', 'monthly'] as AutoBackupFrequency[]).map((freq) => (
             <TouchableOpacity
@@ -213,7 +235,8 @@ export default function StorageSections(props: any) {
               onPress={() => setAutoBackupFrequency(freq)}
               activeOpacity={0.8}
             >
-              <Text
+              <LinearText
+                variant="body"
                 style={[
                   styles.frequencyChipText,
                   autoBackupFrequency === freq && styles.frequencyChipTextActive,
@@ -224,7 +247,7 @@ export default function StorageSections(props: any) {
                   : freq === '3days'
                     ? '3 Days'
                     : freq.charAt(0).toUpperCase() + freq.slice(1)}
-              </Text>
+              </LinearText>
             </TouchableOpacity>
           ))}
         </View>
@@ -276,7 +299,9 @@ export default function StorageSections(props: any) {
             }
           }}
         >
-          <Text style={styles.maintenanceBtnText}>Run Auto-Backup Now</Text>
+          <LinearText variant="body" style={styles.maintenanceBtnText}>
+            Run Auto-Backup Now
+          </LinearText>
         </TouchableOpacity>
         <TouchableOpacity
           style={[styles.maintenanceBtn, backupBusy && styles.saveBtnDisabled]}
@@ -302,19 +327,25 @@ export default function StorageSections(props: any) {
             }
           }}
         >
-          <Text style={styles.maintenanceBtnText}>Clean Up Old Backups</Text>
+          <LinearText variant="body" style={styles.maintenanceBtnText}>
+            Clean Up Old Backups
+          </LinearText>
         </TouchableOpacity>
 
         <View style={styles.subSectionDivider} />
-        <Text style={styles.subSectionLabel}>Google Drive Sync</Text>
-        <Text style={styles.hint}>
+        <LinearText variant="label" style={styles.subSectionLabel}>
+          Google Drive Sync
+        </LinearText>
+        <LinearText variant="body" tone="muted" style={styles.hint}>
           Back up to Google Drive to sync between devices and survive app reinstalls.
-        </Text>
-        <Text style={[styles.label, { marginTop: 12 }]}>Google Web Client ID</Text>
-        <Text style={styles.hint}>
+        </LinearText>
+        <LinearText variant="label" style={[styles.label, { marginTop: 12 }]}>
+          Google Web Client ID
+        </LinearText>
+        <LinearText variant="body" tone="muted" style={styles.hint}>
           Paste your Google OAuth Web application client ID here once. Guru stores it in your
           profile so future sign-ins do not require a rebuild.
-        </Text>
+        </LinearText>
         <LinearTextInput
           value={gdriveWebClientId}
           onChangeText={setGdriveWebClientId}
@@ -336,13 +367,13 @@ export default function StorageSections(props: any) {
         />
         {(profile as any)?.gdriveConnected ? (
           <View>
-            <Text style={[styles.backupDate, { marginBottom: 8 }]}>
+            <LinearText variant="caption" style={[styles.backupDate, { marginBottom: 8 }]}>
               Connected: {(profile as any)?.gdriveEmail || 'Google Account'}
-            </Text>
+            </LinearText>
             {(profile as any)?.gdriveLastSyncAt && (
-              <Text style={styles.backupDate}>
+              <LinearText variant="caption" style={styles.backupDate}>
                 Last sync: {new Date((profile as any).gdriveLastSyncAt).toLocaleString()}
-              </Text>
+              </LinearText>
             )}
             <View style={styles.backupRow}>
               <TouchableOpacity
@@ -355,18 +386,20 @@ export default function StorageSections(props: any) {
                     const success = await runAutoBackup();
                     if (success) {
                       refreshProfile();
-                      Alert.alert('Synced', 'Backup uploaded to Google Drive.');
+                      showSuccess('Synced', 'Backup uploaded to Google Drive.');
                     } else {
-                      Alert.alert('Sync failed', 'Could not create or upload backup.');
+                      showError('Could not create or upload backup.', 'Sync failed');
                     }
                   } catch (e: any) {
-                    Alert.alert('Sync failed', e?.message ?? 'Unknown error');
+                    showError(e, 'Sync failed');
                   } finally {
                     setBackupBusy(false);
                   }
                 }}
               >
-                <Text style={styles.backupBtnText}>Sync Now</Text>
+                <LinearText variant="body" style={styles.backupBtnText}>
+                  Sync Now
+                </LinearText>
               </TouchableOpacity>
               <TouchableOpacity
                 style={[
@@ -376,31 +409,27 @@ export default function StorageSections(props: any) {
                 ]}
                 disabled={backupBusy}
                 activeOpacity={0.8}
-                onPress={() => {
-                  Alert.alert(
+                onPress={async () => {
+                  const ok = await confirmDestructive(
                     'Disconnect Google Drive?',
                     'Auto-sync will stop. Your existing backups on Drive will remain.',
-                    [
-                      { text: 'Cancel', style: 'cancel' },
-                      {
-                        text: 'Disconnect',
-                        style: 'destructive',
-                        onPress: async () => {
-                          try {
-                            await signOutGDrive();
-                            refreshProfile();
-                          } catch (e: any) {
-                            Alert.alert('Error', e?.message ?? 'Failed to disconnect');
-                          }
-                        },
-                      },
-                    ],
+                    { confirmLabel: 'Disconnect' },
                   );
+                  if (!ok) return;
+                  try {
+                    await signOutGDrive();
+                    refreshProfile();
+                  } catch (e: any) {
+                    showError(e, 'Failed to disconnect');
+                  }
                 }}
               >
-                <Text style={[styles.backupBtnText, { color: linearTheme.colors.error }]}>
+                <LinearText
+                  variant="body"
+                  style={[styles.backupBtnText, { color: linearTheme.colors.error }]}
+                >
                   Disconnect
-                </Text>
+                </LinearText>
               </TouchableOpacity>
             </View>
           </View>
@@ -415,7 +444,7 @@ export default function StorageSections(props: any) {
                 GOOGLE_WEB_CLIENT_ID ||
                 profile?.gdriveWebClientId?.trim();
               if (!resolvedGoogleClientId) {
-                Alert.alert(
+                showWarning(
                   'Google Drive setup required',
                   'Paste your Google OAuth Web application client ID in the field above, or provide EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID in your build config.',
                 );
@@ -426,7 +455,7 @@ export default function StorageSections(props: any) {
                 await updateUserProfile({ gdriveWebClientId: resolvedGoogleClientId } as any);
                 const result = await signInToGDrive(resolvedGoogleClientId);
                 refreshProfile();
-                Alert.alert(
+                showSuccess(
                   'Connected!',
                   `Signed in as ${result.email}. Your backups will now sync to Google Drive.`,
                 );
@@ -440,15 +469,12 @@ export default function StorageSections(props: any) {
                     msg.toLowerCase().includes('developer error');
 
                   if (isDeveloperError) {
-                    Alert.alert(
+                    showInfo(
                       'Google Sign-In: Developer error',
                       'Troubleshooting:\n\n1. In Google Cloud, create an Android OAuth client for package com.anonymous.gurustudy.\n2. Add SHA-1 and SHA-256 for your signing key (debug and release if needed).\n3. Keep this Web Client ID and Android client in the same Google project.\n4. Ensure OAuth consent screen is configured and your Google account is added as a test user.\n5. Uninstall/reinstall the app and retry sign-in.',
                     );
                   } else {
-                    Alert.alert(
-                      'Sign-in failed',
-                      e?.message ?? 'Could not connect to Google Drive',
-                    );
+                    showError(e, 'Could not connect to Google Drive');
                   }
                 }
               } finally {
@@ -456,7 +482,9 @@ export default function StorageSections(props: any) {
               }
             }}
           >
-            <Text style={styles.backupBtnText}>Connect Google Drive</Text>
+            <LinearText variant="body" style={styles.backupBtnText}>
+              Connect Google Drive
+            </LinearText>
           </TouchableOpacity>
         )}
       </SectionToggle>
@@ -467,9 +495,9 @@ export default function StorageSections(props: any) {
         icon="construct-outline"
         tint="#8080A0"
       >
-        <Text style={styles.hint}>
+        <LinearText variant="body" tone="muted" style={styles.hint}>
           Run repair and recovery only when you need it instead of during startup.
-        </Text>
+        </LinearText>
         <TouchableOpacity
           style={[styles.maintenanceBtn, maintenanceBusy !== null && styles.saveBtnDisabled]}
           disabled={maintenanceBusy !== null}
@@ -494,7 +522,9 @@ export default function StorageSections(props: any) {
           {maintenanceBusy === 'retry' ? (
             <ActivityIndicator size="small" color={linearTheme.colors.textPrimary} />
           ) : (
-            <Text style={styles.maintenanceBtnText}>Retry failed lecture processing</Text>
+            <LinearText variant="body" style={styles.maintenanceBtnText}>
+              Retry failed lecture processing
+            </LinearText>
           )}
         </TouchableOpacity>
         <TouchableOpacity
@@ -520,7 +550,9 @@ export default function StorageSections(props: any) {
           {maintenanceBusy === 'legacy' ? (
             <ActivityIndicator size="small" color={linearTheme.colors.textPrimary} />
           ) : (
-            <Text style={styles.maintenanceBtnText}>Repair legacy lecture notes</Text>
+            <LinearText variant="body" style={styles.maintenanceBtnText}>
+              Repair legacy lecture notes
+            </LinearText>
           )}
         </TouchableOpacity>
         <TouchableOpacity
@@ -546,7 +578,9 @@ export default function StorageSections(props: any) {
           {maintenanceBusy === 'transcripts' ? (
             <ActivityIndicator size="small" color={linearTheme.colors.textPrimary} />
           ) : (
-            <Text style={styles.maintenanceBtnText}>Recover orphan transcripts</Text>
+            <LinearText variant="body" style={styles.maintenanceBtnText}>
+              Recover orphan transcripts
+            </LinearText>
           )}
         </TouchableOpacity>
         <TouchableOpacity
@@ -572,7 +606,9 @@ export default function StorageSections(props: any) {
           {maintenanceBusy === 'recordings' ? (
             <ActivityIndicator size="small" color={linearTheme.colors.textPrimary} />
           ) : (
-            <Text style={styles.maintenanceBtnText}>Recover orphan recordings</Text>
+            <LinearText variant="body" style={styles.maintenanceBtnText}>
+              Recover orphan recordings
+            </LinearText>
           )}
         </TouchableOpacity>
         <TouchableOpacity
@@ -598,7 +634,9 @@ export default function StorageSections(props: any) {
           {maintenanceBusy === 'cleanup_artifacts' ? (
             <ActivityIndicator size="small" color={linearTheme.colors.textPrimary} />
           ) : (
-            <Text style={styles.maintenanceBtnText}>Clean up failed AI artifacts</Text>
+            <LinearText variant="body" style={styles.maintenanceBtnText}>
+              Clean up failed AI artifacts
+            </LinearText>
           )}
         </TouchableOpacity>
       </SectionToggle>

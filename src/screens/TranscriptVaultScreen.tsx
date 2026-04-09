@@ -14,14 +14,15 @@ import {
   FlatList,
   StyleSheet,
   StatusBar,
-  Alert,
   ActivityIndicator,
   Modal,
   ScrollView,
   AppState,
   useWindowDimensions,
+  Platform,
 } from 'react-native';
 import LinearText from '../components/primitives/LinearText';
+import ErrorBoundary from '../components/ErrorBoundary';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
@@ -37,6 +38,14 @@ import {
   deleteRecording,
 } from '../../modules/app-launcher';
 import { z } from 'zod';
+import {
+  confirmDestructive,
+  confirm,
+  showSuccess,
+  showError,
+  showWarning,
+  showInfo,
+} from '../components/dialogService';
 import { ResponsiveContainer } from '../hooks/useResponsive';
 import { linearTheme as n } from '../theme/linearTheme';
 import ScreenHeader from '../components/ScreenHeader';
@@ -239,8 +248,13 @@ export default function TranscriptVaultScreen() {
   const [sortBy, setSortBy] = useState<'name' | 'words'>('name');
   const listLayoutKey = `${viewportWidth}x${viewportHeight}`;
 
+  // Pagination
+  const PAGE_SIZE = 20;
+  const [displayCount, setDisplayCount] = useState(PAGE_SIZE);
+
   const loadFiles = useCallback(async () => {
     setLoading(true);
+    setDisplayCount(PAGE_SIZE);
     try {
       const hasAccess = await hasAllFilesAccess();
       setNeedsFileAccess(!hasAccess);
@@ -417,26 +431,24 @@ export default function TranscriptVaultScreen() {
 
   const cancelSelection = useCallback(() => setSelectedPaths(new Set()), []);
 
-  const handleBatchDelete = useCallback(() => {
+  const handleBatchDelete = useCallback(async () => {
     const count = selectedPaths.size;
-    Alert.alert(`Delete ${count} transcript${count !== 1 ? 's' : ''}?`, 'This cannot be undone.', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Delete',
-        style: 'destructive',
-        onPress: async () => {
-          for (const p of selectedPaths) {
-            try {
-              await deleteFile(p);
-            } catch {
-              /* skip */
-            }
-          }
-          setFiles((prev) => prev.filter((f) => !selectedPaths.has(f.path)));
-          setSelectedPaths(new Set());
-        },
-      },
-    ]);
+    const ok = await confirmDestructive(
+      `Delete ${count} transcript${count !== 1 ? 's' : ''}?`,
+      'This cannot be undone.',
+      { confirmLabel: 'Delete' },
+    );
+    if (ok) {
+      for (const p of selectedPaths) {
+        try {
+          await deleteFile(p);
+        } catch {
+          /* skip */
+        }
+      }
+      setFiles((prev) => prev.filter((f) => !selectedPaths.has(f.path)));
+      setSelectedPaths(new Set());
+    }
   }, [selectedPaths]);
 
   const handleUploadText = useCallback(async () => {
@@ -457,9 +469,9 @@ export default function TranscriptVaultScreen() {
       }
       await saveTranscriptToFile(content);
       await loadFiles();
-      Alert.alert('Imported', `${asset.name ?? 'Text file'} was added to Transcript Vault.`);
+      showSuccess('Imported', `${asset.name ?? 'Text file'} was added to Transcript Vault.`);
     } catch (e: any) {
-      Alert.alert('Import failed', e?.message ?? 'Could not import this text file.');
+      showError(e, 'Could not import this text file.');
     } finally {
       setIsImportingText(false);
     }
@@ -471,26 +483,22 @@ export default function TranscriptVaultScreen() {
       setReaderTitle(displayName(item.name, item.extractedTitle));
       setReaderContent(content || '(Empty file)');
     } catch (e: any) {
-      Alert.alert('Error', `Could not read file: ${e?.message ?? e}`);
+      showError(e, 'Could not read file.');
     }
   }, []);
 
-  const handleDelete = useCallback((item: TranscriptFile) => {
-    Alert.alert('Delete transcript?', item.name, [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Delete',
-        style: 'destructive',
-        onPress: async () => {
-          try {
-            await deleteFile(item.path);
-            setFiles((prev) => prev.filter((f) => f.path !== item.path));
-          } catch {
-            Alert.alert('Error', 'Could not delete the file. Check file access permissions.');
-          }
-        },
-      },
-    ]);
+  const handleDelete = useCallback(async (item: TranscriptFile) => {
+    const ok = await confirmDestructive('Delete transcript?', item.name, {
+      confirmLabel: 'Delete',
+    });
+    if (ok) {
+      try {
+        await deleteFile(item.path);
+        setFiles((prev) => prev.filter((f) => f.path !== item.path));
+      } catch {
+        showError('Could not delete the file. Check file access permissions.');
+      }
+    }
   }, []);
 
   const [processProgress, setProcessProgress] = useState<string | null>(null);
@@ -498,7 +506,7 @@ export default function TranscriptVaultScreen() {
   const processTranscript = useCallback(async (item: TranscriptFile): Promise<boolean> => {
     const content = await FileSystem.readAsStringAsync(item.path);
     if (countWords(content) < 10) {
-      Alert.alert(
+      showWarning(
         'Too short',
         'This transcript has fewer than 10 words — not enough to generate a note.',
       );
@@ -530,68 +538,57 @@ export default function TranscriptVaultScreen() {
   }, []);
 
   const handleProcess = useCallback(
-    (item: TranscriptFile) => {
-      Alert.alert(
+    async (item: TranscriptFile) => {
+      const ok = await confirm(
         'Process to Notes?',
         `AI will analyze this transcript and create a study note.\n\n${displayName(item.name, item.extractedTitle)}`,
-        [
-          { text: 'Cancel', style: 'cancel' },
-          {
-            text: 'Process',
-            onPress: async () => {
-              setProcessProgress('Analyzing...');
-              try {
-                await processTranscript(item);
-                setProcessProgress(null);
-                Alert.alert('Done', 'Note created in Notes Vault.');
-              } catch (e: any) {
-                setProcessProgress(null);
-                Alert.alert('Failed', e?.message ?? 'Could not process transcript.');
-              }
-            },
-          },
-        ],
+        { confirmLabel: 'Process' },
       );
+      if (ok) {
+        setProcessProgress('Analyzing...');
+        try {
+          await processTranscript(item);
+          setProcessProgress(null);
+          showSuccess('Done', 'Note created in Notes Vault.');
+        } catch (e: any) {
+          setProcessProgress(null);
+          showError(e, 'Could not process transcript.');
+        }
+      }
     },
     [processTranscript],
   );
 
-  const handleBatchProcess = useCallback(() => {
+  const handleBatchProcess = useCallback(async () => {
     const targets = [...selectedPaths];
     const items = files.filter((f) => targets.includes(f.path) && f.wordCount >= 10);
     if (items.length === 0) {
-      Alert.alert('No valid transcripts', 'Selected transcripts are too short to process.');
+      showWarning('No valid transcripts', 'Selected transcripts are too short to process.');
       return;
     }
-    Alert.alert(
+    const ok = await confirm(
       `Process ${items.length} transcript${items.length !== 1 ? 's' : ''}?`,
       'Each will be analyzed by AI and saved as a study note. 2 API calls per transcript.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Process All',
-          onPress: async () => {
-            let done = 0;
-            let failed = 0;
-            for (let i = 0; i < items.length; i++) {
-              setProcessProgress(`${i + 1}/${items.length}`);
-              try {
-                await processTranscript(items[i]);
-                done++;
-              } catch {
-                failed++;
-              }
-            }
-            setProcessProgress(null);
-            setSelectedPaths(new Set());
-            Alert.alert(
-              'Done',
-              `Created ${done} note${done !== 1 ? 's' : ''}${failed > 0 ? ` (${failed} failed)` : ''}.`,
-            );
-          },
-        },
-      ],
     );
+    if (ok) {
+      let done = 0;
+      let failed = 0;
+      for (let i = 0; i < items.length; i++) {
+        setProcessProgress(`${i + 1}/${items.length}`);
+        try {
+          await processTranscript(items[i]);
+          done++;
+        } catch {
+          failed++;
+        }
+      }
+      setProcessProgress(null);
+      setSelectedPaths(new Set());
+      showSuccess(
+        'Done',
+        `Created ${done} note${done !== 1 ? 's' : ''}${failed > 0 ? ` (${failed} failed)` : ''}.`,
+      );
+    }
   }, [selectedPaths, files, processTranscript]);
 
   // Files that need renaming: old format OR generic/unknown labels
@@ -610,72 +607,66 @@ export default function TranscriptVaultScreen() {
 
   const [renameProgress, setRenameProgress] = useState<string | null>(null);
 
-  const handleSmartRename = useCallback(() => {
+  const handleSmartRename = useCallback(async () => {
     const count = renamableFiles.length;
-    Alert.alert(
+    const ok = await confirm(
       `AI-rename ${count} transcript${count !== 1 ? 's' : ''}?`,
       'Reads each transcript, asks AI for the subject & topic, then renames the file. Uses 1 quick API call per file.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Rename',
-          onPress: async () => {
-            let renamed = 0;
-            let failed = 0;
-            for (let i = 0; i < renamableFiles.length; i++) {
-              const f = renamableFiles[i];
-              setRenameProgress(
-                `${i + 1}/${count}: ${displayName(f.name, f.extractedTitle).slice(0, 30)}...`,
-              );
-              try {
-                const content = await FileSystem.readAsStringAsync(f.path);
-                if (countWords(content) < 5) continue;
-
-                const label = await aiExtractLabel(content);
-                if (!label) {
-                  failed++;
-                  continue;
-                }
-
-                const ts = extractTimestamp(f.name);
-                const newName = buildNewFileName(label.subject, label.topic, ts);
-                if (newName === f.name) continue;
-
-                const internalDir = FileSystem.documentDirectory + 'transcripts/';
-                await FileSystem.makeDirectoryAsync(internalDir, { intermediates: true });
-
-                if (f.folder === 'Documents/Guru') {
-                  await FileSystem.writeAsStringAsync(internalDir + newName, content, {
-                    encoding: FileSystem.EncodingType.UTF8,
-                  });
-                  await deleteFile(f.path);
-                } else {
-                  const newPath = f.path.replace(/[^/]+$/, newName);
-                  try {
-                    await FileSystem.moveAsync({ from: f.path, to: newPath });
-                  } catch {
-                    // Fallback: write to internal dir
-                    await FileSystem.writeAsStringAsync(internalDir + newName, content, {
-                      encoding: FileSystem.EncodingType.UTF8,
-                    });
-                    await deleteFile(f.path);
-                  }
-                }
-                renamed++;
-              } catch {
-                failed++;
-              }
-            }
-            setRenameProgress(null);
-            void loadFiles();
-            Alert.alert(
-              'Done',
-              `Renamed ${renamed} file${renamed !== 1 ? 's' : ''}${failed > 0 ? ` (${failed} failed)` : ''}.`,
-            );
-          },
-        },
-      ],
     );
+    if (ok) {
+      let renamed = 0;
+      let failed = 0;
+      for (let i = 0; i < renamableFiles.length; i++) {
+        const f = renamableFiles[i];
+        setRenameProgress(
+          `${i + 1}/${count}: ${displayName(f.name, f.extractedTitle).slice(0, 30)}...`,
+        );
+        try {
+          const content = await FileSystem.readAsStringAsync(f.path);
+          if (countWords(content) < 5) continue;
+
+          const label = await aiExtractLabel(content);
+          if (!label) {
+            failed++;
+            continue;
+          }
+
+          const ts = extractTimestamp(f.name);
+          const newName = buildNewFileName(label.subject, label.topic, ts);
+          if (newName === f.name) continue;
+
+          const internalDir = FileSystem.documentDirectory + 'transcripts/';
+          await FileSystem.makeDirectoryAsync(internalDir, { intermediates: true });
+
+          if (f.folder === 'Documents/Guru') {
+            await FileSystem.writeAsStringAsync(internalDir + newName, content, {
+              encoding: FileSystem.EncodingType.UTF8,
+            });
+            await deleteFile(f.path);
+          } else {
+            const newPath = f.path.replace(/[^/]+$/, newName);
+            try {
+              await FileSystem.moveAsync({ from: f.path, to: newPath });
+            } catch {
+              // Fallback: write to internal dir
+              await FileSystem.writeAsStringAsync(internalDir + newName, content, {
+                encoding: FileSystem.EncodingType.UTF8,
+              });
+              await deleteFile(f.path);
+            }
+          }
+          renamed++;
+        } catch {
+          failed++;
+        }
+      }
+      setRenameProgress(null);
+      void loadFiles();
+      showSuccess(
+        'Done',
+        `Renamed ${renamed} file${renamed !== 1 ? 's' : ''}${failed > 0 ? ` (${failed} failed)` : ''}.`,
+      );
+    }
   }, [renamableFiles, loadFiles]);
 
   // Duplicate detection: group by contentHash, mark extras for deletion
@@ -767,303 +758,303 @@ export default function TranscriptVaultScreen() {
 
   return (
     <SafeAreaView style={styles.safe}>
-      <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
-      <ResponsiveContainer style={styles.container}>
-        <ScreenHeader
-          title="Transcript Vault"
-          subtitle={`${files.length} transcript${files.length !== 1 ? 's' : ''} found`}
-          rightElement={
-            <View style={styles.headerActions}>
-              <TouchableOpacity
-                onPress={() => setSortBy((s) => (s === 'name' ? 'words' : 'name'))}
-                style={styles.sortBtn}
-              >
-                <Ionicons
-                  name={sortBy === 'words' ? 'text-outline' : 'swap-vertical-outline'}
-                  size={18}
-                  color={n.colors.accent}
-                />
-                <LinearText style={styles.sortLabel}>
-                  {sortBy === 'words' ? 'Words' : 'Name'}
-                </LinearText>
-              </TouchableOpacity>
-              <TouchableOpacity onPress={() => void loadFiles()} style={styles.refreshBtn}>
-                <Ionicons name="refresh" size={20} color={n.colors.textMuted} />
-              </TouchableOpacity>
-            </View>
-          }
-        />
-
-        <View style={styles.topActions}>
-          <LinearButton
-            variant="glass"
-            style={styles.topActionBtn}
-            onPress={() => navigation.navigate('ManualNoteCreation' as never)}
-            leftIcon={<Ionicons name="clipboard-outline" size={18} color={n.colors.error} />}
-            label="Paste Transcript"
-          />
-          <LinearButton
-            variant="glass"
-            style={[styles.topActionBtn, isImportingText && styles.topActionBtnDisabled]}
-            onPress={() => void handleUploadText()}
-            disabled={isImportingText}
-            leftIcon={
-              isImportingText ? (
-                <ActivityIndicator size="small" color={n.colors.accent} />
-              ) : (
-                <Ionicons name="document-attach-outline" size={18} color={n.colors.accent} />
-              )
+      <ErrorBoundary>
+        <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
+        <ResponsiveContainer style={styles.container}>
+          <ScreenHeader
+            title="Transcript Vault"
+            subtitle={`${files.length} transcript${files.length !== 1 ? 's' : ''} found`}
+            rightElement={
+              <View style={styles.headerActions}>
+                <TouchableOpacity
+                  onPress={() => setSortBy((s) => (s === 'name' ? 'words' : 'name'))}
+                  style={styles.sortBtn}
+                >
+                  <Ionicons
+                    name={sortBy === 'words' ? 'text-outline' : 'swap-vertical-outline'}
+                    size={18}
+                    color={n.colors.accent}
+                  />
+                  <LinearText style={styles.sortLabel}>
+                    {sortBy === 'words' ? 'Words' : 'Name'}
+                  </LinearText>
+                </TouchableOpacity>
+                <TouchableOpacity onPress={() => void loadFiles()} style={styles.refreshBtn}>
+                  <Ionicons name="refresh" size={20} color={n.colors.textMuted} />
+                </TouchableOpacity>
+              </View>
             }
-            label={isImportingText ? 'Importing…' : 'Upload Text'}
           />
-        </View>
 
-        {/* Cleanup junk banner */}
-        {!isSelectionMode && files.filter((f) => f.wordCount < 10).length > 0 && (
-          <TouchableOpacity
-            style={styles.cleanupBanner}
-            onPress={() => {
-              const junk = files.filter((f) => f.wordCount < 10);
-              Alert.alert(
-                `Delete ${junk.length} junk transcript${junk.length !== 1 ? 's' : ''}?`,
-                'This will permanently delete all transcripts with fewer than 10 words.',
-                [
-                  { text: 'Cancel', style: 'cancel' },
-                  {
-                    text: 'Delete All',
-                    style: 'destructive',
-                    onPress: async () => {
-                      for (const f of junk) {
-                        try {
-                          await deleteFile(f.path);
-                        } catch {
-                          /* skip */
-                        }
-                      }
-                      const junkPaths = new Set(junk.map((f) => f.path));
-                      setFiles((prev) => prev.filter((f) => !junkPaths.has(f.path)));
-                    },
-                  },
-                ],
-              );
-            }}
-          >
-            <Ionicons name="trash-outline" size={16} color={n.colors.error} />
-            <LinearText style={styles.cleanupText}>
-              {files.filter((f) => f.wordCount < 10).length} junk transcript
-              {files.filter((f) => f.wordCount < 10).length !== 1 ? 's' : ''} ({'<'}10 words)
-            </LinearText>
-            <LinearText style={styles.cleanupAction}>Clean up</LinearText>
-          </TouchableOpacity>
-        )}
-
-        {/* Duplicate cleanup banner */}
-        {!isSelectionMode && duplicatePaths.size > 0 && (
-          <TouchableOpacity
-            style={styles.dupeBanner}
-            onPress={() => {
-              Alert.alert(
-                `Delete ${duplicatePaths.size} duplicate${duplicatePaths.size !== 1 ? 's' : ''}?`,
-                'Keeps the newest copy of each transcript and deletes older duplicates.',
-                [
-                  { text: 'Cancel', style: 'cancel' },
-                  {
-                    text: 'Delete Duplicates',
-                    style: 'destructive',
-                    onPress: async () => {
-                      for (const p of duplicatePaths) {
-                        try {
-                          await deleteFile(p);
-                        } catch {
-                          /* skip */
-                        }
-                      }
-                      setFiles((prev) => prev.filter((f) => !duplicatePaths.has(f.path)));
-                    },
-                  },
-                ],
-              );
-            }}
-          >
-            <Ionicons name="copy-outline" size={16} color={n.colors.warning} />
-            <LinearText style={styles.cleanupText}>
-              {duplicatePaths.size} duplicate{duplicatePaths.size !== 1 ? 's' : ''} found
-            </LinearText>
-            <LinearText style={styles.dupeAction}>Remove</LinearText>
-          </TouchableOpacity>
-        )}
-
-        {/* AI rename banner */}
-        {!isSelectionMode && renamableFiles.length > 0 && !renameProgress && (
-          <TouchableOpacity style={styles.renameBanner} onPress={handleSmartRename}>
-            <Ionicons name="sparkles-outline" size={16} color={n.colors.accent} />
-            <LinearText style={styles.cleanupText}>
-              {renamableFiles.length} file{renamableFiles.length !== 1 ? 's' : ''} with unclear
-              names
-            </LinearText>
-            <LinearText style={styles.renameAction}>AI Rename</LinearText>
-          </TouchableOpacity>
-        )}
-
-        {/* Clean up failed AI artifacts */}
-        {!isSelectionMode && (
-          <TouchableOpacity
-            style={styles.artifactCleanupBanner}
-            onPress={() => {
-              Alert.alert(
-                'Clean up failed AI artifacts?',
-                'This will delete failed transcription recordings, empty lecture notes, and their orphaned files.',
-                [
-                  { text: 'Cancel', style: 'cancel' },
-                  {
-                    text: 'Clean Up',
-                    style: 'destructive',
-                    onPress: async () => {
-                      try {
-                        const { cleanupFailedArtifacts } =
-                          await import('../services/lecture/lectureSessionMonitor');
-                        const cleaned = await cleanupFailedArtifacts();
-                        Alert.alert(
-                          'Done',
-                          cleaned > 0
-                            ? `Cleaned up ${cleaned} failed artifact${cleaned !== 1 ? 's' : ''}.`
-                            : 'No failed artifacts found.',
-                        );
-                      } catch (e) {
-                        Alert.alert('Error', 'Failed to clean up artifacts.');
-                      }
-                    },
-                  },
-                ],
-              );
-            }}
-          >
-            <Ionicons name="construct-outline" size={16} color={n.colors.warning} />
-            <LinearText style={styles.cleanupText}>Failed transcriptions & empty notes</LinearText>
-            <LinearText style={styles.cleanupAction}>Clean up</LinearText>
-          </TouchableOpacity>
-        )}
-
-        {/* Rename progress */}
-        {renameProgress && (
-          <View style={styles.renameBanner}>
-            <ActivityIndicator size="small" color={n.colors.accent} />
-            <LinearText style={styles.cleanupText} numberOfLines={2}>
-              {renameProgress}
-            </LinearText>
+          <View style={styles.topActions}>
+            <LinearButton
+              variant="glass"
+              style={styles.topActionBtn}
+              onPress={() => navigation.navigate('ManualNoteCreation' as never)}
+              leftIcon={<Ionicons name="clipboard-outline" size={18} color={n.colors.error} />}
+              label="Paste Transcript"
+            />
+            <LinearButton
+              variant="glass"
+              style={[styles.topActionBtn, isImportingText && styles.topActionBtnDisabled]}
+              onPress={() => void handleUploadText()}
+              disabled={isImportingText}
+              leftIcon={
+                isImportingText ? (
+                  <ActivityIndicator size="small" color={n.colors.accent} />
+                ) : (
+                  <Ionicons name="document-attach-outline" size={18} color={n.colors.accent} />
+                )
+              }
+              label={isImportingText ? 'Importing…' : 'Upload Text'}
+            />
           </View>
-        )}
 
-        {/* Process progress */}
-        {processProgress && (
-          <View style={styles.processBanner}>
-            <ActivityIndicator size="small" color={n.colors.success ?? n.colors.success} />
-            <LinearText style={styles.cleanupText}>
-              Processing transcript {processProgress}...
-            </LinearText>
-          </View>
-        )}
-
-        {/* Selection banner */}
-        {isSelectionMode && (
-          <View style={styles.selectionBanner}>
-            <LinearText style={styles.selectionText}>{selectedPaths.size} selected</LinearText>
-            <View style={styles.selectionActions}>
-              <TouchableOpacity style={styles.selectionCancelBtn} onPress={cancelSelection}>
-                <LinearText style={styles.selectionCancelText}>Cancel</LinearText>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.selectionProcessBtn} onPress={handleBatchProcess}>
-                <Ionicons name="sparkles" size={14} color="#fff" />
-                <LinearText style={styles.selectionDeleteText}>Process</LinearText>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.selectionDeleteBtn} onPress={handleBatchDelete}>
-                <Ionicons name="trash-outline" size={14} color="#fff" />
-                <LinearText style={styles.selectionDeleteText}>Delete</LinearText>
-              </TouchableOpacity>
-            </View>
-          </View>
-        )}
-
-        {/* Permission banner */}
-        {needsFileAccess && (
-          <TouchableOpacity
-            style={styles.permBanner}
-            onPress={async () => {
-              await requestAllFilesAccess();
-            }}
-          >
-            <Ionicons name="lock-open-outline" size={18} color={n.colors.warning} />
-            <LinearText style={styles.permBannerText}>
-              Grant file access to scan all transcript folders.
-            </LinearText>
-            <Ionicons name="chevron-forward" size={16} color={n.colors.textMuted} />
-          </TouchableOpacity>
-        )}
-
-        {loading ? (
-          <View style={styles.center}>
-            <ActivityIndicator size="large" color={n.colors.accent} />
-            <LinearText style={styles.emptyText}>Scanning transcripts...</LinearText>
-          </View>
-        ) : files.length === 0 ? (
-          <View style={styles.center}>
-            <Ionicons name="document-text-outline" size={48} color={n.colors.textMuted} />
-            <LinearText style={styles.emptyTitle}>No transcripts found</LinearText>
-            <LinearText style={styles.emptyText}>
-              Transcript files (.txt) appear here from your Documents/Guru folder and internal
-              backups.
-            </LinearText>
-          </View>
-        ) : (
-          <FlatList
-            data={sortedFiles}
-            key={listLayoutKey}
-            keyExtractor={(item) => item.path}
-            renderItem={renderItem}
-            extraData={listLayoutKey}
-            contentContainerStyle={styles.list}
-            showsVerticalScrollIndicator={false}
-          />
-        )}
-
-        {/* Full-screen reader */}
-        <Modal
-          visible={!!readerContent}
-          animationType="slide"
-          onRequestClose={() => setReaderContent(null)}
-        >
-          <View style={styles.readerContainer}>
-            <View style={styles.readerHeader}>
-              <TouchableOpacity
-                onPress={() => setReaderContent(null)}
-                style={styles.readerCloseBtn}
-              >
-                <Ionicons name="arrow-back" size={22} color={n.colors.textPrimary} />
-              </TouchableOpacity>
-              <LinearText style={styles.readerHeaderTitle} numberOfLines={2}>
-                {readerTitle}
-              </LinearText>
-              <TouchableOpacity
-                onPress={() => {
-                  if (readerContent) {
-                    Clipboard.setString(readerContent);
-                    Haptics.selectionAsync();
+          {/* Cleanup junk banner */}
+          {!isSelectionMode && files.filter((f) => f.wordCount < 10).length > 0 && (
+            <TouchableOpacity
+              style={styles.cleanupBanner}
+              onPress={async () => {
+                const junk = files.filter((f) => f.wordCount < 10);
+                const ok = await confirmDestructive(
+                  `Delete ${junk.length} junk transcript${junk.length !== 1 ? 's' : ''}?`,
+                  'This will permanently delete all transcripts with fewer than 10 words.',
+                );
+                if (ok) {
+                  for (const f of junk) {
+                    try {
+                      await deleteFile(f.path);
+                    } catch {
+                      /* skip */
+                    }
                   }
-                }}
-                style={styles.readerCopyBtn}
-              >
-                <Ionicons name="copy-outline" size={20} color={n.colors.textMuted} />
-              </TouchableOpacity>
-            </View>
-            <ScrollView
-              style={styles.readerScroll}
-              contentContainerStyle={styles.readerScrollContent}
+                  const junkPaths = new Set(junk.map((f) => f.path));
+                  setFiles((prev) => prev.filter((f) => !junkPaths.has(f.path)));
+                }
+              }}
             >
-              <LinearText style={styles.readerText}>{readerContent}</LinearText>
-            </ScrollView>
-          </View>
-        </Modal>
-      </ResponsiveContainer>
+              <Ionicons name="trash-outline" size={16} color={n.colors.error} />
+              <LinearText style={styles.cleanupText}>
+                {files.filter((f) => f.wordCount < 10).length} junk transcript
+                {files.filter((f) => f.wordCount < 10).length !== 1 ? 's' : ''} ({'<'}10 words)
+              </LinearText>
+              <LinearText style={styles.cleanupAction}>Clean up</LinearText>
+            </TouchableOpacity>
+          )}
+
+          {/* Duplicate cleanup banner */}
+          {!isSelectionMode && duplicatePaths.size > 0 && (
+            <TouchableOpacity
+              style={styles.dupeBanner}
+              onPress={async () => {
+                const ok = await confirmDestructive(
+                  `Delete ${duplicatePaths.size} duplicate${duplicatePaths.size !== 1 ? 's' : ''}?`,
+                  'Keeps the newest copy of each transcript and deletes older duplicates.',
+                );
+                if (ok) {
+                  for (const p of duplicatePaths) {
+                    try {
+                      await deleteFile(p);
+                    } catch {
+                      /* skip */
+                    }
+                  }
+                  setFiles((prev) => prev.filter((f) => !duplicatePaths.has(f.path)));
+                }
+              }}
+            >
+              <Ionicons name="copy-outline" size={16} color={n.colors.warning} />
+              <LinearText style={styles.cleanupText}>
+                {duplicatePaths.size} duplicate{duplicatePaths.size !== 1 ? 's' : ''} found
+              </LinearText>
+              <LinearText style={styles.dupeAction}>Remove</LinearText>
+            </TouchableOpacity>
+          )}
+
+          {/* AI rename banner */}
+          {!isSelectionMode && renamableFiles.length > 0 && !renameProgress && (
+            <TouchableOpacity style={styles.renameBanner} onPress={handleSmartRename}>
+              <Ionicons name="sparkles-outline" size={16} color={n.colors.accent} />
+              <LinearText style={styles.cleanupText}>
+                {renamableFiles.length} file{renamableFiles.length !== 1 ? 's' : ''} with unclear
+                names
+              </LinearText>
+              <LinearText style={styles.renameAction}>AI Rename</LinearText>
+            </TouchableOpacity>
+          )}
+
+          {/* Clean up failed AI artifacts */}
+          {!isSelectionMode && (
+            <TouchableOpacity
+              style={styles.artifactCleanupBanner}
+              onPress={async () => {
+                const ok = await confirmDestructive(
+                  'Clean up failed AI artifacts?',
+                  'This will delete failed transcription recordings, empty lecture notes, and their orphaned files.',
+                );
+                if (ok) {
+                  try {
+                    const { cleanupFailedArtifacts } =
+                      await import('../services/lecture/lectureSessionMonitor');
+                    const cleaned = await cleanupFailedArtifacts();
+                    showSuccess(
+                      'Done',
+                      cleaned > 0
+                        ? `Cleaned up ${cleaned} failed artifact${cleaned !== 1 ? 's' : ''}.`
+                        : 'No failed artifacts found.',
+                    );
+                  } catch (e) {
+                    showError('Failed to clean up artifacts.');
+                  }
+                }
+              }}
+            >
+              <Ionicons name="construct-outline" size={16} color={n.colors.warning} />
+              <LinearText style={styles.cleanupText}>
+                Failed transcriptions & empty notes
+              </LinearText>
+              <LinearText style={styles.cleanupAction}>Clean up</LinearText>
+            </TouchableOpacity>
+          )}
+
+          {/* Rename progress */}
+          {renameProgress && (
+            <View style={styles.renameBanner}>
+              <ActivityIndicator size="small" color={n.colors.accent} />
+              <LinearText style={styles.cleanupText} numberOfLines={2}>
+                {renameProgress}
+              </LinearText>
+            </View>
+          )}
+
+          {/* Process progress */}
+          {processProgress && (
+            <View style={styles.processBanner}>
+              <ActivityIndicator size="small" color={n.colors.success ?? n.colors.success} />
+              <LinearText style={styles.cleanupText}>
+                Processing transcript {processProgress}...
+              </LinearText>
+            </View>
+          )}
+
+          {/* Selection banner */}
+          {isSelectionMode && (
+            <View style={styles.selectionBanner}>
+              <LinearText style={styles.selectionText}>{selectedPaths.size} selected</LinearText>
+              <View style={styles.selectionActions}>
+                <TouchableOpacity style={styles.selectionCancelBtn} onPress={cancelSelection}>
+                  <LinearText style={styles.selectionCancelText}>Cancel</LinearText>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.selectionProcessBtn} onPress={handleBatchProcess}>
+                  <Ionicons name="sparkles" size={14} color="#fff" />
+                  <LinearText style={styles.selectionDeleteText}>Process</LinearText>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.selectionDeleteBtn} onPress={handleBatchDelete}>
+                  <Ionicons name="trash-outline" size={14} color="#fff" />
+                  <LinearText style={styles.selectionDeleteText}>Delete</LinearText>
+                </TouchableOpacity>
+              </View>
+            </View>
+          )}
+
+          {/* Permission banner */}
+          {needsFileAccess && (
+            <TouchableOpacity
+              style={styles.permBanner}
+              onPress={async () => {
+                await requestAllFilesAccess();
+              }}
+            >
+              <Ionicons name="lock-open-outline" size={18} color={n.colors.warning} />
+              <LinearText style={styles.permBannerText}>
+                Grant file access to scan all transcript folders.
+              </LinearText>
+              <Ionicons name="chevron-forward" size={16} color={n.colors.textMuted} />
+            </TouchableOpacity>
+          )}
+
+          {loading ? (
+            <View style={styles.center}>
+              <ActivityIndicator size="large" color={n.colors.accent} />
+              <LinearText style={styles.emptyText}>Scanning transcripts...</LinearText>
+            </View>
+          ) : files.length === 0 ? (
+            <View style={styles.emptyState}>
+              <LinearText style={styles.emptyEmoji}>🎙️</LinearText>
+              <LinearText style={styles.emptyTitle}>No Transcripts Yet</LinearText>
+              <LinearText style={styles.emptySubtitle}>
+                Record or upload a lecture to get started.
+              </LinearText>
+            </View>
+          ) : (
+            <>
+              <FlatList
+                data={sortedFiles.slice(0, displayCount)}
+                key={listLayoutKey}
+                keyExtractor={(item) => item.path}
+                renderItem={renderItem}
+                extraData={listLayoutKey}
+                contentContainerStyle={styles.list}
+                showsVerticalScrollIndicator={false}
+                initialNumToRender={10}
+                maxToRenderPerBatch={5}
+                windowSize={11}
+                removeClippedSubviews={Platform.OS === 'android' ? true : undefined}
+                updateCellsBatchingPeriod={100}
+              />
+              {displayCount < sortedFiles.length && (
+                <TouchableOpacity
+                  style={styles.loadMoreBtn}
+                  onPress={() => setDisplayCount((prev) => prev + PAGE_SIZE)}
+                  activeOpacity={0.7}
+                >
+                  <LinearText style={styles.loadMoreText}>
+                    Load More ({sortedFiles.length - displayCount} remaining)
+                  </LinearText>
+                </TouchableOpacity>
+              )}
+            </>
+          )}
+
+          {/* Full-screen reader */}
+          <Modal
+            visible={!!readerContent}
+            animationType="slide"
+            onRequestClose={() => setReaderContent(null)}
+          >
+            <View style={styles.readerContainer}>
+              <View style={styles.readerHeader}>
+                <TouchableOpacity
+                  onPress={() => setReaderContent(null)}
+                  style={styles.readerCloseBtn}
+                >
+                  <Ionicons name="arrow-back" size={22} color={n.colors.textPrimary} />
+                </TouchableOpacity>
+                <LinearText style={styles.readerHeaderTitle} numberOfLines={2}>
+                  {readerTitle}
+                </LinearText>
+                <TouchableOpacity
+                  onPress={() => {
+                    if (readerContent) {
+                      Clipboard.setString(readerContent);
+                      Haptics.selectionAsync();
+                    }
+                  }}
+                  style={styles.readerCopyBtn}
+                >
+                  <Ionicons name="copy-outline" size={20} color={n.colors.textMuted} />
+                </TouchableOpacity>
+              </View>
+              <ScrollView
+                style={styles.readerScroll}
+                contentContainerStyle={styles.readerScrollContent}
+              >
+                <LinearText style={styles.readerText}>{readerContent}</LinearText>
+              </ScrollView>
+            </View>
+          </Modal>
+        </ResponsiveContainer>
+      </ErrorBoundary>
     </SafeAreaView>
   );
 }
@@ -1112,6 +1103,21 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.05)',
   },
   list: { padding: n.spacing.lg, paddingBottom: 40 },
+  loadMoreBtn: {
+    alignItems: 'center',
+    paddingVertical: 14,
+    marginHorizontal: n.spacing.lg,
+    marginBottom: 24,
+    borderRadius: 12,
+    backgroundColor: n.colors.accent + '12',
+    borderWidth: 1,
+    borderColor: n.colors.accent + '30',
+  },
+  loadMoreText: {
+    color: n.colors.accent,
+    fontSize: 14,
+    fontWeight: '700',
+  },
   card: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1133,12 +1139,26 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 32 },
+  emptyState: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 48,
+    marginTop: 40,
+  },
+  emptyEmoji: { fontSize: 64, marginBottom: 16 },
   emptyTitle: {
     color: n.colors.textPrimary,
-    fontSize: 18,
-    fontWeight: '700',
-    marginTop: 16,
+    fontSize: 20,
+    fontWeight: '800',
     marginBottom: 8,
+    textAlign: 'center',
+  },
+  emptySubtitle: {
+    color: n.colors.textMuted,
+    fontSize: 14,
+    textAlign: 'center',
+    lineHeight: 20,
   },
   emptyText: {
     color: n.colors.textMuted,

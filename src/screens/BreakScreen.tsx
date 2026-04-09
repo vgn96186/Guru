@@ -3,15 +3,7 @@ import LinearButton from '../components/primitives/LinearButton';
 import LinearBadge from '../components/primitives/LinearBadge';
 import LinearText from '../components/primitives/LinearText';
 import React, { useEffect, useRef, useState } from 'react';
-import {
-  Animated,
-  View,
-  StyleSheet,
-  TouchableOpacity,
-  BackHandler,
-  Alert,
-  StatusBar,
-} from 'react-native';
+import { Animated, View, StyleSheet, TouchableOpacity, BackHandler, StatusBar } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { fetchContent } from '../services/aiService';
@@ -22,6 +14,7 @@ import VisualTimer from '../components/VisualTimer';
 import { useAppStore } from '../store/useAppStore';
 import { linearTheme as n } from '../theme/linearTheme';
 import { ResponsiveContainer } from '../hooks/useResponsive';
+import { confirmDestructive } from '../components/dialogService';
 
 interface Props {
   countdown: number;
@@ -105,12 +98,18 @@ export default function BreakScreen({
   useEffect(() => {
     // Block back button during break unless they want to end session early
     const handler = BackHandler.addEventListener('hardwareBackPress', () => {
-      Alert.alert('Stay focused!', 'The break timer is running.', [
-        { text: 'Wait it out', style: 'cancel' },
-        ...(onEndSession
-          ? [{ text: 'End Session Early', style: 'destructive' as const, onPress: onEndSession }]
-          : []),
-      ]);
+      if (onEndSession) {
+        confirmDestructive('Stay focused!', 'The break timer is running.', {
+          confirmLabel: 'End Session Early',
+          cancelLabel: 'Wait it out',
+        }).then((ok) => {
+          if (ok) onEndSession();
+        });
+      } else {
+        confirmDestructive('Stay focused!', 'The break timer is running.', {
+          confirmLabel: 'Wait it out',
+        }).then(() => {});
+      }
       return true;
     });
     return () => handler.remove();

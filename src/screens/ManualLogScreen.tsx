@@ -1,13 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import {
-  View,
-  TouchableOpacity,
-  ScrollView,
-  TextInput,
-  StyleSheet,
-  StatusBar,
-  Alert,
-} from 'react-native';
+import { View, TouchableOpacity, ScrollView, TextInput, StyleSheet, StatusBar } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute } from '@react-navigation/native';
@@ -25,6 +17,7 @@ import { ResponsiveContainer } from '../hooks/useResponsive';
 import LinearButton from '../components/primitives/LinearButton';
 import LinearText from '../components/primitives/LinearText';
 import LinearSurface from '../components/primitives/LinearSurface';
+import { showWarning } from '../components/dialogService';
 
 type Nav = NativeStackNavigationProp<any, 'ManualLog'>;
 type Route = RouteProp<any, 'ManualLog'>;
@@ -77,7 +70,7 @@ export default function ManualLogScreen() {
     if (submitting) return;
     const mins = parseInt(duration) || 0;
     if (mins <= 0) {
-      Alert.alert('Invalid Duration', 'Please enter a duration greater than 0 minutes.');
+      await showWarning('Invalid Duration', 'Please enter a duration greater than 0 minutes.');
       return;
     }
 

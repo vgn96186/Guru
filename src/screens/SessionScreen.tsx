@@ -11,7 +11,6 @@ import {
   StyleSheet,
   StatusBar,
   BackHandler,
-  Alert,
   ScrollView,
   InteractionManager,
   Animated,
@@ -48,7 +47,7 @@ import { getCachedUnseenQuestionsForSessionFallback } from '../db/queries/questi
 import { profileRepository, dailyLogRepository } from '../db/repositories';
 import { calculateAndAwardSessionXp } from '../services/xpService';
 import LoadingOrb from '../components/LoadingOrb';
-import { showDialog } from '../components/dialogService';
+import { showDialog, showError, confirm, confirmDestructive } from '../components/dialogService';
 import { MarkdownRender } from '../components/MarkdownRender';
 import { showToast } from '../components/Toast';
 import ContentCard from './ContentCard';
@@ -327,7 +326,7 @@ export default function SessionScreen() {
     } catch (e: unknown) {
       console.error('[Session] finishSession error:', e);
       const message = e instanceof Error ? e.message : 'Unknown session error';
-      Alert.alert('Session Error', 'Could not save session progress properly: ' + message);
+      void showError('Could not save session progress properly: ' + message);
       navigation.navigate('Home');
     } finally {
       finishSessionLockRef.current = false;
@@ -344,10 +343,12 @@ export default function SessionScreen() {
   // Effect: Hardware back button handler
   useEffect(() => {
     const handler = BackHandler.addEventListener('hardwareBackPress', () => {
-      Alert.alert('Leave session?', 'Your progress will be saved.', [
-        { text: 'Stay', style: 'cancel' },
-        { text: 'Leave', style: 'destructive', onPress: finishSession },
-      ]);
+      void confirmDestructive('Leave session?', 'Your progress will be saved.', {
+        confirmLabel: 'Leave',
+        cancelLabel: 'Stay',
+      }).then((ok) => {
+        if (ok) finishSession();
+      });
       return true;
     });
     return () => handler.remove();
@@ -761,48 +762,50 @@ export default function SessionScreen() {
     [xpAnim, triggerEvent, handleContentDone],
   );
 
-  const handleDowngrade = useCallback(() => {
-    Alert.alert('Having a tough time?', 'We can switch to Sprint Mode — shorter, easier content.', [
-      { text: 'Keep Pushing', style: 'cancel' },
+  const handleDowngrade = useCallback(async () => {
+    const ok = await confirm(
+      'Having a tough time?',
+      'We can switch to Sprint Mode — shorter, easier content.',
       {
-        text: 'Downgrade',
-        onPress: () => {
-          downgradeSession();
-          setLoadingContent(true);
-          setCurrentContent(null);
-          const s = useSessionStore.getState();
-          const item = getCurrentAgendaItem(s);
-          const cType = getCurrentContentType(s);
-          if (item && cType) {
-            fetchContent(item.topic, cType)
-              .then((c) => {
-                setCurrentContent(c);
-                setLoadingContent(false);
-              })
-              .catch((e) => {
-                void tryUseCachedQuestionFallback(item.topic)
-                  .then((usedFallback) => {
-                    if (!usedFallback) {
-                      setAiError(e?.message ?? 'AI content failed');
-                    }
-                  })
-                  .catch((fallbackError) => {
-                    if (__DEV__) {
-                      console.warn(
-                        '[Session] Cached question fallback failed after downgrade:',
-                        fallbackError,
-                      );
-                    }
-                    setAiError(e?.message ?? 'AI content failed');
-                  })
-                  .finally(() => {
-                    setLoadingContent(false);
-                  });
-              });
-          }
-        },
+        confirmLabel: 'Downgrade',
+        cancelLabel: 'Keep Pushing',
       },
-    ]);
+    );
+    if (ok) {
+      downgradeSession();
+      setLoadingContent(true);
+      setCurrentContent(null);
+      const s = useSessionStore.getState();
+      const item = getCurrentAgendaItem(s);
+      const cType = getCurrentContentType(s);
+      if (item && cType) {
+        fetchContent(item.topic, cType)
+          .then((c) => {
+            setCurrentContent(c);
+            setLoadingContent(false);
+          })
+          .catch((e) => {
+            void tryUseCachedQuestionFallback(item.topic)
+              .then((usedFallback) => {
+                if (!usedFallback) {
+                  setAiError(e?.message ?? 'AI content failed');
+                }
+              })
+              .catch((fallbackError) => {
+                if (__DEV__) {
+                  console.warn(
+                    '[Session] Cached question fallback failed after downgrade:',
+                    fallbackError,
+                  );
+                }
+                setAiError(e?.message ?? 'AI content failed');
+              })
+              .finally(() => {
+                setLoadingContent(false);
+              });
+          });
+      }
+    }
   }, [downgradeSession, setLoadingContent, setCurrentContent, tryUseCachedQuestionFallback]);
 
   const handleMarkForReview = useCallback(() => {
@@ -1439,21 +1442,13 @@ export default function SessionScreen() {
                   variant="glassTinted"
                   style={[styles.resumeOverlayBtn, styles.endBtn]}
                   textStyle={styles.resumeOverlayBtnText}
-                  onPress={() => {
-                    Alert.alert(
+                  onPress={async () => {
+                    const ok = await confirmDestructive(
                       'End Session?',
                       'This will finalize your current study session and award XP.',
-                      [
-                        { text: 'Keep Studying', style: 'cancel' },
-                        {
-                          text: 'End Session',
-                          style: 'destructive',
-                          onPress: () => {
-                            finishSession();
-                          },
-                        },
-                      ],
+                      { confirmLabel: 'End Session', cancelLabel: 'Keep Studying' },
                     );
+                    if (ok) finishSession();
                   }}
                   leftIcon={<Ionicons name="stop" size={18} color={n.colors.textPrimary} />}
                 />
@@ -1696,7 +1691,11 @@ function SessionDoneScreen({
               <View style={{ width: '100%', marginBottom: 12 }}>
                 {quizSummary.map((r) => {
                   const good = r.pct >= 75;
-                  const barColor = good ? n.colors.success : r.pct >= 50 ? n.colors.warning : n.colors.error;
+                  const barColor = good
+                    ? n.colors.success
+                    : r.pct >= 50
+                      ? n.colors.warning
+                      : n.colors.error;
                   return (
                     <View
                       key={r.topicId}
@@ -1711,7 +1710,13 @@ function SessionDoneScreen({
                         borderLeftColor: barColor,
                       }}
                     >
-                      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <View
+                        style={{
+                          flexDirection: 'row',
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                        }}
+                      >
                         <LinearText variant="label" style={{ flex: 1 }} truncate>
                           {r.topic?.name ?? `Topic ${r.topicId}`}
                         </LinearText>
@@ -1723,8 +1728,23 @@ function SessionDoneScreen({
                         </LinearText>
                       </View>
                       {/* Progress bar */}
-                      <View style={{ height: 4, backgroundColor: n.colors.border, borderRadius: 2, marginTop: 8, overflow: 'hidden' }}>
-                        <View style={{ height: '100%', width: `${r.pct}%`, backgroundColor: barColor, borderRadius: 2 }} />
+                      <View
+                        style={{
+                          height: 4,
+                          backgroundColor: n.colors.border,
+                          borderRadius: 2,
+                          marginTop: 8,
+                          overflow: 'hidden',
+                        }}
+                      >
+                        <View
+                          style={{
+                            height: '100%',
+                            width: `${r.pct}%`,
+                            backgroundColor: barColor,
+                            borderRadius: 2,
+                          }}
+                        />
                       </View>
                     </View>
                   );
@@ -1750,19 +1770,38 @@ function SessionDoneScreen({
                 }}
                 padded={false}
               >
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+                <View
+                  style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 10 }}
+                >
                   <Ionicons name="alert-circle" size={16} color={n.colors.error} />
                   <LinearText variant="chip" style={{ color: n.colors.error, letterSpacing: 1 }}>
                     KNOWLEDGE GAPS ({gapTopics.length})
                   </LinearText>
                 </View>
                 {gapTopics.map((t) => (
-                  <View key={t.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-                    <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: n.colors.error }} />
-                    <LinearText variant="bodySmall" style={{ color: n.colors.textPrimary, flex: 1 }}>
+                  <View
+                    key={t.id}
+                    style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 6 }}
+                  >
+                    <View
+                      style={{
+                        width: 6,
+                        height: 6,
+                        borderRadius: 3,
+                        backgroundColor: n.colors.error,
+                      }}
+                    />
+                    <LinearText
+                      variant="bodySmall"
+                      style={{ color: n.colors.textPrimary, flex: 1 }}
+                    >
                       {t.name}
                     </LinearText>
-                    <LinearText variant="meta" tone="muted" style={{ color: n.colors.textSecondary }}>
+                    <LinearText
+                      variant="meta"
+                      tone="muted"
+                      style={{ color: n.colors.textSecondary }}
+                    >
                       {t.subjectCode}
                     </LinearText>
                   </View>
@@ -1771,7 +1810,10 @@ function SessionDoneScreen({
               <LinearButton
                 label={`Review ${gapTopics.length} Gap${gapTopics.length > 1 ? 's' : ''} Now`}
                 variant="glassTinted"
-                style={[styles.doneSecondaryBtn, { borderColor: `${n.colors.error}44`, marginBottom: 0, marginTop: 0 }]}
+                style={[
+                  styles.doneSecondaryBtn,
+                  { borderColor: `${n.colors.error}44`, marginBottom: 0, marginTop: 0 },
+                ]}
                 textStyle={{ color: n.colors.error, fontWeight: '700' }}
                 onPress={() => onReviewGaps(gapTopicIds)}
               />
@@ -1792,7 +1834,10 @@ function SessionDoneScreen({
             >
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                 <Ionicons name="checkmark-circle" size={16} color={n.colors.success} />
-                <LinearText variant="bodySmall" style={{ color: n.colors.success, fontWeight: '700' }}>
+                <LinearText
+                  variant="bodySmall"
+                  style={{ color: n.colors.success, fontWeight: '700' }}
+                >
                   No knowledge gaps — solid performance!
                 </LinearText>
               </View>

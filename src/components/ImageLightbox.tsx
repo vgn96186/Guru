@@ -1,7 +1,6 @@
 import React, { useCallback, useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   Dimensions,
   Modal,
   Pressable,
@@ -11,6 +10,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { showToast } from './Toast';
+import { showError } from './dialogService';
 import { saveImageToDeviceGallery } from '../utils/saveImageToGallery';
 import { ResilientImage } from './ResilientImage';
 
@@ -34,7 +34,7 @@ export function ImageLightbox({ visible, uri, onClose, imageStyle }: Props) {
       await saveImageToDeviceGallery(uri);
       showToast('Image saved to your gallery', 'success');
     } catch (e) {
-      Alert.alert('Could not save', e instanceof Error ? e.message : 'Unknown error');
+      showError(e, 'Could not save');
     } finally {
       setSaving(false);
     }

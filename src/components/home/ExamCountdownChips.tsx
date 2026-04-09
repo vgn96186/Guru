@@ -1,6 +1,7 @@
 import React, { useEffect, useRef } from 'react';
-import { Animated, Text, View, StyleSheet } from 'react-native';
+import { Animated, View, StyleSheet } from 'react-native';
 import { linearTheme as n } from '../../theme/linearTheme';
+import LinearText from '../primitives/LinearText';
 
 type ExamCountdownChipsProps = {
   daysToInicet: number;
@@ -41,11 +42,19 @@ export default function ExamCountdownChips({
       accessibilityRole="text"
       accessibilityLabel={`INICET in ${daysToInicet} days, NEET-PG in ${daysToNeetPg} days.`}
     >
-      <Text style={styles.label}>INICET </Text>
+      <LinearText variant="bodySmall" tone="muted" style={styles.label}>
+        INICET{' '}
+      </LinearText>
       <Animated.Text style={[styles.days, urgentStyle]}>{daysToInicet}</Animated.Text>
-      <Text style={styles.label}> days · NEET-PG </Text>
+      <LinearText variant="bodySmall" tone="muted" style={styles.label}>
+        {' '}
+        days · NEET-PG{' '}
+      </LinearText>
       <Animated.Text style={[styles.days, urgentStyle]}>{daysToNeetPg}</Animated.Text>
-      <Text style={styles.label}> days</Text>
+      <LinearText variant="bodySmall" tone="muted" style={styles.label}>
+        {' '}
+        days
+      </LinearText>
     </View>
   );
 }

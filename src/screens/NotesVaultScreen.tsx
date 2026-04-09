@@ -16,12 +16,13 @@ import {
   Modal,
   ScrollView,
   RefreshControl,
-  Alert,
   StatusBar,
   ActivityIndicator,
   useWindowDimensions,
+  Platform,
 } from 'react-native';
 import LinearText from '../components/primitives/LinearText';
+import ErrorBoundary from '../components/ErrorBoundary';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
@@ -35,6 +36,7 @@ import SubjectChip from '../components/SubjectChip';
 import TopicPillRow from '../components/TopicPillRow';
 import LinearSurface from '../components/primitives/LinearSurface';
 import { ResponsiveContainer } from '../hooks/useResponsive';
+import { useScrollRestoration, usePersistedInput } from '../hooks/useScrollRestoration';
 import { linearTheme as n } from '../theme/linearTheme';
 import {
   getLectureHistory,
@@ -47,6 +49,7 @@ import { generateJSONWithRouting } from '../services/ai/generate';
 import type { Message } from '../services/ai/types';
 import { CONFIDENCE_LABELS } from '../constants/gamification';
 import type { TabParamList } from '../navigation/types';
+import { showInfo, showSuccess, confirm, confirmDestructive } from '../components/dialogService';
 
 const NoteLabelSchema = z.object({
   subject: z
@@ -128,6 +131,8 @@ const SORT_OPTIONS: Array<{ value: SortOption; label: string }> = [
   { value: 'words', label: 'Words' },
 ];
 
+const PAGE_SIZE = 20;
+
 function getTitle(item: NoteItem): string {
   const summary = item.summary?.trim();
   if (
@@ -165,8 +170,10 @@ export default function NotesVaultScreen() {
   const { width: viewportWidth, height: viewportHeight } = useWindowDimensions();
   const navigation = useNavigation();
   const tabsNavigation = navigation.getParent<NavigationProp<TabParamList>>();
+  const { onScroll, onContentSizeChange, listRef } = useScrollRestoration('notes-vault');
+  const [searchValue, setSearchPersisted] = usePersistedInput('notes-vault-search', '');
   const [notes, setNotes] = useState<NoteItem[]>([]);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [sortBy, setSortBy] = useState<SortOption>('date');
   const [isSortMenuOpen, setIsSortMenuOpen] = useState(false);
@@ -183,11 +190,20 @@ export default function NotesVaultScreen() {
   const [readerTitle, setReaderTitle] = useState('');
   const [readerNote, setReaderNote] = useState<NoteItem | null>(null);
 
+  // Pagination
+  const [displayCount, setDisplayCount] = useState(PAGE_SIZE);
+
   const loadNotes = useCallback(async () => {
-    const all = await getLectureHistory(500);
-    // Only show entries with a processed AI note
-    const withNotes = all.filter((n) => n.note?.trim() && n.note.length > 20);
-    setNotes(withNotes);
+    setLoading(true);
+    try {
+      const all = await getLectureHistory(500);
+      // Only show entries with a processed AI note
+      const withNotes = all.filter((n) => n.note?.trim() && n.note.length > 20);
+      setNotes(withNotes);
+      setDisplayCount(PAGE_SIZE);
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
   useFocusEffect(
@@ -210,8 +226,8 @@ export default function NotesVaultScreen() {
     if (topicFilter !== 'all') {
       filtered = filtered.filter((n) => n.topics.includes(topicFilter));
     }
-    if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase();
+    if (searchValue.trim()) {
+      const q = searchValue.toLowerCase();
       filtered = filtered.filter(
         (n) =>
           n.note?.toLowerCase().includes(q) ||
@@ -228,7 +244,7 @@ export default function NotesVaultScreen() {
     }
     // date sort is default from DB (newest first)
     return sorted;
-  }, [notes, searchQuery, sortBy, subjectFilter, topicFilter]);
+  }, [notes, searchValue, sortBy, subjectFilter, topicFilter]);
 
   const subjectOptions = useMemo(
     () =>
@@ -300,37 +316,32 @@ export default function NotesVaultScreen() {
 
   const cancelSelection = useCallback(() => setSelectedIds(new Set()), []);
 
-  const handleBatchDelete = useCallback(() => {
+  const handleBatchDelete = useCallback(async () => {
     const count = selectedIds.size;
-    Alert.alert(`Delete ${count} note${count !== 1 ? 's' : ''}?`, 'This cannot be undone.', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Delete',
-        style: 'destructive',
-        onPress: async () => {
-          let deleted = 0;
-          let lastErr = '';
-          for (const id of selectedIds) {
-            try {
-              await deleteLectureNote(id);
-              deleted++;
-            } catch (e: any) {
-              lastErr = e?.message ?? String(e);
-            }
-          }
-          setSelectedIds(new Set());
-          // Optimistic removal from UI + full reload
-          setNotes((prev) => prev.filter((n) => !selectedIds.has(n.id)));
-          void loadNotes();
-          if (deleted < selectedIds.size) {
-            Alert.alert(
-              'Some notes could not be deleted',
-              `Deleted ${deleted}/${selectedIds.size}.\n\nError: ${lastErr}`,
-            );
-          }
-        },
-      },
-    ]);
+    const ok = await confirmDestructive(
+      `Delete ${count} note${count !== 1 ? 's' : ''}?`,
+      'This cannot be undone.',
+    );
+    if (!ok) return;
+    let deleted = 0;
+    let lastErr = '';
+    for (const id of selectedIds) {
+      try {
+        await deleteLectureNote(id);
+        deleted++;
+      } catch (e: any) {
+        lastErr = e?.message ?? String(e);
+      }
+    }
+    setSelectedIds(new Set());
+    setNotes((prev) => prev.filter((n) => !selectedIds.has(n.id)));
+    void loadNotes();
+    if (deleted < selectedIds.size) {
+      void showInfo(
+        'Some notes could not be deleted',
+        `Deleted ${deleted}/${selectedIds.size}.\n\nError: ${lastErr}`,
+      );
+    }
   }, [selectedIds, loadNotes]);
 
   // Junk notes: very short
@@ -422,7 +433,7 @@ export default function NotesVaultScreen() {
       }
       setRelabelProgress(null);
       void loadNotes();
-      Alert.alert(
+      void showSuccess(
         'Done',
         `Labeled ${fixed} note${fixed !== 1 ? 's' : ''}${failed > 0 ? ` (${failed} failed)` : ''}.`,
       );
@@ -430,72 +441,58 @@ export default function NotesVaultScreen() {
     [loadNotes],
   );
 
-  const handleRelabel = useCallback(() => {
+  const handleRelabel = useCallback(async () => {
     const count = unlabeledNotes.length;
-    Alert.alert(`AI-label ${count} note${count !== 1 ? 's' : ''}?`, '1 quick API call per note.', [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Label', onPress: () => void runRelabel(unlabeledNotes) },
-    ]);
+    const ok = await confirm(
+      `AI-label ${count} note${count !== 1 ? 's' : ''}?`,
+      '1 quick API call per note.',
+    );
+    if (!ok) return;
+    void runRelabel(unlabeledNotes);
   }, [unlabeledNotes, runRelabel]);
 
-  const handleFixBadTitles = useCallback(() => {
+  const handleFixBadTitles = useCallback(async () => {
     const count = badTitleNotes.length;
-    Alert.alert(
+    const ok = await confirm(
       `Re-label ${count} note${count !== 1 ? 's' : ''}?`,
       'Fixes titles like "This note covers..." with proper noun-phrase headings. 1 API call per note.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Fix Titles', onPress: () => void runRelabel(badTitleNotes) },
-      ],
     );
+    if (!ok) return;
+    void runRelabel(badTitleNotes);
   }, [badTitleNotes, runRelabel]);
 
-  const handleDeleteJunk = useCallback(() => {
-    Alert.alert(
-      `Delete ${junkNotes.length} junk note${junkNotes.length !== 1 ? 's' : ''}?`,
+  const handleDeleteJunk = useCallback(async () => {
+    const count = junkNotes.length;
+    const ok = await confirmDestructive(
+      `Delete ${count} junk note${count !== 1 ? 's' : ''}?`,
       'Permanently deletes notes with fewer than 80 words.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            for (const n of junkNotes) {
-              try {
-                await deleteLectureNote(n.id);
-              } catch {
-                /* skip */
-              }
-            }
-            void loadNotes();
-          },
-        },
-      ],
     );
+    if (!ok) return;
+    for (const n of junkNotes) {
+      try {
+        await deleteLectureNote(n.id);
+      } catch {
+        /* skip */
+      }
+    }
+    void loadNotes();
   }, [junkNotes, loadNotes]);
 
-  const handleDeleteDuplicates = useCallback(() => {
-    Alert.alert(
-      `Delete ${duplicateIds.size} duplicate${duplicateIds.size !== 1 ? 's' : ''}?`,
+  const handleDeleteDuplicates = useCallback(async () => {
+    const count = duplicateIds.size;
+    const ok = await confirmDestructive(
+      `Delete ${count} duplicate${count !== 1 ? 's' : ''}?`,
       'Keeps the newest copy of each note.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            for (const id of duplicateIds) {
-              try {
-                await deleteLectureNote(id);
-              } catch {
-                /* skip */
-              }
-            }
-            void loadNotes();
-          },
-        },
-      ],
     );
+    if (!ok) return;
+    for (const id of duplicateIds) {
+      try {
+        await deleteLectureNote(id);
+      } catch {
+        /* skip */
+      }
+    }
+    void loadNotes();
   }, [duplicateIds, loadNotes]);
 
   const getSubjectLabel = (item: NoteItem) => item.subjectName || 'Unknown';
@@ -646,7 +643,7 @@ export default function NotesVaultScreen() {
   const hasQuickActions =
     !isSelectionMode &&
     (visibleNotes.length > 0 ||
-      (notes.length > 0 && !searchQuery) ||
+      (notes.length > 0 && !searchValue) ||
       subjectOptions.length > 0 ||
       topicOptions.length > 0 ||
       junkNotes.length > 0 ||
@@ -657,436 +654,474 @@ export default function NotesVaultScreen() {
 
   return (
     <SafeAreaView style={styles.safe}>
-      <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
-      <ResponsiveContainer style={styles.flex}>
-        <ScreenHeader
-          title="Notes Vault"
-          subtitle={`${notes.length} processed study note${notes.length !== 1 ? 's' : ''}`}
-          containerStyle={styles.headerCompact}
-          titleStyle={styles.headerTitleCompact}
-          subtitleStyle={styles.headerSubtitleCompact}
-          searchElement={
-            <BannerSearchBar
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-              placeholder="Search notes, topics, subjects..."
-            />
-          }
-        ></ScreenHeader>
-
-        {/* Selection banner */}
-        {isSelectionMode && (
-          <View style={styles.selectionBanner}>
-            <LinearText style={styles.selectionText}>{selectedIds.size} selected</LinearText>
-            <View style={styles.selectionActions}>
-              <TouchableOpacity style={styles.selectionCancelBtn} onPress={cancelSelection}>
-                <LinearText style={styles.selectionCancelText}>Cancel</LinearText>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.selectionDeleteBtn} onPress={handleBatchDelete}>
-                <Ionicons name="trash-outline" size={14} color="#fff" />
-                <LinearText style={styles.selectionDeleteText}>Delete</LinearText>
-              </TouchableOpacity>
-            </View>
+      <ErrorBoundary>
+        <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
+        {loading ? (
+          <View style={styles.loadingState}>
+            <ActivityIndicator size="large" color={n.colors.accent} />
+            <LinearText style={styles.loadingText}>Loading...</LinearText>
           </View>
-        )}
-
-        {hasQuickActions && (
-          <View style={styles.quickActionsSection}>
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.quickActionsContent}
-            >
-              {visibleNotes.length > 0 && (
-                <TouchableOpacity
-                  style={[styles.quickActionChip, styles.quickActionChipPrimary]}
-                  onPress={handleAskGuruFromNotes}
-                  activeOpacity={0.8}
-                  accessibilityRole="button"
-                  accessibilityLabel="Ask Guru using current notes"
-                >
-                  <Ionicons name="sparkles-outline" size={15} color={n.colors.accent} />
-                  <LinearText style={[styles.quickActionText, styles.quickActionTextPrimary]}>
-                    Ask Guru
-                  </LinearText>
-                </TouchableOpacity>
-              )}
-
-              {notes.length > 0 && !searchQuery && (
-                <TouchableOpacity
-                  style={[styles.quickActionChip, isSortMenuOpen && styles.quickActionChipPrimary]}
-                  onPress={() => setIsSortMenuOpen((prev) => !prev)}
-                  accessibilityRole="button"
-                  accessibilityLabel="Sort notes"
-                >
-                  <Ionicons
-                    name={isSortMenuOpen ? 'swap-vertical' : 'swap-vertical-outline'}
-                    size={15}
-                    color={isSortMenuOpen ? n.colors.accent : n.colors.textSecondary}
-                  />
-                  <LinearText style={styles.quickActionText}>
-                    Sort <LinearText style={styles.quickActionValue}>{currentSortLabel}</LinearText>
-                  </LinearText>
-                </TouchableOpacity>
-              )}
-
-              {(subjectOptions.length > 0 || topicOptions.length > 0) && (
-                <TouchableOpacity
-                  style={[
-                    styles.quickActionChip,
-                    (subjectFilter !== 'all' || topicFilter !== 'all' || isFilterMenuOpen) &&
-                      styles.quickActionChipPrimary,
-                  ]}
-                  onPress={() => setIsFilterMenuOpen(true)}
-                  accessibilityRole="button"
-                  accessibilityLabel="Filter notes"
-                >
-                  <Ionicons
-                    name="options-outline"
-                    size={15}
-                    color={
-                      subjectFilter !== 'all' || topicFilter !== 'all' || isFilterMenuOpen
-                        ? n.colors.accent
-                        : n.colors.textSecondary
-                    }
-                  />
-                  <LinearText style={styles.quickActionText}>
-                    <LinearText
-                      style={[
-                        styles.quickActionText,
-                        (subjectFilter !== 'all' || topicFilter !== 'all') &&
-                          styles.quickActionTextPrimary,
-                      ]}
-                    >
-                      {activeFilterSummary}
-                    </LinearText>
-                  </LinearText>
-                </TouchableOpacity>
-              )}
-
-              {junkNotes.length > 0 && (
-                <TouchableOpacity
-                  style={[styles.quickActionChip, styles.quickActionChipError]}
-                  onPress={handleDeleteJunk}
-                >
-                  <Ionicons name="trash-outline" size={15} color={n.colors.error} />
-                  <LinearText style={[styles.quickActionText, styles.quickActionTextError]}>
-                    Clean {junkNotes.length}
-                  </LinearText>
-                </TouchableOpacity>
-              )}
-
-              {duplicateIds.size > 0 && (
-                <TouchableOpacity
-                  style={[styles.quickActionChip, styles.quickActionChipWarning]}
-                  onPress={handleDeleteDuplicates}
-                >
-                  <Ionicons name="copy-outline" size={15} color={n.colors.warning} />
-                  <LinearText style={[styles.quickActionText, styles.quickActionTextWarning]}>
-                    Duplicates {duplicateIds.size}
-                  </LinearText>
-                </TouchableOpacity>
-              )}
-
-              {!relabelProgress && unlabeledNotes.length > 0 && (
-                <TouchableOpacity
-                  style={[styles.quickActionChip, styles.quickActionChipPrimary]}
-                  onPress={handleRelabel}
-                >
-                  <Ionicons name="sparkles-outline" size={15} color={n.colors.accent} />
-                  <LinearText style={[styles.quickActionText, styles.quickActionTextPrimary]}>
-                    Label {unlabeledNotes.length}
-                  </LinearText>
-                </TouchableOpacity>
-              )}
-
-              {!relabelProgress && badTitleNotes.length > 0 && (
-                <TouchableOpacity
-                  style={[styles.quickActionChip, styles.quickActionChipPrimary]}
-                  onPress={handleFixBadTitles}
-                >
-                  <Ionicons name="create-outline" size={15} color={n.colors.accent} />
-                  <LinearText style={[styles.quickActionText, styles.quickActionTextPrimary]}>
-                    Fix Titles {badTitleNotes.length}
-                  </LinearText>
-                </TouchableOpacity>
-              )}
-
-              {relabelProgress && (
-                <View style={[styles.quickActionChip, styles.quickActionChipPrimary]}>
-                  <ActivityIndicator size="small" color={n.colors.accent} />
-                  <LinearText style={[styles.quickActionText, styles.quickActionTextPrimary]}>
-                    Labeling {relabelProgress}
-                  </LinearText>
-                </View>
-              )}
-            </ScrollView>
-          </View>
-        )}
-
-        {notes.length > 0 && !searchQuery && isSortMenuOpen && (
-          <View style={styles.sortSection}>
-            <LinearSurface padded={false} compact style={styles.sortMenu}>
-              {SORT_OPTIONS.map((option) => (
-                <TouchableOpacity
-                  key={option.value}
-                  style={[styles.sortOption, sortBy === option.value && styles.sortOptionActive]}
-                  onPress={() => {
-                    setSortBy(option.value);
-                    setIsSortMenuOpen(false);
-                  }}
-                >
-                  <LinearText
-                    style={[
-                      styles.sortOptionText,
-                      sortBy === option.value && styles.sortOptionTextActive,
-                    ]}
-                  >
-                    {option.label}
-                  </LinearText>
-                  {sortBy === option.value ? (
-                    <Ionicons name="checkmark" size={16} color={n.colors.accent} />
-                  ) : null}
-                </TouchableOpacity>
-              ))}
-            </LinearSurface>
-          </View>
-        )}
-
-        {/* List */}
-        {visibleNotes.length === 0 ? (
-          <View style={styles.empty}>
-            <Ionicons name="document-text-outline" size={48} color={n.colors.textMuted} />
-            <LinearText style={styles.emptyTitle}>
-              {searchQuery ? 'No Results' : 'No Notes Yet'}
-            </LinearText>
-            <LinearText style={styles.emptySubtitle}>
-              {searchQuery
-                ? `Nothing matches "${searchQuery}"`
-                : 'Process recordings, paste transcripts, or upload text to generate study notes.'}
-            </LinearText>
-          </View>
-        ) : (
-          <FlatList
-            data={visibleNotes}
-            key={listLayoutKey}
-            keyExtractor={(item) => item.id.toString()}
-            renderItem={renderNote}
-            extraData={listLayoutKey}
-            contentContainerStyle={styles.list}
-            refreshControl={
-              <RefreshControl
-                refreshing={refreshing}
-                onRefresh={handleRefresh}
-                tintColor={n.colors.textPrimary}
+        ) : null}
+        <ResponsiveContainer style={styles.flex}>
+          <ScreenHeader
+            title="Notes Vault"
+            subtitle={`${notes.length} processed study note${notes.length !== 1 ? 's' : ''}`}
+            containerStyle={styles.headerCompact}
+            titleStyle={styles.headerTitleCompact}
+            subtitleStyle={styles.headerSubtitleCompact}
+            searchElement={
+              <BannerSearchBar
+                value={searchValue}
+                onChangeText={setSearchPersisted}
+                placeholder="Search notes, topics, subjects..."
               />
             }
-          />
-        )}
+          ></ScreenHeader>
 
-        <Modal
-          visible={isFilterMenuOpen}
-          transparent
-          animationType="fade"
-          onRequestClose={() => setIsFilterMenuOpen(false)}
-        >
-          <View style={styles.sheetOverlay}>
-            <Pressable style={styles.sheetBackdrop} onPress={() => setIsFilterMenuOpen(false)} />
-            <LinearSurface padded={false} style={styles.sheetCard}>
-              <View style={styles.sheetHeader}>
-                <View style={styles.sheetHeaderCopy}>
-                  <LinearText style={styles.sheetTitle}>Filter Notes</LinearText>
-                  <LinearText style={styles.sheetSubtitle}>
-                    Narrow the vault by subject and topic.
-                  </LinearText>
-                </View>
-                <TouchableOpacity
-                  style={styles.sheetCloseBtn}
-                  onPress={() => setIsFilterMenuOpen(false)}
-                >
-                  <Ionicons name="close" size={18} color={n.colors.textMuted} />
+          {/* Selection banner */}
+          {isSelectionMode && (
+            <View style={styles.selectionBanner}>
+              <LinearText style={styles.selectionText}>{selectedIds.size} selected</LinearText>
+              <View style={styles.selectionActions}>
+                <TouchableOpacity style={styles.selectionCancelBtn} onPress={cancelSelection}>
+                  <LinearText style={styles.selectionCancelText}>Cancel</LinearText>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.selectionDeleteBtn} onPress={handleBatchDelete}>
+                  <Ionicons name="trash-outline" size={14} color="#fff" />
+                  <LinearText style={styles.selectionDeleteText}>Delete</LinearText>
                 </TouchableOpacity>
               </View>
-
-              <TouchableOpacity
-                style={styles.clearFiltersBtn}
-                onPress={() => {
-                  setSubjectFilter('all');
-                  setTopicFilter('all');
-                  setIsFilterMenuOpen(false);
-                }}
-              >
-                <LinearText style={styles.clearFiltersText}>Clear filters</LinearText>
-              </TouchableOpacity>
-
-              <ScrollView
-                style={styles.sheetScroll}
-                contentContainerStyle={styles.sheetScrollContent}
-                showsVerticalScrollIndicator={false}
-              >
-                <View style={styles.sheetSection}>
-                  <LinearText style={styles.sheetSectionTitle}>Subject</LinearText>
-                  <View style={styles.sheetOptions}>
-                    <TouchableOpacity
-                      style={[
-                        styles.sheetOption,
-                        subjectFilter === 'all' && styles.sheetOptionActive,
-                      ]}
-                      onPress={() => setSubjectFilter('all')}
-                    >
-                      <LinearText
-                        style={[
-                          styles.sheetOptionText,
-                          subjectFilter === 'all' && styles.sheetOptionTextActive,
-                        ]}
-                      >
-                        All subjects
-                      </LinearText>
-                      {subjectFilter === 'all' ? (
-                        <Ionicons name="radio-button-on" size={18} color={n.colors.accent} />
-                      ) : (
-                        <Ionicons name="radio-button-off" size={18} color={n.colors.textMuted} />
-                      )}
-                    </TouchableOpacity>
-                    {subjectOptions.map((subject) => (
-                      <TouchableOpacity
-                        key={subject}
-                        style={[
-                          styles.sheetOption,
-                          subjectFilter === subject && styles.sheetOptionActive,
-                        ]}
-                        onPress={() => setSubjectFilter(subject)}
-                      >
-                        <LinearText
-                          style={[
-                            styles.sheetOptionText,
-                            subjectFilter === subject && styles.sheetOptionTextActive,
-                          ]}
-                        >
-                          {subject}
-                        </LinearText>
-                        {subjectFilter === subject ? (
-                          <Ionicons name="radio-button-on" size={18} color={n.colors.accent} />
-                        ) : (
-                          <Ionicons name="radio-button-off" size={18} color={n.colors.textMuted} />
-                        )}
-                      </TouchableOpacity>
-                    ))}
-                  </View>
-                </View>
-
-                <View style={styles.sheetSection}>
-                  <LinearText style={styles.sheetSectionTitle}>Topic</LinearText>
-                  <View style={styles.sheetOptions}>
-                    <TouchableOpacity
-                      style={[
-                        styles.sheetOption,
-                        topicFilter === 'all' && styles.sheetOptionActive,
-                      ]}
-                      onPress={() => setTopicFilter('all')}
-                    >
-                      <LinearText
-                        style={[
-                          styles.sheetOptionText,
-                          topicFilter === 'all' && styles.sheetOptionTextActive,
-                        ]}
-                      >
-                        All topics
-                      </LinearText>
-                      {topicFilter === 'all' ? (
-                        <Ionicons name="radio-button-on" size={18} color={n.colors.accent} />
-                      ) : (
-                        <Ionicons name="radio-button-off" size={18} color={n.colors.textMuted} />
-                      )}
-                    </TouchableOpacity>
-                    {topicOptions.map((topic) => (
-                      <TouchableOpacity
-                        key={topic}
-                        style={[
-                          styles.sheetOption,
-                          topicFilter === topic && styles.sheetOptionActive,
-                        ]}
-                        onPress={() => setTopicFilter(topic)}
-                      >
-                        <LinearText
-                          style={[
-                            styles.sheetOptionText,
-                            topicFilter === topic && styles.sheetOptionTextActive,
-                          ]}
-                        >
-                          {topic}
-                        </LinearText>
-                        {topicFilter === topic ? (
-                          <Ionicons name="radio-button-on" size={18} color={n.colors.accent} />
-                        ) : (
-                          <Ionicons name="radio-button-off" size={18} color={n.colors.textMuted} />
-                        )}
-                      </TouchableOpacity>
-                    ))}
-                  </View>
-                </View>
-              </ScrollView>
-            </LinearSurface>
-          </View>
-        </Modal>
-
-        {/* Full-screen reader */}
-        <Modal
-          visible={!!readerContent}
-          animationType="slide"
-          onRequestClose={() => {
-            setReaderContent(null);
-            setReaderNote(null);
-          }}
-        >
-          <View style={styles.readerContainer}>
-            <View style={styles.readerHeader}>
-              <TouchableOpacity
-                onPress={() => {
-                  setReaderContent(null);
-                  setReaderNote(null);
-                }}
-                style={styles.readerCloseBtn}
-              >
-                <Ionicons name="arrow-back" size={22} color={n.colors.textPrimary} />
-              </TouchableOpacity>
-              <LinearText style={styles.readerHeaderTitle} numberOfLines={3}>
-                {readerTitle}
-              </LinearText>
-              <TouchableOpacity
-                onPress={() => {
-                  if (readerContent) {
-                    Clipboard.setString(readerContent);
-                    Haptics.selectionAsync();
-                  }
-                }}
-                style={styles.readerCopyBtn}
-              >
-                <Ionicons name="copy-outline" size={20} color={n.colors.textMuted} />
-              </TouchableOpacity>
             </View>
-            {readerNote ? (
-              <TouchableOpacity
-                style={styles.readerAskGuruBtn}
-                onPress={() => handleAskGuruFromNote(readerNote)}
-                activeOpacity={0.8}
-                accessibilityRole="button"
-                accessibilityLabel="Ask Guru from this note"
+          )}
+
+          {hasQuickActions && (
+            <View style={styles.quickActionsSection}>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.quickActionsContent}
               >
-                <Ionicons name="sparkles-outline" size={16} color={n.colors.accent} />
-                <LinearText style={styles.readerAskGuruText}>Ask Guru From This Note</LinearText>
-              </TouchableOpacity>
-            ) : null}
-            <ScrollView
-              style={styles.readerScroll}
-              contentContainerStyle={styles.readerScrollContent}
-              showsVerticalScrollIndicator
-            >
-              <MarkdownRender content={readerContent ?? ''} />
-            </ScrollView>
-          </View>
-        </Modal>
-      </ResponsiveContainer>
+                {visibleNotes.length > 0 && (
+                  <TouchableOpacity
+                    style={[styles.quickActionChip, styles.quickActionChipPrimary]}
+                    onPress={handleAskGuruFromNotes}
+                    activeOpacity={0.8}
+                    accessibilityRole="button"
+                    accessibilityLabel="Ask Guru using current notes"
+                  >
+                    <Ionicons name="sparkles-outline" size={15} color={n.colors.accent} />
+                    <LinearText style={[styles.quickActionText, styles.quickActionTextPrimary]}>
+                      Ask Guru
+                    </LinearText>
+                  </TouchableOpacity>
+                )}
+
+                {notes.length > 0 && !searchValue && (
+                  <TouchableOpacity
+                    style={[
+                      styles.quickActionChip,
+                      isSortMenuOpen && styles.quickActionChipPrimary,
+                    ]}
+                    onPress={() => setIsSortMenuOpen((prev) => !prev)}
+                    accessibilityRole="button"
+                    accessibilityLabel="Sort notes"
+                  >
+                    <Ionicons
+                      name={isSortMenuOpen ? 'swap-vertical' : 'swap-vertical-outline'}
+                      size={15}
+                      color={isSortMenuOpen ? n.colors.accent : n.colors.textSecondary}
+                    />
+                    <LinearText style={styles.quickActionText}>
+                      Sort{' '}
+                      <LinearText style={styles.quickActionValue}>{currentSortLabel}</LinearText>
+                    </LinearText>
+                  </TouchableOpacity>
+                )}
+
+                {(subjectOptions.length > 0 || topicOptions.length > 0) && (
+                  <TouchableOpacity
+                    style={[
+                      styles.quickActionChip,
+                      (subjectFilter !== 'all' || topicFilter !== 'all' || isFilterMenuOpen) &&
+                        styles.quickActionChipPrimary,
+                    ]}
+                    onPress={() => setIsFilterMenuOpen(true)}
+                    accessibilityRole="button"
+                    accessibilityLabel="Filter notes"
+                  >
+                    <Ionicons
+                      name="options-outline"
+                      size={15}
+                      color={
+                        subjectFilter !== 'all' || topicFilter !== 'all' || isFilterMenuOpen
+                          ? n.colors.accent
+                          : n.colors.textSecondary
+                      }
+                    />
+                    <LinearText style={styles.quickActionText}>
+                      <LinearText
+                        style={[
+                          styles.quickActionText,
+                          (subjectFilter !== 'all' || topicFilter !== 'all') &&
+                            styles.quickActionTextPrimary,
+                        ]}
+                      >
+                        {activeFilterSummary}
+                      </LinearText>
+                    </LinearText>
+                  </TouchableOpacity>
+                )}
+
+                {junkNotes.length > 0 && (
+                  <TouchableOpacity
+                    style={[styles.quickActionChip, styles.quickActionChipError]}
+                    onPress={handleDeleteJunk}
+                  >
+                    <Ionicons name="trash-outline" size={15} color={n.colors.error} />
+                    <LinearText style={[styles.quickActionText, styles.quickActionTextError]}>
+                      Clean {junkNotes.length}
+                    </LinearText>
+                  </TouchableOpacity>
+                )}
+
+                {duplicateIds.size > 0 && (
+                  <TouchableOpacity
+                    style={[styles.quickActionChip, styles.quickActionChipWarning]}
+                    onPress={handleDeleteDuplicates}
+                  >
+                    <Ionicons name="copy-outline" size={15} color={n.colors.warning} />
+                    <LinearText style={[styles.quickActionText, styles.quickActionTextWarning]}>
+                      Duplicates {duplicateIds.size}
+                    </LinearText>
+                  </TouchableOpacity>
+                )}
+
+                {!relabelProgress && unlabeledNotes.length > 0 && (
+                  <TouchableOpacity
+                    style={[styles.quickActionChip, styles.quickActionChipPrimary]}
+                    onPress={handleRelabel}
+                  >
+                    <Ionicons name="sparkles-outline" size={15} color={n.colors.accent} />
+                    <LinearText style={[styles.quickActionText, styles.quickActionTextPrimary]}>
+                      Label {unlabeledNotes.length}
+                    </LinearText>
+                  </TouchableOpacity>
+                )}
+
+                {!relabelProgress && badTitleNotes.length > 0 && (
+                  <TouchableOpacity
+                    style={[styles.quickActionChip, styles.quickActionChipPrimary]}
+                    onPress={handleFixBadTitles}
+                  >
+                    <Ionicons name="create-outline" size={15} color={n.colors.accent} />
+                    <LinearText style={[styles.quickActionText, styles.quickActionTextPrimary]}>
+                      Fix Titles {badTitleNotes.length}
+                    </LinearText>
+                  </TouchableOpacity>
+                )}
+
+                {relabelProgress && (
+                  <View style={[styles.quickActionChip, styles.quickActionChipPrimary]}>
+                    <ActivityIndicator size="small" color={n.colors.accent} />
+                    <LinearText style={[styles.quickActionText, styles.quickActionTextPrimary]}>
+                      Labeling {relabelProgress}
+                    </LinearText>
+                  </View>
+                )}
+              </ScrollView>
+            </View>
+          )}
+
+          {notes.length > 0 && !searchValue && isSortMenuOpen && (
+            <View style={styles.sortSection}>
+              <LinearSurface padded={false} compact style={styles.sortMenu}>
+                {SORT_OPTIONS.map((option) => (
+                  <TouchableOpacity
+                    key={option.value}
+                    style={[styles.sortOption, sortBy === option.value && styles.sortOptionActive]}
+                    onPress={() => {
+                      setSortBy(option.value);
+                      setIsSortMenuOpen(false);
+                    }}
+                  >
+                    <LinearText
+                      style={[
+                        styles.sortOptionText,
+                        sortBy === option.value && styles.sortOptionTextActive,
+                      ]}
+                    >
+                      {option.label}
+                    </LinearText>
+                    {sortBy === option.value ? (
+                      <Ionicons name="checkmark" size={16} color={n.colors.accent} />
+                    ) : null}
+                  </TouchableOpacity>
+                ))}
+              </LinearSurface>
+            </View>
+          )}
+
+          {/* List */}
+          {visibleNotes.length === 0 ? (
+            <View style={styles.empty}>
+              <LinearText style={styles.emptyEmoji}>📝</LinearText>
+              <LinearText style={styles.emptyTitle}>No Notes Yet</LinearText>
+              <LinearText style={styles.emptySubtitle}>
+                Study a topic or import a lecture to create notes.
+              </LinearText>
+            </View>
+          ) : (
+            <>
+              <FlatList
+                ref={listRef}
+                data={visibleNotes.slice(0, displayCount)}
+                key={listLayoutKey}
+                keyExtractor={(item) => item.id.toString()}
+                renderItem={renderNote}
+                extraData={listLayoutKey}
+                contentContainerStyle={styles.list}
+                onScroll={onScroll}
+                onContentSizeChange={onContentSizeChange}
+                scrollEventThrottle={16}
+                initialNumToRender={10}
+                maxToRenderPerBatch={5}
+                windowSize={11}
+                removeClippedSubviews={Platform.OS === 'android' ? true : undefined}
+                updateCellsBatchingPeriod={100}
+                refreshControl={
+                  <RefreshControl
+                    refreshing={refreshing}
+                    onRefresh={handleRefresh}
+                    tintColor={n.colors.textPrimary}
+                  />
+                }
+              />
+              {displayCount < visibleNotes.length && (
+                <TouchableOpacity
+                  style={styles.loadMoreBtn}
+                  onPress={() => setDisplayCount((prev) => prev + PAGE_SIZE)}
+                  activeOpacity={0.7}
+                >
+                  <LinearText style={styles.loadMoreText}>
+                    Load More ({visibleNotes.length - displayCount} remaining)
+                  </LinearText>
+                </TouchableOpacity>
+              )}
+            </>
+          )}
+
+          <Modal
+            visible={isFilterMenuOpen}
+            transparent
+            animationType="fade"
+            onRequestClose={() => setIsFilterMenuOpen(false)}
+          >
+            <View style={styles.sheetOverlay}>
+              <Pressable style={styles.sheetBackdrop} onPress={() => setIsFilterMenuOpen(false)} />
+              <LinearSurface padded={false} style={styles.sheetCard}>
+                <View style={styles.sheetHeader}>
+                  <View style={styles.sheetHeaderCopy}>
+                    <LinearText style={styles.sheetTitle}>Filter Notes</LinearText>
+                    <LinearText style={styles.sheetSubtitle}>
+                      Narrow the vault by subject and topic.
+                    </LinearText>
+                  </View>
+                  <TouchableOpacity
+                    style={styles.sheetCloseBtn}
+                    onPress={() => setIsFilterMenuOpen(false)}
+                  >
+                    <Ionicons name="close" size={18} color={n.colors.textMuted} />
+                  </TouchableOpacity>
+                </View>
+
+                <TouchableOpacity
+                  style={styles.clearFiltersBtn}
+                  onPress={() => {
+                    setSubjectFilter('all');
+                    setTopicFilter('all');
+                    setIsFilterMenuOpen(false);
+                  }}
+                >
+                  <LinearText style={styles.clearFiltersText}>Clear filters</LinearText>
+                </TouchableOpacity>
+
+                <ScrollView
+                  style={styles.sheetScroll}
+                  contentContainerStyle={styles.sheetScrollContent}
+                  showsVerticalScrollIndicator={false}
+                >
+                  <View style={styles.sheetSection}>
+                    <LinearText style={styles.sheetSectionTitle}>Subject</LinearText>
+                    <View style={styles.sheetOptions}>
+                      <TouchableOpacity
+                        style={[
+                          styles.sheetOption,
+                          subjectFilter === 'all' && styles.sheetOptionActive,
+                        ]}
+                        onPress={() => setSubjectFilter('all')}
+                      >
+                        <LinearText
+                          style={[
+                            styles.sheetOptionText,
+                            subjectFilter === 'all' && styles.sheetOptionTextActive,
+                          ]}
+                        >
+                          All subjects
+                        </LinearText>
+                        {subjectFilter === 'all' ? (
+                          <Ionicons name="radio-button-on" size={18} color={n.colors.accent} />
+                        ) : (
+                          <Ionicons name="radio-button-off" size={18} color={n.colors.textMuted} />
+                        )}
+                      </TouchableOpacity>
+                      {subjectOptions.map((subject) => (
+                        <TouchableOpacity
+                          key={subject}
+                          style={[
+                            styles.sheetOption,
+                            subjectFilter === subject && styles.sheetOptionActive,
+                          ]}
+                          onPress={() => setSubjectFilter(subject)}
+                        >
+                          <LinearText
+                            style={[
+                              styles.sheetOptionText,
+                              subjectFilter === subject && styles.sheetOptionTextActive,
+                            ]}
+                          >
+                            {subject}
+                          </LinearText>
+                          {subjectFilter === subject ? (
+                            <Ionicons name="radio-button-on" size={18} color={n.colors.accent} />
+                          ) : (
+                            <Ionicons
+                              name="radio-button-off"
+                              size={18}
+                              color={n.colors.textMuted}
+                            />
+                          )}
+                        </TouchableOpacity>
+                      ))}
+                    </View>
+                  </View>
+
+                  <View style={styles.sheetSection}>
+                    <LinearText style={styles.sheetSectionTitle}>Topic</LinearText>
+                    <View style={styles.sheetOptions}>
+                      <TouchableOpacity
+                        style={[
+                          styles.sheetOption,
+                          topicFilter === 'all' && styles.sheetOptionActive,
+                        ]}
+                        onPress={() => setTopicFilter('all')}
+                      >
+                        <LinearText
+                          style={[
+                            styles.sheetOptionText,
+                            topicFilter === 'all' && styles.sheetOptionTextActive,
+                          ]}
+                        >
+                          All topics
+                        </LinearText>
+                        {topicFilter === 'all' ? (
+                          <Ionicons name="radio-button-on" size={18} color={n.colors.accent} />
+                        ) : (
+                          <Ionicons name="radio-button-off" size={18} color={n.colors.textMuted} />
+                        )}
+                      </TouchableOpacity>
+                      {topicOptions.map((topic) => (
+                        <TouchableOpacity
+                          key={topic}
+                          style={[
+                            styles.sheetOption,
+                            topicFilter === topic && styles.sheetOptionActive,
+                          ]}
+                          onPress={() => setTopicFilter(topic)}
+                        >
+                          <LinearText
+                            style={[
+                              styles.sheetOptionText,
+                              topicFilter === topic && styles.sheetOptionTextActive,
+                            ]}
+                          >
+                            {topic}
+                          </LinearText>
+                          {topicFilter === topic ? (
+                            <Ionicons name="radio-button-on" size={18} color={n.colors.accent} />
+                          ) : (
+                            <Ionicons
+                              name="radio-button-off"
+                              size={18}
+                              color={n.colors.textMuted}
+                            />
+                          )}
+                        </TouchableOpacity>
+                      ))}
+                    </View>
+                  </View>
+                </ScrollView>
+              </LinearSurface>
+            </View>
+          </Modal>
+
+          {/* Full-screen reader */}
+          <Modal
+            visible={!!readerContent}
+            animationType="slide"
+            onRequestClose={() => {
+              setReaderContent(null);
+              setReaderNote(null);
+            }}
+          >
+            <View style={styles.readerContainer}>
+              <View style={styles.readerHeader}>
+                <TouchableOpacity
+                  onPress={() => {
+                    setReaderContent(null);
+                    setReaderNote(null);
+                  }}
+                  style={styles.readerCloseBtn}
+                >
+                  <Ionicons name="arrow-back" size={22} color={n.colors.textPrimary} />
+                </TouchableOpacity>
+                <LinearText style={styles.readerHeaderTitle} numberOfLines={3}>
+                  {readerTitle}
+                </LinearText>
+                <TouchableOpacity
+                  onPress={() => {
+                    if (readerContent) {
+                      Clipboard.setString(readerContent);
+                      Haptics.selectionAsync();
+                    }
+                  }}
+                  style={styles.readerCopyBtn}
+                >
+                  <Ionicons name="copy-outline" size={20} color={n.colors.textMuted} />
+                </TouchableOpacity>
+              </View>
+              {readerNote ? (
+                <TouchableOpacity
+                  style={styles.readerAskGuruBtn}
+                  onPress={() => handleAskGuruFromNote(readerNote)}
+                  activeOpacity={0.8}
+                  accessibilityRole="button"
+                  accessibilityLabel="Ask Guru from this note"
+                >
+                  <Ionicons name="sparkles-outline" size={16} color={n.colors.accent} />
+                  <LinearText style={styles.readerAskGuruText}>Ask Guru From This Note</LinearText>
+                </TouchableOpacity>
+              ) : null}
+              <ScrollView
+                style={styles.readerScroll}
+                contentContainerStyle={styles.readerScrollContent}
+                showsVerticalScrollIndicator
+              >
+                <MarkdownRender content={readerContent ?? ''} />
+              </ScrollView>
+            </View>
+          </Modal>
+        </ResponsiveContainer>
+      </ErrorBoundary>
     </SafeAreaView>
   );
 }
@@ -1412,25 +1447,42 @@ const styles = StyleSheet.create({
     borderColor: n.colors.success + '55',
   },
   wordCount: { color: n.colors.textMuted, fontSize: 12 },
-  appBadge: { color: '#666', fontSize: 12 },
+  appBadge: { color: n.colors.textMuted, fontSize: 12 },
   empty: {
     flex: 1,
-    justifyContent: 'center',
     alignItems: 'center',
-    padding: 32,
+    justifyContent: 'center',
+    padding: 48,
+    marginTop: 40,
   },
+  emptyEmoji: { fontSize: 64, marginBottom: 16 },
   emptyTitle: {
     color: n.colors.textPrimary,
-    fontSize: 18,
-    fontWeight: '700',
-    marginTop: 16,
+    fontSize: 20,
+    fontWeight: '800',
     marginBottom: 8,
+    textAlign: 'center',
   },
   emptySubtitle: {
     color: n.colors.textMuted,
     fontSize: 14,
     textAlign: 'center',
     lineHeight: 20,
+  },
+  loadMoreBtn: {
+    alignItems: 'center',
+    paddingVertical: 14,
+    marginHorizontal: 16,
+    marginBottom: 24,
+    borderRadius: 12,
+    backgroundColor: n.colors.accent + '12',
+    borderWidth: 1,
+    borderColor: n.colors.accent + '30',
+  },
+  loadMoreText: {
+    color: n.colors.accent,
+    fontSize: 14,
+    fontWeight: '700',
   },
   cleanupBanner: {
     flexDirection: 'row',
@@ -1691,4 +1743,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '800',
   },
+  loadingState: { alignItems: 'center', justifyContent: 'center', padding: 48, flex: 1 },
+  loadingText: { color: n.colors.textMuted, fontSize: 14, marginTop: 16 },
 });

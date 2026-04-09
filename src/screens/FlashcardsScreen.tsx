@@ -11,6 +11,7 @@ import {
   ScrollView,
 } from 'react-native';
 import LinearText from '../components/primitives/LinearText';
+import ErrorBoundary from '../components/ErrorBoundary';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
@@ -248,14 +249,10 @@ export default function FlashcardsScreen() {
     return (
       <SafeAreaView style={styles.safe}>
         <ResponsiveContainer style={styles.center}>
-          <Ionicons name="book-outline" size={60} color={n.colors.accent} />
-          <LinearText style={styles.title}>
-            {noDueTopics ? 'No Topics Yet' : 'All Caught Up!'}
-          </LinearText>
+          <LinearText style={styles.emptyEmoji}>🃏</LinearText>
+          <LinearText style={styles.title}>No Flashcards Available</LinearText>
           <LinearText style={styles.sub}>
-            {noDueTopics
-              ? "You haven't studied any topics yet. Start studying to unlock flashcards."
-              : 'Finished all reviews for now. Want to practice random topics?'}
+            Complete quiz sessions to generate flashcards for review.
           </LinearText>
           <View style={styles.btnRow}>
             <TouchableOpacity
@@ -375,94 +372,96 @@ export default function FlashcardsScreen() {
 
   return (
     <SafeAreaView style={styles.safe}>
-      <StatusBar barStyle="light-content" />
-      <ResponsiveContainer>
-        <ScreenHeader
-          title={currentTopic?.name ?? 'Flashcards'}
-          subtitle={currentTopic?.subjectName}
-          rightElement={
-            <LinearText style={styles.progressText}>
-              {cardIdx + 1}/{cards.length} · Topic {currentIdx + 1}/{queue.length}
-            </LinearText>
-          }
-        />
+      <ErrorBoundary>
+        <StatusBar barStyle="light-content" />
+        <ResponsiveContainer>
+          <ScreenHeader
+            title={currentTopic?.name ?? 'Flashcards'}
+            subtitle={currentTopic?.subjectName}
+            rightElement={
+              <LinearText style={styles.progressText}>
+                {cardIdx + 1}/{cards.length} · Topic {currentIdx + 1}/{queue.length}
+              </LinearText>
+            }
+          />
 
-        <View style={styles.cardArea}>
-          {loading ? (
-            <LoadingOrb />
-          ) : currentCard ? (
-            <View style={styles.cardContainer} {...panResponder.panHandlers}>
-              <Animated.View style={[styles.cardWrap, { transform: [{ translateX: panXY.x }] }]}>
-                {/* Front */}
-                <Animated.View style={[styles.card, frontAnimatedStyle]}>
-                  <LinearText style={styles.cardLabel}>QUESTION</LinearText>
-                  {currentCard.imageUrl ? (
-                    <FlashcardImage url={currentCard.imageUrl} style={styles.cardImage} />
-                  ) : null}
-                  <LinearText style={styles.cardContent}>{currentCard.front}</LinearText>
-                  <TouchableOpacity style={styles.tapToReveal} onPress={handleFlip}>
-                    <LinearText style={styles.tapText}>Tap to reveal</LinearText>
-                  </TouchableOpacity>
-                </Animated.View>
-
-                {/* Back */}
-                <Animated.View style={[styles.card, styles.cardBack, backAnimatedStyle]}>
-                  <LinearText style={[styles.cardLabel, { color: n.colors.accent }]}>
-                    ANSWER
-                  </LinearText>
-                  <ScrollView showsVerticalScrollIndicator={false} centerContent>
+          <View style={styles.cardArea}>
+            {loading ? (
+              <LoadingOrb />
+            ) : currentCard ? (
+              <View style={styles.cardContainer} {...panResponder.panHandlers}>
+                <Animated.View style={[styles.cardWrap, { transform: [{ translateX: panXY.x }] }]}>
+                  {/* Front */}
+                  <Animated.View style={[styles.card, frontAnimatedStyle]}>
+                    <LinearText style={styles.cardLabel}>QUESTION</LinearText>
                     {currentCard.imageUrl ? (
                       <FlashcardImage url={currentCard.imageUrl} style={styles.cardImage} />
                     ) : null}
-                    <LinearText style={styles.cardContent}>{currentCard.back}</LinearText>
-                  </ScrollView>
-                  {!isLastCard && isFlipped && (
-                    <TouchableOpacity style={styles.nextCardBtn} onPress={handleNextCard}>
-                      <LinearText style={styles.nextCardText}>Next Card →</LinearText>
+                    <LinearText style={styles.cardContent}>{currentCard.front}</LinearText>
+                    <TouchableOpacity style={styles.tapToReveal} onPress={handleFlip}>
+                      <LinearText style={styles.tapText}>Tap to reveal</LinearText>
                     </TouchableOpacity>
+                  </Animated.View>
+
+                  {/* Back */}
+                  <Animated.View style={[styles.card, styles.cardBack, backAnimatedStyle]}>
+                    <LinearText style={[styles.cardLabel, { color: n.colors.accent }]}>
+                      ANSWER
+                    </LinearText>
+                    <ScrollView showsVerticalScrollIndicator={false} centerContent>
+                      {currentCard.imageUrl ? (
+                        <FlashcardImage url={currentCard.imageUrl} style={styles.cardImage} />
+                      ) : null}
+                      <LinearText style={styles.cardContent}>{currentCard.back}</LinearText>
+                    </ScrollView>
+                    {!isLastCard && isFlipped && (
+                      <TouchableOpacity style={styles.nextCardBtn} onPress={handleNextCard}>
+                        <LinearText style={styles.nextCardText}>Next Card →</LinearText>
+                      </TouchableOpacity>
+                    )}
+                  </Animated.View>
+
+                  {/* Tap for flip when not flipped */}
+                  {!isFlipped && (
+                    <TouchableOpacity
+                      style={StyleSheet.absoluteFill}
+                      onPress={handleFlip}
+                      activeOpacity={1}
+                    />
                   )}
                 </Animated.View>
+              </View>
+            ) : (
+              <LinearText style={styles.errorText}>No cards found for this topic.</LinearText>
+            )}
+          </View>
 
-                {/* Tap for flip when not flipped */}
-                {!isFlipped && (
+          <View style={styles.controls}>
+            {isFlipped && isLastCard ? (
+              <View style={styles.ratings}>
+                {RATINGS.map((r) => (
                   <TouchableOpacity
-                    style={StyleSheet.absoluteFill}
-                    onPress={handleFlip}
-                    activeOpacity={1}
-                  />
-                )}
-              </Animated.View>
-            </View>
-          ) : (
-            <LinearText style={styles.errorText}>No cards found for this topic.</LinearText>
-          )}
-        </View>
-
-        <View style={styles.controls}>
-          {isFlipped && isLastCard ? (
-            <View style={styles.ratings}>
-              {RATINGS.map((r) => (
-                <TouchableOpacity
-                  key={r.label}
-                  style={[
-                    styles.rateBtn,
-                    { backgroundColor: r.color + '22', borderColor: r.color },
-                  ]}
-                  onPress={() => handleRate(r)}
-                >
-                  <LinearText style={[styles.rateText, { color: r.color }]}>{r.label}</LinearText>
-                </TouchableOpacity>
-              ))}
-            </View>
-          ) : (
-            <View style={styles.metaInfo}>
-              <LinearText style={styles.cardCounter}>
-                Card {cardIdx + 1} of {cards.length}
-              </LinearText>
-            </View>
-          )}
-        </View>
-      </ResponsiveContainer>
+                    key={r.label}
+                    style={[
+                      styles.rateBtn,
+                      { backgroundColor: r.color + '22', borderColor: r.color },
+                    ]}
+                    onPress={() => handleRate(r)}
+                  >
+                    <LinearText style={[styles.rateText, { color: r.color }]}>{r.label}</LinearText>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            ) : (
+              <View style={styles.metaInfo}>
+                <LinearText style={styles.cardCounter}>
+                  Card {cardIdx + 1} of {cards.length}
+                </LinearText>
+              </View>
+            )}
+          </View>
+        </ResponsiveContainer>
+      </ErrorBoundary>
     </SafeAreaView>
   );
 }
@@ -470,6 +469,7 @@ export default function FlashcardsScreen() {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: n.colors.background },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24 },
+  emptyEmoji: { fontSize: 64, marginBottom: 16 },
   header: {
     flexDirection: 'row',
     alignItems: 'center',

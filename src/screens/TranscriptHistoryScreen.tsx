@@ -14,10 +14,12 @@ import {
   Modal,
   ScrollView,
   RefreshControl,
-  Alert,
   StatusBar,
+  Platform,
+  ActivityIndicator,
 } from 'react-native';
 import LinearText from '../components/primitives/LinearText';
+import ErrorBoundary from '../components/ErrorBoundary';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useNavigation, useRoute } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
@@ -27,6 +29,7 @@ import LinearSurface from '../components/primitives/LinearSurface';
 import type { RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { MenuStackParamList } from '../navigation/types';
+import { useScrollRestoration, usePersistedInput } from '../hooks/useScrollRestoration';
 import {
   getLectureHistory,
   searchLectureNotes,
@@ -56,6 +59,7 @@ import {
   transcribeLectureRecordingToNote,
   type LectureManagerFilter,
 } from '../services/lecture/lectureManager';
+import { showInfo, showSuccess, showError, confirmDestructive } from '../components/dialogService';
 import BannerSearchBar from '../components/BannerSearchBar';
 import ScreenHeader from '../components/ScreenHeader';
 import TranscriptionSettingsPanel from '../components/TranscriptionSettingsPanel';
@@ -289,8 +293,10 @@ const audioStyles = StyleSheet.create({
 export default function TranscriptHistoryScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<MenuStackParamList>>();
   const route = useRoute<RouteProp<MenuStackParamList, 'TranscriptHistory'>>();
+  const { onScroll, onContentSizeChange, listRef } = useScrollRestoration('transcript-history');
+  const [searchValue, setSearchPersisted] = usePersistedInput('transcript-history-search', '');
   const [notes, setNotes] = useState<LectureHistoryItem[]>([]);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [loading, setLoading] = useState(true);
   const [selectedNote, setSelectedNote] = useState<LectureHistoryItem | null>(null);
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [renameText, setRenameText] = useState('');
@@ -303,10 +309,20 @@ export default function TranscriptHistoryScreen() {
   const [readerTitle, setReaderTitle] = useState('');
   const searchTimeout = useRef<NodeJS.Timeout | null>(null);
 
+  // Pagination
+  const PAGE_SIZE = 20;
+  const [displayCount, setDisplayCount] = useState(PAGE_SIZE);
+
   const loadNotes = useCallback(async () => {
-    const items = await getLectureHistory(200);
-    setNotes(items);
-    setSelectedIds((prev) => prev.filter((id) => items.some((item) => item.id === id)));
+    setLoading(true);
+    try {
+      const items = await getLectureHistory(200);
+      setNotes(items);
+      setDisplayCount(PAGE_SIZE);
+      setSelectedIds((prev) => prev.filter((id) => items.some((item) => item.id === id)));
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
   const sortedNotes = React.useMemo(() => {
@@ -320,8 +336,8 @@ export default function TranscriptHistoryScreen() {
   }, [notes, sortBy]);
 
   const visibleNotes = useMemo(
-    () => filterLectureHistoryItems(searchQuery ? notes : sortedNotes, managerFilter),
-    [managerFilter, notes, searchQuery, sortedNotes],
+    () => filterLectureHistoryItems(searchValue ? notes : sortedNotes, managerFilter),
+    [managerFilter, notes, searchValue, sortedNotes],
   );
   const selectedNeedsAiNote = selectedNote ? lectureNeedsAiNote(selectedNote) : false;
   const isFilterActive = managerFilter !== 'all';
@@ -364,7 +380,7 @@ export default function TranscriptHistoryScreen() {
   );
 
   const handleSearch = (query: string) => {
-    setSearchQuery(query);
+    setSearchPersisted(query);
     if (searchTimeout.current) clearTimeout(searchTimeout.current);
     searchTimeout.current = setTimeout(async () => {
       if (query.trim()) {
@@ -378,26 +394,19 @@ export default function TranscriptHistoryScreen() {
 
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);
-    setSearchQuery('');
+    setSearchPersisted('');
     setManagerFilter('all');
     await loadNotes();
     setRefreshing(false);
   }, [loadNotes]);
 
-  const handleDelete = (id: number) => {
-    Alert.alert('Delete transcript?', 'This action cannot be undone.', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Delete',
-        style: 'destructive',
-        onPress: async () => {
-          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-          await deleteLectureNote(id);
-          await loadNotes();
-          setSelectedNote(null);
-        },
-      },
-    ]);
+  const handleDelete = async (id: number) => {
+    const ok = await confirmDestructive('Delete transcript?', 'This action cannot be undone.');
+    if (!ok) return;
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    await deleteLectureNote(id);
+    await loadNotes();
+    setSelectedNote(null);
   };
 
   const toggleSelection = (id: number) => {
@@ -418,31 +427,23 @@ export default function TranscriptHistoryScreen() {
     setSelectedIds([]);
   };
 
-  const handleBatchDelete = () => {
+  const handleBatchDelete = async () => {
     if (selectedIds.length === 0) return;
     const idsToDelete = [...selectedIds];
-    Alert.alert(
+    const ok = await confirmDestructive(
       `Delete ${idsToDelete.length} transcript${idsToDelete.length !== 1 ? 's' : ''}?`,
       'This action cannot be undone.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
-            for (const id of idsToDelete) {
-              await deleteLectureNote(id);
-            }
-            setSelectedIds([]);
-            if (selectedNote && idsToDelete.includes(selectedNote.id)) {
-              setSelectedNote(null);
-            }
-            await loadNotes();
-          },
-        },
-      ],
     );
+    if (!ok) return;
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+    for (const id of idsToDelete) {
+      await deleteLectureNote(id);
+    }
+    setSelectedIds([]);
+    if (selectedNote && idsToDelete.includes(selectedNote.id)) {
+      setSelectedNote(null);
+    }
+    await loadNotes();
   };
 
   const openRename = () => {
@@ -466,11 +467,11 @@ export default function TranscriptHistoryScreen() {
     if (!selectedNote) return;
     const copied = await copyLectureTranscript(selectedNote.transcript);
     if (!copied) {
-      Alert.alert('No transcript', 'There is no transcript text available to copy.');
+      void showInfo('No transcript', 'There is no transcript text available to copy.');
       return;
     }
     Haptics.selectionAsync();
-    Alert.alert('Copied', 'Transcript copied to clipboard.');
+    void showInfo('Copied', 'Transcript copied to clipboard.');
   };
 
   const handleGenerateAiOutput = async () => {
@@ -482,14 +483,14 @@ export default function TranscriptHistoryScreen() {
         : await regenerateLectureNoteFromTranscript(selectedNote.id);
       setSelectedNote(updated);
       await loadNotes();
-      Alert.alert(
+      void showSuccess(
         'Done',
         selectedHasRecordingOnly
           ? 'Recording transcribed and AI note generated.'
           : 'AI note regenerated from the saved transcript.',
       );
     } catch (err) {
-      Alert.alert('Could not generate note', err instanceof Error ? err.message : String(err));
+      void showError(err, 'Could not generate note');
     } finally {
       setIsManagerBusy(false);
     }
@@ -497,45 +498,37 @@ export default function TranscriptHistoryScreen() {
 
   const handleRemoveRecording = async () => {
     if (!selectedNote?.recordingPath) return;
-    Alert.alert('Delete recording?', 'This removes the saved audio file for this lecture.', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Delete recording',
-        style: 'destructive',
-        onPress: async () => {
-          setIsManagerBusy(true);
-          try {
-            await removeLectureRecording(selectedNote.id, selectedNote.recordingPath);
-            const updated = { ...selectedNote, recordingPath: null };
-            setSelectedNote(updated);
-            await loadNotes();
-          } finally {
-            setIsManagerBusy(false);
-          }
-        },
-      },
-    ]);
+    const ok = await confirmDestructive(
+      'Delete recording?',
+      'This removes the saved audio file for this lecture.',
+    );
+    if (!ok) return;
+    setIsManagerBusy(true);
+    try {
+      await removeLectureRecording(selectedNote.id, selectedNote.recordingPath);
+      const updated = { ...selectedNote, recordingPath: null };
+      setSelectedNote(updated);
+      await loadNotes();
+    } finally {
+      setIsManagerBusy(false);
+    }
   };
 
   const handleClearAiNote = async () => {
     if (!selectedNote) return;
-    Alert.alert('Clear AI note?', 'This keeps the transcript but removes the generated note.', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Clear note',
-        style: 'destructive',
-        onPress: async () => {
-          setIsManagerBusy(true);
-          try {
-            await updateLectureTranscriptNote(selectedNote.id, '');
-            setSelectedNote({ ...selectedNote, note: '' });
-            await loadNotes();
-          } finally {
-            setIsManagerBusy(false);
-          }
-        },
-      },
-    ]);
+    const ok = await confirmDestructive(
+      'Clear AI note?',
+      'This keeps the transcript but removes the generated note.',
+    );
+    if (!ok) return;
+    setIsManagerBusy(true);
+    try {
+      await updateLectureTranscriptNote(selectedNote.id, '');
+      setSelectedNote({ ...selectedNote, note: '' });
+      await loadNotes();
+    } finally {
+      setIsManagerBusy(false);
+    }
   };
 
   const formatDate = (timestamp: number): string => {
@@ -666,415 +659,452 @@ export default function TranscriptHistoryScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
-      <ScreenHeader
-        title="Transcript Vault"
-        subtitle="Search, review, and manage captured lectures."
-        onBackPress={() => navigation.navigate('NotesHub')}
-        searchElement={
-          <BannerSearchBar
-            value={searchQuery}
-            onChangeText={handleSearch}
-            placeholder="Search transcripts, topics, concepts..."
-            containerStyle={styles.headerSearchRight}
-          />
-        }
-      ></ScreenHeader>
-      {isSelectionMode && (
-        <LinearSurface padded={false} style={styles.selectionModeBanner}>
-          <LinearText style={styles.selectionModeBannerText}>
-            ✓ Selection mode — {selectedIds.length} selected · Long-press to add
-          </LinearText>
-          <TouchableOpacity onPress={cancelSelection}>
-            <LinearText style={styles.selectionModeCancelText}>Cancel</LinearText>
-          </TouchableOpacity>
-        </LinearSurface>
-      )}
-      <TranscriptionSettingsPanel />
-
-      {/* Header stats */}
-      <View style={styles.statsBar}>
-        {isSelectionMode ? (
-          <LinearSurface padded={false} style={styles.selectionBar}>
-            <LinearText style={styles.selectionText}>{selectedIds.length} selected</LinearText>
-            <View style={styles.selectionActions}>
-              <TouchableOpacity style={styles.selectionCancelBtn} onPress={cancelSelection}>
-                <LinearText style={styles.selectionCancelText}>Cancel</LinearText>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.selectionDeleteBtn} onPress={handleBatchDelete}>
-                <Ionicons name="trash-outline" size={14} color="#fff" />
-                <LinearText style={styles.selectionDeleteText}>Delete</LinearText>
-              </TouchableOpacity>
-            </View>
+      <ErrorBoundary>
+        <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
+        {loading ? (
+          <View style={styles.loadingState}>
+            <ActivityIndicator size="large" color={n.colors.accent} />
+            <LinearText style={styles.loadingText}>Loading...</LinearText>
+          </View>
+        ) : null}
+        <ScreenHeader
+          title="Transcript Vault"
+          subtitle="Search, review, and manage captured lectures."
+          onBackPress={() => navigation.navigate('NotesHub')}
+          searchElement={
+            <BannerSearchBar
+              value={searchValue}
+              onChangeText={handleSearch}
+              placeholder="Search transcripts, topics, concepts..."
+              containerStyle={styles.headerSearchRight}
+            />
+          }
+        ></ScreenHeader>
+        {isSelectionMode && (
+          <LinearSurface padded={false} style={styles.selectionModeBanner}>
+            <LinearText style={styles.selectionModeBannerText}>
+              ✓ Selection mode — {selectedIds.length} selected · Long-press to add
+            </LinearText>
+            <TouchableOpacity onPress={cancelSelection}>
+              <LinearText style={styles.selectionModeCancelText}>Cancel</LinearText>
+            </TouchableOpacity>
           </LinearSurface>
-        ) : (
-          <LinearText style={styles.statsText}>
-            {visibleNotes.length} of {notes.length} lecture{notes.length !== 1 ? 's' : ''} shown
-          </LinearText>
         )}
-      </View>
+        <TranscriptionSettingsPanel />
 
-      {/* Empty state */}
-      {visibleNotes.length === 0 && !searchQuery && (
-        <View style={styles.emptyState}>
-          <Ionicons name="document-text-outline" size={64} color={n.colors.textMuted} />
-          <LinearText style={styles.emptyTitle}>
-            {isFilterActive ? 'No Lectures Match This Filter' : 'No Transcripts Yet'}
-          </LinearText>
-          <LinearText style={styles.emptySubtitle}>
-            {isFilterActive
-              ? 'Try another filter or clear filters to see the full lecture list.'
-              : 'Use a lecture app and your sessions will be transcribed and saved here for revision'}
-          </LinearText>
-        </View>
-      )}
-
-      {/* No results */}
-      {visibleNotes.length === 0 && searchQuery && (
-        <View style={styles.emptyState}>
-          <Ionicons name="search-outline" size={48} color={n.colors.textMuted} />
-          <LinearText style={styles.emptyTitle}>No Results</LinearText>
-          <LinearText style={styles.emptySubtitle}>No transcripts match "{searchQuery}"</LinearText>
-        </View>
-      )}
-
-      {/* Sort bar */}
-      {notes.length > 0 && !searchQuery && (
-        <View style={styles.sortBar}>
-          {(['date', 'subject', 'confidence'] as const).map((opt) => (
-            <TouchableOpacity
-              key={opt}
-              style={[styles.sortBtn, sortBy === opt && styles.sortBtnActive]}
-              onPress={() => setSortBy(opt)}
-              activeOpacity={0.7}
-            >
-              <LinearText style={[styles.sortBtnText, sortBy === opt && styles.sortBtnTextActive]}>
-                {opt === 'date' ? 'Newest' : opt === 'subject' ? 'Subject' : 'Confidence'}
-              </LinearText>
-            </TouchableOpacity>
-          ))}
-        </View>
-      )}
-
-      {notes.length > 0 && (
-        <View style={styles.filterBar}>
-          {(
-            [
-              ['all', 'All'],
-              ['recording', 'Has Recording'],
-              ['transcript', 'Has Transcript'],
-              ['needs_ai', 'Needs AI'],
-              ['needs_review', 'Needs Review'],
-            ] as const
-          ).map(([value, label]) => (
-            <TouchableOpacity
-              key={value}
-              style={[styles.filterChip, managerFilter === value && styles.filterChipActive]}
-              onPress={() => setManagerFilter(value)}
-              activeOpacity={0.7}
-            >
-              <LinearText
-                style={[
-                  styles.filterChipText,
-                  managerFilter === value && styles.filterChipTextActive,
-                ]}
-              >
-                {label}
-              </LinearText>
-            </TouchableOpacity>
-          ))}
-        </View>
-      )}
-
-      {/* Notes list */}
-      <FlatList
-        data={visibleNotes}
-        keyExtractor={(item) => item.id.toString()}
-        renderItem={renderNote}
-        contentContainerStyle={styles.listContent}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={handleRefresh}
-            tintColor={n.colors.textPrimary}
-          />
-        }
-      />
-
-      {/* Detail modal */}
-      <Modal
-        visible={!!selectedNote}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setSelectedNote(null)}
-      >
-        <View style={styles.modalOverlay}>
-          <LinearSurface padded={false} style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <LinearText style={styles.modalTitle} numberOfLines={2}>
-                {selectedNote ? resolveLectureSubjectLabel(selectedNote) : 'Lecture'} Transcript
-              </LinearText>
-              <View style={styles.modalHeaderActions}>
-                <TouchableOpacity
-                  style={styles.headerActionBtn}
-                  onPress={openRename}
-                  accessibilityRole="button"
-                  accessibilityLabel="Rename transcript"
-                >
-                  <Ionicons name="create-outline" size={18} color={n.colors.accent} />
-                  <LinearText style={styles.headerActionText}>Rename</LinearText>
+        {/* Header stats */}
+        <View style={styles.statsBar}>
+          {isSelectionMode ? (
+            <LinearSurface padded={false} style={styles.selectionBar}>
+              <LinearText style={styles.selectionText}>{selectedIds.length} selected</LinearText>
+              <View style={styles.selectionActions}>
+                <TouchableOpacity style={styles.selectionCancelBtn} onPress={cancelSelection}>
+                  <LinearText style={styles.selectionCancelText}>Cancel</LinearText>
                 </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.headerActionBtn}
-                  onPress={() => selectedNote && handleDelete(selectedNote.id)}
-                  accessibilityRole="button"
-                  accessibilityLabel="Delete transcript"
-                >
-                  <Ionicons name="trash-outline" size={18} color={n.colors.error} />
-                  <LinearText style={[styles.headerActionText, { color: n.colors.error }]}>
-                    Delete
-                  </LinearText>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.headerActionBtn}
-                  onPress={() => setSelectedNote(null)}
-                  accessibilityRole="button"
-                  accessibilityLabel="Close"
-                >
-                  <Ionicons name="close" size={22} color={n.colors.textPrimary} />
+                <TouchableOpacity style={styles.selectionDeleteBtn} onPress={handleBatchDelete}>
+                  <Ionicons name="trash-outline" size={14} color="#fff" />
+                  <LinearText style={styles.selectionDeleteText}>Delete</LinearText>
                 </TouchableOpacity>
               </View>
-            </View>
+            </LinearSurface>
+          ) : (
+            <LinearText style={styles.statsText}>
+              {visibleNotes.length} of {notes.length} lecture{notes.length !== 1 ? 's' : ''} shown
+            </LinearText>
+          )}
+        </View>
 
-            <ScrollView style={styles.modalScroll}>
-              {/* Meta info */}
-              <View style={styles.modalMeta}>
-                {selectedNote && (
-                  <LinearText style={styles.customTitleText}>
-                    {getLectureTitle(selectedNote)}
-                  </LinearText>
-                )}
-                {selectedNote?.appName && (
-                  <LinearText style={styles.modalMetaText}>
-                    via {selectedNote.appName} • {formatDate(selectedNote.createdAt)}
-                    {selectedNote.durationMinutes
-                      ? ` • ${formatDuration(selectedNote.durationMinutes)}`
-                      : ''}
-                  </LinearText>
-                )}
+        {/* Empty state */}
+        {visibleNotes.length === 0 && !searchValue && (
+          <View style={styles.emptyState}>
+            <Ionicons name="document-text-outline" size={64} color={n.colors.textMuted} />
+            <LinearText style={styles.emptyTitle}>
+              {isFilterActive ? 'No Lectures Match This Filter' : 'No Transcripts Yet'}
+            </LinearText>
+            <LinearText style={styles.emptySubtitle}>
+              {isFilterActive
+                ? 'Try another filter or clear filters to see the full lecture list.'
+                : 'Use a lecture app and your sessions will be transcribed and saved here for revision'}
+            </LinearText>
+          </View>
+        )}
+
+        {/* No results */}
+        {visibleNotes.length === 0 && searchValue && (
+          <View style={styles.emptyState}>
+            <Ionicons name="search-outline" size={48} color={n.colors.textMuted} />
+            <LinearText style={styles.emptyTitle}>No Results</LinearText>
+            <LinearText style={styles.emptySubtitle}>
+              No transcripts match "{searchValue}"
+            </LinearText>
+          </View>
+        )}
+
+        {/* Sort bar */}
+        {notes.length > 0 && !searchValue && (
+          <View style={styles.sortBar}>
+            {(['date', 'subject', 'confidence'] as const).map((opt) => (
+              <TouchableOpacity
+                key={opt}
+                style={[styles.sortBtn, sortBy === opt && styles.sortBtnActive]}
+                onPress={() => setSortBy(opt)}
+                activeOpacity={0.7}
+              >
+                <LinearText
+                  style={[styles.sortBtnText, sortBy === opt && styles.sortBtnTextActive]}
+                >
+                  {opt === 'date' ? 'Newest' : opt === 'subject' ? 'Subject' : 'Confidence'}
+                </LinearText>
+              </TouchableOpacity>
+            ))}
+          </View>
+        )}
+
+        {notes.length > 0 && (
+          <View style={styles.filterBar}>
+            {(
+              [
+                ['all', 'All'],
+                ['recording', 'Has Recording'],
+                ['transcript', 'Has Transcript'],
+                ['needs_ai', 'Needs AI'],
+                ['needs_review', 'Needs Review'],
+              ] as const
+            ).map(([value, label]) => (
+              <TouchableOpacity
+                key={value}
+                style={[styles.filterChip, managerFilter === value && styles.filterChipActive]}
+                onPress={() => setManagerFilter(value)}
+                activeOpacity={0.7}
+              >
                 <LinearText
                   style={[
-                    styles.confidenceBadge,
-                    {
-                      backgroundColor:
-                        (selectedNote?.confidence ?? 2) === 3
-                          ? n.colors.success
-                          : (selectedNote?.confidence ?? 2) === 2
-                            ? n.colors.warning
-                            : n.colors.error,
-                      alignSelf: 'flex-start',
-                      marginTop: 8,
-                    },
+                    styles.filterChipText,
+                    managerFilter === value && styles.filterChipTextActive,
                   ]}
                 >
-                  {CONFIDENCE_LABELS[(selectedNote?.confidence ?? 2) as 1 | 2 | 3]}
+                  {label}
                 </LinearText>
+              </TouchableOpacity>
+            ))}
+          </View>
+        )}
+
+        {/* Notes list */}
+        <FlatList
+          ref={listRef}
+          data={visibleNotes.slice(0, displayCount)}
+          keyExtractor={(item) => item.id.toString()}
+          renderItem={renderNote}
+          contentContainerStyle={styles.listContent}
+          onScroll={onScroll}
+          onContentSizeChange={onContentSizeChange}
+          scrollEventThrottle={16}
+          initialNumToRender={10}
+          maxToRenderPerBatch={5}
+          windowSize={11}
+          removeClippedSubviews={Platform.OS === 'android' ? true : undefined}
+          updateCellsBatchingPeriod={100}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={handleRefresh}
+              tintColor={n.colors.textPrimary}
+            />
+          }
+          ListFooterComponent={
+            displayCount < visibleNotes.length ? (
+              <TouchableOpacity
+                style={styles.loadMoreBtn}
+                onPress={() => setDisplayCount((prev) => prev + PAGE_SIZE)}
+                activeOpacity={0.7}
+              >
+                <LinearText style={styles.loadMoreText}>
+                  Load More ({visibleNotes.length - displayCount} remaining)
+                </LinearText>
+              </TouchableOpacity>
+            ) : null
+          }
+        />
+
+        {/* Detail modal */}
+        <Modal
+          visible={!!selectedNote}
+          transparent
+          animationType="slide"
+          onRequestClose={() => setSelectedNote(null)}
+        >
+          <View style={styles.modalOverlay}>
+            <LinearSurface padded={false} style={styles.modalContent}>
+              <View style={styles.modalHeader}>
+                <LinearText style={styles.modalTitle} numberOfLines={2}>
+                  {selectedNote ? resolveLectureSubjectLabel(selectedNote) : 'Lecture'} Transcript
+                </LinearText>
+                <View style={styles.modalHeaderActions}>
+                  <TouchableOpacity
+                    style={styles.headerActionBtn}
+                    onPress={openRename}
+                    accessibilityRole="button"
+                    accessibilityLabel="Rename transcript"
+                  >
+                    <Ionicons name="create-outline" size={18} color={n.colors.accent} />
+                    <LinearText style={styles.headerActionText}>Rename</LinearText>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.headerActionBtn}
+                    onPress={() => selectedNote && handleDelete(selectedNote.id)}
+                    accessibilityRole="button"
+                    accessibilityLabel="Delete transcript"
+                  >
+                    <Ionicons name="trash-outline" size={18} color={n.colors.error} />
+                    <LinearText style={[styles.headerActionText, { color: n.colors.error }]}>
+                      Delete
+                    </LinearText>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.headerActionBtn}
+                    onPress={() => setSelectedNote(null)}
+                    accessibilityRole="button"
+                    accessibilityLabel="Close"
+                  >
+                    <Ionicons name="close" size={22} color={n.colors.textPrimary} />
+                  </TouchableOpacity>
+                </View>
               </View>
 
-              {showRenameEditor && (
-                <LinearSurface padded={false} style={styles.renameCard}>
-                  <LinearText style={styles.renameLabel}>Rename transcript</LinearText>
-                  <TextInput
-                    style={styles.renameInput}
-                    value={renameText}
-                    onChangeText={setRenameText}
-                    placeholder="Enter title"
-                    placeholderTextColor={n.colors.textMuted}
-                    autoFocus
-                  />
-                  <View style={styles.renameActions}>
-                    <TouchableOpacity
-                      style={styles.renameCancelBtn}
-                      onPress={() => setShowRenameEditor(false)}
-                    >
-                      <LinearText style={styles.renameCancelText}>Cancel</LinearText>
-                    </TouchableOpacity>
-                    <TouchableOpacity style={styles.renameSaveBtn} onPress={saveRename}>
-                      <LinearText style={styles.renameSaveText}>Save</LinearText>
-                    </TouchableOpacity>
-                  </View>
-                </LinearSurface>
-              )}
-
-              {/* Topics */}
-              {selectedNote && selectedNote.topics.length > 0 && (
-                <View style={styles.modalSection}>
-                  <LinearText style={styles.modalSectionTitle}>Topics Covered</LinearText>
-                  <View style={styles.topicsWrap}>
-                    {selectedNote.topics.map((t, i) => (
-                      <LinearText key={i} style={styles.topicPillLarge}>
-                        {t}
-                      </LinearText>
-                    ))}
-                  </View>
-                </View>
-              )}
-
-              {/* Audio Player */}
-              {selectedNote?.recordingPath && <AudioPlayer uri={selectedNote.recordingPath} />}
-
-              <View style={styles.managerActionGrid}>
-                <TouchableOpacity
-                  style={[
-                    styles.managerActionBtn,
-                    isManagerBusy && styles.managerActionBtnDisabled,
-                  ]}
-                  onPress={handleGenerateAiOutput}
-                  disabled={isManagerBusy}
-                >
-                  <Ionicons name="sparkles-outline" size={18} color={n.colors.accent} />
-                  <LinearText style={styles.managerActionText}>
-                    {selectedHasRecordingOnly
-                      ? 'Transcribe Audio'
-                      : selectedNeedsAiNote
-                        ? 'Generate AI Note'
-                        : 'Regenerate AI Note'}
+              <ScrollView style={styles.modalScroll}>
+                {/* Meta info */}
+                <View style={styles.modalMeta}>
+                  {selectedNote && (
+                    <LinearText style={styles.customTitleText}>
+                      {getLectureTitle(selectedNote)}
+                    </LinearText>
+                  )}
+                  {selectedNote?.appName && (
+                    <LinearText style={styles.modalMetaText}>
+                      via {selectedNote.appName} • {formatDate(selectedNote.createdAt)}
+                      {selectedNote.durationMinutes
+                        ? ` • ${formatDuration(selectedNote.durationMinutes)}`
+                        : ''}
+                    </LinearText>
+                  )}
+                  <LinearText
+                    style={[
+                      styles.confidenceBadge,
+                      {
+                        backgroundColor:
+                          (selectedNote?.confidence ?? 2) === 3
+                            ? n.colors.success
+                            : (selectedNote?.confidence ?? 2) === 2
+                              ? n.colors.warning
+                              : n.colors.error,
+                        alignSelf: 'flex-start',
+                        marginTop: 8,
+                      },
+                    ]}
+                  >
+                    {CONFIDENCE_LABELS[(selectedNote?.confidence ?? 2) as 1 | 2 | 3]}
                   </LinearText>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[
-                    styles.managerActionBtn,
-                    isManagerBusy && styles.managerActionBtnDisabled,
-                  ]}
-                  onPress={handleCopyTranscript}
-                  disabled={isManagerBusy}
-                >
-                  <Ionicons name="copy-outline" size={18} color={n.colors.textPrimary} />
-                  <LinearText style={styles.managerActionText}>Copy Transcript</LinearText>
-                </TouchableOpacity>
-                {selectedNote?.recordingPath ? (
-                  <TouchableOpacity
-                    style={[
-                      styles.managerActionBtn,
-                      isManagerBusy && styles.managerActionBtnDisabled,
-                    ]}
-                    onPress={handleRemoveRecording}
-                    disabled={isManagerBusy}
-                  >
-                    <Ionicons name="trash-outline" size={18} color={n.colors.warning} />
-                    <LinearText style={styles.managerActionText}>Delete Recording</LinearText>
-                  </TouchableOpacity>
-                ) : null}
-                {selectedNote?.note?.trim() ? (
-                  <TouchableOpacity
-                    style={[
-                      styles.managerActionBtn,
-                      isManagerBusy && styles.managerActionBtnDisabled,
-                    ]}
-                    onPress={handleClearAiNote}
-                    disabled={isManagerBusy}
-                  >
-                    <Ionicons name="document-text-outline" size={18} color={n.colors.error} />
-                    <LinearText style={styles.managerActionText}>Clear AI Note</LinearText>
-                  </TouchableOpacity>
-                ) : null}
-              </View>
+                </View>
 
-              {/* ADHD-formatted study note */}
-              {selectedNote?.note && (
-                <View style={styles.modalSection}>
-                  <View
-                    style={{
-                      flexDirection: 'row',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                    }}
-                  >
-                    <LinearText style={styles.modalSectionTitle}>Study Note</LinearText>
-                    <TouchableOpacity
-                      style={styles.readerOpenBtn}
-                      onPress={() => {
-                        setReaderTitle(getLectureTitle(selectedNote));
-                        setReaderContent(selectedNote.note);
-                      }}
-                    >
-                      <Ionicons name="book-outline" size={16} color={n.colors.accent} />
-                      <LinearText style={styles.readerOpenText}>Read</LinearText>
-                    </TouchableOpacity>
-                  </View>
-                  <LinearSurface padded={false} style={styles.studyNoteCard}>
-                    <MarkdownRender content={selectedNote.note} />
+                {showRenameEditor && (
+                  <LinearSurface padded={false} style={styles.renameCard}>
+                    <LinearText style={styles.renameLabel}>Rename transcript</LinearText>
+                    <TextInput
+                      style={styles.renameInput}
+                      value={renameText}
+                      onChangeText={setRenameText}
+                      placeholder="Enter title"
+                      placeholderTextColor={n.colors.textMuted}
+                      autoFocus
+                    />
+                    <View style={styles.renameActions}>
+                      <TouchableOpacity
+                        style={styles.renameCancelBtn}
+                        onPress={() => setShowRenameEditor(false)}
+                      >
+                        <LinearText style={styles.renameCancelText}>Cancel</LinearText>
+                      </TouchableOpacity>
+                      <TouchableOpacity style={styles.renameSaveBtn} onPress={saveRename}>
+                        <LinearText style={styles.renameSaveText}>Save</LinearText>
+                      </TouchableOpacity>
+                    </View>
                   </LinearSurface>
-                </View>
-              )}
+                )}
 
-              {/* Full transcript (collapsible) */}
-              {selectedNote?.transcript && (
-                <View style={{ marginBottom: 12 }}>
-                  <View
-                    style={{
-                      flexDirection: 'row',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      marginBottom: 4,
-                    }}
+                {/* Topics */}
+                {selectedNote && selectedNote.topics.length > 0 && (
+                  <View style={styles.modalSection}>
+                    <LinearText style={styles.modalSectionTitle}>Topics Covered</LinearText>
+                    <View style={styles.topicsWrap}>
+                      {selectedNote.topics.map((t, i) => (
+                        <LinearText key={i} style={styles.topicPillLarge}>
+                          {t}
+                        </LinearText>
+                      ))}
+                    </View>
+                  </View>
+                )}
+
+                {/* Audio Player */}
+                {selectedNote?.recordingPath && <AudioPlayer uri={selectedNote.recordingPath} />}
+
+                <View style={styles.managerActionGrid}>
+                  <TouchableOpacity
+                    style={[
+                      styles.managerActionBtn,
+                      isManagerBusy && styles.managerActionBtnDisabled,
+                    ]}
+                    onPress={handleGenerateAiOutput}
+                    disabled={isManagerBusy}
                   >
-                    <View />
+                    <Ionicons name="sparkles-outline" size={18} color={n.colors.accent} />
+                    <LinearText style={styles.managerActionText}>
+                      {selectedHasRecordingOnly
+                        ? 'Transcribe Audio'
+                        : selectedNeedsAiNote
+                          ? 'Generate AI Note'
+                          : 'Regenerate AI Note'}
+                    </LinearText>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[
+                      styles.managerActionBtn,
+                      isManagerBusy && styles.managerActionBtnDisabled,
+                    ]}
+                    onPress={handleCopyTranscript}
+                    disabled={isManagerBusy}
+                  >
+                    <Ionicons name="copy-outline" size={18} color={n.colors.textPrimary} />
+                    <LinearText style={styles.managerActionText}>Copy Transcript</LinearText>
+                  </TouchableOpacity>
+                  {selectedNote?.recordingPath ? (
                     <TouchableOpacity
-                      style={styles.readerOpenBtn}
-                      onPress={async () => {
-                        const text = await loadTranscriptFromFile(selectedNote.transcript!);
-                        setReaderTitle('Raw Transcript');
-                        setReaderContent(text || 'No transcript available.');
+                      style={[
+                        styles.managerActionBtn,
+                        isManagerBusy && styles.managerActionBtnDisabled,
+                      ]}
+                      onPress={handleRemoveRecording}
+                      disabled={isManagerBusy}
+                    >
+                      <Ionicons name="trash-outline" size={18} color={n.colors.warning} />
+                      <LinearText style={styles.managerActionText}>Delete Recording</LinearText>
+                    </TouchableOpacity>
+                  ) : null}
+                  {selectedNote?.note?.trim() ? (
+                    <TouchableOpacity
+                      style={[
+                        styles.managerActionBtn,
+                        isManagerBusy && styles.managerActionBtnDisabled,
+                      ]}
+                      onPress={handleClearAiNote}
+                      disabled={isManagerBusy}
+                    >
+                      <Ionicons name="document-text-outline" size={18} color={n.colors.error} />
+                      <LinearText style={styles.managerActionText}>Clear AI Note</LinearText>
+                    </TouchableOpacity>
+                  ) : null}
+                </View>
+
+                {/* ADHD-formatted study note */}
+                {selectedNote?.note && (
+                  <View style={styles.modalSection}>
+                    <View
+                      style={{
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
                       }}
                     >
-                      <Ionicons name="book-outline" size={16} color={n.colors.accent} />
-                      <LinearText style={styles.readerOpenText}>Read Full</LinearText>
-                    </TouchableOpacity>
+                      <LinearText style={styles.modalSectionTitle}>Study Note</LinearText>
+                      <TouchableOpacity
+                        style={styles.readerOpenBtn}
+                        onPress={() => {
+                          setReaderTitle(getLectureTitle(selectedNote));
+                          setReaderContent(selectedNote.note);
+                        }}
+                      >
+                        <Ionicons name="book-outline" size={16} color={n.colors.accent} />
+                        <LinearText style={styles.readerOpenText}>Read</LinearText>
+                      </TouchableOpacity>
+                    </View>
+                    <LinearSurface padded={false} style={styles.studyNoteCard}>
+                      <MarkdownRender content={selectedNote.note} />
+                    </LinearSurface>
                   </View>
-                  <TranscriptSection transcript={selectedNote.transcript} />
-                </View>
-              )}
-            </ScrollView>
-          </LinearSurface>
-        </View>
-      </Modal>
+                )}
 
-      {/* Full-screen reader */}
-      <Modal
-        visible={!!readerContent}
-        animationType="slide"
-        onRequestClose={() => setReaderContent(null)}
-      >
-        <View style={styles.readerContainer}>
-          <LinearSurface padded={false} style={styles.readerHeader}>
-            <TouchableOpacity onPress={() => setReaderContent(null)} style={styles.readerCloseBtn}>
-              <Ionicons name="arrow-back" size={22} color={n.colors.textPrimary} />
-            </TouchableOpacity>
-            <LinearText style={styles.readerHeaderTitle} numberOfLines={2}>
-              {readerTitle}
-            </LinearText>
-            <TouchableOpacity
-              onPress={() => {
-                if (readerContent) {
-                  Clipboard.setString(readerContent);
-                  Haptics.selectionAsync();
-                }
-              }}
-              style={styles.readerCopyBtn}
+                {/* Full transcript (collapsible) */}
+                {selectedNote?.transcript && (
+                  <View style={{ marginBottom: 12 }}>
+                    <View
+                      style={{
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        marginBottom: 4,
+                      }}
+                    >
+                      <View />
+                      <TouchableOpacity
+                        style={styles.readerOpenBtn}
+                        onPress={async () => {
+                          const text = await loadTranscriptFromFile(selectedNote.transcript!);
+                          setReaderTitle('Raw Transcript');
+                          setReaderContent(text || 'No transcript available.');
+                        }}
+                      >
+                        <Ionicons name="book-outline" size={16} color={n.colors.accent} />
+                        <LinearText style={styles.readerOpenText}>Read Full</LinearText>
+                      </TouchableOpacity>
+                    </View>
+                    <TranscriptSection transcript={selectedNote.transcript} />
+                  </View>
+                )}
+              </ScrollView>
+            </LinearSurface>
+          </View>
+        </Modal>
+
+        {/* Full-screen reader */}
+        <Modal
+          visible={!!readerContent}
+          animationType="slide"
+          onRequestClose={() => setReaderContent(null)}
+        >
+          <View style={styles.readerContainer}>
+            <LinearSurface padded={false} style={styles.readerHeader}>
+              <TouchableOpacity
+                onPress={() => setReaderContent(null)}
+                style={styles.readerCloseBtn}
+              >
+                <Ionicons name="arrow-back" size={22} color={n.colors.textPrimary} />
+              </TouchableOpacity>
+              <LinearText style={styles.readerHeaderTitle} numberOfLines={2}>
+                {readerTitle}
+              </LinearText>
+              <TouchableOpacity
+                onPress={() => {
+                  if (readerContent) {
+                    Clipboard.setString(readerContent);
+                    Haptics.selectionAsync();
+                  }
+                }}
+                style={styles.readerCopyBtn}
+              >
+                <Ionicons name="copy-outline" size={20} color={n.colors.textMuted} />
+              </TouchableOpacity>
+            </LinearSurface>
+            <ScrollView
+              style={styles.readerScroll}
+              contentContainerStyle={styles.readerScrollContent}
+              showsVerticalScrollIndicator
             >
-              <Ionicons name="copy-outline" size={20} color={n.colors.textMuted} />
-            </TouchableOpacity>
-          </LinearSurface>
-          <ScrollView
-            style={styles.readerScroll}
-            contentContainerStyle={styles.readerScrollContent}
-            showsVerticalScrollIndicator
-          >
-            <MarkdownRender content={readerContent ?? ''} />
-          </ScrollView>
-        </View>
-      </Modal>
+              <MarkdownRender content={readerContent ?? ''} />
+            </ScrollView>
+          </View>
+        </Modal>
+      </ErrorBoundary>
     </SafeAreaView>
   );
 }
@@ -1128,6 +1158,21 @@ const styles = StyleSheet.create({
   },
   selectionDeleteText: { color: n.colors.textPrimary, fontSize: 12, fontWeight: '700' },
   listContent: { paddingHorizontal: 16, paddingBottom: 80 },
+  loadMoreBtn: {
+    alignItems: 'center',
+    paddingVertical: 14,
+    marginHorizontal: 16,
+    marginBottom: 24,
+    borderRadius: 12,
+    backgroundColor: n.colors.accent + '12',
+    borderWidth: 1,
+    borderColor: n.colors.accent + '30',
+  },
+  loadMoreText: {
+    color: n.colors.accent,
+    fontSize: 14,
+    fontWeight: '700',
+  },
   sortBar: { flexDirection: 'row', paddingHorizontal: 16, paddingVertical: 8, gap: 8 },
   sortBtn: {
     paddingHorizontal: 14,
@@ -1458,4 +1503,6 @@ const styles = StyleSheet.create({
   readerCopyBtn: { padding: 8 },
   readerScroll: { flex: 1 },
   readerScrollContent: { padding: 20, paddingBottom: 60 },
+  loadingState: { alignItems: 'center', justifyContent: 'center', padding: 48, flex: 1 },
+  loadingText: { color: n.colors.textMuted, fontSize: 14, marginTop: 16 },
 });

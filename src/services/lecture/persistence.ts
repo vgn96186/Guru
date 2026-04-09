@@ -10,6 +10,8 @@ import {
   updateSessionRecordingPath,
 } from '../../db/queries/externalLogs';
 import { addXpInTx } from '../../db/queries/progress';
+import { getTopicsBySubject } from '../../db/queries/topics';
+import type { LectureAnalysis } from '../transcriptionService';
 
 /** Dictionary for fuzzy subject name mapping */
 const SUBJECT_MAPPINGS: Record<string, string> = {
@@ -78,8 +80,6 @@ async function findSubjectId(name: string): Promise<number | null> {
   ]);
   return res?.id ?? null;
 }
-
-import type { LectureAnalysis } from '../transcriptionService';
 
 export async function saveLecturePersistence(opts: {
   analysis: LectureAnalysis;
@@ -255,4 +255,116 @@ export async function saveLecturePersistence(opts: {
     showToast(`Failed to save lecture: ${msg}`, 'error');
     throw e;
   }
+}
+
+/**
+ * Shared save function for in-app lecture chunks (Pipeline B — LectureModeScreen).
+ * Uses the same 5-level topic matching, XP awarding, and persistence as Pipeline A,
+ * but without the external_app_logs telemetry (since there's no external session).
+ *
+ * Both pipelines now share the same core save path via `runInTransaction` with
+ * `markTopicsFromLecture` + `addXpInTx` + `INSERT lecture_notes`.
+ */
+export async function saveLectureChunk(opts: {
+  analysis: LectureAnalysis;
+  subjectId: number | null;
+  appName?: string;
+  durationMinutes: number;
+  quickNote: string;
+  embedding?: number[] | null;
+  recordingPath?: string | null;
+}): Promise<{ noteId: number; topicsMatched: number; xpAwarded: number }> {
+  const db = getDb();
+  const { analysis } = opts;
+
+  // Compute embedding before the transaction
+  let embeddingForMatching: number[] | null = opts.embedding ?? null;
+  if (embeddingForMatching === null && analysis.lectureSummary) {
+    try {
+      embeddingForMatching = await generateEmbedding(analysis.lectureSummary);
+    } catch (embErr) {
+      console.warn('[saveLectureChunk] Embedding failed, proceeding without:', embErr);
+      embeddingForMatching = null;
+    }
+  }
+
+  // Save transcript to file system
+  const lectureIdentity = {
+    subjectName: analysis.subject,
+    topics: analysis.topics,
+  };
+  const transcriptUri = await saveTranscriptToFile(analysis.transcript || '', lectureIdentity);
+
+  const subjectId = opts.subjectId ?? (await findSubjectId(analysis.subject));
+
+  const result = await runInTransaction(async (tx) => {
+    if (analysis.topics.length > 0 || analysis.lectureSummary) {
+      // Use the same 5-level matching as Pipeline A:
+      // 1. exact match in subject, 2. LIKE contains, 3. reverse contains,
+      // 4. semantic/cosine similarity, 5. queue unmatched
+      await markTopicsFromLecture(
+        tx,
+        analysis.topics,
+        analysis.estimatedConfidence,
+        analysis.subject,
+        analysis.lectureSummary,
+        embeddingForMatching,
+      );
+
+      // Award XP: same as Pipeline A (topics.length * 8)
+      if (analysis.topics.length > 0) {
+        await addXpInTx(tx, analysis.topics.length * 8);
+      }
+    }
+
+    const insertResult = await tx.runAsync(
+      `INSERT INTO lecture_notes (
+         subject_id, note, created_at, transcript_uri, summary, topics_json, app_name,
+         duration_minutes, confidence, embedding, recording_path
+       )
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        subjectId,
+        opts.quickNote,
+        nowTs(),
+        transcriptUri,
+        analysis.lectureSummary,
+        analysis.topics ? JSON.stringify(analysis.topics) : null,
+        opts.appName ?? 'LectureMode',
+        opts.durationMinutes,
+        analysis.estimatedConfidence,
+        embeddingForMatching ? embeddingToBlob(embeddingForMatching) : null,
+        opts.recordingPath ?? null,
+      ],
+    );
+    const noteId = insertResult.lastInsertRowId;
+
+    return { noteId, topicsMatched: analysis.topics.length, xpAwarded: analysis.topics.length * 8 };
+  });
+
+  // Rename recording to descriptive identity (outside transaction — cosmetic only)
+  if (opts.recordingPath) {
+    try {
+      const renamedPath = await renameRecordingToLectureIdentity(
+        opts.recordingPath,
+        lectureIdentity,
+      );
+      if (renamedPath !== opts.recordingPath) {
+        await db.runAsync('UPDATE lecture_notes SET recording_path = ? WHERE id = ?', [
+          renamedPath,
+          result.noteId,
+        ]);
+      }
+    } catch (renameErr) {
+      console.warn('[saveLectureChunk] Recording rename failed:', renameErr);
+    }
+  }
+
+  // Notify UI
+  notifyDbUpdate(DB_EVENT_KEYS.LECTURE_SAVED);
+
+  // Silent background backup
+  runAutoPublicBackup().catch((e) => console.warn('[AutoBackup] Trigger failed:', e));
+
+  return result;
 }

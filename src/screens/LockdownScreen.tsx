@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { StyleSheet, TouchableOpacity, BackHandler, Alert, StatusBar } from 'react-native';
+import { StyleSheet, TouchableOpacity, BackHandler, StatusBar } from 'react-native';
+import { confirmDestructive } from '../components/dialogService';
 import LinearText from '../components/primitives/LinearText';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
@@ -93,15 +94,12 @@ export default function LockdownScreen() {
 
         <TouchableOpacity
           style={styles.exitBtn}
-          onPress={() => {
-            Alert.alert('Give up?', 'Are you sure you want to break the lockdown?', [
-              { text: 'Stay Strong', style: 'cancel' },
-              {
-                text: 'I give up',
-                style: 'destructive',
-                onPress: () => navigation.navigate('Tabs'),
-              },
-            ]);
+          onPress={async () => {
+            const ok = await confirmDestructive(
+              'Give up?',
+              'Are you sure you want to break the lockdown?',
+            );
+            if (ok) navigation.navigate('Tabs');
           }}
           accessibilityRole="button"
           accessibilityLabel="Force exit lockdown"

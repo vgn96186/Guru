@@ -10,7 +10,6 @@ import {
   StyleSheet,
   StatusBar,
   BackHandler,
-  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
@@ -23,6 +22,7 @@ import { linearTheme as n } from '../theme/linearTheme';
 import { ResponsiveContainer } from '../hooks/useResponsive';
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { emphasizeHighYieldMarkdown } from '../utils/highlightMarkdown';
+import { confirmDestructive } from '../components/dialogService';
 
 type Nav = NativeStackNavigationProp<HomeStackParamList, 'MockTest'>;
 
@@ -93,16 +93,15 @@ export default function MockTestScreen() {
     if (phase !== 'test') return;
     const handler = BackHandler.addEventListener('hardwareBackPress', () => {
       const unanswered = answers.filter((a) => a === null).length;
-      Alert.alert(
+      confirmDestructive(
         'Leave Test?',
         unanswered > 0
           ? `You have ${unanswered} unanswered questions. Your progress will be lost.`
           : 'Are you sure you want to leave?',
-        [
-          { text: 'Continue Test', style: 'cancel' },
-          { text: 'Leave', style: 'destructive', onPress: () => navigation.goBack() },
-        ],
-      );
+        { confirmLabel: 'Leave', cancelLabel: 'Continue Test' },
+      ).then((ok) => {
+        if (ok) navigation.goBack();
+      });
       return true;
     });
     return () => handler.remove();

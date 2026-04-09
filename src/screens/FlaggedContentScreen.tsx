@@ -16,6 +16,7 @@ import type { FlaggedContentItem } from '../db/queries/contentFlags';
 import { clearSpecificContentCache } from '../db/queries/aiCache';
 import { fetchContent } from '../services/ai/content';
 import { getDb } from '../db/database';
+import type { TopicWithProgress } from '../types';
 import { linearTheme as n } from '../theme/linearTheme';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -40,8 +41,8 @@ export default function FlaggedContentScreen() {
     try {
       const items = await getFlaggedContentReview();
       setFlaggedItems(items);
-    } catch {
-      console.error('[FlaggedContent] Failed to load:');
+    } catch (_err) {
+      if (__DEV__) console.error('[FlaggedContent] Failed to load:', _err);
     } finally {
       setLoading(false);
     }
@@ -67,12 +68,45 @@ export default function FlaggedContentScreen() {
       );
 
       if (topic) {
-        await fetchContent(topic, item.contentType);
+        const topicWithProgress: TopicWithProgress = {
+          id: Number(topic.id),
+          name: String(topic.name ?? ''),
+          subjectId: Number(topic.subject_id),
+          subjectName: String(topic.subjectName ?? ''),
+          subjectCode: '',
+          subjectColor: '',
+          subtopics: [],
+          estimatedMinutes: 35,
+          inicetPriority: 5,
+          progress: {
+            topicId: Number(topic.id),
+            status: 'unseen' as const,
+            confidence: 0,
+            lastStudiedAt: null,
+            timesStudied: 0,
+            xpEarned: 0,
+            nextReviewDate: null,
+            userNotes: '',
+            fsrsDue: null,
+            fsrsStability: 0,
+            fsrsDifficulty: 0,
+            fsrsElapsedDays: 0,
+            fsrsScheduledDays: 0,
+            fsrsReps: 0,
+            fsrsLapses: 0,
+            fsrsState: 0,
+            fsrsLastReview: null,
+            wrongCount: 0,
+            isNemesis: false,
+          },
+        };
+        await fetchContent(topicWithProgress, item.contentType);
       }
 
       await resolveContentFlags(item.topicId, item.contentType);
       await loadFlagged();
-    } catch {
+    } catch (_err) {
+      if (__DEV__) console.error('[FlaggedContent] Failed to regenerate:', _err);
       Alert.alert('Error', 'Failed to regenerate content.');
     } finally {
       setProcessing(null);
@@ -83,7 +117,8 @@ export default function FlaggedContentScreen() {
     try {
       await resolveContentFlags(item.topicId, item.contentType);
       await loadFlagged();
-    } catch {
+    } catch (_err) {
+      if (__DEV__) console.error('[FlaggedContent] Failed to dismiss flag:', _err);
       Alert.alert('Error', 'Failed to dismiss flag.');
     }
   };

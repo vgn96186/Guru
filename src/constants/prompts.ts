@@ -292,7 +292,8 @@ Return JSON:
       "explanation": "### Correct answer\\n**[Letter]. [Option]**\\n\\n### Why this is correct\\n- [reason]\\n\\n### Why other options are wrong\\n- **A:** ...\\n- **B:** ...\\n- **C:** ...\\n- **D:** ..."
     }
   ]
-}`;
+}
+${MEDICAL_ACCURACY_GUARDRAIL}`;
 }
 
 export function buildManualPrompt(topicName: string, subjectName: string): string {

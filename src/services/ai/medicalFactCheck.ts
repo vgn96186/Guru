@@ -3,9 +3,6 @@ import { InteractionManager } from 'react-native';
 import { extractMedicalEntities, extractClaims } from './medicalEntities';
 import { getLectureHistory } from '../../db/queries/aiCache';
 import { searchLatestMedicalSources } from './medicalSearch';
-import { setContentFlagged, isContentFlagged } from '../../db/queries/aiCache';
-// NOTE: logFactCheckResult is a stub until Task 3 (contentFlags.ts) is implemented.
-// Fact-checking runs but results are not persisted yet.
 import { logFactCheckResult } from '../../db/queries/contentFlags';
 
 const SIMILARITY_THRESHOLD = 0.3;
@@ -224,13 +221,6 @@ export async function runMedicalFactCheck(
 
     const status = contradictions.length > 0 ? 'failed' : 'passed';
     await logFactCheckResult(topicId, contentType, status, contradictions);
-
-    if (contradictions.length > 0) {
-      const alreadyFlagged = await isContentFlagged(topicId, contentType);
-      if (!alreadyFlagged) {
-        await setContentFlagged(topicId, contentType, true);
-      }
-    }
   } catch (err) {
     if (__DEV__) {
       console.warn('[FactCheck] Error during fact-check:', err);

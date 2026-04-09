@@ -1055,7 +1055,8 @@ DROP TABLE ai_cache_old;`,
   {
     version: 161,
     sql: `ALTER TABLE guru_chat_session_memory ADD COLUMN state_json TEXT NOT NULL DEFAULT '{}'`,
-    description: 'Structured tutoring state for Guru chat thread memory (moved from duplicate v149)',
+    description:
+      'Structured tutoring state for Guru chat thread memory (moved from duplicate v149)',
   },
   {
     version: 162,

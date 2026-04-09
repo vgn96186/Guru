@@ -37,7 +37,7 @@ export function ContentFlagButton({ topicId, contentType }: ContentFlagButtonPro
       setSelectedReason(null);
       setNote('');
       Alert.alert('Flagged', 'Thank you for the feedback. This content will be reviewed.');
-    } catch (err) {
+    } catch {
       Alert.alert('Error', 'Failed to flag content. Please try again.');
     } finally {
       setFlagging(false);

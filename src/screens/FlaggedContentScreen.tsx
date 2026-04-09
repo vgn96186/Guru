@@ -18,7 +18,6 @@ import { fetchContent } from '../services/ai/content';
 import { getDb } from '../db/database';
 import { linearTheme as n } from '../theme/linearTheme';
 import { Ionicons } from '@expo/vector-icons';
-import type { ContentType } from '../types';
 
 const FLAG_REASON_LABELS: Record<string, string> = {
   incorrect_fact: 'Incorrect medical fact',
@@ -41,8 +40,8 @@ export default function FlaggedContentScreen() {
     try {
       const items = await getFlaggedContentReview();
       setFlaggedItems(items);
-    } catch (err) {
-      console.error('[FlaggedContent] Failed to load:', err);
+    } catch {
+      console.error('[FlaggedContent] Failed to load:');
     } finally {
       setLoading(false);
     }
@@ -60,7 +59,9 @@ export default function FlaggedContentScreen() {
       await clearSpecificContentCache(item.topicId, item.contentType);
 
       const db = getDb();
-      const topic = await db.getFirstAsync<any>(
+      const topic = await db.getFirstAsync<
+        { id: number; subjectName?: string } & Record<string, unknown>
+      >(
         `SELECT t.*, s.name as subjectName FROM topics t JOIN subjects s ON t.subject_id = s.id WHERE t.id = ?`,
         [item.topicId],
       );
@@ -71,7 +72,7 @@ export default function FlaggedContentScreen() {
 
       await resolveContentFlags(item.topicId, item.contentType);
       await loadFlagged();
-    } catch (err) {
+    } catch {
       Alert.alert('Error', 'Failed to regenerate content.');
     } finally {
       setProcessing(null);
@@ -82,7 +83,7 @@ export default function FlaggedContentScreen() {
     try {
       await resolveContentFlags(item.topicId, item.contentType);
       await loadFlagged();
-    } catch (err) {
+    } catch {
       Alert.alert('Error', 'Failed to dismiss flag.');
     }
   };

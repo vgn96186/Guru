@@ -473,6 +473,32 @@ export const DB_INDEXES = [
   `CREATE INDEX IF NOT EXISTS idx_mind_map_edges_target ON mind_map_edges(target_node_id)`,
 ];
 
+export const CREATE_CONTENT_FACT_CHECKS = `
+CREATE TABLE IF NOT EXISTS content_fact_checks (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  topic_id INTEGER NOT NULL,
+  content_type TEXT NOT NULL,
+  check_status TEXT NOT NULL DEFAULT 'pending'
+    CHECK(check_status IN ('pending', 'passed', 'failed', 'inconclusive')),
+  contradictions_json TEXT,
+  checked_at INTEGER NOT NULL,
+  FOREIGN KEY(topic_id) REFERENCES topics(id) ON DELETE CASCADE
+)`;
+
+export const CREATE_USER_CONTENT_FLAGS = `
+CREATE TABLE IF NOT EXISTS user_content_flags (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  topic_id INTEGER NOT NULL,
+  content_type TEXT NOT NULL,
+  user_note TEXT,
+  flag_reason TEXT NOT NULL
+    CHECK(flag_reason IN ('incorrect_fact', 'outdated_info', 'wrong_dosage', 'missing_concept', 'other')),
+  flagged_at INTEGER NOT NULL,
+  resolved INTEGER NOT NULL DEFAULT 0,
+  resolved_at INTEGER,
+  FOREIGN KEY(topic_id) REFERENCES topics(id) ON DELETE CASCADE
+)`;
+
 export const ALL_SCHEMAS = [
   CREATE_SUBJECTS,
   CREATE_TOPICS,
@@ -498,4 +524,6 @@ export const ALL_SCHEMAS = [
   CREATE_MIND_MAPS,
   CREATE_MIND_MAP_NODES,
   CREATE_MIND_MAP_EDGES,
+  CREATE_CONTENT_FACT_CHECKS,
+  CREATE_USER_CONTENT_FLAGS,
 ];

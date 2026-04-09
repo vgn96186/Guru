@@ -944,11 +944,7 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_guru_chat_session_memory_thread ON guru_ch
     sql: `ALTER TABLE user_profile ADD COLUMN gdrive_web_client_id TEXT NOT NULL DEFAULT ''`,
     description: 'Google OAuth Web Client ID for Drive sync (runtime override)',
   },
-  {
-    version: 149,
-    sql: `ALTER TABLE guru_chat_session_memory ADD COLUMN state_json TEXT NOT NULL DEFAULT '{}'`,
-    description: 'Structured tutoring state for Guru chat thread memory',
-  },
+  // v149 was duplicated — state_json column moved to v161 to fix existing installs
   // ── Lecture Schedule Progress ─────────────────────────────────────────────────
   {
     version: 150,
@@ -1056,7 +1052,42 @@ DROP TABLE ai_cache_old;`,
     sql: `ALTER TABLE mind_map_edges ADD COLUMN is_cross_link INTEGER NOT NULL DEFAULT 0`,
     description: 'Flag cross-link edges for distinct visual rendering',
   },
+  {
+    version: 161,
+    sql: `ALTER TABLE guru_chat_session_memory ADD COLUMN state_json TEXT NOT NULL DEFAULT '{}'`,
+    description: 'Structured tutoring state for Guru chat thread memory (moved from duplicate v149)',
+  },
+  {
+    version: 162,
+    sql: `CREATE TABLE IF NOT EXISTS content_fact_checks (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  topic_id INTEGER NOT NULL,
+  content_type TEXT NOT NULL,
+  check_status TEXT NOT NULL DEFAULT 'pending'
+    CHECK(check_status IN ('pending', 'passed', 'failed', 'inconclusive')),
+  contradictions_json TEXT,
+  checked_at INTEGER NOT NULL,
+  FOREIGN KEY(topic_id) REFERENCES topics(id) ON DELETE CASCADE
+)`,
+    description: 'Add content_fact_checks table for automated fact-check results',
+  },
+  {
+    version: 163,
+    sql: `CREATE TABLE IF NOT EXISTS user_content_flags (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  topic_id INTEGER NOT NULL,
+  content_type TEXT NOT NULL,
+  user_note TEXT,
+  flag_reason TEXT NOT NULL
+    CHECK(flag_reason IN ('incorrect_fact', 'outdated_info', 'wrong_dosage', 'missing_concept', 'other')),
+  flagged_at INTEGER NOT NULL,
+  resolved INTEGER NOT NULL DEFAULT 0,
+  resolved_at INTEGER,
+  FOREIGN KEY(topic_id) REFERENCES topics(id) ON DELETE CASCADE
+)`,
+    description: 'Add user_content_flags table for manual content flagging',
+  },
 ];
 
 /** Latest schema version. Bump when adding new migrations. */
-export const LATEST_VERSION = 160;
+export const LATEST_VERSION = 163;

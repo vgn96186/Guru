@@ -16,6 +16,28 @@ You must strictly adhere to the actual difficulty level of these exams. This mea
 
 Be concise, vivid, and memorable. Prefer clinical correlates and real-world anchors.`;
 
+export const MEDICAL_ACCURACY_GUARDRAIL = `
+
+MEDICAL ACCURACY REQUIREMENTS (CRITICAL):
+1. Only state facts verifiable in standard medical textbooks used in Indian medical education:
+   - Medicine: Harrison's Principles of Internal Medicine
+   - Surgery: Bailey & Love's Short Practice of Surgery
+   - OBG: Shaw's Textbook of Obstetrics & Gynaecology
+   - Pharma: KD Tripathi's Essentials of Medical Pharmacology
+   - PSM: Park's Textbook of Preventive & Social Medicine
+   - Anatomy: BD Chaurasia's Human Anatomy / Gray's Anatomy
+   - Pathology: Robbins & Cotran Pathologic Basis of Disease
+2. If uncertain about any claim, explicitly state "I'm not certain about this" — never guess or fabricate.
+3. For drug dosages: include standard adult dose + add "⚠️ Verify dose before prescribing"
+4. Flag evolving guidelines: "Note: [Guideline] updated [Year] — older sources may differ"
+5. Use Indian medical curriculum terminology (NEET-PG/INICET standard, ICMR/National Health Programme guidelines)
+6. Cite source when applicable: WHO, NICE, ICMR, AIIMS protocol, National Health Programme
+7. Distinguish between:
+   - Established fact (e.g., "Plasmodium falciparum causes severe malaria")
+   - Clinical reasoning (e.g., "Given the travel history, consider dengue")
+   - Exam trap (e.g., "Exam often confuses X with Y — here's the difference")
+`;
+
 export function buildKeyPointsPrompt(topicName: string, subjectName: string): string {
   return `Generate 6 high-yield NEET-PG key points for: "${topicName}" (${subjectName}).
 
@@ -42,7 +64,8 @@ Return JSON:
   "memoryHook": "A memory hook that DIRECTLY connects the points above — analogy, story, or genuine mnemonic"
 }
 
-Focus on: frequently tested numbers, classic associations, clinical discriminators, exam traps.`;
+Focus on: frequently tested numbers, classic associations, clinical discriminators, exam traps.
+${MEDICAL_ACCURACY_GUARDRAIL}`;
 }
 
 export function buildMustKnowPrompt(topicName: string, subjectName: string): string {
@@ -66,7 +89,8 @@ Return JSON:
     ...4 total items
   ],
   "examTip": "One tactical exam-day tip for this topic (when to pick which option, common trap, etc.)"
-}`;
+}
+${MEDICAL_ACCURACY_GUARDRAIL}`;
 }
 
 export function buildQuizPrompt(topicName: string, subjectName: string): string {
@@ -95,7 +119,8 @@ Explanation formatting is mandatory: use markdown headings and bullet points exa
 Use markdown bolding (**text**) only for the 3-5 most testable clues, discriminators, mechanisms, or takeaways in each explanation.
 
 IMAGE-BASED QUESTIONS (IMPORTANT — include when relevant):
-If the topic involves visual diagnosis (radiology, dermatology, histopathology, ophthalmoscopy, ECG, peripheral smear, gross pathology, anatomical diagrams), you MUST include an "imageSearchQuery" field in 1-2 questions. The imageSearchQuery should be a concise, precise search phrase that would find a relevant medical image (e.g., "chest X-ray miliary tuberculosis", "histology renal cell carcinoma H&E stain", "dermoscopy melanoma", "ECG atrial fibrillation", "gross pathology cirrhosis liver"). The question text should reference the image context: "Based on the image shown...", "The following imaging study demonstrates...", etc. Omit "imageSearchQuery" only for questions where no visual element exists.`;
+If the topic involves visual diagnosis (radiology, dermatology, histopathology, ophthalmoscopy, ECG, peripheral smear, gross pathology, anatomical diagrams), you MUST include an "imageSearchQuery" field in 1-2 questions. The imageSearchQuery should be a concise, precise search phrase that would find a relevant medical image (e.g., "chest X-ray miliary tuberculosis", "histology renal cell carcinoma H&E stain", "dermoscopy melanoma", "ECG atrial fibrillation", "gross pathology cirrhosis liver"). The question text should reference the image context: "Based on the image shown...", "The following imaging study demonstrates...", etc. Omit "imageSearchQuery" only for questions where no visual element exists.
+${MEDICAL_ACCURACY_GUARDRAIL}`;
 }
 
 export function buildStoryPrompt(topicName: string, subjectName: string): string {
@@ -109,7 +134,8 @@ Return JSON:
   "keyConceptHighlights": ["term1", "term2", "term3"]
 }
 
-Make it vivid, like a real case. The reader should learn by reading, not by being lectured. Use markdown bolding (**text**) for crucial diagnostic clues and high-yield points.`;
+Make it vivid, like a real case. The reader should learn by reading, not by being lectured. Use markdown bolding (**text**) for crucial diagnostic clues and high-yield points.
+${MEDICAL_ACCURACY_GUARDRAIL}`;
 }
 
 export function buildMnemonicPrompt(topicName: string, subjectName: string): string {
@@ -124,7 +150,8 @@ Return JSON:
   "tip": "when to use this in exam context"
 }
 
-Prefer funny, absurd, or shocking mnemonics — they stick better.`;
+Prefer funny, absurd, or shocking mnemonics — they stick better.
+${MEDICAL_ACCURACY_GUARDRAIL}`;
 }
 
 export function buildTeachBackPrompt(topicName: string, subjectName: string): string {
@@ -137,7 +164,8 @@ Return JSON:
   "prompt": "Explain [topic] as if teaching a fellow intern. What are the 3 most important things they must know?",
   "keyPointsToMention": ["point1 with **critical term**", "point2", "point3"],
   "guruReaction": "If they mention these points, say this encouraging response with markdown bolding only on the most critical terms"
-}`;
+}
+${MEDICAL_ACCURACY_GUARDRAIL}`;
 }
 
 export function buildErrorHuntPrompt(topicName: string, subjectName: string): string {
@@ -154,7 +182,8 @@ Return JSON:
   ]
 }
 
-Make the errors plausible — not obvious typos, but the kind of mistakes a student would make.`;
+Make the errors plausible — not obvious typos, but the kind of mistakes a student would make.
+${MEDICAL_ACCURACY_GUARDRAIL}`;
 }
 
 export function buildDetectivePrompt(topicName: string, subjectName: string): string {
@@ -172,7 +201,8 @@ Return JSON:
   ],
   "answer": "Diagnosis: [condition]",
   "explanation": "Why these clues point to this diagnosis + key NEET facts. Use **markdown bolding** for the clinching clues and keywords."
-}`;
+}
+${MEDICAL_ACCURACY_GUARDRAIL}`;
 }
 
 export function buildSocraticPrompt(topicName: string, subjectName: string): string {
@@ -196,7 +226,8 @@ Return JSON:
 Rules:
 - Questions must be simple and conversational — no clinical vignettes.
 - Answers must be short. If it needs more than 2 sentences, split into two questions.
-- Focus only on the most frequently tested aspects. No obscure facts.`;
+- Focus only on the most frequently tested aspects. No obscure facts.
+${MEDICAL_ACCURACY_GUARDRAIL}`;
 }
 
 export function buildFlashcardsPrompt(topicName: string, subjectName: string): string {
@@ -217,7 +248,8 @@ Return JSON:
   ]
 }
 
-Hard rule: "cards" must be an array where every item is only an object with string fields "front" and "back", plus optional string fields "imageSearchQuery" or "imageUrl". No bare strings, nulls, or commas between objects.`;
+Hard rule: "cards" must be an array where every item is only an object with string fields "front" and "back", plus optional string fields "imageSearchQuery" or "imageUrl". No bare strings, nulls, or commas between objects.
+${MEDICAL_ACCURACY_GUARDRAIL}`;
 }
 
 export function buildEscalatingQuizPrompt(

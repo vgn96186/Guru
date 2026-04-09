@@ -3,7 +3,12 @@
 import { getDb, nowTs, SQL_AI_CACHE } from '../database';
 import type { ContentType } from '../../types';
 
-export type FlagReason = 'incorrect_fact' | 'outdated_info' | 'wrong_dosage' | 'missing_concept' | 'other';
+export type FlagReason =
+  | 'incorrect_fact'
+  | 'outdated_info'
+  | 'wrong_dosage'
+  | 'missing_concept'
+  | 'other';
 
 export interface FlaggedContentItem {
   topicId: number;
@@ -45,7 +50,12 @@ export async function logFactCheckResult(
   topicId: number,
   contentType: ContentType,
   status: 'passed' | 'failed' | 'inconclusive',
-  contradictions: Array<{ claim: string; trustedSource: string; trustedText: string; similarity: number }>,
+  contradictions: Array<{
+    claim: string;
+    trustedSource: string;
+    trustedText: string;
+    similarity: number;
+  }>,
 ): Promise<void> {
   const db = getDb();
   await db.runAsync(
@@ -53,12 +63,19 @@ export async function logFactCheckResult(
      VALUES (?, ?, ?, ?, ?)`,
     [topicId, contentType, status, JSON.stringify(contradictions), nowTs()],
   );
+
+  if (status === 'failed') {
+    await db.runAsync(
+      `UPDATE ${SQL_AI_CACHE} SET is_flagged = 1 WHERE topic_id = ? AND content_type = ?`,
+      [topicId, contentType],
+    );
+  }
 }
 
 /**
- * Get all flagged content (both user-flagged and auto-flagged).
+ * Get all flagged content for review (both user-flagged and auto-flagged).
  */
-export async function getFlaggedContent(): Promise<FlaggedContentItem[]> {
+export async function getFlaggedContentReview(): Promise<FlaggedContentItem[]> {
   const db = getDb();
   const rows = await db.getAllAsync<{
     topic_id: number;
@@ -77,7 +94,7 @@ export async function getFlaggedContent(): Promise<FlaggedContentItem[]> {
        c.content_type,
        u.flag_reason,
        u.user_note,
-       COALESCE(u.flagged_at, 0) AS flagged_at,
+       COALESCE(u.flagged_at, c.created_at) AS flagged_at,
        COALESCE(u.resolved, 0) AS resolved
      FROM ${SQL_AI_CACHE} c
      JOIN topics t ON c.topic_id = t.id
@@ -102,7 +119,10 @@ export async function getFlaggedContent(): Promise<FlaggedContentItem[]> {
 /**
  * Resolve (dismiss) content flags for a topic+type.
  */
-export async function resolveContentFlags(topicId: number, contentType: ContentType): Promise<void> {
+export async function resolveContentFlags(
+  topicId: number,
+  contentType: ContentType,
+): Promise<void> {
   const db = getDb();
   await db.runAsync(
     `UPDATE user_content_flags SET resolved = 1, resolved_at = ? WHERE topic_id = ? AND content_type = ?`,

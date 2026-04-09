@@ -30,7 +30,10 @@ import type {
   ManualContent,
   SocraticContent,
   FlashcardsContent,
+  ContentType,
 } from '../types';
+
+import { ContentFlagButton } from '../components/ContentFlagButton';
 
 import {
   askGuru,
@@ -215,6 +218,7 @@ const QuestionImage = React.memo(function QuestionImage({
 interface Props {
   content: AIContent;
   topicId?: number;
+  contentType?: ContentType;
   onDone: (confidence: number) => void;
   onSkip: () => void;
   onQuizAnswered?: (correct: boolean) => void;
@@ -335,7 +339,15 @@ function buildGuruContext(content: AIContent): string | undefined {
   }
 }
 
-function ContentCard({ content, topicId, onDone, onSkip, onQuizAnswered, onQuizComplete }: Props) {
+function ContentCard({
+  content,
+  topicId,
+  contentType,
+  onDone,
+  onSkip,
+  onQuizAnswered,
+  onQuizComplete,
+}: Props) {
   const [chatOpen, setChatOpen] = useState(false);
   const [flagged, setFlagged] = useState(false);
   const [liveGuruContext, setLiveGuruContext] = useState<string | undefined>(undefined);
@@ -400,17 +412,29 @@ function ContentCard({ content, topicId, onDone, onSkip, onQuizAnswered, onQuizC
         return (
           <KeyPointsCard
             content={content}
+            topicId={topicId}
+            contentType={contentType}
             onDone={onDone}
             onSkip={onSkip}
             onContextChange={setLiveGuruContext}
           />
         );
       case 'must_know':
-        return <MustKnowCard content={content} onDone={onDone} onSkip={onSkip} />;
+        return (
+          <MustKnowCard
+            content={content}
+            topicId={topicId}
+            contentType={contentType}
+            onDone={onDone}
+            onSkip={onSkip}
+          />
+        );
       case 'quiz':
         return (
           <QuizCard
             content={content}
+            topicId={topicId}
+            contentType={contentType}
             onDone={onDone}
             onSkip={onSkip}
             onQuizAnswered={handleQuizAnswered}
@@ -419,11 +443,21 @@ function ContentCard({ content, topicId, onDone, onSkip, onQuizAnswered, onQuizC
           />
         );
       case 'story':
-        return <StoryCard content={content} onDone={onDone} onSkip={onSkip} />;
+        return (
+          <StoryCard
+            content={content}
+            topicId={topicId}
+            contentType={contentType}
+            onDone={onDone}
+            onSkip={onSkip}
+          />
+        );
       case 'mnemonic':
         return (
           <MnemonicCard
             content={content}
+            topicId={topicId}
+            contentType={contentType}
             onDone={onDone}
             onSkip={onSkip}
             onContextChange={setLiveGuruContext}
@@ -433,6 +467,8 @@ function ContentCard({ content, topicId, onDone, onSkip, onQuizAnswered, onQuizC
         return (
           <TeachBackCard
             content={content}
+            topicId={topicId}
+            contentType={contentType}
             onDone={onDone}
             onSkip={onSkip}
             onContextChange={setLiveGuruContext}
@@ -442,6 +478,8 @@ function ContentCard({ content, topicId, onDone, onSkip, onQuizAnswered, onQuizC
         return (
           <ErrorHuntCard
             content={content}
+            topicId={topicId}
+            contentType={contentType}
             onDone={onDone}
             onSkip={onSkip}
             onContextChange={setLiveGuruContext}
@@ -451,24 +489,44 @@ function ContentCard({ content, topicId, onDone, onSkip, onQuizAnswered, onQuizC
         return (
           <DetectiveCard
             content={content}
+            topicId={topicId}
+            contentType={contentType}
             onDone={onDone}
             onSkip={onSkip}
             onContextChange={setLiveGuruContext}
           />
         );
       case 'manual':
-        return <ManualReviewCard content={content} onDone={onDone} onSkip={onSkip} />;
+        return (
+          <ManualReviewCard
+            content={content}
+            topicId={topicId}
+            contentType={contentType}
+            onDone={onDone}
+            onSkip={onSkip}
+          />
+        );
       case 'socratic':
         return (
           <SocraticCard
             content={content}
+            topicId={topicId}
+            contentType={contentType}
             onDone={onDone}
             onSkip={onSkip}
             onContextChange={setLiveGuruContext}
           />
         );
       case 'flashcards':
-        return <FlashcardCard content={content} onDone={onDone} onSkip={onSkip} />;
+        return (
+          <FlashcardCard
+            content={content}
+            topicId={topicId}
+            contentType={contentType}
+            onDone={onDone}
+            onSkip={onSkip}
+          />
+        );
       default:
         return null;
     }
@@ -557,6 +615,8 @@ function ConfidenceRating({ onRate }: { onRate: (n: number) => void }) {
 
 function KeyPointsCard({
   content,
+  topicId,
+  contentType,
   onDone,
   onSkip,
   onContextChange,
@@ -596,9 +656,14 @@ function KeyPointsCard({
       contentContainerStyle={scrollContentStyle}
     >
       <LinearText style={s.cardType}>KEY POINTS</LinearText>
-      <AppText style={s.cardTitle} numberOfLines={3} variant="title">
-        {content.topicName}
-      </AppText>
+      <View style={s.cardHeader}>
+        <AppText style={s.cardTitle} numberOfLines={3} variant="title">
+          {content.topicName}
+        </AppText>
+        {topicId && contentType && (
+          <ContentFlagButton topicId={topicId} contentType={contentType} />
+        )}
+      </View>
       <LinearText style={s.kpProgress}>
         {Math.min(revealIndex + 1, content.points.length)} / {content.points.length}
       </LinearText>
@@ -707,6 +772,8 @@ function ExplainablePoint({
 
 function MustKnowCard({
   content,
+  topicId,
+  contentType,
   onDone,
   onSkip,
 }: { content: MustKnowContent } & Omit<Props, 'content'>) {
@@ -716,9 +783,14 @@ function MustKnowCard({
   return (
     <ScrollView style={s.scroll} contentContainerStyle={scrollContentStyle}>
       <LinearText style={s.cardType}>MUST KNOW</LinearText>
-      <LinearText style={s.cardTitle} numberOfLines={3} ellipsizeMode="tail">
-        {content.topicName}
-      </LinearText>
+      <View style={s.cardHeader}>
+        <LinearText style={s.cardTitle} numberOfLines={3} ellipsizeMode="tail">
+          {content.topicName}
+        </LinearText>
+        {topicId && contentType && (
+          <ContentFlagButton topicId={topicId} contentType={contentType} />
+        )}
+      </View>
       <TopicImage topicName={content.topicName} />
 
       <LinearText style={s.mkSectionLabel}>
@@ -1076,6 +1148,8 @@ ${wrongSection}`;
 
 function QuizCard({
   content,
+  topicId,
+  contentType,
   onDone,
   onSkip,
   onQuizAnswered,
@@ -1287,9 +1361,14 @@ function QuizCard({
           QUIZ {currentQ + 1}/{validQuestions.length}
         </LinearText>
       </View>
-      <LinearText style={s.cardTitle} numberOfLines={3} ellipsizeMode="tail">
-        {content.topicName}
-      </LinearText>
+      <View style={s.cardHeader}>
+        <LinearText style={s.cardTitle} numberOfLines={3} ellipsizeMode="tail">
+          {content.topicName}
+        </LinearText>
+        {topicId && contentType && (
+          <ContentFlagButton topicId={topicId} contentType={contentType} />
+        )}
+      </View>
       {isQuizImageHttpUrl(q.imageUrl) ? (
         <QuestionImage
           url={q.imageUrl!.trim()}
@@ -1498,6 +1577,8 @@ function QuizCard({
 
 function StoryCard({
   content,
+  topicId,
+  contentType,
   onDone,
   onSkip,
 }: { content: StoryContent } & Omit<Props, 'content'>) {
@@ -1506,9 +1587,14 @@ function StoryCard({
   return (
     <ScrollView style={s.scroll} contentContainerStyle={scrollContentStyle}>
       <LinearText style={s.cardType}>📖 CLINICAL STORY</LinearText>
-      <LinearText style={s.cardTitle} numberOfLines={3} ellipsizeMode="tail">
-        {content.topicName}
-      </LinearText>
+      <View style={s.cardHeader}>
+        <LinearText style={s.cardTitle} numberOfLines={3} ellipsizeMode="tail">
+          {content.topicName}
+        </LinearText>
+        {topicId && contentType && (
+          <ContentFlagButton topicId={topicId} contentType={contentType} />
+        )}
+      </View>
       <TopicImage topicName={content.topicName} />
       <View style={{ marginBottom: 20 }}>
         <StudyMarkdown content={emphasizeHighYieldMarkdown(content.story)} />
@@ -1546,6 +1632,8 @@ function StoryCard({
 
 function MnemonicCard({
   content,
+  topicId,
+  contentType,
   onDone,
   onSkip,
   onContextChange,
@@ -1574,9 +1662,14 @@ function MnemonicCard({
   return (
     <ScrollView style={s.scroll} contentContainerStyle={scrollContentStyle}>
       <LinearText style={s.cardType}>🧠 MNEMONIC</LinearText>
-      <LinearText style={s.cardTitle} numberOfLines={3} ellipsizeMode="tail">
-        {content.topicName}
-      </LinearText>
+      <View style={s.cardHeader}>
+        <LinearText style={s.cardTitle} numberOfLines={3} ellipsizeMode="tail">
+          {content.topicName}
+        </LinearText>
+        {topicId && contentType && (
+          <ContentFlagButton topicId={topicId} contentType={contentType} />
+        )}
+      </View>
       <TopicImage topicName={content.topicName} />
       <View style={s.mnemonicBox}>
         <LinearText style={s.mnemonicMain}>{content.mnemonic}</LinearText>
@@ -1628,6 +1721,8 @@ function MnemonicCard({
 
 function TeachBackCard({
   content,
+  topicId,
+  contentType,
   onDone,
   onSkip,
   onContextChange,
@@ -1684,9 +1779,14 @@ function TeachBackCard({
   return (
     <ScrollView style={s.scroll} contentContainerStyle={scrollContentStyle}>
       <LinearText style={s.cardType}>🎤 TEACH BACK</LinearText>
-      <LinearText style={s.cardTitle} numberOfLines={3} ellipsizeMode="tail">
-        {content.topicName}
-      </LinearText>
+      <View style={s.cardHeader}>
+        <LinearText style={s.cardTitle} numberOfLines={3} ellipsizeMode="tail">
+          {content.topicName}
+        </LinearText>
+        {topicId && contentType && (
+          <ContentFlagButton topicId={topicId} contentType={contentType} />
+        )}
+      </View>
       <TopicImage topicName={content.topicName} />
       <LinearText style={s.questionText}>{content.prompt}</LinearText>
       {!submitted ? (
@@ -1767,6 +1867,8 @@ function TeachBackCard({
 
 function ErrorHuntCard({
   content,
+  topicId,
+  contentType,
   onDone,
   onSkip,
   onContextChange,
@@ -1794,9 +1896,14 @@ function ErrorHuntCard({
   return (
     <ScrollView style={s.scroll} contentContainerStyle={scrollContentStyle}>
       <LinearText style={s.cardType}>🔍 ERROR HUNT</LinearText>
-      <LinearText style={s.cardTitle} numberOfLines={3} ellipsizeMode="tail">
-        {content.topicName}
-      </LinearText>
+      <View style={s.cardHeader}>
+        <LinearText style={s.cardTitle} numberOfLines={3} ellipsizeMode="tail">
+          {content.topicName}
+        </LinearText>
+        {topicId && contentType && (
+          <ContentFlagButton topicId={topicId} contentType={contentType} />
+        )}
+      </View>
       <TopicImage topicName={content.topicName} />
       <LinearText style={s.questionText}>Find the 2 factual errors in this paragraph:</LinearText>
       <View style={s.paragraphBox}>
@@ -1841,6 +1948,8 @@ function ErrorHuntCard({
 
 function DetectiveCard({
   content,
+  topicId,
+  contentType,
   onDone,
   onSkip,
   onContextChange,
@@ -1867,9 +1976,14 @@ function DetectiveCard({
   return (
     <ScrollView style={s.scroll} contentContainerStyle={scrollContentStyle}>
       <LinearText style={s.cardType}>🕵️ CLINICAL DETECTIVE</LinearText>
-      <LinearText style={s.cardTitle} numberOfLines={3} ellipsizeMode="tail">
-        {content.topicName}
-      </LinearText>
+      <View style={s.cardHeader}>
+        <LinearText style={s.cardTitle} numberOfLines={3} ellipsizeMode="tail">
+          {content.topicName}
+        </LinearText>
+        {topicId && contentType && (
+          <ContentFlagButton topicId={topicId} contentType={contentType} />
+        )}
+      </View>
       <TopicImage topicName={content.topicName} />
       {content.clues.slice(0, revealedClues).map((clue, i) => (
         <View key={i} style={[s.clueBox, i === revealedClues - 1 && s.clueBoxNew]}>
@@ -1934,6 +2048,8 @@ function DetectiveCard({
 
 function ManualReviewCard({
   content,
+  topicId,
+  contentType,
   onDone,
   onSkip,
 }: { content: ManualContent } & Omit<Props, 'content'>) {
@@ -1942,9 +2058,14 @@ function ManualReviewCard({
   return (
     <ScrollView style={s.scroll} contentContainerStyle={scrollContentStyle}>
       <LinearText style={s.cardType}>📴 MANUAL REVIEW (OFFLINE)</LinearText>
-      <LinearText style={s.cardTitle} numberOfLines={3} ellipsizeMode="tail">
-        {content.topicName}
-      </LinearText>
+      <View style={s.cardHeader}>
+        <LinearText style={s.cardTitle} numberOfLines={3} ellipsizeMode="tail">
+          {content.topicName}
+        </LinearText>
+        {topicId && contentType && (
+          <ContentFlagButton topicId={topicId} contentType={contentType} />
+        )}
+      </View>
       <TopicImage topicName={content.topicName} />
 
       <View style={s.offlineBox}>
@@ -1985,15 +2106,12 @@ function ManualReviewCard({
 // ── SocraticCard ────────────────────────────────────────────────────────────
 function SocraticCard({
   content,
+  topicId,
+  contentType,
   onDone,
   onSkip,
   onContextChange,
-}: {
-  content: SocraticContent;
-  onDone: (confidence: number) => void;
-  onSkip: () => void;
-  onContextChange?: ContextUpdater;
-}) {
+}: { content: SocraticContent; onContextChange?: ContextUpdater } & Omit<Props, 'content'>) {
   const [index, setIndex] = useState(0);
   const [revealed, setRevealed] = useState(false);
 
@@ -2207,6 +2325,12 @@ const s = StyleSheet.create({
     lineHeight: 28,
     minWidth: 0,
     width: '100%',
+  },
+  cardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
   },
   topicImage: {
     width: '100%',
@@ -2678,13 +2802,11 @@ const FLASHCARD_RATINGS = [
 
 function FlashcardCard({
   content,
+  topicId,
+  contentType,
   onDone,
   onSkip,
-}: {
-  content: FlashcardsContent;
-  onDone: (confidence: number) => void;
-  onSkip: () => void;
-}) {
+}: { content: FlashcardsContent } & Omit<Props, 'content'>) {
   const [cardIdx, setCardIdx] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
 
@@ -2740,10 +2862,13 @@ function FlashcardCard({
 
   return (
     <View style={s.flashcardContainer}>
-      <View style={s.flashcardHeader}>
+      <View style={s.cardHeader}>
         <LinearText variant="chip" tone="muted">
           {content.topicName} · Card {cardIdx + 1}/{content.cards.length}
         </LinearText>
+        {topicId && contentType && (
+          <ContentFlagButton topicId={topicId} contentType={contentType} />
+        )}
       </View>
 
       <TouchableOpacity style={s.flashcardBody} onPress={handleFlip} activeOpacity={0.7}>

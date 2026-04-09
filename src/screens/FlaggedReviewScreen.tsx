@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { View, ScrollView, TouchableOpacity, StyleSheet, StatusBar } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import LinearText from '../components/primitives/LinearText';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { getFlaggedContent, setContentFlagged, type FlaggedItem } from '../db/queries/aiCache';
@@ -168,10 +169,10 @@ export default function FlaggedReviewScreen() {
 
         {items.length === 0 ? (
           <View style={styles.empty}>
-            <LinearText style={styles.emptyEmoji}>✅</LinearText>
+            <Ionicons name="checkmark-circle-outline" size={48} color={n.colors.textMuted} />
             <LinearText style={styles.emptyTitle}>No flagged content</LinearText>
             <LinearText style={styles.emptySub}>
-              Tap the 🏳 flag button on any content card to mark it for review here.
+              Tap the flag button on any content card to mark it for review here.
             </LinearText>
           </View>
         ) : (
@@ -259,8 +260,7 @@ const styles = StyleSheet.create({
   previewCorrect: { color: n.colors.success, fontSize: 13, fontWeight: '600', marginBottom: 4 },
   previewExplain: { color: n.colors.textMuted, fontSize: 12, fontStyle: 'italic', lineHeight: 18 },
   expandHint: { color: n.colors.textMuted, fontSize: 11, textAlign: 'center', marginTop: 4 },
-  empty: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 40 },
-  emptyEmoji: { fontSize: 48, marginBottom: 16 },
+  empty: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 40, gap: 16 },
   emptyTitle: { color: n.colors.textPrimary, fontWeight: '700', fontSize: 20, marginBottom: 8 },
   emptySub: { color: n.colors.textMuted, fontSize: 14, textAlign: 'center', lineHeight: 22 },
 });

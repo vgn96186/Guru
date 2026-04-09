@@ -65,11 +65,11 @@ const MESSAGE_VARIATIONS: Record<string, string[]> = {
 };
 
 const MOTIVATIONAL_MESSAGES = [
-  "You're building an amazing medical brain! 🧠",
+  "You're building an amazing medical brain!",
   'Every study session makes you a better doctor 💙',
   'Your dedication is inspiring! Keep going! ✨',
   "Medical knowledge loading... you're almost there! 📚",
-  "Stay focused, Doctor! You're making progress! 🎯",
+  "Stay focused, Doctor! You're making progress!",
 ];
 
 function getRandomVariation(message: string): string {

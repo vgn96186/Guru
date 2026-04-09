@@ -19,6 +19,7 @@ import { ResponsiveContainer } from '../hooks/useResponsive';
 import { useAppStateTransition } from '../hooks/useAppStateTransition';
 import { linearTheme as n } from '../theme/linearTheme';
 import { confirmDestructive } from '../components/dialogService';
+import { Ionicons } from '@expo/vector-icons';
 
 const MAX_OPENS_BEFORE_SHAME = 3;
 const DELAY_SECONDS = 30;
@@ -204,7 +205,7 @@ export default function DoomscrollInterceptor() {
         <ResponsiveContainer>
           <Animated.View style={[styles.container, { opacity: fadeAnim }]}>
             <View style={styles.standbyIconContainer}>
-              <LinearText style={styles.standbyEmoji}>🛡️</LinearText>
+              <Ionicons name="shield-checkmark-outline" size={48} color={n.colors.accent} />
             </View>
 
             <LinearText style={styles.standbyTitle}>App Hijack Standby</LinearText>
@@ -224,7 +225,10 @@ export default function DoomscrollInterceptor() {
                 } as any)
               }
             >
-              <LinearText style={styles.primaryButtonText}>📚 GO BACK TO STUDYING</LinearText>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                <Ionicons name="book-outline" size={16} color={n.colors.textPrimary} />
+                <LinearText style={styles.primaryButtonText}>GO BACK TO STUDYING</LinearText>
+              </View>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -303,7 +307,10 @@ export default function DoomscrollInterceptor() {
           {/* Countdown or Unlocked State */}
           {delayRemaining > 0 ? (
             <View style={styles.countdownContainer}>
-              <LinearText style={styles.countdownLabel}>⏳ Cool Down</LinearText>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                <Ionicons name="time-outline" size={16} color={n.colors.textMuted} />
+                <LinearText style={styles.countdownLabel}>Cool Down</LinearText>
+              </View>
               <View style={styles.countdownCircle}>
                 <LinearText style={[styles.countdownNumber, { color: currentMessage.color }]}>
                   {delayRemaining}
@@ -349,11 +356,17 @@ export default function DoomscrollInterceptor() {
             onPress={handleGoBackToStudy}
             disabled={delayRemaining > 0}
           >
-            <LinearText
-              style={[styles.primaryButtonText, delayRemaining > 0 && styles.disabledButtonText]}
-            >
-              {delayRemaining > 0 ? `⏳ Wait ${delayRemaining}s...` : '📚 GO BACK TO STUDYING'}
-            </LinearText>
+            {delayRemaining > 0 ? (
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                <Ionicons name="time-outline" size={16} color={n.colors.textMuted} />
+                <LinearText style={styles.primaryButtonText}>Wait {delayRemaining}s...</LinearText>
+              </View>
+            ) : (
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                <Ionicons name="book-outline" size={16} color={n.colors.textPrimary} />
+                <LinearText style={styles.primaryButtonText}>GO BACK TO STUDYING</LinearText>
+              </View>
+            )}
           </TouchableOpacity>
 
           {delayRemaining === 0 && (

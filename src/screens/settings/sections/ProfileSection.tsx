@@ -1,6 +1,7 @@
 import React from 'react';
 import { TouchableOpacity } from 'react-native';
-import type { Ionicons } from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons';
+import type { Ionicons as IoniconsType } from '@expo/vector-icons';
 import { linearTheme } from '../../../theme/linearTheme';
 import LinearTextInput from '../../../components/primitives/LinearTextInput';
 import LinearText from '../../../components/primitives/LinearText';
@@ -9,7 +10,7 @@ import SettingsLabel from '../components/SettingsLabel';
 type SectionToggleProps = {
   id: string;
   title: string;
-  icon: keyof typeof Ionicons.glyphMap;
+  icon: keyof typeof IoniconsType.glyphMap;
   tint: string;
   children: React.ReactNode;
 };
@@ -41,7 +42,13 @@ export default function ProfileSection({
           variant="body"
           style={[styles.testBtnText, { color: linearTheme.colors.success }]}
         >
-          📱 Link Another Device (Sync)
+          <Ionicons
+            name="phone-portrait-outline"
+            size={16}
+            color={linearTheme.colors.success}
+            style={{ marginRight: 6 }}
+          />
+          Link Another Device (Sync)
         </LinearText>
       </TouchableOpacity>
       <SettingsLabel text="Your name" />

@@ -53,7 +53,10 @@ export default function BrainDumpFab() {
         >
           <View style={[styles.modalContent, { paddingBottom: Math.max(insets.bottom, 0) + 24 }]}>
             <View style={styles.header}>
-              <Text style={styles.title}>Park a Thought 🧠</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                <Text style={styles.title}>Park a Thought</Text>
+                <Ionicons name="hardware-chip-outline" size={22} color={n.colors.textPrimary} />
+              </View>
               <TouchableOpacity
                 onPress={() => setModalVisible(false)}
                 accessibilityRole="button"

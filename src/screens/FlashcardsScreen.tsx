@@ -249,7 +249,7 @@ export default function FlashcardsScreen() {
     return (
       <SafeAreaView style={styles.safe}>
         <ResponsiveContainer style={styles.center}>
-          <LinearText style={styles.emptyEmoji}>🃏</LinearText>
+          <Ionicons name="layers-outline" size={64} color={n.colors.textMuted} />
           <LinearText style={styles.title}>No Flashcards Available</LinearText>
           <LinearText style={styles.sub}>
             Complete quiz sessions to generate flashcards for review.
@@ -468,8 +468,7 @@ export default function FlashcardsScreen() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: n.colors.background },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24 },
-  emptyEmoji: { fontSize: 64, marginBottom: 16 },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24, gap: 16 },
   header: {
     flexDirection: 'row',
     alignItems: 'center',

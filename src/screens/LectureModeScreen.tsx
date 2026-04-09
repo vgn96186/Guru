@@ -1,5 +1,6 @@
 import LinearSurface from '../components/primitives/LinearSurface';
 import React, { useEffect, useRef, useState, useCallback } from 'react';
+import { Ionicons } from '@expo/vector-icons';
 import {
   View,
   ScrollView,
@@ -936,7 +937,7 @@ export default function LectureModeScreen() {
             padding: 40,
           }}
         >
-          <LinearText style={{ fontSize: 80, marginBottom: 20 }}>📱❌</LinearText>
+          <Ionicons name="phone-portrait-outline" size={80} color={n.colors.textPrimary} />
           <LinearText
             style={{
               color: n.colors.textPrimary,
@@ -973,7 +974,8 @@ export default function LectureModeScreen() {
           >
             <LinearText style={styles.backText}>← End</LinearText>
           </TouchableOpacity>
-          <LinearText style={styles.headerTitle}>📺 Hostage Mode</LinearText>
+          <Ionicons name="tv-outline" size={20} color={n.colors.textPrimary} />
+          <LinearText style={styles.headerTitle}>Hostage Mode</LinearText>
           <FocusAudioPlayer />
         </View>
 
@@ -983,7 +985,7 @@ export default function LectureModeScreen() {
               padded={false}
               style={[styles.hostageInfo, { borderColor: n.colors.error }]}
             >
-              <LinearText style={styles.hostageEmoji}>👀</LinearText>
+              <Ionicons name="eye-outline" size={32} color={n.colors.error} />
               <LinearText style={[styles.hostageText, { color: n.colors.error }]}>
                 Face not detected or distracted! Look at your study materials!
               </LinearText>
@@ -993,7 +995,7 @@ export default function LectureModeScreen() {
           {/* Hostage Instructions */}
           {!proofOfLifeActive && elapsed < 60 && (
             <LinearSurface padded={false} style={styles.hostageInfo}>
-              <LinearText style={styles.hostageEmoji}>📱❌</LinearText>
+              <Ionicons name="phone-portrait-outline" size={32} color={n.colors.textPrimary} />
               <LinearText style={styles.hostageText}>
                 Put this phone face up on your desk. Watch the lecture on your tablet. If you close
                 this app to doomscroll, your phone will scream at you.
@@ -1039,7 +1041,7 @@ export default function LectureModeScreen() {
               ]}
             >
               <View style={styles.proofIconContainer}>
-                <LinearText style={styles.proofEmoji}>🚨</LinearText>
+                <Ionicons name="alert-circle-outline" size={32} color={n.colors.error} />
                 <Animated.View
                   style={[
                     styles.proofPulseRing,
@@ -1123,8 +1125,9 @@ export default function LectureModeScreen() {
           >
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
               {isRecordingEnabled && <View style={styles.recordingDot} />}
+              {!isRecordingEnabled && <Ionicons name="mic-outline" size={18} color="#fff" />}
               <LinearText style={styles.transcribeBtnText}>
-                {isRecordingEnabled ? 'AUTO-SCRIBE ACTIVE — Recording' : '🎙️ Enable Auto-Scribe'}
+                {isRecordingEnabled ? 'AUTO-SCRIBE ACTIVE — Recording' : 'Enable Auto-Scribe'}
               </LinearText>
             </View>
             {isTranscribing && (
@@ -1230,7 +1233,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
   },
-  hostageEmoji: { fontSize: 28, marginRight: 12 },
   hostageText: { color: n.colors.textSecondary, flex: 1, fontSize: 13, lineHeight: 18 },
 
   timerBox: {
@@ -1289,10 +1291,6 @@ const styles = StyleSheet.create({
     height: 64,
     borderRadius: 32,
     backgroundColor: 'rgba(244, 67, 54, 0.4)',
-  },
-  proofEmoji: {
-    fontSize: 32,
-    zIndex: 1,
   },
   proofTitle: {
     color: n.colors.error,

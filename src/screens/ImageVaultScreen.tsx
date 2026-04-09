@@ -321,7 +321,7 @@ export default function ImageVaultScreen() {
             }
             ListEmptyComponent={
               <View style={styles.empty}>
-                <LinearText style={styles.emptyEmoji}>🖼️</LinearText>
+                <Ionicons name="image-outline" size={64} color={n.colors.textMuted} />
                 <LinearText style={styles.emptyTitle}>No Images Saved</LinearText>
                 <LinearText style={styles.emptySubtitle}>
                   Medical images you save during study sessions will appear here.
@@ -657,8 +657,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 32,
     paddingVertical: 48,
     marginTop: 40,
+    gap: 16,
   },
-  emptyEmoji: { fontSize: 64, marginBottom: 16 },
   emptyTitle: {
     color: n.colors.textPrimary,
     fontSize: 20,

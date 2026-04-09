@@ -2,6 +2,7 @@ import LinearSurface from '../components/primitives/LinearSurface';
 import LinearButton from '../components/primitives/LinearButton';
 import LinearBadge from '../components/primitives/LinearBadge';
 import LinearText from '../components/primitives/LinearText';
+import { Ionicons } from '@expo/vector-icons';
 import {
   View,
   TouchableOpacity,
@@ -243,7 +244,7 @@ export default function MockTestScreen() {
       <SafeAreaView style={styles.safe}>
         <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
         <ResponsiveContainer style={styles.setupContainer}>
-          <LinearText style={styles.setupEmoji}>📝</LinearText>
+          <Ionicons name="document-text-outline" size={64} color={n.colors.textMuted} />
           <LinearText variant="title" centered style={styles.setupTitle}>
             Mock Test
           </LinearText>
@@ -578,8 +579,7 @@ const styles = StyleSheet.create({
   emptyMsg: {
     marginBottom: 32,
   },
-  setupContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 32 },
-  setupEmoji: { fontSize: 56, marginBottom: 16 },
+  setupContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 32, gap: 16 },
   setupTitle: { marginBottom: 8 },
   setupSub: { marginBottom: 40 },
   setupLabel: { marginBottom: 16 },

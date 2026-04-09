@@ -9,6 +9,7 @@ import {
   useWindowDimensions,
   RefreshControl,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import LinearText from '../components/primitives/LinearText';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import Svg, { Rect, Text as SvgText } from 'react-native-svg';
@@ -188,7 +189,7 @@ function StatsScreenContent() {
 
           {stats.totalSessions === 0 ? (
             <LinearSurface padded={false} style={styles.emptyHeroCard}>
-              <LinearText style={styles.emptyHeroEmoji}>📊</LinearText>
+              <Ionicons name="stats-chart-outline" size={48} color={n.colors.textMuted} />
               <LinearText style={styles.emptyHeroTitle}>No study data yet</LinearText>
               <LinearText style={styles.emptyHeroText}>
                 Your first session, lecture capture, or review block will unlock streaks,
@@ -270,7 +271,7 @@ function StatsScreenContent() {
             style={[styles.absoluteCard, { backgroundColor: 'rgba(217,119,6,0.1)' }]}
           >
             <View style={styles.streakRow}>
-              <LinearText style={styles.streakEmoji}>🔥</LinearText>
+              <Ionicons name="flame" size={32} color={n.colors.warning} />
               <View style={{ flex: 1 }}>
                 <LinearText style={[styles.absoluteTitle, { color: n.colors.warning }]}>
                   Current Streak
@@ -288,10 +289,10 @@ function StatsScreenContent() {
             {stats.currentStreak >= 7 && (
               <LinearText style={styles.streakMotivation}>
                 {stats.currentStreak >= 30
-                  ? '🏆 Legendary dedication!'
+                  ? 'Legendary dedication!'
                   : stats.currentStreak >= 14
-                    ? '💪 Two weeks strong!'
-                    : '⭐ One week down!'}
+                    ? 'Two weeks strong!'
+                    : 'One week down!'}
               </LinearText>
             )}
           </LinearSurface>
@@ -401,8 +402,8 @@ function StatsScreenContent() {
                     }}
                   >
                     {stats.projectedCompletionDays <= daysToInicet
-                      ? `✅ On track! ${daysToInicet - stats.projectedCompletionDays} buffer days before INICET`
-                      : `⚠️ Need ${Math.ceil((stats.totalTopics - stats.totalCovered) / daysToInicet)} topics/day to finish before INICET`}
+                      ? `On track! ${daysToInicet - stats.projectedCompletionDays} buffer days before INICET`
+                      : `Need ${Math.ceil((stats.totalTopics - stats.totalCovered) / daysToInicet)} topics/day to finish before INICET`}
                   </LinearText>
                 </LinearSurface>
               )}
@@ -428,7 +429,7 @@ function StatsScreenContent() {
               borderColor="rgba(217,119,6,0.18)"
               style={styles.masteredCard}
             >
-              <LinearText style={styles.masteredEmoji}>🔥</LinearText>
+              <Ionicons name="flame" size={32} color={n.colors.warning} />
               <View style={styles.masteredInfo}>
                 <LinearText style={styles.masteredTitle}>
                   You know {stats.masteredCount} topics cold.
@@ -558,11 +559,6 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     alignItems: 'center',
   },
-  emptyHeroEmoji: {
-    fontSize: 48,
-    textAlign: 'center',
-    marginBottom: 12,
-  },
   emptyHeroTitle: {
     color: n.colors.textPrimary,
     fontSize: 20,
@@ -671,7 +667,6 @@ const styles = StyleSheet.create({
     padding: 20,
     marginBottom: 24,
   },
-  masteredEmoji: { fontSize: 32, marginRight: 16 },
   masteredInfo: { flex: 1 },
   masteredTitle: { color: n.colors.warning, fontSize: 16, fontWeight: '800', marginBottom: 4 },
   masteredSub: { color: n.colors.warning, fontSize: 13, lineHeight: 18 },
@@ -715,8 +710,7 @@ const styles = StyleSheet.create({
   subjectFraction: { color: n.colors.textMuted, fontSize: 11, textAlign: 'right' },
 
   // Streak styles
-  streakRow: { flexDirection: 'row', alignItems: 'center' },
-  streakEmoji: { fontSize: 40, marginRight: 16 },
+  streakRow: { flexDirection: 'row', alignItems: 'center', gap: 16 },
   bestStreakBadge: {
     backgroundColor: 'rgba(217,119,6,0.1)',
     paddingHorizontal: 12,

@@ -13,6 +13,7 @@ import { linearTheme as n } from '../theme/linearTheme';
 import { ResponsiveContainer } from '../hooks/useResponsive';
 import LinearButton from '../components/primitives/LinearButton';
 import LinearSurface from '../components/primitives/LinearSurface';
+import { Ionicons } from '@expo/vector-icons';
 
 const HARASSMENT_INTERVAL = 5 * 60 * 1000; // Every 5 minutes
 const GUILT_CHECK_INTERVAL = 60 * 1000; // Check every minute
@@ -225,7 +226,10 @@ export default function PunishmentMode() {
       <SafeAreaView style={styles.safe}>
         <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
         <ResponsiveContainer style={styles.minimizedContainer}>
-          <LinearText style={styles.minimizedText}>😴 Punishment Mode Snoozed</LinearText>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 20 }}>
+            <Ionicons name="moon-outline" size={20} color={n.colors.textMuted} />
+            <LinearText style={styles.minimizedText}>Punishment Mode Snoozed</LinearText>
+          </View>
           <TouchableOpacity style={styles.wakeBtn} onPress={() => setShowGuiltScreen(true)}>
             <LinearText style={styles.wakeBtnText}>Wake Me Up</LinearText>
           </TouchableOpacity>
@@ -282,24 +286,32 @@ export default function PunishmentMode() {
             variant="glassTinted"
             style={styles.studyBtn}
             onPress={handleStartStudying}
-            label="📚 START STUDYING NOW"
+            label="START STUDYING NOW"
             textStyle={{ color: currentMessage.color }}
+            leftIcon={<Ionicons name="book-outline" size={18} color={currentMessage.color} />}
           />
 
           <LinearButton
             variant="glass"
             style={styles.quickWinBtn}
             onPress={handleQuickWin}
-            label="🎯 Just One Card (Easy)"
+            label="Just One Card (Easy)"
+            leftIcon={<Ionicons name="flag-outline" size={18} color={n.colors.accent} />}
           />
 
           <View style={styles.bottomRow}>
             <TouchableOpacity style={styles.snoozeBtn} onPress={handleSnooze}>
-              <LinearText style={styles.snoozeBtnText}>😴 Snooze 10min</LinearText>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                <Ionicons name="moon-outline" size={16} color={n.colors.textMuted} />
+                <LinearText style={styles.snoozeBtnText}>Snooze 10min</LinearText>
+              </View>
             </TouchableOpacity>
 
             <TouchableOpacity style={styles.disableBtn} onPress={handleDisable}>
-              <LinearText style={styles.disableBtnText}>❌ Reduce Intensity</LinearText>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                <Ionicons name="close-outline" size={16} color={n.colors.error} />
+                <LinearText style={styles.disableBtnText}>Reduce Intensity</LinearText>
+              </View>
             </TouchableOpacity>
           </View>
 
@@ -410,7 +422,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     padding: n.spacing.xl,
   },
-  minimizedText: { color: n.colors.textMuted, fontSize: 16, marginBottom: 20 },
+  minimizedText: { color: n.colors.textMuted, fontSize: 16 },
   wakeBtn: {
     backgroundColor: n.colors.accent,
     paddingHorizontal: n.spacing.xl,

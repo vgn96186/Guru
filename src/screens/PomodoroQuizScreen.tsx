@@ -19,6 +19,7 @@ import { MarkdownRender } from '../components/MarkdownRender';
 import { linearTheme as n } from '../theme/linearTheme';
 import LinearSurface from '../components/primitives/LinearSurface';
 import { emphasizeHighYieldMarkdown } from '../utils/highlightMarkdown';
+import { Ionicons } from '@expo/vector-icons';
 
 type Nav = NativeStackNavigationProp<RootStackParamList, 'PomodoroQuiz'>;
 type QuizRoute = RouteProp<RootStackParamList, 'PomodoroQuiz'>;
@@ -151,7 +152,12 @@ export default function PomodoroQuizScreen() {
       <SafeAreaView style={styles.safe}>
         <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
         <View style={styles.center}>
-          <LinearText style={styles.emoji}>🧠</LinearText>
+          <Ionicons
+            name="hardware-chip-outline"
+            size={64}
+            color={n.colors.accent}
+            style={{ marginBottom: 16 }}
+          />
           <LinearText style={styles.title}>Break Complete</LinearText>
           <LinearText style={styles.sub}>
             {isExternalLectureMode
@@ -258,9 +264,23 @@ export default function PomodoroQuizScreen() {
           <View
             style={[styles.feedback, isCorrect ? styles.feedbackCorrect : styles.feedbackWrong]}
           >
-            <LinearText style={styles.feedbackLabel}>
-              {isCorrect ? '✅ Correct!' : '❌ Incorrect'}
-            </LinearText>
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
+              {isCorrect ? (
+                <Ionicons name="checkmark-circle" size={16} color={n.colors.success} />
+              ) : (
+                <Ionicons name="close-circle" size={16} color={n.colors.error} />
+              )}
+              <LinearText
+                style={{
+                  marginLeft: 6,
+                  fontWeight: '800',
+                  fontSize: 16,
+                  color: n.colors.textPrimary,
+                }}
+              >
+                {isCorrect ? 'Correct!' : 'Incorrect'}
+              </LinearText>
+            </View>
             <View style={{ marginTop: 12 }}>
               <MarkdownRender content={emphasizeHighYieldMarkdown(question.explanation)} compact />
             </View>

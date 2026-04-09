@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { View, StyleSheet, TouchableOpacity, Animated, StatusBar } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import LinearText from '../components/primitives/LinearText';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
@@ -139,7 +140,7 @@ export default function WakeUpScreen() {
                 Step {PHASE_LABELS[phase].step} of {PHASE_LABELS[phase].total}
               </LinearText>
             </View>
-            <LinearText style={styles.emoji}>🌱</LinearText>
+            <Ionicons name="leaf-outline" size={64} color={n.colors.textMuted} />
             <LinearText style={styles.title}>Grounding</LinearText>
             <LinearText style={styles.groundText}>{groundingPrompts[groundStep]}</LinearText>
 
@@ -173,13 +174,13 @@ export default function WakeUpScreen() {
                 Step {PHASE_LABELS[phase].step} of {PHASE_LABELS[phase].total}
               </LinearText>
             </View>
-            <LinearText style={styles.emoji}>🧠</LinearText>
+            <Ionicons name="hardware-chip-outline" size={64} color={n.colors.textMuted} />
             <LinearText style={styles.title}>How is the brain fog today?</LinearText>
 
             <View style={styles.fogGrid}>
               <TouchableOpacity onPress={() => handleFogCheck('clear')}>
                 <LinearSurface padded={false} style={styles.fogBtn}>
-                  <LinearText style={styles.fogBtnEmoji}>☀️</LinearText>
+                  <Ionicons name="sunny-outline" size={32} color={n.colors.textPrimary} />
                   <LinearText style={styles.fogBtnText}>Actually Okay</LinearText>
                   <LinearText style={styles.fogBtnSub}>Ready to start</LinearText>
                 </LinearSurface>
@@ -187,7 +188,7 @@ export default function WakeUpScreen() {
 
               <TouchableOpacity onPress={() => handleFogCheck('hazy')}>
                 <LinearSurface padded={false} style={styles.fogBtn}>
-                  <LinearText style={styles.fogBtnEmoji}>🌥️</LinearText>
+                  <Ionicons name="partly-sunny-outline" size={32} color={n.colors.textPrimary} />
                   <LinearText style={styles.fogBtnText}>A Bit Hazy</LinearText>
                   <LinearText style={styles.fogBtnSub}>Need a slow start</LinearText>
                 </LinearSurface>
@@ -195,7 +196,7 @@ export default function WakeUpScreen() {
 
               <TouchableOpacity onPress={() => handleFogCheck('foggy')}>
                 <LinearSurface padded={false} style={styles.fogBtn}>
-                  <LinearText style={styles.fogBtnEmoji}>☁️</LinearText>
+                  <Ionicons name="cloud-outline" size={32} color={n.colors.textPrimary} />
                   <LinearText style={styles.fogBtnText}>Very Foggy</LinearText>
                   <LinearText style={styles.fogBtnSub}>Hard to think</LinearText>
                 </LinearSurface>
@@ -214,7 +215,6 @@ const styles = StyleSheet.create({
   centerBox: { alignItems: 'center' },
   progressRow: { flexDirection: 'row', justifyContent: 'center', marginBottom: 20 },
   progressText: { color: n.colors.accent, fontSize: 14, fontWeight: '700' },
-  emoji: { fontSize: 64, marginBottom: 20 },
   title: {
     color: n.colors.textPrimary,
     fontSize: 24,
@@ -274,8 +274,8 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 16,
   },
-  fogBtnEmoji: { fontSize: 32, marginRight: 16 },
   fogBtnText: { color: n.colors.textPrimary, fontSize: 16, fontWeight: '700', flex: 1 },
   fogBtnSub: { color: n.colors.textMuted, fontSize: 12 },
 });

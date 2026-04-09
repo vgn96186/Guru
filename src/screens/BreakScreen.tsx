@@ -15,6 +15,7 @@ import { useAppStore } from '../store/useAppStore';
 import { linearTheme as n } from '../theme/linearTheme';
 import { ResponsiveContainer } from '../hooks/useResponsive';
 import { confirmDestructive } from '../components/dialogService';
+import { Ionicons } from '@expo/vector-icons';
 
 interface Props {
   countdown: number;
@@ -211,11 +212,25 @@ export default function BreakScreen({
               );
             })}
             {selected !== null && (
-              <LinearText variant="bodySmall" tone="secondary" centered style={styles.result}>
-                {selected === quizQuestion.correct
-                  ? '✅ Correct! +20 XP'
-                  : `❌ Answer: Option ${quizQuestion.correct + 1}`}
-              </LinearText>
+              <View
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  marginTop: 8,
+                }}
+              >
+                {selected === quizQuestion.correct ? (
+                  <Ionicons name="checkmark-circle" size={14} color={n.colors.success} />
+                ) : (
+                  <Ionicons name="close-circle" size={14} color={n.colors.error} />
+                )}
+                <LinearText variant="bodySmall" tone="secondary" style={{ marginLeft: 4 }}>
+                  {selected === quizQuestion.correct
+                    ? 'Correct! +20 XP'
+                    : `Answer: Option ${quizQuestion.correct + 1}`}
+                </LinearText>
+              </View>
             )}
           </LinearSurface>
         )}

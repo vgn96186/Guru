@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, TouchableOpacity, ScrollView, TextInput, StyleSheet, StatusBar } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute } from '@react-navigation/native';
@@ -127,7 +128,7 @@ export default function ManualLogScreen() {
                 style={[styles.appBtn, selectedAppId === app.id && styles.appBtnActive]}
                 onPress={() => setSelectedAppId(app.id)}
               >
-                <LinearText style={styles.appIcon}>{app.iconEmoji}</LinearText>
+                <Ionicons name={app.iconName as any} size={24} color={app.color} />
                 <LinearText
                   variant="chip"
                   style={[styles.appName, selectedAppId === app.id && styles.appNameActive]}
@@ -289,7 +290,6 @@ const styles = StyleSheet.create({
     borderColor: n.colors.accent,
     backgroundColor: n.colors.primaryTintSoft,
   },
-  appIcon: { fontSize: 24, marginBottom: 4 },
   appName: { color: n.colors.textSecondary, fontSize: 11, fontWeight: '600' },
   appNameActive: { color: n.colors.textPrimary },
   subjectScroll: { flexDirection: 'row', marginBottom: 20 },

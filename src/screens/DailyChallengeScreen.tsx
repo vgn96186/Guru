@@ -8,6 +8,7 @@ import {
   Animated,
   ActivityIndicator,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -226,9 +227,11 @@ export default function DailyChallengeScreen() {
         <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
         <ResponsiveContainer>
           <View style={styles.doneContainer}>
-            <LinearText style={styles.doneEmoji}>
-              {pct >= 80 ? '🏆' : pct >= 60 ? '⭐' : '📚'}
-            </LinearText>
+            <Ionicons
+              name={pct >= 80 ? 'trophy-outline' : pct >= 60 ? 'star-outline' : 'book-outline'}
+              size={72}
+              color={n.colors.textMuted}
+            />
             <LinearText variant="title" centered style={styles.doneGrade}>
               {grade}
             </LinearText>
@@ -393,7 +396,12 @@ export default function DailyChallengeScreen() {
             <LinearSurface padded={false} style={styles.feedbackCard}>
               <TouchableOpacity onPress={handleNextQuestion} activeOpacity={0.8}>
                 <LinearText variant="bodySmall" style={styles.feedbackLabel}>
-                  {isCorrect ? '✅ Correct!' : '❌ Wrong'}{' '}
+                  {isCorrect ? (
+                    <Ionicons name="checkmark-circle" size={14} color={n.colors.success} />
+                  ) : (
+                    <Ionicons name="close-circle" size={14} color={n.colors.error} />
+                  )}{' '}
+                  {isCorrect ? 'Correct!' : 'Wrong'}{' '}
                   <LinearText variant="caption" tone="muted" style={{ fontWeight: '500' }}>
                     Tap to continue ➔
                   </LinearText>
@@ -462,8 +470,7 @@ const styles = StyleSheet.create({
   feedbackCorrect: {},
   feedbackWrong: {},
   feedbackLabel: { marginBottom: 4 },
-  doneContainer: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32 },
-  doneEmoji: { fontSize: 72, marginBottom: 16 },
+  doneContainer: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32, gap: 16 },
   doneGrade: { marginBottom: 8 },
   doneScore: { marginBottom: 24 },
   xpBadge: {

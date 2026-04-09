@@ -20,6 +20,7 @@ import LinearButton from '../components/primitives/LinearButton';
 import LinearSurface from '../components/primitives/LinearSurface';
 import LinearTextInput from '../components/primitives/LinearTextInput';
 import LinearText from '../components/primitives/LinearText';
+import { Ionicons } from '@expo/vector-icons';
 
 export default function DeviceLinkScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<MenuStackParamList>>();
@@ -59,7 +60,12 @@ export default function DeviceLinkScreen() {
             subtitle="Keep your phone and lecture device tied to the same study session."
             onBackPress={() => navigation.navigate('MenuHome')}
           />
-          <LinearText style={styles.emoji}>📡</LinearText>
+          <Ionicons
+            name="sync-outline"
+            size={56}
+            color={n.colors.accent}
+            style={{ marginBottom: 16 }}
+          />
           <LinearText style={styles.sub}>
             Watch lectures on your tablet and keep this phone synced as a hostage/remote control.
           </LinearText>
@@ -89,7 +95,10 @@ export default function DeviceLinkScreen() {
               borderColor={n.colors.error}
               style={styles.warningBox}
             >
-              <LinearText style={styles.warningText}>⚠️ SECURITY WARNING</LinearText>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+                <Ionicons name="warning-outline" size={16} color={n.colors.error} />
+                <LinearText style={styles.warningText}>SECURITY WARNING</LinearText>
+              </View>
               <LinearText style={styles.warningSubText}>
                 Sync uses a public MQTT broker for low-latency connection. Do not share this code or
                 discuss sensitive info.

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { View, TouchableOpacity, StyleSheet, StatusBar, Animated, ScrollView } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import LinearText from '../components/primitives/LinearText';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
@@ -168,7 +169,7 @@ export default function BossBattleScreen() {
     return (
       <SafeAreaView style={styles.safe}>
         <View style={styles.center}>
-          <LinearText style={styles.emoji}>⚔️</LinearText>
+          <Ionicons name="shield-outline" size={64} color={n.colors.warning} />
           <LinearText style={styles.title}>Generating Questions...</LinearText>
           <LinearText style={styles.sub}>Preparing the boss fight...</LinearText>
         </View>
@@ -220,7 +221,7 @@ export default function BossBattleScreen() {
     return (
       <SafeAreaView style={styles.safe}>
         <View style={styles.center}>
-          <LinearText style={styles.emoji}>🏆</LinearText>
+          <Ionicons name="trophy-outline" size={64} color={n.colors.accent} />
           <LinearText style={styles.title}>BOSS DEFEATED!</LinearText>
           <LinearText style={styles.sub}>You conquered {selectedSubject}!</LinearText>
           <LinearText style={styles.xp}>+500 XP</LinearText>
@@ -236,7 +237,7 @@ export default function BossBattleScreen() {
     return (
       <SafeAreaView style={styles.safe}>
         <View style={styles.center}>
-          <LinearText style={styles.emoji}>💀</LinearText>
+          <Ionicons name="skull-outline" size={64} color={n.colors.error} />
           <LinearText style={styles.title}>YOU DIED</LinearText>
           <LinearText style={styles.sub}>The {selectedSubject} boss was too strong.</LinearText>
           <TouchableOpacity
@@ -272,7 +273,11 @@ export default function BossBattleScreen() {
           </View>
 
           <View style={styles.playerStats}>
-            <LinearText style={styles.hearts}>{'❤️'.repeat(playerHp)}</LinearText>
+            <View style={styles.heartsRow}>
+              {Array.from({ length: playerHp }).map((_, i) => (
+                <Ionicons key={i} name="heart" size={20} color={n.colors.error} />
+              ))}
+            </View>
           </View>
         </View>
 
@@ -354,8 +359,7 @@ const styles = StyleSheet.create({
   subjectName: { fontWeight: '800', fontSize: 14, textAlign: 'center' },
   qBadge: { color: n.colors.textSecondary, fontSize: 11, fontWeight: '700', marginTop: 4 },
   qHint: { color: n.colors.warning, fontSize: 10, marginTop: 2, textAlign: 'center' },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 32 },
-  emoji: { fontSize: 80, marginBottom: 20 },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 32, gap: 16 },
   sub: { color: n.colors.textMuted, fontSize: 16, textAlign: 'center', marginBottom: 20 },
   xp: { color: n.colors.warning, fontSize: 24, fontWeight: '900', marginBottom: 40 },
   btn: {
@@ -392,7 +396,7 @@ const styles = StyleSheet.create({
   hpFill: { height: '100%', backgroundColor: n.colors.error },
   hpText: { color: n.colors.textPrimary, fontSize: 11, position: 'absolute', right: 4, top: 20 },
   playerStats: { alignItems: 'flex-end' },
-  hearts: { fontSize: 24 },
+  heartsRow: { flexDirection: 'row', gap: 4 },
   qContainer: { padding: 20, paddingBottom: 40 },
   qText: {
     color: n.colors.textPrimary,

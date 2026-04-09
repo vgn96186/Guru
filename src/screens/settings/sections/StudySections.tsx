@@ -1,5 +1,6 @@
 import React from 'react';
 import { Switch, TouchableOpacity, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import SettingsLabel from '../components/SettingsLabel';
 import LinearTextInput from '../../../components/primitives/LinearTextInput';
 import LinearText from '../../../components/primitives/LinearText';
@@ -134,9 +135,12 @@ export default function StudySections(props: any) {
         />
         <View style={[styles.switchRow, { marginTop: 16 }]}>
           <View style={{ flex: 1, paddingRight: 8 }}>
-            <LinearText style={styles.switchLabel} variant="label">
-              Strict Mode 👮
-            </LinearText>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+              <Ionicons name="shield-checkmark" size={16} color={linearTheme.colors.error} />
+              <LinearText style={styles.switchLabel} variant="label">
+                Strict Mode
+              </LinearText>
+            </View>
             <LinearText style={styles.hint} variant="body" tone="muted">
               Nag you instantly if you leave the app or are idle. Idle time won't count towards
               session duration.

@@ -864,7 +864,7 @@ export default function NotesVaultScreen() {
           {/* List */}
           {visibleNotes.length === 0 ? (
             <View style={styles.empty}>
-              <LinearText style={styles.emptyEmoji}>📝</LinearText>
+              <Ionicons name="document-text-outline" size={64} color={n.colors.textMuted} />
               <LinearText style={styles.emptyTitle}>No Notes Yet</LinearText>
               <LinearText style={styles.emptySubtitle}>
                 Study a topic or import a lecture to create notes.
@@ -1454,8 +1454,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     padding: 48,
     marginTop: 40,
+    gap: 16,
   },
-  emptyEmoji: { fontSize: 64, marginBottom: 16 },
   emptyTitle: {
     color: n.colors.textPrimary,
     fontSize: 20,

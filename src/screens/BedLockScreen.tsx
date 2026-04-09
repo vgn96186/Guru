@@ -8,6 +8,7 @@ import {
   Vibration,
   ActivityIndicator,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { Accelerometer } from 'expo-sensors';
 import LinearText from '../components/primitives/LinearText';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -168,7 +169,7 @@ export default function BedLockScreen() {
       <SafeAreaView style={styles.safe}>
         <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
         <ResponsiveContainer style={styles.center}>
-          <LinearText style={styles.shameEmoji}>😴</LinearText>
+          <Ionicons name="moon-outline" size={64} color={n.colors.textMuted} />
           <LinearText style={styles.shameTitle}>You're Lying Down</LinearText>
           <LinearText style={styles.shameSub}>
             {shameCount > 3
@@ -186,7 +187,8 @@ export default function BedLockScreen() {
           </LinearText>
 
           <TouchableOpacity style={styles.situpBtn} onPress={handleStartSitUp}>
-            <LinearText style={styles.situpBtnText}>📱 I'm Sitting Up Now</LinearText>
+            <Ionicons name="phone-portrait-outline" size={18} color="#fff" />
+            <LinearText style={styles.situpBtnText}>I'm Sitting Up Now</LinearText>
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.cheatBtn} onPress={handleForceUnlock}>
@@ -203,7 +205,7 @@ export default function BedLockScreen() {
         <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
         <ResponsiveContainer style={{ flex: 1 }}>
           <Animated.View style={[styles.center, { transform: [{ translateX: shakeAnim }] }]}>
-            <LinearText style={styles.progressEmoji}>💪</LinearText>
+            <Ionicons name="fitness-outline" size={64} color={n.colors.accent} />
             <LinearText style={styles.progressTitle}>Keep Sitting Up!</LinearText>
             <LinearText style={styles.progressSub}>Hold phone upright to unlock</LinearText>
 
@@ -227,7 +229,7 @@ export default function BedLockScreen() {
     return (
       <SafeAreaView style={styles.safe}>
         <ResponsiveContainer style={styles.center}>
-          <LinearText style={styles.unlockedEmoji}>🎉</LinearText>
+          <Ionicons name="sparkles-outline" size={64} color={n.colors.accent} />
           <LinearText style={styles.unlockedTitle}>You're Upright!</LinearText>
           <LinearText style={styles.unlockedSub}>
             The hardest part is done. Now let's study.
@@ -274,8 +276,6 @@ const styles = StyleSheet.create({
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32 },
 
   detectingText: { color: n.colors.textMuted, fontSize: 16, marginTop: 20 },
-
-  shameEmoji: { fontSize: 80, marginBottom: 20 },
   shameTitle: {
     color: n.colors.error,
     fontSize: 28,
@@ -316,13 +316,15 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     minWidth: 250,
     alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 10,
   },
   situpBtnText: { color: n.colors.textPrimary, fontSize: 18, fontWeight: '800' },
 
   cheatBtn: { padding: 16 },
   cheatBtnText: { color: n.colors.textMuted, fontSize: 14, textDecorationLine: 'underline' },
 
-  progressEmoji: { fontSize: 56, marginBottom: 16 },
   progressTitle: { color: n.colors.textPrimary, fontSize: 24, fontWeight: '800', marginBottom: 8 },
   progressSub: { color: n.colors.textMuted, fontSize: 14, marginBottom: 40 },
 
@@ -343,7 +345,6 @@ const styles = StyleSheet.create({
 
   encouragement: { color: n.colors.success, fontSize: 16, fontWeight: '600', marginTop: 20 },
 
-  unlockedEmoji: { fontSize: 72, marginBottom: 20 },
   unlockedTitle: { color: n.colors.success, fontSize: 32, fontWeight: '900', marginBottom: 12 },
   unlockedSub: {
     color: n.colors.textMuted,

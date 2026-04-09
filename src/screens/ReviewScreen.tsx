@@ -29,6 +29,7 @@ import { MarkdownRender } from '../components/MarkdownRender';
 import { linearTheme as n } from '../theme/linearTheme';
 import { ResponsiveContainer } from '../hooks/useResponsive';
 import { emphasizeHighYieldMarkdown } from '../utils/highlightMarkdown';
+import { Ionicons } from '@expo/vector-icons';
 
 // Spaced Repetition Ratings
 const RATINGS = [
@@ -38,10 +39,10 @@ const RATINGS = [
   { label: 'Easy', days: 14, confidence: 4, color: n.colors.accent },
 ];
 
-const CONTENT_CHIPS: { type: ContentType; label: string; icon: string }[] = [
-  { type: 'keypoints', label: 'Keypoints', icon: '📋' },
-  { type: 'quiz', label: 'Quiz', icon: '❓' },
-  { type: 'mnemonic', label: 'Mnemonic', icon: '🧠' },
+const CONTENT_CHIPS: { type: ContentType; label: string; icon: string; ionicon?: string }[] = [
+  { type: 'keypoints', label: 'Keypoints', icon: '📋', ionicon: 'list-outline' },
+  { type: 'quiz', label: 'Quiz', icon: '❓', ionicon: 'help-circle-outline' },
+  { type: 'mnemonic', label: 'Mnemonic', icon: '🧠', ionicon: 'hardware-chip-outline' },
 ];
 
 function getAutoContentType(confidence: number): ContentType {
@@ -223,7 +224,12 @@ export default function ReviewScreen() {
     return (
       <SafeAreaView style={styles.safe}>
         <ResponsiveContainer style={styles.center}>
-          <LinearText style={styles.emoji}>🎉</LinearText>
+          <Ionicons
+            name="checkmark-circle-outline"
+            size={60}
+            color={n.colors.success}
+            style={{ marginBottom: 20 }}
+          />
           <LinearText variant="title" centered style={styles.title}>
             All caught up!
           </LinearText>
@@ -330,11 +336,17 @@ export default function ReviewScreen() {
                   }}
                   activeOpacity={0.8}
                 >
+                  <Ionicons
+                    name={(chip.ionicon || 'list-outline') as any}
+                    size={12}
+                    color={isActive ? n.colors.textPrimary : n.colors.textMuted}
+                    style={{ marginRight: 4 }}
+                  />
                   <LinearText
                     variant="caption"
                     style={[styles.chipText, isActive && styles.chipTextActive]}
                   >
-                    {chip.icon} {chip.label}
+                    {chip.label}
                   </LinearText>
                   {isAuto && (
                     <LinearText variant="badge" tone="accent" style={styles.autoBadge}>
@@ -467,9 +479,12 @@ function renderBackContent(content: AIContent | null) {
           </LinearText>
         ))}
         {content.memoryHook ? (
-          <LinearText variant="bodySmall" tone="warning" style={styles.hook}>
-            💡 {content.memoryHook}
-          </LinearText>
+          <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 6, marginTop: 12 }}>
+            <Ionicons name="bulb-outline" size={14} color={n.colors.warning} />
+            <LinearText variant="bodySmall" tone="warning" style={[styles.hook, { marginTop: 0 }]}>
+              {content.memoryHook}
+            </LinearText>
+          </View>
         ) : null}
       </View>
     );
@@ -490,9 +505,12 @@ function renderBackContent(content: AIContent | null) {
           </LinearText>
         ))}
         {content.tip ? (
-          <LinearText variant="bodySmall" tone="warning" style={styles.hook}>
-            💡 {content.tip}
-          </LinearText>
+          <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 6, marginTop: 12 }}>
+            <Ionicons name="bulb-outline" size={14} color={n.colors.warning} />
+            <LinearText variant="bodySmall" tone="warning" style={[styles.hook, { marginTop: 0 }]}>
+              {content.tip}
+            </LinearText>
+          </View>
         ) : null}
       </View>
     );

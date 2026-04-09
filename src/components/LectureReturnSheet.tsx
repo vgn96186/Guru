@@ -617,7 +617,12 @@ export default function LectureReturnSheet(props: Props) {
                             },
                           ]}
                         >
-                          {selected === q.correctIndex ? '✅ Correct!' : '❌ Incorrect'}
+                          {selected === q.correctIndex ? (
+                            <Ionicons name="checkmark-circle" size={16} color={n.colors.success} />
+                          ) : (
+                            <Ionicons name="close-circle" size={16} color={n.colors.error} />
+                          )}{' '}
+                          {selected === q.correctIndex ? 'Correct!' : 'Incorrect'}
                         </Text>
                         <MarkdownRender content={q.explanation} compact />
                       </View>
@@ -719,13 +724,33 @@ export default function LectureReturnSheet(props: Props) {
                           : 'Mark as studied and take quick quiz'
                     }
                   >
-                    <Text style={styles.primaryBtnText}>
-                      {isSaving
-                        ? 'Saving lecture summary'
-                        : quizLoading
-                          ? 'Loading Quiz'
-                          : '🧠 Mark as Studied + Quick Quiz'}
-                    </Text>
+                    {isSaving ? (
+                      <Text style={styles.primaryBtnText}>
+                        {isSaving
+                          ? 'Saving lecture summary'
+                          : quizLoading
+                            ? 'Loading Quiz'
+                            : 'Mark as Studied + Quick Quiz'}
+                      </Text>
+                    ) : (
+                      <View
+                        style={{
+                          flexDirection: 'row',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                        }}
+                      >
+                        <Ionicons
+                          name="hardware-chip-outline"
+                          size={18}
+                          color={n.colors.textPrimary}
+                          style={{ marginRight: 6 }}
+                        />
+                        <Text style={styles.primaryBtnText}>
+                          {quizLoading ? 'Loading Quiz' : 'Mark as Studied + Quick Quiz'}
+                        </Text>
+                      </View>
+                    )}
                   </TouchableOpacity>
                   <TouchableOpacity
                     style={styles.outlineBtn}

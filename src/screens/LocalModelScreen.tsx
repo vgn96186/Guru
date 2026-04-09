@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, StatusBar, ScrollView } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as FileSystem from 'expo-file-system/legacy';
 import { useAppStore } from '../store/useAppStore';
@@ -365,7 +366,9 @@ export default function LocalModelScreen() {
                     variant="glassTinted"
                     style={styles.downloadBtn}
                     onPress={() => handleDownload(model, 'llm')}
-                    leftIcon={<LinearText style={styles.buttonEmoji}>✅</LinearText>}
+                    leftIcon={
+                      <Ionicons name="checkmark-circle" size={18} color={n.colors.success} />
+                    }
                   />
                 ) : (
                   <LinearButton
@@ -373,7 +376,7 @@ export default function LocalModelScreen() {
                     style={styles.downloadBtn}
                     variant="primary"
                     onPress={() => handleDownload(model, 'llm')}
-                    leftIcon={<LinearText style={styles.buttonEmoji}>⬇️</LinearText>}
+                    leftIcon={<Ionicons name="arrow-down-outline" size={18} color="#fff" />}
                   />
                 )}
               </LinearSurface>
@@ -450,7 +453,9 @@ export default function LocalModelScreen() {
                     variant="glassTinted"
                     style={styles.downloadBtn}
                     onPress={() => handleDownload(model, 'whisper')}
-                    leftIcon={<LinearText style={styles.buttonEmoji}>✅</LinearText>}
+                    leftIcon={
+                      <Ionicons name="checkmark-circle" size={18} color={n.colors.success} />
+                    }
                   />
                 ) : (
                   <LinearButton
@@ -458,7 +463,7 @@ export default function LocalModelScreen() {
                     style={styles.downloadBtn}
                     variant="primary"
                     onPress={() => handleDownload(model, 'whisper')}
-                    leftIcon={<LinearText style={styles.buttonEmoji}>⬇️</LinearText>}
+                    leftIcon={<Ionicons name="arrow-down-outline" size={18} color="#fff" />}
                   />
                 )}
               </LinearSurface>
@@ -493,7 +498,6 @@ const styles = StyleSheet.create({
   modelName: { marginBottom: 6 },
   modelDesc: { marginBottom: 20 },
   downloadBtn: { borderRadius: 10 },
-  buttonEmoji: { fontSize: 14 },
   downloadBox: { marginTop: 10 },
   progressText: { marginBottom: 8 },
   progressBarBg: {

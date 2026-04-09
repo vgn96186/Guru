@@ -6,9 +6,9 @@ export interface ExternalApp {
   id: string;
   name: string;
   packageName: string; // Android package name
-  webUrl: string;      // Fallback or App Link trigger
+  webUrl: string; // Fallback or App Link trigger
   customScheme?: string; // Custom scheme if known (e.g. marrow://)
-  iconEmoji: string;
+  iconName: string; // Ionicons icon name
   color: string;
 }
 
@@ -19,7 +19,7 @@ export const EXTERNAL_APPS: ExternalApp[] = [
     packageName: 'com.cerebellummobileapp',
     webUrl: 'https://cerebellumacademy.com',
     customScheme: 'cerebellum://',
-    iconEmoji: '🧠',
+    iconName: 'hardware-chip-outline',
     color: '#E91E63',
   },
   {
@@ -28,7 +28,7 @@ export const EXTERNAL_APPS: ExternalApp[] = [
     packageName: 'one.dbmci',
     webUrl: 'https://dbmci.one',
     customScheme: 'dbmci://',
-    iconEmoji: '🩺',
+    iconName: 'medical-outline',
     color: '#2196F3',
   },
   {
@@ -37,7 +37,7 @@ export const EXTERNAL_APPS: ExternalApp[] = [
     packageName: 'com.marrow',
     webUrl: 'https://www.marrow.com',
     customScheme: 'marrow://',
-    iconEmoji: '💊',
+    iconName: 'bone-outline',
     color: '#00BCD4',
   },
   {
@@ -46,7 +46,7 @@ export const EXTERNAL_APPS: ExternalApp[] = [
     packageName: 'com.prepladder.learningapp',
     webUrl: 'https://www.prepladder.com',
     customScheme: 'prepladder://',
-    iconEmoji: '🪜',
+    iconName: 'arrow-up-circle-outline',
     color: '#FFC107',
   },
   {
@@ -54,7 +54,7 @@ export const EXTERNAL_APPS: ExternalApp[] = [
     name: 'Dr. Bhatia',
     packageName: 'com.dbmci.bhatia',
     webUrl: 'https://www.dbmci.com',
-    iconEmoji: '👨‍⚕️',
+    iconName: 'medical-outline',
     color: '#4CAF50',
   },
   {
@@ -63,7 +63,7 @@ export const EXTERNAL_APPS: ExternalApp[] = [
     packageName: 'com.google.android.youtube',
     webUrl: 'https://www.youtube.com',
     customScheme: 'vnd.youtube://',
-    iconEmoji: '▶️',
+    iconName: 'play-circle-outline',
     color: '#FF0000',
   },
 ];

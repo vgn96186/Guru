@@ -980,7 +980,7 @@ export default function TranscriptVaultScreen() {
             </View>
           ) : files.length === 0 ? (
             <View style={styles.emptyState}>
-              <LinearText style={styles.emptyEmoji}>🎙️</LinearText>
+              <Ionicons name="mic-outline" size={64} color={n.colors.textMuted} />
               <LinearText style={styles.emptyTitle}>No Transcripts Yet</LinearText>
               <LinearText style={styles.emptySubtitle}>
                 Record or upload a lecture to get started.
@@ -1145,8 +1145,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     padding: 48,
     marginTop: 40,
+    gap: 16,
   },
-  emptyEmoji: { fontSize: 64, marginBottom: 16 },
   emptyTitle: {
     color: n.colors.textPrimary,
     fontSize: 20,

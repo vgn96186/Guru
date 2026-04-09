@@ -17,11 +17,12 @@ import { useAppStore } from '../store/useAppStore';
 import { ResponsiveContainer } from '../hooks/useResponsive';
 import { linearTheme as n } from '../theme/linearTheme';
 import type { HarassmentTone } from '../types';
+import { Ionicons } from '@expo/vector-icons';
 
 const TONE_OPTIONS: { tone: HarassmentTone; icon: string; label: string }[] = [
   { tone: 'shame', icon: '😈', label: 'Shame' },
   { tone: 'motivational', icon: '💪', label: 'Motivational' },
-  { tone: 'tough_love', icon: '🎯', label: 'Tough Love' },
+  { tone: 'tough_love', icon: '', label: 'Tough Love' },
 ];
 
 export default function DoomscrollGuideScreen() {
@@ -69,7 +70,12 @@ export default function DoomscrollGuideScreen() {
       <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
       <ScrollView contentContainerStyle={styles.container}>
         <ResponsiveContainer style={{ alignItems: 'center' }}>
-          <LinearText style={styles.emoji}>📱</LinearText>
+          <Ionicons
+            name="phone-portrait-outline"
+            size={56}
+            color={n.colors.error}
+            style={{ marginBottom: 16 }}
+          />
           <LinearText style={styles.title}>The Ultimate Fix</LinearText>
           <LinearText style={styles.sub}>
             If your brain refuses to open this app when you're procrastinating, you need to force
@@ -99,7 +105,16 @@ export default function DoomscrollGuideScreen() {
                   accessibilityLabel={`Notification tone: ${opt.label}`}
                   accessibilityState={{ selected: selectedTone === opt.tone }}
                 >
-                  <LinearText style={styles.toneIcon}>{opt.icon}</LinearText>
+                  {opt.tone === 'tough_love' || !opt.icon ? (
+                    <Ionicons
+                      name="flag-outline"
+                      size={20}
+                      color={selectedTone === opt.tone ? n.colors.accent : n.colors.textMuted}
+                      style={{ marginBottom: 4 }}
+                    />
+                  ) : (
+                    <LinearText style={styles.toneIcon}>{opt.icon}</LinearText>
+                  )}
                   <LinearText
                     style={[
                       styles.toneBtnText,

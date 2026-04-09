@@ -119,7 +119,8 @@ export default function AccountSections(props: any) {
             variant="body"
             style={[
               styles.hint,
-              fetchDatesMsg.startsWith('✅')
+              fetchDatesMsg.toLowerCase().includes('success') ||
+              fetchDatesMsg.toLowerCase().includes('updated')
                 ? { color: linearTheme.colors.success }
                 : { color: linearTheme.colors.error },
             ]}

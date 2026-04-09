@@ -9,6 +9,7 @@ import {
   Dimensions,
   Image,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -248,7 +249,7 @@ export default function InertiaScreen() {
         <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
         <ResponsiveContainer style={{ flex: 1 }}>
           <Animated.View style={[styles.center, { opacity: fadeAnim }]}>
-            <LinearText style={styles.sitUpEmoji}>🕵️</LinearText>
+            <Ionicons name="search-outline" size={64} color={n.colors.textMuted} />
             <LinearText variant="display" centered style={styles.sitUpTitle}>
               One Minute Mystery
             </LinearText>
@@ -257,19 +258,23 @@ export default function InertiaScreen() {
             </LinearText>
             <View style={styles.choiceBox}>
               <LinearButton
-                label="📱 I'm Ready (Sit Up)"
+                label="I'm Ready (Sit Up)"
                 variant="primary"
                 style={styles.sitUpBtn}
                 onPress={handlePositionConfirm}
+                leftIcon={
+                  <Ionicons name="phone-portrait-outline" size={18} color={n.colors.textPrimary} />
+                }
               />
               <LinearText variant="caption" tone="muted" style={styles.orText}>
                 or
               </LinearText>
               <LinearButton
-                label="🛏️ Play from Bed (Lazy Mode)"
+                label="Play from Bed (Lazy Mode)"
                 variant="glass"
                 style={styles.bedBtn}
                 onPress={() => setPhase('micro_win_bed')}
+                leftIcon={<Ionicons name="bed-outline" size={18} color={n.colors.textSecondary} />}
               />
             </View>
           </Animated.View>
@@ -340,7 +345,7 @@ export default function InertiaScreen() {
         <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
         <ResponsiveContainer style={{ flex: 1 }}>
           <Animated.View style={[styles.center, { opacity: fadeAnim }]}>
-            <LinearText style={styles.emoji}>🔥</LinearText>
+            <Ionicons name="flame" size={64} color={n.colors.warning} />
             <LinearText variant="title" style={styles.pivotTitle}>
               Brain Sparked!
             </LinearText>
@@ -353,10 +358,11 @@ export default function InertiaScreen() {
               </LinearText>
             </LinearSurface>
             <LinearButton
-              label="🚀 Start 5-Min Sprint"
+              label="Start 5-Min Sprint"
               variant="primary"
               style={styles.sprintBtn}
               onPress={handleStartSprint}
+              leftIcon={<Ionicons name="rocket-outline" size={18} color={n.colors.textPrimary} />}
             />
             <TouchableOpacity style={styles.closeBtn} onPress={handleClose}>
               <LinearText variant="bodySmall" tone="muted" style={styles.closeBtnText}>
@@ -427,7 +433,6 @@ const styles = StyleSheet.create({
   },
   skipBtnText: { color: n.colors.textMuted, fontSize: 14, fontWeight: '600' },
 
-  emoji: { fontSize: 64, marginBottom: 20 },
   winTitle: {
     color: n.colors.accent,
     fontSize: 14,
@@ -542,7 +547,6 @@ const styles = StyleSheet.create({
   closeBtn: { padding: 16 },
   closeBtnText: { color: n.colors.textMuted, fontSize: 16, fontWeight: '600' },
 
-  sitUpEmoji: { fontSize: 64, marginBottom: 20 },
   sitUpTitle: {
     color: n.colors.textPrimary,
     fontSize: 28,

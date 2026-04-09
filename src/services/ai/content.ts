@@ -6,12 +6,17 @@ import type {
   SaveQuestionInput,
   FlashcardsContent,
 } from '../../types';
-import { SYSTEM_PROMPT, CONTENT_PROMPT_MAP, buildEscalatingQuizPrompt } from '../../constants/prompts';
+import {
+  SYSTEM_PROMPT,
+  CONTENT_PROMPT_MAP,
+  buildEscalatingQuizPrompt,
+} from '../../constants/prompts';
 import { getCachedContent, setCachedContent } from '../../db/queries/aiCache';
 import { saveBulkQuestions } from '../../db/queries/questionBank';
 import type { Message } from './types';
 import { AIContentSchema } from './schemas';
 import { generateJSONWithRouting } from './generate';
+import { scheduleBackgroundFactCheck } from './medicalFactCheck';
 import {
   searchMedicalImages,
   generateVisualSearchQueries,
@@ -229,10 +234,7 @@ export async function fetchContent(
     let groundingBlock = '';
     if (contentType === 'quiz' || contentType === 'keypoints' || contentType === 'must_know') {
       try {
-        const sources = await searchLatestMedicalSources(
-          `${topic.name} ${topic.subjectName}`,
-          4,
-        );
+        const sources = await searchLatestMedicalSources(`${topic.name} ${topic.subjectName}`, 4);
         if (sources.length > 0) {
           groundingBlock =
             `\n\nSUPPLEMENTARY REFERENCES (use only to verify clinical accuracy — do not copy verbatim):\n` +
@@ -321,6 +323,9 @@ export async function fetchContent(
 
     await setCachedContent(topic.id, contentType, contentWithMeta, modelUsed);
 
+    // Trigger background fact-check (non-blocking — user doesn't wait)
+    scheduleBackgroundFactCheck(topic.id, contentType, contentWithMeta, topic.subjectName);
+
     if (contentWithMeta.type === 'quiz') {
       const quiz = contentWithMeta as QuizContent;
       const inputs: SaveQuestionInput[] = quiz.questions.map((q) => ({
@@ -354,64 +359,63 @@ const IMAGE_VISUAL_TYPES =
   'image|imaging study|photograph|micrograph|radiograph|X-ray|CT scan|MRI|ECG|histology|slide|smear|specimen|scan|film';
 
 function stripImageFramingFromStem(text: string): string {
-  return text
-    // "Based on / Referring to / Looking at / In the <type> (shown|provided|above|…)"
-    .replace(
-      new RegExp(
-        `\\b(Based on|Referring to|Looking at|In|From|Examining) the (${IMAGE_VISUAL_TYPES}) (shown|displayed|provided|above|below|here|given)[.,]?\\s*`,
-        'gi',
-      ),
-      '',
-    )
-    // "Based on the provided / given <type>"
-    .replace(
-      new RegExp(
-        `\\b(Based on|Referring to|Looking at|In) the (provided|given|following) (${IMAGE_VISUAL_TYPES})[.,]?\\s*`,
-        'gi',
-      ),
-      '',
-    )
-    // "The following <type> demonstrates / shows / reveals"
-    .replace(
-      new RegExp(
-        `The following (${IMAGE_VISUAL_TYPES}) (demonstrates|shows|reveals|depicts|illustrates)[.:]?\\s*`,
-        'gi',
-      ),
-      '',
-    )
-    // "As shown in / As seen in / As depicted in the <type>"
-    .replace(
-      new RegExp(
-        `As (shown|seen|depicted|demonstrated|illustrated) in the (${IMAGE_VISUAL_TYPES})[.,]?\\s*`,
-        'gi',
-      ),
-      '',
-    )
-    // "The image / The X-ray / The ECG shows / reveals"
-    .replace(
-      new RegExp(
-        `The (${IMAGE_VISUAL_TYPES}) (shows|reveals|demonstrates|depicts|illustrates)[.:]?\\s*`,
-        'gi',
-      ),
-      '',
-    )
-    // "Consider the following <type>"
-    .replace(
-      new RegExp(`Consider the following (${IMAGE_VISUAL_TYPES})[.:]?\\s*`, 'gi'),
-      '',
-    )
-    // "A <type> of this patient shows / reveals"
-    .replace(
-      new RegExp(
-        `A (${IMAGE_VISUAL_TYPES}) (of this patient|of the patient)? ?(shows|reveals|demonstrates|depicts)[.:]?\\s*`,
-        'gi',
-      ),
-      '',
-    )
-    // Trim any leading punctuation/whitespace left after stripping
-    .replace(/^\s*[,.:;]\s*/, '')
-    // Capitalize first letter if stripping lowercased the question start
-    .replace(/^([a-z])/, (c) => c.toUpperCase());
+  return (
+    text
+      // "Based on / Referring to / Looking at / In the <type> (shown|provided|above|…)"
+      .replace(
+        new RegExp(
+          `\\b(Based on|Referring to|Looking at|In|From|Examining) the (${IMAGE_VISUAL_TYPES}) (shown|displayed|provided|above|below|here|given)[.,]?\\s*`,
+          'gi',
+        ),
+        '',
+      )
+      // "Based on the provided / given <type>"
+      .replace(
+        new RegExp(
+          `\\b(Based on|Referring to|Looking at|In) the (provided|given|following) (${IMAGE_VISUAL_TYPES})[.,]?\\s*`,
+          'gi',
+        ),
+        '',
+      )
+      // "The following <type> demonstrates / shows / reveals"
+      .replace(
+        new RegExp(
+          `The following (${IMAGE_VISUAL_TYPES}) (demonstrates|shows|reveals|depicts|illustrates)[.:]?\\s*`,
+          'gi',
+        ),
+        '',
+      )
+      // "As shown in / As seen in / As depicted in the <type>"
+      .replace(
+        new RegExp(
+          `As (shown|seen|depicted|demonstrated|illustrated) in the (${IMAGE_VISUAL_TYPES})[.,]?\\s*`,
+          'gi',
+        ),
+        '',
+      )
+      // "The image / The X-ray / The ECG shows / reveals"
+      .replace(
+        new RegExp(
+          `The (${IMAGE_VISUAL_TYPES}) (shows|reveals|demonstrates|depicts|illustrates)[.:]?\\s*`,
+          'gi',
+        ),
+        '',
+      )
+      // "Consider the following <type>"
+      .replace(new RegExp(`Consider the following (${IMAGE_VISUAL_TYPES})[.:]?\\s*`, 'gi'), '')
+      // "A <type> of this patient shows / reveals"
+      .replace(
+        new RegExp(
+          `A (${IMAGE_VISUAL_TYPES}) (of this patient|of the patient)? ?(shows|reveals|demonstrates|depicts)[.:]?\\s*`,
+          'gi',
+        ),
+        '',
+      )
+      // Trim any leading punctuation/whitespace left after stripping
+      .replace(/^\s*[,.:;]\s*/, '')
+      // Capitalize first letter if stripping lowercased the question start
+      .replace(/^([a-z])/, (c) => c.toUpperCase())
+  );
 }
 
 /**

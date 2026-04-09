@@ -49,9 +49,6 @@ const DRUG_CLASSES = {
     'chloroquine',
     'primaquine',
     'quinine',
-    'metformin',
-    'glimepiride',
-    'glibenclamide',
   ],
   cardiovascular: [
     'amlodipine',
@@ -121,6 +118,9 @@ const DRUG_CLASSES = {
     'glipizide',
     'pioglitazone',
     'sitagliptin',
+    'metformin',
+    'glimepiride',
+    'glibenclamide',
   ],
   other: [
     'omeprazole',
@@ -151,7 +151,7 @@ const ALL_DRUGS = [
 export const DRUG_REGEX = new RegExp(`\\b(${ALL_DRUGS.join('|')})\\b`, 'gi');
 
 export const DISEASE_REGEX =
-  /\b(malaria|tuberculosis|diabetes|hypertension|pneumonia|meningitis|hepatitis|typhoid|dengue|cholera|hiv|aids|cancer|carcinoma|leukemia|lymphoma|anemia|asthma|copd|heart failure|myocardial infarction|stroke|sepsis|appendicitis|cholecystitis|pancreatitis|cirrhosis|nephrotic|nephritic|thyroid|hyperthyroidism|hypothyroidism)\b/gi;
+  /\b(malaria|tuberculosis|diabetes|hypertension|pneumonia|meningitis|hepatitis|typhoid|dengue|cholera|hiv|aids|cancer|carcinoma|leukemia|lymphoma|anemia|asthma|copd|heart failure|myocardial infarction|stroke|sepsis|appendicitis|cholecystitis|pancreatitis|cirrhosis|nephrotic|nephritic|thyroid|hyperthyroidism|hypothyroidism|migraine|epilepsy|schizophrenia|depression|osteoporosis|gout|rheumatoid|psoriasis|glaucoma|cataract|sinusitis|endometriosis|pcos)\b/gi;
 
 export const DOSAGE_REGEX =
   /\b(\d+\.?\d*)\s*(mg|ml|mcg|μg|g|units|IU|mmol|meq|micrograms|milligrams|grams)\b/gi;
@@ -164,6 +164,15 @@ export function extractSentences(text: string): string[] {
     .split(/[.!?]+/)
     .map((s) => s.trim())
     .filter((s) => s.length > 10);
+}
+
+export function extractMedicalEntities(text: string) {
+  return {
+    drugs: (text.match(DRUG_REGEX) ?? []).map((d) => d.toLowerCase()),
+    diseases: (text.match(DISEASE_REGEX) ?? []).map((d) => d.toLowerCase()),
+    dosages: (text.match(DOSAGE_REGEX) ?? []).map((d) => d.trim()),
+    procedures: (text.match(PROCEDURE_REGEX) ?? []).map((p) => p.toLowerCase()),
+  };
 }
 
 export function extractClaims(

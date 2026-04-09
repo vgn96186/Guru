@@ -16,6 +16,7 @@ import {
 } from 'react-native';
 import LinearText from '../components/primitives/LinearText';
 import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
 import type {
   AIContent,
   KeyPointsContent,
@@ -2649,7 +2650,31 @@ const s = StyleSheet.create({
     fontWeight: '800' as const,
     fontSize: 16,
   },
+  flashcardRatingRow: {
+    flexDirection: 'row',
+    gap: 6,
+    width: '100%',
+  },
+  flashcardRatingBtn: {
+    flex: 1,
+    height: 44,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  flashcardRatingText: {
+    fontWeight: '800' as const,
+    fontSize: 13,
+  },
 });
+
+const FLASHCARD_RATINGS = [
+  { label: 'Again', confidence: 0, color: n.colors.error },
+  { label: 'Hard', confidence: 1, color: n.colors.warning },
+  { label: 'Good', confidence: 2, color: n.colors.success },
+  { label: 'Easy', confidence: 3, color: n.colors.accent },
+];
 
 function FlashcardCard({
   content,
@@ -2663,6 +2688,20 @@ function FlashcardCard({
   const [cardIdx, setCardIdx] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
 
+  if (content.cards.length === 0) {
+    return (
+      <View style={s.flashcardContainer}>
+        <Ionicons name="alert-circle-outline" size={48} color={n.colors.textMuted} />
+        <LinearText style={s.flashcardEmpty} variant="body" tone="muted">
+          AI generated 0 flashcards for this topic.
+        </LinearText>
+        <TouchableOpacity style={s.flashcardDoneBtn} onPress={() => onSkip()}>
+          <LinearText style={s.flashcardDoneText}>Skip</LinearText>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
   const card = content.cards[cardIdx];
   if (!card) {
     return (
@@ -2671,7 +2710,7 @@ function FlashcardCard({
         <LinearText style={s.flashcardEmpty} variant="body" tone="muted">
           No flashcards available
         </LinearText>
-        <TouchableOpacity style={s.flashcardDoneBtn} onPress={() => onDone(2)}>
+        <TouchableOpacity style={s.flashcardDoneBtn} onPress={() => onSkip()}>
           <LinearText style={s.flashcardDoneText}>Skip</LinearText>
         </TouchableOpacity>
       </View>
@@ -2680,19 +2719,34 @@ function FlashcardCard({
 
   const isLastCard = cardIdx === content.cards.length - 1;
 
+  function handleFlip() {
+    setIsFlipped((prev) => !prev);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+  }
+
+  function handleNext() {
+    setCardIdx((i) => i + 1);
+    setIsFlipped(false);
+  }
+
+  function handleRate(confidence: number) {
+    Haptics.notificationAsync(
+      confidence === 0
+        ? Haptics.NotificationFeedbackType.Error
+        : Haptics.NotificationFeedbackType.Success,
+    );
+    onDone(confidence);
+  }
+
   return (
     <View style={s.flashcardContainer}>
       <View style={s.flashcardHeader}>
         <LinearText variant="chip" tone="muted">
-          Card {cardIdx + 1}/{content.cards.length}
+          {content.topicName} · Card {cardIdx + 1}/{content.cards.length}
         </LinearText>
       </View>
 
-      <TouchableOpacity
-        style={s.flashcardBody}
-        onPress={() => setIsFlipped(!isFlipped)}
-        activeOpacity={0.7}
-      >
+      <TouchableOpacity style={s.flashcardBody} onPress={handleFlip} activeOpacity={0.7}>
         <LinearText style={s.flashcardLabel}>{isFlipped ? 'ANSWER' : 'QUESTION'}</LinearText>
         {card.imageUrl && !isFlipped && <QuestionImage url={card.imageUrl} />}
         <LinearText style={s.flashcardText} variant="body">
@@ -2705,21 +2759,28 @@ function FlashcardCard({
 
       <View style={s.flashcardActions}>
         {!isFlipped ? (
-          <TouchableOpacity style={s.flashcardFlipBtn} onPress={() => setIsFlipped(true)}>
+          <TouchableOpacity style={s.flashcardFlipBtn} onPress={handleFlip}>
             <LinearText style={s.flashcardFlipText}>Reveal Answer</LinearText>
           </TouchableOpacity>
         ) : isLastCard ? (
-          <TouchableOpacity style={s.flashcardDoneBtn} onPress={() => onDone(2)}>
-            <LinearText style={s.flashcardDoneText}>Done</LinearText>
-          </TouchableOpacity>
+          <View style={s.flashcardRatingRow}>
+            {FLASHCARD_RATINGS.map((r) => (
+              <TouchableOpacity
+                key={r.label}
+                style={[
+                  s.flashcardRatingBtn,
+                  { backgroundColor: r.color + '22', borderColor: r.color },
+                ]}
+                onPress={() => handleRate(r.confidence)}
+              >
+                <LinearText style={[s.flashcardRatingText, { color: r.color }]}>
+                  {r.label}
+                </LinearText>
+              </TouchableOpacity>
+            ))}
+          </View>
         ) : (
-          <TouchableOpacity
-            style={s.flashcardNextBtn}
-            onPress={() => {
-              setCardIdx((i) => i + 1);
-              setIsFlipped(false);
-            }}
-          >
+          <TouchableOpacity style={s.flashcardNextBtn} onPress={handleNext}>
             <LinearText style={s.flashcardNextText}>Next Card →</LinearText>
           </TouchableOpacity>
         )}

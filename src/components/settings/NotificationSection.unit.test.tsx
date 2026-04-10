@@ -71,9 +71,9 @@ describe('NotificationSection', () => {
   it('applies active styling to the current frequency button text', () => {
     const { getByText } = render(<NotificationSection {...defaultProps} frequency="frequent" />);
     const activeText = getByText('Frequent');
-    // StyleSheet is mocked to return the object itself, and flatten is mocked to merge them.
-    // In RNTL, we can check the props.style of the rendered component.
-    expect(activeText.props.style).toContainEqual({ color: '#5E6AD2', fontWeight: '700' });
+    // Styles may be nested arrays; flatten before checking
+    const flatStyle = [activeText.props.style].flat(Infinity);
+    expect(flatStyle).toContainEqual({ color: '#5E6AD2', fontWeight: '700' });
   });
 
   it('uses number-pad keyboard for hour input', () => {

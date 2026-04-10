@@ -18,23 +18,25 @@ describe('StudyPreferencesSection', () => {
   });
 
   it('renders correctly with default props', () => {
-    const { getByText, UNSAFE_getAllByType } = render(<StudyPreferencesSection {...defaultProps} />);
-    
-    expect(getByText('Strict Mode 👮')).toBeTruthy();
+    const { getByText, UNSAFE_getAllByType } = render(
+      <StudyPreferencesSection {...defaultProps} />,
+    );
+
+    expect(getByText('Strict Mode')).toBeTruthy();
     expect(getByText('Nag you instantly if you leave the app or are idle.')).toBeTruthy();
-    
-    expect(getByText('Visual Timers 🍅')).toBeTruthy();
+
+    expect(getByText('Visual Timers')).toBeTruthy();
     expect(getByText('Circular timers during breaks instead of plain text.')).toBeTruthy();
-    
+
     expect(getByText('Guru presence (Body Doubling)')).toBeTruthy();
     expect(getByText('Ambient messages and pulsing dot while you study.')).toBeTruthy();
 
     const switches = UNSAFE_getAllByType(Switch);
     expect(switches).toHaveLength(3);
-    
+
     // Check initial values
     expect(switches[0].props.value).toBe(false); // strictMode
-    expect(switches[1].props.value).toBe(true);  // visualTimers
+    expect(switches[1].props.value).toBe(true); // visualTimers
     expect(switches[2].props.value).toBe(false); // bodyDoubling
   });
 

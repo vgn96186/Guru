@@ -20,7 +20,7 @@ describe('ProfileSection', () => {
     );
 
     expect(getByDisplayValue('John Doe')).toBeTruthy();
-    expect(getByText('📱 Link Another Device (Sync)')).toBeTruthy();
+    expect(getByText('Link Another Device (Sync)')).toBeTruthy();
     expect(queryByText(/Tablet Sync is currently unavailable/)).toBeNull();
   });
 
@@ -33,7 +33,7 @@ describe('ProfileSection', () => {
 
   it('triggers onLinkDevice when Link button is pressed and sync is available', () => {
     const { getByText } = render(<ProfileSection {...defaultProps} />);
-    fireEvent.press(getByText('📱 Link Another Device (Sync)'));
+    fireEvent.press(getByText('Link Another Device (Sync)'));
     expect(defaultProps.onLinkDevice).toHaveBeenCalledTimes(1);
   });
 
@@ -54,9 +54,9 @@ describe('ProfileSection', () => {
     );
 
     const linkBtn = getByLabelText('Link another device for sync');
-    const linkBtnText = getByText('📱 Link Another Device (Sync)');
+    const linkBtnText = getByText('Link Another Device (Sync)');
 
-    expect(linkBtn.props.style).toContainEqual({ opacity: 0.5 });
-    expect(linkBtnText.props.style).toContainEqual({ color: '#A0A0A5' });
+    expect([linkBtn.props.style].flat(Infinity)).toContainEqual({ opacity: 0.5 });
+    expect([linkBtnText.props.style].flat(Infinity)).toContainEqual({ color: '#A0A0A5' });
   });
 });

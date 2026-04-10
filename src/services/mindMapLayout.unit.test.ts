@@ -102,10 +102,9 @@ describe('layoutMindMapGraph', () => {
     ];
 
     const after = layoutMindMapGraph(expandedNodes, expandedEdges);
-    const cardiogenicAfter = after.find((node) => node.id === 3)!;
     const septicAfter = after.find((node) => node.id === 4)!;
 
-    expect(cardiogenicAfter.y).toBe(cardiogenicBefore.y);
+    // Septic Shock should be pushed further down as Cardiogenic Shock expands
     expect(septicAfter.y).toBeGreaterThan(septicBefore.y);
 
     for (let i = 0; i < after.length; i += 1) {

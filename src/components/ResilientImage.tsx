@@ -62,9 +62,6 @@ export function ResilientImage({
   const retryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const safeUri = typeof uri === 'string' ? uri.trim() : '';
-  if (!safeUri || !/^https?:\/\//i.test(safeUri)) {
-    return null;
-  }
 
   const handleLoad = useCallback(() => {
     attemptsRef.current = 0;
@@ -91,6 +88,10 @@ export function ResilientImage({
     setStatus('loading');
     setRetryKey((k) => k + 1);
   }, []);
+
+  if (!safeUri || !/^https?:\/\//i.test(safeUri)) {
+    return null;
+  }
 
   const imageSource = {
     uri: safeUri,

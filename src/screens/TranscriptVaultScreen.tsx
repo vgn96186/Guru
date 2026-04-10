@@ -44,10 +44,12 @@ import {
   showSuccess,
   showError,
   showWarning,
-  showInfo,
 } from '../components/dialogService';
 import { ResponsiveContainer } from '../hooks/useResponsive';
 import { linearTheme as n } from '../theme/linearTheme';
+import { whiteAlpha, transcriptBlueBorderAlpha } from '../theme/colorUtils';
+import { EmptyState } from '../components/primitives';
+import LoadingOrb from '../components/LoadingOrb';
 import ScreenHeader from '../components/ScreenHeader';
 import LinearButton from '../components/primitives/LinearButton';
 import LinearSurface from '../components/primitives/LinearSurface';
@@ -171,7 +173,12 @@ function slugifyLabel(value: string): string {
 
 function buildNewFileName(subject: string, topic: string, timestamp: number): string {
   const d = new Date(timestamp);
-  const dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}_${String(d.getHours()).padStart(2, '0')}${String(d.getMinutes()).padStart(2, '0')}`;
+  const dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(
+    d.getDate(),
+  ).padStart(2, '0')}_${String(d.getHours()).padStart(2, '0')}${String(d.getMinutes()).padStart(
+    2,
+    '0',
+  )}`;
   return `${slugifyLabel(subject)}_${slugifyLabel(topic)}_transcript_${dateStr}.txt`;
 }
 
@@ -216,7 +223,11 @@ function displayName(fileName: string, extractedTitle?: string): string {
         .replace(/\b\w/g, (c) => c.toUpperCase());
       const ts = parseInt(oldMatch[2], 10);
       const d = new Date(ts);
-      datePart = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+      datePart = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(
+        d.getDate(),
+      ).padStart(2, '0')} ${String(d.getHours()).padStart(2, '0')}:${String(
+        d.getMinutes(),
+      ).padStart(2, '0')}`;
     }
   }
 
@@ -541,7 +552,10 @@ export default function TranscriptVaultScreen() {
     async (item: TranscriptFile) => {
       const ok = await confirm(
         'Process to Notes?',
-        `AI will analyze this transcript and create a study note.\n\n${displayName(item.name, item.extractedTitle)}`,
+        `AI will analyze this transcript and create a study note.\n\n${displayName(
+          item.name,
+          item.extractedTitle,
+        )}`,
         { confirmLabel: 'Process' },
       );
       if (ok) {
@@ -664,7 +678,9 @@ export default function TranscriptVaultScreen() {
       void loadFiles();
       showSuccess(
         'Done',
-        `Renamed ${renamed} file${renamed !== 1 ? 's' : ''}${failed > 0 ? ` (${failed} failed)` : ''}.`,
+        `Renamed ${renamed} file${renamed !== 1 ? 's' : ''}${
+          failed > 0 ? ` (${failed} failed)` : ''
+        }.`,
       );
     }
   }, [renamableFiles, loadFiles]);
@@ -695,6 +711,21 @@ export default function TranscriptVaultScreen() {
     else copy.sort((a, b) => b.name.localeCompare(a.name));
     return copy;
   }, [files, sortBy]);
+  const junkFiles = React.useMemo(() => files.filter((f) => f.wordCount < 10), [files]);
+  const processableCount = React.useMemo(
+    () => files.filter((f) => f.wordCount >= 10).length,
+    [files],
+  );
+  const currentSortLabel = sortBy === 'words' ? 'Shortest first' : 'Newest first';
+  const summaryCards = React.useMemo(
+    () => [
+      { label: 'Transcripts', value: files.length.toString(), tone: 'primary' as const },
+      { label: 'Ready', value: processableCount.toString(), tone: 'success' as const },
+      { label: 'Duplicates', value: duplicatePaths.size.toString(), tone: 'warning' as const },
+      { label: 'Rename', value: renamableFiles.length.toString(), tone: 'accent' as const },
+    ],
+    [duplicatePaths.size, files.length, processableCount, renamableFiles.length],
+  );
 
   const renderItem = ({ item }: { item: TranscriptFile }) => {
     const isSelected = selectedPaths.has(item.path);
@@ -786,57 +817,122 @@ export default function TranscriptVaultScreen() {
             }
           />
 
-          <View style={styles.topActions}>
-            <LinearButton
-              variant="glass"
-              style={styles.topActionBtn}
-              onPress={() => navigation.navigate('ManualNoteCreation' as never)}
-              leftIcon={<Ionicons name="clipboard-outline" size={18} color={n.colors.error} />}
-              label="Paste Transcript"
-            />
-            <LinearButton
-              variant="glass"
-              style={[styles.topActionBtn, isImportingText && styles.topActionBtnDisabled]}
-              onPress={() => void handleUploadText()}
-              disabled={isImportingText}
-              leftIcon={
-                isImportingText ? (
-                  <ActivityIndicator size="small" color={n.colors.accent} />
-                ) : (
-                  <Ionicons name="document-attach-outline" size={18} color={n.colors.accent} />
-                )
-              }
-              label={isImportingText ? 'Importing…' : 'Upload Text'}
-            />
-          </View>
+          {!loading && (
+            <LinearSurface compact style={styles.summaryCard}>
+              <View style={styles.summaryHeader}>
+                <View style={styles.summaryCopy}>
+                  <LinearText variant="meta" tone="accent" style={styles.summaryEyebrow}>
+                    TRANSCRIPT LIBRARY
+                  </LinearText>
+                  <LinearText variant="sectionTitle" style={styles.summaryTitle}>
+                    Raw transcript files ready for cleanup and note creation
+                  </LinearText>
+                  <LinearText variant="bodySmall" tone="secondary" style={styles.summaryText}>
+                    Import text, batch process transcript backups, and keep the vault tidy before
+                    study notes are generated.
+                  </LinearText>
+                </View>
+                <View style={styles.summaryPill}>
+                  <LinearText variant="chip" tone={needsFileAccess ? 'warning' : 'accent'}>
+                    {needsFileAccess ? 'Access needed' : currentSortLabel}
+                  </LinearText>
+                </View>
+              </View>
+              <View style={styles.summaryMetricsRow}>
+                {summaryCards.map((card) => (
+                  <View key={card.label} style={styles.summaryMetricCard}>
+                    <LinearText variant="title" tone={card.tone} style={styles.summaryMetricValue}>
+                      {card.value}
+                    </LinearText>
+                    <LinearText
+                      variant="caption"
+                      tone="secondary"
+                      style={styles.summaryMetricLabel}
+                    >
+                      {card.label}
+                    </LinearText>
+                  </View>
+                ))}
+              </View>
+            </LinearSurface>
+          )}
+
+          <LinearSurface compact style={styles.toolbarCard}>
+            <View style={styles.toolbarHeader}>
+              <View style={styles.toolbarCopy}>
+                <LinearText variant="label" tone="secondary" style={styles.toolbarTitle}>
+                  {isSelectionMode
+                    ? `${selectedPaths.size} transcript${
+                        selectedPaths.size !== 1 ? 's' : ''
+                      } selected`
+                    : 'Import or paste transcript text'}
+                </LinearText>
+                <LinearText variant="bodySmall" tone="secondary" style={styles.toolbarSubtitle}>
+                  {isSelectionMode
+                    ? 'Batch process or delete the selected transcripts.'
+                    : `${processableCount} ready for notes - ${currentSortLabel}`}
+                </LinearText>
+              </View>
+              {!isSelectionMode && (
+                <View style={styles.toolbarPill}>
+                  <LinearText variant="chip" tone="accent">
+                    {files.length} files
+                  </LinearText>
+                </View>
+              )}
+            </View>
+
+            <View style={styles.topActions}>
+              <LinearButton
+                variant="glass"
+                style={styles.topActionBtn}
+                onPress={() => navigation.navigate('ManualNoteCreation' as never)}
+                leftIcon={<Ionicons name="clipboard-outline" size={18} color={n.colors.error} />}
+                label="Paste Transcript"
+              />
+              <LinearButton
+                variant="glass"
+                style={[styles.topActionBtn, isImportingText && styles.topActionBtnDisabled]}
+                onPress={() => void handleUploadText()}
+                disabled={isImportingText}
+                leftIcon={
+                  isImportingText ? (
+                    <ActivityIndicator size="small" color={n.colors.accent} />
+                  ) : (
+                    <Ionicons name="document-attach-outline" size={18} color={n.colors.accent} />
+                  )
+                }
+                label={isImportingText ? 'Importing…' : 'Upload Text'}
+              />
+            </View>
+          </LinearSurface>
 
           {/* Cleanup junk banner */}
-          {!isSelectionMode && files.filter((f) => f.wordCount < 10).length > 0 && (
+          {!isSelectionMode && junkFiles.length > 0 && (
             <TouchableOpacity
               style={styles.cleanupBanner}
               onPress={async () => {
-                const junk = files.filter((f) => f.wordCount < 10);
                 const ok = await confirmDestructive(
-                  `Delete ${junk.length} junk transcript${junk.length !== 1 ? 's' : ''}?`,
+                  `Delete ${junkFiles.length} junk transcript${junkFiles.length !== 1 ? 's' : ''}?`,
                   'This will permanently delete all transcripts with fewer than 10 words.',
                 );
                 if (ok) {
-                  for (const f of junk) {
+                  for (const f of junkFiles) {
                     try {
                       await deleteFile(f.path);
                     } catch {
                       /* skip */
                     }
                   }
-                  const junkPaths = new Set(junk.map((f) => f.path));
+                  const junkPaths = new Set(junkFiles.map((f) => f.path));
                   setFiles((prev) => prev.filter((f) => !junkPaths.has(f.path)));
                 }
               }}
             >
               <Ionicons name="trash-outline" size={16} color={n.colors.error} />
               <LinearText style={styles.cleanupText}>
-                {files.filter((f) => f.wordCount < 10).length} junk transcript
-                {files.filter((f) => f.wordCount < 10).length !== 1 ? 's' : ''} ({'<'}10 words)
+                {junkFiles.length} junk transcript{junkFiles.length !== 1 ? 's' : ''} ({'<'}10
+                words)
               </LinearText>
               <LinearText style={styles.cleanupAction}>Clean up</LinearText>
             </TouchableOpacity>
@@ -894,8 +990,9 @@ export default function TranscriptVaultScreen() {
                 );
                 if (ok) {
                   try {
-                    const { cleanupFailedArtifacts } =
-                      await import('../services/lecture/lectureSessionMonitor');
+                    const { cleanupFailedArtifacts } = await import(
+                      '../services/lecture/lectureSessionMonitor'
+                    );
                     const cleaned = await cleanupFailedArtifacts();
                     showSuccess(
                       'Done',
@@ -903,7 +1000,7 @@ export default function TranscriptVaultScreen() {
                         ? `Cleaned up ${cleaned} failed artifact${cleaned !== 1 ? 's' : ''}.`
                         : 'No failed artifacts found.',
                     );
-                  } catch (e) {
+                  } catch {
                     showError('Failed to clean up artifacts.');
                   }
                 }
@@ -975,17 +1072,15 @@ export default function TranscriptVaultScreen() {
 
           {loading ? (
             <View style={styles.center}>
-              <ActivityIndicator size="large" color={n.colors.accent} />
-              <LinearText style={styles.emptyText}>Scanning transcripts...</LinearText>
+              <LoadingOrb message="Scanning transcripts..." size={120} />
             </View>
           ) : files.length === 0 ? (
-            <View style={styles.emptyState}>
-              <Ionicons name="mic-outline" size={64} color={n.colors.textMuted} />
-              <LinearText style={styles.emptyTitle}>No Transcripts Yet</LinearText>
-              <LinearText style={styles.emptySubtitle}>
-                Record or upload a lecture to get started.
-              </LinearText>
-            </View>
+            <EmptyState
+              icon="mic-outline"
+              iconSize={64}
+              title="No Transcripts Yet"
+              subtitle="Record or upload a lecture to get started."
+            />
           ) : (
             <>
               <FlatList
@@ -1067,11 +1162,72 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 8,
   },
+  summaryCard: {
+    gap: 14,
+    marginHorizontal: n.spacing.lg,
+  },
+  summaryHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    gap: 12,
+  },
+  summaryCopy: { flex: 1, gap: 4 },
+  summaryEyebrow: { letterSpacing: 1 },
+  summaryTitle: { maxWidth: 440 },
+  summaryText: { lineHeight: 20, maxWidth: 520 },
+  summaryPill: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: n.radius.full,
+    backgroundColor: n.colors.card,
+    borderWidth: 1,
+    borderColor: n.colors.border,
+  },
+  summaryMetricsRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+  },
+  summaryMetricCard: {
+    flexGrow: 1,
+    minWidth: 120,
+    borderRadius: n.radius.md,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    backgroundColor: n.colors.card,
+    borderWidth: 1,
+    borderColor: n.colors.border,
+    gap: 2,
+  },
+  summaryMetricValue: {},
+  summaryMetricLabel: { fontWeight: '600' },
+  toolbarCard: {
+    gap: 10,
+    marginHorizontal: n.spacing.lg,
+    marginTop: 12,
+  },
+  toolbarHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    gap: 12,
+  },
+  toolbarCopy: { flex: 1, gap: 2 },
+  toolbarTitle: { fontWeight: '700' },
+  toolbarSubtitle: { lineHeight: 19 },
+  toolbarPill: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: n.radius.full,
+    backgroundColor: n.colors.card,
+    borderWidth: 1,
+    borderColor: n.colors.border,
+  },
   topActions: {
     flexDirection: 'row',
     gap: 10,
-    paddingHorizontal: n.spacing.lg,
-    paddingTop: 10,
+    marginTop: 2,
   },
   topActionBtn: {
     flex: 1,
@@ -1088,7 +1244,7 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: 'rgba(130,170,255,0.2)',
+    borderColor: transcriptBlueBorderAlpha['20'],
     backgroundColor: n.colors.accent + '18',
   },
   sortLabel: { color: n.colors.accent, fontSize: 12, fontWeight: '700' },
@@ -1100,7 +1256,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     borderWidth: 1,
     borderColor: n.colors.border,
-    backgroundColor: 'rgba(255,255,255,0.05)',
+    backgroundColor: whiteAlpha['5'],
   },
   list: { padding: n.spacing.lg, paddingBottom: 40 },
   loadMoreBtn: {

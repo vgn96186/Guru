@@ -1,12 +1,10 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   View,
-  TextInput,
   TouchableOpacity,
   ScrollView,
   StyleSheet,
   StatusBar,
-  Switch,
   ActivityIndicator,
   Linking,
   Platform,
@@ -27,18 +25,15 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import type { MenuStackParamList, RootStackParamList } from '../navigation/types';
 import * as FileSystem from 'expo-file-system/legacy';
-import * as Sharing from 'expo-sharing';
 import * as DocumentPicker from 'expo-document-picker';
 import * as Notifications from 'expo-notifications';
 import { Audio } from 'expo-av';
 import { canDrawOverlays, requestOverlayPermission } from '../../modules/app-launcher';
 import {
-  showDialog,
   showInfo,
   showSuccess,
   showWarning,
   showError,
-  confirm,
   confirmDestructive,
 } from '../components/dialogService';
 import { useAppStore } from '../store/useAppStore';
@@ -53,9 +48,8 @@ import {
   requestNotificationPermissions,
   refreshAccountabilityNotifications,
 } from '../services/notificationService';
-import { getDb, runInTransaction } from '../db/database';
+import { runInTransaction } from '../db/database';
 import { fetchExamDates } from '../services/aiService';
-import { showToast } from '../components/Toast';
 import {
   testGroqConnection,
   testHuggingFaceConnection,
@@ -71,9 +65,7 @@ import {
   testDeepgramConnection,
   testQwenConnection,
 } from '../services/ai/providerHealth';
-import { getQwenAccessToken } from '../services/ai/qwen';
 import type { ChatGptAccountSlot, ContentType, ProviderId, Subject, UserProfile } from '../types';
-import { DEFAULT_PROVIDER_ORDER, PROVIDER_DISPLAY_NAMES } from '../types';
 import { sanitizeProviderOrder } from '../utils/providerOrder';
 import {
   requestDeviceCode,
@@ -91,7 +83,6 @@ import {
   clearTokens as clearGitHubTokens,
   getValidAccessToken as getGitHubCopilotAccessToken,
   VERIFICATION_URL as GITHUB_VERIFICATION_URL,
-  isGitHubCopilotConnected,
   invalidateCopilotSessionToken,
 } from '../services/ai/github';
 import {
@@ -111,17 +102,22 @@ import {
   saveTokens as savePoeTokens,
   clearTokens as clearPoeTokens,
   VERIFICATION_URL as POE_VERIFICATION_URL,
-  isPoeConnected,
 } from '../services/ai/poe';
 import {
   requestDeviceCode as requestQwenDeviceCode,
   pollForToken as pollQwenToken,
   saveQwenTokens,
   clearQwenTokens,
-  loadQwenTokens,
-  isQwenAuthenticated,
+  getQwenAccessToken,
 } from '../services/ai/qwen';
 import { linearTheme as n } from '../theme/linearTheme';
+import {
+  whiteAlpha,
+  blackAlpha,
+  errorAlpha,
+  transcriptBlueAlpha,
+  transcriptBlueBorderAlpha,
+} from '../theme/colorUtils';
 import {
   DEFAULT_HF_TRANSCRIPTION_MODEL,
   DEFAULT_INICET_DATE,
@@ -138,7 +134,6 @@ import { formatGuruChatModelChipLabel } from '../services/ai/guruChatModelPrefer
 import { useLiveGuruChatModels } from '../hooks/useLiveGuruChatModels';
 import { getLocalLlmRamWarning, isLocalLlmAllowedOnThisDevice } from '../services/deviceMemory';
 import ScreenHeader from '../components/ScreenHeader';
-import TranscriptionSettingsPanel from '../components/TranscriptionSettingsPanel';
 import AccountSections from './settings/sections/AccountSections';
 import StudySections from './settings/sections/StudySections';
 import StorageSections from './settings/sections/StorageSections';
@@ -147,12 +142,14 @@ import {
   exportUnifiedBackup,
   importUnifiedBackup,
   runAutoBackup,
-  shouldRunAutoBackup,
   cleanupOldBackups,
   type AutoBackupFrequency,
-  type RestoreOptions,
 } from '../services/unifiedBackupService';
 import { profileRepository } from '../db/repositories';
+
+function hasValue(value: string | null | undefined): boolean {
+  return Boolean(value?.trim());
+}
 
 function sanitizeGithubCopilotPreferredModel(value: string): string {
   const t = value.trim();
@@ -166,21 +163,11 @@ function sanitizeGitlabDuoPreferredModel(value: string): string {
   return (GITLAB_DUO_MODELS as readonly string[]).includes(t) ? t : '';
 }
 
-const ALL_CONTENT_TYPES: { type: ContentType; label: string }[] = [
-  { type: 'keypoints', label: 'Key Points' },
-  { type: 'quiz', label: 'Quiz' },
-  { type: 'story', label: 'Story' },
-  { type: 'mnemonic', label: 'Mnemonic' },
-  { type: 'teach_back', label: 'Teach Back' },
-  { type: 'error_hunt', label: 'Error Hunt' },
-  { type: 'detective', label: 'Detective' },
-];
-
-const BACKUP_VERSION = 1;
 const LOCAL_FILE_ACCESS_PERMISSION =
   PermissionsAndroid.PERMISSIONS.READ_MEDIA_AUDIO ??
   PermissionsAndroid.PERMISSIONS.READ_EXTERNAL_STORAGE;
 
+const BACKUP_VERSION = 1;
 type BackupRow = Record<string, unknown>;
 
 interface AppBackup {
@@ -264,47 +251,13 @@ function sanitizeApiValidationState(value: unknown): ApiValidationState {
   return value as ApiValidationState;
 }
 
-async function exportBackup(): Promise<boolean> {
-  const db = getDb();
-  const [profile, topicProgress, dailyLog, lectureNotes] = await Promise.all([
-    db.getFirstAsync<BackupRow>('SELECT * FROM user_profile WHERE id = 1'),
-    db.getAllAsync<BackupRow>('SELECT * FROM topic_progress'),
-    db.getAllAsync<BackupRow>('SELECT * FROM daily_log ORDER BY date DESC LIMIT 90'),
-    db.getAllAsync<BackupRow>('SELECT * FROM lecture_notes ORDER BY created_at DESC LIMIT 500'),
-  ]);
-
-  const backup: AppBackup = {
-    version: BACKUP_VERSION,
-    exportedAt: new Date().toISOString(),
-    user_profile: profile,
-    topic_progress: topicProgress,
-    daily_log: dailyLog,
-    lecture_notes: lectureNotes,
-  };
-
-  const json = JSON.stringify(backup, null, 2);
-  const dateStr = new Date().toISOString().slice(0, 10);
-  const filePath = `${FileSystem.cacheDirectory}guru_backup_${dateStr}.json`;
-  await FileSystem.writeAsStringAsync(filePath, json);
-
-  if (await Sharing.isAvailableAsync()) {
-    try {
-      await Sharing.shareAsync(filePath, {
-        mimeType: 'application/json',
-        dialogTitle: 'Save Guru Backup',
-      });
-      return true;
-    } catch (e) {
-      // User cancelled sharing
-      return false;
-    }
-  } else {
-    showSuccess('Backup saved', `File written to:\n${filePath}`);
-    return true;
-  }
+function getErrorMessage(error: unknown): string {
+  if (error instanceof Error && error.message) return error.message;
+  if (typeof error === 'string' && error.trim()) return error;
+  return 'Unknown error';
 }
 
-async function importBackup(): Promise<{ ok: boolean; message: string }> {
+async function _importBackup(): Promise<{ ok: boolean; message: string }> {
   const result = await DocumentPicker.getDocumentAsync({
     type: 'application/json',
     copyToCacheDirectory: true,
@@ -492,7 +445,7 @@ export default function SettingsScreen() {
   }) {
     const isExpanded = expandedSections.has(id);
     return (
-      <View>
+      <View style={styles.subSectionPanel}>
         <TouchableOpacity
           style={styles.subSectionHeader}
           onPress={() =>
@@ -505,14 +458,17 @@ export default function SettingsScreen() {
           }
           activeOpacity={0.8}
         >
-          <LinearText style={styles.subSectionLabel}>{title}</LinearText>
+          <View style={styles.subSectionHeaderLeft}>
+            <View style={styles.subSectionAccent} />
+            <LinearText style={styles.subSectionLabel}>{title}</LinearText>
+          </View>
           <Ionicons
             name={isExpanded ? 'chevron-up' : 'chevron-down'}
             size={14}
             color={n.colors.accent}
           />
         </TouchableOpacity>
-        {isExpanded && children}
+        {isExpanded && <View style={styles.subSectionBody}>{children}</View>}
       </View>
     );
   }
@@ -563,8 +519,8 @@ export default function SettingsScreen() {
   const [fetchDatesMsg, setFetchDatesMsg] = useState('');
   const [testingGroqKey, setTestingGroqKey] = useState(false);
   const [groqKeyTestResult, setGroqKeyTestResult] = useState<'ok' | 'fail' | null>(null);
-  const [testingQwenKey, setTestingQwenKey] = useState(false);
-  const [qwenKeyTestResult, setQwenKeyTestResult] = useState<'ok' | 'fail' | null>(null);
+  const [_testingQwenKey, _setTestingQwenKey] = useState(false);
+  const [_qwenKeyTestResult, _setQwenKeyTestResult] = useState<'ok' | 'fail' | null>(null);
   const [githubModelsPat, setGithubModelsPat] = useState('');
   const [testingGithubPat, setTestingGithubPat] = useState(false);
   const [githubPatTestResult, setGithubPatTestResult] = useState<'ok' | 'fail' | null>(null);
@@ -572,8 +528,8 @@ export default function SettingsScreen() {
   const [openRouterKeyTestResult, setOpenRouterKeyTestResult] = useState<'ok' | 'fail' | null>(
     null,
   );
-  const [testingHuggingFaceToken, setTestingHuggingFaceToken] = useState(false);
-  const [huggingFaceTokenTestResult, setHuggingFaceTokenTestResult] = useState<
+  const [_testingHuggingFaceToken, _setTestingHuggingFaceToken] = useState(false);
+  const [_huggingFaceTokenTestResult, _setHuggingFaceTokenTestResult] = useState<
     'ok' | 'fail' | null
   >(null);
   const [geminiKey, setGeminiKey] = useState('');
@@ -592,7 +548,7 @@ export default function SettingsScreen() {
   const [braveSearchKeyTestResult, setBraveSearchKeyTestResult] = useState<'ok' | 'fail' | null>(
     null,
   );
-  const [testingGoogleCustomSearchKey, setTestingGoogleCustomSearchKey] = useState(false);
+  const [_testingGoogleCustomSearchKey, _setTestingGoogleCustomSearchKey] = useState(false);
   const [googleCustomSearchKeyTestResult, setGoogleCustomSearchKeyTestResult] = useState<
     'ok' | 'fail' | null
   >(null);
@@ -619,7 +575,9 @@ export default function SettingsScreen() {
   );
   const [chatgptDeviceCode, setChatgptDeviceCode] = useState<DeviceCodeResponse | null>(null);
   const [githubCopilotConnecting, setGithubCopilotConnecting] = useState(false);
-  const [githubCopilotDeviceCode, setGithubCopilotDeviceCode] = useState<any>(null);
+  const [githubCopilotDeviceCode, setGithubCopilotDeviceCode] = useState<Awaited<
+    ReturnType<typeof requestGitHubDeviceCode>
+  > | null>(null);
   const [githubCopilotConnected, setGithubCopilotConnected] = useState(false);
   const [githubCopilotPreferredModel, setGithubCopilotPreferredModel] = useState('');
   const [gitlabDuoPreferredModel, setGitlabDuoPreferredModel] = useState('');
@@ -640,10 +598,14 @@ export default function SettingsScreen() {
     null,
   );
   const [poeConnecting, setPoeConnecting] = useState(false);
-  const [poeDeviceCode, setPoeDeviceCode] = useState<any>(null);
+  const [poeDeviceCode, setPoeDeviceCode] = useState<Awaited<
+    ReturnType<typeof requestPoeDeviceCode>
+  > | null>(null);
   const [poeConnected, setPoeConnected] = useState(false);
   const [qwenConnecting, setQwenConnecting] = useState(false);
-  const [qwenDeviceCode, setQwenDeviceCode] = useState<any>(null);
+  const [qwenDeviceCode, setQwenDeviceCode] = useState<Awaited<
+    ReturnType<typeof requestQwenDeviceCode>
+  > | null>(null);
   const [qwenConnected, setQwenConnected] = useState(false);
   const [gdriveWebClientId, setGdriveWebClientId] = useState('');
   const [guruChatDefaultModel, setGuruChatDefaultModel] = useState('auto');
@@ -731,19 +693,19 @@ export default function SettingsScreen() {
     setTestingGroqKey(false);
   }
 
-  async function testQwenKey() {
+  async function _testQwenKey() {
     if (!profile?.qwenConnected && !qwenConnected) {
       showWarning('Not connected', 'Connect Qwen OAuth first to validate the connection.');
       return;
     }
-    setTestingQwenKey(true);
-    setQwenKeyTestResult(null);
+    _setTestingQwenKey(true);
+    _setQwenKeyTestResult(null);
     try {
       const tokenResult = await getQwenAccessToken();
       if (!tokenResult || !tokenResult.accessToken) {
-        setQwenKeyTestResult('fail');
+        _setQwenKeyTestResult('fail');
         showError('No OAuth token available. Try reconnecting Qwen.');
-        setTestingQwenKey(false);
+        _setTestingQwenKey(false);
         return;
       }
       const res = await testQwenConnection(
@@ -751,17 +713,17 @@ export default function SettingsScreen() {
         tokenResult.apiKey,
         tokenResult.resourceUrl,
       );
-      setQwenKeyTestResult(res.ok ? 'ok' : 'fail');
+      _setQwenKeyTestResult(res.ok ? 'ok' : 'fail');
       if (res.ok) markProviderValidated('qwen', tokenResult.accessToken);
       else clearProviderValidated('qwen');
       if (!res.ok) {
         showError(res.message || 'Qwen API returned an error.');
       }
-    } catch (err: any) {
-      setQwenKeyTestResult('fail');
-      showError(err.message || 'Unknown error');
+    } catch (err: unknown) {
+      _setQwenKeyTestResult('fail');
+      showError(getErrorMessage(err));
     }
-    setTestingQwenKey(false);
+    _setTestingQwenKey(false);
   }
 
   async function testGithubModelsPat() {
@@ -869,21 +831,21 @@ export default function SettingsScreen() {
     setTestingAgentRouterKey(false);
   }
 
-  async function testHuggingFaceKey() {
+  async function _testHuggingFaceKey() {
     const token = huggingFaceToken.trim() || profile?.huggingFaceToken || '';
     if (!token) {
       showWarning('No token', 'Enter a Hugging Face token first.');
       return;
     }
-    setTestingHuggingFaceToken(true);
-    setHuggingFaceTokenTestResult(null);
+    _setTestingHuggingFaceToken(true);
+    _setHuggingFaceTokenTestResult(null);
     const res = await testHuggingFaceConnection(token, huggingFaceModel.trim());
-    setHuggingFaceTokenTestResult(res.ok ? 'ok' : 'fail');
-    setTestingHuggingFaceToken(false);
+    _setHuggingFaceTokenTestResult(res.ok ? 'ok' : 'fail');
+    _setTestingHuggingFaceToken(false);
   }
 
   async function testDeepgramKey() {
-    const key = deepgramApiKey.trim() || (profile as any)?.deepgramApiKey || '';
+    const key = deepgramApiKey.trim() || profile?.deepgramApiKey || '';
     if (!key) {
       showWarning('No key', 'Enter a Deepgram API key first.');
       return;
@@ -937,7 +899,7 @@ export default function SettingsScreen() {
         return;
       }
       throw new Error('Device code expired. Please try again.');
-    } catch (err: any) {
+    } catch (err: unknown) {
       showError(err, 'Unknown error');
       setChatgptDeviceCode(null);
       setChatgptConnectingSlot(null);
@@ -988,7 +950,7 @@ export default function SettingsScreen() {
         return;
       }
       throw new Error('Device code expired. Please try again.');
-    } catch (err: any) {
+    } catch (err: unknown) {
       showError(err, 'Unknown error');
       setGithubCopilotDeviceCode(null);
       setGithubCopilotConnecting(false);
@@ -1069,7 +1031,7 @@ export default function SettingsScreen() {
         'Sign in with GitLab',
         'Finish in the browser. The app should reopen automatically when authorization completes. If it does not, use "Paste callback URL" below with the full guru-study:// link.',
       );
-    } catch (err: any) {
+    } catch (err: unknown) {
       showError(err, 'Unknown error');
     } finally {
       setGitlabDuoConnecting(false);
@@ -1145,7 +1107,10 @@ export default function SettingsScreen() {
       } else {
         showWarning(
           'GitLab Duo validate',
-          `HTTP ${res.status}\n${(res.message ?? '').slice(0, 480)}\n\n403/404: need Premium/Ultimate Duo, OAuth scopes read_user+api (reconnect), or self-managed Duo + Agent Platform. Metro: ${log}`,
+          `HTTP ${res.status}\n${(res.message ?? '').slice(
+            0,
+            480,
+          )}\n\n403/404: need Premium/Ultimate Duo, OAuth scopes read_user+api (reconnect), or self-managed Duo + Agent Platform. Metro: ${log}`,
         );
       }
     } finally {
@@ -1179,7 +1144,7 @@ export default function SettingsScreen() {
         return;
       }
       throw new Error('Device code expired. Please try again.');
-    } catch (err: any) {
+    } catch (err: unknown) {
       showError(err, 'Unknown error');
       setPoeDeviceCode(null);
       setPoeConnecting(false);
@@ -1228,7 +1193,7 @@ export default function SettingsScreen() {
         refreshProfile();
         showSuccess('Connected', 'Qwen OAuth is now active. Free tier: 1,000 requests/day.');
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       showError(err, 'Unknown error');
       setQwenDeviceCode(null);
       setQwenConnecting(false);
@@ -1310,18 +1275,20 @@ export default function SettingsScreen() {
     setTestingBraveSearchKey(false);
   }
 
-  async function testGoogleCustomSearchKey() {
+  async function _testGoogleCustomSearchKey() {
     const key = googleCustomSearchApiKey.trim() || profile?.googleCustomSearchApiKey || '';
     if (!key) {
       showWarning('No key', 'Enter a Google Custom Search API key first.');
       return;
     }
-    setTestingGoogleCustomSearchKey(true);
+    _setTestingGoogleCustomSearchKey(true);
     setGoogleCustomSearchKeyTestResult(null);
     // Test by making a simple image search request
     try {
       const cx = '5085c21a1fd974c13';
-      const url = `https://www.googleapis.com/customsearch/v1?key=${encodeURIComponent(key)}&cx=${cx}&q=test&searchType=image&num=1`;
+      const url = `https://www.googleapis.com/customsearch/v1?key=${encodeURIComponent(
+        key,
+      )}&cx=${cx}&q=test&searchType=image&num=1`;
       const res = await fetch(url);
       if (res.ok) {
         setGoogleCustomSearchKeyTestResult('ok');
@@ -1334,7 +1301,7 @@ export default function SettingsScreen() {
       setGoogleCustomSearchKeyTestResult('fail');
       clearProviderValidated('google');
     }
-    setTestingGoogleCustomSearchKey(false);
+    _setTestingGoogleCustomSearchKey(false);
   }
 
   async function handleAutoFetchDates() {
@@ -1354,6 +1321,7 @@ export default function SettingsScreen() {
       setFetchDatesMsg(
         `âœ… Fetched: INICET ${dates.inicetDate} Â· NEET-PG ${dates.neetDate}. Verify and save.`,
       );
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (e: any) {
       setFetchDatesMsg(`âŒ ${e?.message || 'Could not fetch dates. Try manually.'}`);
     } finally {
@@ -1444,7 +1412,7 @@ export default function SettingsScreen() {
         disabledProviders: currentProfile.disabledProviders ?? [],
         openrouterKey: currentProfile.openrouterKey ?? '',
         geminiKey: currentProfile.geminiKey ?? '',
-        deepgramApiKey: (currentProfile as any).deepgramApiKey ?? '',
+        deepgramApiKey: currentProfile.deepgramApiKey ?? '',
         cloudflareAccountId: currentProfile.cloudflareAccountId ?? '',
         cloudflareApiToken: currentProfile.cloudflareApiToken ?? '',
         falApiKey: currentProfile.falApiKey ?? '',
@@ -1535,7 +1503,7 @@ export default function SettingsScreen() {
       setPreferGeminiStructuredJson(profile.preferGeminiStructuredJson !== false);
       setHuggingFaceToken(profile.huggingFaceToken ?? '');
       setHuggingFaceModel(profile.huggingFaceTranscriptionModel ?? DEFAULT_HF_TRANSCRIPTION_MODEL);
-      setDeepgramApiKey((profile as any).deepgramApiKey ?? '');
+      setDeepgramApiKey(profile.deepgramApiKey ?? '');
       setChatgptAccounts(
         sanitizeChatGptAccountSettings(
           profile.chatgptAccounts ??
@@ -1579,7 +1547,7 @@ export default function SettingsScreen() {
       setNotifHour((profile.notificationHour ?? 7).toString());
       setGuruFrequency(profile.guruFrequency ?? 'normal');
       setFocusSubjectIds(profile.focusSubjectIds ?? []);
-      setAutoBackupFrequency((profile as any).autoBackupFrequency ?? 'off');
+      setAutoBackupFrequency(profile.autoBackupFrequency ?? 'off');
       profileHydrationSignatureRef.current = nextSignature;
       profileLoaded.current = true;
     }
@@ -1647,7 +1615,7 @@ export default function SettingsScreen() {
         guruFrequency,
         focusSubjectIds,
         autoBackupFrequency,
-      } as any);
+      });
       if (notifs) {
         try {
           await requestNotificationPermissions();
@@ -1697,6 +1665,7 @@ export default function SettingsScreen() {
     dbmciClassStartDate,
     btrStartDate,
     homeNoveltyCooldownHours,
+    sessionLength,
     dailyGoal,
     notifs,
     strictMode,
@@ -1763,12 +1732,12 @@ export default function SettingsScreen() {
     try {
       await refreshAccountabilityNotifications();
       showSuccess('Done', 'Notifications scheduled! Check your notification panel.');
-    } catch (e) {
+    } catch {
       showError('Error', 'Could not schedule notifications.');
     }
   }
 
-  const handleSelectBackupDir = async () => {
+  const _handleSelectBackupDir = async () => {
     if (Platform.OS !== 'android') {
       showWarning('Not supported', 'This feature is only available on Android.');
       return;
@@ -1777,14 +1746,14 @@ export default function SettingsScreen() {
       const { StorageAccessFramework } = await import('expo-file-system/legacy');
       const permissions = await StorageAccessFramework.requestDirectoryPermissionsAsync();
       if (permissions.granted) {
-        await updateUserProfile({ backupDirectoryUri: permissions.directoryUri } as any);
+        await updateUserProfile({ backupDirectoryUri: permissions.directoryUri });
         await refreshProfile();
         showSuccess(
           'Success',
           'Backup directory configured! Your data will now stay synced there.',
         );
       }
-    } catch (err) {
+    } catch {
       showError('Error', 'Failed to configure backup directory.');
     }
   };
@@ -1847,15 +1816,11 @@ export default function SettingsScreen() {
   const deepgramValidationStatus = resolveValidationStatus(
     'deepgram',
     deepgramKeyTestResult,
-    deepgramApiKey.trim() || (profile as any)?.deepgramApiKey || '',
+    deepgramApiKey.trim() || profile?.deepgramApiKey || '',
   );
   const hasPomodoroOverlayPermission = permStatus.overlay === 'granted';
   const hasPomodoroGroqKey = !!(groqKey.trim() || profile?.groqApiKey || '');
-  const hasPomodoroDeepgramKey = !!(
-    deepgramApiKey.trim() ||
-    (profile as any)?.deepgramApiKey ||
-    ''
-  );
+  const hasPomodoroDeepgramKey = !!(deepgramApiKey.trim() || profile?.deepgramApiKey || '');
   const pomodoroLectureQuizReady =
     hasPomodoroOverlayPermission && hasPomodoroGroqKey && hasPomodoroDeepgramKey;
   const cloudflareValidationStatus = resolveValidationStatus(
@@ -1875,7 +1840,7 @@ export default function SettingsScreen() {
     braveSearchKeyTestResult,
     braveSearchApiKey.trim() || profile?.braveSearchApiKey || '',
   );
-  const googleValidationStatus = resolveValidationStatus(
+  const _googleValidationStatus = resolveValidationStatus(
     'google',
     googleCustomSearchKeyTestResult,
     googleCustomSearchApiKey.trim() || profile?.googleCustomSearchApiKey || '',
@@ -1899,6 +1864,36 @@ export default function SettingsScreen() {
   const localWhisperFileName = localWhisperPath
     ? decodeURIComponent(localWhisperPath.split('/').pop() || localWhisperPath)
     : '';
+  const permissionReadyCount = Object.values(permStatus).filter(
+    (status) => status === 'granted',
+  ).length;
+  const planningAnchorCount = [dbmciClassStartDate, btrStartDate, inicetDate, neetDate].filter(
+    hasValue,
+  ).length;
+  const providerReadyCount = [
+    isChatGptEnabled(chatgptAccounts),
+    githubCopilotConnected,
+    gitlabDuoConnected,
+    poeConnected,
+    qwenConnected,
+    hasValue(groqKey),
+    hasValue(githubModelsPat),
+    hasValue(orKey),
+    hasValue(kiloApiKey),
+    hasValue(deepseekKey),
+    hasValue(agentRouterKey),
+    hasValue(geminiKey),
+    hasValue(deepgramApiKey),
+    hasValue(falApiKey),
+    hasValue(braveSearchApiKey),
+    hasValue(cfAccountId) && hasValue(cfApiToken),
+    localAiEnabled && (localLlmReady || localWhisperReady),
+  ].filter(Boolean).length;
+  const settingsSummaryCards = [
+    { label: 'Providers ready', value: providerReadyCount, tone: 'accent' as const },
+    { label: 'Permissions ready', value: `${permissionReadyCount}/4`, tone: 'success' as const },
+    { label: 'Plan anchors set', value: `${planningAnchorCount}/4`, tone: 'warning' as const },
+  ];
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -1919,6 +1914,40 @@ export default function SettingsScreen() {
             subtitle="Control sync, backups, AI, and study behavior."
             onBackPress={() => navigation.navigate('MenuHome')}
           />
+
+          <LinearSurface compact style={styles.summaryCard}>
+            <View style={styles.summaryRow}>
+              <View style={styles.summaryCopy}>
+                <LinearText variant="meta" tone="accent" style={styles.summaryEyebrow}>
+                  CONTROL ROOM
+                </LinearText>
+                <LinearText variant="sectionTitle" style={styles.summaryTitle}>
+                  The app-wide behavior layer
+                </LinearText>
+                <LinearText variant="bodySmall" tone="secondary" style={styles.summaryText}>
+                  Exam dates, permissions, provider routing, backups, and study defaults now live in
+                  one calmer shell.
+                </LinearText>
+              </View>
+              <View style={styles.summaryPill}>
+                <LinearText variant="chip" tone="accent">
+                  Auto-save
+                </LinearText>
+              </View>
+            </View>
+            <View style={styles.summaryMetricsRow}>
+              {settingsSummaryCards.map((card) => (
+                <View key={card.label} style={styles.summaryMetricCard}>
+                  <LinearText variant="title" tone={card.tone} style={styles.summaryMetricValue}>
+                    {card.value}
+                  </LinearText>
+                  <LinearText variant="caption" tone="secondary" style={styles.summaryMetricLabel}>
+                    {card.label}
+                  </LinearText>
+                </View>
+              ))}
+            </View>
+          </LinearSurface>
 
           <AiProvidersSection
             styles={styles}
@@ -2173,7 +2202,7 @@ export default function SettingsScreen() {
   );
 }
 
-function PermissionRow({
+function _PermissionRow({
   label,
   status,
   onFix,
@@ -2205,7 +2234,7 @@ function Label({ text }: { text: string }) {
 }
 
 /** Dropdown picker for model selection â€” replaces congested chip rows. */
-function ModelDropdown({
+function _ModelDropdown({
   label,
   value,
   options,
@@ -2216,7 +2245,8 @@ function ModelDropdown({
   options: Array<{ id: string; label: string; group?: string }>;
   onSelect: (id: string) => void;
 }) {
-  const [open, setOpen] = React.useState(false);
+  const open = false;
+  const setOpen = (_next: boolean) => {};
   const selectedLabel = options.find((o) => o.id === value)?.label ?? (value || 'Select...');
 
   return (
@@ -2280,6 +2310,62 @@ const styles = StyleSheet.create({
   flex: { flex: 1 },
   safe: { flex: 1, backgroundColor: n.colors.background },
   content: { padding: n.spacing.lg, paddingBottom: 60 },
+  summaryCard: {
+    marginTop: n.spacing.sm,
+    marginBottom: n.spacing.lg,
+  },
+  summaryCardCompact: {
+    marginBottom: n.spacing.md,
+  },
+  summaryRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    gap: n.spacing.md,
+  },
+  summaryCopy: {
+    flex: 1,
+  },
+  summaryEyebrow: {
+    letterSpacing: 1.1,
+  },
+  summaryTitle: {
+    marginTop: n.spacing.xs,
+  },
+  summaryText: {
+    marginTop: n.spacing.xs,
+    maxWidth: 560,
+  },
+  summaryPill: {
+    backgroundColor: n.colors.primaryTintSoft,
+    borderRadius: n.radius.full,
+    borderWidth: 1,
+    borderColor: n.colors.borderHighlight,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  summaryMetricsRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+    marginTop: n.spacing.md,
+  },
+  summaryMetricCard: {
+    flexGrow: 1,
+    minWidth: 110,
+    backgroundColor: n.colors.background,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: n.colors.border,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+  },
+  summaryMetricValue: {
+    marginBottom: 2,
+  },
+  summaryMetricLabel: {
+    lineHeight: 16,
+  },
   title: {
     color: n.colors.textPrimary,
     fontSize: 26,
@@ -2287,12 +2373,21 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     marginTop: 8,
   },
-  section: { marginBottom: n.spacing.md },
+  section: {
+    marginBottom: n.spacing.md,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: n.colors.border,
+    backgroundColor: n.colors.surface,
+    overflow: 'hidden',
+  },
   sectionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 10,
+    paddingHorizontal: n.spacing.lg,
+    paddingVertical: 14,
+    minHeight: 68,
   },
   sectionHeaderLeft: {
     flexDirection: 'row',
@@ -2301,16 +2396,16 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   sectionIconWrap: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
+    width: 40,
+    height: 40,
+    borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
   },
   sectionTitle: {
     color: n.colors.textPrimary,
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '700',
   },
   categoryLabel: {
@@ -2318,12 +2413,15 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '800',
     letterSpacing: 1.2,
-    marginTop: n.spacing.lg,
-    marginBottom: n.spacing.xs,
+    marginTop: n.spacing.xl,
+    marginBottom: n.spacing.sm,
   },
   sectionContent: {
-    borderRadius: 16,
+    borderRadius: 0,
+    borderTopWidth: 1,
+    borderTopColor: n.colors.border,
     padding: n.spacing.lg,
+    backgroundColor: whiteAlpha['1.5'],
   },
   label: { color: n.colors.textSecondary, fontSize: 13, marginBottom: 6, marginTop: 8 },
   input: {
@@ -2370,11 +2468,32 @@ const styles = StyleSheet.create({
   validationSuccess: { color: n.colors.success },
   validationError: { color: n.colors.error },
   hint: { color: n.colors.textMuted, fontSize: 12, marginBottom: 4 },
+  subSectionPanel: {
+    backgroundColor: n.colors.card,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: n.colors.border,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+  },
   subSectionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 8,
+    gap: n.spacing.sm,
+    minHeight: 34,
+  },
+  subSectionHeaderLeft: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  subSectionAccent: {
+    width: 7,
+    height: 7,
+    borderRadius: 999,
+    backgroundColor: n.colors.accent,
   },
   subSectionLabel: {
     color: n.colors.accent,
@@ -2382,10 +2501,13 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     letterSpacing: 1,
   },
+  subSectionBody: {
+    paddingTop: 10,
+  },
   subSectionDivider: {
     height: 1,
     backgroundColor: n.colors.border,
-    marginVertical: 14,
+    marginVertical: 12,
   },
   localModelBtn: {
     marginTop: 12,
@@ -2504,9 +2626,9 @@ const styles = StyleSheet.create({
   providerActionBtnDisabled: { opacity: 0.25 },
   providerActionBtnPressed: { backgroundColor: n.colors.card },
   saveBtn: {
-    backgroundColor: 'rgba(109,153,255,0.14)',
+    backgroundColor: transcriptBlueAlpha['14'],
     borderWidth: 1,
-    borderColor: 'rgba(130,170,255,0.24)',
+    borderColor: transcriptBlueBorderAlpha['24'],
     borderRadius: 16,
     padding: 18,
     alignItems: 'center',
@@ -2519,12 +2641,12 @@ const styles = StyleSheet.create({
   backupRow: { flexDirection: 'row', gap: 10, marginTop: 8 },
   backupBtn: {
     flex: 1,
-    backgroundColor: 'rgba(255,255,255,0.06)',
+    backgroundColor: whiteAlpha['6'],
     borderRadius: 14,
     padding: 14,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.14)',
+    borderColor: whiteAlpha['14'],
   },
   backupBtnText: { color: n.colors.accent, fontWeight: '700', fontSize: 14 },
   backupDate: {
@@ -2617,7 +2739,7 @@ const styles = StyleSheet.create({
   },
   typeChipBlocked: {
     backgroundColor: n.colors.errorSurface,
-    borderColor: 'rgba(241,76,76,0.08)',
+    borderColor: errorAlpha['8'],
   },
   typeChipLocked: { borderColor: n.colors.borderHighlight, opacity: 0.5 },
   typeChipText: { color: n.colors.textPrimary, fontSize: 13, fontWeight: '600' },
@@ -2627,13 +2749,13 @@ const styles = StyleSheet.create({
   clearBtnText: { color: n.colors.textMuted, fontSize: 13 },
   maintenanceBtn: {
     marginTop: 10,
-    backgroundColor: 'rgba(255,255,255,0.06)',
+    backgroundColor: whiteAlpha['6'],
     borderRadius: 14,
     paddingHorizontal: 14,
     paddingVertical: 12,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.14)',
+    borderColor: whiteAlpha['14'],
   },
   maintenanceBtnText: { color: n.colors.textPrimary, fontWeight: '700', fontSize: 14 },
   dangerBtn: {
@@ -2660,7 +2782,7 @@ const styles = StyleSheet.create({
   modelSelectorArrow: { color: n.colors.textMuted, fontSize: 12 },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.82)',
+    backgroundColor: blackAlpha['82'],
     justifyContent: 'flex-end',
   },
   modalContent: {
@@ -2748,7 +2870,7 @@ const styles = StyleSheet.create({
   dropdownArrow: { color: n.colors.textMuted, fontSize: 16, marginLeft: 8 },
   dropdownBackdrop: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.6)',
+    backgroundColor: blackAlpha['60'],
     justifyContent: 'center',
     padding: 24,
   },

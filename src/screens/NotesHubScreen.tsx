@@ -17,9 +17,13 @@ import type { MenuStackParamList, TabParamList } from '../navigation/types';
 import { ResponsiveContainer } from '../hooks/useResponsive';
 import { useScrollRestoration } from '../hooks/useScrollRestoration';
 import { linearTheme as n } from '../theme/linearTheme';
+import { blackAlpha } from '../theme/colorUtils';
 import LinearButton from '../components/primitives/LinearButton';
 import LinearSurface from '../components/primitives/LinearSurface';
 import LinearText from '../components/primitives/LinearText';
+import { EmptyState } from '../components/primitives';
+import LoadingOrb from '../components/LoadingOrb';
+import ScreenHeader from '../components/ScreenHeader';
 import { MS_PER_DAY } from '../constants/time';
 import { getDb } from '../db/database';
 import { getLectureHistory, type LectureHistoryItem } from '../db/queries/aiCache';
@@ -189,7 +193,7 @@ export default function NotesHubScreen() {
       setSelectedUploadSubjectName(
         resolution.requiresSelection
           ? null
-          : (resolution.matchedSubject?.name ?? resolution.normalizedSubjectName),
+          : resolution.matchedSubject?.name ?? resolution.normalizedSubjectName,
       );
     } catch (e: unknown) {
       showError(e);
@@ -310,6 +314,22 @@ export default function NotesHubScreen() {
     () => stats.lectureCount === 0 && stats.topicNoteCount === 0,
     [stats.lectureCount, stats.topicNoteCount],
   );
+  const totalNotesCount = stats.lectureCount + stats.topicNoteCount;
+  const summaryCards = useMemo<
+    Array<{ label: string; value: string; tone: 'primary' | 'accent' | 'success' | 'warning' }>
+  >(
+    () => [
+      { label: 'Total notes', value: totalNotesCount.toString(), tone: 'primary' },
+      { label: 'Lectures', value: stats.lectureCount.toString(), tone: 'accent' },
+      { label: 'Topic notes', value: stats.topicNoteCount.toString(), tone: 'success' },
+      {
+        label: 'Pending',
+        value: pendingSessions.length.toString(),
+        tone: pendingSessions.length > 0 ? 'warning' : 'accent',
+      },
+    ],
+    [pendingSessions.length, stats.lectureCount, stats.topicNoteCount, totalNotesCount],
+  );
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -325,8 +345,7 @@ export default function NotesHubScreen() {
           >
             {loading ? (
               <View style={styles.loadingState}>
-                <ActivityIndicator size="large" color={n.colors.accent} />
-                <LinearText style={styles.loadingText}>Loading...</LinearText>
+                <LoadingOrb message="Loading..." size={120} />
               </View>
             ) : null}
             {isRecoveringBackground ? (
@@ -337,33 +356,59 @@ export default function NotesHubScreen() {
                 </LinearText>
               </LinearSurface>
             ) : null}
-            <View style={styles.headerRow}>
-              <TouchableOpacity
-                onPress={() => navigation.goBack()}
-                style={styles.backBtn}
-                activeOpacity={0.7}
-                accessibilityRole="button"
-                accessibilityLabel="Go back"
-              >
-                <Ionicons name="arrow-back" size={20} color={n.colors.textPrimary} />
-              </TouchableOpacity>
-              <View style={styles.headerTextWrap}>
-                <LinearText variant="badge" tone="accent" style={styles.kicker}>
-                  KNOWLEDGE VAULT
-                </LinearText>
-                <LinearText variant="display" style={styles.title}>
-                  My Notes
-                </LinearText>
-                <LinearText variant="body" tone="secondary" style={styles.subtitle}>
-                  Search, revisit, and reuse your lecture notes and topic notes from one place.
-                </LinearText>
+            <ScreenHeader
+              title="My Notes"
+              subtitle="Search, revisit, and reuse your lecture notes and topic notes from one place."
+            />
+
+            <LinearSurface compact style={styles.overviewCard}>
+              <View style={styles.overviewHeader}>
+                <View style={styles.overviewCopy}>
+                  <LinearText variant="meta" tone="accent" style={styles.overviewEyebrow}>
+                    KNOWLEDGE VAULT
+                  </LinearText>
+                  <LinearText variant="sectionTitle" style={styles.overviewTitle}>
+                    Lecture captures and revision notes in one calmer hub
+                  </LinearText>
+                  <LinearText variant="bodySmall" tone="secondary" style={styles.overviewText}>
+                    Reopen saved lecture notes, topic-level notes, and anything that still needs
+                    processing before it disappears into backlog.
+                  </LinearText>
+                </View>
+                <View style={styles.overviewPill}>
+                  <LinearText
+                    variant="chip"
+                    tone={pendingSessions.length > 0 ? 'warning' : 'accent'}
+                  >
+                    {pendingSessions.length > 0 ? 'Needs rescue' : 'Vault synced'}
+                  </LinearText>
+                </View>
               </View>
-            </View>
+              <View style={styles.overviewMetricsRow}>
+                {summaryCards.map((card) => (
+                  <View key={card.label} style={styles.overviewMetricCard}>
+                    <LinearText variant="title" tone={card.tone} style={styles.overviewMetricValue}>
+                      {card.value}
+                    </LinearText>
+                    <LinearText
+                      variant="caption"
+                      tone="secondary"
+                      style={styles.overviewMetricLabel}
+                    >
+                      {card.label}
+                    </LinearText>
+                  </View>
+                ))}
+              </View>
+            </LinearSurface>
 
             {pendingSessions.length > 0 && (
-              <View style={styles.pendingSection}>
+              <LinearSurface compact style={styles.pendingSection}>
                 <View style={styles.sectionHeader}>
-                  <LinearText style={[styles.sectionTitle, { color: n.colors.warning }]}>
+                  <LinearText
+                    variant="sectionTitle"
+                    style={[styles.sectionTitle, styles.pendingSectionTitle]}
+                  >
                     Unprocessed Recordings ({pendingSessions.length})
                   </LinearText>
                 </View>
@@ -458,27 +503,8 @@ export default function NotesHubScreen() {
                     </LinearSurface>
                   ))}
                 </ScrollView>
-              </View>
+              </LinearSurface>
             )}
-
-            <View style={styles.statsRow}>
-              <LinearSurface padded={false} style={styles.statCard}>
-                <LinearText variant="display" style={styles.statValue}>
-                  {stats.lectureCount}
-                </LinearText>
-                <LinearText variant="bodySmall" tone="secondary" style={styles.statLabel}>
-                  Lecture notes
-                </LinearText>
-              </LinearSurface>
-              <LinearSurface padded={false} style={styles.statCard}>
-                <LinearText variant="display" style={styles.statValue}>
-                  {stats.topicNoteCount}
-                </LinearText>
-                <LinearText variant="bodySmall" tone="secondary" style={styles.statLabel}>
-                  Topic notes
-                </LinearText>
-              </LinearSurface>
-            </View>
 
             <View style={styles.actionGrid}>
               <LinearSurface padded={false} style={[styles.actionCard, styles.actionPrimary]}>
@@ -583,28 +609,26 @@ export default function NotesHubScreen() {
             </View>
 
             {emptyState ? (
-              <LinearSurface padded={false} style={styles.emptyCard}>
-                <Ionicons name="library-outline" size={28} color={n.colors.accent} />
-                <LinearText variant="title" style={styles.emptyTitle}>
-                  No saved notes yet
-                </LinearText>
-                <LinearText variant="body" tone="secondary" style={styles.emptySub}>
-                  Lecture returns and topic note edits will show up here once they are saved.
-                </LinearText>
-                <LinearButton
-                  label="Start a lecture capture"
-                  variant="primary"
-                  style={styles.emptyBtn}
-                  onPress={() =>
-                    tabsNavigation?.navigate('HomeTab', {
-                      screen: 'LectureMode',
-                      params: {},
-                    })
-                  }
-                  accessibilityRole="button"
-                  accessibilityLabel="Start a lecture capture"
-                />
-              </LinearSurface>
+              <EmptyState
+                variant="card"
+                icon="library-outline"
+                iconSize={28}
+                iconColor={n.colors.accent}
+                title="No saved notes yet"
+                subtitle="Lecture returns and topic note edits will show up here once they are saved."
+                actions={[
+                  {
+                    label: 'Start a lecture capture',
+                    onPress: () =>
+                      tabsNavigation?.navigate('HomeTab', {
+                        screen: 'LectureMode',
+                        params: {},
+                      }),
+                    buttonVariant: 'primary',
+                  },
+                ]}
+                style={styles.emptyCard}
+              />
             ) : (
               <>
                 <View style={styles.sectionHeader}>
@@ -834,7 +858,47 @@ export default function NotesHubScreen() {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: n.colors.background },
   content: { padding: 16, paddingBottom: 40, gap: 16 },
+  overviewCard: {
+    gap: 14,
+  },
+  overviewHeader: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  overviewCopy: { flex: 1, gap: 4 },
+  overviewEyebrow: { letterSpacing: 1 },
+  overviewTitle: { maxWidth: 420 },
+  overviewText: { lineHeight: 20, maxWidth: 480 },
+  overviewPill: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: n.radius.full,
+    backgroundColor: n.colors.card,
+    borderWidth: 1,
+    borderColor: n.colors.border,
+  },
+  overviewMetricsRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+  },
+  overviewMetricCard: {
+    flexGrow: 1,
+    minWidth: 120,
+    borderRadius: n.radius.md,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    backgroundColor: n.colors.card,
+    borderWidth: 1,
+    borderColor: n.colors.border,
+    gap: 2,
+  },
+  overviewMetricValue: {},
+  overviewMetricLabel: { fontWeight: '600' },
   pendingSection: { gap: 10, marginBottom: 8 },
+  pendingSectionTitle: { color: n.colors.warning },
   pendingList: { maxHeight: 220 },
   pendingCard: {
     borderRadius: 16,
@@ -845,12 +909,12 @@ const styles = StyleSheet.create({
   },
   pendingInfo: { flex: 1, minWidth: 0, gap: 2 },
   pendingAppName: { color: n.colors.textPrimary, fontSize: 15, fontWeight: '700' },
-  pendingDate: { color: '#9A9AAC', fontSize: 12 },
-  pendingStatus: { color: '#FFB74D', fontSize: 12, marginTop: 2 },
-  pendingStage: { color: '#E8E8F0', fontSize: 12, marginTop: 4, fontWeight: '600' },
-  pendingDetail: { color: '#B7B7C7', fontSize: 12, lineHeight: 18 },
+  pendingDate: { color: n.colors.textMuted, fontSize: 12 },
+  pendingStatus: { color: n.colors.warning, fontSize: 12, marginTop: 2 },
+  pendingStage: { color: n.colors.textPrimary, fontSize: 12, marginTop: 4, fontWeight: '600' },
+  pendingDetail: { color: n.colors.textSecondary, fontSize: 12, lineHeight: 18 },
   pendingEvents: { marginTop: 6, gap: 2 },
-  pendingEventText: { color: '#8F8FA7', fontSize: 11, lineHeight: 16 },
+  pendingEventText: { color: n.colors.textMuted, fontSize: 11, lineHeight: 16 },
   pendingError: { color: n.colors.error, fontSize: 12, lineHeight: 18, fontStyle: 'italic' },
   pendingActions: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   miniActionBtn: {
@@ -875,53 +939,21 @@ const styles = StyleSheet.create({
     color: n.colors.textMuted,
     fontWeight: '600',
   },
-  headerRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 14, marginBottom: 8 },
-  backBtn: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    backgroundColor: n.colors.card,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: n.colors.border,
-    marginTop: 4,
-  },
-  headerTextWrap: { flex: 1, gap: 4 },
-  kicker: { letterSpacing: 1.1 },
-  title: {},
-  subtitle: { lineHeight: 21 },
-  statsRow: { flexDirection: 'row', gap: 12 },
-  statCard: {
-    flex: 1,
-    borderRadius: 18,
-    padding: 16,
-    gap: 4,
-  },
-  statValue: {},
-  statLabel: { fontWeight: '600' },
   actionGrid: { gap: 12 },
   actionCard: {
     borderRadius: 20,
     overflow: 'hidden',
   },
   actionPrimary: {
-    backgroundColor: '#E5E2FF',
+    backgroundColor: `${n.colors.accent}22`,
+    borderColor: `${n.colors.accent}42`,
   },
   actionTap: { padding: 16, gap: 8 },
   actionPrimaryTitle: {},
   actionPrimarySub: { lineHeight: 19 },
   actionTitle: {},
   actionSub: { lineHeight: 19 },
-  emptyCard: {
-    borderRadius: 20,
-    padding: 24,
-    alignItems: 'flex-start',
-    gap: 10,
-  },
-  emptyTitle: {},
-  emptySub: { lineHeight: 21 },
-  emptyBtn: { marginTop: 4 },
+  emptyCard: {},
   sectionHeader: {
     marginTop: 8,
     flexDirection: 'row',
@@ -972,7 +1004,7 @@ const styles = StyleSheet.create({
   topicTitle: {},
   topicPreview: { lineHeight: 20 },
   // Upload review modal
-  modalOverlay: { flex: 1, backgroundColor: '#000000aa', justifyContent: 'flex-end' },
+  modalOverlay: { flex: 1, backgroundColor: blackAlpha['72'], justifyContent: 'flex-end' },
   modalSheet: {
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,

@@ -17,6 +17,8 @@ import {
   AppState,
 } from 'react-native';
 import LinearText from '../components/primitives/LinearText';
+import { EmptyState } from '../components/primitives';
+import { whiteAlpha } from '../theme/colorUtils';
 import * as Haptics from 'expo-haptics';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -35,15 +37,10 @@ import { transcribeAudio } from '../services/transcription/transcribeAudio';
 import { saveLecturePersistence } from '../services/lecture/persistence';
 import { profileRepository } from '../db/repositories';
 import { getApiKeys } from '../services/ai/config';
-import {
-  showInfo,
-  showSuccess,
-  showError,
-  confirm,
-  confirmDestructive,
-} from '../components/dialogService';
+import { showInfo, showSuccess, showError, confirmDestructive } from '../components/dialogService';
 import { ResponsiveContainer } from '../hooks/useResponsive';
 import { linearTheme as n } from '../theme/linearTheme';
+import LoadingOrb from '../components/LoadingOrb';
 import ScreenHeader from '../components/ScreenHeader';
 import TranscriptionSettingsPanel from '../components/TranscriptionSettingsPanel';
 import LinearButton from '../components/primitives/LinearButton';
@@ -77,7 +74,7 @@ function entriesToRecordingFiles(
     const folder =
       guruIdx >= 0 && guruIdx < parts.length - 2
         ? parts.slice(guruIdx + 1, -1).join('/')
-        : (parts.slice(-2, -1)[0] ?? 'Unknown');
+        : parts.slice(-2, -1)[0] ?? 'Unknown';
     return {
       name: e.name,
       path: e.path,
@@ -257,6 +254,19 @@ export default function RecordingVaultScreen() {
   }, []);
 
   const isSelectionMode = selectedPaths.size > 0;
+  const totalSizeMb = recordings.reduce((sum, item) => sum + item.sizeMB, 0);
+  const totalSizeLabel =
+    totalSizeMb >= 1024 ? `${(totalSizeMb / 1024).toFixed(1)} GB` : `${Math.round(totalSizeMb)} MB`;
+  const recentCount = recordings.filter((item) => {
+    if (!item.date) return false;
+    return Date.now() - item.date.getTime() <= 7 * 24 * 60 * 60 * 1000;
+  }).length;
+  const summaryCards = [
+    { label: 'Recordings', value: recordings.length.toString(), tone: 'accent' as const },
+    { label: 'Folders', value: savedFolders.length.toString(), tone: 'primary' as const },
+    { label: 'Recent 7d', value: recentCount.toString(), tone: 'success' as const },
+    { label: 'Stored', value: totalSizeLabel, tone: 'warning' as const },
+  ];
 
   const toggleSelection = useCallback((path: string) => {
     setSelectedPaths((prev) => {
@@ -337,10 +347,10 @@ export default function RecordingVaultScreen() {
               isSelected
                 ? n.colors.accent
                 : isError
-                  ? n.colors.error
-                  : isDone
-                    ? n.colors.success
-                    : n.colors.border
+                ? n.colors.error
+                : isDone
+                ? n.colors.success
+                : n.colors.border
             }
             style={[
               styles.card,
@@ -531,29 +541,65 @@ export default function RecordingVaultScreen() {
           }
         />
 
-        <View style={styles.topActions}>
-          <LinearButton
-            variant="glass"
-            style={[styles.topActionBtn, isUploadingAudio && styles.topActionBtnDisabled]}
-            onPress={() => void handleUploadAudio()}
-            disabled={isUploadingAudio}
-            leftIcon={
-              isUploadingAudio ? (
-                <ActivityIndicator size="small" color={n.colors.accent} />
-              ) : (
-                <Ionicons name="cloud-upload-outline" size={18} color={n.colors.accent} />
-              )
-            }
-            label={isUploadingAudio ? 'Uploading…' : 'Upload Audio'}
-          />
-          <LinearButton
-            variant="glass"
-            style={styles.topActionBtn}
-            onPress={handlePickFolder}
-            leftIcon={<Ionicons name="folder-open-outline" size={18} color={n.colors.accent} />}
-            label="Add Folder"
-          />
-        </View>
+        <LinearSurface compact style={styles.summaryCard}>
+          <View style={styles.summaryHeader}>
+            <View style={styles.summaryCopy}>
+              <LinearText variant="meta" tone="accent" style={styles.summaryEyebrow}>
+                CAPTURE LIBRARY
+              </LinearText>
+              <LinearText variant="sectionTitle" style={styles.summaryTitle}>
+                External lecture recordings in one place
+              </LinearText>
+              <LinearText variant="bodySmall" tone="secondary" style={styles.summaryText}>
+                Re-upload audio, scan custom folders, and keep lecture captures ready for
+                transcription.
+              </LinearText>
+            </View>
+            <View style={styles.summaryPill}>
+              <LinearText variant="chip" tone={needsFileAccess ? 'warning' : 'accent'}>
+                {needsFileAccess ? 'Access needed' : 'Scan ready'}
+              </LinearText>
+            </View>
+          </View>
+          <View style={styles.summaryMetricsRow}>
+            {summaryCards.map((card) => (
+              <View key={card.label} style={styles.summaryMetricCard}>
+                <LinearText variant="title" tone={card.tone} style={styles.summaryMetricValue}>
+                  {card.value}
+                </LinearText>
+                <LinearText variant="caption" tone="secondary" style={styles.summaryMetricLabel}>
+                  {card.label}
+                </LinearText>
+              </View>
+            ))}
+          </View>
+        </LinearSurface>
+
+        <LinearSurface compact style={styles.actionPanel}>
+          <View style={styles.topActions}>
+            <LinearButton
+              variant="glass"
+              style={[styles.topActionBtn, isUploadingAudio && styles.topActionBtnDisabled]}
+              onPress={() => void handleUploadAudio()}
+              disabled={isUploadingAudio}
+              leftIcon={
+                isUploadingAudio ? (
+                  <ActivityIndicator size="small" color={n.colors.accent} />
+                ) : (
+                  <Ionicons name="cloud-upload-outline" size={18} color={n.colors.accent} />
+                )
+              }
+              label={isUploadingAudio ? 'Uploading…' : 'Upload Audio'}
+            />
+            <LinearButton
+              variant="glass"
+              style={styles.topActionBtn}
+              onPress={handlePickFolder}
+              leftIcon={<Ionicons name="folder-open-outline" size={18} color={n.colors.accent} />}
+              label="Add Folder"
+            />
+          </View>
+        </LinearSurface>
 
         <TranscriptionSettingsPanel />
 
@@ -613,18 +659,15 @@ export default function RecordingVaultScreen() {
 
         {loading ? (
           <View style={styles.center}>
-            <ActivityIndicator size="large" color={n.colors.accent} />
-            <LinearText style={styles.emptyText}>Scanning recordings...</LinearText>
+            <LoadingOrb message="Scanning recordings..." size={120} />
           </View>
         ) : recordings.length === 0 ? (
-          <View style={styles.center}>
-            <Ionicons name="mic-off-outline" size={48} color={n.colors.textMuted} />
-            <LinearText style={styles.emptyTitle}>No recordings found</LinearText>
-            <LinearText style={styles.emptyText}>
-              Lecture recordings appear here after you use the external app recording feature.
-              {'\n\n'}Tap the folder icon above to browse for a folder.
-            </LinearText>
-          </View>
+          <EmptyState
+            icon="mic-off-outline"
+            iconSize={48}
+            title="No recordings found"
+            subtitle="Lecture recordings appear here after you use the external app recording feature. Tap the folder icon above to browse for a folder."
+          />
         ) : (
           <FlatList
             data={recordings}
@@ -642,6 +685,59 @@ export default function RecordingVaultScreen() {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: n.colors.background },
   container: { flex: 1 },
+  summaryCard: {
+    marginHorizontal: n.spacing.lg,
+    marginTop: n.spacing.xs,
+    marginBottom: 12,
+  },
+  summaryHeader: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    gap: n.spacing.md,
+  },
+  summaryCopy: {
+    flex: 1,
+  },
+  summaryEyebrow: {
+    letterSpacing: 1.1,
+  },
+  summaryTitle: {
+    marginTop: n.spacing.xs,
+  },
+  summaryText: {
+    marginTop: n.spacing.xs,
+  },
+  summaryPill: {
+    backgroundColor: n.colors.primaryTintSoft,
+    borderRadius: n.radius.full,
+    borderWidth: 1,
+    borderColor: n.colors.borderHighlight,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  summaryMetricsRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+    marginTop: n.spacing.md,
+  },
+  summaryMetricCard: {
+    flexGrow: 1,
+    minWidth: 110,
+    backgroundColor: n.colors.background,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: n.colors.border,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+  },
+  summaryMetricValue: {
+    marginBottom: 2,
+  },
+  summaryMetricLabel: {
+    lineHeight: 16,
+  },
   headerActions: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -656,13 +752,15 @@ const styles = StyleSheet.create({
     padding: 0,
     borderWidth: 1,
     borderColor: n.colors.border,
-    backgroundColor: 'rgba(255,255,255,0.05)',
+    backgroundColor: whiteAlpha['5'],
+  },
+  actionPanel: {
+    marginHorizontal: n.spacing.lg,
+    marginBottom: 10,
   },
   topActions: {
     flexDirection: 'row',
     gap: 10,
-    paddingHorizontal: n.spacing.lg,
-    paddingTop: 10,
   },
   topActionBtn: {
     flex: 1,

@@ -12,6 +12,9 @@ import {
   ScrollView,
 } from 'react-native';
 import LinearText from '../components/primitives/LinearText';
+import { EmptyState, type EmptyStateAction } from '../components/primitives';
+import LoadingOrb from '../components/LoadingOrb';
+import { blackAlpha, whiteAlpha } from '../theme/colorUtils';
 import Svg, {
   Rect,
   G,
@@ -930,55 +933,37 @@ function CanvasView({
       )}
 
       {/* ── Empty state ── */}
-      {nodes.length === 0 && (
-        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32 }}>
-          <Ionicons
-            name="alert-circle-outline"
-            size={48}
-            color={n.colors.warning}
-            style={{ marginBottom: 16 }}
-          />
-          <LinearText
-            variant="body"
-            style={{ color: n.colors.textSecondary, textAlign: 'center', marginBottom: 8 }}
-          >
-            This map has no concepts yet.
-          </LinearText>
-          <LinearText
-            variant="caption"
-            tone="muted"
-            style={{ textAlign: 'center', marginBottom: 24 }}
-          >
-            The AI generation may have failed. Tap below to try again.
-          </LinearText>
-          <View style={{ flexDirection: 'row', gap: 12 }}>
-            {onRetry && (
-              <TouchableOpacity
-                onPress={onRetry}
-                style={styles.emptyStatePrimaryBtn}
-                activeOpacity={0.8}
-              >
-                <Ionicons name="refresh" size={16} color="#fff" />
-                <LinearText variant="label" style={{ color: n.colors.textPrimary }}>
-                  Regenerate
-                </LinearText>
-              </TouchableOpacity>
-            )}
-            {onDelete && (
-              <TouchableOpacity
-                onPress={onDelete}
-                style={styles.emptyStateDeleteBtn}
-                activeOpacity={0.8}
-              >
-                <Ionicons name="trash-outline" size={16} color={n.colors.error} />
-                <LinearText variant="label" style={{ color: n.colors.error }}>
-                  Delete Map
-                </LinearText>
-              </TouchableOpacity>
-            )}
-          </View>
-        </View>
-      )}
+      {nodes.length === 0 &&
+        (() => {
+          const emptyActions: EmptyStateAction[] = [];
+          if (onRetry) {
+            emptyActions.push({
+              label: 'Regenerate',
+              onPress: onRetry,
+              buttonVariant: 'primary',
+              icon: 'refresh',
+            });
+          }
+          if (onDelete) {
+            emptyActions.push({
+              label: 'Delete Map',
+              onPress: onDelete,
+              buttonVariant: 'outline',
+              icon: 'trash-outline',
+              destructive: true,
+            });
+          }
+          return (
+            <EmptyState
+              icon="alert-circle-outline"
+              iconSize={48}
+              iconColor={n.colors.warning}
+              title="This map has no concepts yet."
+              subtitle="The AI generation may have failed. Tap below to try again."
+              actions={emptyActions}
+            />
+          );
+        })()}
 
       {/* ── Canvas ── */}
       {nodes.length > 0 && (
@@ -1029,7 +1014,7 @@ function CanvasView({
                       <G key={`e-${edge.id}`}>
                         <Path
                           d={`M ${sx} ${sy} C ${mx} ${sy}, ${mx} ${ty}, ${tx} ${ty}`}
-                          stroke={edge.isCrossLink ? 'rgba(255,255,255,0.25)' : palette.fill}
+                          stroke={edge.isCrossLink ? whiteAlpha['25'] : palette.fill}
                           strokeWidth={edge.isCrossLink ? 1.5 : 2}
                           fill="none"
                           strokeLinecap="round"
@@ -1049,7 +1034,7 @@ function CanvasView({
                             y={(sy + ty) / 2 - 6}
                             textAnchor="middle"
                             fontSize={9}
-                            fill={edge.isCrossLink ? 'rgba(255,255,255,0.4)' : palette.fill}
+                            fill={edge.isCrossLink ? whiteAlpha['40'] : palette.fill}
                             opacity={0.8}
                           >
                             {edge.label.length > 20
@@ -1075,7 +1060,7 @@ function CanvasView({
                           cx={tx}
                           cy={ty}
                           r={3}
-                          fill="rgba(255,255,255,0.3)"
+                          fill={whiteAlpha['30']}
                         />
                       );
                     })}
@@ -1118,7 +1103,7 @@ function CanvasView({
                           height={height}
                           rx={PILL_RADIUS}
                           ry={PILL_RADIUS}
-                          fill="rgba(0,0,0,0.15)"
+                          fill={blackAlpha['15']}
                         />
                         {/* Expanding ring */}
                         {isExpanding && (
@@ -1557,10 +1542,10 @@ export default function MindMapScreen() {
       <SafeAreaView style={styles.root}>
         <ScreenHeader title="Mind Map" />
         <View style={styles.centerContent}>
-          <ActivityIndicator size="large" color={n.colors.accent} />
-          <LinearText style={styles.loadingText}>
-            {creating ? 'AI is mapping concepts...' : 'Loading...'}
-          </LinearText>
+          <LoadingOrb
+            message={creating ? 'AI is mapping concepts...' : 'Loading...'}
+            size={120}
+          />
         </View>
       </SafeAreaView>
     );
@@ -1686,25 +1671,6 @@ const styles = StyleSheet.create({
   },
   svgWrap: { flex: 1, backgroundColor: n.colors.background, overflow: 'hidden' },
   canvasSurface: { position: 'absolute', left: 0, top: 0 },
-  emptyStatePrimaryBtn: {
-    backgroundColor: n.colors.accent,
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: n.radius.sm,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  emptyStateDeleteBtn: {
-    backgroundColor: 'rgba(255,80,80,0.15)',
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: n.radius.sm,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-
   // Search
   searchBar: {
     flexDirection: 'row',
@@ -1728,9 +1694,9 @@ const styles = StyleSheet.create({
     left: 16,
     right: 16,
     bottom: 88,
-    backgroundColor: 'rgba(7, 10, 16, 0.94)',
+    backgroundColor: n.colors.surface,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
+    borderColor: whiteAlpha['8'],
     borderRadius: n.radius.lg,
     paddingHorizontal: 16,
     paddingVertical: 14,
@@ -1801,7 +1767,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    backgroundColor: 'rgba(0,0,0,0.8)',
+    backgroundColor: blackAlpha['80'],
     borderRadius: n.radius.full,
     paddingHorizontal: 16,
     paddingVertical: 8,
@@ -1811,7 +1777,7 @@ const styles = StyleSheet.create({
   // Dialog
   dialogOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.6)',
+    backgroundColor: blackAlpha['60'],
     justifyContent: 'center',
     alignItems: 'center',
     padding: 32,

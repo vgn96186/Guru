@@ -4,6 +4,14 @@
     "slug": "guru-study",
     "scheme": "guru-study",
     "version": "1.0.0",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/9bd98d16-0bbc-4416-8f97-a5ac65e0dc56",
+      "checkAutomatically": "ON_LOAD",
+      "fallbackToCacheTimeout": 0
+    },
     "orientation": "default",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
@@ -42,6 +50,7 @@
       "expo-sqlite",
       "expo-media-library",
       "expo-notifications",
+      "@sentry/react-native",
       "./modules/app-launcher/withAppLauncher",
       "expo-build-properties",
       "expo-font",

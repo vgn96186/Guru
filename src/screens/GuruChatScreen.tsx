@@ -3,12 +3,8 @@ import {
   ActivityIndicator,
   Animated,
   Easing,
-  FlatList,
   InteractionManager,
-  Keyboard,
-  KeyboardAvoidingView,
   Linking,
-  Platform,
   Pressable,
   ScrollView,
   StatusBar,
@@ -16,26 +12,24 @@ import {
   TextInput,
   useWindowDimensions,
   View,
-  type ListRenderItemInfo,
+  type ImageStyle,
+  type StyleProp,
 } from 'react-native';
+import { type FlashListRef, type ListRenderItemInfo } from '@shopify/flash-list';
+import { KeyboardStickyView } from 'react-native-keyboard-controller';
 import { ImageLightbox } from '../components/ImageLightbox';
 import { ResilientImage } from '../components/ResilientImage';
 import ErrorBoundary from '../components/ErrorBoundary';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import {
-  useNavigation,
-  useRoute,
-  useIsFocused,
-  type NavigationProp,
-} from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RouteProp } from '@react-navigation/native';
 import Clipboard from '@react-native-clipboard/clipboard';
 import LinearSurface from '../components/primitives/LinearSurface';
 import type { ChatStackParamList } from '../navigation/types';
 import LinearText from '../components/primitives/LinearText';
-import LinearBadge from '../components/primitives/LinearBadge';
+import { AppFlashList } from '../components/primitives/AppFlashList';
 import { ResponsiveContainer } from '../hooks/useResponsive';
 import BannerIconButton from '../components/BannerIconButton';
 import ScreenHeader from '../components/ScreenHeader';
@@ -76,6 +70,7 @@ import {
 } from '../services/ai/guruChatModelPreference';
 import { useLiveGuruChatModels } from '../hooks/useLiveGuruChatModels';
 import { linearTheme as n } from '../theme/linearTheme';
+import { whiteAlpha, accentAlpha, blackAlpha } from '../theme/colorUtils';
 import {
   listGeneratedStudyImagesForTopic,
   type GeneratedStudyImageRecord,
@@ -84,7 +79,6 @@ import {
 import { buildChatImageContextKey, generateStudyImage } from '../services/studyImageService';
 import { maybeSummarizeGuruSession } from '../services/guruChatSessionSummary';
 import { buildBoundedGuruChatStudyContext } from '../services/guruChatStudyContext';
-import { useAiRuntimeStatus } from '../hooks/useAiRuntimeStatus';
 
 type Nav = NativeStackNavigationProp<ChatStackParamList, 'GuruChat'>;
 type ScreenRoute = RouteProp<ChatStackParamList, 'GuruChat'>;
@@ -145,46 +139,6 @@ const MODEL_GROUP_ORDER: ModelOption['group'][] = [
 
 function getShortModelLabel(modelName?: string | null) {
   return modelName?.split('/').pop() ?? null;
-}
-
-function getRuntimeStatusTone(args: {
-  isActive: boolean;
-  hasError: boolean;
-  hasLastModel: boolean;
-}) {
-  if (args.isActive) {
-    return {
-      backgroundColor: n.colors.primaryTintSoft,
-      borderColor: n.colors.accent,
-      dotColor: n.colors.accent,
-      textColor: n.colors.accent,
-    };
-  }
-
-  if (args.hasError) {
-    return {
-      backgroundColor: 'rgba(241,76,76,0.08)',
-      borderColor: n.colors.error,
-      dotColor: n.colors.error,
-      textColor: n.colors.textSecondary,
-    };
-  }
-
-  if (args.hasLastModel) {
-    return {
-      backgroundColor: 'rgba(63,185,80,0.08)',
-      borderColor: n.colors.success,
-      dotColor: n.colors.success,
-      textColor: n.colors.textSecondary,
-    };
-  }
-
-  return {
-    backgroundColor: n.colors.surface,
-    borderColor: n.colors.border,
-    dotColor: n.colors.textMuted,
-    textColor: n.colors.textMuted,
-  };
 }
 
 function getStartersForTopic(topicName: string) {
@@ -475,7 +429,7 @@ function ChatImagePreview({
   accessibilityLabel,
 }: {
   uri: string;
-  style: any;
+  style: StyleProp<ImageStyle>;
   onPress: () => void;
   onLongPress?: () => void;
   accessibilityLabel: string;
@@ -630,17 +584,16 @@ function GuruChatScreenContent() {
   const navigation = useNavigation<Nav>();
   const route = useRoute<ScreenRoute>();
   const insets = useSafeAreaInsets();
-  const { width: viewportWidth, height: viewportHeight } = useWindowDimensions();
+  const { width: viewportWidth } = useWindowDimensions();
   const topicName = route.params?.topicName ?? 'General Medicine';
   const syllabusTopicId = route.params?.topicId;
   const requestedThreadId = route.params?.threadId;
   const groundingTitle = route.params?.groundingTitle;
   const groundingContext = route.params?.groundingContext;
   const profile = useAppStore((s) => s.profile);
-  const flatListRef = useRef<FlatList<ChatItem>>(null);
+  const flatListRef = useRef<FlashListRef<ChatItem>>(null);
 
   const isGeneralChat = !route.params?.topicName || topicName === 'General Medicine';
-  const isLandscape = viewportWidth > viewportHeight;
   const apiTopicName = isGeneralChat ? undefined : topicName;
   const [starters, setStarters] = useState(
     isGeneralChat ? FALLBACK_STARTERS : getStartersForTopic(topicName),
@@ -651,22 +604,6 @@ function GuruChatScreenContent() {
       getDynamicStarters().then(setStarters);
     }
   }, [isGeneralChat]);
-
-  useEffect(() => {
-    if (Platform.OS !== 'android') return;
-
-    const showSub = Keyboard.addListener('keyboardDidShow', (event) => {
-      setKeyboardInset(Math.max(0, event.endCoordinates.height - insets.bottom));
-    });
-    const hideSub = Keyboard.addListener('keyboardDidHide', () => {
-      setKeyboardInset(0);
-    });
-
-    return () => {
-      showSub.remove();
-      hideSub.remove();
-    };
-  }, [insets.bottom]);
 
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState(route.params?.initialQuestion ?? '');
@@ -679,7 +616,6 @@ function GuruChatScreenContent() {
   const [imageJobKey, setImageJobKey] = useState<string | null>(null);
   const [lightboxUri, setLightboxUri] = useState<string | null>(null);
   const [expandedSourcesMessageId, setExpandedSourcesMessageId] = useState<string | null>(null);
-  const [keyboardInset, setKeyboardInset] = useState(0);
   const [sessionSummary, setSessionSummary] = useState('');
   const [sessionStateJson, setSessionStateJson] = useState('{}');
   const [threads, setThreads] = useState<GuruChatThread[]>([]);
@@ -694,7 +630,6 @@ function GuruChatScreenContent() {
   const prevGuruChatDefaultRef = useRef<string | undefined>(undefined);
   const chosenModelRef = useRef<string>('auto');
   const hasPersistedTopicProgressRef = useRef(false);
-  const runtime = useAiRuntimeStatus();
   const currentThreadId = currentThread?.id ?? null;
 
   const applyChosenModel = useCallback((modelId: string) => {
@@ -797,9 +732,9 @@ function GuruChatScreenContent() {
             modelUsed: entry.modelUsed,
             images:
               entry.role === 'guru'
-                ? (imagesByKey.get(
+                ? imagesByKey.get(
                     buildChatImageContextKey(currentThread.topicName, entry.timestamp),
-                  ) ?? [])
+                  ) ?? []
                 : [],
           })),
         );
@@ -1023,48 +958,6 @@ function GuruChatScreenContent() {
     return MODEL_GROUP_ORDER.filter((group) => presentGroups.has(group));
   }, [availableModels]);
 
-  const runtimeStatus = useMemo(() => {
-    const activeRequest = runtime.active[0];
-    const activeModel = getShortModelLabel(activeRequest?.modelUsed);
-    const lastModel = getShortModelLabel(runtime.lastModelUsed);
-    const backend = activeRequest?.backend ?? runtime.lastBackend;
-
-    if (runtime.activeCount > 0) {
-      return {
-        text: activeModel
-          ? `Live: ${activeModel}${backend ? ` via ${backend}` : ''}`
-          : backend
-            ? `Live: ${backend}`
-            : 'AI working',
-        tone: getRuntimeStatusTone({
-          isActive: true,
-          hasError: false,
-          hasLastModel: false,
-        }),
-      };
-    }
-
-    if (lastModel) {
-      return {
-        text: `Last reply: ${lastModel}${backend ? ` via ${backend}` : ''}`,
-        tone: getRuntimeStatusTone({
-          isActive: false,
-          hasError: !!runtime.lastError,
-          hasLastModel: true,
-        }),
-      };
-    }
-
-    return {
-      text: `Selected: ${currentModelLabel}`,
-      tone: getRuntimeStatusTone({
-        isActive: false,
-        hasError: !!runtime.lastError,
-        hasLastModel: false,
-      }),
-    };
-  }, [currentModelLabel, runtime]);
-
   const modelHistory = useMemo(
     () => messages.map((message) => ({ role: message.role, text: message.text })),
     [messages],
@@ -1087,20 +980,20 @@ function GuruChatScreenContent() {
     if (loading) {
       items.push({ id: 'typing-indicator', type: 'typing' });
     }
-    return items.reverse();
+    return items;
   }, [loading, messages]);
 
   const scrollToLatest = useCallback((delay = 80) => {
     setTimeout(() => {
       InteractionManager.runAfterInteractions(() => {
         requestAnimationFrame(() => {
-          flatListRef.current?.scrollToOffset({ offset: 0, animated: true });
+          flatListRef.current?.scrollToEnd({ animated: true });
         });
       });
     }, delay);
   }, []);
 
-  async function openSource(url: string) {
+  const openSource = useCallback(async (url: string) => {
     try {
       if (await Linking.canOpenURL(url)) {
         await Linking.openURL(url);
@@ -1108,7 +1001,7 @@ function GuruChatScreenContent() {
     } catch {
       void showInfo('Could not open source', 'The source link could not be opened.');
     }
-  }
+  }, []);
 
   const copyMessage = useCallback(async (text: string) => {
     Clipboard.setString(text);
@@ -1217,154 +1110,176 @@ function GuruChatScreenContent() {
         setImageJobKey(null);
       }
     },
-    [currentThread, imageJobKey, topicName],
+    [currentThread, imageJobKey, scrollToLatest, topicName],
   );
 
-  async function handleSend(questionOverride?: string) {
-    const question = (questionOverride ?? input).trim();
-    if (!question || loading || !currentThreadId) return;
-    const wantsImage = isExplicitImageRequest(question);
-    const requestedImageStyle = inferRequestedImageStyle(question);
-    const canGenerateImage = canAutoGenerateStudyImage(profile);
+  const handleSend = useCallback(
+    async (questionOverride?: string) => {
+      const question = (questionOverride ?? input).trim();
+      if (!question || loading || !currentThreadId) return;
+      const wantsImage = isExplicitImageRequest(question);
+      const requestedImageStyle = inferRequestedImageStyle(question);
+      const canGenerateImage = canAutoGenerateStudyImage(profile);
 
-    const userMessage: ChatMessage = {
-      id: `u-${Date.now()}`,
-      role: 'user',
-      text: question,
-      timestamp: Date.now(),
-    };
+      const userMessage: ChatMessage = {
+        id: `u-${Date.now()}`,
+        role: 'user',
+        text: question,
+        timestamp: Date.now(),
+      };
 
-    const nextHistory = [...modelHistory, { role: 'user' as const, text: question }];
-    setMessages((current) => [...current, userMessage]);
-    setInput('');
-    setBannerVisible(false);
-    setLoading(true);
-    scrollToLatest();
+      const nextHistory = [...modelHistory, { role: 'user' as const, text: question }];
+      setMessages((current) => [...current, userMessage]);
+      setInput('');
+      setBannerVisible(false);
+      setLoading(true);
+      scrollToLatest();
 
-    try {
-      await saveChatMessage(currentThreadId, topicName, 'user', question, Date.now());
-      await refreshThreads();
-    } catch {
-      // Persistence should not block the main conversation flow.
-    }
+      try {
+        await saveChatMessage(currentThreadId, topicName, 'user', question, Date.now());
+        await refreshThreads();
+      } catch {
+        // Persistence should not block the main conversation flow.
+      }
 
-    const guruTs = Date.now();
-    const guruId = `g-${guruTs}`;
-    let sawFirstToken = false;
+      const guruTs = Date.now();
+      const guruId = `g-${guruTs}`;
+      let sawFirstToken = false;
 
-    try {
-      const studyContextLine = await buildBoundedGuruChatStudyContext(profile, syllabusTopicId);
-      const selectedModelAtSend = chosenModelRef.current;
-      const modelForApi = selectedModelAtSend === 'auto' ? undefined : selectedModelAtSend;
-      // #region agent log
-      fetch('http://127.0.0.1:7507/ingest/f6a0734c-b45d-4770-9e51-aa07e5c2da6e', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': 'ca9385' },
-        body: JSON.stringify({
-          sessionId: 'ca9385',
-          hypothesisId: 'H1',
-          location: 'GuruChatScreen.handleSend',
-          message: 'guru_chat_model_passed',
-          data: {
-            chosenModelState: chosenModel,
-            chosenModelRef: selectedModelAtSend,
-            modelForApi: modelForApi ?? 'undefined(auto)',
-          },
-          timestamp: Date.now(),
-        }),
-      }).catch(() => {});
-      // #endregion
-      const grounded = await chatWithGuruGroundedStreaming(
-        question,
-        apiTopicName,
-        nextHistory,
-        modelForApi,
-        (delta) => {
-          if (!sawFirstToken) {
-            sawFirstToken = true;
-            setLoading(false);
-          }
-          setMessages((current) => {
-            const idx = current.findIndex((m) => m.id === guruId);
-            if (idx === -1) {
-              return [
-                ...current,
-                {
-                  id: guruId,
-                  role: 'guru' as const,
-                  text: delta,
-                  timestamp: guruTs,
-                },
-              ];
-            }
-            const next = [...current];
-            const prev = next[idx];
-            next[idx] = { ...prev, text: prev.text + delta };
-            return next;
-          });
-          scrollToLatest(0);
-        },
-        {
-          sessionSummary: sessionSummary.trim() || undefined,
-          stateJson: sessionStateJson.trim() || undefined,
-          profileNotes: profile?.guruMemoryNotes?.trim() || undefined,
-          studyContext: studyContextLine,
-          syllabusTopicId,
-          groundingTitle,
-          groundingContext,
-        },
-      );
-      let finalGuruText = grounded.reply;
-      setMessages((current) => {
-        const idx = current.findIndex((m) => m.id === guruId);
-        if (idx === -1) {
-          return [
-            ...current,
-            {
-              id: guruId,
-              role: 'guru',
-              text: grounded.reply,
-              sources: grounded.sources,
-              referenceImages: grounded.referenceImages,
-              modelUsed: grounded.modelUsed,
-              searchQuery: grounded.searchQuery,
-              timestamp: guruTs,
+      try {
+        const studyContextLine = await buildBoundedGuruChatStudyContext(profile, syllabusTopicId);
+        const selectedModelAtSend = chosenModelRef.current;
+        const modelForApi = selectedModelAtSend === 'auto' ? undefined : selectedModelAtSend;
+        // #region agent log
+        fetch('http://127.0.0.1:7507/ingest/f6a0734c-b45d-4770-9e51-aa07e5c2da6e', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': 'ca9385' },
+          body: JSON.stringify({
+            sessionId: 'ca9385',
+            hypothesisId: 'H1',
+            location: 'GuruChatScreen.handleSend',
+            message: 'guru_chat_model_passed',
+            data: {
+              chosenModelState: chosenModel,
+              chosenModelRef: selectedModelAtSend,
+              modelForApi: modelForApi ?? 'undefined(auto)',
             },
-          ];
-        }
-        const next = [...current];
-        const prev = next[idx];
-        next[idx] = {
-          ...prev,
-          text: grounded.reply,
-          sources: grounded.sources,
-          referenceImages: grounded.referenceImages,
-          modelUsed: grounded.modelUsed,
-          searchQuery: grounded.searchQuery,
-        };
-        return next;
-      });
+            timestamp: Date.now(),
+          }),
+        }).catch(() => {});
+        // #endregion
+        const grounded = await chatWithGuruGroundedStreaming(
+          question,
+          apiTopicName,
+          nextHistory,
+          modelForApi,
+          (delta) => {
+            if (!sawFirstToken) {
+              sawFirstToken = true;
+              setLoading(false);
+            }
+            setMessages((current) => {
+              const idx = current.findIndex((m) => m.id === guruId);
+              if (idx === -1) {
+                return [
+                  ...current,
+                  {
+                    id: guruId,
+                    role: 'guru' as const,
+                    text: delta,
+                    timestamp: guruTs,
+                  },
+                ];
+              }
+              const next = [...current];
+              const prev = next[idx];
+              next[idx] = { ...prev, text: prev.text + delta };
+              return next;
+            });
+            scrollToLatest(0);
+          },
+          {
+            sessionSummary: sessionSummary.trim() || undefined,
+            stateJson: sessionStateJson.trim() || undefined,
+            profileNotes: profile?.guruMemoryNotes?.trim() || undefined,
+            studyContext: studyContextLine,
+            syllabusTopicId,
+            groundingTitle,
+            groundingContext,
+          },
+        );
+        let finalGuruText = grounded.reply;
+        setMessages((current) => {
+          const idx = current.findIndex((m) => m.id === guruId);
+          if (idx === -1) {
+            return [
+              ...current,
+              {
+                id: guruId,
+                role: 'guru',
+                text: grounded.reply,
+                sources: grounded.sources,
+                referenceImages: grounded.referenceImages,
+                modelUsed: grounded.modelUsed,
+                searchQuery: grounded.searchQuery,
+                timestamp: guruTs,
+              },
+            ];
+          }
+          const next = [...current];
+          const prev = next[idx];
+          next[idx] = {
+            ...prev,
+            text: grounded.reply,
+            sources: grounded.sources,
+            referenceImages: grounded.referenceImages,
+            modelUsed: grounded.modelUsed,
+            searchQuery: grounded.searchQuery,
+          };
+          return next;
+        });
 
-      if (wantsImage && canGenerateImage && !imageJobKey) {
-        try {
-          setImageJobKey(`${guruId}:${requestedImageStyle}`);
-          const image = await generateStudyImage({
-            contextType: 'chat',
-            contextKey: buildChatImageContextKey(currentThread?.topicName ?? topicName, guruTs),
-            topicName: currentThread?.topicName ?? topicName,
-            sourceText: grounded.reply,
-            style: requestedImageStyle,
-          });
-          setMessages((current) =>
-            current.map((entry) =>
-              entry.id === guruId ? { ...entry, images: [image, ...(entry.images ?? [])] } : entry,
-            ),
-          );
-          scrollToLatest(0);
-        } catch (imageError) {
-          const imageFailureMessage =
-            imageError instanceof Error ? imageError.message : 'Image generation failed.';
-          finalGuruText = `${finalGuruText}\n\nNote: I couldn't generate a study image automatically. ${imageFailureMessage}`;
+        if (wantsImage && canGenerateImage && !imageJobKey) {
+          try {
+            setImageJobKey(`${guruId}:${requestedImageStyle}`);
+            const image = await generateStudyImage({
+              contextType: 'chat',
+              contextKey: buildChatImageContextKey(currentThread?.topicName ?? topicName, guruTs),
+              topicName: currentThread?.topicName ?? topicName,
+              sourceText: grounded.reply,
+              style: requestedImageStyle,
+            });
+            setMessages((current) =>
+              current.map((entry) =>
+                entry.id === guruId
+                  ? { ...entry, images: [image, ...(entry.images ?? [])] }
+                  : entry,
+              ),
+            );
+            scrollToLatest(0);
+          } catch (imageError) {
+            const imageFailureMessage =
+              imageError instanceof Error ? imageError.message : 'Image generation failed.';
+            finalGuruText = `${finalGuruText}\n\nNote: I couldn't generate a study image automatically. ${imageFailureMessage}`;
+            setMessages((current) =>
+              current.map((entry) =>
+                entry.id === guruId
+                  ? {
+                      ...entry,
+                      text: finalGuruText,
+                    }
+                  : entry,
+              ),
+            );
+          } finally {
+            setImageJobKey(null);
+          }
+        } else if (
+          wantsImage &&
+          !canGenerateImage &&
+          (!grounded.referenceImages || grounded.referenceImages.length === 0)
+        ) {
+          finalGuruText = `${finalGuruText}\n\nNote: No image backend is configured right now. Add a fal, Gemini, Cloudflare, or OpenRouter image key in Settings to let Guru generate diagrams automatically.`;
           setMessages((current) =>
             current.map((entry) =>
               entry.id === guruId
@@ -1375,84 +1290,85 @@ function GuruChatScreenContent() {
                 : entry,
             ),
           );
-        } finally {
-          setImageJobKey(null);
         }
-      } else if (
-        wantsImage &&
-        !canGenerateImage &&
-        (!grounded.referenceImages || grounded.referenceImages.length === 0)
-      ) {
-        finalGuruText = `${finalGuruText}\n\nNote: No image backend is configured right now. Add a fal, Gemini, Cloudflare, or OpenRouter image key in Settings to let Guru generate diagrams automatically.`;
-        setMessages((current) =>
-          current.map((entry) =>
-            entry.id === guruId
-              ? {
-                  ...entry,
-                  text: finalGuruText,
-                }
-              : entry,
-          ),
-        );
-      }
 
-      try {
-        await saveChatMessage(
-          currentThreadId,
-          topicName,
-          'guru',
-          finalGuruText,
-          guruTs,
-          grounded.sources && grounded.sources.length > 0
-            ? JSON.stringify(grounded.sources)
-            : undefined,
-          grounded.modelUsed,
-        );
-        await refreshThreads();
-      } catch {
-        // Ignore persistence issues here too.
-      }
-      if (syllabusTopicId != null && !hasPersistedTopicProgressRef.current) {
         try {
-          await markTopicDiscussedInChat(syllabusTopicId);
-          hasPersistedTopicProgressRef.current = true;
+          await saveChatMessage(
+            currentThreadId,
+            topicName,
+            'guru',
+            finalGuruText,
+            guruTs,
+            grounded.sources && grounded.sources.length > 0
+              ? JSON.stringify(grounded.sources)
+              : undefined,
+            grounded.modelUsed,
+          );
+          await refreshThreads();
         } catch {
-          // Progress persistence should not block the conversation flow.
+          // Ignore persistence issues here too.
         }
+        if (syllabusTopicId != null && !hasPersistedTopicProgressRef.current) {
+          try {
+            await markTopicDiscussedInChat(syllabusTopicId);
+            hasPersistedTopicProgressRef.current = true;
+          } catch {
+            // Progress persistence should not block the conversation flow.
+          }
+        }
+        try {
+          await maybeSummarizeGuruSession(currentThreadId, topicName);
+          const row = await getSessionMemoryRow(currentThreadId);
+          setSessionSummary(row?.summaryText ?? '');
+          setSessionStateJson(row?.stateJson ?? '{}');
+        } catch {
+          /* session summary is optional */
+        }
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'Unknown error';
+        setMessages((current) => [
+          ...current,
+          {
+            id: `g-${Date.now()}`,
+            role: 'guru',
+            text: `Warning: ${message}`,
+            timestamp: Date.now(),
+          },
+        ]);
+      } finally {
+        setLoading(false);
+        scrollToLatest(120);
       }
-      try {
-        await maybeSummarizeGuruSession(currentThreadId, topicName);
-        const row = await getSessionMemoryRow(currentThreadId);
-        setSessionSummary(row?.summaryText ?? '');
-        setSessionStateJson(row?.stateJson ?? '{}');
-      } catch {
-        /* session summary is optional */
-      }
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Unknown error';
-      setMessages((current) => [
-        ...current,
-        {
-          id: `g-${Date.now()}`,
-          role: 'guru',
-          text: `Warning: ${message}`,
-          timestamp: Date.now(),
-        },
-      ]);
-    } finally {
-      setLoading(false);
-      scrollToLatest(120);
-    }
-  }
+    },
+    [
+      apiTopicName,
+      chosenModel,
+      currentThread,
+      currentThreadId,
+      groundingContext,
+      groundingTitle,
+      imageJobKey,
+      input,
+      loading,
+      modelHistory,
+      profile,
+      refreshThreads,
+      scrollToLatest,
+      sessionStateJson,
+      sessionSummary,
+      syllabusTopicId,
+      topicName,
+    ],
+  );
 
-  async function handleRegenerateReply() {
+  const handleRegenerateReply = useCallback(async () => {
     if (loading) return;
     if (!lastUserPrompt) {
       void showInfo('Nothing to regenerate', 'Send a message first.');
       return;
     }
     await handleSend(lastUserPrompt);
-  }
+  }, [handleSend, lastUserPrompt, loading]);
 
   async function startNewChat() {
     if (messages.length > 0) {
@@ -1504,7 +1420,7 @@ function GuruChatScreenContent() {
       const hasSources = !!message.sources?.length;
       const sourcesExpanded = expandedSourcesMessageId === message.id;
       const isLatestGuruMessage = message.id === latestGuruMessageId;
-      const guruGeneratedImages = message.role === 'guru' ? (message.images ?? []) : [];
+      const guruGeneratedImages = message.role === 'guru' ? message.images ?? [] : [];
       const guruReferenceImages =
         message.role === 'guru'
           ? (message.referenceImages ?? []).filter(isDisplayableReferenceImage)
@@ -1771,10 +1687,9 @@ function GuruChatScreenContent() {
       entryComplete,
       handleGenerateMessageImage,
       imageJobKey,
-      lastUserPrompt,
       latestGuruMessageId,
       loading,
-      isLandscape,
+      handleRegenerateReply,
       openSource,
     ],
   );
@@ -1884,12 +1799,7 @@ function GuruChatScreenContent() {
   return (
     <SafeAreaView style={styles.safe} testID="guru-chat-screen">
       <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
-      <KeyboardAvoidingView
-        style={styles.flex}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        enabled={Platform.OS === 'ios'}
-        keyboardVerticalOffset={0}
-      >
+      <View style={styles.flex}>
         <ScreenMotion
           style={styles.flex}
           trigger={GURU_CHAT_SCREEN_MOTION_TRIGGER}
@@ -1904,8 +1814,8 @@ function GuruChatScreenContent() {
                     currentThread && currentThread.title !== topicName
                       ? currentThread.title
                       : isGeneralChat
-                        ? 'Medical assistant'
-                        : topicName
+                      ? 'Medical assistant'
+                      : topicName
                   }
                   onBackPress={navigation.canGoBack() ? () => navigation.goBack() : undefined}
                   rightElement={
@@ -1960,7 +1870,7 @@ function GuruChatScreenContent() {
                     <LinearText style={styles.historyNewBtnText}>New Chat</LinearText>
                   </Pressable>
 
-                  <FlatList
+                  <AppFlashList
                     data={threads}
                     keyExtractor={(item) => item.id.toString()}
                     style={styles.historyList}
@@ -2062,7 +1972,7 @@ function GuruChatScreenContent() {
                   </ScrollView>
 
                   {/* Models for selected tab */}
-                  <FlatList
+                  <AppFlashList
                     data={availableModels.filter((m) => m.group === pickerTab)}
                     keyExtractor={(m) => m.id}
                     style={styles.modelList}
@@ -2154,7 +2064,7 @@ function GuruChatScreenContent() {
                       </View>
                     </View>
                   ) : (
-                    <FlatList
+                    <AppFlashList
                       key={`chat-list-${viewportWidth}`}
                       ref={flatListRef}
                       data={chatItems}
@@ -2165,8 +2075,10 @@ function GuruChatScreenContent() {
                       showsVerticalScrollIndicator={false}
                       keyboardShouldPersistTaps="handled"
                       keyboardDismissMode="on-drag"
-                      inverted
-                      maintainVisibleContentPosition={{ minIndexForVisible: 0 }}
+                      maintainVisibleContentPosition={{
+                        autoscrollToBottomThreshold: 0.2,
+                        startRenderingFromBottom: true,
+                      }}
                     />
                   )}
                 </View>
@@ -2174,84 +2086,81 @@ function GuruChatScreenContent() {
             </RevealSection>
 
             <RevealSection active={entryComplete} delayMs={140}>
-              <View style={styles.composerToolsWrap}>
-                <View style={styles.quickActionsCenterWrap}>
-                  <View style={styles.quickActionsCenter}>
-                    {QUICK_REPLY_OPTIONS.map((option) => (
-                      <Pressable
-                        key={option.key}
-                        style={({ pressed }) => [
-                          styles.quickActionChip,
-                          loading && styles.quickActionChipDisabled,
-                          pressed && !loading && styles.pressed,
-                        ]}
-                        onPress={() => handleSend(option.prompt)}
-                        disabled={loading}
-                      >
-                        <LinearText style={styles.quickActionText}>{option.label}</LinearText>
-                      </Pressable>
-                    ))}
+              <KeyboardStickyView offset={{ opened: -Math.max(insets.bottom - 8, 0) }}>
+                <View style={styles.composerToolsWrap}>
+                  <View style={styles.quickActionsCenterWrap}>
+                    <View style={styles.quickActionsCenter}>
+                      {QUICK_REPLY_OPTIONS.map((option) => (
+                        <Pressable
+                          key={option.key}
+                          style={({ pressed }) => [
+                            styles.quickActionChip,
+                            loading && styles.quickActionChipDisabled,
+                            pressed && !loading && styles.pressed,
+                          ]}
+                          onPress={() => handleSend(option.prompt)}
+                          disabled={loading}
+                        >
+                          <LinearText style={styles.quickActionText}>{option.label}</LinearText>
+                        </Pressable>
+                      ))}
+                    </View>
                   </View>
-                </View>
 
-                <View
-                  style={[
-                    styles.composerWrap,
-                    keyboardInset > 0 && { marginBottom: keyboardInset },
-                  ]}
-                >
-                  <View style={styles.inputRow}>
-                    <Pressable
-                      style={({ pressed }) => [styles.modelIconBtn, pressed && styles.pressed]}
-                      onPress={() => {
-                        setPickerTab(currentModelGroup);
-                        setShowModelPicker(true);
-                      }}
-                      accessibilityRole="button"
-                      accessibilityLabel={`Current model: ${currentModelLabel}. Tap to change.`}
-                    >
-                      <View style={styles.modelDot} />
-                      <Ionicons name="chevron-down" size={8} color={n.colors.textMuted} />
-                    </Pressable>
-                    <TextInput
-                      style={styles.input}
-                      placeholder="Ask Guru anything..."
-                      placeholderTextColor={n.colors.textMuted}
-                      value={input}
-                      autoFocus={!!route.params?.autoFocusComposer}
-                      onChangeText={setInput}
-                      onSubmitEditing={() => handleSend()}
-                      returnKeyType="send"
-                      multiline={false}
-                      blurOnSubmit={false}
-                      maxLength={1000}
-                      selectionColor={n.colors.accent}
-                    />
-                    <Pressable
-                      style={({ pressed }) => [
-                        styles.sendBtn,
-                        (!input.trim() || loading) && styles.sendBtnDisabled,
-                        pressed && input.trim() && !loading && styles.pressed,
-                      ]}
-                      android_ripple={{ color: '#ffffff18', radius: 22 }}
-                      onPress={() => handleSend()}
-                      disabled={!input.trim() || loading}
-                      accessibilityRole="button"
-                      accessibilityLabel="Send message"
-                    >
-                      <Ionicons
-                        name={loading ? 'ellipse-outline' : 'send'}
-                        size={18}
-                        color={n.colors.textPrimary}
+                  <View style={styles.composerWrap}>
+                    <View style={styles.inputRow}>
+                      <Pressable
+                        style={({ pressed }) => [styles.modelIconBtn, pressed && styles.pressed]}
+                        onPress={() => {
+                          setPickerTab(currentModelGroup);
+                          setShowModelPicker(true);
+                        }}
+                        accessibilityRole="button"
+                        accessibilityLabel={`Current model: ${currentModelLabel}. Tap to change.`}
+                      >
+                        <View style={styles.modelDot} />
+                        <Ionicons name="chevron-down" size={8} color={n.colors.textMuted} />
+                      </Pressable>
+                      <TextInput
+                        style={styles.input}
+                        placeholder="Ask Guru anything..."
+                        placeholderTextColor={n.colors.textMuted}
+                        value={input}
+                        autoFocus={!!route.params?.autoFocusComposer}
+                        onChangeText={setInput}
+                        onSubmitEditing={() => handleSend()}
+                        returnKeyType="send"
+                        multiline={false}
+                        blurOnSubmit={false}
+                        maxLength={1000}
+                        selectionColor={n.colors.accent}
                       />
-                    </Pressable>
+                      <Pressable
+                        style={({ pressed }) => [
+                          styles.sendBtn,
+                          (!input.trim() || loading) && styles.sendBtnDisabled,
+                          pressed && input.trim() && !loading && styles.pressed,
+                        ]}
+                        android_ripple={{ color: '#ffffff18', radius: 22 }}
+                        onPress={() => handleSend()}
+                        disabled={!input.trim() || loading}
+                        accessibilityRole="button"
+                        accessibilityLabel="Send message"
+                      >
+                        <Ionicons
+                          name={loading ? 'ellipse-outline' : 'send'}
+                          size={18}
+                          color={n.colors.textPrimary}
+                        />
+                      </Pressable>
+                    </View>
                   </View>
                 </View>
-              </View>
+              </KeyboardStickyView>
             </RevealSection>
           </ResponsiveContainer>
         </ScreenMotion>
-      </KeyboardAvoidingView>
+      </View>
       <ImageLightbox
         visible={!!lightboxUri}
         uri={lightboxUri}
@@ -2291,9 +2200,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: 17,
-    backgroundColor: 'rgba(255, 255, 255, 0.03)',
+    backgroundColor: whiteAlpha['3'],
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
+    borderColor: whiteAlpha['8'],
   },
   headerCenter: {
     flex: 1,
@@ -2320,9 +2229,9 @@ const styles = StyleSheet.create({
     borderRadius: 17,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.03)',
+    backgroundColor: whiteAlpha['3'],
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
+    borderColor: whiteAlpha['8'],
   },
   historyOverlay: {
     ...StyleSheet.absoluteFillObject,
@@ -2330,7 +2239,7 @@ const styles = StyleSheet.create({
   },
   historyBackdrop: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(2, 4, 8, 0.52)',
+    backgroundColor: blackAlpha['52'],
   },
   historyDrawer: {
     position: 'absolute',
@@ -2340,11 +2249,11 @@ const styles = StyleSheet.create({
     width: '82%',
     maxWidth: 340,
     borderRightWidth: StyleSheet.hairlineWidth,
-    borderRightColor: 'rgba(255, 255, 255, 0.08)',
+    borderRightColor: whiteAlpha['8'],
     paddingTop: 58,
     paddingHorizontal: 16,
     paddingBottom: 18,
-    backgroundColor: 'rgba(5, 5, 5, 0.98)',
+    backgroundColor: n.colors.background,
   },
   historyHeader: {
     flexDirection: 'row',
@@ -2362,7 +2271,7 @@ const styles = StyleSheet.create({
     borderRadius: 17,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.04)',
+    backgroundColor: whiteAlpha['4'],
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: n.colors.border,
   },
@@ -2374,9 +2283,9 @@ const styles = StyleSheet.create({
     borderRadius: n.radius.md,
     paddingVertical: 13,
     marginBottom: 14,
-    backgroundColor: 'rgba(94, 106, 210, 0.08)',
+    backgroundColor: accentAlpha['8'],
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: 'rgba(94, 106, 210, 0.2)',
+    borderColor: accentAlpha['20'],
   },
   historyNewBtnText: {
     ...n.typography.label,
@@ -2400,9 +2309,9 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   historyItemActive: {
-    backgroundColor: 'rgba(94, 106, 210, 0.08)',
+    backgroundColor: accentAlpha['8'],
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: 'rgba(94, 106, 210, 0.18)',
+    borderColor: accentAlpha['18'],
   },
   historyItemMain: {
     flex: 1,
@@ -2445,9 +2354,9 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.03)',
+    backgroundColor: whiteAlpha['3'],
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
+    borderColor: whiteAlpha['8'],
   },
   historyEmpty: {
     paddingVertical: 28,
@@ -2464,10 +2373,10 @@ const styles = StyleSheet.create({
   },
   sheetBackdrop: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(2, 4, 8, 0.56)',
+    backgroundColor: blackAlpha['56'],
   },
   sheetContent: {
-    backgroundColor: 'rgba(8, 10, 16, 0.94)',
+    backgroundColor: n.colors.surface,
     borderRadius: 20,
     paddingTop: 16,
     paddingHorizontal: 16,
@@ -2478,7 +2387,7 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     marginBottom: 12,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
+    borderColor: whiteAlpha['10'],
     shadowColor: n.colors.background,
     shadowOffset: { width: 0, height: -8 },
     shadowOpacity: 0.5,
@@ -2517,8 +2426,8 @@ const styles = StyleSheet.create({
     borderColor: 'transparent',
   },
   tabChipActive: {
-    backgroundColor: 'rgba(94, 106, 210, 0.1)',
-    borderColor: 'rgba(94, 106, 210, 0.25)',
+    backgroundColor: accentAlpha['10'],
+    borderColor: accentAlpha['25'],
   },
   tabChipText: {
     color: n.colors.textMuted,
@@ -2541,9 +2450,9 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   modelItemActive: {
-    backgroundColor: 'rgba(94, 106, 210, 0.08)',
+    backgroundColor: accentAlpha['8'],
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: 'rgba(94, 106, 210, 0.2)',
+    borderColor: accentAlpha['20'],
   },
   modelItemText: {
     color: n.colors.textSecondary,
@@ -2558,7 +2467,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     alignItems: 'center',
     borderRadius: n.radius.sm,
-    backgroundColor: 'rgba(255, 255, 255, 0.03)',
+    backgroundColor: whiteAlpha['3'],
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: n.colors.border,
   },
@@ -2584,10 +2493,10 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   renameInput: {
-    backgroundColor: 'rgba(255, 255, 255, 0.04)',
+    backgroundColor: whiteAlpha['4'],
     borderRadius: n.radius.md,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
+    borderColor: whiteAlpha['10'],
     color: n.colors.textPrimary,
     fontSize: 15,
     paddingHorizontal: 14,
@@ -2602,7 +2511,7 @@ const styles = StyleSheet.create({
     borderRadius: n.radius.sm,
     paddingHorizontal: 18,
     paddingVertical: 12,
-    backgroundColor: 'rgba(255, 255, 255, 0.04)',
+    backgroundColor: whiteAlpha['4'],
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: n.colors.border,
   },
@@ -2640,9 +2549,9 @@ const styles = StyleSheet.create({
     marginHorizontal: 4,
     marginTop: 4,
     borderRadius: n.radius.md,
-    backgroundColor: 'rgba(94, 106, 210, 0.06)',
+    backgroundColor: accentAlpha['6'],
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: 'rgba(94, 106, 210, 0.15)',
+    borderColor: accentAlpha['15'],
   },
   bannerIcon: {
     marginTop: 0,
@@ -2655,7 +2564,7 @@ const styles = StyleSheet.create({
   chatSurface: {
     flex: 1,
     borderRadius: n.radius.lg,
-    backgroundColor: 'rgba(255, 255, 255, 0.015)',
+    backgroundColor: whiteAlpha['1.5'],
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: n.colors.border,
     marginTop: 6,
@@ -2686,9 +2595,9 @@ const styles = StyleSheet.create({
     width: 28,
     height: 28,
     borderRadius: 14,
-    backgroundColor: 'rgba(94, 106, 210, 0.1)',
+    backgroundColor: accentAlpha['10'],
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: 'rgba(94, 106, 210, 0.25)',
+    borderColor: accentAlpha['25'],
     alignItems: 'center',
     justifyContent: 'center',
     flexShrink: 0,
@@ -2766,9 +2675,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 999,
-    backgroundColor: 'rgba(94, 106, 210, 0.08)',
+    backgroundColor: accentAlpha['8'],
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: 'rgba(94, 106, 210, 0.18)',
+    borderColor: accentAlpha['18'],
   },
   msgModelPillText: {
     color: n.colors.accent,
@@ -2784,8 +2693,8 @@ const styles = StyleSheet.create({
     borderWidth: StyleSheet.hairlineWidth,
   },
   userBubble: {
-    backgroundColor: 'rgba(94, 106, 210, 0.14)',
-    borderColor: 'rgba(94, 106, 210, 0.35)',
+    backgroundColor: accentAlpha['14'],
+    borderColor: accentAlpha['35'],
     borderBottomRightRadius: 6,
     shadowColor: '#5E6AD2',
     shadowOffset: { width: 0, height: 2 },
@@ -2794,11 +2703,11 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   guruBubble: {
-    backgroundColor: 'rgba(255, 255, 255, 0.03)',
-    borderColor: 'rgba(255, 255, 255, 0.08)',
+    backgroundColor: whiteAlpha['3'],
+    borderColor: whiteAlpha['8'],
     borderBottomLeftRadius: 6,
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: 'rgba(255, 255, 255, 0.12)',
+    borderTopColor: whiteAlpha['12'],
   },
   typingBubble: {
     paddingVertical: 16,
@@ -2859,10 +2768,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    backgroundColor: 'rgba(255, 255, 255, 0.03)',
+    backgroundColor: whiteAlpha['3'],
     borderRadius: 999,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
+    borderColor: whiteAlpha['10'],
     paddingHorizontal: 12,
     paddingVertical: 8,
   },
@@ -2915,7 +2824,7 @@ const styles = StyleSheet.create({
     width: '100%',
     marginTop: 8,
     borderRadius: n.radius.md,
-    backgroundColor: 'rgba(255, 255, 255, 0.02)',
+    backgroundColor: whiteAlpha['2'],
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: n.colors.border,
     overflow: 'hidden',
@@ -2927,7 +2836,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingTop: 10,
     paddingBottom: 8,
-    backgroundColor: 'rgba(94, 106, 210, 0.04)',
+    backgroundColor: accentAlpha['4'],
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: n.colors.border,
   },
@@ -2967,7 +2876,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     flexShrink: 0,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
+    borderColor: whiteAlpha['8'],
     backgroundColor: n.colors.surfaceHover,
   },
   sourceBodyPress: {
@@ -3042,7 +2951,7 @@ const styles = StyleSheet.create({
   emptyPanel: {
     borderRadius: n.radius.lg,
     padding: 20,
-    backgroundColor: 'rgba(255, 255, 255, 0.02)',
+    backgroundColor: whiteAlpha['2'],
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: n.colors.border,
     gap: 20,
@@ -3085,7 +2994,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 12,
     borderRadius: n.radius.md,
-    backgroundColor: 'rgba(255, 255, 255, 0.02)',
+    backgroundColor: whiteAlpha['2'],
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: n.colors.border,
   },
@@ -3106,7 +3015,7 @@ const styles = StyleSheet.create({
     borderRadius: n.radius.md,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: n.colors.border,
-    backgroundColor: 'rgba(255, 255, 255, 0.02)',
+    backgroundColor: whiteAlpha['2'],
     paddingHorizontal: 14,
     paddingVertical: 12,
     flexBasis: '47%',
@@ -3118,9 +3027,9 @@ const styles = StyleSheet.create({
     borderRadius: 15,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(94, 106, 210, 0.1)',
+    backgroundColor: accentAlpha['10'],
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: 'rgba(94, 106, 210, 0.2)',
+    borderColor: accentAlpha['20'],
   },
   starterChipText: {
     color: n.colors.textSecondary,
@@ -3133,7 +3042,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 8,
     borderRadius: n.radius.lg,
-    backgroundColor: 'rgba(255, 255, 255, 0.025)',
+    backgroundColor: whiteAlpha['2.5'],
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: n.colors.border,
     marginHorizontal: 4,
@@ -3158,8 +3067,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderRadius: 999,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
-    backgroundColor: 'rgba(255, 255, 255, 0.03)',
+    borderColor: whiteAlpha['10'],
+    backgroundColor: whiteAlpha['3'],
     paddingHorizontal: 12,
     paddingVertical: 7,
   },
@@ -3176,9 +3085,9 @@ const styles = StyleSheet.create({
     width: 34,
     height: 34,
     borderRadius: 17,
-    backgroundColor: 'rgba(255, 255, 255, 0.04)',
+    backgroundColor: whiteAlpha['4'],
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
+    borderColor: whiteAlpha['10'],
     alignItems: 'center',
     justifyContent: 'center',
     flexDirection: 'row',
@@ -3225,7 +3134,7 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   sendBtnDisabled: {
-    backgroundColor: 'rgba(255, 255, 255, 0.04)',
+    backgroundColor: whiteAlpha['4'],
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: n.colors.border,
     shadowOpacity: 0,

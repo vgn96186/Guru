@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import {
   View,
-  TextInput,
-  FlatList,
   TouchableOpacity,
   StyleSheet,
   StatusBar,
@@ -19,8 +17,10 @@ import { linearTheme as n } from '../theme/linearTheme';
 import { ResponsiveContainer } from '../hooks/useResponsive';
 import AppText from '../components/AppText';
 import BannerSearchBar from '../components/BannerSearchBar';
+import { AppFlashList } from '../components/primitives/AppFlashList';
 import ScreenHeader from '../components/ScreenHeader';
 import LinearSurface from '../components/primitives/LinearSurface';
+import { EmptyState } from '../components/primitives';
 
 type Nav = NativeStackNavigationProp<HomeStackParamList, 'GlobalTopicSearch'>;
 
@@ -88,35 +88,28 @@ export default function GlobalTopicSearchScreen() {
                 autoFocus
               />
             }
-          >
-          </ScreenHeader>
-          <FlatList
+          ></ScreenHeader>
+          <AppFlashList
             data={results}
             keyExtractor={(item) => item.id.toString()}
             keyboardShouldPersistTaps="handled"
             contentContainerStyle={styles.listContent}
             ListEmptyComponent={
               query.length >= 2 ? (
-                <View style={styles.emptyState}>
-                  <AppText style={styles.emptyTitle} variant="sectionTitle">
-                    No topics found
-                  </AppText>
-                  <AppText style={styles.emptySub} variant="bodySmall" tone="muted">
-                    Try a different keyword.
-                  </AppText>
-                </View>
+                <EmptyState
+                  icon="search-outline"
+                  title="No topics found"
+                  subtitle="Try a different keyword."
+                  style={styles.emptyState}
+                />
               ) : (
-                <View style={styles.emptyState}>
-                  <Ionicons
-                    name="search-outline"
-                    size={48}
-                    color={n.colors.border}
-                    style={{ marginBottom: 16 }}
-                  />
-                  <AppText style={styles.emptySub} variant="bodySmall" tone="muted">
-                    Type at least 2 characters to search across all subjects.
-                  </AppText>
-                </View>
+                <EmptyState
+                  icon="search-outline"
+                  iconSize={48}
+                  title=""
+                  subtitle="Type at least 2 characters to search across all subjects."
+                  style={styles.emptyState}
+                />
               )
             }
             renderItem={({ item }) => (
@@ -164,7 +157,5 @@ const styles = StyleSheet.create({
   resultTextContainer: { flex: 1, minWidth: 0, marginRight: 12 },
   resultName: { fontWeight: '700', marginBottom: 4 },
   resultSubject: {},
-  emptyState: { alignItems: 'center', marginTop: 60, paddingHorizontal: 32 },
-  emptyTitle: { marginBottom: 8, textAlign: 'center' },
-  emptySub: { textAlign: 'center' },
+  emptyState: { marginTop: 60 },
 });

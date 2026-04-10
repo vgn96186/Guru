@@ -32,6 +32,8 @@ export interface ChatGptAccountsConfig {
   secondary: ChatGptAccountState;
 }
 
+export type AutoBackupFrequency = 'off' | 'daily' | '3days' | 'weekly' | 'monthly';
+
 export interface Subject {
   id: number;
   name: string;
@@ -147,6 +149,8 @@ export interface UserProfile {
   focusSubjectIds: number[];
   quizCorrectCount?: number;
   lastBackupDate?: string | null;
+  autoBackupFrequency?: AutoBackupFrequency;
+  lastAutoBackupAt?: string | null;
   useLocalModel?: boolean;
   localModelPath?: string | null;
   useLocalWhisper?: boolean;

@@ -14,13 +14,13 @@
 import React, { useCallback, useRef, useState } from 'react';
 import {
   ActivityIndicator,
-  Image,
   Pressable,
   StyleSheet,
   View,
   type ImageStyle,
   type StyleProp,
 } from 'react-native';
+import { Image as ExpoImage, type ImageContentFit } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
 import { linearTheme as n } from '../theme/linearTheme';
 import LinearText from '../components/primitives/LinearText';
@@ -62,11 +62,12 @@ export function ResilientImage({
   const retryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const safeUri = typeof uri === 'string' ? uri.trim() : '';
-  if (!safeUri || !/^https?:\/\//i.test(safeUri)) {
-    return null;
-  }
 
   const handleLoad = useCallback(() => {
+    if (retryTimerRef.current) {
+      clearTimeout(retryTimerRef.current);
+      retryTimerRef.current = null;
+    }
     attemptsRef.current = 0;
     setStatus('loaded');
   }, []);
@@ -76,10 +77,14 @@ export function ResilientImage({
     if (attempt < MAX_RETRIES) {
       const delay = RETRY_DELAYS_MS[Math.min(attempt, RETRY_DELAYS_MS.length - 1)];
       attemptsRef.current = attempt + 1;
+      if (retryTimerRef.current) {
+        clearTimeout(retryTimerRef.current);
+      }
       // Schedule a retry by bumping retryKey after delay
       retryTimerRef.current = setTimeout(() => {
         setStatus('loading');
         setRetryKey((k) => k + 1);
+        retryTimerRef.current = null;
       }, delay);
     } else {
       setStatus('failed');
@@ -87,6 +92,10 @@ export function ResilientImage({
   }, []);
 
   const handleManualRetry = useCallback(() => {
+    if (retryTimerRef.current) {
+      clearTimeout(retryTimerRef.current);
+      retryTimerRef.current = null;
+    }
     attemptsRef.current = 0;
     setStatus('loading');
     setRetryKey((k) => k + 1);
@@ -95,18 +104,35 @@ export function ResilientImage({
   const imageSource = {
     uri: safeUri,
     headers: { 'User-Agent': IMAGE_USER_AGENT },
-    cache: 'default' as const,
   };
+  const contentFit = (resizeMode === 'repeat' ? 'cover' : resizeMode) as ImageContentFit;
+  const recyclingKey = `${safeUri}:${retryKey}`;
+
+  React.useEffect(() => {
+    return () => {
+      if (retryTimerRef.current) {
+        clearTimeout(retryTimerRef.current);
+        retryTimerRef.current = null;
+      }
+    };
+  }, []);
+
+  if (!safeUri || !/^https?:\/\//i.test(safeUri)) {
+    return null;
+  }
 
   const content = () => {
     if (status === 'loaded') {
       return (
-        <Image
+        <ExpoImage
           key={retryKey}
           source={imageSource}
           style={style}
-          resizeMode={resizeMode}
+          contentFit={contentFit}
           accessibilityLabel={accessibilityLabel}
+          cachePolicy="memory-disk"
+          transition={120}
+          recyclingKey={recyclingKey}
           onLoad={handleLoad}
           onError={handleError}
         />
@@ -138,11 +164,14 @@ export function ResilientImage({
     // with a spinner overlay.
     return (
       <View style={[styles.loadingContainer, style]}>
-        <Image
+        <ExpoImage
           key={retryKey}
           source={imageSource}
           style={StyleSheet.absoluteFill}
-          resizeMode={resizeMode}
+          contentFit={contentFit}
+          cachePolicy="memory-disk"
+          transition={120}
+          recyclingKey={recyclingKey}
           onLoad={handleLoad}
           onError={handleError}
         />

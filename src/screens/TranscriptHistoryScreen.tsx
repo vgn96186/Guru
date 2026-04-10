@@ -16,7 +16,6 @@ import {
   RefreshControl,
   StatusBar,
   Platform,
-  ActivityIndicator,
 } from 'react-native';
 import LinearText from '../components/primitives/LinearText';
 import ErrorBoundary from '../components/ErrorBoundary';
@@ -40,6 +39,13 @@ import {
   type LectureHistoryItem,
 } from '../db/queries/aiCache';
 import { linearTheme as n } from '../theme/linearTheme';
+import {
+  blackAlpha,
+  whiteAlpha,
+  transcriptBlueAlpha,
+  transcriptBlueBorderAlpha,
+} from '../theme/colorUtils';
+import LoadingOrb from '../components/LoadingOrb';
 import { CONFIDENCE_LABELS } from '../constants/gamification';
 import { loadTranscriptFromFile } from '../services/transcriptStorage';
 import { dbEvents, DB_EVENT_KEYS } from '../services/databaseEvents';
@@ -342,6 +348,22 @@ export default function TranscriptHistoryScreen() {
   const selectedNeedsAiNote = selectedNote ? lectureNeedsAiNote(selectedNote) : false;
   const isFilterActive = managerFilter !== 'all';
   const selectedHasRecordingOnly = !!(selectedNote?.recordingPath && !selectedNote?.transcript);
+  const recordingsCount = useMemo(
+    () => notes.filter((item) => Boolean(item.recordingPath)).length,
+    [notes],
+  );
+  const transcriptCount = useMemo(
+    () => notes.filter((item) => Boolean(item.transcript)).length,
+    [notes],
+  );
+  const needsAiCount = useMemo(
+    () => notes.filter((item) => lectureNeedsAiNote(item)).length,
+    [notes],
+  );
+  const needsReviewCount = useMemo(
+    () => notes.filter((item) => lectureNeedsReview(item)).length,
+    [notes],
+  );
 
   useEffect(() => {
     const onLectureSaved = () => void loadNotes();
@@ -641,8 +663,8 @@ export default function TranscriptHistoryScreen() {
                         item.confidence === 3
                           ? n.colors.success
                           : item.confidence === 2
-                            ? n.colors.warning
-                            : n.colors.error,
+                          ? n.colors.warning
+                          : n.colors.error,
                     },
                   ]}
                 >
@@ -663,8 +685,7 @@ export default function TranscriptHistoryScreen() {
         <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
         {loading ? (
           <View style={styles.loadingState}>
-            <ActivityIndicator size="large" color={n.colors.accent} />
-            <LinearText style={styles.loadingText}>Loading...</LinearText>
+            <LoadingOrb message="Loading transcripts..." size={120} />
           </View>
         ) : null}
         <ScreenHeader
@@ -692,27 +713,138 @@ export default function TranscriptHistoryScreen() {
         )}
         <TranscriptionSettingsPanel />
 
-        {/* Header stats */}
-        <View style={styles.statsBar}>
-          {isSelectionMode ? (
-            <LinearSurface padded={false} style={styles.selectionBar}>
-              <LinearText style={styles.selectionText}>{selectedIds.length} selected</LinearText>
-              <View style={styles.selectionActions}>
-                <TouchableOpacity style={styles.selectionCancelBtn} onPress={cancelSelection}>
-                  <LinearText style={styles.selectionCancelText}>Cancel</LinearText>
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.selectionDeleteBtn} onPress={handleBatchDelete}>
-                  <Ionicons name="trash-outline" size={14} color="#fff" />
-                  <LinearText style={styles.selectionDeleteText}>Delete</LinearText>
-                </TouchableOpacity>
+        {notes.length > 0 && (
+          <LinearSurface compact style={styles.overviewCard}>
+            <View style={styles.overviewHeader}>
+              <View style={styles.overviewCopy}>
+                <LinearText variant="meta" tone="accent" style={styles.overviewEyebrow}>
+                  LECTURE LIBRARY
+                </LinearText>
+                <LinearText variant="sectionTitle" style={styles.overviewTitle}>
+                  Search, triage, and reopen captured lectures
+                </LinearText>
+                <LinearText variant="bodySmall" tone="secondary" style={styles.overviewText}>
+                  Keep recordings, transcripts, AI notes, and review follow-ups in one calmer
+                  revision queue.
+                </LinearText>
               </View>
-            </LinearSurface>
-          ) : (
-            <LinearText style={styles.statsText}>
-              {visibleNotes.length} of {notes.length} lecture{notes.length !== 1 ? 's' : ''} shown
-            </LinearText>
-          )}
-        </View>
+              <View style={styles.overviewPill}>
+                <LinearText variant="chip" tone="accent">
+                  {visibleNotes.length} visible
+                </LinearText>
+              </View>
+            </View>
+            <View style={styles.overviewMetricsRow}>
+              <View style={styles.overviewMetricCard}>
+                <LinearText variant="title" tone="primary" style={styles.overviewMetricValue}>
+                  {notes.length}
+                </LinearText>
+                <LinearText variant="caption" tone="secondary" style={styles.overviewMetricLabel}>
+                  Total lectures
+                </LinearText>
+              </View>
+              <View style={styles.overviewMetricCard}>
+                <LinearText variant="title" tone="success" style={styles.overviewMetricValue}>
+                  {recordingsCount}
+                </LinearText>
+                <LinearText variant="caption" tone="secondary" style={styles.overviewMetricLabel}>
+                  With recording
+                </LinearText>
+              </View>
+              <View style={styles.overviewMetricCard}>
+                <LinearText variant="title" tone="warning" style={styles.overviewMetricValue}>
+                  {needsAiCount}
+                </LinearText>
+                <LinearText variant="caption" tone="secondary" style={styles.overviewMetricLabel}>
+                  Need AI note
+                </LinearText>
+              </View>
+              <View style={styles.overviewMetricCard}>
+                <LinearText variant="title" tone="warning" style={styles.overviewMetricValue}>
+                  {needsReviewCount}
+                </LinearText>
+                <LinearText variant="caption" tone="secondary" style={styles.overviewMetricLabel}>
+                  Need review
+                </LinearText>
+              </View>
+            </View>
+          </LinearSurface>
+        )}
+
+        {notes.length > 0 && (
+          <LinearSurface compact style={styles.toolbarCard}>
+            <View style={styles.statsBar}>
+              {isSelectionMode ? (
+                <LinearSurface padded={false} style={styles.selectionBar}>
+                  <LinearText style={styles.selectionText}>
+                    {selectedIds.length} selected
+                  </LinearText>
+                  <View style={styles.selectionActions}>
+                    <TouchableOpacity style={styles.selectionCancelBtn} onPress={cancelSelection}>
+                      <LinearText style={styles.selectionCancelText}>Cancel</LinearText>
+                    </TouchableOpacity>
+                    <TouchableOpacity style={styles.selectionDeleteBtn} onPress={handleBatchDelete}>
+                      <Ionicons name="trash-outline" size={14} color="#fff" />
+                      <LinearText style={styles.selectionDeleteText}>Delete</LinearText>
+                    </TouchableOpacity>
+                  </View>
+                </LinearSurface>
+              ) : (
+                <LinearText style={styles.statsText}>
+                  {visibleNotes.length} of {notes.length} lecture{notes.length !== 1 ? 's' : ''}{' '}
+                  shown · {transcriptCount} transcript{transcriptCount !== 1 ? 's' : ''}
+                </LinearText>
+              )}
+            </View>
+
+            {!searchValue && (
+              <View style={styles.sortBar}>
+                {(['date', 'subject', 'confidence'] as const).map((opt) => (
+                  <TouchableOpacity
+                    key={opt}
+                    style={[styles.sortBtn, sortBy === opt && styles.sortBtnActive]}
+                    onPress={() => setSortBy(opt)}
+                    activeOpacity={0.7}
+                  >
+                    <LinearText
+                      style={[styles.sortBtnText, sortBy === opt && styles.sortBtnTextActive]}
+                    >
+                      {opt === 'date' ? 'Newest' : opt === 'subject' ? 'Subject' : 'Confidence'}
+                    </LinearText>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            )}
+
+            <View style={styles.filterBar}>
+              {(
+                [
+                  ['all', 'All'],
+                  ['recording', 'Has Recording'],
+                  ['transcript', 'Has Transcript'],
+                  ['needs_ai', 'Needs AI'],
+                  ['needs_review', 'Needs Review'],
+                ] as const
+              ).map(([value, label]) => (
+                <TouchableOpacity
+                  key={value}
+                  style={[styles.filterChip, managerFilter === value && styles.filterChipActive]}
+                  onPress={() => setManagerFilter(value)}
+                  activeOpacity={0.7}
+                >
+                  <LinearText
+                    style={[
+                      styles.filterChipText,
+                      managerFilter === value && styles.filterChipTextActive,
+                    ]}
+                  >
+                    {label}
+                  </LinearText>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </LinearSurface>
+        )}
 
         {/* Empty state */}
         {visibleNotes.length === 0 && !searchValue && (
@@ -737,56 +869,6 @@ export default function TranscriptHistoryScreen() {
             <LinearText style={styles.emptySubtitle}>
               No transcripts match "{searchValue}"
             </LinearText>
-          </View>
-        )}
-
-        {/* Sort bar */}
-        {notes.length > 0 && !searchValue && (
-          <View style={styles.sortBar}>
-            {(['date', 'subject', 'confidence'] as const).map((opt) => (
-              <TouchableOpacity
-                key={opt}
-                style={[styles.sortBtn, sortBy === opt && styles.sortBtnActive]}
-                onPress={() => setSortBy(opt)}
-                activeOpacity={0.7}
-              >
-                <LinearText
-                  style={[styles.sortBtnText, sortBy === opt && styles.sortBtnTextActive]}
-                >
-                  {opt === 'date' ? 'Newest' : opt === 'subject' ? 'Subject' : 'Confidence'}
-                </LinearText>
-              </TouchableOpacity>
-            ))}
-          </View>
-        )}
-
-        {notes.length > 0 && (
-          <View style={styles.filterBar}>
-            {(
-              [
-                ['all', 'All'],
-                ['recording', 'Has Recording'],
-                ['transcript', 'Has Transcript'],
-                ['needs_ai', 'Needs AI'],
-                ['needs_review', 'Needs Review'],
-              ] as const
-            ).map(([value, label]) => (
-              <TouchableOpacity
-                key={value}
-                style={[styles.filterChip, managerFilter === value && styles.filterChipActive]}
-                onPress={() => setManagerFilter(value)}
-                activeOpacity={0.7}
-              >
-                <LinearText
-                  style={[
-                    styles.filterChipText,
-                    managerFilter === value && styles.filterChipTextActive,
-                  ]}
-                >
-                  {label}
-                </LinearText>
-              </TouchableOpacity>
-            ))}
           </View>
         )}
 
@@ -896,8 +978,8 @@ export default function TranscriptHistoryScreen() {
                           (selectedNote?.confidence ?? 2) === 3
                             ? n.colors.success
                             : (selectedNote?.confidence ?? 2) === 2
-                              ? n.colors.warning
-                              : n.colors.error,
+                            ? n.colors.warning
+                            : n.colors.error,
                         alignSelf: 'flex-start',
                         marginTop: 8,
                       },
@@ -963,8 +1045,8 @@ export default function TranscriptHistoryScreen() {
                       {selectedHasRecordingOnly
                         ? 'Transcribe Audio'
                         : selectedNeedsAiNote
-                          ? 'Generate AI Note'
-                          : 'Regenerate AI Note'}
+                        ? 'Generate AI Note'
+                        : 'Regenerate AI Note'}
                     </LinearText>
                   </TouchableOpacity>
                   <TouchableOpacity
@@ -1130,8 +1212,64 @@ const styles = StyleSheet.create({
     minHeight: 24,
     paddingVertical: 0,
   },
+  overviewCard: {
+    marginHorizontal: 16,
+    marginTop: 8,
+    marginBottom: 10,
+  },
+  overviewHeader: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    gap: n.spacing.md,
+  },
+  overviewCopy: {
+    flex: 1,
+  },
+  overviewEyebrow: {
+    letterSpacing: 1.1,
+  },
+  overviewTitle: {
+    marginTop: n.spacing.xs,
+  },
+  overviewText: {
+    marginTop: n.spacing.xs,
+  },
+  overviewPill: {
+    backgroundColor: n.colors.primaryTintSoft,
+    borderRadius: n.radius.full,
+    borderWidth: 1,
+    borderColor: n.colors.borderHighlight,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  overviewMetricsRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+    marginTop: n.spacing.md,
+  },
+  overviewMetricCard: {
+    flexGrow: 1,
+    minWidth: 110,
+    backgroundColor: n.colors.background,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: n.colors.border,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+  },
+  overviewMetricValue: {
+    marginBottom: 2,
+  },
+  overviewMetricLabel: {
+    lineHeight: 16,
+  },
+  toolbarCard: {
+    marginHorizontal: 16,
+    marginBottom: 10,
+  },
   statsBar: {
-    paddingHorizontal: 16,
     paddingBottom: 8,
   },
   statsText: { color: n.colors.textMuted, fontSize: 13 },
@@ -1173,7 +1311,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '700',
   },
-  sortBar: { flexDirection: 'row', paddingHorizontal: 16, paddingVertical: 8, gap: 8 },
+  sortBar: { flexDirection: 'row', paddingVertical: 8, gap: 8 },
   sortBtn: {
     paddingHorizontal: 14,
     paddingVertical: 6,
@@ -1191,7 +1329,6 @@ const styles = StyleSheet.create({
   filterBar: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    paddingHorizontal: 16,
     paddingBottom: 8,
     gap: 8,
   },
@@ -1320,7 +1457,7 @@ const styles = StyleSheet.create({
   // Modal
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.85)',
+    backgroundColor: blackAlpha['85'],
     justifyContent: 'flex-end',
   },
   modalContent: {
@@ -1388,9 +1525,9 @@ const styles = StyleSheet.create({
   renameCancelBtn: { paddingHorizontal: 12, paddingVertical: 8 },
   renameCancelText: { color: n.colors.textMuted, fontSize: 13, fontWeight: '600' },
   renameSaveBtn: {
-    backgroundColor: 'rgba(109,153,255,0.14)',
+    backgroundColor: transcriptBlueAlpha['14'],
     borderWidth: 1,
-    borderColor: 'rgba(130,170,255,0.24)',
+    borderColor: transcriptBlueBorderAlpha['24'],
     borderRadius: 8,
     paddingHorizontal: 12,
     paddingVertical: 8,
@@ -1419,8 +1556,8 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.14)',
-    backgroundColor: 'rgba(255,255,255,0.06)',
+    borderColor: whiteAlpha['14'],
+    backgroundColor: whiteAlpha['6'],
   },
   managerActionBtnDisabled: {
     opacity: 0.55,

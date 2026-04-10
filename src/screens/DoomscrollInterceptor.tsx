@@ -18,6 +18,7 @@ import * as Haptics from 'expo-haptics';
 import { ResponsiveContainer } from '../hooks/useResponsive';
 import { useAppStateTransition } from '../hooks/useAppStateTransition';
 import { linearTheme as n } from '../theme/linearTheme';
+import { accentAlpha, errorAlpha, whiteAlpha } from '../theme/colorUtils';
 import { confirmDestructive } from '../components/dialogService';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -417,7 +418,7 @@ const styles = StyleSheet.create({
     width: 100,
     height: 100,
     borderRadius: 50,
-    backgroundColor: 'rgba(108, 99, 255, 0.15)',
+    backgroundColor: accentAlpha['15'],
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 32,
@@ -448,7 +449,7 @@ const styles = StyleSheet.create({
     width: 120,
     height: 120,
     borderRadius: 60,
-    backgroundColor: 'rgba(244, 67, 54, 0.1)',
+    backgroundColor: errorAlpha['10'],
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 32,
@@ -459,7 +460,7 @@ const styles = StyleSheet.create({
     width: 120,
     height: 120,
     borderRadius: 60,
-    backgroundColor: 'rgba(244, 67, 54, 0.3)',
+    backgroundColor: errorAlpha['30'],
   },
   lockIcon: {
     width: 80,
@@ -492,7 +493,7 @@ const styles = StyleSheet.create({
   },
 
   quoteBox: {
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    backgroundColor: whiteAlpha['5'],
     padding: 20,
     borderRadius: 16,
     borderLeftWidth: 4,
@@ -525,7 +526,7 @@ const styles = StyleSheet.create({
     width: 120,
     height: 120,
     borderRadius: 60,
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    backgroundColor: whiteAlpha['5'],
     borderWidth: 3,
     borderColor: n.colors.error,
     alignItems: 'center',
@@ -548,7 +549,7 @@ const styles = StyleSheet.create({
   progressBarContainer: {
     width: SCREEN_WIDTH * 0.6,
     height: 6,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    backgroundColor: whiteAlpha['10'],
     borderRadius: 3,
     overflow: 'hidden',
     marginBottom: 12,
@@ -607,8 +608,8 @@ const styles = StyleSheet.create({
     borderColor: n.colors.error,
   },
   disabledButton: {
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    borderColor: 'rgba(255, 255, 255, 0.2)',
+    backgroundColor: whiteAlpha['10'],
+    borderColor: whiteAlpha['20'],
   },
   primaryButtonText: {
     color: n.colors.textPrimary,
@@ -639,7 +640,7 @@ const styles = StyleSheet.create({
     marginTop: 32,
     paddingTop: 24,
     borderTopWidth: 1,
-    borderTopColor: 'rgba(255, 255, 255, 0.1)',
+    borderTopColor: whiteAlpha['10'],
     width: '100%',
   },
   statItem: {
@@ -662,7 +663,7 @@ const styles = StyleSheet.create({
   statDivider: {
     width: 1,
     height: 40,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    backgroundColor: whiteAlpha['10'],
   },
   statsRow: {
     flexDirection: 'row',

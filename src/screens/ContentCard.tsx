@@ -49,6 +49,12 @@ import ErrorBoundary from '../components/ErrorBoundary';
 import AppText from '../components/AppText';
 import StudyMarkdown from '../components/StudyMarkdown';
 import { linearTheme as n } from '../theme/linearTheme';
+import {
+  blackAlpha,
+  whiteAlpha,
+  transcriptBlueAlpha,
+  transcriptBlueBorderAlpha,
+} from '../theme/colorUtils';
 import { emphasizeHighYieldMarkdown } from '../utils/highlightMarkdown';
 import LinearSurface from '../components/primitives/LinearSurface';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -2355,7 +2361,7 @@ const s = StyleSheet.create({
   },
   lightboxBackdrop: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.92)',
+    backgroundColor: blackAlpha['92'],
     justifyContent: 'center' as const,
     alignItems: 'center' as const,
   },
@@ -2412,9 +2418,9 @@ const s = StyleSheet.create({
   },
   hookText: { color: n.colors.textPrimary, fontSize: 14, fontStyle: 'italic' as const },
   doneBtn: {
-    backgroundColor: 'rgba(109,153,255,0.14)',
+    backgroundColor: transcriptBlueAlpha['14'],
     borderWidth: 1,
-    borderColor: 'rgba(130,170,255,0.24)',
+    borderColor: transcriptBlueBorderAlpha['24'],
     borderRadius: 14,
     padding: 16,
     alignItems: 'center',
@@ -2448,7 +2454,7 @@ const s = StyleSheet.create({
   optionBtn: { borderRadius: 12, padding: 14, borderWidth: 2, minWidth: 0 },
   optionText: { color: n.colors.textPrimary, fontSize: 14, lineHeight: 20 },
   iDontKnowBtn: {
-    backgroundColor: 'rgba(255,255,255,0.04)',
+    backgroundColor: whiteAlpha['4'],
     borderRadius: 12,
     borderWidth: 1,
     borderColor: n.colors.warning,
@@ -2487,7 +2493,7 @@ const s = StyleSheet.create({
     textTransform: 'uppercase' as const,
   },
   explainDeeperBtn: {
-    backgroundColor: 'rgba(109,153,255,0.1)',
+    backgroundColor: transcriptBlueAlpha['10'],
     borderRadius: 12,
     paddingVertical: 12,
     alignItems: 'center' as const,
@@ -2504,7 +2510,7 @@ const s = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 6,
     borderRadius: 8,
-    backgroundColor: 'rgba(109,153,255,0.1)',
+    backgroundColor: transcriptBlueAlpha['10'],
     borderWidth: 1,
     borderColor: n.colors.accent,
     gap: 4,

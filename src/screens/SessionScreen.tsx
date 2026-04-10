@@ -63,6 +63,7 @@ import { useAppStateTransition } from '../hooks/useAppStateTransition';
 import { ResponsiveContainer } from '../hooks/useResponsive';
 import { theme } from '../constants/theme';
 import { linearTheme as n } from '../theme/linearTheme';
+import { blackAlpha } from '../theme/colorUtils';
 
 type Nav = NativeStackNavigationProp<HomeStackParamList, 'Session'>;
 type Route = RouteProp<HomeStackParamList, 'Session'>;
@@ -2234,7 +2235,7 @@ const styles = StyleSheet.create({
   guruToastText: {},
   pausedOverlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.85)',
+    backgroundColor: blackAlpha['85'],
     justifyContent: 'center',
     alignItems: 'center',
     zIndex: 100,

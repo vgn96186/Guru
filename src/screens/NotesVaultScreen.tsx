@@ -9,7 +9,6 @@ import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import {
   View,
   FlatList,
-  TextInput,
   TouchableOpacity,
   Pressable,
   StyleSheet,
@@ -38,6 +37,9 @@ import LinearSurface from '../components/primitives/LinearSurface';
 import { ResponsiveContainer } from '../hooks/useResponsive';
 import { useScrollRestoration, usePersistedInput } from '../hooks/useScrollRestoration';
 import { linearTheme as n } from '../theme/linearTheme';
+import { errorAlpha, warningAlpha, successAlpha, blackAlpha } from '../theme/colorUtils';
+import { EmptyState } from '../components/primitives';
+import LoadingOrb from '../components/LoadingOrb';
 import {
   getLectureHistory,
   deleteLectureNote,
@@ -400,6 +402,10 @@ export default function NotesVaultScreen() {
       }),
     [notes],
   );
+  const taggedNotesCount = useMemo(
+    () => notes.filter((note) => note.topics.length > 0).length,
+    [notes],
+  );
 
   const runRelabel = useCallback(
     async (targets: NoteItem[]) => {
@@ -618,8 +624,8 @@ export default function NotesVaultScreen() {
                   item.confidence === 3
                     ? styles.confidenceBadgeStrong
                     : item.confidence === 2
-                      ? styles.confidenceBadgeMid
-                      : styles.confidenceBadgeLight,
+                    ? styles.confidenceBadgeMid
+                    : styles.confidenceBadgeLight,
                 ]}
               >
                 {CONFIDENCE_LABELS[item.confidence as 1 | 2 | 3]}
@@ -651,6 +657,16 @@ export default function NotesVaultScreen() {
       unlabeledNotes.length > 0 ||
       badTitleNotes.length > 0 ||
       !!relabelProgress);
+  const summaryCards = [
+    { label: 'Notes', value: notes.length.toString(), tone: 'accent' as const },
+    { label: 'Subjects', value: subjectOptions.length.toString(), tone: 'primary' as const },
+    { label: 'Tagged', value: taggedNotesCount.toString(), tone: 'success' as const },
+    {
+      label: 'Need labels',
+      value: unlabeledNotes.length.toString(),
+      tone: unlabeledNotes.length > 0 ? ('warning' as const) : ('success' as const),
+    },
+  ];
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -658,8 +674,7 @@ export default function NotesVaultScreen() {
         <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
         {loading ? (
           <View style={styles.loadingState}>
-            <ActivityIndicator size="large" color={n.colors.accent} />
-            <LinearText style={styles.loadingText}>Loading...</LinearText>
+            <LoadingOrb message="Loading notes..." size={120} />
           </View>
         ) : null}
         <ResponsiveContainer style={styles.flex}>
@@ -678,6 +693,46 @@ export default function NotesVaultScreen() {
             }
           ></ScreenHeader>
 
+          {notes.length > 0 && (
+            <LinearSurface compact style={styles.summaryCard}>
+              <View style={styles.summaryHeader}>
+                <View style={styles.summaryCopy}>
+                  <LinearText variant="meta" tone="accent" style={styles.summaryEyebrow}>
+                    STUDY LIBRARY
+                  </LinearText>
+                  <LinearText variant="sectionTitle" style={styles.summaryTitle}>
+                    Processed notes ready for revision
+                  </LinearText>
+                  <LinearText variant="bodySmall" tone="secondary" style={styles.summaryText}>
+                    Search by subject or topic, clean up weak notes, and send the current note set
+                    straight into Guru.
+                  </LinearText>
+                </View>
+                <View style={styles.summaryPill}>
+                  <LinearText variant="chip" tone="accent">
+                    {visibleNotes.length} visible
+                  </LinearText>
+                </View>
+              </View>
+              <View style={styles.summaryMetricsRow}>
+                {summaryCards.map((card) => (
+                  <View key={card.label} style={styles.summaryMetricCard}>
+                    <LinearText variant="title" tone={card.tone} style={styles.summaryMetricValue}>
+                      {card.value}
+                    </LinearText>
+                    <LinearText
+                      variant="caption"
+                      tone="secondary"
+                      style={styles.summaryMetricLabel}
+                    >
+                      {card.label}
+                    </LinearText>
+                  </View>
+                ))}
+              </View>
+            </LinearSurface>
+          )}
+
           {/* Selection banner */}
           {isSelectionMode && (
             <View style={styles.selectionBanner}>
@@ -694,182 +749,211 @@ export default function NotesVaultScreen() {
             </View>
           )}
 
-          {hasQuickActions && (
-            <View style={styles.quickActionsSection}>
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.quickActionsContent}
-              >
-                {visibleNotes.length > 0 && (
-                  <TouchableOpacity
-                    style={[styles.quickActionChip, styles.quickActionChipPrimary]}
-                    onPress={handleAskGuruFromNotes}
-                    activeOpacity={0.8}
-                    accessibilityRole="button"
-                    accessibilityLabel="Ask Guru using current notes"
-                  >
-                    <Ionicons name="sparkles-outline" size={15} color={n.colors.accent} />
-                    <LinearText style={[styles.quickActionText, styles.quickActionTextPrimary]}>
-                      Ask Guru
-                    </LinearText>
-                  </TouchableOpacity>
-                )}
-
-                {notes.length > 0 && !searchValue && (
-                  <TouchableOpacity
-                    style={[
-                      styles.quickActionChip,
-                      isSortMenuOpen && styles.quickActionChipPrimary,
-                    ]}
-                    onPress={() => setIsSortMenuOpen((prev) => !prev)}
-                    accessibilityRole="button"
-                    accessibilityLabel="Sort notes"
-                  >
-                    <Ionicons
-                      name={isSortMenuOpen ? 'swap-vertical' : 'swap-vertical-outline'}
-                      size={15}
-                      color={isSortMenuOpen ? n.colors.accent : n.colors.textSecondary}
-                    />
-                    <LinearText style={styles.quickActionText}>
-                      Sort{' '}
-                      <LinearText style={styles.quickActionValue}>{currentSortLabel}</LinearText>
-                    </LinearText>
-                  </TouchableOpacity>
-                )}
-
-                {(subjectOptions.length > 0 || topicOptions.length > 0) && (
-                  <TouchableOpacity
-                    style={[
-                      styles.quickActionChip,
-                      (subjectFilter !== 'all' || topicFilter !== 'all' || isFilterMenuOpen) &&
-                        styles.quickActionChipPrimary,
-                    ]}
-                    onPress={() => setIsFilterMenuOpen(true)}
-                    accessibilityRole="button"
-                    accessibilityLabel="Filter notes"
-                  >
-                    <Ionicons
-                      name="options-outline"
-                      size={15}
-                      color={
-                        subjectFilter !== 'all' || topicFilter !== 'all' || isFilterMenuOpen
-                          ? n.colors.accent
-                          : n.colors.textSecondary
-                      }
-                    />
-                    <LinearText style={styles.quickActionText}>
-                      <LinearText
-                        style={[
-                          styles.quickActionText,
-                          (subjectFilter !== 'all' || topicFilter !== 'all') &&
-                            styles.quickActionTextPrimary,
-                        ]}
-                      >
-                        {activeFilterSummary}
-                      </LinearText>
-                    </LinearText>
-                  </TouchableOpacity>
-                )}
-
-                {junkNotes.length > 0 && (
-                  <TouchableOpacity
-                    style={[styles.quickActionChip, styles.quickActionChipError]}
-                    onPress={handleDeleteJunk}
-                  >
-                    <Ionicons name="trash-outline" size={15} color={n.colors.error} />
-                    <LinearText style={[styles.quickActionText, styles.quickActionTextError]}>
-                      Clean {junkNotes.length}
-                    </LinearText>
-                  </TouchableOpacity>
-                )}
-
-                {duplicateIds.size > 0 && (
-                  <TouchableOpacity
-                    style={[styles.quickActionChip, styles.quickActionChipWarning]}
-                    onPress={handleDeleteDuplicates}
-                  >
-                    <Ionicons name="copy-outline" size={15} color={n.colors.warning} />
-                    <LinearText style={[styles.quickActionText, styles.quickActionTextWarning]}>
-                      Duplicates {duplicateIds.size}
-                    </LinearText>
-                  </TouchableOpacity>
-                )}
-
-                {!relabelProgress && unlabeledNotes.length > 0 && (
-                  <TouchableOpacity
-                    style={[styles.quickActionChip, styles.quickActionChipPrimary]}
-                    onPress={handleRelabel}
-                  >
-                    <Ionicons name="sparkles-outline" size={15} color={n.colors.accent} />
-                    <LinearText style={[styles.quickActionText, styles.quickActionTextPrimary]}>
-                      Label {unlabeledNotes.length}
-                    </LinearText>
-                  </TouchableOpacity>
-                )}
-
-                {!relabelProgress && badTitleNotes.length > 0 && (
-                  <TouchableOpacity
-                    style={[styles.quickActionChip, styles.quickActionChipPrimary]}
-                    onPress={handleFixBadTitles}
-                  >
-                    <Ionicons name="create-outline" size={15} color={n.colors.accent} />
-                    <LinearText style={[styles.quickActionText, styles.quickActionTextPrimary]}>
-                      Fix Titles {badTitleNotes.length}
-                    </LinearText>
-                  </TouchableOpacity>
-                )}
-
-                {relabelProgress && (
-                  <View style={[styles.quickActionChip, styles.quickActionChipPrimary]}>
-                    <ActivityIndicator size="small" color={n.colors.accent} />
-                    <LinearText style={[styles.quickActionText, styles.quickActionTextPrimary]}>
-                      Labeling {relabelProgress}
+          {(hasQuickActions || notes.length > 0) && (
+            <LinearSurface compact style={styles.toolbarCard}>
+              <View style={styles.toolbarHeader}>
+                <View style={styles.toolbarCopy}>
+                  <LinearText variant="bodySmall" tone="secondary" style={styles.toolbarTitle}>
+                    {visibleNotes.length} of {notes.length} note{notes.length !== 1 ? 's' : ''}{' '}
+                    shown
+                  </LinearText>
+                  <LinearText variant="caption" tone="muted" style={styles.toolbarSubtitle}>
+                    {searchValue.trim()
+                      ? `Searching "${searchValue.trim()}"`
+                      : `${activeFilterSummary} · ${currentSortLabel}`}
+                  </LinearText>
+                </View>
+                {(subjectFilter !== 'all' || topicFilter !== 'all') && (
+                  <View style={styles.toolbarPill}>
+                    <LinearText variant="chip" tone="accent">
+                      Filters on
                     </LinearText>
                   </View>
                 )}
-              </ScrollView>
-            </View>
-          )}
+              </View>
 
-          {notes.length > 0 && !searchValue && isSortMenuOpen && (
-            <View style={styles.sortSection}>
-              <LinearSurface padded={false} compact style={styles.sortMenu}>
-                {SORT_OPTIONS.map((option) => (
-                  <TouchableOpacity
-                    key={option.value}
-                    style={[styles.sortOption, sortBy === option.value && styles.sortOptionActive]}
-                    onPress={() => {
-                      setSortBy(option.value);
-                      setIsSortMenuOpen(false);
-                    }}
+              {hasQuickActions && (
+                <View style={styles.quickActionsSection}>
+                  <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={styles.quickActionsContent}
                   >
-                    <LinearText
-                      style={[
-                        styles.sortOptionText,
-                        sortBy === option.value && styles.sortOptionTextActive,
-                      ]}
-                    >
-                      {option.label}
-                    </LinearText>
-                    {sortBy === option.value ? (
-                      <Ionicons name="checkmark" size={16} color={n.colors.accent} />
-                    ) : null}
-                  </TouchableOpacity>
-                ))}
-              </LinearSurface>
-            </View>
+                    {visibleNotes.length > 0 && (
+                      <TouchableOpacity
+                        style={[styles.quickActionChip, styles.quickActionChipPrimary]}
+                        onPress={handleAskGuruFromNotes}
+                        activeOpacity={0.8}
+                        accessibilityRole="button"
+                        accessibilityLabel="Ask Guru using current notes"
+                      >
+                        <Ionicons name="sparkles-outline" size={15} color={n.colors.accent} />
+                        <LinearText style={[styles.quickActionText, styles.quickActionTextPrimary]}>
+                          Ask Guru
+                        </LinearText>
+                      </TouchableOpacity>
+                    )}
+
+                    {notes.length > 0 && !searchValue && (
+                      <TouchableOpacity
+                        style={[
+                          styles.quickActionChip,
+                          isSortMenuOpen && styles.quickActionChipPrimary,
+                        ]}
+                        onPress={() => setIsSortMenuOpen((prev) => !prev)}
+                        accessibilityRole="button"
+                        accessibilityLabel="Sort notes"
+                      >
+                        <Ionicons
+                          name={isSortMenuOpen ? 'swap-vertical' : 'swap-vertical-outline'}
+                          size={15}
+                          color={isSortMenuOpen ? n.colors.accent : n.colors.textSecondary}
+                        />
+                        <LinearText style={styles.quickActionText}>
+                          Sort{' '}
+                          <LinearText style={styles.quickActionValue}>
+                            {currentSortLabel}
+                          </LinearText>
+                        </LinearText>
+                      </TouchableOpacity>
+                    )}
+
+                    {(subjectOptions.length > 0 || topicOptions.length > 0) && (
+                      <TouchableOpacity
+                        style={[
+                          styles.quickActionChip,
+                          (subjectFilter !== 'all' || topicFilter !== 'all' || isFilterMenuOpen) &&
+                            styles.quickActionChipPrimary,
+                        ]}
+                        onPress={() => setIsFilterMenuOpen(true)}
+                        accessibilityRole="button"
+                        accessibilityLabel="Filter notes"
+                      >
+                        <Ionicons
+                          name="options-outline"
+                          size={15}
+                          color={
+                            subjectFilter !== 'all' || topicFilter !== 'all' || isFilterMenuOpen
+                              ? n.colors.accent
+                              : n.colors.textSecondary
+                          }
+                        />
+                        <LinearText style={styles.quickActionText}>
+                          <LinearText
+                            style={[
+                              styles.quickActionText,
+                              (subjectFilter !== 'all' || topicFilter !== 'all') &&
+                                styles.quickActionTextPrimary,
+                            ]}
+                          >
+                            {activeFilterSummary}
+                          </LinearText>
+                        </LinearText>
+                      </TouchableOpacity>
+                    )}
+
+                    {junkNotes.length > 0 && (
+                      <TouchableOpacity
+                        style={[styles.quickActionChip, styles.quickActionChipError]}
+                        onPress={handleDeleteJunk}
+                      >
+                        <Ionicons name="trash-outline" size={15} color={n.colors.error} />
+                        <LinearText style={[styles.quickActionText, styles.quickActionTextError]}>
+                          Clean {junkNotes.length}
+                        </LinearText>
+                      </TouchableOpacity>
+                    )}
+
+                    {duplicateIds.size > 0 && (
+                      <TouchableOpacity
+                        style={[styles.quickActionChip, styles.quickActionChipWarning]}
+                        onPress={handleDeleteDuplicates}
+                      >
+                        <Ionicons name="copy-outline" size={15} color={n.colors.warning} />
+                        <LinearText style={[styles.quickActionText, styles.quickActionTextWarning]}>
+                          Duplicates {duplicateIds.size}
+                        </LinearText>
+                      </TouchableOpacity>
+                    )}
+
+                    {!relabelProgress && unlabeledNotes.length > 0 && (
+                      <TouchableOpacity
+                        style={[styles.quickActionChip, styles.quickActionChipPrimary]}
+                        onPress={handleRelabel}
+                      >
+                        <Ionicons name="sparkles-outline" size={15} color={n.colors.accent} />
+                        <LinearText style={[styles.quickActionText, styles.quickActionTextPrimary]}>
+                          Label {unlabeledNotes.length}
+                        </LinearText>
+                      </TouchableOpacity>
+                    )}
+
+                    {!relabelProgress && badTitleNotes.length > 0 && (
+                      <TouchableOpacity
+                        style={[styles.quickActionChip, styles.quickActionChipPrimary]}
+                        onPress={handleFixBadTitles}
+                      >
+                        <Ionicons name="create-outline" size={15} color={n.colors.accent} />
+                        <LinearText style={[styles.quickActionText, styles.quickActionTextPrimary]}>
+                          Fix Titles {badTitleNotes.length}
+                        </LinearText>
+                      </TouchableOpacity>
+                    )}
+
+                    {relabelProgress && (
+                      <View style={[styles.quickActionChip, styles.quickActionChipPrimary]}>
+                        <ActivityIndicator size="small" color={n.colors.accent} />
+                        <LinearText style={[styles.quickActionText, styles.quickActionTextPrimary]}>
+                          Labeling {relabelProgress}
+                        </LinearText>
+                      </View>
+                    )}
+                  </ScrollView>
+                </View>
+              )}
+
+              {notes.length > 0 && !searchValue && isSortMenuOpen && (
+                <View style={styles.sortSection}>
+                  <LinearSurface padded={false} compact style={styles.sortMenu}>
+                    {SORT_OPTIONS.map((option) => (
+                      <TouchableOpacity
+                        key={option.value}
+                        style={[
+                          styles.sortOption,
+                          sortBy === option.value && styles.sortOptionActive,
+                        ]}
+                        onPress={() => {
+                          setSortBy(option.value);
+                          setIsSortMenuOpen(false);
+                        }}
+                      >
+                        <LinearText
+                          style={[
+                            styles.sortOptionText,
+                            sortBy === option.value && styles.sortOptionTextActive,
+                          ]}
+                        >
+                          {option.label}
+                        </LinearText>
+                        {sortBy === option.value ? (
+                          <Ionicons name="checkmark" size={16} color={n.colors.accent} />
+                        ) : null}
+                      </TouchableOpacity>
+                    ))}
+                  </LinearSurface>
+                </View>
+              )}
+            </LinearSurface>
           )}
 
           {/* List */}
           {visibleNotes.length === 0 ? (
-            <View style={styles.empty}>
-              <Ionicons name="document-text-outline" size={64} color={n.colors.textMuted} />
-              <LinearText style={styles.emptyTitle}>No Notes Yet</LinearText>
-              <LinearText style={styles.emptySubtitle}>
-                Study a topic or import a lecture to create notes.
-              </LinearText>
-            </View>
+            <EmptyState
+              icon="document-text-outline"
+              iconSize={64}
+              title="No Notes Yet"
+              subtitle="Study a topic or import a lecture to create notes."
+            />
           ) : (
             <>
               <FlatList
@@ -1142,6 +1226,59 @@ const styles = StyleSheet.create({
     fontSize: 13,
     lineHeight: 18,
   },
+  summaryCard: {
+    marginHorizontal: 16,
+    marginTop: 8,
+    marginBottom: 12,
+  },
+  summaryHeader: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    gap: n.spacing.md,
+  },
+  summaryCopy: {
+    flex: 1,
+  },
+  summaryEyebrow: {
+    letterSpacing: 1.1,
+  },
+  summaryTitle: {
+    marginTop: n.spacing.xs,
+  },
+  summaryText: {
+    marginTop: n.spacing.xs,
+  },
+  summaryPill: {
+    backgroundColor: n.colors.primaryTintSoft,
+    borderRadius: n.radius.full,
+    borderWidth: 1,
+    borderColor: n.colors.borderHighlight,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  summaryMetricsRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+    marginTop: n.spacing.md,
+  },
+  summaryMetricCard: {
+    flexGrow: 1,
+    minWidth: 110,
+    backgroundColor: n.colors.background,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: n.colors.border,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+  },
+  summaryMetricValue: {
+    marginBottom: 2,
+  },
+  summaryMetricLabel: {
+    lineHeight: 16,
+  },
   askGuruBanner: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1183,12 +1320,11 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   quickActionsSection: {
-    paddingHorizontal: 16,
-    marginBottom: 10,
+    marginTop: 10,
   },
   quickActionsContent: {
     gap: 8,
-    paddingRight: 16,
+    paddingRight: 4,
   },
   quickActionChip: {
     minHeight: 34,
@@ -1197,6 +1333,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
+    backgroundColor: n.colors.surface,
+    borderWidth: 1,
+    borderColor: n.colors.border,
   },
   quickActionChipPrimary: {
     backgroundColor: n.colors.accent + '10',
@@ -1230,6 +1369,33 @@ const styles = StyleSheet.create({
     fontSize: 12,
     lineHeight: 18,
     fontWeight: '800',
+  },
+  toolbarCard: {
+    marginHorizontal: 16,
+    marginBottom: 12,
+  },
+  toolbarHeader: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  toolbarCopy: {
+    flex: 1,
+  },
+  toolbarTitle: {
+    fontWeight: '700',
+  },
+  toolbarSubtitle: {
+    marginTop: 2,
+  },
+  toolbarPill: {
+    backgroundColor: n.colors.primaryTintSoft,
+    borderRadius: n.radius.full,
+    borderWidth: 1,
+    borderColor: n.colors.borderHighlight,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
   },
   filterSection: {
     paddingHorizontal: 16,
@@ -1278,8 +1444,7 @@ const styles = StyleSheet.create({
     padding: 0,
   },
   sortSection: {
-    paddingHorizontal: 16,
-    marginBottom: 10,
+    marginTop: 10,
   },
   sortTrigger: {
     minHeight: 44,
@@ -1433,17 +1598,17 @@ const styles = StyleSheet.create({
   },
   confidenceBadgeLight: {
     color: n.colors.error,
-    backgroundColor: 'rgba(241,76,76,0.08)',
+    backgroundColor: errorAlpha['8'],
     borderColor: n.colors.error + '55',
   },
   confidenceBadgeMid: {
     color: n.colors.warning,
-    backgroundColor: 'rgba(217,119,6,0.08)',
+    backgroundColor: warningAlpha['8'],
     borderColor: n.colors.warning + '55',
   },
   confidenceBadgeStrong: {
     color: n.colors.success,
-    backgroundColor: 'rgba(63,185,80,0.08)',
+    backgroundColor: successAlpha['8'],
     borderColor: n.colors.success + '55',
   },
   wordCount: { color: n.colors.textMuted, fontSize: 12 },
@@ -1591,7 +1756,7 @@ const styles = StyleSheet.create({
   sheetOverlay: {
     flex: 1,
     justifyContent: 'flex-end',
-    backgroundColor: 'rgba(0, 0, 0, 0.45)',
+    backgroundColor: blackAlpha['45'],
   },
   sheetBackdrop: {
     ...StyleSheet.absoluteFillObject,

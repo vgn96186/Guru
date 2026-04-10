@@ -10,6 +10,7 @@ import type {
   StudyResourceMode,
   HarassmentTone,
   ChatGptAccountsConfig,
+  AutoBackupFrequency,
 } from '../../types';
 import { LEVELS } from '../../constants/gamification';
 import {
@@ -26,6 +27,10 @@ const VALID_ENUMS: Record<string, { values: readonly string[]; fallback: string 
   transcriptionProvider: {
     values: ['auto', 'groq', 'huggingface', 'cloudflare', 'deepgram', 'local'],
     fallback: 'auto',
+  },
+  autoBackupFrequency: {
+    values: ['off', 'daily', '3days', 'weekly', 'monthly'],
+    fallback: 'off',
   },
   guruFrequency: { values: ['rare', 'normal', 'frequent', 'off'], fallback: 'normal' },
   studyResourceMode: { values: ['standard', 'btr', 'dbmci_live', 'hybrid'], fallback: 'hybrid' },
@@ -164,6 +169,8 @@ export async function getUserProfile(): Promise<UserProfile> {
     google_custom_search_api_key: string;
     qwen_connected: number;
     deepgram_api_key: string;
+    auto_backup_frequency?: AutoBackupFrequency | null;
+    last_auto_backup_at?: string | null;
     github_copilot_connected?: number;
     github_copilot_preferred_model?: string;
     gitlab_duo_connected?: number;
@@ -216,6 +223,8 @@ export async function getUserProfile(): Promise<UserProfile> {
       faceTrackingEnabled: false,
       quizCorrectCount: 0,
       lastBackupDate: null,
+      autoBackupFrequency: 'off',
+      lastAutoBackupAt: null,
       useLocalModel: false,
       localModelPath: null,
       useLocalWhisper: false,
@@ -345,6 +354,8 @@ export async function getUserProfile(): Promise<UserProfile> {
     faceTrackingEnabled: (r.face_tracking_enabled ?? 0) === 1,
     quizCorrectCount: r.quiz_correct_count ?? 0,
     lastBackupDate: r.last_backup_date,
+    autoBackupFrequency: r.auto_backup_frequency ?? 'off',
+    lastAutoBackupAt: r.last_auto_backup_at ?? null,
     useLocalModel: (r.use_local_model ?? 0) === 1,
     localModelPath: r.local_model_path ?? null,
     useLocalWhisper: (r.use_local_whisper ?? 0) === 1,
@@ -453,6 +464,8 @@ export async function updateUserProfile(updates: Partial<UserProfile>): Promise<
     faceTrackingEnabled: 'face_tracking_enabled',
     quizCorrectCount: 'quiz_correct_count',
     lastBackupDate: 'last_backup_date',
+    autoBackupFrequency: 'auto_backup_frequency',
+    lastAutoBackupAt: 'last_auto_backup_at',
     useLocalModel: 'use_local_model',
     localModelPath: 'local_model_path',
     useLocalWhisper: 'use_local_whisper',

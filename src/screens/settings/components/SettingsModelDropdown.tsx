@@ -1,8 +1,9 @@
 import React from 'react';
-import { Modal, Pressable, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { StyleSheet, TouchableOpacity, View } from 'react-native';
 import { linearTheme } from '../../../theme/linearTheme';
 import LinearText from '../../../components/primitives/LinearText';
 import SettingsLabel from './SettingsLabel';
+import AppBottomSheet from '../../../components/primitives/AppBottomSheet';
 
 export interface SettingsModelOption {
   id: string;
@@ -22,7 +23,8 @@ export default function SettingsModelDropdown({
   onSelect: (id: string) => void;
 }) {
   const [open, setOpen] = React.useState(false);
-  const selectedLabel = options.find((o) => o.id === value)?.label ?? (value || 'Select...');
+  const selectedLabel =
+    options.find((option) => option.id === value)?.label ?? (value || 'Select...');
 
   return (
     <>
@@ -36,56 +38,58 @@ export default function SettingsModelDropdown({
           {selectedLabel}
         </LinearText>
         <LinearText variant="body" tone="muted" style={styles.dropdownArrow}>
-          ▾
+          ▼
         </LinearText>
       </TouchableOpacity>
-      <Modal visible={open} transparent animationType="fade" onRequestClose={() => setOpen(false)}>
-        <Pressable style={styles.dropdownBackdrop} onPress={() => setOpen(false)}>
-          <View style={styles.dropdownSheet}>
-            <LinearText variant="title" style={styles.dropdownSheetTitle}>
-              {label}
-            </LinearText>
-            <ScrollView style={{ maxHeight: 400 }} showsVerticalScrollIndicator>
-              {options.map((opt, idx) => {
-                const showGroup = opt.group && (idx === 0 || options[idx - 1]?.group !== opt.group);
-                return (
-                  <React.Fragment key={opt.id}>
-                    {showGroup && (
-                      <LinearText variant="caption" tone="accent" style={styles.dropdownGroupLabel}>
-                        {opt.group}
-                      </LinearText>
-                    )}
-                    <TouchableOpacity
-                      style={[styles.dropdownItem, value === opt.id && styles.dropdownItemActive]}
-                      onPress={() => {
-                        onSelect(opt.id);
-                        setOpen(false);
-                      }}
-                      activeOpacity={0.7}
-                    >
-                      <LinearText
-                        variant="body"
-                        style={[
-                          styles.dropdownItemText,
-                          value === opt.id && styles.dropdownItemTextActive,
-                        ]}
-                        numberOfLines={2}
-                      >
-                        {opt.label}
-                      </LinearText>
-                      {value === opt.id && (
-                        <LinearText tone="accent" style={styles.dropdownCheck}>
-                          ✓
-                        </LinearText>
-                      )}
-                    </TouchableOpacity>
-                  </React.Fragment>
-                );
-              })}
-            </ScrollView>
-          </View>
-        </Pressable>
-      </Modal>
+
+      <AppBottomSheet
+        open={open}
+        onClose={() => setOpen(false)}
+        title={label}
+        subtitle="Choose the default model you want Guru to use here."
+        snapPoints={['72%']}
+        scrollable
+      >
+        {options.map((option, index) => {
+          const showGroup =
+            option.group && (index === 0 || options[index - 1]?.group !== option.group);
+          return (
+            <React.Fragment key={option.id}>
+              {showGroup ? (
+                <LinearText variant="caption" tone="accent" style={styles.dropdownGroupLabel}>
+                  {option.group}
+                </LinearText>
+              ) : null}
+              <TouchableOpacity
+                style={[styles.dropdownItem, value === option.id && styles.dropdownItemActive]}
+                onPress={() => {
+                  onSelect(option.id);
+                  setOpen(false);
+                }}
+                activeOpacity={0.7}
+              >
+                <View style={styles.dropdownItemBody}>
+                  <LinearText
+                    variant="body"
+                    style={[
+                      styles.dropdownItemText,
+                      value === option.id && styles.dropdownItemTextActive,
+                    ]}
+                    numberOfLines={2}
+                  >
+                    {option.label}
+                  </LinearText>
+                </View>
+                {value === option.id ? (
+                  <LinearText tone="accent" style={styles.dropdownCheck}>
+                    ✓
+                  </LinearText>
+                ) : null}
+              </TouchableOpacity>
+            </React.Fragment>
+          );
+        })}
+      </AppBottomSheet>
     </>
   );
 }
@@ -111,41 +115,26 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   dropdownArrow: { fontSize: 16, marginLeft: 8 },
-  dropdownBackdrop: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.6)',
-    justifyContent: 'center',
-    padding: 24,
-  },
-  dropdownSheet: {
-    backgroundColor: linearTheme.colors.surface,
-    borderRadius: 16,
-    paddingVertical: 12,
-    maxHeight: '80%',
-  },
-  dropdownSheetTitle: {
-    fontSize: 16,
-    fontWeight: '800',
-    paddingHorizontal: 16,
-    paddingBottom: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: linearTheme.colors.border,
-  },
   dropdownGroupLabel: {
     fontSize: 12,
     fontWeight: '700',
     letterSpacing: 0.5,
     textTransform: 'uppercase',
-    paddingHorizontal: 16,
     paddingTop: 14,
-    paddingBottom: 4,
+    paddingBottom: 6,
   },
   dropdownItem: {
     flexDirection: 'row',
     alignItems: 'flex-start',
     justifyContent: 'space-between',
-    paddingHorizontal: 16,
+    paddingHorizontal: 14,
     paddingVertical: 12,
+    borderRadius: 12,
+    marginBottom: 4,
+  },
+  dropdownItemBody: {
+    flex: 1,
+    minWidth: 0,
   },
   dropdownItemActive: { backgroundColor: linearTheme.colors.primaryTintSoft },
   dropdownItemText: { fontSize: 14, lineHeight: 20, flex: 1 },

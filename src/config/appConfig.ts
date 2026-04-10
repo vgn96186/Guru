@@ -62,6 +62,13 @@ export const GOOGLE_WEB_CLIENT_ID = (
   DEFAULT_GOOGLE_WEB_CLIENT_ID
 ).trim();
 
+/** Optional Sentry DSN for production crash/performance monitoring. */
+export const SENTRY_DSN = (
+  process.env.EXPO_PUBLIC_SENTRY_DSN ||
+  getExpoExtraString('sentryDsn') ||
+  ''
+).trim();
+
 /**
  * GitHub Models inference API (OpenAI-style chat). See REST: POST .../inference/chat/completions.
  * @see https://docs.github.com/en/rest/models/inference

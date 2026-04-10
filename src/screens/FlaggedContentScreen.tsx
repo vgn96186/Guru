@@ -1,13 +1,13 @@
 import React, { useCallback, useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   FlatList,
   Pressable,
   StyleSheet,
   Text,
   View,
 } from 'react-native';
+import LoadingOrb from '../components/LoadingOrb';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { MenuStackParamList } from '../navigation/types';
@@ -19,6 +19,8 @@ import { getDb } from '../db/database';
 import type { TopicWithProgress } from '../types';
 import { linearTheme as n } from '../theme/linearTheme';
 import { Ionicons } from '@expo/vector-icons';
+import { useAsyncAction } from '../hooks/useAsyncAction';
+import { EmptyState } from '../components/primitives';
 
 const FLAG_REASON_LABELS: Record<string, string> = {
   incorrect_fact: 'Incorrect medical fact',
@@ -54,74 +56,72 @@ export default function FlaggedContentScreen() {
     }, [loadFlagged]),
   );
 
-  const handleRegenerate = async (item: FlaggedContentItem) => {
-    setProcessing(item.topicId);
-    try {
-      await clearSpecificContentCache(item.topicId, item.contentType);
+  const [regenerate] = useAsyncAction(
+    async (item: FlaggedContentItem) => {
+      setProcessing(item.topicId);
+      try {
+        await clearSpecificContentCache(item.topicId, item.contentType);
 
-      const db = getDb();
-      const topic = await db.getFirstAsync<
-        { id: number; subjectName?: string } & Record<string, unknown>
-      >(
-        `SELECT t.*, s.name as subjectName FROM topics t JOIN subjects s ON t.subject_id = s.id WHERE t.id = ?`,
-        [item.topicId],
-      );
+        const db = getDb();
+        const topic = await db.getFirstAsync<
+          { id: number; subjectName?: string } & Record<string, unknown>
+        >(
+          `SELECT t.*, s.name as subjectName FROM topics t JOIN subjects s ON t.subject_id = s.id WHERE t.id = ?`,
+          [item.topicId],
+        );
 
-      if (topic) {
-        const topicWithProgress: TopicWithProgress = {
-          id: Number(topic.id),
-          name: String(topic.name ?? ''),
-          subjectId: Number(topic.subject_id),
-          subjectName: String(topic.subjectName ?? ''),
-          subjectCode: '',
-          subjectColor: '',
-          subtopics: [],
-          estimatedMinutes: 35,
-          inicetPriority: 5,
-          progress: {
-            topicId: Number(topic.id),
-            status: 'unseen' as const,
-            confidence: 0,
-            lastStudiedAt: null,
-            timesStudied: 0,
-            xpEarned: 0,
-            nextReviewDate: null,
-            userNotes: '',
-            fsrsDue: null,
-            fsrsStability: 0,
-            fsrsDifficulty: 0,
-            fsrsElapsedDays: 0,
-            fsrsScheduledDays: 0,
-            fsrsReps: 0,
-            fsrsLapses: 0,
-            fsrsState: 0,
-            fsrsLastReview: null,
-            wrongCount: 0,
-            isNemesis: false,
-          },
-        };
-        await fetchContent(topicWithProgress, item.contentType);
+        if (topic) {
+          const topicWithProgress: TopicWithProgress = {
+            id: Number(topic.id),
+            name: String(topic.name ?? ''),
+            subjectId: Number(topic.subject_id),
+            subjectName: String(topic.subjectName ?? ''),
+            subjectCode: '',
+            subjectColor: '',
+            subtopics: [],
+            estimatedMinutes: 35,
+            inicetPriority: 5,
+            progress: {
+              topicId: Number(topic.id),
+              status: 'unseen' as const,
+              confidence: 0,
+              lastStudiedAt: null,
+              timesStudied: 0,
+              xpEarned: 0,
+              nextReviewDate: null,
+              userNotes: '',
+              fsrsDue: null,
+              fsrsStability: 0,
+              fsrsDifficulty: 0,
+              fsrsElapsedDays: 0,
+              fsrsScheduledDays: 0,
+              fsrsReps: 0,
+              fsrsLapses: 0,
+              fsrsState: 0,
+              fsrsLastReview: null,
+              wrongCount: 0,
+              isNemesis: false,
+            },
+          };
+          await fetchContent(topicWithProgress, item.contentType);
+        }
+
+        await resolveContentFlags(item.topicId, item.contentType);
+        await loadFlagged();
+      } finally {
+        setProcessing(null);
       }
+    },
+    { fallbackMessage: 'Failed to regenerate content.' },
+  );
 
+  const [dismiss] = useAsyncAction(
+    async (item: FlaggedContentItem) => {
       await resolveContentFlags(item.topicId, item.contentType);
       await loadFlagged();
-    } catch (_err) {
-      if (__DEV__) console.error('[FlaggedContent] Failed to regenerate:', _err);
-      Alert.alert('Error', 'Failed to regenerate content.');
-    } finally {
-      setProcessing(null);
-    }
-  };
-
-  const handleDismiss = async (item: FlaggedContentItem) => {
-    try {
-      await resolveContentFlags(item.topicId, item.contentType);
-      await loadFlagged();
-    } catch (_err) {
-      if (__DEV__) console.error('[FlaggedContent] Failed to dismiss flag:', _err);
-      Alert.alert('Error', 'Failed to dismiss flag.');
-    }
-  };
+    },
+    { fallbackMessage: 'Failed to dismiss flag.' },
+  );
 
   const renderItem = ({ item }: { item: FlaggedContentItem }) => (
     <View style={styles.itemCard}>
@@ -147,7 +147,7 @@ export default function FlaggedContentScreen() {
       <View style={styles.itemActions}>
         <Pressable
           style={styles.dismissButton}
-          onPress={() => handleDismiss(item)}
+          onPress={() => dismiss(item)}
           disabled={processing === item.topicId}
         >
           <Text style={styles.dismissButtonText}>Dismiss</Text>
@@ -157,7 +157,7 @@ export default function FlaggedContentScreen() {
             styles.regenerateButton,
             processing === item.topicId && styles.regenerateButtonDisabled,
           ]}
-          onPress={() => handleRegenerate(item)}
+          onPress={() => regenerate(item)}
           disabled={processing === item.topicId}
         >
           {processing === item.topicId ? (
@@ -182,14 +182,15 @@ export default function FlaggedContentScreen() {
 
       {loading ? (
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={n.colors.accent} />
+          <LoadingOrb message="Loading flagged content..." size={120} />
         </View>
       ) : flaggedItems.length === 0 ? (
-        <View style={styles.emptyContainer}>
-          <Ionicons name="checkmark-circle" size={64} color={n.colors.success} />
-          <Text style={styles.emptyTitle}>All Clear!</Text>
-          <Text style={styles.emptySubtitle}>No flagged content to review.</Text>
-        </View>
+        <EmptyState
+          icon="checkmark-circle"
+          iconSize={64}
+          title="All Clear!"
+          subtitle="No flagged content to review."
+        />
       ) : (
         <FlatList
           data={flaggedItems}
@@ -272,7 +273,4 @@ const styles = StyleSheet.create({
   regenerateButtonDisabled: { opacity: 0.5 },
   regenerateButtonText: { fontSize: 14, fontWeight: '600', color: '#FFF' },
   loadingContainer: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  emptyContainer: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32 },
-  emptyTitle: { fontSize: 20, fontWeight: '700', color: n.colors.textPrimary, marginTop: 16 },
-  emptySubtitle: { fontSize: 15, color: n.colors.textMuted, marginTop: 8, textAlign: 'center' },
 });

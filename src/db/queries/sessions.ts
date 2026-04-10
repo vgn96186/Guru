@@ -1,16 +1,7 @@
 import { dateStr, getDb, runInTransaction, nowTs, todayStr } from '../database';
 import { MS_PER_DAY } from '../../constants/time';
 import type { StudySession, Mood, SessionMode } from '../../types';
-
-/** Safe JSON.parse with a typed fallback — prevents one bad row from crashing a query. */
-function safeJsonParse<T>(json: string | null | undefined, fallback: T): T {
-  if (!json) return fallback;
-  try {
-    return JSON.parse(json) as T;
-  } catch {
-    return fallback;
-  }
-}
+import { safeJsonParse } from '../../utils/safeJsonParse';
 
 type WeeklyStatsBucket = {
   minutes: number;

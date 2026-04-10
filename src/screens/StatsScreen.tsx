@@ -5,13 +5,12 @@ import {
   StyleSheet,
   ScrollView,
   StatusBar,
-  TouchableOpacity,
   useWindowDimensions,
   RefreshControl,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import LinearText from '../components/primitives/LinearText';
-import { useFocusEffect, useNavigation } from '@react-navigation/native';
+import { useFocusEffect, useNavigation, type NavigationProp } from '@react-navigation/native';
 import Svg, { Rect, Text as SvgText } from 'react-native-svg';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { getSubjectBreakdown, type SubjectBreakdownRow } from '../db/queries/topics';
@@ -28,8 +27,11 @@ import LoadingOrb from '../components/LoadingOrb';
 import { ResponsiveContainer } from '../hooks/useResponsive';
 import ReviewCalendar from '../components/ReviewCalendar';
 import { linearTheme as n } from '../theme/linearTheme';
+import { warningAlpha } from '../theme/colorUtils';
 import ScreenHeader from '../components/ScreenHeader';
 import LinearSurface from '../components/primitives/LinearSurface';
+import { EmptyState } from '../components/primitives';
+import type { MenuStackParamList } from '../navigation/types';
 
 export default function StatsScreen() {
   const [ready, setReady] = useState(false);
@@ -49,7 +51,7 @@ export default function StatsScreen() {
 }
 
 function StatsScreenContent() {
-  const navigation = useNavigation<any>();
+  const navigation = useNavigation<NavigationProp<MenuStackParamList>>();
   const profile = useAppStore((s) => s.profile);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -76,21 +78,7 @@ function StatsScreenContent() {
   });
 
   // Reload stats every time screen gains focus (not just on mount)
-  const loadStatsCb = useCallback(() => {
-    const task = InteractionManager.runAfterInteractions(() => {
-      void loadStats();
-    });
-    return () => task.cancel();
-  }, []);
-  useFocusEffect(loadStatsCb);
-
-  const onRefresh = useCallback(async () => {
-    setRefreshing(true);
-    await loadStats();
-    setRefreshing(false);
-  }, []);
-
-  async function loadStats() {
+  const loadStats = useCallback(async () => {
     // Use SQL aggregation — avoids loading all 5000+ topic rows into JS
     const breakdown = await getSubjectBreakdown();
 
@@ -151,7 +139,21 @@ function StatsScreenContent() {
     });
 
     setLoading(false);
-  }
+  }, [profile?.streakBest]);
+
+  const loadStatsCb = useCallback(() => {
+    const task = InteractionManager.runAfterInteractions(() => {
+      void loadStats();
+    });
+    return () => task.cancel();
+  }, [loadStats]);
+  useFocusEffect(loadStatsCb);
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await loadStats();
+    setRefreshing(false);
+  }, [loadStats]);
 
   const { width: screenWidth } = useWindowDimensions();
   // Respect ResponsiveContainer max width (tablet caps at ~600px)
@@ -162,6 +164,21 @@ function StatsScreenContent() {
   const daysToInicet = profile?.inicetDate
     ? profileRepository.getDaysToExam(profile.inicetDate)
     : 0;
+  const totalLoggedMinutes = stats.totalAppMinutes + stats.totalExternalMinutes;
+  const totalLoggedHeadline =
+    totalLoggedMinutes >= 60
+      ? `${Math.floor(totalLoggedMinutes / 60)}h`
+      : `${Math.max(0, totalLoggedMinutes)}m`;
+  const snapshotCards = [
+    { label: 'Coverage', value: `${stats.coveragePercent}%`, tone: 'accent' as const },
+    { label: 'Mastered', value: String(stats.masteredCount), tone: 'warning' as const },
+    {
+      label: 'Streak',
+      value: `${stats.currentStreak}d`,
+      tone: stats.currentStreak > 0 ? ('success' as const) : ('primary' as const),
+    },
+    { label: 'Logged', value: totalLoggedHeadline, tone: 'primary' as const },
+  ];
 
   return (
     <SafeAreaView style={styles.safe} testID="stats-screen">
@@ -188,22 +205,62 @@ function StatsScreenContent() {
           </View>
 
           {stats.totalSessions === 0 ? (
-            <LinearSurface padded={false} style={styles.emptyHeroCard}>
-              <Ionicons name="stats-chart-outline" size={48} color={n.colors.textMuted} />
-              <LinearText style={styles.emptyHeroTitle}>No study data yet</LinearText>
-              <LinearText style={styles.emptyHeroText}>
-                Your first session, lecture capture, or review block will unlock streaks,
-                projections, and coverage trends here.
-              </LinearText>
-              <TouchableOpacity
-                style={styles.emptyHeroCta}
-                onPress={() => navigation.navigate('HomeTab' as never)}
-                activeOpacity={0.8}
-              >
-                <LinearText style={styles.emptyHeroCtaText}>Start Your First Session →</LinearText>
-              </TouchableOpacity>
-            </LinearSurface>
+            <EmptyState
+              variant="card"
+              icon="stats-chart-outline"
+              iconSize={48}
+              title="No study data yet"
+              subtitle="Your first session, lecture capture, or review block will unlock streaks, projections, and coverage trends here."
+              actions={[
+                {
+                  label: 'Start Your First Session →',
+                  onPress: () => navigation.navigate('HomeTab' as never),
+                  buttonVariant: 'primary',
+                },
+              ]}
+              style={styles.emptyHeroCard}
+            />
           ) : null}
+
+          {stats.totalSessions > 0 && (
+            <LinearSurface compact style={styles.snapshotCard}>
+              <View style={styles.snapshotHeader}>
+                <View style={styles.snapshotCopy}>
+                  <LinearText variant="meta" tone="accent" style={styles.snapshotEyebrow}>
+                    READINESS SNAPSHOT
+                  </LinearText>
+                  <LinearText variant="sectionTitle" style={styles.snapshotTitle}>
+                    Coverage is moving in the right direction
+                  </LinearText>
+                  <LinearText variant="bodySmall" tone="secondary" style={styles.snapshotText}>
+                    Track pace, consistency, mastery, and logged effort before diving into the full
+                    analytics stack.
+                  </LinearText>
+                </View>
+                <View style={styles.snapshotPill}>
+                  <LinearText variant="chip" tone="accent">
+                    {stats.totalSessions} sessions
+                  </LinearText>
+                </View>
+              </View>
+              <View style={styles.snapshotMetricsRow}>
+                {snapshotCards.map((card) => (
+                  <View key={card.label} style={styles.snapshotMetricCard}>
+                    <LinearText variant="title" tone={card.tone} style={styles.snapshotMetricValue}>
+                      {card.value}
+                    </LinearText>
+                    <LinearText
+                      variant="caption"
+                      tone="secondary"
+                      style={styles.snapshotMetricLabel}
+                    >
+                      {card.label}
+                    </LinearText>
+                  </View>
+                ))}
+              </View>
+            </LinearSurface>
+          )}
 
           {/* The Big Projection Card */}
           <LinearSurface
@@ -268,7 +325,7 @@ function StatsScreenContent() {
           {/* Streak Card */}
           <LinearSurface
             padded={false}
-            style={[styles.absoluteCard, { backgroundColor: 'rgba(217,119,6,0.1)' }]}
+            style={[styles.absoluteCard, { backgroundColor: warningAlpha['10'] }]}
           >
             <View style={styles.streakRow}>
               <Ionicons name="flame" size={32} color={n.colors.warning} />
@@ -291,8 +348,8 @@ function StatsScreenContent() {
                 {stats.currentStreak >= 30
                   ? 'Legendary dedication!'
                   : stats.currentStreak >= 14
-                    ? 'Two weeks strong!'
-                    : 'One week down!'}
+                  ? 'Two weeks strong!'
+                  : 'One week down!'}
               </LinearText>
             )}
           </LinearSurface>
@@ -317,8 +374,8 @@ function StatsScreenContent() {
                     stats.lastWeek.minutes > 0
                       ? Math.round((diff / stats.lastWeek.minutes) * 100)
                       : stats.thisWeek.minutes > 0
-                        ? 100
-                        : 0;
+                      ? 100
+                      : 0;
                   const isUp = diff >= 0;
                   if (pct === 0) return null;
                   return (
@@ -402,8 +459,12 @@ function StatsScreenContent() {
                     }}
                   >
                     {stats.projectedCompletionDays <= daysToInicet
-                      ? `On track! ${daysToInicet - stats.projectedCompletionDays} buffer days before INICET`
-                      : `Need ${Math.ceil((stats.totalTopics - stats.totalCovered) / daysToInicet)} topics/day to finish before INICET`}
+                      ? `On track! ${
+                          daysToInicet - stats.projectedCompletionDays
+                        } buffer days before INICET`
+                      : `Need ${Math.ceil(
+                          (stats.totalTopics - stats.totalCovered) / daysToInicet,
+                        )} topics/day to finish before INICET`}
                   </LinearText>
                 </LinearSurface>
               )}
@@ -426,7 +487,7 @@ function StatsScreenContent() {
           {stats.masteredCount > 0 && (
             <LinearSurface
               padded={false}
-              borderColor="rgba(217,119,6,0.18)"
+              borderColor={warningAlpha['18']}
               style={styles.masteredCard}
             >
               <Ionicons name="flame" size={32} color={n.colors.warning} />
@@ -436,7 +497,9 @@ function StatsScreenContent() {
                 </LinearText>
                 <LinearText style={styles.masteredSub}>
                   {stats.masteredTopics.length > 0
-                    ? `Including: ${stats.masteredTopics.join(', ')}${stats.masteredCount > 10 ? '...' : '.'}`
+                    ? `Including: ${stats.masteredTopics.join(', ')}${
+                        stats.masteredCount > 10 ? '...' : '.'
+                      }`
                     : 'Keep stacking strong reviews and this bank will grow quickly.'}
                 </LinearText>
               </View>
@@ -444,35 +507,63 @@ function StatsScreenContent() {
           )}
 
           {/* Subject Breakdown */}
-          <LinearText style={styles.sectionTitle}>Subject Coverage</LinearText>
-          <View style={styles.subjectGrid}>
-            {stats.subjectBreakdown.map((sub) => (
-              <LinearSurface key={sub.id} padded={false} style={styles.subjectRow}>
-                <View style={styles.subjectHeader}>
-                  <View style={styles.subjectNameRow}>
-                    <View style={[styles.subjectDot, { backgroundColor: sub.color }]} />
-                    <LinearText style={styles.subjectName}>{sub.name}</LinearText>
-                  </View>
-                  <LinearText style={styles.subjectPercent}>{sub.percent}%</LinearText>
-                </View>
-                <View style={styles.subProgressBar}>
-                  <View
-                    style={[
-                      styles.subProgressFill,
-                      { width: `${sub.percent}%`, backgroundColor: sub.color },
-                    ]}
-                  />
-                </View>
-                <LinearText style={styles.subjectFraction}>
-                  {sub.covered} / {sub.total} topics
+          <LinearSurface compact style={styles.sectionCard}>
+            <View style={styles.sectionHeader}>
+              <View style={styles.sectionHeaderCopy}>
+                <LinearText variant="meta" tone="muted" style={styles.sectionEyebrow}>
+                  SUBJECT COVERAGE
                 </LinearText>
-              </LinearSurface>
-            ))}
-          </View>
+                <LinearText style={styles.sectionTitle}>Coverage by subject</LinearText>
+              </View>
+              <View style={styles.sectionPill}>
+                <LinearText variant="chip" tone="accent">
+                  {stats.subjectBreakdown.length} tracked
+                </LinearText>
+              </View>
+            </View>
+            <View style={styles.subjectGrid}>
+              {stats.subjectBreakdown.map((sub) => (
+                <LinearSurface key={sub.id} padded={false} style={styles.subjectRow}>
+                  <View style={styles.subjectHeaderRow}>
+                    <View style={styles.subjectNameRow}>
+                      <View style={[styles.subjectDot, { backgroundColor: sub.color }]} />
+                      <LinearText style={styles.subjectName}>{sub.name}</LinearText>
+                    </View>
+                    <LinearText style={styles.subjectPercent}>{sub.percent}%</LinearText>
+                  </View>
+                  <View style={styles.subProgressBar}>
+                    <View
+                      style={[
+                        styles.subProgressFill,
+                        { width: `${sub.percent}%`, backgroundColor: sub.color },
+                      ]}
+                    />
+                  </View>
+                  <LinearText style={styles.subjectFraction}>
+                    {sub.covered} / {sub.total} topics
+                  </LinearText>
+                </LinearSurface>
+              ))}
+            </View>
+          </LinearSurface>
 
           {/* Review Calendar */}
-          <LinearText style={styles.sectionTitle}>Review Schedule</LinearText>
-          <ReviewCalendar />
+          <LinearSurface compact style={styles.sectionCard}>
+            <View style={styles.sectionHeader}>
+              <View style={styles.sectionHeaderCopy}>
+                <LinearText variant="meta" tone="muted" style={styles.sectionEyebrow}>
+                  REVIEW SCHEDULE
+                </LinearText>
+                <LinearText style={styles.sectionTitle}>Upcoming revision load</LinearText>
+              </View>
+              <View style={styles.sectionPill}>
+                <LinearText variant="chip" tone={daysToInicet > 0 ? 'accent' : 'secondary'}>
+                  {daysToInicet > 0 ? `${daysToInicet}d to INICET` : 'Track reviews'}
+                </LinearText>
+              </View>
+            </View>
+            <ReviewCalendar />
+          </LinearSurface>
 
           <View style={styles.bottomSpacer} />
         </ResponsiveContainer>
@@ -554,36 +645,7 @@ const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: n.colors.background },
   container: { padding: n.spacing.lg, paddingBottom: 40 },
   emptyHeroCard: {
-    borderRadius: 20,
-    padding: 24,
     marginBottom: 20,
-    alignItems: 'center',
-  },
-  emptyHeroTitle: {
-    color: n.colors.textPrimary,
-    fontSize: 20,
-    fontWeight: '800',
-    marginBottom: 8,
-    textAlign: 'center',
-  },
-  emptyHeroText: {
-    color: n.colors.textSecondary,
-    fontSize: 14,
-    lineHeight: 21,
-    textAlign: 'center',
-  },
-  emptyHeroCta: {
-    backgroundColor: n.colors.accent,
-    borderRadius: 12,
-    paddingVertical: 14,
-    paddingHorizontal: 24,
-    marginTop: 16,
-    alignSelf: 'center',
-  },
-  emptyHeroCtaText: {
-    color: n.colors.textPrimary,
-    fontSize: 15,
-    fontWeight: '800',
   },
   header: { marginBottom: n.spacing.xl, marginTop: n.spacing.lg },
   headerTitle: {
@@ -593,6 +655,57 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   headerSub: { color: n.colors.textSecondary, fontSize: 14, marginTop: 4 },
+  snapshotCard: {
+    marginBottom: 20,
+  },
+  snapshotHeader: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    gap: n.spacing.md,
+  },
+  snapshotCopy: {
+    flex: 1,
+  },
+  snapshotEyebrow: {
+    letterSpacing: 1.1,
+  },
+  snapshotTitle: {
+    marginTop: n.spacing.xs,
+  },
+  snapshotText: {
+    marginTop: n.spacing.xs,
+  },
+  snapshotPill: {
+    backgroundColor: n.colors.primaryTintSoft,
+    borderRadius: n.radius.full,
+    borderWidth: 1,
+    borderColor: n.colors.borderHighlight,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  snapshotMetricsRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+    marginTop: n.spacing.md,
+  },
+  snapshotMetricCard: {
+    flexGrow: 1,
+    minWidth: 110,
+    backgroundColor: n.colors.background,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: n.colors.border,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+  },
+  snapshotMetricValue: {
+    marginBottom: 2,
+  },
+  snapshotMetricLabel: {
+    lineHeight: 16,
+  },
 
   projectionCard: {
     borderRadius: 20,
@@ -663,7 +776,7 @@ const styles = StyleSheet.create({
   masteredCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(217,119,6,0.1)',
+    backgroundColor: warningAlpha['10'],
     padding: 20,
     marginBottom: 24,
   },
@@ -671,12 +784,35 @@ const styles = StyleSheet.create({
   masteredTitle: { color: n.colors.warning, fontSize: 16, fontWeight: '800', marginBottom: 4 },
   masteredSub: { color: n.colors.warning, fontSize: 13, lineHeight: 18 },
 
+  sectionCard: {
+    marginBottom: 20,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    gap: n.spacing.md,
+    marginBottom: n.spacing.md,
+  },
+  sectionHeaderCopy: {
+    flex: 1,
+  },
+  sectionEyebrow: {
+    letterSpacing: 1.1,
+  },
+  sectionPill: {
+    backgroundColor: n.colors.primaryTintSoft,
+    borderRadius: n.radius.full,
+    borderWidth: 1,
+    borderColor: n.colors.borderHighlight,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
   sectionTitle: {
     color: n.colors.textPrimary,
     fontSize: 20,
     fontWeight: '800',
-    marginBottom: n.spacing.lg,
-    marginTop: 8,
+    marginTop: 4,
   },
   subjectGrid: { gap: 16 },
   subjectRow: {
@@ -684,7 +820,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     padding: n.spacing.lg,
   },
-  subjectHeader: {
+  subjectHeaderRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
@@ -712,7 +848,7 @@ const styles = StyleSheet.create({
   // Streak styles
   streakRow: { flexDirection: 'row', alignItems: 'center', gap: 16 },
   bestStreakBadge: {
-    backgroundColor: 'rgba(217,119,6,0.1)',
+    backgroundColor: warningAlpha['10'],
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 12,

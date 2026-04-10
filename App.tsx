@@ -19,7 +19,10 @@ import { InstallModelProgressOverlay } from './src/components/InstallModelProgre
 import { DialogHost } from './src/components/DialogHost';
 import { ToastContainer } from './src/components/Toast';
 import DevConsole, { installDevConsoleInterceptors } from './src/components/DevConsole';
+import AppStatusBanners from './src/components/AppStatusBanners';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
+import { KeyboardProvider } from 'react-native-keyboard-controller';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { enableFreeze, enableScreens } from 'react-native-screens';
 import { navigationRef } from './src/navigation/navigationRef';
@@ -28,11 +31,13 @@ import { useAppStore } from './src/store/useAppStore';
 import { useAppBootstrap } from './src/hooks/useAppBootstrap';
 import linking from './src/navigation/linking';
 import { theme } from './src/constants/theme';
+import { initializeSentry, registerNavigationContainer } from './src/services/monitoring/sentry';
 
 // Install console interceptors early so all logs are captured
 installDevConsoleInterceptors();
 enableScreens(true);
 enableFreeze(true);
+initializeSentry();
 
 const textComponent = Text as typeof Text & {
   defaultProps?: React.ComponentProps<typeof Text>;
@@ -85,9 +90,11 @@ function AppContent({
     <>
       <ToastContainer />
       <DialogHost />
+      <AppStatusBanners />
       <NavigationContainer
         ref={navigationRef}
         linking={linking}
+        onReady={() => registerNavigationContainer(navigationRef)}
         theme={{
           ...DarkTheme,
           colors: { ...DarkTheme.colors, background: '#000000', card: '#000000' },
@@ -141,22 +148,26 @@ function AppShell({
     return (
       <GestureHandlerRootView style={styles.root}>
         <SafeAreaProvider>
-          <AppRecoveryScreen
-            title="Startup error"
-            message="Guru could not finish launching. Your local study data should still be safe on this device."
-            detail={error || fontError?.message || 'Font loading failed'}
-            statusLabel="Startup recovery"
-            primaryLabel="Reload App"
-            primaryAccessibilityLabel="Reload app"
-            onPrimary={onReload}
-            secondaryLabel="Try Launch Again"
-            secondaryAccessibilityLabel="Retry startup"
-            onSecondary={onRetry}
-            tips={[
-              'Reload the app for a clean restart, or retry launch without leaving the app.',
-              'If this keeps happening, the failure is likely in startup setup rather than your saved notes or progress.',
-            ]}
-          />
+          <KeyboardProvider>
+            <BottomSheetModalProvider>
+              <AppRecoveryScreen
+                title="Startup error"
+                message="Guru could not finish launching. Your local study data should still be safe on this device."
+                detail={error || fontError?.message || 'Font loading failed'}
+                statusLabel="Startup recovery"
+                primaryLabel="Reload App"
+                primaryAccessibilityLabel="Reload app"
+                onPrimary={onReload}
+                secondaryLabel="Try Launch Again"
+                secondaryAccessibilityLabel="Retry startup"
+                onSecondary={onRetry}
+                tips={[
+                  'Reload the app for a clean restart, or retry launch without leaving the app.',
+                  'If this keeps happening, the failure is likely in startup setup rather than your saved notes or progress.',
+                ]}
+              />
+            </BottomSheetModalProvider>
+          </KeyboardProvider>
         </SafeAreaProvider>
       </GestureHandlerRootView>
     );
@@ -166,8 +177,12 @@ function AppShell({
     return (
       <GestureHandlerRootView style={styles.root}>
         <SafeAreaProvider>
-          <View style={styles.loadingContainer} />
-          <BootTransition />
+          <KeyboardProvider>
+            <BottomSheetModalProvider>
+              <View style={styles.loadingContainer} />
+              <BootTransition />
+            </BottomSheetModalProvider>
+          </KeyboardProvider>
         </SafeAreaProvider>
       </GestureHandlerRootView>
     );
@@ -176,10 +191,14 @@ function AppShell({
   return (
     <GestureHandlerRootView style={styles.root}>
       <SafeAreaProvider>
-        <ErrorBoundary>
-          <AppContent initialRoute={initialRoute} onFatalError={onFatalError} />
-        </ErrorBoundary>
-        <BootTransition />
+        <KeyboardProvider>
+          <BottomSheetModalProvider>
+            <ErrorBoundary>
+              <AppContent initialRoute={initialRoute} onFatalError={onFatalError} />
+            </ErrorBoundary>
+            <BootTransition />
+          </BottomSheetModalProvider>
+        </KeyboardProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>
   );
@@ -219,22 +238,26 @@ export default function App() {
     return (
       <GestureHandlerRootView style={styles.root}>
         <SafeAreaProvider>
-          <AppRecoveryScreen
-            title="Something went wrong"
-            message="Guru hit a startup task failure outside the render tree, so the usual crash boundary could not show first."
-            detail={runtimeError}
-            statusLabel="App recovery"
-            primaryLabel="Reload App"
-            primaryAccessibilityLabel="Reload app"
-            onPrimary={reloadApp}
-            secondaryLabel="Try App Again"
-            secondaryAccessibilityLabel="Retry app"
-            onSecondary={retryApp}
-            tips={[
-              'Reload the app for a clean restart, or remount the app once without leaving this screen.',
-              'This path now surfaces async startup failures instead of letting them disappear as silent crashes.',
-            ]}
-          />
+          <KeyboardProvider>
+            <BottomSheetModalProvider>
+              <AppRecoveryScreen
+                title="Something went wrong"
+                message="Guru hit a startup task failure outside the render tree, so the usual crash boundary could not show first."
+                detail={runtimeError}
+                statusLabel="App recovery"
+                primaryLabel="Reload App"
+                primaryAccessibilityLabel="Reload app"
+                onPrimary={reloadApp}
+                secondaryLabel="Try App Again"
+                secondaryAccessibilityLabel="Retry app"
+                onSecondary={retryApp}
+                tips={[
+                  'Reload the app for a clean restart, or remount the app once without leaving this screen.',
+                  'This path now surfaces async startup failures instead of letting them disappear as silent crashes.',
+                ]}
+              />
+            </BottomSheetModalProvider>
+          </KeyboardProvider>
         </SafeAreaProvider>
       </GestureHandlerRootView>
     );

@@ -4,3 +4,5 @@ export { default as LinearButton } from './LinearButton';
 export { default as LinearTextInput } from './LinearTextInput';
 export { default as LinearBadge } from './LinearBadge';
 export { default as LinearDivider } from './LinearDivider';
+export { default as EmptyState } from './EmptyState';
+export type { EmptyStateAction } from './EmptyState';

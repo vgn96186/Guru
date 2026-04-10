@@ -18,5 +18,6 @@ module.exports = {
     bundledGroqKey: process.env.EXPO_PUBLIC_BUNDLED_GROQ_KEY ?? '',
     bundledHfToken: process.env.EXPO_PUBLIC_BUNDLED_HF_TOKEN ?? '',
     googleWebClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID ?? DEFAULT_GOOGLE_WEB_CLIENT_ID,
+    sentryDsn: process.env.EXPO_PUBLIC_SENTRY_DSN ?? '',
   },
 };

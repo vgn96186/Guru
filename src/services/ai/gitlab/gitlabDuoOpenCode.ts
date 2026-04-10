@@ -9,6 +9,7 @@ import type { Message } from '../types';
 import { RateLimitError } from '../schemas';
 import { getGitLabAiGatewayUrl, getGitLabInstanceUrl } from './gitlabInstance';
 import { resolveGitLabDuoGatewayModel } from './gitlabDuoGatewayModels';
+import { withRetry } from '../../../utils/withRetry';
 
 const DIRECT_ACCESS_PATH = '/api/v4/ai/third_party_agents/direct_access';
 const CACHE_TTL_MS = 25 * 60 * 1000;
@@ -33,12 +34,6 @@ function parseDirectAccessPayload(data: unknown): DirectAccessCreds {
     if (typeof v === 'string') h[k] = v;
   }
   return { token: o.token, headers: h };
-}
-
-const TRANSIENT_RETRY_DELAYS = [1000, 3000]; // 2 retries: 1s, 3s
-
-function sleep(ms: number): Promise<void> {
-  return new Promise((r) => setTimeout(r, ms));
 }
 
 function stripHtml(raw: string): string {
@@ -76,46 +71,45 @@ export async function fetchGitLabDirectAccessCredentials(
   const instanceUrl = getGitLabInstanceUrl().replace(/\/+$/, '');
   const url = `${instanceUrl}${DIRECT_ACCESS_PATH}`;
 
-  let lastError: Error | null = null;
+  return withRetry(
+    async () => {
+      const res = await postDirectAccess(url, userAccessToken);
 
-  // Try once + up to 2 retries for transient 502/503
-  for (let attempt = 0; attempt <= TRANSIENT_RETRY_DELAYS.length; attempt++) {
-    if (attempt > 0) {
-      const delay = TRANSIENT_RETRY_DELAYS[attempt - 1];
-      if (__DEV__)
-        console.log(
-          `[AI] GitLab direct_access retry ${attempt}/${TRANSIENT_RETRY_DELAYS.length} after ${delay}ms…`,
+      if (res.status === 429) {
+        throw new RateLimitError('GitLab Duo direct_access rate limited');
+      }
+
+      if (res.status === 502 || res.status === 503) {
+        const err = await res.text().catch(() => res.statusText);
+        throw new Error(
+          `GitLab AI Gateway unavailable (${res.status}). This usually means Duo Pro/Enterprise is not enabled on your GitLab account, or GitLab's AI infrastructure is temporarily down. Check status.gitlab.com. ${stripHtml(err)}`.trim(),
         );
-      await sleep(delay);
-    }
+      }
 
-    const res = await postDirectAccess(url, userAccessToken);
+      if (!res.ok) {
+        const err = await res.text().catch(() => res.statusText);
+        throw new Error(`GitLab direct_access ${res.status}: ${stripHtml(err)}`);
+      }
 
-    if (res.status === 429) {
-      throw new RateLimitError('GitLab Duo direct_access rate limited');
-    }
-
-    if (res.status === 502 || res.status === 503) {
-      const err = await res.text().catch(() => res.statusText);
-      lastError = new Error(
-        `GitLab AI Gateway unavailable (${res.status}). This usually means Duo Pro/Enterprise is not enabled on your GitLab account, or GitLab's AI infrastructure is temporarily down. Check status.gitlab.com. ${stripHtml(err)}`.trim(),
-      );
-      continue; // retry
-    }
-
-    if (!res.ok) {
-      const err = await res.text().catch(() => res.statusText);
-      throw new Error(`GitLab direct_access ${res.status}: ${stripHtml(err)}`);
-    }
-
-    const json: unknown = await res.json();
-    const creds = parseDirectAccessPayload(json);
-    credsCache = { key, creds, expiresAt: Date.now() + CACHE_TTL_MS };
-    return creds;
-  }
-
-  // All retries exhausted
-  throw lastError ?? new Error('GitLab direct_access failed after retries');
+      const json: unknown = await res.json();
+      const creds = parseDirectAccessPayload(json);
+      credsCache = { key, creds, expiresAt: Date.now() + CACHE_TTL_MS };
+      return creds;
+    },
+    {
+      maxRetries: 2,
+      baseDelayMs: 1000,
+      shouldRetry: (err) => {
+        // Only retry transient gateway errors, not rate limits or auth errors
+        if (err instanceof RateLimitError) return true;
+        if (err instanceof Error && /\b(502|503)\b/.test(err.message)) return true;
+        return false;
+      },
+      onRetry: (_, attempt, delay) => {
+        if (__DEV__) console.log(`[AI] GitLab direct_access retry ${attempt}/2 after ${delay}ms…`);
+      },
+    },
+  );
 }
 
 export function invalidateGitLabDirectAccessCache(): void {

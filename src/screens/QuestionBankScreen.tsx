@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import {
   View,
   StyleSheet,
@@ -6,21 +6,23 @@ import {
   FlatList,
   StatusBar,
   Modal,
-  ActivityIndicator,
 } from 'react-native';
 import LinearText from '../components/primitives/LinearText';
+import { EmptyState } from '../components/primitives';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import LinearButton from '../components/primitives/LinearButton';
+import LinearBadge from '../components/primitives/LinearBadge';
 import LinearSurface from '../components/primitives/LinearSurface';
 import { linearTheme as n } from '../theme/linearTheme';
+import LoadingOrb from '../components/LoadingOrb';
 import { MarkdownRender } from '../components/MarkdownRender';
 import ScreenHeader from '../components/ScreenHeader';
+import { ResponsiveContainer } from '../hooks/useResponsive';
 import {
   getQuestions,
   getQuestionCount,
-  getDueForReview,
   getPracticeSet,
   toggleBookmark,
   markMastered,
@@ -149,14 +151,7 @@ export default function QuestionBankScreen() {
     }
     setPracticeIndex((i) => i + 1);
     setPracticeAnswer(null);
-  }, [
-    practiceIndex,
-    practiceQuestions.length,
-    practiceScore,
-    practiceAnswer,
-    currentPracticeQ,
-    loadData,
-  ]);
+  }, [practiceIndex, practiceQuestions.length, practiceScore, loadData]);
 
   // ── Render ──────────────────────────────────────────────────────────────────
   const renderItem = useCallback(
@@ -173,9 +168,7 @@ export default function QuestionBankScreen() {
           <LinearSurface padded={false} style={styles.card}>
             <View style={styles.cardHeader}>
               {item.subjectName ? (
-                <View style={[styles.subjectChip, { backgroundColor: '#E040FB22' }]}>
-                  <LinearText style={styles.subjectChipText}>{item.subjectName}</LinearText>
-                </View>
+                <LinearBadge label={item.subjectName} variant="accent" style={styles.subjectChip} />
               ) : null}
               {item.topicName ? (
                 <LinearText style={styles.topicLabel} numberOfLines={1}>
@@ -267,64 +260,93 @@ export default function QuestionBankScreen() {
     { mode: 'mastered', label: 'Mastered', count: masteredCount },
   ];
 
+  const summaryCards = [
+    { label: 'Saved', value: totalCount.toString(), tone: 'primary' as const },
+    { label: 'Due', value: dueCount.toString(), tone: 'warning' as const },
+    { label: 'Starred', value: bookmarkedCount.toString(), tone: 'accent' as const },
+    { label: 'Mastered', value: masteredCount.toString(), tone: 'success' as const },
+  ];
+
   return (
     <SafeAreaView style={styles.safe}>
       <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
-      <ScreenHeader title="Question Bank" subtitle={`${totalCount} questions saved`} />
+      <ResponsiveContainer style={styles.flex}>
+        <ScreenHeader title="Question Bank" subtitle={`${totalCount} questions saved`} />
 
-      {/* Stats + Filter bar */}
-      <View style={styles.filterBar}>
-        {filters.map((f) => (
-          <TouchableOpacity key={f.mode} onPress={() => setFilterMode(f.mode)} activeOpacity={0.8}>
-            <LinearSurface
-              padded={false}
-              style={[styles.filterChip, filterMode === f.mode && styles.filterChipActive]}
-            >
-              <LinearText
-                style={[
-                  styles.filterChipText,
-                  filterMode === f.mode && styles.filterChipTextActive,
-                ]}
-              >
-                {f.label} ({f.count})
-              </LinearText>
+        <View style={styles.summaryRow}>
+          {summaryCards.map((card) => (
+            <LinearSurface key={card.label} compact padded={false} style={styles.summaryCard}>
+              <View style={styles.summaryCardContent}>
+                <LinearText variant="title" tone={card.tone} style={styles.summaryValue}>
+                  {card.value}
+                </LinearText>
+                <LinearText variant="caption" tone="secondary" style={styles.summaryLabel}>
+                  {card.label}
+                </LinearText>
+              </View>
             </LinearSurface>
-          </TouchableOpacity>
-        ))}
-      </View>
-
-      {/* Action row */}
-      <View style={styles.actionRow}>
-        <LinearButton
-          variant="glass"
-          style={styles.practiceBtn}
-          onPress={startPractice}
-          leftIcon={<Ionicons name="play-circle-outline" size={20} color={n.colors.textPrimary} />}
-          label="Practice"
-        />
-      </View>
-
-      {loading ? (
-        <View style={styles.center}>
-          <ActivityIndicator size="large" color={n.colors.accent} />
+          ))}
         </View>
-      ) : questions.length === 0 ? (
-        <View style={styles.center}>
-          <Ionicons name="help-circle-outline" size={48} color={n.colors.textMuted} />
-          <LinearText style={styles.emptyText}>No questions yet</LinearText>
-          <LinearText style={styles.emptyHint}>
-            Study topics or take quizzes to auto-save questions here.
-          </LinearText>
+
+        <View style={styles.filterBar}>
+          {filters.map((f) => (
+            <TouchableOpacity
+              key={f.mode}
+              onPress={() => setFilterMode(f.mode)}
+              activeOpacity={0.8}
+            >
+              <LinearSurface
+                compact
+                padded={false}
+                style={[styles.filterChip, filterMode === f.mode && styles.filterChipActive]}
+              >
+                <LinearText
+                  variant="caption"
+                  style={[
+                    styles.filterChipText,
+                    filterMode === f.mode && styles.filterChipTextActive,
+                  ]}
+                >
+                  {f.label} ({f.count})
+                </LinearText>
+              </LinearSurface>
+            </TouchableOpacity>
+          ))}
         </View>
-      ) : (
-        <FlatList
-          data={questions}
-          renderItem={renderItem}
-          keyExtractor={keyExtractor}
-          contentContainerStyle={styles.list}
-          showsVerticalScrollIndicator={false}
-        />
-      )}
+
+        <View style={styles.actionRow}>
+          <LinearButton
+            variant="glass"
+            style={styles.practiceBtn}
+            onPress={startPractice}
+            leftIcon={
+              <Ionicons name="play-circle-outline" size={20} color={n.colors.textPrimary} />
+            }
+            label="Practice 10-question set"
+          />
+        </View>
+
+        {loading ? (
+          <View style={styles.center}>
+            <LoadingOrb message="Loading questions..." size={120} />
+          </View>
+        ) : questions.length === 0 ? (
+          <EmptyState
+            icon="help-circle-outline"
+            iconSize={48}
+            title="No questions saved yet"
+            subtitle="Study topics or take quizzes to auto-save questions here."
+          />
+        ) : (
+          <FlatList
+            data={questions}
+            renderItem={renderItem}
+            keyExtractor={keyExtractor}
+            contentContainerStyle={styles.list}
+            showsVerticalScrollIndicator={false}
+          />
+        )}
+      </ResponsiveContainer>
 
       {/* ── Practice Modal ───────────────────────────────────────────────── */}
       <Modal visible={practiceActive} animationType="slide" transparent={false}>
@@ -348,13 +370,11 @@ export default function QuestionBankScreen() {
           {currentPracticeQ && (
             <View style={styles.practiceBody}>
               {currentPracticeQ.subjectName ? (
-                <View
-                  style={[styles.subjectChip, { backgroundColor: '#E040FB22', marginBottom: 8 }]}
-                >
-                  <LinearText style={styles.subjectChipText}>
-                    {currentPracticeQ.subjectName}
-                  </LinearText>
-                </View>
+                <LinearBadge
+                  label={currentPracticeQ.subjectName}
+                  variant="accent"
+                  style={styles.subjectChip}
+                />
               ) : null}
 
               <LinearText style={styles.practiceQuestion}>{currentPracticeQ.question}</LinearText>
@@ -368,8 +388,8 @@ export default function QuestionBankScreen() {
                     showResult && isCorrect
                       ? styles.practiceOptionCorrect
                       : showResult && isSelected && !isCorrect
-                        ? styles.practiceOptionWrong
-                        : styles.practiceOption;
+                      ? styles.practiceOptionWrong
+                      : styles.practiceOption;
 
                   return (
                     <TouchableOpacity
@@ -415,27 +435,49 @@ export default function QuestionBankScreen() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: n.colors.background },
+  flex: { flex: 1 },
+  summaryRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: n.spacing.sm,
+    paddingHorizontal: n.spacing.md,
+    paddingBottom: n.spacing.sm,
+  },
+  summaryCard: {
+    width: '48%',
+  },
+  summaryCardContent: {
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    gap: 4,
+  },
+  summaryValue: {
+    color: n.colors.textPrimary,
+  },
+  summaryLabel: {
+    letterSpacing: 0.2,
+  },
   filterBar: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     paddingHorizontal: 16,
     paddingVertical: 8,
     gap: 8,
   },
   filterChip: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
+    minHeight: 0,
   },
   filterChipActive: {
-    backgroundColor: n.colors.accent,
+    borderColor: `${n.colors.accent}66`,
+    backgroundColor: n.colors.primaryTintSoft,
   },
   filterChipText: {
-    fontSize: 12,
-    fontWeight: '600',
     color: n.colors.textSecondary,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
   },
   filterChipTextActive: {
-    color: n.colors.textPrimary,
+    color: n.colors.accent,
   },
   actionRow: {
     flexDirection: 'row',
@@ -444,7 +486,7 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   practiceBtn: {
-    minWidth: 160,
+    minWidth: 220,
     minHeight: 52,
   },
   list: { paddingHorizontal: 16, paddingBottom: 40 },
@@ -468,15 +510,7 @@ const styles = StyleSheet.create({
   },
   cardHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 6 },
   subjectChip: {
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 8,
-  },
-  subjectChipText: {
-    fontSize: 11,
-    lineHeight: 16,
-    fontWeight: '700',
-    color: '#E040FB',
+    marginBottom: 2,
   },
   topicLabel: {
     fontSize: 11,
@@ -498,7 +532,7 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   correctOption: {
-    backgroundColor: '#4CAF5022',
+    backgroundColor: `${n.colors.success}18`,
   },
   optionLetter: {
     color: n.colors.textMuted,
@@ -569,7 +603,7 @@ const styles = StyleSheet.create({
   },
   practiceOptionCorrect: {
     flexDirection: 'row' as const,
-    backgroundColor: '#4CAF5022',
+    backgroundColor: `${n.colors.success}18`,
     padding: 14,
     borderRadius: n.radius.md,
     borderWidth: 1,
@@ -577,7 +611,7 @@ const styles = StyleSheet.create({
   },
   practiceOptionWrong: {
     flexDirection: 'row' as const,
-    backgroundColor: '#F4433622',
+    backgroundColor: `${n.colors.error}18`,
     padding: 14,
     borderRadius: n.radius.md,
     borderWidth: 1,

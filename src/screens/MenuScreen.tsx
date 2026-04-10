@@ -10,6 +10,7 @@ import { ResponsiveContainer } from '../hooks/useResponsive';
 import { linearTheme as n } from '../theme/linearTheme';
 import BannerIconButton from '../components/BannerIconButton';
 import ScreenHeader from '../components/ScreenHeader';
+import LinearSurface from '../components/primitives/LinearSurface';
 
 type Nav = NativeStackNavigationProp<MenuStackParamList, 'MenuHome'>;
 
@@ -88,6 +89,7 @@ const PRIMARY_DESTINATIONS: Array<{
 export default function MenuScreen() {
   const navigation = useNavigation<Nav>();
   const tabsNavigation = navigation.getParent<NavigationProp<TabParamList>>();
+  const destinationCount = PRIMARY_DESTINATIONS.length;
 
   return (
     <SafeAreaView style={styles.safe} testID="menu-screen">
@@ -110,29 +112,68 @@ export default function MenuScreen() {
             }
           />
 
+          <LinearSurface compact style={styles.summaryCard}>
+            <View style={styles.summaryRow}>
+              <View style={styles.summaryCopy}>
+                <LinearText variant="meta" tone="accent" style={styles.summaryEyebrow}>
+                  ROUTE MAP
+                </LinearText>
+                <LinearText variant="sectionTitle" style={styles.summaryTitle}>
+                  {destinationCount} focused destinations
+                </LinearText>
+                <LinearText variant="bodySmall" tone="secondary" style={styles.summaryText}>
+                  Planning, vaults, practice, and setup now live in one calmer navigation hub.
+                </LinearText>
+              </View>
+              <View style={styles.summaryPill}>
+                <LinearText variant="chip" tone="accent">
+                  Fast access
+                </LinearText>
+              </View>
+            </View>
+          </LinearSurface>
+
           <View style={styles.destinations}>
+            <LinearText variant="meta" tone="muted" style={styles.destinationsLabel}>
+              DESTINATIONS
+            </LinearText>
             <View style={styles.grid}>
               {PRIMARY_DESTINATIONS.map((item) => (
                 <Pressable
                   key={item.route}
-                  style={({ pressed }) => [styles.listItem, pressed && styles.cardPressed]}
+                  style={({ pressed }) => [pressed && styles.cardPressed]}
                   android_ripple={{ color: `${item.tint}22` }}
                   onPress={() => navigation.navigate(item.route as never)}
                   accessibilityRole="button"
-                  accessibilityLabel={item.title}
+                  accessibilityLabel={`${item.title}. ${item.subtitle}`}
                 >
-                  <View
-                    style={[
-                      styles.listIconWrap,
-                      { backgroundColor: `${item.tint}18`, borderColor: `${item.tint}55` },
-                    ]}
-                  >
-                    <Ionicons name={item.icon} size={22} color={item.tint} />
-                  </View>
-                  <View style={styles.listTextContent}>
-                    <LinearText style={styles.listTitle}>{item.title}</LinearText>
-                  </View>
-                  <Ionicons name="chevron-forward" size={18} color={n.colors.textMuted} />
+                  <LinearSurface compact padded={false} style={styles.listItemSurface}>
+                    <View style={styles.listItem}>
+                      <View
+                        style={[
+                          styles.listIconWrap,
+                          { backgroundColor: `${item.tint}18`, borderColor: `${item.tint}55` },
+                        ]}
+                      >
+                        <Ionicons name={item.icon} size={22} color={item.tint} />
+                      </View>
+                      <View style={styles.listTextContent}>
+                        <LinearText variant="label" style={styles.listTitle}>
+                          {item.title}
+                        </LinearText>
+                        <LinearText
+                          variant="bodySmall"
+                          tone="secondary"
+                          style={styles.listSubtitle}
+                        >
+                          {item.subtitle}
+                        </LinearText>
+                      </View>
+                      <View style={styles.chevronWrap}>
+                        <Ionicons name="chevron-forward" size={18} color={n.colors.textMuted} />
+                      </View>
+                    </View>
+                  </LinearSurface>
                 </Pressable>
               ))}
             </View>
@@ -157,40 +198,81 @@ const styles = StyleSheet.create({
     paddingBottom: 56,
     gap: n.spacing.lg,
   },
+  summaryCard: {
+    borderColor: n.colors.borderHighlight,
+  },
+  summaryRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    gap: n.spacing.md,
+  },
+  summaryCopy: {
+    flex: 1,
+    gap: 4,
+  },
+  summaryEyebrow: {
+    letterSpacing: 1.2,
+  },
+  summaryTitle: {
+    color: n.colors.textPrimary,
+  },
+  summaryText: {
+    lineHeight: 20,
+  },
+  summaryPill: {
+    alignSelf: 'flex-start',
+    paddingHorizontal: n.spacing.sm,
+    paddingVertical: n.spacing.xs,
+    borderRadius: n.radius.full,
+    backgroundColor: n.colors.primaryTintSoft,
+    borderWidth: 1,
+    borderColor: `${n.colors.accent}44`,
+  },
   destinations: {
     gap: n.spacing.sm,
   },
+  destinationsLabel: {
+    letterSpacing: 1.4,
+    paddingHorizontal: 2,
+  },
   grid: {
-    gap: 0,
+    gap: n.spacing.sm,
   },
   cardPressed: {
     opacity: n.alpha.pressed,
   },
+  listItemSurface: {
+    borderColor: n.colors.border,
+  },
   listItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'transparent',
-    borderRadius: 0,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: n.colors.border,
-    paddingVertical: n.spacing.sm,
-    paddingHorizontal: n.spacing.xs,
-    gap: n.spacing.sm,
+    paddingVertical: 14,
+    paddingHorizontal: 14,
+    gap: 12,
   },
   listIconWrap: {
-    width: 34,
-    height: 34,
-    borderRadius: n.radius.sm,
+    width: 42,
+    height: 42,
+    borderRadius: n.radius.md,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: StyleSheet.hairlineWidth,
   },
   listTextContent: {
     flex: 1,
+    minWidth: 0,
+    gap: 3,
   },
   listTitle: {
-    ...n.typography.label,
     color: n.colors.textPrimary,
-    fontSize: 14,
+  },
+  listSubtitle: {
+    lineHeight: 19,
+  },
+  chevronWrap: {
+    alignSelf: 'center',
+    paddingLeft: 4,
   },
 });

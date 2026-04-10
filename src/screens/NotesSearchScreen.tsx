@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, TextInput, FlatList, TouchableOpacity, StyleSheet, StatusBar } from 'react-native';
+import { View, TouchableOpacity, StyleSheet, StatusBar } from 'react-native';
 import LinearText from '../components/primitives/LinearText';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, type NavigationProp } from '@react-navigation/native';
@@ -17,6 +17,8 @@ import { ResponsiveContainer } from '../hooks/useResponsive';
 import type { Subject } from '../types';
 import { buildLectureDisplayTitle } from '../services/lecture/lectureIdentity';
 import BannerSearchBar from '../components/BannerSearchBar';
+import { AppFlashList } from '../components/primitives/AppFlashList';
+import { EmptyState } from '../components/primitives';
 import ScreenHeader from '../components/ScreenHeader';
 import { confirmDestructive } from '../components/dialogService';
 
@@ -316,7 +318,7 @@ export default function NotesSearchScreen() {
             />
           }
         ></ScreenHeader>
-        <FlatList
+        <AppFlashList
           data={results}
           ListHeaderComponent={
             isSelectionMode ? (
@@ -333,24 +335,23 @@ export default function NotesSearchScreen() {
               </View>
             ) : null
           }
-          keyExtractor={(item, idx) =>
+          keyExtractor={(item) =>
             item.type === 'lecture' ? `lec-${item.item.id}` : `topic-${item.id}`
           }
           renderItem={renderItem}
           ListEmptyComponent={
             query.length > 1 ? (
-              <View style={styles.emptyContainer}>
-                <LinearText style={styles.empty}>No matches found</LinearText>
-                <LinearText style={styles.emptySub}>
-                  Try searching for 2+ characters or different keywords
-                </LinearText>
-              </View>
+              <EmptyState
+                icon="search-outline"
+                title="No matches found"
+                subtitle="Try searching for 2+ characters or different keywords"
+              />
             ) : query.length > 0 ? (
-              <View style={styles.emptyContainer}>
-                <LinearText style={styles.emptySub}>
-                  Type at least 2 characters to search
-                </LinearText>
-              </View>
+              <EmptyState
+                icon="search-outline"
+                title="Keep typing…"
+                subtitle="Type at least 2 characters to search"
+              />
             ) : null
           }
         />

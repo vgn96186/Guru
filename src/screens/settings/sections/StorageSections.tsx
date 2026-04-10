@@ -12,9 +12,24 @@ import {
 import { showToast } from '../../../components/Toast';
 import LinearTextInput from '../../../components/primitives/LinearTextInput';
 import LinearText from '../../../components/primitives/LinearText';
-import { linearTheme, linearTheme as n } from '../../../theme/linearTheme';
+import { linearTheme } from '../../../theme/linearTheme';
 import type { AutoBackupFrequency } from '../../../services/unifiedBackupService';
+import type { UserProfile } from '../../../types';
 
+function getErrorMessage(error: unknown): string {
+  if (error instanceof Error && error.message) return error.message;
+  if (typeof error === 'string' && error.trim()) return error;
+  return 'Unknown error';
+}
+
+function getErrorCode(error: unknown): string {
+  if (error && typeof error === 'object' && 'code' in error) {
+    return String((error as { code?: unknown }).code ?? '');
+  }
+  return '';
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export default function StorageSections(props: any) {
   const {
     styles,
@@ -43,6 +58,7 @@ export default function StorageSections(props: any) {
     runMaintenanceTask,
     getUserProfile,
   } = props;
+  const currentProfile = profile as UserProfile | null | undefined;
 
   return (
     <>
@@ -174,10 +190,10 @@ export default function StorageSections(props: any) {
                 const success = await exportUnifiedBackup();
                 if (success) {
                   const now = new Date().toISOString();
-                  updateUserProfile({ lastBackupDate: now } as any);
+                  updateUserProfile({ lastBackupDate: now });
                   refreshProfile();
                 }
-              } catch (e: any) {
+              } catch (e: unknown) {
                 showError(e, 'Unknown error');
               } finally {
                 setBackupBusy(false);
@@ -217,7 +233,7 @@ export default function StorageSections(props: any) {
                 } else {
                   showError(res.message, 'Import failed');
                 }
-              } catch (e: any) {
+              } catch (e: unknown) {
                 showError(e, 'Import failed');
               } finally {
                 setBackupBusy(false);
@@ -261,8 +277,8 @@ export default function StorageSections(props: any) {
                 {freq === 'off'
                   ? 'Off'
                   : freq === '3days'
-                    ? '3 Days'
-                    : freq.charAt(0).toUpperCase() + freq.slice(1)}
+                  ? '3 Days'
+                  : freq.charAt(0).toUpperCase() + freq.slice(1)}
               </LinearText>
             </TouchableOpacity>
           ))}
@@ -290,7 +306,7 @@ export default function StorageSections(props: any) {
               const success = await runAutoBackup();
               if (success) {
                 const now = new Date().toISOString();
-                await profileRepository.updateProfile({ lastAutoBackupAt: now } as any);
+                await profileRepository.updateProfile({ lastAutoBackupAt: now });
                 refreshProfile();
                 showToast({
                   title: 'Auto-backup complete',
@@ -304,10 +320,10 @@ export default function StorageSections(props: any) {
                   variant: 'error',
                 });
               }
-            } catch (e: any) {
+            } catch (e: unknown) {
               showToast({
                 title: 'Failed',
-                message: e?.message ?? 'Unknown error',
+                message: getErrorMessage(e),
                 variant: 'error',
               });
             } finally {
@@ -332,10 +348,10 @@ export default function StorageSections(props: any) {
                 message: 'Old backups have been cleaned up.',
                 variant: 'success',
               });
-            } catch (e: any) {
+            } catch (e: unknown) {
               showToast({
                 title: 'Cleanup failed',
-                message: e?.message ?? 'Unknown error',
+                message: getErrorMessage(e),
                 variant: 'error',
               });
             } finally {
@@ -381,14 +397,14 @@ export default function StorageSections(props: any) {
             marginTop: 8,
           }}
         />
-        {(profile as any)?.gdriveConnected ? (
+        {currentProfile?.gdriveConnected ? (
           <View>
             <LinearText variant="caption" style={[styles.backupDate, { marginBottom: 8 }]}>
-              Connected: {(profile as any)?.gdriveEmail || 'Google Account'}
+              Connected: {currentProfile.gdriveEmail || 'Google Account'}
             </LinearText>
-            {(profile as any)?.gdriveLastSyncAt && (
+            {currentProfile.gdriveLastSyncAt && (
               <LinearText variant="caption" style={styles.backupDate}>
-                Last sync: {new Date((profile as any).gdriveLastSyncAt).toLocaleString()}
+                Last sync: {new Date(currentProfile.gdriveLastSyncAt).toLocaleString()}
               </LinearText>
             )}
             <View style={styles.backupRow}>
@@ -406,7 +422,7 @@ export default function StorageSections(props: any) {
                     } else {
                       showError('Could not create or upload backup.', 'Sync failed');
                     }
-                  } catch (e: any) {
+                  } catch (e: unknown) {
                     showError(e, 'Sync failed');
                   } finally {
                     setBackupBusy(false);
@@ -435,7 +451,7 @@ export default function StorageSections(props: any) {
                   try {
                     await signOutGDrive();
                     refreshProfile();
-                  } catch (e: any) {
+                  } catch (e: unknown) {
                     showError(e, 'Failed to disconnect');
                   }
                 }}
@@ -468,17 +484,17 @@ export default function StorageSections(props: any) {
               }
               setBackupBusy(true);
               try {
-                await updateUserProfile({ gdriveWebClientId: resolvedGoogleClientId } as any);
+                await updateUserProfile({ gdriveWebClientId: resolvedGoogleClientId });
                 const result = await signInToGDrive(resolvedGoogleClientId);
                 refreshProfile();
                 showSuccess(
                   'Connected!',
                   `Signed in as ${result.email}. Your backups will now sync to Google Drive.`,
                 );
-              } catch (e: any) {
-                if (e?.code !== 'SIGN_IN_CANCELLED') {
-                  const code = String(e?.code ?? '');
-                  const msg = String(e?.message ?? '');
+              } catch (e: unknown) {
+                if (getErrorCode(e) !== 'SIGN_IN_CANCELLED') {
+                  const code = getErrorCode(e);
+                  const msg = getErrorMessage(e);
                   const isDeveloperError =
                     code === '10' ||
                     code === 'DEVELOPER_ERROR' ||
@@ -522,8 +538,9 @@ export default function StorageSections(props: any) {
             runMaintenanceTask(
               'retry',
               async () => {
-                const { retryFailedTasks } =
-                  await import('../../../services/lecture/lectureSessionMonitor');
+                const { retryFailedTasks } = await import(
+                  '../../../services/lecture/lectureSessionMonitor'
+                );
                 const activeProfile = await getUserProfile();
                 return retryFailedTasks(activeProfile?.groqApiKey || undefined);
               },
@@ -551,8 +568,9 @@ export default function StorageSections(props: any) {
             runMaintenanceTask(
               'legacy',
               async () => {
-                const { autoRepairLegacyNotes } =
-                  await import('../../../services/lecture/lectureSessionMonitor');
+                const { autoRepairLegacyNotes } = await import(
+                  '../../../services/lecture/lectureSessionMonitor'
+                );
                 return autoRepairLegacyNotes();
               },
               {
@@ -579,8 +597,9 @@ export default function StorageSections(props: any) {
             runMaintenanceTask(
               'transcripts',
               async () => {
-                const { scanAndRecoverOrphanedTranscripts } =
-                  await import('../../../services/lecture/lectureSessionMonitor');
+                const { scanAndRecoverOrphanedTranscripts } = await import(
+                  '../../../services/lecture/lectureSessionMonitor'
+                );
                 return scanAndRecoverOrphanedTranscripts();
               },
               {
@@ -607,8 +626,9 @@ export default function StorageSections(props: any) {
             runMaintenanceTask(
               'recordings',
               async () => {
-                const { scanAndRecoverOrphanedRecordings } =
-                  await import('../../../services/lecture/lectureSessionMonitor');
+                const { scanAndRecoverOrphanedRecordings } = await import(
+                  '../../../services/lecture/lectureSessionMonitor'
+                );
                 return scanAndRecoverOrphanedRecordings();
               },
               {
@@ -635,8 +655,9 @@ export default function StorageSections(props: any) {
             runMaintenanceTask(
               'cleanup_artifacts',
               async () => {
-                const { cleanupFailedArtifacts } =
-                  await import('../../../services/lecture/lectureSessionMonitor');
+                const { cleanupFailedArtifacts } = await import(
+                  '../../../services/lecture/lectureSessionMonitor'
+                );
                 return cleanupFailedArtifacts();
               },
               {

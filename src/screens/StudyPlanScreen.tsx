@@ -5,7 +5,6 @@ import {
   ScrollView,
   StyleSheet,
   StatusBar,
-  ActivityIndicator,
   InteractionManager,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -23,6 +22,8 @@ import { showToast } from '../components/Toast';
 import { useAppStore } from '../store/useAppStore';
 import { ResponsiveContainer } from '../hooks/useResponsive';
 import { linearTheme as n } from '../theme/linearTheme';
+import { warningAlpha } from '../theme/colorUtils';
+import LoadingOrb from '../components/LoadingOrb';
 import { MS_PER_DAY } from '../constants/time';
 import { Ionicons } from '@expo/vector-icons';
 import { getCompletedTopicIdsBetween } from '../db/queries/sessions';
@@ -459,13 +460,9 @@ function MasteryFunnelCard({ summary }: { summary: StudyPlanSummary }) {
     summary.masteredCount;
   if (total === 0) return null;
 
-  const bar = (count: number, color: string) => {
-    const pct =
-      total > 0
-        ? (`${Math.round((count / total) * 100)}%` as `${number}%`)
-        : ('0%' as `${number}%`);
-    return <View style={[masteryStyles.funnelSeg, { flex: count, backgroundColor: color }]} />;
-  };
+  const bar = (count: number, color: string) => (
+    <View style={[masteryStyles.funnelSeg, { flex: count, backgroundColor: color }]} />
+  );
 
   return (
     <View style={masteryStyles.funnelCard}>
@@ -532,11 +529,8 @@ function FoundationRepairQueueCard({
         item.topic.progress.confidence <= 1,
     ) ?? [];
 
-  const foundationMinutes = foundationToday.reduce((sum, item) => sum + item.duration, 0);
   const hasQueue = foundationToday.length > 0 || summary.seenNeedingQuizCount > 0;
   if (!hasQueue) return null;
-
-  const tone = summary.newTopicsGated || summary.overdueBacklogDays > 4;
 
   return (
     <View style={masteryStyles.foundationActionRow}>
@@ -737,7 +731,9 @@ export default function StudyPlanScreen() {
         activeOpacity={0.7}
         onPress={() => handleStartPlannedTopic(day, index)}
         accessibilityRole="button"
-        accessibilityLabel={`${item.topic.name}, ${item.type === 'review' ? 'review' : item.type === 'deep_dive' ? 'deep dive' : 'study'}${isCompleted ? ', completed' : ''}`}
+        accessibilityLabel={`${item.topic.name}, ${
+          item.type === 'review' ? 'review' : item.type === 'deep_dive' ? 'deep dive' : 'study'
+        }${isCompleted ? ', completed' : ''}`}
         style={[
           styles.topicRow,
           item.type === 'review' && styles.rowReview,
@@ -780,8 +776,7 @@ export default function StudyPlanScreen() {
       <SafeAreaView style={styles.safe} testID="plan-screen">
         <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
         <View style={styles.loadingWrap}>
-          <ActivityIndicator size="large" color={n.colors.accent} />
-          <LinearText style={styles.loadingText}>Building your study plan...</LinearText>
+          <LoadingOrb message="Building your study plan..." size={120} />
         </View>
       </SafeAreaView>
     );
@@ -809,6 +804,21 @@ export default function StudyPlanScreen() {
   const requiredHoursDisplay = summary.hoursPerDayCapped
     ? `${summary.requiredHoursPerDay}h+`
     : `${summary.requiredHoursPerDay}h`;
+  const currentPlanModeLabel =
+    PLAN_MODES.find((mode) => mode.key === planMode)?.label ?? 'Balanced';
+  const currentResourceLabel =
+    RESOURCE_MODES.find((mode) => mode.key === resourceMode)?.label ?? summary.resourceLabel;
+  const todayTaskCount = todayPlan?.items.length ?? 0;
+  const heroMetrics = [
+    { label: 'Today tasks', value: String(todayTaskCount), tone: 'accent' as const },
+    { label: 'Topics left', value: String(summary.totalTopicsLeft), tone: 'primary' as const },
+    { label: 'Watch gap', value: String(summary.seenNeedingQuizCount), tone: 'warning' as const },
+    {
+      label: 'Overdue load',
+      value: `${summary.overdueBacklogDays}d`,
+      tone: summary.overdueBacklogDays > 4 ? ('error' as const) : ('success' as const),
+    },
+  ];
   const foundationToday =
     todayPlan?.items
       .map((item) => item.topic)
@@ -834,54 +844,77 @@ export default function StudyPlanScreen() {
               subtitle={`${summary.daysRemaining} days to INICET · ${summary.totalHoursLeft}h content left`}
               onBackPress={() => navigation.navigate('MenuHome')}
             />
-            <View style={styles.modeRow}>
-              {PLAN_MODES.map((mode) => (
-                <TouchableOpacity
-                  key={mode.key}
-                  style={[styles.modeChip, planMode === mode.key && styles.modeChipActive]}
-                  onPress={() => setPlanMode(mode.key)}
-                  activeOpacity={0.8}
-                  accessibilityRole="button"
-                  accessibilityLabel={`Plan mode: ${mode.label}`}
-                  accessibilityState={{ selected: planMode === mode.key }}
-                >
-                  <LinearText
-                    style={[
-                      styles.modeChipText,
-                      planMode === mode.key && styles.modeChipTextActive,
-                    ]}
-                  >
-                    {mode.label}
-                  </LinearText>
-                </TouchableOpacity>
-              ))}
-            </View>
-            <View style={styles.resourceRow}>
-              {RESOURCE_MODES.map((mode) => (
-                <TouchableOpacity
-                  key={mode.key}
-                  style={[
-                    styles.resourceChip,
-                    resourceMode === mode.key && styles.resourceChipActive,
-                  ]}
-                  onPress={() => setStudyResourceMode(mode.key)}
-                  activeOpacity={0.8}
-                  accessibilityRole="button"
-                  accessibilityLabel={`Resource: ${mode.label}`}
-                  accessibilityState={{ selected: resourceMode === mode.key }}
-                >
-                  <LinearText
-                    style={[
-                      styles.resourceChipText,
-                      resourceMode === mode.key && styles.resourceChipTextActive,
-                    ]}
-                  >
-                    {mode.label}
-                  </LinearText>
-                </TouchableOpacity>
-              ))}
-            </View>
           </View>
+
+          <LinearSurface compact style={styles.heroCard}>
+            <View style={styles.heroHeader}>
+              <View style={styles.heroCopy}>
+                <LinearText variant="meta" tone="accent" style={styles.heroEyebrow}>
+                  TRAJECTORY
+                </LinearText>
+                <LinearText variant="sectionTitle" style={styles.heroTitle}>
+                  {summary.phaseLabel}
+                </LinearText>
+                <LinearText variant="bodySmall" tone="secondary" style={styles.heroText}>
+                  {summary.phaseFocus}
+                </LinearText>
+              </View>
+              <View
+                style={[
+                  styles.heroStatusPill,
+                  summary.feasible ? styles.heroStatusPillOk : styles.heroStatusPillWarn,
+                ]}
+              >
+                <LinearText variant="chip" tone={summary.feasible ? 'success' : 'warning'}>
+                  {summary.feasible ? 'On track' : 'Compressed'}
+                </LinearText>
+              </View>
+            </View>
+
+            <View style={styles.heroContextRow}>
+              <View style={styles.heroContextChip}>
+                <LinearText variant="caption" tone="muted">
+                  Mode
+                </LinearText>
+                <LinearText variant="label" style={styles.heroContextValue}>
+                  {currentPlanModeLabel}
+                </LinearText>
+              </View>
+              <View style={styles.heroContextChip}>
+                <LinearText variant="caption" tone="muted">
+                  Resource
+                </LinearText>
+                <LinearText variant="label" style={styles.heroContextValue}>
+                  {currentResourceLabel}
+                </LinearText>
+              </View>
+            </View>
+
+            {summary.subjectLoadHighlights.length > 0 && (
+              <View style={styles.heroHighlightRow}>
+                {summary.subjectLoadHighlights.slice(0, 3).map((highlight) => (
+                  <View key={highlight} style={styles.heroHighlightChip}>
+                    <LinearText variant="caption" tone="secondary" numberOfLines={2}>
+                      {highlight}
+                    </LinearText>
+                  </View>
+                ))}
+              </View>
+            )}
+
+            <View style={styles.heroMetricsRow}>
+              {heroMetrics.map((metric) => (
+                <View key={metric.label} style={styles.heroMetricCard}>
+                  <LinearText variant="title" tone={metric.tone} style={styles.heroMetricValue}>
+                    {metric.value}
+                  </LinearText>
+                  <LinearText variant="caption" tone="secondary" style={styles.heroMetricLabel}>
+                    {metric.label}
+                  </LinearText>
+                </View>
+              ))}
+            </View>
+          </LinearSurface>
 
           {/* ── Dashboard card ── */}
           <LinearSurface compact style={styles.dashboardCard}>
@@ -906,28 +939,100 @@ export default function StudyPlanScreen() {
 
           {/* ── Controls ── */}
           <View style={styles.controlsRow}>
-            <View style={masteryStyles.capacityChipRow}>
-              {CAPACITY_OPTIONS.map((opt) => {
-                const active = capacityOverrideMinutes === opt.minutes;
-                return (
-                  <TouchableOpacity
-                    key={opt.minutes}
-                    style={[masteryStyles.capacityChip, active && masteryStyles.capacityChipActive]}
-                    onPress={() => setCapacityOverrideMinutes(active ? null : opt.minutes)}
-                    activeOpacity={0.8}
-                  >
-                    <LinearText
-                      style={[
-                        masteryStyles.capacityChipText,
-                        active && masteryStyles.capacityChipTextActive,
-                      ]}
+            <LinearSurface compact style={styles.controlCard}>
+              <View style={styles.controlSection}>
+                <LinearText variant="meta" tone="muted" style={styles.controlEyebrow}>
+                  PLAN MODE
+                </LinearText>
+                <View style={styles.modeRow}>
+                  {PLAN_MODES.map((mode) => (
+                    <TouchableOpacity
+                      key={mode.key}
+                      style={[styles.modeChip, planMode === mode.key && styles.modeChipActive]}
+                      onPress={() => setPlanMode(mode.key)}
+                      activeOpacity={0.8}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Plan mode: ${mode.label}`}
+                      accessibilityState={{ selected: planMode === mode.key }}
                     >
-                      {opt.label}
-                    </LinearText>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
+                      <LinearText
+                        style={[
+                          styles.modeChipText,
+                          planMode === mode.key && styles.modeChipTextActive,
+                        ]}
+                      >
+                        {mode.label}
+                      </LinearText>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </View>
+
+              <View style={styles.controlSection}>
+                <LinearText variant="meta" tone="muted" style={styles.controlEyebrow}>
+                  LECTURE SYNC
+                </LinearText>
+                <View style={styles.resourceRow}>
+                  {RESOURCE_MODES.map((mode) => (
+                    <TouchableOpacity
+                      key={mode.key}
+                      style={[
+                        styles.resourceChip,
+                        resourceMode === mode.key && styles.resourceChipActive,
+                      ]}
+                      onPress={() => setStudyResourceMode(mode.key)}
+                      activeOpacity={0.8}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Resource: ${mode.label}`}
+                      accessibilityState={{ selected: resourceMode === mode.key }}
+                    >
+                      <LinearText
+                        style={[
+                          styles.resourceChipText,
+                          resourceMode === mode.key && styles.resourceChipTextActive,
+                        ]}
+                      >
+                        {mode.label}
+                      </LinearText>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </View>
+
+              <View style={styles.controlSection}>
+                <LinearText variant="meta" tone="muted" style={styles.controlEyebrow}>
+                  DAILY CAPACITY
+                </LinearText>
+                <LinearText variant="bodySmall" tone="secondary" style={styles.controlHint}>
+                  Choose what today realistically allows. The queue will adapt around it.
+                </LinearText>
+                <View style={masteryStyles.capacityChipRow}>
+                  {CAPACITY_OPTIONS.map((opt) => {
+                    const active = capacityOverrideMinutes === opt.minutes;
+                    return (
+                      <TouchableOpacity
+                        key={opt.minutes}
+                        style={[
+                          masteryStyles.capacityChip,
+                          active && masteryStyles.capacityChipActive,
+                        ]}
+                        onPress={() => setCapacityOverrideMinutes(active ? null : opt.minutes)}
+                        activeOpacity={0.8}
+                      >
+                        <LinearText
+                          style={[
+                            masteryStyles.capacityChipText,
+                            active && masteryStyles.capacityChipTextActive,
+                          ]}
+                        >
+                          {opt.label}
+                        </LinearText>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+              </View>
+            </LinearSurface>
             <FoundationRepairQueueCard
               summary={summary}
               todayPlan={todayPlan}
@@ -1066,6 +1171,98 @@ const styles = StyleSheet.create({
   header: { marginBottom: n.spacing.sm },
   title: { ...n.typography.display, color: n.colors.textPrimary, marginBottom: n.spacing.xs },
   subtitle: { ...n.typography.bodySmall, color: n.colors.textSecondary },
+  heroCard: {
+    marginBottom: n.spacing.md,
+  },
+  heroHeader: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    gap: n.spacing.md,
+  },
+  heroCopy: {
+    flex: 1,
+  },
+  heroEyebrow: {
+    letterSpacing: 1.1,
+  },
+  heroTitle: {
+    marginTop: n.spacing.xs,
+  },
+  heroText: {
+    marginTop: n.spacing.xs,
+  },
+  heroStatusPill: {
+    borderRadius: n.radius.full,
+    borderWidth: 1,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  heroStatusPillOk: {
+    backgroundColor: n.colors.successSurface,
+    borderColor: `${n.colors.success}55`,
+  },
+  heroStatusPillWarn: {
+    backgroundColor: warningAlpha['12'],
+    borderColor: `${n.colors.warning}55`,
+  },
+  heroContextRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+    marginTop: n.spacing.md,
+  },
+  heroContextChip: {
+    flexGrow: 1,
+    minWidth: 132,
+    backgroundColor: n.colors.background,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: n.colors.border,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+  },
+  heroContextValue: {
+    marginTop: 2,
+  },
+  heroHighlightRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginTop: n.spacing.md,
+  },
+  heroHighlightChip: {
+    flexGrow: 1,
+    minWidth: 140,
+    backgroundColor: n.colors.card,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: n.colors.border,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+  },
+  heroMetricsRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+    marginTop: n.spacing.md,
+  },
+  heroMetricCard: {
+    flexGrow: 1,
+    minWidth: 110,
+    backgroundColor: n.colors.background,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: n.colors.border,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+  },
+  heroMetricValue: {
+    marginBottom: 2,
+  },
+  heroMetricLabel: {
+    lineHeight: 16,
+  },
   modeRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: n.spacing.sm },
   resourceRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 6 },
   modeChip: {
@@ -1124,16 +1321,34 @@ const styles = StyleSheet.create({
   },
 
   // ── Section labels ──
+  controlCard: {
+    marginBottom: 2,
+  },
+  controlSection: {
+    marginBottom: n.spacing.md,
+  },
+  controlEyebrow: {
+    letterSpacing: 1.2,
+    marginBottom: 8,
+  },
+  controlHint: {
+    marginBottom: 10,
+  },
   sectionTitle: {
-    ...n.typography.label,
-    color: n.colors.textMuted,
-    letterSpacing: 1.5,
-    textTransform: 'uppercase',
-    marginBottom: n.spacing.sm,
-    marginTop: n.spacing.sm,
+    ...n.typography.sectionTitle,
+    color: n.colors.textPrimary,
+    marginTop: 2,
   },
 
-  dayBlock: { marginBottom: n.spacing.lg },
+  dayBlock: {
+    marginBottom: n.spacing.md,
+    backgroundColor: n.colors.background,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: n.colors.border,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+  },
   dayHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -1142,15 +1357,16 @@ const styles = StyleSheet.create({
     paddingBottom: n.spacing.xs,
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: n.colors.border,
+    gap: n.spacing.sm,
   },
   dayLabel: { ...n.typography.label, color: n.colors.textPrimary, fontSize: 14 },
-  dayMeta: { ...n.typography.meta, color: n.colors.textMuted },
+  dayMeta: { ...n.typography.meta, color: n.colors.textMuted, textAlign: 'right' },
 
   topicRow: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: 10,
-    paddingHorizontal: 6,
+    paddingHorizontal: 4,
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: n.colors.border,
   },
@@ -1200,7 +1416,7 @@ const styles = StyleSheet.create({
     fontSize: 10,
     color: n.colors.warning,
     fontWeight: '800',
-    backgroundColor: 'rgba(217, 119, 6, 0.1)',
+    backgroundColor: warningAlpha['10'],
     paddingHorizontal: 4,
     paddingVertical: 1,
     borderRadius: 3,
@@ -1208,9 +1424,11 @@ const styles = StyleSheet.create({
   },
   emptySection: {
     paddingVertical: n.spacing.md,
-    paddingLeft: 14,
-    borderLeftWidth: 2,
-    borderLeftColor: n.colors.border,
+    paddingHorizontal: 14,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: n.colors.border,
+    backgroundColor: n.colors.background,
     marginBottom: n.spacing.md,
   },
   emptySectionTitle: {

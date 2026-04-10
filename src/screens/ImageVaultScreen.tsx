@@ -8,7 +8,6 @@ import {
   ScrollView,
   StatusBar,
   StyleSheet,
-  TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
@@ -24,7 +23,14 @@ import ScreenHeader from '../components/ScreenHeader';
 import { ImageLightbox } from '../components/ImageLightbox';
 import { ResponsiveContainer } from '../hooks/useResponsive';
 import { linearTheme as n } from '../theme/linearTheme';
+import {
+  blackAlpha,
+  transcriptBlueAlpha,
+  transcriptBlueBorderAlpha,
+  warningAlpha,
+} from '../theme/colorUtils';
 import LinearSurface from '../components/primitives/LinearSurface';
+import { EmptyState } from '../components/primitives';
 import {
   listGeneratedStudyImages,
   type GeneratedStudyImageContextType,
@@ -213,7 +219,9 @@ export default function ImageVaultScreen() {
               <>
                 <ScreenHeader
                   title="Image Vault"
-                  subtitle={`${images.length} AI-generated image${images.length !== 1 ? 's' : ''} saved`}
+                  subtitle={`${images.length} AI-generated image${
+                    images.length !== 1 ? 's' : ''
+                  } saved`}
                   containerStyle={styles.headerCompact}
                   titleStyle={styles.headerTitleCompact}
                   subtitleStyle={styles.headerSubtitleCompact}
@@ -241,92 +249,93 @@ export default function ImageVaultScreen() {
                   </LinearSurface>
                 </View>
 
-                <View style={styles.resultsRow}>
-                  <View style={styles.resultsCopy}>
-                    <LinearText style={styles.resultsTitle}>
-                      {visibleImages.length} result{visibleImages.length !== 1 ? 's' : ''}
-                    </LinearText>
-                    <LinearText style={styles.resultsSubtitle} numberOfLines={1}>
-                      {activeFilterSummary}
-                    </LinearText>
+                <LinearSurface compact style={styles.resultsPanel}>
+                  <View style={styles.resultsRow}>
+                    <View style={styles.resultsCopy}>
+                      <LinearText style={styles.resultsTitle}>
+                        {visibleImages.length} result{visibleImages.length !== 1 ? 's' : ''}
+                      </LinearText>
+                      <LinearText style={styles.resultsSubtitle} numberOfLines={1}>
+                        {activeFilterSummary}
+                      </LinearText>
+                    </View>
+                    {hasActiveFilters || hasActiveSearch ? (
+                      <TouchableOpacity
+                        style={styles.clearFiltersBtn}
+                        onPress={() => {
+                          setSearchQuery('');
+                          setStyleFilter('all');
+                          setContextFilter('all');
+                        }}
+                      >
+                        <LinearText style={styles.clearFiltersText}>Clear</LinearText>
+                      </TouchableOpacity>
+                    ) : null}
                   </View>
-                  {hasActiveFilters || hasActiveSearch ? (
-                    <TouchableOpacity
-                      style={styles.clearFiltersBtn}
-                      onPress={() => {
-                        setSearchQuery('');
-                        setStyleFilter('all');
-                        setContextFilter('all');
-                      }}
-                    >
-                      <LinearText style={styles.clearFiltersText}>Clear</LinearText>
-                    </TouchableOpacity>
-                  ) : null}
-                </View>
 
-                <ScrollView
-                  horizontal
-                  showsHorizontalScrollIndicator={false}
-                  contentContainerStyle={styles.filterRow}
-                >
-                  {STYLE_FILTERS.map((filter) => (
-                    <TouchableOpacity
-                      key={filter.id}
-                      style={[
-                        styles.filterBtn,
-                        styleFilter === filter.id && styles.filterBtnActive,
-                      ]}
-                      onPress={() => setStyleFilter(filter.id)}
-                      activeOpacity={0.8}
-                    >
-                      <LinearText
+                  <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={styles.filterRow}
+                  >
+                    {STYLE_FILTERS.map((filter) => (
+                      <TouchableOpacity
+                        key={filter.id}
                         style={[
-                          styles.filterBtnText,
-                          styleFilter === filter.id && styles.filterBtnTextActive,
+                          styles.filterBtn,
+                          styleFilter === filter.id && styles.filterBtnActive,
                         ]}
+                        onPress={() => setStyleFilter(filter.id)}
+                        activeOpacity={0.8}
                       >
-                        {filter.label}
-                      </LinearText>
-                    </TouchableOpacity>
-                  ))}
-                </ScrollView>
+                        <LinearText
+                          style={[
+                            styles.filterBtnText,
+                            styleFilter === filter.id && styles.filterBtnTextActive,
+                          ]}
+                        >
+                          {filter.label}
+                        </LinearText>
+                      </TouchableOpacity>
+                    ))}
+                  </ScrollView>
 
-                <ScrollView
-                  horizontal
-                  showsHorizontalScrollIndicator={false}
-                  contentContainerStyle={[styles.filterRow, styles.filterRowTight]}
-                >
-                  {CONTEXT_FILTERS.map((filter) => (
-                    <TouchableOpacity
-                      key={filter.id}
-                      style={[
-                        styles.filterBtn,
-                        contextFilter === filter.id && styles.filterBtnActive,
-                      ]}
-                      onPress={() => setContextFilter(filter.id)}
-                      activeOpacity={0.8}
-                    >
-                      <LinearText
+                  <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={[styles.filterRow, styles.filterRowTight]}
+                  >
+                    {CONTEXT_FILTERS.map((filter) => (
+                      <TouchableOpacity
+                        key={filter.id}
                         style={[
-                          styles.filterBtnText,
-                          contextFilter === filter.id && styles.filterBtnTextActive,
+                          styles.filterBtn,
+                          contextFilter === filter.id && styles.filterBtnActive,
                         ]}
+                        onPress={() => setContextFilter(filter.id)}
+                        activeOpacity={0.8}
                       >
-                        {filter.label}
-                      </LinearText>
-                    </TouchableOpacity>
-                  ))}
-                </ScrollView>
+                        <LinearText
+                          style={[
+                            styles.filterBtnText,
+                            contextFilter === filter.id && styles.filterBtnTextActive,
+                          ]}
+                        >
+                          {filter.label}
+                        </LinearText>
+                      </TouchableOpacity>
+                    ))}
+                  </ScrollView>
+                </LinearSurface>
               </>
             }
             ListEmptyComponent={
-              <View style={styles.empty}>
-                <Ionicons name="image-outline" size={64} color={n.colors.textMuted} />
-                <LinearText style={styles.emptyTitle}>No Images Saved</LinearText>
-                <LinearText style={styles.emptySubtitle}>
-                  Medical images you save during study sessions will appear here.
-                </LinearText>
-              </View>
+              <EmptyState
+                icon="image-outline"
+                iconSize={64}
+                title="No Images Saved"
+                subtitle="Medical images you save during study sessions will appear here."
+              />
             }
             refreshControl={
               <RefreshControl
@@ -458,6 +467,9 @@ const styles = StyleSheet.create({
   summaryRow: {
     flexDirection: 'row',
     gap: 10,
+    marginBottom: 12,
+  },
+  resultsPanel: {
     marginBottom: 12,
   },
   summaryCard: {
@@ -608,12 +620,12 @@ const styles = StyleSheet.create({
     borderColor: n.colors.border,
   },
   illustrationChip: {
-    backgroundColor: 'rgba(108, 156, 255, 0.12)',
-    borderColor: 'rgba(108, 156, 255, 0.35)',
+    backgroundColor: transcriptBlueAlpha['12'],
+    borderColor: transcriptBlueBorderAlpha['35'],
   },
   chartChip: {
-    backgroundColor: 'rgba(255, 193, 7, 0.14)',
-    borderColor: 'rgba(255, 193, 7, 0.35)',
+    backgroundColor: warningAlpha['14'],
+    borderColor: warningAlpha['35'],
   },
   metaChipText: {
     color: n.colors.textSecondary,
@@ -650,34 +662,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     backgroundColor: n.colors.surface,
   },
-  empty: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 32,
-    paddingVertical: 48,
-    marginTop: 40,
-    gap: 16,
-  },
-  emptyTitle: {
-    color: n.colors.textPrimary,
-    fontSize: 20,
-    fontWeight: '800',
-    marginTop: 0,
-    marginBottom: 8,
-    textAlign: 'center',
-  },
-  emptySubtitle: {
-    color: n.colors.textMuted,
-    fontSize: 14,
-    lineHeight: 20,
-    textAlign: 'center',
-    marginTop: 0,
-  },
   detailOverlay: {
     flex: 1,
     justifyContent: 'flex-end',
-    backgroundColor: 'rgba(2,2,4,0.72)',
+    backgroundColor: blackAlpha['72'],
     padding: 12,
   },
   detailSheet: {

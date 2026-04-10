@@ -4,10 +4,10 @@ import {
   TouchableOpacity,
   StyleSheet,
   StatusBar,
-  ActivityIndicator,
   ScrollView,
 } from 'react-native';
 import LinearText from '../components/primitives/LinearText';
+import LoadingOrb from '../components/LoadingOrb';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute, type RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -110,12 +110,14 @@ export default function PomodoroQuizScreen() {
       <SafeAreaView style={styles.safe}>
         <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
         <View style={styles.center}>
-          <ActivityIndicator size="large" color={n.colors.accent} />
-          <LinearText style={styles.loadingText}>
-            {isExternalLectureMode
-              ? 'Preparing your live lecture break quiz...'
-              : 'Generating quick break quiz...'}
-          </LinearText>
+          <LoadingOrb
+            message={
+              isExternalLectureMode
+                ? 'Preparing your live lecture break quiz...'
+                : 'Generating quick break quiz...'
+            }
+            size={120}
+          />
         </View>
       </SafeAreaView>
     );

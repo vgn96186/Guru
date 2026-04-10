@@ -43,6 +43,7 @@ import * as Haptics from 'expo-haptics';
 import BannerIconButton from '../components/BannerIconButton';
 import BannerSearchBar from '../components/BannerSearchBar';
 import { linearTheme as n } from '../theme/linearTheme';
+import { errorAlpha, warningAlpha } from '../theme/colorUtils';
 import ScreenHeader from '../components/ScreenHeader';
 import LinearSurface from '../components/primitives/LinearSurface';
 import LinearBadge from '../components/primitives/LinearBadge';
@@ -920,13 +921,13 @@ const styles = StyleSheet.create({
   heroBadgesRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 4 },
 
   badgeDue: {
-    backgroundColor: 'rgba(255, 75, 75, 0.15)',
+    backgroundColor: errorAlpha['15'],
     paddingHorizontal: 6,
     paddingVertical: 2,
     borderRadius: 4,
   },
   badgeHY: {
-    backgroundColor: 'rgba(250, 173, 20, 0.15)',
+    backgroundColor: warningAlpha['15'],
     paddingHorizontal: 6,
     paddingVertical: 2,
     borderRadius: 4,

@@ -6,6 +6,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { getFlaggedContent, setContentFlagged, type FlaggedItem } from '../db/queries/aiCache';
 import { MarkdownRender } from '../components/MarkdownRender';
 import { linearTheme as n } from '../theme/linearTheme';
+import { warningAlpha } from '../theme/colorUtils';
 import { CONTENT_TYPE_LABELS } from '../constants/contentTypes';
 import { ResponsiveContainer } from '../hooks/useResponsive';
 import { emphasizeHighYieldMarkdown } from '../utils/highlightMarkdown';
@@ -206,7 +207,7 @@ const styles = StyleSheet.create({
     color: n.colors.warning,
     fontWeight: '700',
     fontSize: 16,
-    backgroundColor: 'rgba(217,119,6,0.1)',
+    backgroundColor: warningAlpha['10'],
     borderRadius: 10,
     paddingHorizontal: 10,
     paddingVertical: 3,
@@ -231,7 +232,7 @@ const styles = StyleSheet.create({
     color: n.colors.warning,
     fontWeight: '700',
     fontSize: 12,
-    backgroundColor: 'rgba(217,119,6,0.1)',
+    backgroundColor: warningAlpha['10'],
     borderRadius: 6,
     paddingHorizontal: 8,
     paddingVertical: 2,

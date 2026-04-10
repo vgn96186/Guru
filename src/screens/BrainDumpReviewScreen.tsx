@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, StyleSheet, FlatList, TouchableOpacity, StatusBar } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, StatusBar } from 'react-native';
 import LinearText from '../components/primitives/LinearText';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -13,6 +13,8 @@ import {
   BrainDumpLog,
 } from '../db/queries/brainDumps';
 import { ResponsiveContainer } from '../hooks/useResponsive';
+import { AppFlashList } from '../components/primitives/AppFlashList';
+import { EmptyState } from '../components/primitives';
 import { confirmDestructive } from '../components/dialogService';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'BrainDumpReview'>;
@@ -61,12 +63,14 @@ export default function BrainDumpReviewScreen({ navigation }: Props) {
         </View>
 
         {dumps.length === 0 ? (
-          <View style={styles.emptyContainer}>
-            <Ionicons name="checkmark-circle-outline" size={64} color="#4CAF50" />
-            <LinearText style={styles.emptyText}>No thoughts parked this session.</LinearText>
-          </View>
+          <EmptyState
+            icon="checkmark-circle-outline"
+            iconSize={64}
+            iconColor="#4CAF50"
+            title="No thoughts parked this session."
+          />
         ) : (
-          <FlatList
+          <AppFlashList
             data={dumps}
             keyExtractor={(v) => v.id.toString()}
             contentContainerStyle={styles.listContent}

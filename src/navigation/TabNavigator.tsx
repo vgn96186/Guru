@@ -7,7 +7,6 @@ import {
   PanResponder,
   Pressable,
   StyleSheet,
-  Text,
   View,
 } from 'react-native';
 import { createMaterialTopTabNavigator } from '@react-navigation/material-top-tabs';
@@ -61,7 +60,6 @@ import NotesVaultScreen from '../screens/NotesVaultScreen';
 import TranscriptVaultScreen from '../screens/TranscriptVaultScreen';
 import LectureReturnSheet from '../components/LectureReturnSheet';
 import { EXTERNAL_APPS } from '../constants/externalApps';
-import { theme } from '../constants/theme';
 import { linearTheme as n } from '../theme/linearTheme';
 import { launchMedicalApp, type SupportedMedicalApp } from '../services/appLauncher';
 import { useAppStore } from '../store/useAppStore';
@@ -86,6 +84,8 @@ import ConfidenceSelector from '../components/ConfidenceSelector';
 import TopicPillRow from '../components/TopicPillRow';
 import SubjectChip from '../components/SubjectChip';
 import SubjectSelectionCard from '../components/SubjectSelectionCard';
+import LinearSurface from '../components/primitives/LinearSurface';
+import LinearText from '../components/primitives/LinearText';
 import { navigationRef } from './navigationRef';
 import type { MaterialTopTabBarProps } from '@react-navigation/material-top-tabs';
 import { getDeepestFocusedRouteName, isActionHubAllowedForRoute } from './tabUiVisibility';
@@ -286,11 +286,15 @@ function CustomTabBar({
               <Ionicons name={focused ? tab.iconFocused : tab.icon} size={24} color={color} />
               {tab.name === 'SyllabusTab' && dueCount > 0 && (
                 <View style={styles.badge}>
-                  <Text style={styles.badgeText}>{dueCount > 99 ? '99+' : dueCount}</Text>
+                  <LinearText variant="caption" style={styles.badgeText}>
+                    {dueCount > 99 ? '99+' : dueCount}
+                  </LinearText>
                 </View>
               )}
             </View>
-            <Text style={[styles.tabLabel, { color }]}>{tab.label}</Text>
+            <LinearText variant="caption" style={[styles.tabLabel, { color }]}>
+              {tab.label}
+            </LinearText>
           </Pressable>
         );
       })}
@@ -321,7 +325,12 @@ function CustomTabBar({
             color={actionHubEnabled ? n.colors.textPrimary : n.colors.textMuted}
           />
         </View>
-        <Text style={[styles.fabLabel, !actionHubEnabled && styles.fabLabelDisabled]}>Actions</Text>
+        <LinearText
+          variant="caption"
+          style={[styles.fabLabel, !actionHubEnabled && styles.fabLabelDisabled]}
+        >
+          Actions
+        </LinearText>
       </Pressable>
 
       {rightTabs.map((tab, i) => {
@@ -339,7 +348,9 @@ function CustomTabBar({
             accessibilityLabel={`${tab.label} tab`}
           >
             <Ionicons name={focused ? tab.iconFocused : tab.icon} size={24} color={color} />
-            <Text style={[styles.tabLabel, { color }]}>{tab.label}</Text>
+            <LinearText variant="caption" style={[styles.tabLabel, { color }]}>
+              {tab.label}
+            </LinearText>
           </Pressable>
         );
       })}
@@ -376,6 +387,7 @@ export default function TabNavigator() {
   const bottomInset = Math.max(insets.bottom, 8);
   const [dueCount, setDueCount] = useState(0);
   const [returnSheet, setReturnSheet] = useState<LectureReturnSheetData | null>(null);
+  const externalChipWidth = Dimensions.get('window').width >= 520 ? '16.66%' : '31.5%';
 
   const refreshDueCount = useCallback(() => {
     getDb()
@@ -537,7 +549,7 @@ export default function TabNavigator() {
       setSelectedUploadSubjectName(
         resolution.requiresSelection
           ? null
-          : (resolution.matchedSubject?.name ?? resolution.normalizedSubjectName),
+          : resolution.matchedSubject?.name ?? resolution.normalizedSubjectName,
       );
     } catch (e: any) {
       void showError(e.message, 'Error');
@@ -657,7 +669,7 @@ export default function TabNavigator() {
           style={[
             styles.sheet,
             {
-              paddingBottom: bottomInset + theme.spacing.lg,
+              paddingBottom: bottomInset + n.spacing.lg,
               bottom: TAB_BAR_HEIGHT + 8,
             },
             {
@@ -704,7 +716,9 @@ export default function TabNavigator() {
             <View style={styles.sheetHandle} />
           </View>
           <View style={styles.sheetContent}>
-            <Text style={styles.sheetEyebrow}>ACTION HUB</Text>
+            <LinearText variant="meta" style={styles.sheetEyebrow}>
+              ACTION HUB
+            </LinearText>
             <View style={styles.topActionRow}>
               <Pressable
                 style={({ pressed }) => [styles.topActionTile, pressed && styles.actionPressed]}
@@ -715,7 +729,9 @@ export default function TabNavigator() {
                 accessibilityLabel="Record lecture"
               >
                 <Ionicons name="mic-outline" size={18} color={n.colors.textPrimary} />
-                <Text style={styles.topActionTitle}>Record Lecture</Text>
+                <LinearText variant="body" style={styles.topActionTitle}>
+                  Record Lecture
+                </LinearText>
               </Pressable>
 
               <Pressable
@@ -727,7 +743,9 @@ export default function TabNavigator() {
                 accessibilityLabel="Search any topic"
               >
                 <Ionicons name="search-outline" size={18} color={n.colors.textPrimary} />
-                <Text style={styles.topActionTitle}>Search Topics</Text>
+                <LinearText variant="body" style={styles.topActionTitle}>
+                  Search Topics
+                </LinearText>
               </Pressable>
 
               <Pressable
@@ -739,7 +757,9 @@ export default function TabNavigator() {
                 accessibilityLabel="Open notes vault"
               >
                 <Ionicons name="library-outline" size={18} color={n.colors.textPrimary} />
-                <Text style={styles.topActionTitle}>Notes Vault</Text>
+                <LinearText variant="body" style={styles.topActionTitle}>
+                  Notes Vault
+                </LinearText>
               </Pressable>
             </View>
 
@@ -752,7 +772,9 @@ export default function TabNavigator() {
                 accessibilityLabel="Open daily challenge"
               >
                 <Ionicons name="flash-outline" size={15} color={n.colors.textSecondary} />
-                <Text style={styles.manualActionText}>Daily Challenge</Text>
+                <LinearText variant="bodySmall" style={styles.manualActionText}>
+                  Daily Challenge
+                </LinearText>
               </Pressable>
 
               <Pressable
@@ -763,7 +785,9 @@ export default function TabNavigator() {
                 accessibilityLabel="Open boss battle"
               >
                 <Ionicons name="shield-half-outline" size={15} color={n.colors.textSecondary} />
-                <Text style={styles.manualActionText}>Boss Battle</Text>
+                <LinearText variant="bodySmall" style={styles.manualActionText}>
+                  Boss Battle
+                </LinearText>
               </Pressable>
 
               <Pressable
@@ -774,7 +798,9 @@ export default function TabNavigator() {
                 accessibilityLabel="Open recording vault"
               >
                 <Ionicons name="mic-outline" size={15} color={n.colors.textSecondary} />
-                <Text style={styles.manualActionText}>Upload Audio</Text>
+                <LinearText variant="bodySmall" style={styles.manualActionText}>
+                  Upload Audio
+                </LinearText>
               </Pressable>
 
               <Pressable
@@ -785,7 +811,9 @@ export default function TabNavigator() {
                 accessibilityLabel="Open transcript vault"
               >
                 <Ionicons name="clipboard-outline" size={15} color={n.colors.textSecondary} />
-                <Text style={styles.manualActionText}>Transcript Tools</Text>
+                <LinearText variant="bodySmall" style={styles.manualActionText}>
+                  Transcript Tools
+                </LinearText>
               </Pressable>
 
               <Pressable
@@ -796,18 +824,26 @@ export default function TabNavigator() {
                 accessibilityLabel="Review parked thoughts"
               >
                 <Ionicons name="bulb-outline" size={15} color={n.colors.textSecondary} />
-                <Text style={styles.manualActionText}>Parked thoughts</Text>
+                <LinearText variant="bodySmall" style={styles.manualActionText}>
+                  Parked thoughts
+                </LinearText>
               </Pressable>
             </View>
 
             <View style={styles.externalHeader}>
-              <Text style={styles.externalTitle}>Launch External App</Text>
+              <LinearText variant="meta" style={styles.externalTitle}>
+                Launch External App
+              </LinearText>
             </View>
             <View style={styles.externalGrid}>
               {EXTERNAL_APPS.slice(0, 6).map((app) => (
                 <Pressable
                   key={app.id}
-                  style={({ pressed }) => [styles.externalChip, pressed && styles.actionPressed]}
+                  style={({ pressed }) => [
+                    styles.externalChip,
+                    { width: externalChipWidth },
+                    pressed && styles.actionPressed,
+                  ]}
                   android_ripple={{ color: `${app.color}22` }}
                   onPress={() => launchExternalAction(app.id as SupportedMedicalApp)}
                   testID={`action-hub-external-${app.id}`}
@@ -826,9 +862,15 @@ export default function TabNavigator() {
                       color={app.color}
                     />
                   </View>
-                  <Text style={styles.externalChipLabel} numberOfLines={1} ellipsizeMode="tail">
+                  <LinearText
+                    variant="meta"
+                    style={styles.externalChipLabel}
+                    numberOfLines={2}
+                    ellipsizeMode="tail"
+                    centered
+                  >
                     {app.name}
-                  </Text>
+                  </LinearText>
                 </Pressable>
               ))}
             </View>
@@ -865,72 +907,86 @@ export default function TabNavigator() {
         }}
       >
         <View style={styles.uploadModalOverlay}>
-          <View style={styles.uploadModalSheet}>
-            <Text style={styles.uploadModalTitle}>Lecture Transcribed</Text>
-            {uploadReview ? (
-              <>
-                {uploadSubjectRequired ? (
-                  <SubjectSelectionCard
-                    detectedSubjectName={uploadReview.subject}
-                    selectedSubjectName={selectedUploadSubjectName}
-                    onSelectSubject={setSelectedUploadSubjectName}
-                  />
-                ) : (
-                  <SubjectChip subject={selectedUploadSubjectName ?? uploadReview.subject} />
-                )}
-                <Text style={styles.uploadModalSummary} numberOfLines={4}>
-                  {uploadReview.lectureSummary}
-                </Text>
-                {uploadReview.topics.length > 0 ? (
-                  <>
-                    <Text style={styles.uploadModalLabel}>TOPICS DETECTED</Text>
-                    <TopicPillRow topics={uploadReview.topics} />
-                    <Text style={styles.uploadModalLabel}>YOUR CONFIDENCE LEVEL</Text>
-                    <ConfidenceSelector
-                      value={uploadConfidence ?? (uploadReview.estimatedConfidence as 1 | 2 | 3)}
-                      onChange={setUploadConfidence}
+          <LinearSurface padded={false} style={styles.uploadModalSheet}>
+            <View style={styles.uploadModalContent}>
+              <LinearText variant="title" style={styles.uploadModalTitle}>
+                Lecture Transcribed
+              </LinearText>
+              {uploadReview ? (
+                <>
+                  {uploadSubjectRequired ? (
+                    <SubjectSelectionCard
+                      detectedSubjectName={uploadReview.subject}
+                      selectedSubjectName={selectedUploadSubjectName}
+                      onSelectSubject={setSelectedUploadSubjectName}
                     />
-                  </>
-                ) : null}
-              </>
-            ) : null}
+                  ) : (
+                    <SubjectChip subject={selectedUploadSubjectName ?? uploadReview.subject} />
+                  )}
+                  <LinearText
+                    variant="bodySmall"
+                    style={styles.uploadModalSummary}
+                    numberOfLines={4}
+                  >
+                    {uploadReview.lectureSummary}
+                  </LinearText>
+                  {uploadReview.topics.length > 0 ? (
+                    <>
+                      <LinearText variant="meta" style={styles.uploadModalLabel}>
+                        TOPICS DETECTED
+                      </LinearText>
+                      <TopicPillRow topics={uploadReview.topics} />
+                      <LinearText variant="meta" style={styles.uploadModalLabel}>
+                        YOUR CONFIDENCE LEVEL
+                      </LinearText>
+                      <ConfidenceSelector
+                        value={uploadConfidence ?? (uploadReview.estimatedConfidence as 1 | 2 | 3)}
+                        onChange={setUploadConfidence}
+                      />
+                    </>
+                  ) : null}
+                </>
+              ) : null}
 
-            <Pressable
-              style={({ pressed }) => [
-                styles.uploadSaveBtn,
-                pressed && styles.actionPressed,
-                (isSavingUpload ||
+              <Pressable
+                style={({ pressed }) => [
+                  styles.uploadSaveBtn,
+                  pressed && styles.actionPressed,
+                  (isSavingUpload ||
+                    !uploadReview?.topics.length ||
+                    (uploadSubjectRequired && !selectedUploadSubjectName)) &&
+                    styles.uploadSaveBtnDisabled,
+                ]}
+                onPress={handleSaveUploadedAudio}
+                disabled={
+                  isSavingUpload ||
                   !uploadReview?.topics.length ||
-                  (uploadSubjectRequired && !selectedUploadSubjectName)) &&
-                  styles.uploadSaveBtnDisabled,
-              ]}
-              onPress={handleSaveUploadedAudio}
-              disabled={
-                isSavingUpload ||
-                !uploadReview?.topics.length ||
-                (uploadSubjectRequired && !selectedUploadSubjectName)
-              }
-              accessibilityRole="button"
-              accessibilityLabel="Save uploaded audio"
-            >
-              <Text style={styles.uploadSaveBtnText}>
-                {isSavingUpload ? 'Saving...' : 'Save to Notes Vault'}
-              </Text>
-            </Pressable>
-            <Pressable
-              style={({ pressed }) => [styles.uploadDismissBtn, pressed && styles.actionPressed]}
-              onPress={() => {
-                setUploadReview(null);
-                setUploadConfidence(null);
-                setUploadSubjectRequired(false);
-                setSelectedUploadSubjectName(null);
-              }}
-              accessibilityRole="button"
-              accessibilityLabel="Discard uploaded audio result"
-            >
-              <Text style={styles.uploadDismissBtnText}>Discard</Text>
-            </Pressable>
-          </View>
+                  (uploadSubjectRequired && !selectedUploadSubjectName)
+                }
+                accessibilityRole="button"
+                accessibilityLabel="Save uploaded audio"
+              >
+                <LinearText variant="label" tone="inverse" style={styles.uploadSaveBtnText}>
+                  {isSavingUpload ? 'Saving...' : 'Save to Notes Vault'}
+                </LinearText>
+              </Pressable>
+              <Pressable
+                style={({ pressed }) => [styles.uploadDismissBtn, pressed && styles.actionPressed]}
+                onPress={() => {
+                  setUploadReview(null);
+                  setUploadConfidence(null);
+                  setUploadSubjectRequired(false);
+                  setSelectedUploadSubjectName(null);
+                }}
+                accessibilityRole="button"
+                accessibilityLabel="Discard uploaded audio result"
+              >
+                <LinearText variant="label" tone="secondary" style={styles.uploadDismissBtnText}>
+                  Discard
+                </LinearText>
+              </Pressable>
+            </View>
+          </LinearSurface>
         </View>
       </Modal>
     </View>
@@ -1015,52 +1071,46 @@ const styles = StyleSheet.create({
   },
   sheetBackdrop: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(2, 4, 8, 0.46)',
+    backgroundColor: 'rgba(2, 4, 8, 0.58)',
   },
   uploadModalOverlay: {
     flex: 1,
     justifyContent: 'flex-end',
-    backgroundColor: theme.colors.overlay,
+    backgroundColor: 'rgba(0, 0, 0, 0.76)',
     padding: 16,
   },
   uploadModalSheet: {
-    backgroundColor: theme.colors.surface,
-    borderRadius: 20,
+    borderColor: n.colors.borderHighlight,
+  },
+  uploadModalContent: {
     padding: 20,
     gap: 14,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
   },
   uploadModalTitle: {
-    color: theme.colors.textPrimary,
-    fontSize: 22,
-    fontWeight: '800',
+    color: n.colors.textPrimary,
   },
   uploadModalSummary: {
-    color: theme.colors.textSecondary,
-    fontSize: 14,
+    color: n.colors.textSecondary,
     lineHeight: 20,
   },
   uploadModalLabel: {
-    color: theme.colors.textMuted,
-    fontSize: 12,
-    fontWeight: '700',
+    color: n.colors.textMuted,
     letterSpacing: 0.8,
   },
   uploadSaveBtn: {
-    backgroundColor: theme.colors.primary,
+    backgroundColor: n.colors.accent,
     borderRadius: 14,
     paddingVertical: 14,
     alignItems: 'center',
     justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: `${n.colors.accent}88`,
   },
   uploadSaveBtnDisabled: {
     opacity: 0.5,
   },
   uploadSaveBtnText: {
-    color: theme.colors.textPrimary,
-    fontSize: 15,
-    fontWeight: '800',
+    color: n.colors.textInverse,
   },
   uploadDismissBtn: {
     alignItems: 'center',
@@ -1068,16 +1118,14 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
   },
   uploadDismissBtnText: {
-    color: theme.colors.textSecondary,
-    fontSize: 14,
-    fontWeight: '700',
+    color: n.colors.textSecondary,
   },
   sheet: {
     position: 'absolute',
-    backgroundColor: 'rgba(2, 2, 4, 0.97)',
+    backgroundColor: n.colors.card,
     borderRadius: 24,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
+    borderColor: n.colors.borderHighlight,
     paddingHorizontal: n.spacing.lg,
     paddingTop: n.spacing.sm,
     maxHeight: Dimensions.get('window').height * 0.65,
@@ -1091,9 +1139,9 @@ const styles = StyleSheet.create({
   },
   sheetFrostLayer: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(255,255,255,0.01)',
+    backgroundColor: n.colors.surfaceInset,
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: 'rgba(255,255,255,0.10)',
+    borderTopColor: n.colors.borderHighlight,
   },
   sheetHandleHitbox: {
     alignItems: 'center',
@@ -1198,15 +1246,15 @@ const styles = StyleSheet.create({
   },
   externalGrid: {
     flexDirection: 'row',
-    flexWrap: 'nowrap',
-    justifyContent: 'space-between',
+    flexWrap: 'wrap',
+    justifyContent: 'flex-start',
     alignItems: 'flex-start',
+    gap: 12,
   },
   externalChip: {
     alignItems: 'center',
     justifyContent: 'center',
     gap: 4,
-    width: '16.66%',
     minWidth: 0,
   },
   externalIconCircle: {
@@ -1224,8 +1272,7 @@ const styles = StyleSheet.create({
     color: n.colors.textSecondary,
     textAlign: 'center',
     width: '100%',
-    fontSize: 10,
-    lineHeight: 13,
-    letterSpacing: 0,
+    fontSize: 11,
+    lineHeight: 14,
   },
 });

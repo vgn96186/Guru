@@ -118,24 +118,6 @@ async function getFileCount(directory: string): Promise<number> {
   }
 }
 
-async function getDirectorySize(directory: string): Promise<number> {
-  try {
-    const info = await FileSystem.getInfoAsync(directory);
-    if (!info.exists) return 0;
-    const files = await FileSystem.readDirectoryAsync(directory);
-    let total = 0;
-    for (const file of files) {
-      const fileInfo = await FileSystem.getInfoAsync(`${directory}${file}`);
-      if (fileInfo.exists && !fileInfo.isDirectory) {
-        total += fileInfo.size ?? 0;
-      }
-    }
-    return total;
-  } catch {
-    return 0;
-  }
-}
-
 async function copyAssetsToDirectory(
   sourceDir: string,
   destDir: string,
@@ -293,7 +275,7 @@ export async function exportUnifiedBackup(options?: Partial<RestoreOptions>): Pr
     await FileSystem.writeAsStringAsync(manifestPath, JSON.stringify(manifest, null, 2));
 
     // Create ZIP archive
-    const zipResult = await zip(tempBackupDir, backupPath);
+    await zip(tempBackupDir, backupPath);
 
     // Clean up temp directory
     await FileSystem.deleteAsync(tempBackupDir, { idempotent: true });
@@ -541,7 +523,7 @@ async function _importUnifiedBackup(
       try {
         const testDb = getDb();
         await testDb.getFirstAsync('SELECT COUNT(*) FROM subjects');
-      } catch (validationError) {
+      } catch {
         // Rollback on validation failure
         const rollbackDbPath = `${rollbackDir}neet_study.db`;
         const rollbackInfo = await FileSystem.getInfoAsync(rollbackDbPath);
@@ -615,11 +597,11 @@ const FREQUENCY_MS: Record<AutoBackupFrequency, number> = {
 export async function shouldRunAutoBackup(): Promise<boolean> {
   try {
     const profile = await profileRepository.getProfile();
-    const frequency = (profile as any).autoBackupFrequency as AutoBackupFrequency;
+    const frequency = profile.autoBackupFrequency ?? 'off';
 
     if (!frequency || frequency === 'off') return false;
 
-    const lastBackup = (profile as any).lastAutoBackupAt as string | null;
+    const lastBackup = profile.lastAutoBackupAt ?? null;
     if (!lastBackup) return true;
 
     const lastBackupTime = new Date(lastBackup).getTime();
@@ -634,7 +616,7 @@ export async function shouldRunAutoBackup(): Promise<boolean> {
 export async function runAutoBackup(): Promise<boolean> {
   try {
     const profile = await profileRepository.getProfile();
-    const backupDir = (profile as any).backupDirectoryUri as string | null;
+    const backupDir = profile.backupDirectoryUri ?? null;
 
     // Run export without user interaction
     const tempBackupDir = `${FileSystem.cacheDirectory}guru_auto_backup/`;
@@ -705,7 +687,7 @@ export async function runAutoBackup(): Promise<boolean> {
     await profileRepository.updateProfile({
       lastAutoBackupAt: new Date().toISOString(),
       lastBackupDeviceId: generateDeviceId(),
-    } as any);
+    });
 
     // Clean up temp directory
     await FileSystem.deleteAsync(tempBackupDir, { idempotent: true });
@@ -731,8 +713,9 @@ export async function runAutoBackup(): Promise<boolean> {
  */
 async function uploadToGDriveIfConnected(backupPath: string): Promise<void> {
   try {
-    const { isGDriveConnected, uploadBackupToGDrive, cleanupOldGDriveBackups } =
-      await import('./gdriveBackupService');
+    const { isGDriveConnected, uploadBackupToGDrive, cleanupOldGDriveBackups } = await import(
+      './gdriveBackupService'
+    );
     if (!(await isGDriveConnected())) return;
     const uploaded = await uploadBackupToGDrive(backupPath);
     if (uploaded) {
@@ -757,7 +740,7 @@ export async function getBackupInfo(uri: string): Promise<BackupInfo | null> {
     return {
       uri,
       name: uri.split('/').pop() || 'backup.guru',
-      size: (fileInfo as any).size ?? 0,
+      size: 'size' in fileInfo ? fileInfo.size ?? 0 : 0,
       manifest: validation.manifest,
     };
   } catch {

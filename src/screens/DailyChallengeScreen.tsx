@@ -1,13 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
-  StatusBar,
-  Animated,
-  ActivityIndicator,
-} from 'react-native';
+import { View, TouchableOpacity, StyleSheet, StatusBar, Animated } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
@@ -26,6 +18,8 @@ import { emphasizeHighYieldMarkdown } from '../utils/highlightMarkdown';
 import LinearButton from '../components/primitives/LinearButton';
 import LinearSurface from '../components/primitives/LinearSurface';
 import LinearText from '../components/primitives/LinearText';
+import { EmptyState } from '../components/primitives';
+import LoadingOrb from '../components/LoadingOrb';
 import ScreenHeader from '../components/ScreenHeader';
 
 type Nav = NativeStackNavigationProp<HomeStackParamList, 'DailyChallenge'>;
@@ -193,10 +187,8 @@ export default function DailyChallengeScreen() {
         <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
         <ResponsiveContainer>
           <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color={n.colors.accent} />
-            <LinearText variant="body" tone="secondary" centered style={styles.loadingText}>
-              {loadingMsg}
-            </LinearText>
+            <LoadingOrb message={loadingMsg} size={120} />
+
             {loadingProgress.total > 0 && (
               <View style={styles.loadingProgressContainer}>
                 <View style={styles.loadingProgressBg}>
@@ -264,17 +256,12 @@ export default function DailyChallengeScreen() {
     return (
       <SafeAreaView style={styles.safe}>
         <ResponsiveContainer>
-          <View style={styles.loadingContainer}>
-            <LinearText variant="body" tone="secondary" centered style={styles.loadingText}>
-              No topics due for review yet.{'\n'}Keep studying to unlock challenges!
-            </LinearText>
-            <LinearButton
-              label="Go Back"
-              variant="primary"
-              style={[styles.doneBtn, { marginTop: 24 }]}
-              onPress={() => navigation.goBack()}
-            />
-          </View>
+          <EmptyState
+            icon="time-outline"
+            title="No topics due for review yet"
+            subtitle="Keep studying to unlock challenges!"
+            action={{ label: 'Go Back', onPress: () => navigation.goBack() }}
+          />
         </ResponsiveContainer>
       </SafeAreaView>
     );

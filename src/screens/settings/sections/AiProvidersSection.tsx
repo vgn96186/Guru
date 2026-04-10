@@ -13,6 +13,8 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { linearTheme } from '../../../theme/linearTheme';
+import LinearSurface from '../../../components/primitives/LinearSurface';
+import LinearText from '../../../components/primitives/LinearText';
 import LinearTextInput from '../../../components/primitives/LinearTextInput';
 import TranscriptionSettingsPanel from '../../../components/TranscriptionSettingsPanel';
 import SettingsLabel from '../components/SettingsLabel';
@@ -178,10 +180,98 @@ export default function AiProvidersSection(props: any) {
     localLlmAllowed,
     localLlmWarning,
   } = props;
+  const hasValue = (value: string | null | undefined) => Boolean(value?.trim());
+  const readyProviderCount = [
+    isChatGptEnabled(chatgptAccounts),
+    githubCopilotConnected,
+    gitlabDuoConnected,
+    poeConnected,
+    qwenConnected,
+    hasValue(groqKey),
+    hasValue(githubModelsPat),
+    hasValue(orKey),
+    hasValue(kiloApiKey),
+    hasValue(deepseekKey),
+    hasValue(agentRouterKey),
+    hasValue(geminiKey),
+    hasValue(deepgramApiKey),
+    hasValue(falApiKey),
+    hasValue(braveSearchApiKey),
+    hasValue(cfAccountId) && hasValue(cfApiToken),
+    localAiEnabled && (localLlmReady || localWhisperReady),
+  ].filter(Boolean).length;
+  const oauthConnectionCount = [
+    chatgptAccounts.primary.connected,
+    chatgptAccounts.secondary.connected,
+    githubCopilotConnected,
+    gitlabDuoConnected,
+    poeConnected,
+    qwenConnected,
+  ].filter(Boolean).length;
+  const providerPriority = sanitizeProviderOrder(providerOrder)[0];
+  const topProviderLabel = PROVIDER_DISPLAY_NAMES[providerPriority] ?? 'Auto';
+  const localAiSummary = localAiEnabled
+    ? localLlmReady || localWhisperReady
+      ? 'Ready'
+      : 'Needs models'
+    : 'Cloud first';
 
   return (
     <>
-      <Text style={styles.categoryLabel}>AI & PROVIDERS</Text>
+      <LinearText
+        style={[styles.categoryLabel, { marginTop: 0 }]}
+        variant="sectionTitle"
+        tone="muted"
+      >
+        AI & PROVIDERS
+      </LinearText>
+      <LinearSurface compact style={styles.summaryCardCompact}>
+        <View style={styles.summaryRow}>
+          <View style={styles.summaryCopy}>
+            <LinearText variant="meta" tone="accent" style={styles.summaryEyebrow}>
+              COMMAND CENTER
+            </LinearText>
+            <LinearText variant="label" style={styles.summaryTitle}>
+              Routing, subscriptions, and transcription setup
+            </LinearText>
+            <LinearText variant="bodySmall" tone="secondary" style={styles.summaryText}>
+              Default chat model, OAuth subscriptions, API keys, image generation, and local AI all
+              feed the same routing stack here.
+            </LinearText>
+          </View>
+          <View style={styles.summaryPill}>
+            <LinearText variant="chip" tone="accent">
+              {readyProviderCount} ready
+            </LinearText>
+          </View>
+        </View>
+        <View style={styles.summaryMetricsRow}>
+          <View style={styles.summaryMetricCard}>
+            <LinearText variant="title" tone="accent" style={styles.summaryMetricValue}>
+              {topProviderLabel}
+            </LinearText>
+            <LinearText variant="caption" tone="secondary" style={styles.summaryMetricLabel}>
+              Top routing priority
+            </LinearText>
+          </View>
+          <View style={styles.summaryMetricCard}>
+            <LinearText variant="title" tone="success" style={styles.summaryMetricValue}>
+              {oauthConnectionCount}
+            </LinearText>
+            <LinearText variant="caption" tone="secondary" style={styles.summaryMetricLabel}>
+              OAuth connections
+            </LinearText>
+          </View>
+          <View style={styles.summaryMetricCard}>
+            <LinearText variant="title" tone="warning" style={styles.summaryMetricValue}>
+              {localAiSummary}
+            </LinearText>
+            <LinearText variant="caption" tone="secondary" style={styles.summaryMetricLabel}>
+              Local AI mode
+            </LinearText>
+          </View>
+        </View>
+      </LinearSurface>
       <SectionToggle
         id="ai_config"
         title="AI Configuration"
@@ -597,16 +687,16 @@ export default function AiProvidersSection(props: any) {
                         githubCopilotOAuthTestResult === 'ok'
                           ? 'checkmark-circle'
                           : githubCopilotOAuthTestResult === 'fail'
-                            ? 'close-circle'
-                            : 'pulse-outline'
+                          ? 'close-circle'
+                          : 'pulse-outline'
                       }
                       size={20}
                       color={
                         githubCopilotOAuthTestResult === 'ok'
                           ? linearTheme.colors.success
                           : githubCopilotOAuthTestResult === 'fail'
-                            ? linearTheme.colors.error
-                            : linearTheme.colors.accent
+                          ? linearTheme.colors.error
+                          : linearTheme.colors.accent
                       }
                     />
                   )}
@@ -800,16 +890,16 @@ export default function AiProvidersSection(props: any) {
                         gitlabDuoOAuthTestResult === 'ok'
                           ? 'checkmark-circle'
                           : gitlabDuoOAuthTestResult === 'fail'
-                            ? 'close-circle'
-                            : 'pulse-outline'
+                          ? 'close-circle'
+                          : 'pulse-outline'
                       }
                       size={20}
                       color={
                         gitlabDuoOAuthTestResult === 'ok'
                           ? linearTheme.colors.success
                           : gitlabDuoOAuthTestResult === 'fail'
-                            ? linearTheme.colors.error
-                            : linearTheme.colors.accent
+                          ? linearTheme.colors.error
+                          : linearTheme.colors.accent
                       }
                     />
                   )}
@@ -1147,16 +1237,16 @@ export default function AiProvidersSection(props: any) {
                     groqValidationStatus === 'ok'
                       ? 'checkmark-circle'
                       : groqValidationStatus === 'fail'
-                        ? 'close-circle'
-                        : 'flash-outline'
+                      ? 'close-circle'
+                      : 'flash-outline'
                   }
                   size={20}
                   color={
                     groqValidationStatus === 'ok'
                       ? linearTheme.colors.success
                       : groqValidationStatus === 'fail'
-                        ? linearTheme.colors.error
-                        : linearTheme.colors.accent
+                      ? linearTheme.colors.error
+                      : linearTheme.colors.accent
                   }
                 />
               )}
@@ -1202,16 +1292,16 @@ export default function AiProvidersSection(props: any) {
                     githubValidationStatus === 'ok'
                       ? 'checkmark-circle'
                       : githubValidationStatus === 'fail'
-                        ? 'close-circle'
-                        : 'flash-outline'
+                      ? 'close-circle'
+                      : 'flash-outline'
                   }
                   size={20}
                   color={
                     githubValidationStatus === 'ok'
                       ? linearTheme.colors.success
                       : githubValidationStatus === 'fail'
-                        ? linearTheme.colors.error
-                        : linearTheme.colors.accent
+                      ? linearTheme.colors.error
+                      : linearTheme.colors.accent
                   }
                 />
               )}
@@ -1257,16 +1347,16 @@ export default function AiProvidersSection(props: any) {
                     openRouterValidationStatus === 'ok'
                       ? 'checkmark-circle'
                       : openRouterValidationStatus === 'fail'
-                        ? 'close-circle'
-                        : 'flash-outline'
+                      ? 'close-circle'
+                      : 'flash-outline'
                   }
                   size={20}
                   color={
                     openRouterValidationStatus === 'ok'
                       ? linearTheme.colors.success
                       : openRouterValidationStatus === 'fail'
-                        ? linearTheme.colors.error
-                        : linearTheme.colors.accent
+                      ? linearTheme.colors.error
+                      : linearTheme.colors.accent
                   }
                 />
               )}
@@ -1310,16 +1400,16 @@ export default function AiProvidersSection(props: any) {
                     kiloValidationStatus === 'ok'
                       ? 'checkmark-circle'
                       : kiloValidationStatus === 'fail'
-                        ? 'close-circle'
-                        : 'flash-outline'
+                      ? 'close-circle'
+                      : 'flash-outline'
                   }
                   size={20}
                   color={
                     kiloValidationStatus === 'ok'
                       ? linearTheme.colors.success
                       : kiloValidationStatus === 'fail'
-                        ? linearTheme.colors.error
-                        : linearTheme.colors.accent
+                      ? linearTheme.colors.error
+                      : linearTheme.colors.accent
                   }
                 />
               )}
@@ -1365,16 +1455,16 @@ export default function AiProvidersSection(props: any) {
                     deepseekValidationStatus === 'ok'
                       ? 'checkmark-circle'
                       : deepseekValidationStatus === 'fail'
-                        ? 'close-circle'
-                        : 'flash-outline'
+                      ? 'close-circle'
+                      : 'flash-outline'
                   }
                   size={20}
                   color={
                     deepseekValidationStatus === 'ok'
                       ? linearTheme.colors.success
                       : deepseekValidationStatus === 'fail'
-                        ? linearTheme.colors.error
-                        : linearTheme.colors.accent
+                      ? linearTheme.colors.error
+                      : linearTheme.colors.accent
                   }
                 />
               )}
@@ -1418,16 +1508,16 @@ export default function AiProvidersSection(props: any) {
                     agentRouterValidationStatus === 'ok'
                       ? 'checkmark-circle'
                       : agentRouterValidationStatus === 'fail'
-                        ? 'close-circle'
-                        : 'flash-outline'
+                      ? 'close-circle'
+                      : 'flash-outline'
                   }
                   size={20}
                   color={
                     agentRouterValidationStatus === 'ok'
                       ? linearTheme.colors.success
                       : agentRouterValidationStatus === 'fail'
-                        ? linearTheme.colors.error
-                        : linearTheme.colors.accent
+                      ? linearTheme.colors.error
+                      : linearTheme.colors.accent
                   }
                 />
               )}
@@ -1471,16 +1561,16 @@ export default function AiProvidersSection(props: any) {
                     geminiValidationStatus === 'ok'
                       ? 'checkmark-circle'
                       : geminiValidationStatus === 'fail'
-                        ? 'close-circle'
-                        : 'flash-outline'
+                      ? 'close-circle'
+                      : 'flash-outline'
                   }
                   size={20}
                   color={
                     geminiValidationStatus === 'ok'
                       ? linearTheme.colors.success
                       : geminiValidationStatus === 'fail'
-                        ? linearTheme.colors.error
-                        : linearTheme.colors.accent
+                      ? linearTheme.colors.error
+                      : linearTheme.colors.accent
                   }
                 />
               )}
@@ -1540,16 +1630,16 @@ export default function AiProvidersSection(props: any) {
                     deepgramValidationStatus === 'ok'
                       ? 'checkmark-circle'
                       : deepgramValidationStatus === 'fail'
-                        ? 'close-circle'
-                        : 'flash-outline'
+                      ? 'close-circle'
+                      : 'flash-outline'
                   }
                   size={20}
                   color={
                     deepgramValidationStatus === 'ok'
                       ? linearTheme.colors.success
                       : deepgramValidationStatus === 'fail'
-                        ? linearTheme.colors.error
-                        : linearTheme.colors.accent
+                      ? linearTheme.colors.error
+                      : linearTheme.colors.accent
                   }
                 />
               )}
@@ -1591,16 +1681,16 @@ export default function AiProvidersSection(props: any) {
                     cloudflareValidationStatus === 'ok'
                       ? 'checkmark-circle'
                       : cloudflareValidationStatus === 'fail'
-                        ? 'close-circle'
-                        : 'flash-outline'
+                      ? 'close-circle'
+                      : 'flash-outline'
                   }
                   size={20}
                   color={
                     cloudflareValidationStatus === 'ok'
                       ? linearTheme.colors.success
                       : cloudflareValidationStatus === 'fail'
-                        ? linearTheme.colors.error
-                        : linearTheme.colors.accent
+                      ? linearTheme.colors.error
+                      : linearTheme.colors.accent
                   }
                 />
               )}
@@ -1816,16 +1906,16 @@ export default function AiProvidersSection(props: any) {
                     falValidationStatus === 'ok'
                       ? 'checkmark-circle'
                       : falValidationStatus === 'fail'
-                        ? 'close-circle'
-                        : 'flash-outline'
+                      ? 'close-circle'
+                      : 'flash-outline'
                   }
                   size={20}
                   color={
                     falValidationStatus === 'ok'
                       ? linearTheme.colors.success
                       : falValidationStatus === 'fail'
-                        ? linearTheme.colors.error
-                        : linearTheme.colors.accent
+                      ? linearTheme.colors.error
+                      : linearTheme.colors.accent
                   }
                 />
               )}
@@ -1997,16 +2087,16 @@ export default function AiProvidersSection(props: any) {
                     braveValidationStatus === 'ok'
                       ? 'checkmark-circle'
                       : braveValidationStatus === 'fail'
-                        ? 'close-circle'
-                        : 'images-outline'
+                      ? 'close-circle'
+                      : 'images-outline'
                   }
                   size={20}
                   color={
                     braveValidationStatus === 'ok'
                       ? linearTheme.colors.success
                       : braveValidationStatus === 'fail'
-                        ? linearTheme.colors.error
-                        : linearTheme.colors.accent
+                      ? linearTheme.colors.error
+                      : linearTheme.colors.accent
                   }
                 />
               )}

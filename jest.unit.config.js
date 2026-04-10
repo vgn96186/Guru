@@ -28,12 +28,18 @@ module.exports = {
   moduleNameMapper: {
     '^expo-updates$': '<rootDir>/__mocks__/expo-updates.js',
     '^expo-asset$': '<rootDir>/__mocks__/expo-asset.js',
+    '^expo-image$': '<rootDir>/__mocks__/expo-image.js',
+    '^expo-network$': '<rootDir>/__mocks__/expo-network.js',
     '^whisper.rn$': '<rootDir>/__mocks__/whisper.rn.js',
     '^whisper\\.rn/index\\.js$': '<rootDir>/__mocks__/whisper.rn.js',
     '^llama.rn$': '<rootDir>/__mocks__/llama.rn.js',
     '^expo-sqlite$': '<rootDir>/__mocks__/expo-sqlite.js',
     '^react-native-worklets$': '<rootDir>/__mocks__/react-native-worklets.js',
     '^react-native-worklets-core$': '<rootDir>/__mocks__/react-native-worklets.js',
+    '^@sentry/react-native$': '<rootDir>/__mocks__/sentry-react-native.js',
+    '^react-native-keyboard-controller$': '<rootDir>/__mocks__/react-native-keyboard-controller.js',
+    '^@gorhom/bottom-sheet$': '<rootDir>/__mocks__/gorhom-bottom-sheet.js',
+    '^@shopify/flash-list$': '<rootDir>/__mocks__/shopify-flash-list.js',
   },
   transform: {
     '^.+\\.(ts|tsx)$': ['ts-jest', { tsconfig: { module: 'commonjs', jsx: 'react' } }],

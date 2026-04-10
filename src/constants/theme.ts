@@ -1,8 +1,9 @@
 /**
- * Guru — Centralized Design System
+ * @deprecated Use `linearTheme` from '../theme/linearTheme' and color utilities
+ * from '../theme/colorUtils' instead. This file is retained for backward
+ * compatibility only — do not add new usages.
  *
- * All screens should import from this file rather than hardcoding hex values,
- * magic numbers, or inline font sizes. Migrate screens incrementally.
+ * Guru — Legacy Design System
  *
  * Migration order (highest-traffic first):
  *   HomeScreen → SettingsScreen → StatsScreen → SessionScreen → SyllabusScreen

@@ -14,7 +14,7 @@ import { warmAiContentCache } from '../services/backgroundTasks';
 import { tryCompleteGitLabDuoOAuth } from '../services/ai/gitlab';
 import { validateAiProvidersOnBoot } from '../services/ai/bootProviderValidation';
 import { shouldRunAutoBackup, runAutoBackup } from '../services/unifiedBackupService';
-import { resetDbSingleton } from '../db/database';
+import { captureException } from '../services/monitoring/sentry';
 
 /**
  * Master initialization hook.
@@ -66,8 +66,6 @@ export function useAppBootstrap(onFatalError?: (message: string) => void): void 
     const bootstrap = async () => {
       // 1. Load core state
       await loadProfile();
-      const state = useAppStore.getState();
-      const profile = state.profile;
 
       // 2. Seed bundled API keys into the profile on first run.
       //    This makes bundled defaults persist across Expo + bare RN builds without copy/paste.
@@ -78,17 +76,17 @@ export function useAppBootstrap(onFatalError?: (message: string) => void): void 
       const needsGroq = !!bundledGroq && !currentProfile?.groqApiKey;
       const needsHf = !!bundledHf && !currentProfile?.huggingFaceToken;
       const needsOr = !!bundledOr && !currentProfile?.openrouterKey;
+      const autoBackupFrequency = currentProfile?.autoBackupFrequency;
       // Also default auto-backup to daily on first run
       const needsAutoBackup =
-        !(currentProfile as any)?.autoBackupFrequency ||
-        ((currentProfile as any)?.autoBackupFrequency === 'off' && currentProfile?.totalXp === 0);
+        !autoBackupFrequency || (autoBackupFrequency === 'off' && currentProfile?.totalXp === 0);
       if (needsGroq || needsHf || needsOr || needsAutoBackup) {
         await profileRepository.updateProfile({
           ...(needsGroq ? { groqApiKey: bundledGroq } : {}),
           ...(needsHf ? { huggingFaceToken: bundledHf } : {}),
           ...(needsOr ? { openrouterKey: bundledOr } : {}),
           ...(needsAutoBackup ? { autoBackupFrequency: 'daily' } : {}),
-        } as any);
+        });
         await refreshProfile();
       }
 
@@ -151,6 +149,7 @@ export function useAppBootstrap(onFatalError?: (message: string) => void): void 
 
     void bootstrap().catch((e) => {
       console.error('[AppBootstrap] Fatal startup error:', e);
+      captureException(e, { component: 'useAppBootstrap' });
       initialized.current = false; // Allow retry on next mount
       onFatalError?.(e instanceof Error ? e.message : 'App startup failed');
     });
@@ -177,12 +176,13 @@ export function useAppBootstrap(onFatalError?: (message: string) => void): void 
  */
 async function checkForNewerGDriveBackup(): Promise<void> {
   try {
-    const { isGDriveConnected, listGDriveBackups, downloadBackupFromGDrive } =
-      await import('../services/gdriveBackupService');
+    const { isGDriveConnected, listGDriveBackups, downloadBackupFromGDrive } = await import(
+      '../services/gdriveBackupService'
+    );
     if (!(await isGDriveConnected())) return;
 
     const profile = await profileRepository.getProfile();
-    const localLastBackup = (profile as any)?.lastAutoBackupAt as string | null;
+    const localLastBackup = profile.lastAutoBackupAt ?? null;
 
     const remoteBackups = await listGDriveBackups();
     if (remoteBackups.length === 0) return;
@@ -191,7 +191,7 @@ async function checkForNewerGDriveBackup(): Promise<void> {
     const deviceName =
       require('react-native').Platform.OS === 'android' ? 'Android Device' : 'iOS Device';
     const newerRemote = remoteBackups.find((b) => {
-      if (b.deviceName === deviceName && b.deviceId === (profile as any)?.lastBackupDeviceId) {
+      if (b.deviceName === deviceName && b.deviceId === profile.lastBackupDeviceId) {
         return false; // Same device
       }
       if (!localLastBackup) return true; // No local backup — any remote is newer
@@ -218,8 +218,9 @@ async function checkForNewerGDriveBackup(): Promise<void> {
                 return;
               }
               // Use the existing import flow
-              const { importUnifiedBackupFromPath } =
-                await import('../services/unifiedBackupService');
+              const { importUnifiedBackupFromPath } = await import(
+                '../services/unifiedBackupService'
+              );
               const result = await importUnifiedBackupFromPath(localPath);
               if (result.ok) {
                 const { refreshProfile } = useAppStore.getState();
@@ -227,8 +228,8 @@ async function checkForNewerGDriveBackup(): Promise<void> {
               } else {
                 Alert.alert('Restore failed', result.message);
               }
-            } catch (e: any) {
-              Alert.alert('Restore failed', e?.message ?? 'Unknown error');
+            } catch (e: unknown) {
+              Alert.alert('Restore failed', e instanceof Error ? e.message : 'Unknown error');
             }
           },
         },

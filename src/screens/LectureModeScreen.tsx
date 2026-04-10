@@ -38,6 +38,7 @@ import { saveLectureNote } from '../db/queries/aiCache';
 import { createSession, endSession, updateSessionProgress } from '../db/queries/sessions';
 import { profileRepository } from '../db/repositories';
 import { linearTheme as n } from '../theme/linearTheme';
+import { errorAlpha } from '../theme/colorUtils';
 import { useAppStore } from '../store/useAppStore';
 import { sendImmediateNag } from '../services/notificationService';
 import { connectToRoom, sendSyncMessage } from '../services/deviceSyncService';
@@ -1290,7 +1291,7 @@ const styles = StyleSheet.create({
     width: 64,
     height: 64,
     borderRadius: 32,
-    backgroundColor: 'rgba(244, 67, 54, 0.4)',
+    backgroundColor: errorAlpha['40'],
   },
   proofTitle: {
     color: n.colors.error,

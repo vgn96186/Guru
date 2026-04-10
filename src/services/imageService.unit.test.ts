@@ -115,7 +115,7 @@ describe('imageService', () => {
           }),
         ); // Commons file info succeeds
 
-      const result = await fetchWikipediaImage('UnknownTopic');
+      const result = await fetchWikipediaImage('RareMedicalTopic');
       expect(result).toBe('https://example.com/commons.jpg');
       expect(globalThis.fetch).toHaveBeenCalledTimes(4);
     });

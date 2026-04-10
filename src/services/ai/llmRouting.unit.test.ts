@@ -43,7 +43,9 @@ async function loadRoutingModule() {
   }));
 
   jest.doMock('./google/geminiChat', () => ({
-    geminiGenerateContentSdk: jest.fn().mockRejectedValue(new Error('Gemini SDK disabled in llmRouting unit test')),
+    geminiGenerateContentSdk: jest
+      .fn()
+      .mockRejectedValue(new Error('Gemini SDK disabled in llmRouting unit test')),
     geminiGenerateContentStreamSdk: jest
       .fn()
       .mockRejectedValue(new Error('Gemini SDK disabled in llmRouting unit test')),
@@ -90,7 +92,7 @@ describe('llmRouting', () => {
     expect(calledModels).toEqual(['preferred-groq']);
   });
 
-  it('uses Groq before OpenRouter when both keys are present', async () => {
+  it('uses OpenRouter before Groq when both keys are present', async () => {
     const { module } = await loadRoutingModule();
     const callOrder: string[] = [];
 
@@ -121,12 +123,12 @@ describe('llmRouting', () => {
       'groq-key',
     );
 
-    expect(result.text).toBe('groq-success');
-    expect(result.modelUsed).toBe('groq/groq-a');
-    expect(callOrder).toEqual(['groq:groq-a']);
+    expect(result.text).toBe('or-success');
+    expect(result.modelUsed).toBe('or-a');
+    expect(callOrder).toEqual(['or:or-a']);
   });
 
-  it('falls back to OpenRouter when all Groq models fail', async () => {
+  it('falls back to Groq when all OpenRouter models fail', async () => {
     const { module } = await loadRoutingModule();
     const callOrder: string[] = [];
 
@@ -135,14 +137,14 @@ describe('llmRouting', () => {
       const body = JSON.parse(init.body);
       if (requestUrl.includes('openrouter.ai')) {
         callOrder.push(`or:${body.model}`);
-        return mockResponse({
-          ok: true,
-          json: async () => ({ choices: [{ message: { content: 'or-success' } }] }),
-        });
+        return mockResponse({ ok: false, status: 500 });
       }
       if (requestUrl.includes('api.groq.com')) {
         callOrder.push(`groq:${body.model}`);
-        return mockResponse({ ok: false, status: 500 });
+        return mockResponse({
+          ok: true,
+          json: async () => ({ choices: [{ message: { content: 'groq-success' } }] }),
+        });
       }
       return mockResponse({ ok: false });
     });
@@ -154,9 +156,9 @@ describe('llmRouting', () => {
       'groq-key',
     );
 
-    expect(result.text).toBe('or-success');
-    expect(result.modelUsed).toBe('or-a');
-    expect(callOrder).toEqual(['groq:groq-a', 'groq:groq-b', 'or:or-a']);
+    expect(result.text).toBe('groq-success');
+    expect(result.modelUsed).toBe('groq/groq-a');
+    expect(callOrder).toEqual(['or:or-a', 'or:or-b', 'groq:groq-a']);
   });
 
   it('throws clear error when no cloud keys are available', async () => {
@@ -181,7 +183,7 @@ describe('llmRouting', () => {
     expect(updateProfileMock).toHaveBeenCalledWith({ localModelPath: null, useLocalModel: false });
   });
 
-  it('uses Groq first when both Groq and OpenRouter keys are present', async () => {
+  it('falls back to Groq when OpenRouter fails', async () => {
     const { module } = await loadRoutingModule();
     const callOrder: string[] = [];
 
@@ -211,7 +213,7 @@ describe('llmRouting', () => {
 
     expect(result.text).toBe('groq-success');
     expect(result.modelUsed).toBe('groq/groq-a');
-    expect(callOrder).toEqual(['groq:groq-a']);
+    expect(callOrder).toEqual(['or:or-a', 'or:or-b', 'groq:groq-a']);
   });
 
   it('tries next OpenRouter model on error', async () => {
@@ -259,7 +261,7 @@ describe('llmRouting', () => {
   it('releaseLlamaContext does nothing when context is in use', async () => {
     const releaseMock = jest.fn(async () => undefined);
     const { module, initLlamaMock, completionMock } = await loadRoutingModule();
-    
+
     // Make initLlama return a stable object so we can spy on it
     const stableCtx = {
       completion: completionMock,
@@ -269,13 +271,19 @@ describe('llmRouting', () => {
 
     // Start a generation (it will be in flight)
     let resolveCompletion: (val: { text: string }) => void;
-    const completionPromise = new Promise<{ text: string }>(resolve => { resolveCompletion = resolve; });
+    const completionPromise = new Promise<{ text: string }>((resolve) => {
+      resolveCompletion = resolve;
+    });
     completionMock.mockReturnValue(completionPromise);
 
-    const generationPromise = module.attemptLocalLLM([{ role: 'user', content: 'hi' }], '/path', false);
-    
+    const generationPromise = module.attemptLocalLLM(
+      [{ role: 'user', content: 'hi' }],
+      '/path',
+      false,
+    );
+
     // Need to wait a bit for getLlamaContext to finish and set llamaContext
-    await new Promise(r => setTimeout(r, 10));
+    await new Promise((r) => setTimeout(r, 10));
 
     // Now try to release
     await module.releaseLlamaContext();

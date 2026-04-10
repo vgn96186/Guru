@@ -121,7 +121,7 @@ modules/
 - Cloud fallback chain: **Groq** (fastest, bundled key) → OpenRouter free models.
 - Groq: `profile.groqApiKey` or bundled `BUNDLED_GROQ_KEY`. Models: llama-3.3-70b-versatile, llama-3.1-8b-instant.
 - OpenRouter: free models via `profile.openrouterKey` (Llama 3.3, Qwen 2.5, DeepSeek, Mistral).
-- Routing order: **cloud first** (Groq → OpenRouter), then local fallback. Groq is the primary AI backend.
+- Routing order: **cloud first** then local fallback. `DEFAULT_PROVIDER_ORDER` has OpenRouter before Groq, but Groq has a `BUNDLED_GROQ_KEY` so it works without user configuration. Groq is used directly for first content/card generation to reduce lag (fast models).
 - `generateJSONWithRouting()` — for structured JSON output.
 - `generateTextWithRouting()` — for free-text output.
 

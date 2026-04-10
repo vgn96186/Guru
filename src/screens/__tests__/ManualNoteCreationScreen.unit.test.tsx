@@ -120,8 +120,10 @@ describe('ManualNoteCreationScreen', () => {
 
     await waitFor(() => {
       expect(Alert.alert).toHaveBeenCalledWith(
-        'Error',
+        'Something went wrong',
         'No usable lecture content was detected in this transcript.',
+        expect.any(Array),
+        expect.any(Object),
       );
     });
 

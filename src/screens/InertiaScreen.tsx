@@ -6,7 +6,6 @@ import {
   StatusBar,
   Animated,
   Easing,
-  Dimensions,
   Image,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -26,8 +25,6 @@ import { ResponsiveContainer } from '../hooks/useResponsive';
 import { MarkdownRender } from '../components/MarkdownRender';
 import { linearTheme as n } from '../theme/linearTheme';
 import type { DetectiveContent, TopicWithProgress } from '../types';
-
-const { width } = Dimensions.get('window');
 
 function TopicImage({ topicName }: { topicName: string }) {
   const [imageUrl, setImageUrl] = useState<string | null>(null);

@@ -34,8 +34,9 @@ for _ in {1..45}; do
 done
 
 adb shell am start \
+  -n "com.anonymous.gurustudy.dev/com.anonymous.gurustudy.MainActivity" \
   -a android.intent.action.VIEW \
-  -d "exp+guru-study://expo-development-client/?url=http%3A%2F%2F127.0.0.1%3A8081" \
+  -d "exp+guru-study-dev://expo-development-client/?url=http%3A%2F%2F127.0.0.1%3A8081" \
   >/dev/null 2>&1 || true
 
 wait "$METRO_PID"

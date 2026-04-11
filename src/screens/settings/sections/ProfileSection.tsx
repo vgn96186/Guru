@@ -1,19 +1,10 @@
 import React from 'react';
 import { TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import type { Ionicons as IoniconsType } from '@expo/vector-icons';
 import { linearTheme } from '../../../theme/linearTheme';
-import LinearTextInput from '../../../components/primitives/LinearTextInput';
 import LinearText from '../../../components/primitives/LinearText';
-import SettingsLabel from '../components/SettingsLabel';
-
-type SectionToggleProps = {
-  id: string;
-  title: string;
-  icon: keyof typeof IoniconsType.glyphMap;
-  tint: string;
-  children: React.ReactNode;
-};
+import SettingsField from '../components/SettingsField';
+import type { SettingsSectionToggleProps } from '../components/SettingsSectionAccordion';
 
 export default function ProfileSection({
   SectionToggle,
@@ -22,8 +13,8 @@ export default function ProfileSection({
   name,
   setName,
 }: {
-  SectionToggle: (props: SectionToggleProps) => React.ReactElement;
-  styles: any;
+  SectionToggle: (props: SettingsSectionToggleProps) => React.ReactElement;
+  styles: Record<string, object>;
   onNavigateDeviceLink: () => void;
   name: string;
   setName: (value: string) => void;
@@ -51,9 +42,8 @@ export default function ProfileSection({
           Link Another Device (Sync)
         </LinearText>
       </TouchableOpacity>
-      <SettingsLabel text="Your name" />
-      <LinearTextInput
-        style={styles.input}
+      <SettingsField
+        label="Your name"
         placeholder="Dr. ..."
         placeholderTextColor={linearTheme.colors.textMuted}
         value={name}

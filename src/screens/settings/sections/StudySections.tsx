@@ -1,13 +1,60 @@
 import React from 'react';
-import { Switch, TouchableOpacity, View } from 'react-native';
+import { TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import SettingsField from '../components/SettingsField';
 import SettingsLabel from '../components/SettingsLabel';
-import LinearTextInput from '../../../components/primitives/LinearTextInput';
+import type { SettingsSectionToggleProps } from '../components/SettingsSectionAccordion';
+import SettingsToggleRow from '../components/SettingsToggleRow';
 import LinearText from '../../../components/primitives/LinearText';
 import { linearTheme } from '../../../theme/linearTheme';
 import { ALL_CONTENT_TYPES } from '../types';
+import type { ContentType, Subject } from '../../../types';
 
-export default function StudySections(props: any) {
+interface StudySectionsProps {
+  styles: Record<string, object>;
+  SectionToggle: (props: SettingsSectionToggleProps) => React.ReactElement;
+  dbmciClassStartDate: string;
+  setDbmciClassStartDate: (value: string) => void;
+  btrStartDate: string;
+  setBtrStartDate: (value: string) => void;
+  homeNoveltyCooldownHours: string;
+  setHomeNoveltyCooldownHours: (value: string) => void;
+  sessionLength: string;
+  setSessionLength: (value: string) => void;
+  dailyGoal: string;
+  setDailyGoal: (value: string) => void;
+  strictMode: boolean;
+  setStrictMode: (value: boolean) => void;
+  notifs: boolean;
+  setNotifs: (value: boolean) => void;
+  notifHour: string;
+  setNotifHour: (value: string) => void;
+  guruFrequency: 'rare' | 'normal' | 'frequent' | 'off';
+  setGuruFrequency: (value: 'rare' | 'normal' | 'frequent' | 'off') => void;
+  testNotification: () => void;
+  bodyDoubling: boolean;
+  setBodyDoubling: (value: boolean) => void;
+  blockedTypes: ContentType[];
+  setBlockedTypes: React.Dispatch<React.SetStateAction<ContentType[]>>;
+  subjects: Array<Pick<Subject, 'id' | 'colorHex' | 'shortCode'>>;
+  focusSubjectIds: number[];
+  setFocusSubjectIds: React.Dispatch<React.SetStateAction<number[]>>;
+  idleTimeout: string;
+  setIdleTimeout: (value: string) => void;
+  breakDuration: string;
+  setBreakDuration: (value: string) => void;
+  pomodoroEnabled: boolean;
+  setPomodoroEnabled: (value: boolean) => void;
+  pomodoroLectureQuizReady: boolean;
+  hasPomodoroOverlayPermission: boolean;
+  hasPomodoroGroqKey: boolean;
+  hasPomodoroDeepgramKey: boolean;
+  requestPomodoroOverlay: () => void;
+  pomodoroInterval: string;
+  setPomodoroInterval: (value: string) => void;
+}
+
+export default function StudySections(props: StudySectionsProps) {
   const {
     styles,
     SectionToggle,
@@ -58,32 +105,24 @@ export default function StudySections(props: any) {
         STUDY
       </LinearText>
       <SectionToggle id="live_batch" title="Study Plan" icon="book-outline" tint="#2196F3">
-        <SettingsLabel text="DBMCI One batch start date (YYYY-MM-DD)" />
-        <LinearTextInput
-          style={styles.input}
+        <SettingsField
+          label="DBMCI One batch start date (YYYY-MM-DD)"
           value={dbmciClassStartDate}
           onChangeText={setDbmciClassStartDate}
           placeholder="e.g. 2025-01-06"
           placeholderTextColor={linearTheme.colors.textMuted}
           autoCapitalize="none"
+          hint="Set this to unlock the live-class position tracker in the Study Plan screen. Guru will highlight which subject DBMCI One is covering today."
         />
-        <LinearText style={styles.hint} variant="body" tone="muted">
-          Set this to unlock the live-class position tracker in the Study Plan screen. Guru will
-          highlight which subject DBMCI One is covering today.
-        </LinearText>
-        <SettingsLabel text="BTR (Back to Roots) batch start date (YYYY-MM-DD)" />
-        <LinearTextInput
-          style={styles.input}
+        <SettingsField
+          label="BTR (Back to Roots) batch start date (YYYY-MM-DD)"
           value={btrStartDate}
           onChangeText={setBtrStartDate}
           placeholder="e.g. 2025-09-01"
           placeholderTextColor={linearTheme.colors.textMuted}
           autoCapitalize="none"
+          hint="Set this when you start the BTR revision batch. Guru will align your daily revision queue with the current BTR subject."
         />
-        <LinearText style={styles.hint} variant="body" tone="muted">
-          Set this when you start the BTR revision batch. Guru will align your daily revision queue
-          with the current BTR subject.
-        </LinearText>
         <SettingsLabel text="Home novelty cooldown (hours)" />
         <View style={styles.frequencyRow}>
           {[2, 4, 6, 8, 12].map((hrs) => {
@@ -117,42 +156,31 @@ export default function StudySections(props: any) {
         icon="school-outline"
         tint="#E040FB"
       >
-        <SettingsLabel text="Preferred session length (minutes)" />
-        <LinearTextInput
-          style={styles.input}
+        <SettingsField
+          label="Preferred session length (minutes)"
           value={sessionLength}
           onChangeText={setSessionLength}
           keyboardType="number-pad"
           placeholderTextColor={linearTheme.colors.textMuted}
         />
-        <SettingsLabel text="Daily study goal (minutes)" />
-        <LinearTextInput
-          style={styles.input}
+        <SettingsField
+          label="Daily study goal (minutes)"
           value={dailyGoal}
           onChangeText={setDailyGoal}
           keyboardType="number-pad"
           placeholderTextColor={linearTheme.colors.textMuted}
         />
-        <View style={[styles.switchRow, { marginTop: 16 }]}>
-          <View style={{ flex: 1, paddingRight: 8 }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 4 }}>
-              <Ionicons name="shield-checkmark" size={16} color={linearTheme.colors.error} />
-              <LinearText style={styles.switchLabel} variant="label">
-                Strict Mode
-              </LinearText>
-            </View>
-            <LinearText style={styles.hint} variant="body" tone="muted">
-              Nag you instantly if you leave the app or are idle. Idle time won't count towards
-              session duration.
-            </LinearText>
-          </View>
-          <Switch
-            value={strictMode}
-            onValueChange={setStrictMode}
-            trackColor={{ true: linearTheme.colors.error, false: linearTheme.colors.border }}
-            thumbColor={linearTheme.colors.textPrimary}
-          />
-        </View>
+        <SettingsToggleRow
+          label="Strict Mode"
+          hint="Nag you instantly if you leave the app or are idle. Idle time won't count towards session duration."
+          value={strictMode}
+          onValueChange={setStrictMode}
+          activeTrackColor={linearTheme.colors.error}
+          style={{ marginTop: 16 }}
+          labelIcon={
+            <Ionicons name="shield-checkmark" size={16} color={linearTheme.colors.error} />
+          }
+        />
       </SectionToggle>
 
       <SectionToggle
@@ -161,33 +189,20 @@ export default function StudySections(props: any) {
         icon="notifications-outline"
         tint="#FFD700"
       >
-        <View style={styles.switchRow}>
-          <View>
-            <LinearText style={styles.switchLabel} variant="label">
-              Enable Guru's reminders
-            </LinearText>
-            <LinearText style={styles.hint} variant="body" tone="muted">
-              Guru will send personalized daily accountability messages
-            </LinearText>
-          </View>
-          <Switch
-            value={notifs}
-            onValueChange={setNotifs}
-            trackColor={{ true: linearTheme.colors.accent, false: linearTheme.colors.border }}
-            thumbColor={linearTheme.colors.textPrimary}
-          />
-        </View>
-        <SettingsLabel text="Reminder hour (0–23, e.g. 7 = 7:30 AM)" />
-        <LinearTextInput
-          style={styles.input}
+        <SettingsToggleRow
+          label="Enable Guru's reminders"
+          hint="Guru will send personalized daily accountability messages."
+          value={notifs}
+          onValueChange={setNotifs}
+        />
+        <SettingsField
+          label="Reminder hour (0-23, e.g. 7 = 7:30 AM)"
           value={notifHour}
           onChangeText={setNotifHour}
           keyboardType="number-pad"
           placeholderTextColor={linearTheme.colors.textMuted}
+          hint="Evening nudge fires ~11 hours after this."
         />
-        <LinearText style={styles.hint} variant="body" tone="muted">
-          Evening nudge fires ~11 hours after this.
-        </LinearText>
         <SettingsLabel text="Guru presence frequency" />
         <View style={styles.frequencyRow}>
           {(['rare', 'normal', 'frequent', 'off'] as const).map((freq) => (
@@ -217,22 +232,12 @@ export default function StudySections(props: any) {
       </SectionToggle>
 
       <SectionToggle id="body_doubling" title="Body Doubling" icon="people-outline" tint="#7ED6A7">
-        <View style={styles.switchRow}>
-          <View style={{ flex: 1, paddingRight: 8 }}>
-            <LinearText style={styles.switchLabel} variant="label">
-              Guru presence during sessions
-            </LinearText>
-            <LinearText style={styles.hint} variant="body" tone="muted">
-              Ambient toast messages and pulsing dot while you study. Helps with focus.
-            </LinearText>
-          </View>
-          <Switch
-            value={bodyDoubling}
-            onValueChange={setBodyDoubling}
-            trackColor={{ true: linearTheme.colors.accent, false: linearTheme.colors.border }}
-            thumbColor={linearTheme.colors.textPrimary}
-          />
-        </View>
+        <SettingsToggleRow
+          label="Guru presence during sessions"
+          hint="Ambient toast messages and pulsing dot while you study. Helps with focus."
+          value={bodyDoubling}
+          onValueChange={setBodyDoubling}
+        />
       </SectionToggle>
 
       <SectionToggle
@@ -258,8 +263,10 @@ export default function StudySections(props: any) {
                 ]}
                 onPress={() => {
                   if (isLocked) return;
-                  setBlockedTypes((prev: any) =>
-                    isBlocked ? prev.filter((t: any) => t !== type) : [...prev, type],
+                  setBlockedTypes((prev) =>
+                    isBlocked
+                      ? prev.filter((blockedType) => blockedType !== type)
+                      : [...prev, type],
                   );
                 }}
                 activeOpacity={isLocked ? 1 : 0.8}
@@ -270,12 +277,12 @@ export default function StudySections(props: any) {
                 >
                   {label}
                 </LinearText>
-                {isBlocked && (
+                {isBlocked ? (
                   <LinearText style={styles.typeChipX} variant="body">
                     {' '}
-                    ✕
+                    X
                   </LinearText>
-                )}
+                ) : null}
               </TouchableOpacity>
             );
           })}
@@ -287,7 +294,7 @@ export default function StudySections(props: any) {
           Pin subjects to limit sessions to those areas only. Clear all to study everything.
         </LinearText>
         <View style={styles.chipGrid}>
-          {subjects.map((s: any) => {
+          {subjects.map((s) => {
             const isFocused = focusSubjectIds.includes(s.id);
             return (
               <TouchableOpacity
@@ -297,8 +304,8 @@ export default function StudySections(props: any) {
                   isFocused && { backgroundColor: s.colorHex + '33', borderColor: s.colorHex },
                 ]}
                 onPress={() =>
-                  setFocusSubjectIds((prev: any) =>
-                    isFocused ? prev.filter((id: any) => id !== s.id) : [...prev, s.id],
+                  setFocusSubjectIds((prev) =>
+                    isFocused ? prev.filter((subjectId) => subjectId !== s.id) : [...prev, s.id],
                   )
                 }
                 activeOpacity={0.8}
@@ -313,27 +320,25 @@ export default function StudySections(props: any) {
             );
           })}
         </View>
-        {focusSubjectIds.length > 0 && (
+        {focusSubjectIds.length > 0 ? (
           <TouchableOpacity onPress={() => setFocusSubjectIds([])} style={styles.clearBtn}>
             <LinearText style={styles.clearBtnText} variant="body">
               Clear focus (study all subjects)
             </LinearText>
           </TouchableOpacity>
-        )}
+        ) : null}
       </SectionToggle>
 
       <SectionToggle id="session" title="Session Timing" icon="timer-outline" tint="#FF9800">
-        <SettingsLabel text="Idle timeout (minutes before auto-pause)" />
-        <LinearTextInput
-          style={styles.input}
+        <SettingsField
+          label="Idle timeout (minutes before auto-pause)"
           value={idleTimeout}
           onChangeText={setIdleTimeout}
           keyboardType="number-pad"
           placeholderTextColor={linearTheme.colors.textMuted}
         />
-        <SettingsLabel text="Break duration between topics (minutes)" />
-        <LinearTextInput
-          style={styles.input}
+        <SettingsField
+          label="Break duration between topics (minutes)"
           value={breakDuration}
           onChangeText={setBreakDuration}
           keyboardType="number-pad"
@@ -347,22 +352,12 @@ export default function StudySections(props: any) {
         icon="alarm-outline"
         tint="#F44336"
       >
-        <View style={styles.switchRow}>
-          <View style={{ flex: 1, paddingRight: 8 }}>
-            <LinearText style={styles.switchLabel} variant="label">
-              Enable Pomodoro Suggestion
-            </LinearText>
-            <LinearText style={styles.hint} variant="body" tone="muted">
-              Auto-expand the external lecture overlay every interval to suggest a break.
-            </LinearText>
-          </View>
-          <Switch
-            value={pomodoroEnabled}
-            onValueChange={setPomodoroEnabled}
-            trackColor={{ true: linearTheme.colors.accent, false: linearTheme.colors.border }}
-            thumbColor={linearTheme.colors.textPrimary}
-          />
-        </View>
+        <SettingsToggleRow
+          label="Enable Pomodoro Suggestion"
+          hint="Auto-expand the external lecture overlay every interval to suggest a break."
+          value={pomodoroEnabled}
+          onValueChange={setPomodoroEnabled}
+        />
         <LinearText
           style={[
             styles.hint,
@@ -370,8 +365,8 @@ export default function StudySections(props: any) {
               color: pomodoroLectureQuizReady
                 ? linearTheme.colors.success
                 : pomodoroEnabled
-                ? linearTheme.colors.error
-                : linearTheme.colors.textMuted,
+                  ? linearTheme.colors.error
+                  : linearTheme.colors.textMuted,
             },
           ]}
           variant="body"
@@ -380,10 +375,10 @@ export default function StudySections(props: any) {
           {pomodoroLectureQuizReady
             ? 'Lecture-aware break quizzes are ready.'
             : pomodoroEnabled
-            ? 'Currently this will only suggest a break until overlay permission, Groq, and Deepgram are configured.'
-            : 'Pomodoro break suggestions are off.'}
+              ? 'Currently this will only suggest a break until overlay permission, Groq, and Deepgram are configured.'
+              : 'Pomodoro break suggestions are off.'}
         </LinearText>
-        {!hasPomodoroOverlayPermission && (
+        {!hasPomodoroOverlayPermission ? (
           <TouchableOpacity
             style={[
               styles.validateBtn,
@@ -396,7 +391,7 @@ export default function StudySections(props: any) {
               Grant Overlay Permission
             </LinearText>
           </TouchableOpacity>
-        )}
+        ) : null}
         <View style={[styles.chipGrid, { marginTop: 10 }]}>
           {[
             { label: 'Overlay', ready: hasPomodoroOverlayPermission },
@@ -427,9 +422,8 @@ export default function StudySections(props: any) {
             </View>
           ))}
         </View>
-        <SettingsLabel text="Pomodoro interval (minutes)" />
-        <LinearTextInput
-          style={styles.input}
+        <SettingsField
+          label="Pomodoro interval (minutes)"
           value={pomodoroInterval}
           onChangeText={setPomodoroInterval}
           keyboardType="number-pad"

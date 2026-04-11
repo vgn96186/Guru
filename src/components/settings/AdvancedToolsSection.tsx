@@ -1,6 +1,7 @@
 import React from 'react';
-import { View, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 import { linearTheme as n } from '../../theme/linearTheme';
+import LinearButton from '../primitives/LinearButton';
 import LinearText from '../primitives/LinearText';
 
 interface AdvancedToolsSectionProps {
@@ -35,24 +36,22 @@ function AdvancedToolsSection({
           Database Backup (SQLite)
         </LinearText>
         <View style={styles.row}>
-          <TouchableOpacity style={styles.button} onPress={onExportBackup} disabled={isExporting}>
-            {isExporting ? (
-              <ActivityIndicator size="small" color="#FFF" />
-            ) : (
-              <LinearText variant="body" style={styles.buttonText}>
-                Export .db
-              </LinearText>
-            )}
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.button, styles.outlineButton]}
+          <LinearButton
+            label="Export .db"
+            style={styles.button}
+            textStyle={styles.buttonText}
+            onPress={onExportBackup}
+            loading={isExporting}
+          />
+          <LinearButton
+            label="Import .db"
+            variant="outline"
+            style={styles.button}
+            textTone="accent"
+            textStyle={styles.buttonText}
             onPress={onImportBackup}
             disabled={isImporting}
-          >
-            <LinearText variant="body" style={[styles.buttonText, styles.outlineButtonText]}>
-              Import .db
-            </LinearText>
-          </TouchableOpacity>
+          />
         </View>
         <LinearText variant="bodySmall" tone="muted" style={styles.hint}>
           Binary backup of the entire database. Recommended for full migrations.
@@ -64,19 +63,20 @@ function AdvancedToolsSection({
           Portability Backup (JSON)
         </LinearText>
         <View style={styles.row}>
-          <TouchableOpacity style={styles.button} onPress={onExportJsonBackup}>
-            <LinearText variant="body" style={styles.buttonText}>
-              Export JSON
-            </LinearText>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.button, styles.outlineButton]}
+          <LinearButton
+            label="Export JSON"
+            style={styles.button}
+            textStyle={styles.buttonText}
+            onPress={onExportJsonBackup}
+          />
+          <LinearButton
+            label="Import JSON"
+            variant="outline"
+            style={styles.button}
+            textTone="accent"
+            textStyle={styles.buttonText}
             onPress={onImportJsonBackup}
-          >
-            <LinearText variant="body" style={[styles.buttonText, styles.outlineButtonText]}>
-              Import JSON
-            </LinearText>
-          </TouchableOpacity>
+          />
         </View>
         <LinearText variant="bodySmall" tone="muted" style={styles.hint}>
           Human-readable backup. Better for partial restores or sync across platforms.
@@ -87,16 +87,24 @@ function AdvancedToolsSection({
         <LinearText variant="badge" tone="error" style={styles.dangerLabel}>
           Danger Zone
         </LinearText>
-        <TouchableOpacity style={styles.dangerButton} onPress={onClearCache}>
-          <LinearText variant="body" style={styles.dangerButtonText}>
-            Clear AI Content Cache
-          </LinearText>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.dangerButton} onPress={onResetProgress}>
-          <LinearText variant="body" style={styles.dangerButtonText}>
-            Reset All Study Progress
-          </LinearText>
-        </TouchableOpacity>
+        <View style={styles.dangerActions}>
+          <LinearButton
+            label="Clear AI Content Cache"
+            variant="outline"
+            textTone="error"
+            style={styles.dangerButton}
+            textStyle={styles.dangerButtonText}
+            onPress={onClearCache}
+          />
+          <LinearButton
+            label="Reset All Study Progress"
+            variant="outline"
+            textTone="error"
+            style={styles.dangerButton}
+            textStyle={styles.dangerButtonText}
+            onPress={onResetProgress}
+          />
+        </View>
       </View>
     </View>
   );
@@ -125,16 +133,8 @@ const styles = StyleSheet.create({
   row: { flexDirection: 'row', gap: 10 },
   button: {
     flex: 1,
-    backgroundColor: n.colors.accent,
-    borderRadius: 10,
-    padding: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-    height: 44,
   },
-  buttonText: { color: n.colors.textPrimary, fontSize: 13, fontWeight: '700' },
-  outlineButton: { backgroundColor: 'transparent', borderWidth: 1, borderColor: n.colors.accent },
-  outlineButtonText: { color: n.colors.accent },
+  buttonText: { fontSize: 13 },
   hint: { color: n.colors.textSecondary, fontSize: 11, marginTop: 6, lineHeight: 16 },
   dangerZone: {
     marginTop: 10,
@@ -142,6 +142,7 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: n.colors.border,
   },
+  dangerActions: { gap: 10 },
   dangerLabel: {
     color: n.colors.error,
     fontSize: 12,
@@ -150,9 +151,7 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
   },
   dangerButton: {
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: n.colors.border,
+    width: '100%',
   },
-  dangerButtonText: { color: n.colors.textSecondary, fontSize: 14 },
+  dangerButtonText: { fontSize: 14 },
 });

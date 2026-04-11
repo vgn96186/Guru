@@ -6,25 +6,19 @@
  */
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  StyleSheet,
-  ActivityIndicator,
-  Animated,
-} from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Animated } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { linearTheme as n } from '../theme/linearTheme';
+import LinearChipButton from './primitives/LinearChipButton';
+import LinearIconButton from './primitives/LinearIconButton';
 import { DEFAULT_HF_TRANSCRIPTION_MODEL } from '../config/appConfig';
 import { profileRepository } from '../db/repositories';
 import { updateUserProfile } from '../db/queries/progress';
 import { useAppStore } from '../store/useAppStore';
+import type { UserProfile } from '../types';
 import {
   testGroqConnection,
   testHuggingFaceConnection,
-  testCloudflareConnection,
   testDeepgramConnection,
 } from '../services/ai/providerHealth';
 
@@ -65,16 +59,16 @@ export default function TranscriptionSettingsPanel({
       setProvider(p.transcriptionProvider ?? 'auto');
       setHfToken(p.huggingFaceToken ?? '');
       setHfModel(p.huggingFaceTranscriptionModel ?? DEFAULT_HF_TRANSCRIPTION_MODEL);
-      setDeepgramKey((p as any).deepgramApiKey ?? '');
+      setDeepgramKey(p.deepgramApiKey ?? '');
       setGroqKey(p.groqApiKey ?? '');
     });
   }, []);
 
   const autoSave = useCallback(
-    (updates: Record<string, unknown>) => {
+    (updates: Partial<UserProfile>) => {
       if (saveTimer.current) clearTimeout(saveTimer.current);
       saveTimer.current = setTimeout(async () => {
-        await updateUserProfile(updates as any);
+        await updateUserProfile(updates);
         await refreshProfile();
       }, 600);
     },
@@ -180,15 +174,16 @@ export default function TranscriptionSettingsPanel({
         <Text style={s.label}>Provider</Text>
         <View style={s.providerRow}>
           {PROVIDERS.map(([val, label]) => (
-            <TouchableOpacity
+            <LinearChipButton
               key={val}
-              style={[s.providerBtn, provider === val && s.providerBtnActive]}
+              label={label}
+              style={s.providerBtn}
+              selected={provider === val}
+              selectedStyle={s.providerBtnActive}
+              textStyle={s.providerText}
+              selectedTextStyle={s.providerTextActive}
               onPress={() => handleProviderChange(val)}
-            >
-              <Text style={[s.providerText, provider === val && s.providerTextActive]}>
-                {label}
-              </Text>
-            </TouchableOpacity>
+            />
           ))}
         </View>
         <Text style={s.hint}>Auto: Groq → CF → HF → DG → Local</Text>
@@ -281,14 +276,15 @@ function TestButton({
   onPress: () => void;
 }) {
   return (
-    <TouchableOpacity
+    <LinearIconButton
+      variant="glass"
+      loading={testing}
+      spinnerColor={n.colors.accent}
       style={[s.testBtn, result === 'ok' && s.testBtnOk, result === 'fail' && s.testBtnFail]}
       onPress={onPress}
       disabled={testing}
     >
-      {testing ? (
-        <ActivityIndicator size="small" color={n.colors.accent} />
-      ) : (
+      {!testing ? (
         <Ionicons
           name={
             result === 'ok'
@@ -306,8 +302,8 @@ function TestButton({
                 : n.colors.accent
           }
         />
-      )}
-    </TouchableOpacity>
+      ) : null}
+    </LinearIconButton>
   );
 }
 
@@ -375,15 +371,9 @@ const s = StyleSheet.create({
     gap: 6,
   },
   providerBtn: {
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: n.colors.border,
     backgroundColor: n.colors.card,
   },
   providerBtnActive: {
-    borderColor: n.colors.accent,
     backgroundColor: n.colors.accent + '22',
   },
   providerText: { color: n.colors.textMuted, fontSize: 12, fontWeight: '600' },
@@ -405,14 +395,7 @@ const s = StyleSheet.create({
     paddingVertical: 8,
   },
   testBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
     backgroundColor: n.colors.card,
-    borderWidth: 1,
-    borderColor: n.colors.border,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   testBtnOk: {
     borderColor: n.colors.success + '66',

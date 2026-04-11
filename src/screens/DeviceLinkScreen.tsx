@@ -15,6 +15,7 @@ import { linearTheme as n } from '../theme/linearTheme';
 import { useAppStore } from '../store/useAppStore';
 import { profileRepository } from '../db/repositories';
 import { ResponsiveContainer } from '../hooks/useResponsive';
+import { normalizeSyncCode } from '../services/deviceSyncService';
 import ScreenHeader from '../components/ScreenHeader';
 import LinearButton from '../components/primitives/LinearButton';
 import LinearSurface from '../components/primitives/LinearSurface';
@@ -29,10 +30,14 @@ export default function DeviceLinkScreen() {
   const [code, setCode] = useState(profile?.syncCode || '');
 
   async function handleSave() {
-    const cleanCode = code.trim().toUpperCase();
+    const cleanCode = normalizeSyncCode(code);
     await profileRepository.updateProfile({ syncCode: cleanCode || null });
     await refreshProfile();
     navigation.goBack();
+  }
+
+  function handleCodeChange(value: string) {
+    setCode(normalizeSyncCode(value).slice(0, 16));
   }
 
   function generateCode() {
@@ -43,8 +48,7 @@ export default function DeviceLinkScreen() {
     for (let i = 0; i < 12; i++) {
       randomCode += chars.charAt(randomValues[i] % chars.length);
     }
-    const formattedCode = `${randomCode.substring(0, 4)}-${randomCode.substring(4, 8)}-${randomCode.substring(8, 12)}`;
-    setCode(formattedCode);
+    setCode(randomCode);
   }
 
   return (
@@ -74,11 +78,11 @@ export default function DeviceLinkScreen() {
             <LinearText style={styles.label}>Enter a shared Room Code on both devices:</LinearText>
             <LinearTextInput
               style={styles.input}
-              placeholder="e.g. NEETT2026"
+              placeholder="e.g. NEET2026"
               value={code}
-              onChangeText={setCode}
+              onChangeText={handleCodeChange}
               autoCapitalize="characters"
-              maxLength={14}
+              maxLength={16}
             />
 
             <TouchableOpacity

@@ -1,6 +1,7 @@
 import React from 'react';
-import { View, TextInput, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, TextInput, StyleSheet } from 'react-native';
 import { linearTheme as n } from '../../theme/linearTheme';
+import LinearButton from '../primitives/LinearButton';
 import LinearText from '../primitives/LinearText';
 
 interface ProfileSectionProps {
@@ -23,20 +24,16 @@ function ProfileSection({
           Tablet Sync is currently unavailable on this device (MQTT module missing).
         </LinearText>
       )}
-      <TouchableOpacity
+      <LinearButton
+        label="Link Another Device (Sync)"
+        variant="outline"
+        textTone={isSyncAvailable ? 'accent' : 'secondary'}
         style={[styles.linkBtn, !isSyncAvailable && styles.disabledBtn]}
         onPress={onLinkDevice}
         disabled={!isSyncAvailable}
-        accessibilityRole="button"
         accessibilityLabel="Link another device for sync"
-      >
-        <LinearText
-          variant="body"
-          style={[styles.linkBtnText, !isSyncAvailable && styles.disabledText]}
-        >
-          Link Another Device (Sync)
-        </LinearText>
-      </TouchableOpacity>
+        textStyle={[styles.linkBtnText, !isSyncAvailable && styles.disabledText]}
+      />
 
       <LinearText variant="label" style={styles.label}>
         Your Name
@@ -57,17 +54,9 @@ export default React.memo(ProfileSection);
 const styles = StyleSheet.create({
   container: { gap: 12 },
   syncWarning: { color: n.colors.error, fontSize: 12, marginBottom: 8 },
-  linkBtn: {
-    backgroundColor: n.colors.surface,
-    borderRadius: 10,
-    padding: 12,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: n.colors.border,
-    marginBottom: 8,
-  },
+  linkBtn: { marginBottom: 8 },
   disabledBtn: { opacity: 0.5 },
-  linkBtnText: { color: n.colors.accent, fontWeight: '700', fontSize: 14 },
+  linkBtnText: { fontSize: 14 },
   disabledText: { color: n.colors.textSecondary },
   label: { color: n.colors.textPrimary, fontSize: 13, fontWeight: '700' },
   input: {

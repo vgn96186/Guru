@@ -1,29 +1,22 @@
 #!/usr/bin/env node
 
-const fs = require('fs');
 const { spawn, spawnSync } = require('child_process');
 const http = require('http');
-const path = require('path');
 const { resolveAdbCommand } = require('./android-tooling');
 
 const ADB_PORT = '8081';
 const APP_PACKAGE = 'com.anonymous.gurustudy.dev';
 const APP_ACTIVITY = 'com.anonymous.gurustudy.MainActivity';
+const METRO_STATUS_URL = `http://127.0.0.1:${ADB_PORT}/status`;
 const DEV_CLIENT_URL =
   `exp+guru-study-dev://expo-development-client/?url=` +
   encodeURIComponent(`http://127.0.0.1:${ADB_PORT}`);
-const METRO_STATUS_URL = `http://127.0.0.1:${ADB_PORT}/status`;
 const WAIT_TIMEOUT_MS = 45_000;
 const POLL_INTERVAL_MS = 1_000;
 
-const ANDROID_DIR = path.join(process.cwd(), 'android');
-const METRO_LOG_PATH = path.join(process.cwd(), 'metro-dev.log');
-const METRO_ERR_LOG_PATH = path.join(process.cwd(), 'metro-dev.err.log');
-const NPX_CMD = process.platform === 'win32' ? 'npx.cmd' : 'npx';
 const ADB_CMD = resolveAdbCommand();
-const GRADLE_CMD = process.platform === 'win32' ? 'gradlew.bat' : './gradlew';
+const NPX_CMD = process.platform === 'win32' ? 'npx.cmd' : 'npx';
 const USE_SHELL_FOR_NPX = process.platform === 'win32';
-const USE_SHELL_FOR_GRADLE = process.platform === 'win32';
 
 function fail(message) {
   console.error(message);
@@ -71,9 +64,10 @@ function ensureDeviceConnected() {
 }
 
 function ensureAdbReverse() {
-  runSync(ADB_CMD, ['reverse', `tcp:${ADB_PORT}`, `tcp:${ADB_PORT}`], {
-    stdio: 'ignore',
-  });
+  const result = runSync(ADB_CMD, ['reverse', `tcp:${ADB_PORT}`, `tcp:${ADB_PORT}`]);
+  if (result.error || result.status !== 0) {
+    fail(`Failed to set adb reverse for Metro on port ${ADB_PORT}.`);
+  }
 }
 
 function isMetroRunning() {
@@ -109,47 +103,14 @@ async function waitForMetro() {
 }
 
 function startMetro() {
-  const outFd = fs.openSync(METRO_LOG_PATH, 'a');
-  const errFd = fs.openSync(METRO_ERR_LOG_PATH, 'a');
-  const metroEnv = {
-    ...process.env,
-    CI: process.env.CI || '1',
-    NODE_ENV: 'development',
-  };
-
-  const metroProcess = spawn(
+  return spawn(
     NPX_CMD,
     ['expo', 'start', '--dev-client', '--localhost', '--port', ADB_PORT, '-c'],
     {
-      stdio: ['ignore', outFd, errFd],
-      shell: USE_SHELL_FOR_NPX,
-      detached: true,
-      env: metroEnv,
-    },
-  );
-
-  metroProcess.unref();
-  return metroProcess;
-}
-
-function installDebugApp() {
-  const result = spawnSync(
-    GRADLE_CMD,
-    [':app:installDebug', '--console=plain', '--no-daemon', '-PreactNativeArchitectures=arm64-v8a'],
-    {
       stdio: 'inherit',
-      shell: USE_SHELL_FOR_GRADLE,
-      cwd: ANDROID_DIR,
-      env: process.env,
+      shell: USE_SHELL_FOR_NPX,
     },
   );
-
-  if (result.error) {
-    throw result.error;
-  }
-  if (typeof result.status === 'number' && result.status !== 0) {
-    process.exit(result.status);
-  }
 }
 
 function openDevClient() {
@@ -172,8 +133,9 @@ function openDevClient() {
   );
 
   if (result.error) {
-    throw result.error;
+    fail(result.error.message);
   }
+
   if (typeof result.status === 'number' && result.status !== 0) {
     process.exit(result.status);
   }
@@ -185,17 +147,45 @@ async function main() {
   ensureDeviceConnected();
   ensureAdbReverse();
 
+  let metroProcess = null;
   const metroAlreadyRunning = await isMetroRunning();
 
   if (!metroAlreadyRunning) {
-    startMetro();
+    metroProcess = startMetro();
+    metroProcess.on('exit', (code) => {
+      if (code !== 0 && code !== null) {
+        fail(`Metro exited early with code ${code}.`);
+      }
+    });
     await waitForMetro();
   } else {
     console.log('Metro already running on localhost:8081, reusing it.');
   }
 
-  installDebugApp();
   openDevClient();
+
+  if (!metroProcess) {
+    return;
+  }
+
+  const cleanup = () => {
+    if (metroProcess && !metroProcess.killed) {
+      metroProcess.kill();
+    }
+  };
+
+  process.on('SIGINT', () => {
+    cleanup();
+    process.exit(130);
+  });
+  process.on('SIGTERM', () => {
+    cleanup();
+    process.exit(143);
+  });
+
+  await new Promise((resolve) => {
+    metroProcess.on('exit', resolve);
+  });
 }
 
 main().catch((error) => {

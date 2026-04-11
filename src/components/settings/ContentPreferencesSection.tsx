@@ -1,6 +1,8 @@
 import React from 'react';
-import { View, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 import { linearTheme as n } from '../../theme/linearTheme';
+import LinearButton from '../primitives/LinearButton';
+import LinearChipButton from '../primitives/LinearChipButton';
 import LinearText from '../primitives/LinearText';
 import type { ContentType, Subject } from '../../types';
 
@@ -32,34 +34,40 @@ function ContentPreferencesSection({
         Pin subjects to limit sessions to those areas only.
       </LinearText>
       <View style={styles.chipGrid}>
-        {subjects.map((s) => {
-          const isFocused = focusSubjectIds.includes(s.id);
+        {subjects.map((subject) => {
+          const isFocused = focusSubjectIds.includes(subject.id);
           return (
-            <TouchableOpacity
-              key={s.id}
-              style={[
-                styles.chip,
-                isFocused && { backgroundColor: s.colorHex + '33', borderColor: s.colorHex },
-              ]}
-              onPress={() => onFocusSubjectToggle(s.id)}
-            >
-              <LinearText
-                variant="chip"
-                style={[styles.chipText, isFocused && { color: s.colorHex }]}
-              >
-                {s.shortCode}
-              </LinearText>
-            </TouchableOpacity>
+            <LinearChipButton
+              key={subject.id}
+              label={subject.shortCode}
+              style={styles.chip}
+              selected={isFocused}
+              selectedStyle={
+                isFocused
+                  ? {
+                      backgroundColor: subject.colorHex + '33',
+                      borderColor: subject.colorHex,
+                    }
+                  : undefined
+              }
+              textStyle={styles.chipText}
+              selectedTextStyle={isFocused ? { color: subject.colorHex } : undefined}
+              onPress={() => onFocusSubjectToggle(subject.id)}
+            />
           );
         })}
       </View>
-      {focusSubjectIds.length > 0 && (
-        <TouchableOpacity onPress={onClearFocus} style={styles.clearBtn}>
-          <LinearText variant="bodySmall" tone="accent" style={styles.clearBtnText}>
-            Clear focus (study all)
-          </LinearText>
-        </TouchableOpacity>
-      )}
+      {focusSubjectIds.length > 0 ? (
+        <LinearButton
+          label="Clear focus (study all)"
+          size="sm"
+          variant="ghost"
+          textTone="accent"
+          style={styles.clearBtn}
+          textStyle={styles.clearBtnText}
+          onPress={onClearFocus}
+        />
+      ) : null}
 
       <View style={styles.divider} />
 
@@ -73,26 +81,27 @@ function ContentPreferencesSection({
         {allContentTypes.map(({ type, label }) => {
           const isBlocked = blockedTypes.includes(type);
           const isLocked = type === 'keypoints';
+
           return (
-            <TouchableOpacity
+            <LinearChipButton
               key={type}
-              style={[styles.chip, isBlocked && styles.chipBlocked, isLocked && styles.chipLocked]}
+              label={label}
+              style={[styles.chip, isLocked && styles.chipLocked]}
+              selected={isBlocked}
+              tone={isBlocked ? 'error' : 'accent'}
+              selectedStyle={isBlocked ? styles.chipBlocked : undefined}
+              textStyle={styles.chipText}
+              selectedTextStyle={isBlocked ? styles.chipTextBlocked : undefined}
+              rightIcon={
+                isBlocked ? (
+                  <LinearText variant="badge" tone="error" style={styles.chipX}>
+                    X
+                  </LinearText>
+                ) : undefined
+              }
               onPress={() => !isLocked && onContentTypeToggle(type)}
               disabled={isLocked}
-            >
-              <LinearText
-                variant="chip"
-                style={[styles.chipText, isBlocked && styles.chipTextBlocked]}
-              >
-                {label}
-              </LinearText>
-              {isBlocked && (
-                <LinearText variant="badge" tone="error" style={styles.chipX}>
-                  {' '}
-                  ✕
-                </LinearText>
-              )}
-            </TouchableOpacity>
+            />
           );
         })}
       </View>
@@ -113,22 +122,13 @@ const styles = StyleSheet.create({
   },
   hint: { color: n.colors.textSecondary, fontSize: 11, lineHeight: 16, marginBottom: 4 },
   chipGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  chip: {
-    backgroundColor: n.colors.surface,
-    borderRadius: 20,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderWidth: 1,
-    borderColor: n.colors.border,
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
+  chip: {},
   chipText: { color: n.colors.textSecondary, fontSize: 12, lineHeight: 18, fontWeight: '600' },
-  chipBlocked: { backgroundColor: `${n.colors.error}22`, borderColor: n.colors.error },
+  chipBlocked: { borderColor: n.colors.error },
   chipTextBlocked: { color: n.colors.error },
   chipLocked: { opacity: 0.5 },
   chipX: { color: n.colors.error, fontSize: 10, lineHeight: 14, marginLeft: 4 },
-  clearBtn: { padding: 8, alignItems: 'center' },
-  clearBtnText: { color: n.colors.accent, fontSize: 12, lineHeight: 18, fontWeight: '600' },
+  clearBtn: { alignSelf: 'center' },
+  clearBtnText: { fontSize: 12, lineHeight: 18, fontWeight: '600' },
   divider: { height: 1, backgroundColor: n.colors.border, marginVertical: 8 },
 });

@@ -10,16 +10,40 @@ import {
   markLectureCompleted,
   type NextLectureInfo,
 } from '../../db/queries/lectureSchedule';
-import type { LectureBatchId } from '../../constants/lectureSchedule';
+import { getBatchById, type LectureBatchId } from '../../constants/lectureSchedule';
 import { SUBJECTS_SEED } from '../../constants/syllabus';
 import { launchMedicalApp, type SupportedMedicalApp } from '../../services/appLauncher';
 import { useAppStore } from '../../store/useAppStore';
 import * as Haptics from 'expo-haptics';
+import HomeSectionHeader from './HomeSectionHeader';
+import { HOME_SECTION_GAP, HOME_TILE_HEIGHT } from './homeLayout';
 
 const subjectColorMap = new Map(SUBJECTS_SEED.map((s) => [s.id, s.colorHex]));
+const HOME_LECTURE_BATCH_ORDER: LectureBatchId[] = ['dbmci_one', 'btr'];
 
 function getSubjectColor(subjectId: number): string {
   return subjectColorMap.get(subjectId) ?? n.colors.accent;
+}
+
+function getEmptyStateCopy(batchShortName: string, hasLoaded: boolean, loadFailed: boolean) {
+  if (!hasLoaded) {
+    return {
+      title: 'Loading next lecture',
+      body: `Checking your ${batchShortName} schedule.`,
+    };
+  }
+
+  if (loadFailed) {
+    return {
+      title: 'Lecture unavailable',
+      body: `We could not load the ${batchShortName} slot right now.`,
+    };
+  }
+
+  return {
+    title: `${batchShortName} batch complete`,
+    body: 'No pending lecture is left in this batch right now.',
+  };
 }
 
 interface NextLectureSectionProps {
@@ -29,13 +53,19 @@ interface NextLectureSectionProps {
 export default function NextLectureSection({ onLectureCompleted }: NextLectureSectionProps) {
   const [lectures, setLectures] = useState<NextLectureInfo[]>([]);
   const [busyBatch, setBusyBatch] = useState<LectureBatchId | null>(null);
+  const [hasLoaded, setHasLoaded] = useState(false);
+  const [loadFailed, setLoadFailed] = useState(false);
 
   const loadLectures = useCallback(async () => {
     try {
+      setLoadFailed(false);
       const next = await getNextLectures();
       setLectures(next);
     } catch (e) {
       console.warn('[NextLecture] Failed to load:', e);
+      setLoadFailed(true);
+    } finally {
+      setHasLoaded(true);
     }
   }, []);
 
@@ -78,78 +108,92 @@ export default function NextLectureSection({ onLectureCompleted }: NextLectureSe
     [loadLectures, onLectureCompleted],
   );
 
-  if (lectures.length === 0) return null;
+  const lectureByBatch = new Map(lectures.map((info) => [info.batchId, info]));
 
   return (
     <View style={styles.container}>
-      {lectures.map((info) => {
-        const pct = Math.round((info.completedCount / info.totalCount) * 100);
-        const subColor = getSubjectColor(info.lecture.subjectId);
-        const isBusy = busyBatch === info.batchId;
+      {HOME_LECTURE_BATCH_ORDER.map((batchId) => {
+        const batch = getBatchById(batchId);
+        if (!batch) return null;
+
+        const info = lectureByBatch.get(batchId);
+        const emptyState = getEmptyStateCopy(batch.shortName, hasLoaded, loadFailed);
+        const isBusy = info ? busyBatch === info.batchId : false;
+        const pct = info ? Math.round((info.completedCount / info.totalCount) * 100) : 0;
+        const subColor = info ? getSubjectColor(info.lecture.subjectId) : n.colors.border;
 
         return (
-          <View key={info.batchId} style={styles.sectionWrap}>
-            <LinearText variant="chip" tone="muted" style={styles.sectionLabel}>
-              {info.batchShortName} LECTURE
-            </LinearText>
-            <Pressable
-              onPress={() => handleCardPress(info)}
-              style={({ pressed }) => [styles.cardPressable, pressed && styles.cardPressed]}
-              accessibilityRole="button"
-              accessibilityLabel={`Open ${info.batchShortName} lecture: ${info.lecture.title}`}
-            >
-              <LinearSurface compact style={styles.card}>
-                {/* Lecture info */}
-                <View style={styles.lectureRow}>
-                  <View style={[styles.subjectDot, { backgroundColor: subColor }]} />
-                  <View style={styles.lectureInfo}>
-                    <LinearText
-                      variant="body"
-                      tone="primary"
-                      style={styles.lectureTitle}
-                      numberOfLines={1}
+          <View key={batch.id} style={styles.sectionWrap}>
+            <HomeSectionHeader label={`${batch.shortName} LECTURE`} />
+            {info ? (
+              <Pressable
+                onPress={() => handleCardPress(info)}
+                style={({ pressed }) => [styles.cardPressable, pressed && styles.cardPressed]}
+                accessibilityRole="button"
+                accessibilityLabel={`Open ${info.batchShortName} lecture: ${info.lecture.title}`}
+              >
+                <LinearSurface compact style={styles.card}>
+                  <View style={styles.lectureRow}>
+                    <View style={[styles.subjectDot, { backgroundColor: subColor }]} />
+                    <View style={styles.lectureInfo}>
+                      <LinearText
+                        variant="body"
+                        tone="primary"
+                        style={styles.lectureTitle}
+                        numberOfLines={1}
+                      >
+                        {info.lecture.title}
+                      </LinearText>
+                      <LinearText variant="caption" tone="muted" style={styles.lectureSubtitle}>
+                        Lecture {info.lecture.index} - {info.completedCount}/{info.totalCount} (
+                        {pct}%)
+                      </LinearText>
+                    </View>
+                    <Pressable
+                      style={({ pressed }) => [
+                        styles.doneBtn,
+                        pressed && styles.doneBtnPressed,
+                        isBusy && styles.doneBtnBusy,
+                      ]}
+                      onPress={(e) => {
+                        e.stopPropagation();
+                        void handleMarkDone(info);
+                      }}
+                      disabled={isBusy}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Mark ${info.lecture.title} as done`}
+                      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                     >
-                      {info.lecture.title}
-                    </LinearText>
-                    <LinearText variant="caption" tone="muted" style={styles.lectureSubtitle}>
-                      Lecture {info.lecture.index} • {info.completedCount}/{info.totalCount} ({pct}
-                      %)
-                    </LinearText>
+                      <Ionicons
+                        name={isBusy ? 'hourglass-outline' : 'checkmark'}
+                        size={16}
+                        color={isBusy ? n.colors.textMuted : n.colors.success}
+                      />
+                    </Pressable>
                   </View>
-                  <Pressable
-                    style={({ pressed }) => [
-                      styles.doneBtn,
-                      pressed && styles.doneBtnPressed,
-                      isBusy && styles.doneBtnBusy,
-                    ]}
-                    onPress={(e) => {
-                      e.stopPropagation();
-                      void handleMarkDone(info);
-                    }}
-                    disabled={isBusy}
-                    accessibilityRole="button"
-                    accessibilityLabel={`Mark ${info.lecture.title} as done`}
-                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                  >
-                    <Ionicons
-                      name={isBusy ? 'hourglass-outline' : 'checkmark'}
-                      size={16}
-                      color={isBusy ? n.colors.textMuted : n.colors.success}
-                    />
-                  </Pressable>
-                </View>
 
-                {/* Progress bar */}
-                <View style={styles.progressBar}>
-                  <View
-                    style={[
-                      styles.progressFill,
-                      { width: `${pct}%`, backgroundColor: info.batchColor },
-                    ]}
-                  />
+                  <View style={styles.progressBar}>
+                    <View
+                      style={[
+                        styles.progressFill,
+                        { width: `${pct}%`, backgroundColor: info.batchColor },
+                      ]}
+                    />
+                  </View>
+                </LinearSurface>
+              </Pressable>
+            ) : (
+              <LinearSurface compact style={[styles.card, styles.emptyCard]}>
+                <View style={styles.emptyCardContent}>
+                  <LinearText variant="bodySmall" tone="primary" style={styles.emptyTitle}>
+                    {emptyState.title}
+                  </LinearText>
+                  <LinearText variant="caption" tone="muted" style={styles.emptyBody}>
+                    {emptyState.body}
+                  </LinearText>
                 </View>
               </LinearSurface>
-            </Pressable>
+            )}
           </View>
         );
       })}
@@ -159,7 +203,7 @@ export default function NextLectureSection({ onLectureCompleted }: NextLectureSe
 
 const styles = StyleSheet.create({
   container: {
-    // empty container, styling pushed to sectionWrap
+    gap: HOME_SECTION_GAP,
   },
   cardPressable: {
     width: '100%',
@@ -168,25 +212,35 @@ const styles = StyleSheet.create({
     opacity: 0.92,
     transform: [{ scale: 0.99 }],
   },
-  sectionWrap: {
-    marginBottom: n.spacing.md,
-  },
-  sectionLabel: {
-    color: n.colors.textMuted,
-    fontWeight: '800' as const,
-    fontSize: 11,
-    letterSpacing: 1.5,
-    marginBottom: n.spacing.md,
-    textTransform: 'uppercase',
-  },
+  sectionWrap: {},
   card: {
-    marginBottom: 12,
-    height: 135,
+    height: HOME_TILE_HEIGHT,
     paddingVertical: 12,
     paddingHorizontal: 14,
     justifyContent: 'space-between',
   },
-
+  emptyCard: {
+    justifyContent: 'center',
+  },
+  emptyCardContent: {
+    borderLeftWidth: 2,
+    borderLeftColor: n.colors.border,
+    paddingLeft: 14,
+    paddingRight: 8,
+  },
+  emptyTitle: {
+    color: n.colors.textPrimary,
+    fontSize: 13,
+    fontWeight: '700',
+    lineHeight: 18,
+  },
+  emptyBody: {
+    color: n.colors.textMuted,
+    fontSize: 11,
+    fontWeight: '500',
+    lineHeight: 16,
+    marginTop: 4,
+  },
   lectureRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -230,16 +284,15 @@ const styles = StyleSheet.create({
   doneBtnPressed: {
     opacity: 0.88,
   },
-
   progressBar: {
     position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
-    height: 4, // thicker
+    height: 4,
     backgroundColor: n.colors.border,
     overflow: 'hidden',
-    borderBottomLeftRadius: 16, // matches typical LinearSurface rounding
+    borderBottomLeftRadius: 16,
     borderBottomRightRadius: 16,
   },
   progressFill: {

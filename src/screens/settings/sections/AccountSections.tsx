@@ -1,13 +1,40 @@
 import React from 'react';
 import { ActivityIndicator, Platform, TouchableOpacity } from 'react-native';
+import SettingsField from '../components/SettingsField';
 import SettingsPermissionRow from '../components/SettingsPermissionRow';
+import type { SettingsSectionToggleProps } from '../components/SettingsSectionAccordion';
 import ProfileSection from './ProfileSection';
-import SettingsLabel from '../components/SettingsLabel';
-import LinearTextInput from '../../../components/primitives/LinearTextInput';
 import LinearText from '../../../components/primitives/LinearText';
 import { linearTheme } from '../../../theme/linearTheme';
 
-export default function AccountSections(props: any) {
+interface AccountSectionsProps {
+  styles: Record<string, object>;
+  SectionToggle: (props: SettingsSectionToggleProps) => React.ReactElement;
+  navigation: { navigate: (screen: string) => void };
+  permStatus: {
+    notifs: string;
+    mic: string;
+    localFiles: string;
+    overlay: string;
+  };
+  onRequestNotifications: () => void;
+  onRequestMic: () => void;
+  onRequestLocalFiles: () => void;
+  onRequestOverlay: () => void;
+  onOpenSystemSettings: () => void;
+  onOpenDevConsole: () => void;
+  name: string;
+  setName: (value: string) => void;
+  inicetDate: string;
+  setInicetDate: (value: string) => void;
+  neetDate: string;
+  setNeetDate: (value: string) => void;
+  handleAutoFetchDates: () => void;
+  fetchingDates: boolean;
+  fetchDatesMsg: string;
+}
+
+export default function AccountSections(props: AccountSectionsProps) {
   const {
     styles,
     SectionToggle,
@@ -51,20 +78,20 @@ export default function AccountSections(props: any) {
           status={permStatus.mic}
           onFix={onRequestMic}
         />
-        {Platform.OS === 'android' && (
+        {Platform.OS === 'android' ? (
           <SettingsPermissionRow
             label="Local File Access (Audio Imports)"
             status={permStatus.localFiles}
             onFix={onRequestLocalFiles}
           />
-        )}
-        {Platform.OS === 'android' && (
+        ) : null}
+        {Platform.OS === 'android' ? (
           <SettingsPermissionRow
             label="Draw Over Apps (Break Overlay)"
             status={permStatus.overlay}
             onFix={onRequestOverlay}
           />
-        )}
+        ) : null}
         <TouchableOpacity style={styles.diagBtn} onPress={onOpenSystemSettings}>
           <LinearText variant="body" style={styles.diagBtnText}>
             Open System Settings
@@ -86,16 +113,14 @@ export default function AccountSections(props: any) {
       />
 
       <SectionToggle id="exam_dates" title="Exam Dates" icon="calendar-outline" tint="#FF9800">
-        <SettingsLabel text="INICET date (YYYY-MM-DD)" />
-        <LinearTextInput
-          style={styles.input}
+        <SettingsField
+          label="INICET date (YYYY-MM-DD)"
           value={inicetDate}
           onChangeText={setInicetDate}
           placeholderTextColor={linearTheme.colors.textMuted}
         />
-        <SettingsLabel text="NEET-PG date (YYYY-MM-DD)" />
-        <LinearTextInput
-          style={styles.input}
+        <SettingsField
+          label="NEET-PG date (YYYY-MM-DD)"
           value={neetDate}
           onChangeText={setNeetDate}
           placeholderTextColor={linearTheme.colors.textMuted}
@@ -110,7 +135,7 @@ export default function AccountSections(props: any) {
             <ActivityIndicator size="small" color={linearTheme.colors.accent} />
           ) : (
             <LinearText variant="body" style={styles.autoFetchBtnText}>
-              🤖 Auto-fetch dates via AI
+              Auto-fetch dates via AI
             </LinearText>
           )}
         </TouchableOpacity>

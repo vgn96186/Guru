@@ -1,7 +1,7 @@
 # Guru — AI Context File
 
 React Native (Expo) NEET-PG/INICET medical study app for Android.
-Target user: ADHD medical student. Stack: Expo SDK 52, expo-sqlite (sync), TypeScript.
+Target user: ADHD medical student. Stack: Expo SDK 54, expo-sqlite (async), TypeScript.
 
 ---
 
@@ -15,7 +15,7 @@ Target user: ADHD medical student. Stack: Expo SDK 52, expo-sqlite (sync), TypeS
 - **Secondary:** Strong rank in INICET (which serves as practice and a real exam).
 - Both exams require genuine mastery of all 19 NEET-PG subjects, not just surface-level watching.
 
-### Current Situation (as of April 2026)
+### Current Planning Assumptions (last manually updated: April 2026)
 
 - **DBMCI One live batch:** Not yet started — 0 lectures watched. Will begin soon.
 - **BTR (Back to Roots) batch:** Partially completed — several subjects done, a few remaining.
@@ -55,24 +55,24 @@ Seeing a topic = 0 points toward the exam. Mastering it = 1 point.
 src/
   screens/          # Full-screen views
   components/       # Reusable UI pieces
-  services/         # Business logic (AI, audio, sync, planning)
+  services/         # Business logic (AI, audio, sync, planning, lecture pipeline)
   db/
     schema.ts       # All CREATE TABLE statements
     database.ts     # getDb() singleton (expo-sqlite)
     migrations.ts   # Versioned migrations + migration_history audit
     queries/        # One file per domain (topics, progress, sessions, aiCache, externalLogs, brainDumps)
     repositories/   # profileRepository, dailyLogRepository — abstraction for stores
-  hooks/            # useAppInitialization, useAppBootstrap, useGuruPresence, useResponsive, useFaceTracking, useIdleTimer
+  hooks/            # Bootstrap, AppState, lecture recovery, responsive/layout hooks
   navigation/
     types.ts        # All stack param lists
     RootNavigator   # Root modal stack (overlays BedLock, Punishment, etc.)
-    TabNavigator    # 5 tabs: Home, Syllabus, Plan, Stats, Settings
+    TabNavigator    # 4 tabs: Home, Syllabus, Chat, Menu
   store/
     useAppStore.ts  # Zustand store — profile, levelInfo, refreshProfile
   types/index.ts    # Re-exports from schemas + remaining interfaces
   schemas/          # Zod schemas — single source of truth (Mood, DailyLog, ContentType, etc.)
   config/
-    appConfig.ts    # Exam dates, AI model lists, env vars (DEFAULT_INICET_DATE, GROQ_MODELS)
+    appConfig.ts    # Exam dates, provider/model config, env-driven defaults
   constants/
     prompts.ts      # All LLM prompts
     syllabus.ts     # Seeded NEET-PG topic tree
@@ -102,13 +102,13 @@ modules/
 
 ### App Bootstrap (replaces scripts/ patching)
 
-- **Cold start:** `src/services/appBootstrap.ts` — `runAppBootstrap()` orchestrates DB init, offline queue, background fetch, confidence decay, local model download. Called once from `App.tsx`.
-- **Post-mount:** `src/hooks/useAppBootstrap.ts` — profile load, exam date sync, accountability notifications, WakeUp notification routing, AppState listeners. Used by `AppContent`.
+- **Cold start:** `src/services/appBootstrap.ts` — `runAppBootstrap()` orchestrates DB init, backup restore checks, offline queue processing, background fetch registration, confidence decay, and local model bootstrap. Called once from `App.tsx`.
+- **Post-mount:** `src/hooks/useAppBootstrap.ts` — profile load, exam date sync, notification refresh, WakeUp routing, provider validation, and auto-backup checks. Used by `AppContent`.
 - `src/navigation/navigationRef.ts` — shared `navigationRef` for imperative navigation (e.g. WakeUp from notification tap).
 
 ### Configuration & Schemas
 
-- **appConfig** (`src/config/appConfig.ts`) — `DEFAULT_INICET_DATE`, `DEFAULT_NEET_DATE` (env: `EXPO_PUBLIC_DEFAULT_*`), `OPENROUTER_FREE_MODELS`, `GROQ_MODELS`, `BUNDLED_GROQ_KEY`. Used by schema, migrations, progress, SettingsScreen, ai/config.
+- **appConfig** (`src/config/appConfig.ts`) — exam dates, provider model lists, OAuth/client IDs, and env-driven defaults. Release builds do **not** ship bundled API keys.
 - **Schemas** (`src/schemas/core.ts`) — Zod schemas for Mood, ContentType, DailyLog, TopicStatus, etc. Types derived via `z.infer`. `types/index.ts` re-exports.
 
 ### AI Service Routing (`src/services/aiService.ts` and `src/services/ai/`)
@@ -118,10 +118,10 @@ modules/
 - Local LLM: llama.rn / MedGemma/Qwen via `profile.localModelPath` when `profile.useLocalModel = true`.
 - Default local model: **MedGemma 4B** (best domain fit for medical reasoning on-device).
 - Local Whisper: whisper.rn via `profile.localWhisperPath` when `profile.useLocalWhisper = true`.
-- Cloud fallback chain: **Groq** (fastest, bundled key) → OpenRouter free models.
-- Groq: `profile.groqApiKey` or bundled `BUNDLED_GROQ_KEY`. Models: llama-3.3-70b-versatile, llama-3.1-8b-instant.
-- OpenRouter: free models via `profile.openrouterKey` (Llama 3.3, Qwen 2.5, DeepSeek, Mistral).
-- Routing order: **cloud first** (Groq → OpenRouter), then local fallback. Groq is the primary AI backend.
+- Cloud routing is **provider-order driven**, using `profile.providerOrder` / `disabledProviders` with a broad provider set: ChatGPT, GitHub Copilot, GitLab Duo, Poe, OpenRouter, Groq, Qwen, AgentRouter, GitHub Models, Kilo, DeepSeek, Gemini, and Cloudflare.
+- Explicit model ids like `groq/...`, `chatgpt/...`, `github_copilot/...`, `gitlab_duo/...`, `poe/...`, `gemini/...`, `cf/...`, `qwen/...` short-circuit to the selected provider.
+- OpenRouter still uses `profile.openrouterKey`; `profile.openrouterApiKey` is legacy-only.
+- Groq still uses `profile.groqApiKey`, but release builds do not rely on bundled Groq credentials.
 - `generateJSONWithRouting()` — for structured JSON output.
 - `generateTextWithRouting()` — for free-text output.
 
@@ -130,7 +130,7 @@ modules/
 ```typescript
 profile.openrouterApiKey; // = legacy field (kept for backward compatibility, not actively used)
 profile.openrouterKey; // = OpenRouter key for free model fallbacks
-profile.groqApiKey; // = Groq API key (falls back to BUNDLED_GROQ_KEY if empty)
+profile.groqApiKey; // = Groq API key
 ```
 
 ---
@@ -142,11 +142,11 @@ profile.groqApiKey; // = Groq API key (falls back to BUNDLED_GROQ_KEY if empty)
 **Trigger:** User taps a lecture app in `ExternalToolsRow` on HomeScreen.
 
 1. `ExternalToolsRow` → `launchMedicalApp(app.id)` in `src/services/appLauncher.ts`
-2. `launchMedicalApp` → requests MediaProjection or mic permission → `startRecording(packageName)` → `launchApp(packageName)` → `showOverlay(appName)` → logs to `external_app_logs` via `startExternalAppSession()`
+2. `launchMedicalApp` → requests mic + overlay permission → `startRecording(''[, liveTranscriptionKey, insightGenerationKey])` → `launchApp(packageName)` → `showOverlay(appName, faceTracking, pomodoroEnabled, pomodoroIntervalMinutes)` → logs to `external_app_logs` via `startExternalAppSession()`
 3. Native `RecordingService.kt` records audio in background as `.m4a` in `context.filesDir`
 4. Native `OverlayService.kt` shows draggable floating timer bubble (purple ring = no face tracking, green/orange/red = ML Kit face states)
-5. User returns to Guru → `HomeScreen` AppState listener fires → `checkForReturnedSession()` → stops recording + overlay → shows `LectureReturnSheet`
-6. `LectureReturnSheet` → `transcribeWithGroq()` or `transcribeWithLocalWhisper()` from `src/services/transcriptionService.ts` → structured `LectureAnalysis` → `markTopicsFromLecture()` updates `topic_progress` DB
+5. User returns to Guru → lecture recovery flow stops recording + overlay → shows `LectureReturnSheet`
+6. `LectureReturnSheet` / recovery pipeline → `transcribeAudio({ audioFilePath })` from `src/services/transcriptionService.ts` → structured `LectureAnalysis` → `markTopicsFromLecture()` updates `topic_progress` DB
 7. User taps "Mark as Studied" → `markTopicsFromLecture()` + `addXp()` + optional quiz via `catalyzeTranscript()`
 
 ### Flow B: In-App Recording (LectureModeScreen "Hostage Mode")
@@ -154,16 +154,17 @@ profile.groqApiKey; // = Groq API key (falls back to BUNDLED_GROQ_KEY if empty)
 **Trigger:** User navigates to `LectureMode` screen (phone stays open, tablet runs lecture).
 
 1. Toggle "Auto-Scribe" → starts `Audio.Recording` loop (3-minute chunks)
-2. Each chunk → `processRecording()` → `transcribeWithGroq()` or local Whisper → `LectureAnalysis`
+2. Each chunk → `processRecording()` → `transcribeAudio({ audioFilePath })` → `LectureAnalysis`
 3. Calls `markTopicsFromLecture(getDb(), analysis.topics, analysis.estimatedConfidence, analysis.subject)` to update DB
 4. Saves formatted note: `[Subject] summary\n• concept1\n• concept2`
 5. Proof-of-Life check every 15 min — user must type what professor just said
 
 ### Key transcription files
 
-- `src/services/transcriptionService.ts` — `transcribeWithGroq()`, `transcribeWithLocalWhisper()`, `transcribeWithOpenAI()`, `markTopicsFromLecture()`
-- `src/services/aiService.ts` — `transcribeAndSummarizeAudio()` (legacy, returns plain text only — do NOT use for knowledge base updates), `catalyzeTranscript()` (structured analysis from transcript text)
-- `src/db/queries/aiCache.ts` — `saveLectureNote()` (saves raw note text)
+- `src/services/transcriptionService.ts` — public barrel for `transcribeAudio()`, `analyzeTranscript()`, `markTopicsFromLecture()`
+- `src/services/transcription/` — implementation for audio transcription, transcript analysis, note generation, and matching
+- `src/services/aiService.ts` — barrel re-export for AI generation helpers including `catalyzeTranscript()`
+- `src/db/queries/aiCache.ts` — `saveLectureNote()` / transcript persistence into `lecture_notes`
 
 ### `markTopicsFromLecture()` matching strategy (5 levels)
 
@@ -178,20 +179,24 @@ profile.groqApiKey; // = Groq API key (falls back to BUNDLED_GROQ_KEY if empty)
 
 ## Native Module: `modules/app-launcher`
 
-JS API (`modules/app-launcher/index.ts`):
+Selected JS API (`modules/app-launcher/index.ts`, not exhaustive):
 
 ```typescript
 launchApp(packageName); // Intent-based app launch
 isAppInstalled(packageName); // Check installation
 getAppUid(packageName); // For audio capture filtering
 requestMediaProjection(); // System dialog for internal audio capture (Android 10+)
-startRecording(targetPackage); // Starts RecordingService (mic or internal)
+startRecording(targetPackage, liveTranscriptionKey?, insightGenerationKey?); // Starts RecordingService
 stopRecording(); // Returns .m4a path
 deleteRecording(path); // Cleanup after transcription
 canDrawOverlays(); // Check SYSTEM_ALERT_WINDOW
 requestOverlayPermission(); // Open settings
-showOverlay(appName, faceTracking); // Start OverlayService foreground
+showOverlay(appName, faceTracking, pomodoroEnabled, pomodoroIntervalMinutes); // Start OverlayService foreground
 hideOverlay(); // Stop OverlayService
+listPublicBackups(); // Restore/backup support
+copyFileFromPublicBackup(filename, destPath); // Restore helper
+hasAllFilesAccess(); // Android scoped storage helper
+pickFolderAndScan(); // Manual recording import helper
 ```
 
 OverlayService bubble colors: purple=neutral, green=focused, orange=drowsy/distracted, red=absent (sends notification after 15s absent).
@@ -202,36 +207,32 @@ OverlayService bubble colors: purple=neutral, green=focused, orange=drowsy/distr
 
 ### Root Stack (modal overlays — always on top)
 
-`RootStackParamList`: PunishmentMode, BedLock, DoomscrollInterceptor, BreakEnforcer, DeviceLink, DoomscrollGuide, Lockdown, CheckIn, Tabs, BrainDumpReview, SleepMode, WakeUp, LocalModel
+`RootStackParamList`: PunishmentMode, BedLock, DoomscrollInterceptor, BreakEnforcer, DoomscrollGuide, Lockdown, CheckIn, Tabs, BrainDumpReview, SleepMode, WakeUp, LocalModel, PomodoroQuiz
 
 ### Tabs (inside `Tabs` route)
 
-HomeTab, SyllabusTab, PlanTab, StatsTab, SettingsTab
+HomeTab, SyllabusTab, ChatTab, MenuTab
 
 ### HomeStack (within HomeTab)
 
-`HomeStackParamList`: Home, Session, LectureMode, MockTest, Review, NotesSearch, BossBattle, Inertia, ManualLog, StudyPlan, DailyChallenge, FlaggedReview
+`HomeStackParamList`: Home, Session, LectureMode, MockTest, Review, BossBattle, Inertia, ManualLog, DailyChallenge, FlaggedReview, GlobalTopicSearch
 
 ### SyllabusStack
 
 `SyllabusStackParamList`: Syllabus, TopicDetail
 
+### MenuStack
+
+`MenuStackParamList`: StudyPlan, Stats, Flashcards, MindMap, Settings, DeviceLink, NotesHub, NotesSearch, ManualNoteCreation, TranscriptHistory, RecordingVault, ImageVault, NotesVault, TranscriptVault, QuestionBank, FlaggedContent
+
 ---
 
 ## Database Schema Summary
 
-| Table               | Purpose                                                                                                 |
-| ------------------- | ------------------------------------------------------------------------------------------------------- |
-| `subjects`          | 19 NEET-PG subjects (seeded, static)                                                                    |
-| `topics`            | Topic tree with `parent_topic_id`, `subject_id`, `inicet_priority`                                      |
-| `topic_progress`    | Per-topic status/confidence/FSRS fields — the progress KB                                               |
-| `sessions`          | Study session records with XP, mood, duration                                                           |
-| `daily_log`         | One row per day — minutes, XP, mood                                                                     |
-| `ai_cache`          | Cached AI content per topic+contentType (keypoints/quiz/story/mnemonic/teach_back/error_hunt/detective) |
-| `lecture_notes`     | Free-text notes saved during lectures                                                                   |
-| `user_profile`      | Single row (id=1) — all user settings and API keys                                                      |
-| `brain_dumps`       | Quick capture notes                                                                                     |
-| `external_app_logs` | Records of lecture app sessions (`returned_at NULL` = active session)                                   |
+- Core study tables: `subjects`, `topics`, `topic_progress`, `sessions`, `daily_log`
+- AI and lecture tables: `ai_cache`, `lecture_notes`, `lecture_learned_topics`, `question_bank`, `content_fact_checks`, `user_content_flags`
+- Planning and profile tables: `user_profile`, `daily_agenda`, `plan_events`, `lecture_schedule_progress`, `external_app_logs`, `brain_dumps`, `offline_ai_queue`
+- Chat and media tables: `guru_chat_threads`, `guru_chat_session_memory`, `chat_history`, `generated_study_images`, `mind_maps`, `mind_map_nodes`, `mind_map_edges`
 
 ---
 
@@ -247,9 +248,9 @@ Always call `refreshProfile()` after XP or profile mutations so UI reflects chan
 
 ## Content Types & AI Cards
 
-`ContentType`: `keypoints | quiz | story | mnemonic | teach_back | error_hunt | detective`
+`ContentType`: `keypoints | must_know | quiz | story | mnemonic | teach_back | error_hunt | detective | manual | socratic | flashcards`
 
-- Fetched via `fetchContent(topic, contentType)` in `aiService.ts`
+- Fetched via `fetchContent(topic, contentType)` from the AI service barrel
 - Cached in `ai_cache` table (one row per topic+type)
 - All schemas are Zod-validated in `aiService.ts`
 
@@ -311,10 +312,11 @@ When writing memory:
 
 - `profile.openrouterApiKey` = legacy field (kept for backward compatibility, not actively used in routing).
 - `profile.openrouterKey` = actual OpenRouter key for free model fallbacks.
-- `transcribeAndSummarizeAudio()` in `aiService.ts` is a legacy function returning plain text — it does NOT call `markTopicsFromLecture()`. Use `transcribeWithGroq()` from `transcriptionService.ts` instead.
+- `src/services/transcriptionService.ts` is a barrel. New code should think in terms of `transcribeAudio()` / `analyzeTranscript()` / `markTopicsFromLecture()`.
 - `external_app_logs` with `returned_at IS NULL` = user is currently in a lecture app.
 - `EXTERNAL_APPS[].id` values exactly match `SupportedMedicalApp` union type keys — safe to cast `app.id as SupportedMedicalApp`.
-- `ai_cache` stores both AI-generated content cards AND lecture notes (via `saveLectureNote()`).
+- `saveLectureNote()` writes to `lecture_notes`, not `ai_cache`.
 - DB `confidence` column (0–3 int) vs `LectureAnalysis.estimatedConfidence` (1–3 int) — compatible, pass directly.
 - `useLocalWhisper` / `localWhisperPath` on profile = on-device Whisper model (whisper.rn). Separate from `useLocalModel` / `localModelPath` which is the LLM (llama.rn).
+- Release builds do not ship bundled cloud API keys; provider access comes from user-entered keys or OAuth connections in Settings.
 - The `scripts/archive/` folder contains deprecated regex-based patch scripts. All their changes are already in source. Do not run them or create new patch scripts.

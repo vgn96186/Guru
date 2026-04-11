@@ -13,6 +13,54 @@ describe('deviceSyncService', () => {
     jest.resetModules();
   });
 
+  it('normalizes sync codes before connecting', async () => {
+    const handlers: Record<string, (...args: any[]) => void> = {};
+    const mockClient: {
+      on: jest.Mock;
+      subscribe: jest.Mock;
+      publish: jest.Mock;
+      end: jest.Mock;
+    } = {
+      on: jest.fn((event: string, callback: (...args: any[]) => void) => {
+        handlers[event] = callback;
+        return mockClient;
+      }),
+      subscribe: jest.fn(),
+      publish: jest.fn(),
+      end: jest.fn(),
+    };
+    const connectMock = jest.fn(() => mockClient);
+
+    jest.doMock('mqtt/dist/mqtt', () => ({
+      connect: connectMock,
+    }));
+
+    jest.doMock('./syncCrypto', () => ({
+      encryptPayload: jest.fn(async (_code: string, msg: unknown) =>
+        JSON.stringify({
+          payload: msg,
+          ts: Date.now(),
+          msgId: `enc-${Date.now()}`,
+        }),
+      ),
+      decryptPayload: jest.fn(async (_code: string, raw: string) => JSON.parse(raw)),
+      clearKeyCache: jest.fn(),
+    }));
+
+    const { connectToRoom, normalizeSyncCode } = await import('./deviceSyncService');
+
+    expect(normalizeSyncCode(' neet-2026 ')).toBe('NEET2026');
+
+    const unsubscribeA = connectToRoom('ne-et12', jest.fn());
+    const unsubscribeB = connectToRoom('NEET12', jest.fn());
+
+    await waitFor(() => !!handlers.connect);
+    expect(connectMock).toHaveBeenCalledTimes(1);
+
+    unsubscribeA();
+    unsubscribeB();
+  });
+
   it('keeps one shared connection for multiple listeners', async () => {
     const handlers: Record<string, (...args: any[]) => void> = {};
     const mockClient: {

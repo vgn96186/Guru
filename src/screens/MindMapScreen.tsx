@@ -2,7 +2,6 @@ import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import {
   View,
   StyleSheet,
-  Dimensions,
   TouchableOpacity,
   TextInput,
   ActivityIndicator,
@@ -10,6 +9,7 @@ import {
   Pressable,
   Modal,
   ScrollView,
+  useWindowDimensions,
 } from 'react-native';
 import LinearText from '../components/primitives/LinearText';
 import { EmptyState, type EmptyStateAction } from '../components/primitives';
@@ -85,7 +85,8 @@ const PILL_PAD_X = 16;
 const PILL_PAD_Y = 12;
 const PILL_RADIUS = 6;
 const MAX_NODE_WIDTH = 220;
-const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get('window');
+
+type Viewport = { width: number; height: number };
 
 const BRANCH_COLORS = [
   { fill: '#C1D8F0', stroke: 'transparent', text: '#1E1E1E' },
@@ -142,15 +143,16 @@ function clamp(value: number, min: number, max: number) {
   return Math.min(max, Math.max(min, value));
 }
 
-function getCanvasMetrics(nodes: MindMapNode[]) {
+function getCanvasMetrics(nodes: MindMapNode[], viewport: Viewport) {
+  const { width: viewportWidth, height: viewportHeight } = viewport;
   if (nodes.length === 0) {
     return {
       minX: 0,
-      maxX: SCREEN_W,
+      maxX: viewportWidth,
       minY: 0,
-      maxY: SCREEN_H,
-      width: SCREEN_W,
-      height: SCREEN_H,
+      maxY: viewportHeight,
+      width: viewportWidth,
+      height: viewportHeight,
       offsetX: VIEWPORT_PADDING,
       offsetY: VIEWPORT_PADDING,
     };
@@ -171,18 +173,19 @@ function getCanvasMetrics(nodes: MindMapNode[]) {
     maxX,
     minY,
     maxY,
-    width: Math.max(maxX - minX + VIEWPORT_PADDING * 2, SCREEN_W * 1.5),
-    height: Math.max(maxY - minY + VIEWPORT_PADDING * 2, SCREEN_H * 1.5),
+    width: Math.max(maxX - minX + VIEWPORT_PADDING * 2, viewportWidth * 1.5),
+    height: Math.max(maxY - minY + VIEWPORT_PADDING * 2, viewportHeight * 1.5),
     offsetX: -minX + VIEWPORT_PADDING,
     offsetY: -minY + VIEWPORT_PADDING,
   };
 }
 
-function computeFittedViewport(nodes: MindMapNode[]) {
-  if (nodes.length === 0) return { x: SCREEN_W / 2, y: SCREEN_H / 3, scale: 1 };
-  const metrics = getCanvasMetrics(nodes);
+function computeFittedViewport(nodes: MindMapNode[], viewport: Viewport) {
+  const { width: viewportWidth, height: viewportHeight } = viewport;
+  if (nodes.length === 0) return { x: viewportWidth / 2, y: viewportHeight / 3, scale: 1 };
+  const metrics = getCanvasMetrics(nodes, viewport);
   const scale = clamp(
-    Math.min(SCREEN_W / metrics.width, (SCREEN_H - 120) / metrics.height, 1),
+    Math.min(viewportWidth / metrics.width, (viewportHeight - 120) / metrics.height, 1),
     MIN_ZOOM,
     1,
   );
@@ -190,8 +193,8 @@ function computeFittedViewport(nodes: MindMapNode[]) {
   const rootCanvasX = metrics.offsetX + rootNode.x;
   const rootCanvasY = metrics.offsetY + rootNode.y;
   return {
-    x: SCREEN_W * 0.15 - rootCanvasX * scale,
-    y: (SCREEN_H - 120) / 2 + 60 - rootCanvasY * scale,
+    x: viewportWidth * 0.15 - rootCanvasX * scale,
+    y: (viewportHeight - 120) / 2 + 60 - rootCanvasY * scale,
     scale,
   };
 }
@@ -365,9 +368,14 @@ function CanvasView({
   onDelete?: () => void;
 }) {
   const navigation = useNavigation<NativeStackNavigationProp<HomeStackParamList>>();
+  const { width: viewportWidth, height: viewportHeight } = useWindowDimensions();
+  const viewport = useMemo(
+    () => ({ width: viewportWidth, height: viewportHeight }),
+    [viewportHeight, viewportWidth],
+  );
   const nodes = data.nodes;
   const edges = data.edges;
-  const canvasMetrics = useMemo(() => getCanvasMetrics(nodes), [nodes]);
+  const canvasMetrics = useMemo(() => getCanvasMetrics(nodes, viewport), [nodes, viewport]);
   const canvasRef = useRef<View>(null);
 
   // ── Core selection state ──
@@ -408,14 +416,15 @@ function CanvasView({
   const [moveOffset, setMoveOffset] = useState({ x: 0, y: 0 });
 
   // ── Viewport ──
-  const translateX = useSharedValue(SCREEN_W / 2);
-  const translateY = useSharedValue(SCREEN_H / 3);
+  const translateX = useSharedValue(viewportWidth / 2);
+  const translateY = useSharedValue(viewportHeight / 3);
   const scale = useSharedValue(1);
   const panStartX = useSharedValue(0);
   const panStartY = useSharedValue(0);
   const pinchStartScale = useSharedValue(1);
   const viewportReady = useRef(false);
   const lastGraphShape = useRef({ nodeCount: nodes.length, edgeCount: edges.length });
+  const lastViewport = useRef(viewport);
 
   // Save viewport on unmount
   useEffect(() => {
@@ -439,10 +448,14 @@ function CanvasView({
     const graphChanged =
       lastGraphShape.current.nodeCount !== currentShape.nodeCount ||
       lastGraphShape.current.edgeCount !== currentShape.edgeCount;
+    const viewportChanged =
+      lastViewport.current.width !== viewport.width ||
+      lastViewport.current.height !== viewport.height;
     lastGraphShape.current = currentShape;
+    lastViewport.current = viewport;
 
-    if (graphChanged && viewportReady.current) {
-      const fitted = computeFittedViewport(nodes);
+    if ((graphChanged || viewportChanged) && viewportReady.current) {
+      const fitted = computeFittedViewport(nodes, viewport);
       translateX.value = withTiming(fitted.x, { duration: 250 });
       translateY.value = withTiming(fitted.y, { duration: 250 });
       scale.value = withTiming(fitted.scale, { duration: 250 });
@@ -460,21 +473,21 @@ function CanvasView({
           return;
         }
       } catch {}
-      const fitted = computeFittedViewport(nodes);
+      const fitted = computeFittedViewport(nodes, viewport);
       translateX.value = fitted.x;
       translateY.value = fitted.y;
       scale.value = fitted.scale;
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [nodes.length, edges.length]);
+  }, [nodes.length, edges.length, viewport]);
 
   const centerMap = useCallback(() => {
-    const fitted = computeFittedViewport(nodes);
+    const fitted = computeFittedViewport(nodes, viewport);
     const timing = { duration: 300 };
     translateX.value = withTiming(fitted.x, timing);
     translateY.value = withTiming(fitted.y, timing);
     scale.value = withTiming(fitted.scale, timing);
-  }, [nodes, scale, translateX, translateY]);
+  }, [nodes, scale, translateX, translateY, viewport]);
 
   const canvasStyle = useAnimatedStyle(() => ({
     transform: [
@@ -590,13 +603,13 @@ function CanvasView({
             translateX.value = withTiming(event.x - canvasX * targetScale, timing);
             translateY.value = withTiming(event.y - canvasY * targetScale, timing);
           } else {
-            const fitted = computeFittedViewport(nodes);
+            const fitted = computeFittedViewport(nodes, viewport);
             scale.value = withTiming(fitted.scale, timing);
             translateX.value = withTiming(fitted.x, timing);
             translateY.value = withTiming(fitted.y, timing);
           }
         }),
-    [nodes, scale, translateX, translateY, movingNodeSV],
+    [nodes, scale, translateX, translateY, movingNodeSV, viewport],
   );
 
   const gesture = useMemo(
@@ -1542,10 +1555,7 @@ export default function MindMapScreen() {
       <SafeAreaView style={styles.root}>
         <ScreenHeader title="Mind Map" />
         <View style={styles.centerContent}>
-          <LoadingOrb
-            message={creating ? 'AI is mapping concepts...' : 'Loading...'}
-            size={120}
-          />
+          <LoadingOrb message={creating ? 'AI is mapping concepts...' : 'Loading...'} size={120} />
         </View>
       </SafeAreaView>
     );

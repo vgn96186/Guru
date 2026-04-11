@@ -2,11 +2,11 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   Animated,
   BackHandler,
-  Dimensions,
   Modal,
   PanResponder,
   Pressable,
   StyleSheet,
+  useWindowDimensions,
   View,
 } from 'react-native';
 import { createMaterialTopTabNavigator } from '@react-navigation/material-top-tabs';
@@ -370,6 +370,7 @@ const EXTERNAL_APP_ICON_MAP: Record<string, keyof typeof Ionicons.glyphMap> = {
 export default function TabNavigator() {
   const navigation = useNavigation<any>();
   const insets = useSafeAreaInsets();
+  const { width: windowWidth, height: windowHeight } = useWindowDimensions();
   const profile = useAppStore((state) => state.profile);
   const refreshProfile = useAppStore((state) => state.refreshProfile);
   const faceTrackingEnabled = profile?.faceTrackingEnabled ?? false;
@@ -387,7 +388,7 @@ export default function TabNavigator() {
   const bottomInset = Math.max(insets.bottom, 8);
   const [dueCount, setDueCount] = useState(0);
   const [returnSheet, setReturnSheet] = useState<LectureReturnSheetData | null>(null);
-  const externalChipWidth = Dimensions.get('window').width >= 520 ? '16.66%' : '31.5%';
+  const externalChipWidth = windowWidth >= 520 ? '16.66%' : '31.5%';
 
   const refreshDueCount = useCallback(() => {
     getDb()
@@ -549,7 +550,7 @@ export default function TabNavigator() {
       setSelectedUploadSubjectName(
         resolution.requiresSelection
           ? null
-          : resolution.matchedSubject?.name ?? resolution.normalizedSubjectName,
+          : (resolution.matchedSubject?.name ?? resolution.normalizedSubjectName),
       );
     } catch (e: any) {
       void showError(e.message, 'Error');
@@ -671,6 +672,7 @@ export default function TabNavigator() {
             {
               paddingBottom: bottomInset + n.spacing.lg,
               bottom: TAB_BAR_HEIGHT + 8,
+              maxHeight: windowHeight * 0.65,
             },
             {
               opacity: sheetAnim.interpolate({
@@ -1128,7 +1130,6 @@ const styles = StyleSheet.create({
     borderColor: n.colors.borderHighlight,
     paddingHorizontal: n.spacing.lg,
     paddingTop: n.spacing.sm,
-    maxHeight: Dimensions.get('window').height * 0.65,
     width: '94%',
     maxWidth: 680,
     alignSelf: 'center',

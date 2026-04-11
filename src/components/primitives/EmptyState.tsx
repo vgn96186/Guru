@@ -3,7 +3,7 @@ import { View, StyleSheet, type StyleProp, type ViewStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { linearTheme as n } from '../../theme/linearTheme';
 import LinearText from './LinearText';
-import LinearButton from './LinearButton';
+import LinearButton, { type LinearButtonVariant } from './LinearButton';
 import LinearSurface from './LinearSurface';
 
 type EmptyStateVariant = 'fullscreen' | 'card';
@@ -12,7 +12,7 @@ export interface EmptyStateAction {
   label: string;
   onPress: () => void;
   /** LinearButton variant. Defaults to `ghost` for the first action, `outline` for the rest. */
-  buttonVariant?: 'primary' | 'ghost' | 'outline' | 'glass' | 'glassTinted';
+  buttonVariant?: LinearButtonVariant;
   /** Tints the label + icon with the error color (use for Delete / destructive). */
   destructive?: boolean;
   /** Optional Ionicon rendered to the left of the label. */
@@ -65,15 +65,9 @@ export default function EmptyState({
         </LinearText>
       ) : null}
       {resolvedActions.length > 0 ? (
-        <View
-          style={[
-            styles.actionsRow,
-            resolvedActions.length === 1 && styles.actionsRowSingle,
-          ]}
-        >
+        <View style={[styles.actionsRow, resolvedActions.length === 1 && styles.actionsRowSingle]}>
           {resolvedActions.map((a, idx) => {
-            const buttonVariant =
-              a.buttonVariant ?? (idx === 0 ? 'ghost' : 'outline');
+            const buttonVariant = a.buttonVariant ?? (idx === 0 ? 'ghost' : 'outline');
             const labelColor = a.destructive ? n.colors.error : undefined;
             return (
               <LinearButton
@@ -83,19 +77,11 @@ export default function EmptyState({
                 onPress={a.onPress}
                 leftIcon={
                   a.icon ? (
-                    <Ionicons
-                      name={a.icon}
-                      size={16}
-                      color={labelColor ?? n.colors.textPrimary}
-                    />
+                    <Ionicons name={a.icon} size={16} color={labelColor ?? n.colors.textPrimary} />
                   ) : undefined
                 }
                 textStyle={labelColor ? { color: labelColor } : undefined}
-                style={
-                  a.destructive
-                    ? { borderColor: n.colors.error }
-                    : undefined
-                }
+                style={a.destructive ? { borderColor: n.colors.error } : undefined}
               />
             );
           })}

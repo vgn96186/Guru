@@ -4,13 +4,6 @@ const { spawnSync } = require('child_process');
 const { resolveAdbCommand } = require('./android-tooling');
 
 const ADB_PORT = '8081';
-const APP_PACKAGE = 'com.anonymous.gurustudy.dev';
-const APP_ACTIVITY = 'com.anonymous.gurustudy.MainActivity';
-const APP_SCHEME = 'exp+guru-study-dev';
-const DEV_CLIENT_URL =
-  `${APP_SCHEME}://expo-development-client/?url=` +
-  encodeURIComponent(`http://127.0.0.1:${ADB_PORT}`);
-
 const ADB_CMD = resolveAdbCommand();
 
 function fail(message) {
@@ -18,11 +11,10 @@ function fail(message) {
   process.exit(1);
 }
 
-function runSync(args, options = {}) {
+function runSync(args) {
   const result = spawnSync(ADB_CMD, args, {
     stdio: 'pipe',
     encoding: 'utf8',
-    ...options,
   });
 
   if (result.error) {
@@ -58,39 +50,12 @@ function ensureDeviceConnected() {
 function ensureAdbReverse() {
   const result = runSync(['reverse', `tcp:${ADB_PORT}`, `tcp:${ADB_PORT}`]);
   if (result.status !== 0) {
-    fail('Failed to set adb reverse for Metro on port 8081.');
-  }
-}
-
-function openDevClient() {
-  const result = spawnSync(
-    ADB_CMD,
-    [
-      'shell',
-      'am',
-      'start',
-      '-n',
-      `${APP_PACKAGE}/${APP_ACTIVITY}`,
-      '-a',
-      'android.intent.action.VIEW',
-      '-d',
-      DEV_CLIENT_URL,
-    ],
-    {
-      stdio: 'inherit',
-    },
-  );
-
-  if (result.error) {
-    fail(result.error.message);
-  }
-
-  if (typeof result.status === 'number' && result.status !== 0) {
-    process.exit(result.status);
+    fail(`Failed to set adb reverse for port ${ADB_PORT}.`);
   }
 }
 
 ensureAdbAvailable();
 ensureDeviceConnected();
 ensureAdbReverse();
-openDevClient();
+
+console.log(`Reversed tcp:${ADB_PORT} to the connected device.`);

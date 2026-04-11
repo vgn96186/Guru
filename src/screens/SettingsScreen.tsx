@@ -22,7 +22,6 @@ import {
   type CompositeNavigationProp,
 } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { Ionicons } from '@expo/vector-icons';
 import type { MenuStackParamList, RootStackParamList } from '../navigation/types';
 import * as FileSystem from 'expo-file-system/legacy';
 import * as DocumentPicker from 'expo-document-picker';
@@ -138,6 +137,12 @@ import AccountSections from './settings/sections/AccountSections';
 import StudySections from './settings/sections/StudySections';
 import StorageSections from './settings/sections/StorageSections';
 import AiProvidersSection from './settings/sections/AiProvidersSection';
+import {
+  SettingsSectionAccordion,
+  SettingsSubSectionAccordion,
+  type SettingsSectionToggleProps,
+  type SettingsSubSectionToggleProps,
+} from './settings/components/SettingsSectionAccordion';
 import {
   exportUnifiedBackup,
   importUnifiedBackup,
@@ -380,96 +385,32 @@ export default function SettingsScreen() {
   const refreshProfile = useAppStore((state) => state.refreshProfile);
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set());
 
-  function SectionToggle({
-    id,
-    title,
-    icon,
-    tint,
-    children,
-  }: {
-    id: string;
-    title: string;
-    icon: keyof typeof Ionicons.glyphMap;
-    tint: string;
-    children: React.ReactNode;
-  }) {
-    const isExpanded = expandedSections.has(id);
+  const toggleExpandedSection = useCallback((id: string) => {
+    setExpandedSections((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }, []);
+
+  function SectionToggle({ id, ...rest }: SettingsSectionToggleProps) {
     return (
-      <View style={styles.section}>
-        <TouchableOpacity
-          style={styles.sectionHeader}
-          onPress={() =>
-            setExpandedSections((prev) => {
-              const next = new Set(prev);
-              if (next.has(id)) next.delete(id);
-              else next.add(id);
-              return next;
-            })
-          }
-          activeOpacity={0.8}
-        >
-          <View style={styles.sectionHeaderLeft}>
-            <View
-              style={[
-                styles.sectionIconWrap,
-                { backgroundColor: `${tint}18`, borderColor: `${tint}55` },
-              ]}
-            >
-              <Ionicons name={icon} size={18} color={tint} />
-            </View>
-            <LinearText style={styles.sectionTitle}>{title}</LinearText>
-          </View>
-          <Ionicons
-            name={isExpanded ? 'chevron-up' : 'chevron-down'}
-            size={18}
-            color={n.colors.textMuted}
-          />
-        </TouchableOpacity>
-        {isExpanded && (
-          <LinearSurface padded={false} style={styles.sectionContent}>
-            {children}
-          </LinearSurface>
-        )}
-      </View>
+      <SettingsSectionAccordion
+        {...rest}
+        expanded={expandedSections.has(id)}
+        onToggle={() => toggleExpandedSection(id)}
+      />
     );
   }
 
-  function SubSectionToggle({
-    id,
-    title,
-    children,
-  }: {
-    id: string;
-    title: string;
-    children: React.ReactNode;
-  }) {
-    const isExpanded = expandedSections.has(id);
+  function SubSectionToggle({ id, ...rest }: SettingsSubSectionToggleProps) {
     return (
-      <View style={styles.subSectionPanel}>
-        <TouchableOpacity
-          style={styles.subSectionHeader}
-          onPress={() =>
-            setExpandedSections((prev) => {
-              const next = new Set(prev);
-              if (next.has(id)) next.delete(id);
-              else next.add(id);
-              return next;
-            })
-          }
-          activeOpacity={0.8}
-        >
-          <View style={styles.subSectionHeaderLeft}>
-            <View style={styles.subSectionAccent} />
-            <LinearText style={styles.subSectionLabel}>{title}</LinearText>
-          </View>
-          <Ionicons
-            name={isExpanded ? 'chevron-up' : 'chevron-down'}
-            size={14}
-            color={n.colors.accent}
-          />
-        </TouchableOpacity>
-        {isExpanded && <View style={styles.subSectionBody}>{children}</View>}
-      </View>
+      <SettingsSubSectionAccordion
+        {...rest}
+        expanded={expandedSections.has(id)}
+        onToggle={() => toggleExpandedSection(id)}
+      />
     );
   }
 

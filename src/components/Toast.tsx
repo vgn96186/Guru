@@ -12,7 +12,7 @@
  */
 
 import React, { useEffect, useRef, useState, useCallback } from 'react';
-import { Animated, TouchableOpacity, StyleSheet, Dimensions, View } from 'react-native';
+import { Animated, TouchableOpacity, StyleSheet, View } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { theme } from '../constants/theme';
@@ -138,8 +138,6 @@ const TOAST_STYLES: Record<
     pillTextColor: theme.colors.primaryLight,
   },
 };
-
-const WIDTH = Dimensions.get('window').width - 32;
 
 const ToastItem = React.memo(
   ({ payload, onDone }: { payload: ToastPayload; onDone: () => void }) => {
@@ -276,7 +274,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   toast: {
-    width: WIDTH,
+    width: '100%',
+    alignSelf: 'stretch',
     borderRadius: theme.borderRadius.lg,
     marginTop: 8,
     borderWidth: 1,

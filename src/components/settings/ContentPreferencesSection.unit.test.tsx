@@ -94,6 +94,6 @@ describe('ContentPreferencesSection', () => {
 
   it('displays blocked content types with an X', () => {
     const { getByText } = render(<ContentPreferencesSection {...defaultProps} />);
-    expect(getByText('✕')).toBeTruthy();
+    expect(getByText('X')).toBeTruthy();
   });
 });

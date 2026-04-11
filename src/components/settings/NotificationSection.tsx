@@ -1,6 +1,8 @@
 import React from 'react';
-import { View, TextInput, StyleSheet, Switch, TouchableOpacity } from 'react-native';
+import { View, TextInput, StyleSheet, Switch } from 'react-native';
 import { linearTheme as n } from '../../theme/linearTheme';
+import LinearButton from '../primitives/LinearButton';
+import LinearChipButton from '../primitives/LinearChipButton';
 import LinearText from '../primitives/LinearText';
 
 interface NotificationSectionProps {
@@ -58,26 +60,27 @@ function NotificationSection({
       </LinearText>
       <View style={styles.frequencyRow}>
         {(['rare', 'normal', 'frequent', 'off'] as const).map((freq) => (
-          <TouchableOpacity
+          <LinearChipButton
             key={freq}
-            style={[styles.freqBtn, frequency === freq && styles.freqBtnActive]}
+            label={freq.charAt(0).toUpperCase() + freq.slice(1)}
+            style={styles.freqBtn}
+            selected={frequency === freq}
+            selectedStyle={styles.freqBtnActive}
+            textStyle={styles.freqText}
+            selectedTextStyle={styles.freqTextActive}
             onPress={() => onFrequencyChange(freq)}
-          >
-            <LinearText
-              variant="bodySmall"
-              style={[styles.freqText, frequency === freq && styles.freqTextActive]}
-            >
-              {freq.charAt(0).toUpperCase() + freq.slice(1)}
-            </LinearText>
-          </TouchableOpacity>
+          />
         ))}
       </View>
 
-      <TouchableOpacity style={styles.testBtn} onPress={onTest}>
-        <LinearText variant="body" tone="accent" style={styles.testBtnText}>
-          Schedule Notifications Now
-        </LinearText>
-      </TouchableOpacity>
+      <LinearButton
+        label="Schedule Notifications Now"
+        variant="outline"
+        textTone="accent"
+        style={styles.testBtn}
+        textStyle={styles.testBtnText}
+        onPress={onTest}
+      />
     </View>
   );
 }
@@ -108,24 +111,12 @@ const styles = StyleSheet.create({
   frequencyRow: { flexDirection: 'row', gap: 8 },
   freqBtn: {
     flex: 1,
-    backgroundColor: n.colors.surface,
+    alignSelf: 'stretch',
     borderRadius: 10,
-    paddingVertical: 10,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: n.colors.border,
   },
-  freqBtnActive: { backgroundColor: `${n.colors.accent}22`, borderColor: n.colors.accent },
+  freqBtnActive: {},
   freqText: { color: n.colors.textSecondary, fontSize: 12, fontWeight: '600' },
   freqTextActive: { color: n.colors.accent, fontWeight: '700' },
-  testBtn: {
-    marginTop: 8,
-    backgroundColor: n.colors.surface,
-    borderRadius: 10,
-    padding: 12,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: n.colors.border,
-  },
-  testBtnText: { color: n.colors.accent, fontWeight: '700', fontSize: 13 },
+  testBtn: { marginTop: 8 },
+  testBtnText: { fontSize: 13 },
 });

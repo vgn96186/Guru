@@ -6,7 +6,6 @@ import {
   Modal,
   Platform,
   Pressable,
-  Switch,
   Text,
   TouchableOpacity,
   View,
@@ -17,9 +16,10 @@ import LinearSurface from '../../../components/primitives/LinearSurface';
 import LinearText from '../../../components/primitives/LinearText';
 import LinearTextInput from '../../../components/primitives/LinearTextInput';
 import TranscriptionSettingsPanel from '../../../components/TranscriptionSettingsPanel';
+import SettingsToggleRow from '../components/SettingsToggleRow';
 import SettingsLabel from '../components/SettingsLabel';
 import SettingsModelDropdown from '../components/SettingsModelDropdown';
-import type { ChatGptAccountSlot } from '../../../types';
+import type { ChatGptAccountSlot, ProviderId } from '../../../types';
 import { DEFAULT_PROVIDER_ORDER, PROVIDER_DISPLAY_NAMES } from '../../../types';
 import { sanitizeProviderOrder } from '../../../utils/providerOrder';
 import { VERIFICATION_URL } from '../../../services/ai/chatgpt';
@@ -28,13 +28,8 @@ import { getGitLabInstanceUrl, getRedirectUri } from '../../../services/ai/gitla
 import { VERIFICATION_URL as POE_VERIFICATION_URL } from '../../../services/ai/poe';
 import { GITHUB_COPILOT_MODELS, GITLAB_DUO_MODELS } from '../../../config/appConfig';
 import { isChatGptEnabled } from '../utils';
-import {
-  requestDeviceCode,
-  pollForToken,
-  saveQwenTokens,
-  QWEN_MODELS,
-} from '../../../services/ai/qwen';
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export default function AiProvidersSection(props: any) {
   const {
     styles,
@@ -463,34 +458,30 @@ export default function AiProvidersSection(props: any) {
                   backgroundColor: linearTheme.colors.background,
                 }}
               >
-                <View style={styles.switchRow}>
-                  <View style={{ flex: 1, paddingRight: 12 }}>
-                    <Text style={styles.switchLabel}>
-                      {isPrimary ? 'Primary account' : 'Secondary account'}
-                    </Text>
-                    <Text style={styles.hint}>
-                      {isPrimary
-                        ? 'Tried first whenever ChatGPT is selected in routing.'
-                        : 'Backup account used only if primary fails early.'}
-                    </Text>
-                  </View>
-                  <Switch
-                    value={slotState.enabled}
-                    onValueChange={(value) =>
-                      setChatgptAccounts((prev: any) => ({
+                <SettingsToggleRow
+                  label={isPrimary ? 'Primary account' : 'Secondary account'}
+                  hint={
+                    isPrimary
+                      ? 'Tried first whenever ChatGPT is selected in routing.'
+                      : 'Backup account used only if primary fails early.'
+                  }
+                  value={slotState.enabled}
+                  onValueChange={(value) =>
+                    setChatgptAccounts(
+                      (
+                        prev: Record<ChatGptAccountSlot, { enabled: boolean; connected: boolean }>,
+                      ) => ({
                         ...prev,
                         [slot]: { ...prev[slot], enabled: value },
-                      }))
-                    }
-                    trackColor={{
-                      false: linearTheme.colors.border,
-                      true: linearTheme.colors.primaryTintSoft,
-                    }}
-                    thumbColor={
-                      slotState.enabled ? linearTheme.colors.accent : linearTheme.colors.textMuted
-                    }
-                  />
-                </View>
+                      }),
+                    )
+                  }
+                  activeTrackColor={linearTheme.colors.primaryTintSoft}
+                  thumbColor={
+                    slotState.enabled ? linearTheme.colors.accent : linearTheme.colors.textMuted
+                  }
+                  contentStyle={{ paddingRight: 12 }}
+                />
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 8 }}>
                   <Ionicons
                     name={slotState.connected ? 'checkmark-circle' : 'ellipse-outline'}
@@ -687,16 +678,16 @@ export default function AiProvidersSection(props: any) {
                         githubCopilotOAuthTestResult === 'ok'
                           ? 'checkmark-circle'
                           : githubCopilotOAuthTestResult === 'fail'
-                          ? 'close-circle'
-                          : 'pulse-outline'
+                            ? 'close-circle'
+                            : 'pulse-outline'
                       }
                       size={20}
                       color={
                         githubCopilotOAuthTestResult === 'ok'
                           ? linearTheme.colors.success
                           : githubCopilotOAuthTestResult === 'fail'
-                          ? linearTheme.colors.error
-                          : linearTheme.colors.accent
+                            ? linearTheme.colors.error
+                            : linearTheme.colors.accent
                       }
                     />
                   )}
@@ -890,16 +881,16 @@ export default function AiProvidersSection(props: any) {
                         gitlabDuoOAuthTestResult === 'ok'
                           ? 'checkmark-circle'
                           : gitlabDuoOAuthTestResult === 'fail'
-                          ? 'close-circle'
-                          : 'pulse-outline'
+                            ? 'close-circle'
+                            : 'pulse-outline'
                       }
                       size={20}
                       color={
                         gitlabDuoOAuthTestResult === 'ok'
                           ? linearTheme.colors.success
                           : gitlabDuoOAuthTestResult === 'fail'
-                          ? linearTheme.colors.error
-                          : linearTheme.colors.accent
+                            ? linearTheme.colors.error
+                            : linearTheme.colors.accent
                       }
                     />
                   )}
@@ -1237,16 +1228,16 @@ export default function AiProvidersSection(props: any) {
                     groqValidationStatus === 'ok'
                       ? 'checkmark-circle'
                       : groqValidationStatus === 'fail'
-                      ? 'close-circle'
-                      : 'flash-outline'
+                        ? 'close-circle'
+                        : 'flash-outline'
                   }
                   size={20}
                   color={
                     groqValidationStatus === 'ok'
                       ? linearTheme.colors.success
                       : groqValidationStatus === 'fail'
-                      ? linearTheme.colors.error
-                      : linearTheme.colors.accent
+                        ? linearTheme.colors.error
+                        : linearTheme.colors.accent
                   }
                 />
               )}
@@ -1292,16 +1283,16 @@ export default function AiProvidersSection(props: any) {
                     githubValidationStatus === 'ok'
                       ? 'checkmark-circle'
                       : githubValidationStatus === 'fail'
-                      ? 'close-circle'
-                      : 'flash-outline'
+                        ? 'close-circle'
+                        : 'flash-outline'
                   }
                   size={20}
                   color={
                     githubValidationStatus === 'ok'
                       ? linearTheme.colors.success
                       : githubValidationStatus === 'fail'
-                      ? linearTheme.colors.error
-                      : linearTheme.colors.accent
+                        ? linearTheme.colors.error
+                        : linearTheme.colors.accent
                   }
                 />
               )}
@@ -1347,16 +1338,16 @@ export default function AiProvidersSection(props: any) {
                     openRouterValidationStatus === 'ok'
                       ? 'checkmark-circle'
                       : openRouterValidationStatus === 'fail'
-                      ? 'close-circle'
-                      : 'flash-outline'
+                        ? 'close-circle'
+                        : 'flash-outline'
                   }
                   size={20}
                   color={
                     openRouterValidationStatus === 'ok'
                       ? linearTheme.colors.success
                       : openRouterValidationStatus === 'fail'
-                      ? linearTheme.colors.error
-                      : linearTheme.colors.accent
+                        ? linearTheme.colors.error
+                        : linearTheme.colors.accent
                   }
                 />
               )}
@@ -1400,16 +1391,16 @@ export default function AiProvidersSection(props: any) {
                     kiloValidationStatus === 'ok'
                       ? 'checkmark-circle'
                       : kiloValidationStatus === 'fail'
-                      ? 'close-circle'
-                      : 'flash-outline'
+                        ? 'close-circle'
+                        : 'flash-outline'
                   }
                   size={20}
                   color={
                     kiloValidationStatus === 'ok'
                       ? linearTheme.colors.success
                       : kiloValidationStatus === 'fail'
-                      ? linearTheme.colors.error
-                      : linearTheme.colors.accent
+                        ? linearTheme.colors.error
+                        : linearTheme.colors.accent
                   }
                 />
               )}
@@ -1455,16 +1446,16 @@ export default function AiProvidersSection(props: any) {
                     deepseekValidationStatus === 'ok'
                       ? 'checkmark-circle'
                       : deepseekValidationStatus === 'fail'
-                      ? 'close-circle'
-                      : 'flash-outline'
+                        ? 'close-circle'
+                        : 'flash-outline'
                   }
                   size={20}
                   color={
                     deepseekValidationStatus === 'ok'
                       ? linearTheme.colors.success
                       : deepseekValidationStatus === 'fail'
-                      ? linearTheme.colors.error
-                      : linearTheme.colors.accent
+                        ? linearTheme.colors.error
+                        : linearTheme.colors.accent
                   }
                 />
               )}
@@ -1508,16 +1499,16 @@ export default function AiProvidersSection(props: any) {
                     agentRouterValidationStatus === 'ok'
                       ? 'checkmark-circle'
                       : agentRouterValidationStatus === 'fail'
-                      ? 'close-circle'
-                      : 'flash-outline'
+                        ? 'close-circle'
+                        : 'flash-outline'
                   }
                   size={20}
                   color={
                     agentRouterValidationStatus === 'ok'
                       ? linearTheme.colors.success
                       : agentRouterValidationStatus === 'fail'
-                      ? linearTheme.colors.error
-                      : linearTheme.colors.accent
+                        ? linearTheme.colors.error
+                        : linearTheme.colors.accent
                   }
                 />
               )}
@@ -1561,38 +1552,28 @@ export default function AiProvidersSection(props: any) {
                     geminiValidationStatus === 'ok'
                       ? 'checkmark-circle'
                       : geminiValidationStatus === 'fail'
-                      ? 'close-circle'
-                      : 'flash-outline'
+                        ? 'close-circle'
+                        : 'flash-outline'
                   }
                   size={20}
                   color={
                     geminiValidationStatus === 'ok'
                       ? linearTheme.colors.success
                       : geminiValidationStatus === 'fail'
-                      ? linearTheme.colors.error
-                      : linearTheme.colors.accent
+                        ? linearTheme.colors.error
+                        : linearTheme.colors.accent
                   }
                 />
               )}
             </TouchableOpacity>
           </View>
           <Text style={styles.hint}>Chat + image models. Key at aistudio.google.com/apikey</Text>
-          <View style={styles.switchRow}>
-            <View style={{ flex: 1, paddingRight: 8 }}>
-              <Text style={styles.switchLabel}>Structured JSON (Gemini)</Text>
-              <Text style={styles.hint}>
-                When on, structured AI outputs (quizzes, daily plan, lecture analysis) use Gemini
-                native JSON + schema first if your Gemini key is set. Turn off to force text-only
-                parsing (for debugging).
-              </Text>
-            </View>
-            <Switch
-              value={preferGeminiStructuredJson}
-              onValueChange={setPreferGeminiStructuredJson}
-              trackColor={{ true: linearTheme.colors.accent, false: linearTheme.colors.border }}
-              thumbColor={linearTheme.colors.textPrimary}
-            />
-          </View>
+          <SettingsToggleRow
+            label="Structured JSON (Gemini)"
+            hint="When on, structured AI outputs (quizzes, daily plan, lecture analysis) use Gemini native JSON + schema first if your Gemini key is set. Turn off to force text-only parsing (for debugging)."
+            value={preferGeminiStructuredJson}
+            onValueChange={setPreferGeminiStructuredJson}
+          />
           <SettingsLabel text="Deepgram" />
           <View style={styles.apiKeyRow}>
             <LinearTextInput
@@ -1630,16 +1611,16 @@ export default function AiProvidersSection(props: any) {
                     deepgramValidationStatus === 'ok'
                       ? 'checkmark-circle'
                       : deepgramValidationStatus === 'fail'
-                      ? 'close-circle'
-                      : 'flash-outline'
+                        ? 'close-circle'
+                        : 'flash-outline'
                   }
                   size={20}
                   color={
                     deepgramValidationStatus === 'ok'
                       ? linearTheme.colors.success
                       : deepgramValidationStatus === 'fail'
-                      ? linearTheme.colors.error
-                      : linearTheme.colors.accent
+                        ? linearTheme.colors.error
+                        : linearTheme.colors.accent
                   }
                 />
               )}
@@ -1681,16 +1662,16 @@ export default function AiProvidersSection(props: any) {
                     cloudflareValidationStatus === 'ok'
                       ? 'checkmark-circle'
                       : cloudflareValidationStatus === 'fail'
-                      ? 'close-circle'
-                      : 'flash-outline'
+                        ? 'close-circle'
+                        : 'flash-outline'
                   }
                   size={20}
                   color={
                     cloudflareValidationStatus === 'ok'
                       ? linearTheme.colors.success
                       : cloudflareValidationStatus === 'fail'
-                      ? linearTheme.colors.error
-                      : linearTheme.colors.accent
+                        ? linearTheme.colors.error
+                        : linearTheme.colors.accent
                   }
                 />
               )}
@@ -1721,7 +1702,7 @@ export default function AiProvidersSection(props: any) {
           <Text style={styles.hint}>
             Reorder fallback priority. First available provider is used.
           </Text>
-          {providerOrder.map((id: any, index: number) => {
+          {providerOrder.map((id: ProviderId, index: number) => {
             const providerId = id as keyof typeof PROVIDER_DISPLAY_NAMES;
             const hasKey = (() => {
               switch (id) {
@@ -1851,7 +1832,7 @@ export default function AiProvidersSection(props: any) {
               props.setProviderOrder(reset);
               void updateUserProfile({ providerOrder: sanitizeProviderOrder(reset) })
                 .then(() => refreshProfile())
-                .catch((err: any) => {
+                .catch((err: unknown) => {
                   if (__DEV__) console.warn('[Settings] Failed to reset provider order:', err);
                 });
             }}
@@ -1906,16 +1887,16 @@ export default function AiProvidersSection(props: any) {
                     falValidationStatus === 'ok'
                       ? 'checkmark-circle'
                       : falValidationStatus === 'fail'
-                      ? 'close-circle'
-                      : 'flash-outline'
+                        ? 'close-circle'
+                        : 'flash-outline'
                   }
                   size={20}
                   color={
                     falValidationStatus === 'ok'
                       ? linearTheme.colors.success
                       : falValidationStatus === 'fail'
-                      ? linearTheme.colors.error
-                      : linearTheme.colors.accent
+                        ? linearTheme.colors.error
+                        : linearTheme.colors.accent
                   }
                 />
               )}
@@ -2087,16 +2068,16 @@ export default function AiProvidersSection(props: any) {
                     braveValidationStatus === 'ok'
                       ? 'checkmark-circle'
                       : braveValidationStatus === 'fail'
-                      ? 'close-circle'
-                      : 'images-outline'
+                        ? 'close-circle'
+                        : 'images-outline'
                   }
                   size={20}
                   color={
                     braveValidationStatus === 'ok'
                       ? linearTheme.colors.success
                       : braveValidationStatus === 'fail'
-                      ? linearTheme.colors.error
-                      : linearTheme.colors.accent
+                        ? linearTheme.colors.error
+                        : linearTheme.colors.accent
                   }
                 />
               )}
@@ -2106,7 +2087,7 @@ export default function AiProvidersSection(props: any) {
             Optional fallback for image search when MedPix, Open-i, and Wikimedia return nothing.
           </Text>
           <View style={styles.modelChipRow}>
-            {imageGenerationOptions.map((opt: any) => (
+            {imageGenerationOptions.map((opt: { value: string; label: string }) => (
               <TouchableOpacity
                 key={opt.value}
                 style={[styles.freqBtn, imageGenerationModel === opt.value && styles.freqBtnActive]}
@@ -2179,7 +2160,7 @@ export default function AiProvidersSection(props: any) {
           <TouchableOpacity
             style={styles.localModelBtn}
             activeOpacity={0.8}
-            onPress={() => navigation.navigate('LocalModel' as any)}
+            onPress={() => navigation.navigate('LocalModel' as never)}
           >
             <Ionicons
               name="download-outline"

@@ -39,7 +39,9 @@ import { useHomeDashboardData } from '../hooks/useHomeDashboardData';
 import { linearTheme as n } from '../theme/linearTheme';
 import { DEFAULT_INICET_DATE, DEFAULT_NEET_DATE } from '../config/appConfig';
 import type { Mood, UserProfile, TopicWithProgress } from '../types';
+import HomeSectionHeader from '../components/home/HomeSectionHeader';
 import NextLectureSection from '../components/home/NextLectureSection';
+import { HOME_SECTION_GAP, HOME_TILE_HEIGHT } from '../components/home/homeLayout';
 
 function isLeafTopicIdListValid(allIds: number[], validLeafIds: Set<number>): boolean {
   return allIds.every((id) => validLeafIds.has(id));
@@ -159,7 +161,24 @@ function HomeSkeleton() {
           <View
             style={{
               width: '100%',
-              height: 120,
+              height: HOME_TILE_HEIGHT,
+              backgroundColor: n.colors.border,
+              borderRadius: 16,
+            }}
+          />
+          <View
+            style={{
+              width: 80,
+              height: 12,
+              backgroundColor: n.colors.border,
+              marginTop: HOME_SECTION_GAP,
+              marginBottom: 12,
+            }}
+          />
+          <View
+            style={{
+              width: '100%',
+              height: HOME_TILE_HEIGHT,
               backgroundColor: n.colors.border,
               borderRadius: 16,
             }}
@@ -172,7 +191,24 @@ function HomeSkeleton() {
           <View
             style={{
               width: '100%',
-              height: 120,
+              height: HOME_TILE_HEIGHT,
+              backgroundColor: n.colors.border,
+              borderRadius: 16,
+            }}
+          />
+          <View
+            style={{
+              width: 80,
+              height: 12,
+              backgroundColor: n.colors.border,
+              marginTop: HOME_SECTION_GAP,
+              marginBottom: 12,
+            }}
+          />
+          <View
+            style={{
+              width: '100%',
+              height: HOME_TILE_HEIGHT,
               backgroundColor: n.colors.border,
               borderRadius: 16,
             }}
@@ -248,6 +284,9 @@ function HomeScreenContent() {
   }, [weakTopics]);
   const moreAnim = useRef(new Animated.Value(0)).current;
   const lastHomeFocusReloadAtRef = useRef(0);
+  const openStudyPlan = useCallback(() => {
+    tabsNavigation?.navigate('MenuTab', { screen: 'StudyPlan' });
+  }, [tabsNavigation]);
 
   // Added from UI-UX audit branch
 
@@ -539,62 +578,45 @@ function HomeScreenContent() {
                 </View>
 
                 <View style={styles.rightColumn}>
-                  {/* DO THIS NOW with shuffle */}
-                  <View
-                    style={styles.section}
-                    accessibilityRole="summary"
+                  <Section
+                    label="DO THIS NOW"
                     accessibilityLabel="Do this now"
-                  >
-                    <View
-                      style={{
-                        flexDirection: 'row',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        marginBottom: 8,
-                      }}
-                    >
-                      <LinearText variant="label" tone="muted" style={styles.sectionLabel}>
-                        DO THIS NOW
-                      </LinearText>
-                      {weakTopics.length > 1 && (
+                    headerAction={
+                      weakTopics.length > 1 ? (
                         <TouchableOpacity
                           onPress={() => setWeakTopicOffset((o) => (o + 1) % weakTopics.length)}
                           activeOpacity={0.7}
-                          style={{
-                            flexDirection: 'row',
-                            alignItems: 'center',
-                            gap: 4,
-                            paddingVertical: 2,
-                            paddingHorizontal: 6,
-                          }}
+                          style={styles.headerActionButton}
                           accessibilityRole="button"
                           accessibilityLabel="Shuffle topic suggestion"
                         >
                           <Ionicons name="shuffle" size={14} color={n.colors.accent} />
-                          <LinearText
-                            variant="meta"
-                            tone="accent"
-                            style={{ fontSize: 11, fontWeight: '700' }}
-                          >
+                          <LinearText variant="meta" tone="accent" style={styles.headerActionText}>
                             Shuffle
                           </LinearText>
                         </TouchableOpacity>
-                      )}
-                    </View>
+                      ) : undefined
+                    }
+                  >
                     {weakTopics.length === 0 ? (
                       <TouchableOpacity
-                        style={styles.emptySectionTouchable}
+                        style={styles.fullWidthPressable}
                         onPress={() => navigation.navigate('Session', { mood })}
+                        activeOpacity={0.7}
                         accessibilityRole="button"
                         accessibilityLabel="Start a session to get suggestions"
                       >
-                        <LinearText
-                          variant="bodySmall"
-                          tone="secondary"
-                          style={styles.emptySectionText}
-                        >
-                          No weak topic highlighted — start a session or open Study Plan.
-                        </LinearText>
+                        <LinearSurface compact style={styles.agendaItemWrap}>
+                          <View style={styles.emptySectionTouchable}>
+                            <LinearText
+                              variant="bodySmall"
+                              tone="secondary"
+                              style={styles.emptySectionText}
+                            >
+                              No weak topic highlighted — start a session or open Study Plan.
+                            </LinearText>
+                          </View>
+                        </LinearSurface>
                       </TouchableOpacity>
                     ) : (
                       (() => {
@@ -624,91 +646,82 @@ function HomeScreenContent() {
                         );
                       })()
                     )}
-                  </View>
-                  <Section label="UP NEXT" accessibilityLabel="Up next">
-                    {todayTasks.length === 0 ? (
-                      <TouchableOpacity
-                        onPress={() => tabsNavigation?.navigate('MenuTab', { screen: 'StudyPlan' })}
-                        activeOpacity={0.7}
-                        accessibilityRole="button"
-                        accessibilityLabel="Open Study Plan"
-                      >
-                        <LinearSurface compact style={styles.agendaItemWrap}>
-                          <LinearText
-                            variant="bodySmall"
-                            tone="secondary"
-                            style={styles.emptySectionText}
-                          >
-                            Nothing scheduled — tap to open Study Plan.
-                          </LinearText>
-                          <View style={styles.seeAllButton}>
-                            <LinearText
-                              variant="label"
-                              tone="accent"
-                              style={styles.seeAllButtonText}
-                            >
-                              Open study plan
-                            </LinearText>
-                            <Ionicons name="chevron-forward" size={14} color={n.colors.accent} />
-                          </View>
-                        </LinearSurface>
-                      </TouchableOpacity>
-                    ) : (
-                      <>
-                        {todayTasks.slice(0, 2).map((t, i) => (
-                          <LinearSurface compact key={i} style={styles.agendaItemWrap}>
-                            <AgendaItem
-                              time={t.timeLabel.split(' ')[0]}
-                              title={t.topic.name}
-                              type={
-                                t.type === 'study'
-                                  ? 'new'
-                                  : (t.type as 'review' | 'deep_dive' | 'new')
-                              }
-                              subjectName={t.topic.subjectName}
-                              priority={t.topic.inicetPriority}
-                              rationale={homeSelectionReasonFromTopic(
-                                t.topic,
-                                t.type === 'study'
-                                  ? 'new'
-                                  : (t.type as 'review' | 'deep_dive' | 'new'),
-                              )}
-                              onPress={() =>
-                                navigation.navigate('Session', {
-                                  mood,
-                                  focusTopicId: t.topic.id,
-                                  preferredActionType: t.type,
-                                  forcedMinutes: t.duration,
-                                })
-                              }
-                            />
-                          </LinearSurface>
-                        ))}
-                        {todayTasks.length > 2 && (
-                          <TouchableOpacity
-                            style={styles.seeAllButtonStandalone}
-                            onPress={() =>
-                              tabsNavigation?.navigate('MenuTab', { screen: 'StudyPlan' })
-                            }
-                            activeOpacity={0.7}
-                            accessibilityRole="button"
-                            accessibilityLabel="See full study plan"
-                          >
-                            <View style={styles.seeAllButton}>
-                              <LinearText
-                                variant="label"
-                                tone="accent"
-                                style={styles.seeAllButtonText}
-                              >
-                                Open study plan
-                              </LinearText>
-                              <Ionicons name="chevron-forward" size={14} color={n.colors.accent} />
-                            </View>
-                          </TouchableOpacity>
-                        )}
-                      </>
-                    )}
                   </Section>
+                  <View style={styles.rightColumnSectionGap}>
+                    <Section
+                      label="UP NEXT"
+                      accessibilityLabel="Up next"
+                      headerAction={
+                        <TouchableOpacity
+                          style={styles.headerActionButton}
+                          onPress={openStudyPlan}
+                          activeOpacity={0.7}
+                          accessibilityRole="button"
+                          accessibilityLabel="Open study plan"
+                        >
+                          <LinearText variant="meta" tone="accent" style={styles.headerActionText}>
+                            Open plan
+                          </LinearText>
+                          <Ionicons name="chevron-forward" size={14} color={n.colors.accent} />
+                        </TouchableOpacity>
+                      }
+                    >
+                      {todayTasks.length === 0 ? (
+                        <TouchableOpacity
+                          onPress={openStudyPlan}
+                          style={styles.fullWidthPressable}
+                          activeOpacity={0.7}
+                          accessibilityRole="button"
+                          accessibilityLabel="Open Study Plan"
+                        >
+                          <LinearSurface compact style={styles.agendaItemWrap}>
+                            <View style={styles.emptySectionTouchable}>
+                              <LinearText
+                                variant="bodySmall"
+                                tone="secondary"
+                                style={styles.emptySectionText}
+                              >
+                                Nothing scheduled — tap to open Study Plan.
+                              </LinearText>
+                            </View>
+                          </LinearSurface>
+                        </TouchableOpacity>
+                      ) : (
+                        (() => {
+                          const t = todayTasks[0];
+                          return (
+                            <LinearSurface compact style={styles.agendaItemWrap}>
+                              <AgendaItem
+                                time={t.timeLabel.split(' ')[0]}
+                                title={t.topic.name}
+                                type={
+                                  t.type === 'study'
+                                    ? 'new'
+                                    : (t.type as 'review' | 'deep_dive' | 'new')
+                                }
+                                subjectName={t.topic.subjectName}
+                                priority={t.topic.inicetPriority}
+                                rationale={homeSelectionReasonFromTopic(
+                                  t.topic,
+                                  t.type === 'study'
+                                    ? 'new'
+                                    : (t.type as 'review' | 'deep_dive' | 'new'),
+                                )}
+                                onPress={() =>
+                                  navigation.navigate('Session', {
+                                    mood,
+                                    focusTopicId: t.topic.id,
+                                    preferredActionType: t.type,
+                                    forcedMinutes: t.duration,
+                                  })
+                                }
+                              />
+                            </LinearSurface>
+                          );
+                        })()
+                      )}
+                    </Section>
+                  </View>
                 </View>
               </View>
             </StaggeredEntrance>
@@ -730,7 +743,7 @@ function HomeScreenContent() {
               moreExpanded ? 'Collapse Tools and Advanced' : 'Expand Tools and Advanced'
             }
           >
-            <LinearText variant="label" tone="muted" style={styles.sectionLabel}>
+            <LinearText variant="label" tone="muted" style={styles.moreHeaderLabel}>
               TOOLS & ADVANCED
             </LinearText>
             <Animated.View
@@ -878,20 +891,16 @@ function Section({
   label,
   children,
   accessibilityLabel,
+  headerAction,
 }: {
   label: string;
   children: React.ReactNode;
   accessibilityLabel?: string;
+  headerAction?: React.ReactNode;
 }) {
   return (
-    <View
-      style={styles.section}
-      accessibilityRole="summary"
-      accessibilityLabel={accessibilityLabel ?? label}
-    >
-      <LinearText variant="label" tone="muted" style={styles.sectionLabel}>
-        {label}
-      </LinearText>
+    <View accessibilityRole="summary" accessibilityLabel={accessibilityLabel ?? label}>
+      <HomeSectionHeader label={label} action={headerAction} />
       {children}
     </View>
   );
@@ -943,8 +952,7 @@ const styles = StyleSheet.create({
 
   // ── Agenda item wrapper ──
   agendaItemWrap: {
-    marginBottom: 12,
-    height: 135,
+    height: HOME_TILE_HEIGHT,
     justifyContent: 'center',
   },
 
@@ -963,6 +971,9 @@ const styles = StyleSheet.create({
   },
   rightColumn: {
     flex: 1,
+  },
+  rightColumnSectionGap: {
+    marginTop: HOME_SECTION_GAP,
   },
 
   // ── Error row ──
@@ -1001,16 +1012,28 @@ const styles = StyleSheet.create({
     fontSize: 13,
     lineHeight: 19,
   },
+  fullWidthPressable: {
+    width: '100%',
+  },
 
   // ── Sections ──
-  section: { marginBottom: n.spacing.md },
-  sectionLabel: {
+  moreHeaderLabel: {
     color: n.colors.textMuted,
     fontWeight: '800',
     fontSize: 11,
     letterSpacing: 1.5,
-    marginBottom: n.spacing.md,
     textTransform: 'uppercase',
+  },
+  headerActionButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    minHeight: 24,
+    paddingLeft: 6,
+  },
+  headerActionText: {
+    fontSize: 11,
+    fontWeight: '700',
   },
 
   // ── Layouts ──
@@ -1033,28 +1056,4 @@ const styles = StyleSheet.create({
     minHeight: 44,
   },
   toolRowText: { color: n.colors.textSecondary, fontSize: 14, fontWeight: '500', flex: 1 },
-
-  // ── See all link ──
-  seeAllButtonStandalone: {
-    marginTop: 8,
-    alignSelf: 'flex-end',
-  },
-  seeAllButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    alignSelf: 'flex-start',
-    gap: 4,
-    marginTop: 10,
-    paddingHorizontal: 10,
-    paddingVertical: 7,
-    borderRadius: n.radius.full,
-    backgroundColor: n.colors.primaryTintSoft,
-    borderWidth: 1,
-    borderColor: n.colors.borderLight,
-  },
-  seeAllButtonText: {
-    color: n.colors.accent,
-    fontSize: 12,
-    fontWeight: '700',
-  },
 });

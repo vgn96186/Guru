@@ -10,7 +10,6 @@ import {
   Image,
   Modal,
   Pressable,
-  Dimensions,
   useWindowDimensions,
   Platform,
 } from 'react-native';
@@ -160,8 +159,7 @@ const QuestionImage = React.memo(function QuestionImage({
 }) {
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [failed, setFailed] = useState(false);
-  const screenW = Dimensions.get('window').width;
-  const screenH = Dimensions.get('window').height;
+  const { width: screenW, height: screenH } = useWindowDimensions();
 
   function handleError() {
     setFailed(true);

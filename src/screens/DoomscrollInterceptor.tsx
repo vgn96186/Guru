@@ -6,7 +6,7 @@ import {
   StatusBar,
   Vibration,
   Animated,
-  Dimensions,
+  useWindowDimensions,
 } from 'react-native';
 import LinearText from '../components/primitives/LinearText';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -25,10 +25,9 @@ import { Ionicons } from '@expo/vector-icons';
 const MAX_OPENS_BEFORE_SHAME = 3;
 const DELAY_SECONDS = 30;
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
-
 export default function DoomscrollInterceptor() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const { width: screenWidth } = useWindowDimensions();
   const route = useRoute<RouteProp<RootStackParamList, 'DoomscrollInterceptor'>>();
   const [doomscrollAttempts, setDoomscrollAttempts] = useState(0);
   const [isBlocking, setIsBlocking] = useState(false);
@@ -320,7 +319,7 @@ export default function DoomscrollInterceptor() {
               </View>
 
               {/* Progress Bar */}
-              <View style={styles.progressBarContainer}>
+              <View style={[styles.progressBarContainer, { width: screenWidth * 0.6 }]}>
                 <Animated.View
                   style={[
                     styles.progressBarFill,
@@ -547,7 +546,6 @@ const styles = StyleSheet.create({
   },
 
   progressBarContainer: {
-    width: SCREEN_WIDTH * 0.6,
     height: 6,
     backgroundColor: whiteAlpha['10'],
     borderRadius: 3,

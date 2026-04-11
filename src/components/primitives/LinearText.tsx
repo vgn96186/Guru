@@ -8,6 +8,7 @@ export type LinearTextVariant =
   | 'sectionTitle'
   | 'body'
   | 'bodySmall'
+  | 'button'
   | 'label'
   | 'caption'
   | 'chip'
@@ -37,6 +38,7 @@ const variantStyles = StyleSheet.create({
   sectionTitle: linearTheme.typography.sectionTitle,
   body: linearTheme.typography.body,
   bodySmall: linearTheme.typography.bodySmall,
+  button: linearTheme.typography.button,
   label: linearTheme.typography.label,
   caption: linearTheme.typography.caption,
   chip: linearTheme.typography.chip,

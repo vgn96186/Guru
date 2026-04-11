@@ -10,7 +10,7 @@ import {
   confirmDestructive,
 } from '../../../components/dialogService';
 import { showToast } from '../../../components/Toast';
-import LinearTextInput from '../../../components/primitives/LinearTextInput';
+import SettingsField from '../components/SettingsField';
 import LinearText from '../../../components/primitives/LinearText';
 import { linearTheme } from '../../../theme/linearTheme';
 import type { AutoBackupFrequency } from '../../../services/unifiedBackupService';
@@ -277,8 +277,8 @@ export default function StorageSections(props: any) {
                 {freq === 'off'
                   ? 'Off'
                   : freq === '3days'
-                  ? '3 Days'
-                  : freq.charAt(0).toUpperCase() + freq.slice(1)}
+                    ? '3 Days'
+                    : freq.charAt(0).toUpperCase() + freq.slice(1)}
               </LinearText>
             </TouchableOpacity>
           ))}
@@ -371,14 +371,9 @@ export default function StorageSections(props: any) {
         <LinearText variant="body" tone="muted" style={styles.hint}>
           Back up to Google Drive to sync between devices and survive app reinstalls.
         </LinearText>
-        <LinearText variant="label" style={[styles.label, { marginTop: 12 }]}>
-          Google Web Client ID
-        </LinearText>
-        <LinearText variant="body" tone="muted" style={styles.hint}>
-          Paste your Google OAuth Web application client ID here once. Guru stores it in your
-          profile so future sign-ins do not require a rebuild.
-        </LinearText>
-        <LinearTextInput
+        <SettingsField
+          label="Google Web Client ID"
+          hint="Paste your Google OAuth Web application client ID here once. Guru stores it in your profile so future sign-ins do not require a rebuild."
           value={gdriveWebClientId}
           onChangeText={setGdriveWebClientId}
           placeholder="Your Google Web Client ID"
@@ -386,15 +381,13 @@ export default function StorageSections(props: any) {
           autoCapitalize="none"
           autoCorrect={false}
           editable={!backupBusy}
-          style={{
-            borderWidth: 1,
-            borderColor: linearTheme.colors.border,
+          inputContainerStyle={{
             backgroundColor: linearTheme.colors.surface,
-            color: linearTheme.colors.textPrimary,
             borderRadius: 12,
-            paddingHorizontal: 12,
-            paddingVertical: 12,
             marginTop: 8,
+          }}
+          inputStyle={{
+            color: linearTheme.colors.textPrimary,
           }}
         />
         {currentProfile?.gdriveConnected ? (
@@ -538,9 +531,8 @@ export default function StorageSections(props: any) {
             runMaintenanceTask(
               'retry',
               async () => {
-                const { retryFailedTasks } = await import(
-                  '../../../services/lecture/lectureSessionMonitor'
-                );
+                const { retryFailedTasks } =
+                  await import('../../../services/lecture/lectureSessionMonitor');
                 const activeProfile = await getUserProfile();
                 return retryFailedTasks(activeProfile?.groqApiKey || undefined);
               },
@@ -568,9 +560,8 @@ export default function StorageSections(props: any) {
             runMaintenanceTask(
               'legacy',
               async () => {
-                const { autoRepairLegacyNotes } = await import(
-                  '../../../services/lecture/lectureSessionMonitor'
-                );
+                const { autoRepairLegacyNotes } =
+                  await import('../../../services/lecture/lectureSessionMonitor');
                 return autoRepairLegacyNotes();
               },
               {
@@ -597,9 +588,8 @@ export default function StorageSections(props: any) {
             runMaintenanceTask(
               'transcripts',
               async () => {
-                const { scanAndRecoverOrphanedTranscripts } = await import(
-                  '../../../services/lecture/lectureSessionMonitor'
-                );
+                const { scanAndRecoverOrphanedTranscripts } =
+                  await import('../../../services/lecture/lectureSessionMonitor');
                 return scanAndRecoverOrphanedTranscripts();
               },
               {
@@ -626,9 +616,8 @@ export default function StorageSections(props: any) {
             runMaintenanceTask(
               'recordings',
               async () => {
-                const { scanAndRecoverOrphanedRecordings } = await import(
-                  '../../../services/lecture/lectureSessionMonitor'
-                );
+                const { scanAndRecoverOrphanedRecordings } =
+                  await import('../../../services/lecture/lectureSessionMonitor');
                 return scanAndRecoverOrphanedRecordings();
               },
               {
@@ -655,9 +644,8 @@ export default function StorageSections(props: any) {
             runMaintenanceTask(
               'cleanup_artifacts',
               async () => {
-                const { cleanupFailedArtifacts } = await import(
-                  '../../../services/lecture/lectureSessionMonitor'
-                );
+                const { cleanupFailedArtifacts } =
+                  await import('../../../services/lecture/lectureSessionMonitor');
                 return cleanupFailedArtifacts();
               },
               {

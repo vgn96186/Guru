@@ -1,10 +1,10 @@
 import React, { useCallback, useState } from 'react';
 import {
   ActivityIndicator,
-  Dimensions,
   Modal,
   Pressable,
   StyleSheet,
+  useWindowDimensions,
   View,
   type ImageStyle,
 } from 'react-native';
@@ -22,10 +22,9 @@ type Props = {
   imageStyle?: ImageStyle;
 };
 
-const { width: W, height: H } = Dimensions.get('window');
-
 export function ImageLightbox({ visible, uri, onClose, imageStyle }: Props) {
   const [saving, setSaving] = useState(false);
+  const { width: viewportWidth, height: viewportHeight } = useWindowDimensions();
 
   const handleSave = useCallback(async () => {
     if (!uri || saving) return;
@@ -53,7 +52,7 @@ export function ImageLightbox({ visible, uri, onClose, imageStyle }: Props) {
       <View style={styles.root}>
         <Pressable style={StyleSheet.absoluteFill} onPress={onClose} accessibilityLabel="Close" />
         <Pressable
-          style={styles.saveBtn}
+          style={[styles.saveBtn, { top: viewportHeight * 0.06 }]}
           onPress={handleSave}
           disabled={saving}
           hitSlop={12}
@@ -67,7 +66,7 @@ export function ImageLightbox({ visible, uri, onClose, imageStyle }: Props) {
           )}
         </Pressable>
         <Pressable
-          style={styles.closeBtn}
+          style={[styles.closeBtn, { top: viewportHeight * 0.06 }]}
           onPress={onClose}
           hitSlop={12}
           accessibilityRole="button"
@@ -75,10 +74,17 @@ export function ImageLightbox({ visible, uri, onClose, imageStyle }: Props) {
         >
           <Ionicons name="close" size={28} color="#fff" />
         </Pressable>
-        <View style={styles.imageWrap} pointerEvents="box-none">
+        <View
+          style={[styles.imageWrap, { width: viewportWidth, maxHeight: viewportHeight * 0.88 }]}
+          pointerEvents="box-none"
+        >
           <ResilientImage
             uri={uri}
-            style={[styles.image, imageStyle]}
+            style={[
+              styles.image,
+              { width: viewportWidth - 16, height: viewportHeight * 0.78 },
+              imageStyle,
+            ]}
             resizeMode="contain"
             accessibilityLabel="Enlarged image"
           />
@@ -97,27 +103,20 @@ const styles = StyleSheet.create({
   },
   saveBtn: {
     position: 'absolute',
-    top: H * 0.06,
     left: 16,
     zIndex: 2,
     padding: 8,
   },
   closeBtn: {
     position: 'absolute',
-    top: H * 0.06,
     right: 16,
     zIndex: 2,
     padding: 8,
   },
   imageWrap: {
-    width: W,
-    maxHeight: H * 0.88,
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 8,
   },
-  image: {
-    width: W - 16,
-    height: H * 0.78,
-  },
+  image: {},
 });

@@ -1,6 +1,7 @@
 import React from 'react';
-import { View, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 import { linearTheme as n } from '../../theme/linearTheme';
+import LinearButton from '../primitives/LinearButton';
 import LinearText from '../primitives/LinearText';
 
 interface PermissionRowProps {
@@ -27,11 +28,15 @@ function PermissionRow({ label, status, onFix }: PermissionRowProps) {
         </LinearText>
       </View>
       {!isGranted && (
-        <TouchableOpacity style={styles.fixBtn} onPress={onFix}>
-          <LinearText variant="chip" tone="accent" style={styles.fixBtnText}>
-            Fix
-          </LinearText>
-        </TouchableOpacity>
+        <LinearButton
+          label="Fix"
+          size="sm"
+          variant="outline"
+          textTone="accent"
+          style={styles.fixBtn}
+          textStyle={styles.fixBtnText}
+          onPress={onFix}
+        />
       )}
     </View>
   );
@@ -53,13 +58,6 @@ const styles = StyleSheet.create({
   status: { fontSize: 12, marginTop: 2, fontWeight: '700' },
   granted: { color: n.colors.success },
   denied: { color: n.colors.error },
-  fixBtn: {
-    backgroundColor: `${n.colors.accent}22`,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 6,
-    borderWidth: 1,
-    borderColor: n.colors.accent,
-  },
-  fixBtnText: { color: n.colors.accent, fontSize: 12, fontWeight: '700' },
+  fixBtn: { minWidth: 72 },
+  fixBtnText: { fontSize: 12 },
 });

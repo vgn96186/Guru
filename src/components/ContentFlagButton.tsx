@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { flagContentWithReason, type FlagReason } from '../db/queries/contentFlags';
 import type { ContentType } from '../types';
 import { linearTheme as n } from '../theme/linearTheme';
+import LinearButton from './primitives/LinearButton';
 
 const FLAG_REASONS: Array<{ label: string; value: FlagReason }> = [
   { label: 'Incorrect medical fact', value: 'incorrect_fact' },
@@ -91,16 +92,23 @@ export function ContentFlagButton({ topicId, contentType }: ContentFlagButtonPro
             )}
 
             <View style={styles.modalActions}>
-              <Pressable style={styles.cancelButton} onPress={() => setShowModal(false)}>
-                <Text style={styles.cancelText}>Cancel</Text>
-              </Pressable>
-              <Pressable
-                style={[styles.submitButton, flagging && styles.submitButtonDisabled]}
+              <LinearButton
+                label="Cancel"
+                variant="outline"
+                textTone="secondary"
+                style={styles.actionButton}
+                textStyle={styles.cancelText}
+                onPress={() => setShowModal(false)}
+              />
+              <LinearButton
+                label="Submit Flag"
+                style={styles.actionButton}
+                loading={flagging}
+                loadingLabel="Flagging..."
                 onPress={handleFlag}
                 disabled={flagging || !selectedReason}
-              >
-                <Text style={styles.submitText}>{flagging ? 'Flagging...' : 'Submit Flag'}</Text>
-              </Pressable>
+                textStyle={styles.submitText}
+              />
             </View>
           </View>
         </View>
@@ -142,14 +150,7 @@ const styles = StyleSheet.create({
     minHeight: 60,
   },
   modalActions: { flexDirection: 'row', justifyContent: 'flex-end', gap: 12, marginTop: 8 },
-  cancelButton: { paddingVertical: 10, paddingHorizontal: 16 },
-  cancelText: { fontSize: 15, color: n.colors.textMuted },
-  submitButton: {
-    backgroundColor: n.colors.accent,
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 8,
-  },
-  submitButtonDisabled: { opacity: 0.5 },
-  submitText: { fontSize: 15, fontWeight: '600', color: '#FFF' },
+  actionButton: { minWidth: 116 },
+  cancelText: { fontSize: 15 },
+  submitText: { fontSize: 15, fontWeight: '600' },
 });

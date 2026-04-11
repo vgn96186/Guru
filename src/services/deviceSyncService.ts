@@ -26,6 +26,13 @@ let nextSubscriberId = 0;
 const outgoingQueue: SyncMessage[] = [];
 let isConnected = false;
 
+export function normalizeSyncCode(code: string): string {
+  return code
+    .trim()
+    .toUpperCase()
+    .replace(/[^A-Z0-9]/g, '');
+}
+
 function notifySyncConnectionLost(): void {
   showToast(SYNC_CONNECTION_LOST_MESSAGE, 'warning');
 }
@@ -92,11 +99,12 @@ function closeClient(): void {
   activeTopic = null;
   connectPromise = null;
   connectingRoomCode = null;
+  isConnected = false;
   seenMessageIds.clear();
 }
 
 async function getRoomTopic(code: string): Promise<string> {
-  const cleanCode = code.trim().toUpperCase();
+  const cleanCode = normalizeSyncCode(code);
   const raw = new TextEncoder().encode(cleanCode + '::topic-v2');
   const hashBuffer = await globalThis.crypto.subtle.digest('SHA-256', raw);
   const hashArray = Array.from(new Uint8Array(hashBuffer));
@@ -113,30 +121,43 @@ function generateSecureId(prefix: string): string {
 }
 
 async function ensureConnected(code: string): Promise<void> {
+  const normalizedCode = normalizeSyncCode(code);
+  if (!normalizedCode) {
+    console.warn('[DeviceSync] Cannot connect with empty room code');
+    return;
+  }
+
   if (mqttUnavailable) {
     console.warn('[DeviceSync] MQTT module unavailable');
     return;
   }
 
-  if (client && currentRoomCode === code) return;
-  if (connectPromise && (currentRoomCode === code || connectingRoomCode === code)) {
+  if (client && currentRoomCode === normalizedCode && isConnected) return;
+  if (
+    connectPromise &&
+    (currentRoomCode === normalizedCode || connectingRoomCode === normalizedCode)
+  ) {
     await connectPromise;
     return;
   }
 
-  if (currentRoomCode !== code) {
+  if (client && currentRoomCode === normalizedCode && !isConnected) {
+    closeClient();
+  }
+
+  if (currentRoomCode !== normalizedCode) {
     clearKeyCache();
     closeClient();
   }
 
-  connectingRoomCode = code;
+  connectingRoomCode = normalizedCode;
   connectPromise = (async () => {
     const mqtt = await getMqtt();
     if (!mqtt) {
       console.warn('[DeviceSync] MQTT module not available');
       return;
     }
-    if (client && currentRoomCode === code) return;
+    if (client && currentRoomCode === normalizedCode && isConnected) return;
 
     const clientId = generateSecureId('guru');
     const nextClient = mqtt.connect(BROKER_URL, {
@@ -149,9 +170,10 @@ async function ensureConnected(code: string): Promise<void> {
       // In production, use a private broker with authentication
     });
 
-    const topic = await getRoomTopic(code);
+    const topic = await getRoomTopic(normalizedCode);
 
     nextClient.on('connect', () => {
+      client = nextClient;
       isConnected = true;
       if (__DEV__) console.log('[DeviceSync] Connected to MQTT broker');
       nextClient.subscribe(topic, (err: any) => {
@@ -259,7 +281,7 @@ async function ensureConnected(code: string): Promise<void> {
 
     nextClient.on('close', () => {
       isConnected = false;
-      if (client === nextClient) {
+      if (subscribers.size === 0 && client === nextClient) {
         client = null;
       }
       if (__DEV__) console.log('[DeviceSync] MQTT connection closed');
@@ -271,7 +293,7 @@ async function ensureConnected(code: string): Promise<void> {
     });
 
     client = nextClient;
-    currentRoomCode = code;
+    currentRoomCode = normalizedCode;
     activeTopic = topic;
   })();
 
@@ -292,9 +314,14 @@ export function connectToRoom(code: string, onMessage: (msg: SyncMessage) => voi
     return () => {};
   }
 
-  // Validate room code format (4-6 uppercase alphanumeric)
-  const cleanCode = code.trim().toUpperCase();
-  if (!/^[A-Z0-9]{4,6}$/.test(cleanCode)) {
+  const cleanCode = normalizeSyncCode(code);
+  if (!cleanCode) {
+    console.error('[DeviceSync] Invalid room code provided');
+    return () => {};
+  }
+
+  // Validate room code format (4-16 uppercase alphanumeric after normalization)
+  if (!/^[A-Z0-9]{4,16}$/.test(cleanCode)) {
     console.warn('[DeviceSync] Unusual room code format:', code);
   }
 

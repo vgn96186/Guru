@@ -10,11 +10,11 @@
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
-const { open } = require('child_process');
 const { Runner } = require('./runner');
 
 const PORT = 3100;
 const PUBLIC_DIR = path.join(__dirname, 'public');
+const ROOT = path.join(__dirname, '..', '..');
 
 const runner = new Runner();
 
@@ -97,30 +97,63 @@ async function handleAPI(req, res) {
 
     if (req.url === '/api/run') {
       const { action } = data;
+      const isWin = process.platform === 'win32';
 
       const actions = {
         dev: async () => {
-          // npm run android — full rebuild + Metro + open app
-          await runner.run(process.platform === 'win32' ? 'npm.cmd' : 'npm', ['run', 'android']);
+          await runner.run(isWin ? 'npm.cmd' : 'npm', ['run', 'android']);
         },
         'hot-reload': async () => {
-          // Just open the app (Metro should already be running)
-          const isWin = process.platform === 'win32';
           await runner.run(isWin ? 'npm.cmd' : 'npm', ['run', 'android:open']);
         },
         'start-metro': async () => {
-          // Start Metro in background
-          const isWin = process.platform === 'win32';
           await runner.run(isWin ? 'npm.cmd' : 'npm', ['run', 'android:metro']);
         },
         'stop-metro': async () => {
-          const isWin = process.platform === 'win32';
           await runner.run('node', [path.join(ROOT, 'scripts', 'stop-metro.js')]);
         },
-        rebuild: async () => {
-          // Full debug APK rebuild
-          const isWin = process.platform === 'win32';
+        'build-debug': async () => {
           await runner.run(isWin ? 'npm.cmd' : 'npm', ['run', 'android:apk:device']);
+        },
+        'build-release': async () => {
+          await runner.run(isWin ? 'npm.cmd' : 'npm', ['run', 'android:apk:release:device']);
+        },
+        'adb-devices': async () => {
+          await runner.runAdb(['devices', '-l']);
+        },
+        'adb-restart-app': async () => {
+          const APP_PACKAGE = 'com.anonymous.gurustudy.dev';
+          await runner.runAdb(['shell', 'am', 'force-stop', APP_PACKAGE]);
+          await runner.runAdb([
+            'shell',
+            'monkey',
+            '-p',
+            APP_PACKAGE,
+            '-c',
+            'android.intent.category.LAUNCHER',
+            '1',
+          ]);
+        },
+        'adb-screenshot': async () => {
+          const screenshotPath = path.join(ROOT, 'device-screen.png');
+          await runner.runAdb(['shell', 'screencap', '-p', '/sdcard/screen.png']);
+          await runner.runAdb(['pull', '/sdcard/screen.png', screenshotPath]);
+          runner.log(`Screenshot saved to device-screen.png`, 'success');
+        },
+        'adb-logcat': async () => {
+          await runner.runAdb([
+            'logcat',
+            '-d',
+            '-t',
+            '200',
+            '*:S',
+            'ReactNative:V',
+            'ReactNativeJS:V',
+            'AndroidRuntime:E',
+          ]);
+        },
+        'create-shortcut': async () => {
+          await runner.run('node', [path.join(ROOT, 'scripts', 'create-desktop-shortcut.js')]);
         },
       };
 
@@ -141,8 +174,6 @@ async function handleAPI(req, res) {
     res.end(JSON.stringify({ error: 'Not found' }));
   });
 }
-
-const ROOT = path.join(__dirname, '..', '..');
 
 /**
  * Main HTTP server.

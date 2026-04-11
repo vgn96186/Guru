@@ -7,7 +7,7 @@
 const { spawn } = require('child_process');
 const { EventEmitter } = require('events');
 const path = require('path');
-const http = require('http');
+const { resolveAdbCommand } = require('../android-tooling');
 
 const ROOT = path.join(__dirname, '..', '..');
 
@@ -59,6 +59,58 @@ class Runner extends EventEmitter {
 
       child.on('error', (err) => {
         this.log(`Error: ${err.message}`, 'error');
+        this.running = false;
+        this.emit('done', { success: false, error: err.message });
+        resolve(false);
+      });
+
+      child.on('close', (code) => {
+        const success = code === 0;
+        this.log(
+          success ? '✅ Done!' : `❌ Failed with code ${code}`,
+          success ? 'success' : 'error',
+        );
+        this.running = false;
+        this.emit('done', { success, code });
+        resolve(success);
+      });
+    });
+  }
+
+  /**
+   * Run an adb command and stream output.
+   */
+  async runAdb(adbArgs) {
+    if (this.running) {
+      this.log('A task is already running.', 'error');
+      return false;
+    }
+
+    this.running = true;
+    this.logs = [];
+    this.log(`adb ${adbArgs.join(' ')}`, 'info');
+
+    const ADB_CMD = resolveAdbCommand();
+
+    return new Promise((resolve) => {
+      const child = spawn(ADB_CMD, adbArgs, {
+        cwd: ROOT,
+        shell: false,
+        stdio: ['ignore', 'pipe', 'pipe'],
+      });
+
+      child.stdout.on('data', (data) => {
+        const text = data.toString().trim();
+        if (text) this.log(text, 'stdout');
+      });
+
+      child.stderr.on('data', (data) => {
+        const text = data.toString().trim();
+        if (text) this.log(text, 'stderr');
+      });
+
+      child.on('error', (err) => {
+        this.log(`ADB Error: ${err.message}`, 'error');
         this.running = false;
         this.emit('done', { success: false, error: err.message });
         resolve(false);

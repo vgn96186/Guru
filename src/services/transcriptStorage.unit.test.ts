@@ -13,6 +13,7 @@ async function loadService() {
     makeDirectoryAsync: jest.fn(async (_u: string, _o?: any) => {}),
     getInfoAsync: jest.fn(async (_u: string) => ({ exists: true })),
     copyAsync: jest.fn(async (_o: { from: string; to: string }) => {}),
+    deleteAsync: jest.fn(async (_u: string, _o?: any) => {}),
     moveAsync: jest.fn(async (_o: { from: string; to: string }) => {}),
     StorageAccessFramework: {
       createFileAsync: jest.fn(
@@ -51,6 +52,9 @@ describe('transcriptStorage', () => {
     (FileSystem.makeDirectoryAsync as jest.Mock).mockClear();
     (FileSystem.getInfoAsync as jest.Mock).mockClear();
     (FileSystem.copyAsync as jest.Mock).mockClear();
+    if ((FileSystem as any).deleteAsync) {
+      ((FileSystem as any).deleteAsync as jest.Mock).mockClear();
+    }
     if ((FileSystem as any).moveAsync) {
       ((FileSystem as any).moveAsync as jest.Mock).mockClear();
     }

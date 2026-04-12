@@ -16,7 +16,6 @@ jest.mock('expo-file-system/legacy', () => ({
   },
 }));
 
-
 jest.mock('../db/repositories', () => ({
   profileRepository: {
     getProfile: jest.fn(),
@@ -40,10 +39,10 @@ describe('backgroundBackupService', () => {
   it('runs successfully on iOS (only secondary backup)', async () => {
     Platform.OS = 'ios';
     await runAutoPublicBackup();
-    
+
     expect(copyFileToPublicBackup).toHaveBeenCalledWith(
       '/test/SQLite/neet_study.db',
-      'guru_latest.db'
+      'guru_latest.db',
     );
     expect(FileSystem.StorageAccessFramework.createFileAsync).not.toHaveBeenCalled();
   });
@@ -54,7 +53,9 @@ describe('backgroundBackupService', () => {
     (profileRepository.getProfile as jest.Mock).mockResolvedValue({
       backupDirectoryUri: mockUri,
     });
-    (FileSystem.StorageAccessFramework.createFileAsync as jest.Mock).mockResolvedValue('content://test/new-file');
+    (FileSystem.StorageAccessFramework.createFileAsync as jest.Mock).mockResolvedValue(
+      'content://test/new-file',
+    );
     (FileSystem.readAsStringAsync as jest.Mock).mockResolvedValue('base64data');
 
     await runAutoPublicBackup();
@@ -62,16 +63,15 @@ describe('backgroundBackupService', () => {
     expect(FileSystem.StorageAccessFramework.createFileAsync).toHaveBeenCalledWith(
       mockUri,
       expect.stringContaining('guru_auto_db_'),
-      'application/octet-stream'
+      'application/octet-stream',
     );
-    expect(FileSystem.readAsStringAsync).toHaveBeenCalledWith(
-      'file:///test/SQLite/neet_study.db',
-      { encoding: 'base64' }
-    );
+    expect(FileSystem.readAsStringAsync).toHaveBeenCalledWith('file:///test/SQLite/neet_study.db', {
+      encoding: 'base64',
+    });
     expect(FileSystem.writeAsStringAsync).toHaveBeenCalledWith(
       'content://test/new-file',
       'base64data',
-      { encoding: 'base64' }
+      { encoding: 'base64' },
     );
     expect(copyFileToPublicBackup).toHaveBeenCalled();
   });
@@ -93,7 +93,9 @@ describe('backgroundBackupService', () => {
     (profileRepository.getProfile as jest.Mock).mockResolvedValue({
       backupDirectoryUri: 'content://test/backup',
     });
-    (FileSystem.StorageAccessFramework.createFileAsync as jest.Mock).mockRejectedValue(new Error('SAF failed'));
+    (FileSystem.StorageAccessFramework.createFileAsync as jest.Mock).mockRejectedValue(
+      new Error('SAF failed'),
+    );
 
     await runAutoPublicBackup();
 
@@ -102,7 +104,7 @@ describe('backgroundBackupService', () => {
 
   it('handles errors gracefully in runAutoPublicBackup', async () => {
     (profileRepository.getProfile as jest.Mock).mockRejectedValue(new Error('DB failed'));
-    
+
     // Should not throw
     await expect(runAutoPublicBackup()).resolves.not.toThrow();
   });

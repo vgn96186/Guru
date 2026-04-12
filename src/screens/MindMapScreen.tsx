@@ -472,7 +472,9 @@ function CanvasView({
           scale.value = clamp(saved.scale, MIN_ZOOM, MAX_ZOOM);
           return;
         }
-      } catch {}
+      } catch {
+        /* ignore corrupt saved viewport */
+      }
       const fitted = computeFittedViewport(nodes, viewport);
       translateX.value = fitted.x;
       translateY.value = fitted.y;
@@ -825,7 +827,9 @@ function CanvasView({
       } else {
         showWarning(
           'Quiz Branch',
-          `Subtree: ${topicLabels.slice(0, 5).join(', ')}${topicLabels.length > 5 ? '...' : ''}\n\nNo exact syllabus match found. Use "Ask Guru" to quiz yourself on "${node.label}".`,
+          `Subtree: ${topicLabels.slice(0, 5).join(', ')}${
+            topicLabels.length > 5 ? '...' : ''
+          }\n\nNo exact syllabus match found. Use "Ask Guru" to quiz yourself on "${node.label}".`,
         );
       }
     },
@@ -972,7 +976,6 @@ function CanvasView({
               iconSize={48}
               iconColor={n.colors.warning}
               title="This map has no concepts yet."
-              subtitle="The AI generation may have failed. Tap below to try again."
               actions={emptyActions}
             />
           );
@@ -1093,8 +1096,8 @@ function CanvasView({
                     const fillColor = node.isCenter
                       ? palette.fill
                       : isSelected
-                        ? '#EFEFEF'
-                        : palette.fill;
+                      ? '#EFEFEF'
+                      : palette.fill;
                     const strokeColor = isSelected ? '#1E1E1E' : palette.stroke;
 
                     const nx = isMoving ? node.x + moveOffset.x : node.x;
@@ -1553,7 +1556,7 @@ export default function MindMapScreen() {
   if (loading || creating) {
     return (
       <SafeAreaView style={styles.root}>
-        <ScreenHeader title="Mind Map" />
+        <ScreenHeader title="Mind Map" showSettings />
         <View style={styles.centerContent}>
           <LoadingOrb message={creating ? 'AI is mapping concepts...' : 'Loading...'} size={120} />
         </View>
@@ -1582,7 +1585,7 @@ export default function MindMapScreen() {
 
   return (
     <SafeAreaView style={styles.root}>
-      <ScreenHeader title="Mind Map" />
+      <ScreenHeader title="Mind Map" showSettings />
       <MapListView
         maps={maps}
         onSelect={openMap}

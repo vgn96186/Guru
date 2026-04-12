@@ -271,7 +271,7 @@ export default function QuestionBankScreen() {
     <SafeAreaView style={styles.safe}>
       <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
       <ResponsiveContainer style={styles.flex}>
-        <ScreenHeader title="Question Bank" subtitle={`${totalCount} questions saved`} />
+        <ScreenHeader title="Question Bank" showSettings />
 
         <View style={styles.summaryRow}>
           {summaryCards.map((card) => (
@@ -335,7 +335,6 @@ export default function QuestionBankScreen() {
             icon="help-circle-outline"
             iconSize={48}
             title="No questions saved yet"
-            subtitle="Study topics or take quizzes to auto-save questions here."
           />
         ) : (
           <FlatList

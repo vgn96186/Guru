@@ -168,9 +168,9 @@ describe('useAppStore', () => {
 
     it('should toggle focus audio optimistically', async () => {
       (profileRepository.updateProfile as jest.Mock).mockResolvedValue(undefined);
-      
+
       await useAppStore.getState().toggleFocusAudio();
-      
+
       expect(useAppStore.getState().profile?.focusAudioEnabled).toBe(true);
       expect(profileRepository.updateProfile).toHaveBeenCalledWith({ focusAudioEnabled: true });
     });
@@ -178,9 +178,9 @@ describe('useAppStore', () => {
     it('should rollback focus audio on failure', async () => {
       const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
       (profileRepository.updateProfile as jest.Mock).mockRejectedValue(new Error('Update failed'));
-      
+
       await useAppStore.getState().toggleFocusAudio();
-      
+
       expect(useAppStore.getState().profile?.focusAudioEnabled).toBe(false); // Rolled back
       expect(showToast).toHaveBeenCalledWith(expect.any(String), 'error');
       consoleSpy.mockRestore();
@@ -227,14 +227,26 @@ describe('useAppStore', () => {
       // Re-import the store in an isolated module to check registration calls
       jest.isolateModules(() => {
         const { dbEvents: localDbEvents } = require('../services/databaseEvents');
-        // The mock is already active for the entire file, 
+        // The mock is already active for the entire file,
         // but isolateModules will re-run the useAppStore initialization.
         require('./useAppStore');
-        
-        expect(localDbEvents.on).toHaveBeenCalledWith(DB_EVENT_KEYS.LECTURE_SAVED, expect.any(Function));
-        expect(localDbEvents.on).toHaveBeenCalledWith(DB_EVENT_KEYS.TRANSCRIPT_RECOVERED, expect.any(Function));
-        expect(localDbEvents.on).toHaveBeenCalledWith(DB_EVENT_KEYS.PROGRESS_UPDATED, expect.any(Function));
-        expect(localDbEvents.on).toHaveBeenCalledWith(DB_EVENT_KEYS.PROFILE_UPDATED, expect.any(Function));
+
+        expect(localDbEvents.on).toHaveBeenCalledWith(
+          DB_EVENT_KEYS.LECTURE_SAVED,
+          expect.any(Function),
+        );
+        expect(localDbEvents.on).toHaveBeenCalledWith(
+          DB_EVENT_KEYS.TRANSCRIPT_RECOVERED,
+          expect.any(Function),
+        );
+        expect(localDbEvents.on).toHaveBeenCalledWith(
+          DB_EVENT_KEYS.PROGRESS_UPDATED,
+          expect.any(Function),
+        );
+        expect(localDbEvents.on).toHaveBeenCalledWith(
+          DB_EVENT_KEYS.PROFILE_UPDATED,
+          expect.any(Function),
+        );
       });
     });
   });

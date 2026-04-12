@@ -347,7 +347,7 @@ export async function transcribeAudio(opts: {
         logId: logId ?? null,
         audioFilePath,
         providerOrder,
-        lastError: lastError instanceof Error ? lastError.message : (lastError ?? null),
+        lastError: lastError instanceof Error ? lastError.message : lastError ?? null,
       });
     }
     if (!hasGroq && !hasHuggingFace && !hasCloudflare && !hasDeepgram && !hasLocalWhisper) {

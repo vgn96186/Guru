@@ -325,7 +325,10 @@ export async function testGitHubCopilotConnection(
 
 export async function testGitLabDuoConnection(accessToken: string): Promise<ProviderHealthResult> {
   try {
-    const url = `${getGitLabInstanceUrl().replace(/\/+$/, '')}/api/v4/ai/third_party_agents/direct_access`;
+    const url = `${getGitLabInstanceUrl().replace(
+      /\/+$/,
+      '',
+    )}/api/v4/ai/third_party_agents/direct_access`;
     const res = await fetch(url, {
       method: 'POST',
       headers: {

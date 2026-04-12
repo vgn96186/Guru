@@ -141,7 +141,9 @@ export default function LectureReturnSheet(props: Props) {
     if (phase === 'results') {
       const subject = selectedSubjectName ?? analysis?.subject ?? 'Lecture';
       const topicCount = analysis?.topics.length ?? 0;
-      return `${subject}${topicCount > 0 ? ` • ${topicCount} topic${topicCount === 1 ? '' : 's'} detected` : ''}`;
+      return `${subject}${
+        topicCount > 0 ? ` • ${topicCount} topic${topicCount === 1 ? '' : 's'} detected` : ''
+      }`;
     }
     if (phase === 'quiz') {
       return `${quizQuestions.length} question${quizQuestions.length === 1 ? '' : 's'} ready`;
@@ -218,16 +220,16 @@ export default function LectureReturnSheet(props: Props) {
                     phase === 'error'
                       ? 'alert-circle'
                       : phase === 'results' || phase === 'quiz' || phase === 'quiz_done'
-                        ? 'checkmark-circle'
-                        : 'mic'
+                      ? 'checkmark-circle'
+                      : 'mic'
                   }
                   size={18}
                   color={
                     phase === 'error'
                       ? n.colors.error
                       : phase === 'results' || phase === 'quiz' || phase === 'quiz_done'
-                        ? n.colors.success
-                        : n.colors.accent
+                      ? n.colors.success
+                      : n.colors.accent
                   }
                 />
                 {isWorkingPhase ? (
@@ -246,8 +248,8 @@ export default function LectureReturnSheet(props: Props) {
                   {isWorkingPhase && progressLabel
                     ? `${progressLabel}${progressProvider ? ` · ${progressProvider}` : ''}`
                     : isIntroPhase
-                      ? 'Tap to start transcription'
-                      : getCompactSubtitle()}
+                    ? 'Tap to start transcription'
+                    : getCompactSubtitle()}
                 </Text>
               </View>
               {!isWorkingPhase && (
@@ -332,8 +334,8 @@ export default function LectureReturnSheet(props: Props) {
                             stage === 'transcribing'
                               ? 'Transcribe'
                               : stage === 'analyzing'
-                                ? 'Analyze'
-                                : 'Save';
+                              ? 'Analyze'
+                              : 'Save';
 
                           return (
                             <View
@@ -651,16 +653,16 @@ export default function LectureReturnSheet(props: Props) {
                     score === quizQuestions.length
                       ? 'trophy'
                       : score >= quizQuestions.length / 2
-                        ? 'ribbon'
-                        : 'book-outline'
+                      ? 'ribbon'
+                      : 'book-outline'
                   }
                   size={40}
                   color={
                     score === quizQuestions.length
                       ? n.colors.warning
                       : score >= quizQuestions.length / 2
-                        ? n.colors.success
-                        : n.colors.accent
+                      ? n.colors.success
+                      : n.colors.accent
                   }
                   style={styles.returnIcon}
                 />
@@ -671,8 +673,8 @@ export default function LectureReturnSheet(props: Props) {
                   {score === quizQuestions.length
                     ? 'Perfect! You nailed it.'
                     : score >= quizQuestions.length / 2
-                      ? 'Good effort. Review the misses.'
-                      : 'Rewatch this section soon.'}
+                    ? 'Good effort. Review the misses.'
+                    : 'Rewatch this section soon.'}
                 </Text>
                 {score > 0 && (
                   <View style={styles.xpBonusBox}>
@@ -720,8 +722,8 @@ export default function LectureReturnSheet(props: Props) {
                       isSaving
                         ? 'Saving'
                         : quizLoading
-                          ? 'Loading quiz'
-                          : 'Mark as studied and take quick quiz'
+                        ? 'Loading quiz'
+                        : 'Mark as studied and take quick quiz'
                     }
                   >
                     {isSaving ? (
@@ -729,8 +731,8 @@ export default function LectureReturnSheet(props: Props) {
                         {isSaving
                           ? 'Saving lecture summary'
                           : quizLoading
-                            ? 'Loading Quiz'
-                            : 'Mark as Studied + Quick Quiz'}
+                          ? 'Loading Quiz'
+                          : 'Mark as Studied + Quick Quiz'}
                       </Text>
                     ) : (
                       <View

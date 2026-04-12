@@ -34,7 +34,7 @@ function scoreLectureNote(note: string): number {
     (score, header) => score + (trimmed.includes(header) ? 2 : 0),
     0,
   );
-  const bulletCount = (trimmed.match(/^[•\-]\s/gm) ?? []).length;
+  const bulletCount = (trimmed.match(/^[-•]\s/gm) ?? []).length;
   const boldCount = (trimmed.match(/\*\*[^*]+\*\*/g) ?? []).length;
   const questionCount = (trimmed.match(/^\s*[-•]\s+Q:|^\s*\d+\.\s+/gm) ?? []).length;
   const detailScore = Math.min(4, Math.floor(trimmed.length / 400));

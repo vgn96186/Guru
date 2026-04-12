@@ -47,7 +47,9 @@ type ImagePreference =
   | { kind: 'cf_only'; models: readonly string[] }
   | { kind: 'openrouter_only'; models: readonly string[] };
 
-function resolveImagePreference(profile: { imageGenerationModel?: string | null }): ImagePreference {
+function resolveImagePreference(profile: {
+  imageGenerationModel?: string | null;
+}): ImagePreference {
   const raw = (profile.imageGenerationModel ?? '').trim();
   if ((FAL_IMAGE_MODELS as readonly string[]).includes(raw)) {
     return { kind: 'fal_only', models: [raw] };
@@ -239,17 +241,17 @@ async function callCloudflareImage(
   const errors: string[] = [];
   for (const model of modelList) {
     let res: Response;
-    
+
     // Some Cloudflare models require multipart/form-data instead of JSON
     const requiresMultipart = model.includes('flux-2');
-    
+
     if (requiresMultipart) {
       const formData = new FormData();
       formData.append('prompt', prompt);
       if (options?.steps) {
         formData.append('steps', options.steps.toString());
       }
-      
+
       res = await fetch(
         `https://api.cloudflare.com/client/v4/accounts/${cfAccountId}/ai/run/${model}`,
         {

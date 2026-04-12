@@ -1,9 +1,6 @@
 import React from 'react';
 import type { TextProps } from 'react-native';
-import LinearText, {
-  type LinearTextTone,
-  type LinearTextVariant,
-} from './primitives/LinearText';
+import LinearText, { type LinearTextTone, type LinearTextVariant } from './primitives/LinearText';
 
 type AppTextVariant = LinearTextVariant;
 type AppTextTone = LinearTextTone;

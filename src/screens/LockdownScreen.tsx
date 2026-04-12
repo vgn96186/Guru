@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { StyleSheet, TouchableOpacity, BackHandler, StatusBar } from 'react-native';
+import { StyleSheet, BackHandler, StatusBar } from 'react-native';
 import { confirmDestructive } from '../components/dialogService';
 import LinearText from '../components/primitives/LinearText';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -92,8 +92,10 @@ export default function LockdownScreen() {
           label={`Start ${Math.ceil(timeLeft / 60)}-min Sprint`}
         />
 
-        <TouchableOpacity
+        <LinearButton
+          variant="ghost"
           style={styles.exitBtn}
+          textStyle={styles.exitBtnText}
           onPress={async () => {
             const ok = await confirmDestructive(
               'Give up?',
@@ -103,9 +105,8 @@ export default function LockdownScreen() {
           }}
           accessibilityRole="button"
           accessibilityLabel="Force exit lockdown"
-        >
-          <LinearText style={styles.exitBtnText}>Force Exit</LinearText>
-        </TouchableOpacity>
+          label="Force Exit"
+        />
       </ResponsiveContainer>
     </SafeAreaView>
   );
@@ -150,6 +151,6 @@ const styles = StyleSheet.create({
     minHeight: 60,
     marginBottom: 24,
   },
-  exitBtn: { padding: 12 },
-  exitBtnText: { color: n.colors.textSecondary, fontSize: 14, textDecorationLine: 'underline' },
+  exitBtn: { paddingVertical: 12, paddingHorizontal: 8, minHeight: 0 },
+  exitBtnText: { textDecorationLine: 'underline' },
 });

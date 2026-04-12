@@ -23,10 +23,7 @@ const DEFAULT_SHOULD_RETRY = (error: unknown): boolean => {
   return false;
 };
 
-export async function withRetry<T>(
-  fn: () => Promise<T>,
-  options?: RetryOptions,
-): Promise<T> {
+export async function withRetry<T>(fn: () => Promise<T>, options?: RetryOptions): Promise<T> {
   const maxRetries = options?.maxRetries ?? 2;
   const baseDelay = options?.baseDelayMs ?? 1000;
   const maxDelay = options?.maxDelayMs ?? 10000;

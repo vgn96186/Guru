@@ -13,6 +13,7 @@
  */
 
 import * as FileSystem from 'expo-file-system/legacy';
+import { createDownloadWithMirrorFallback } from '../localModelFiles';
 // whisper.rn has an exports map that does not allow importing the package root.
 // Import the explicit entrypoint to avoid Metro warnings during builds.
 import { initWhisper } from 'whisper.rn/index.js';
@@ -112,7 +113,9 @@ async function computeFileSha256(filePath: string): Promise<string> {
     const hashArray = Array.from(new Uint8Array(hash));
     return hashArray.map((b) => b.toString(16).padStart(2, '0')).join('');
   } catch (err) {
-    throw new Error(`Failed to compute SHA-256: ${err}`);
+    throw new Error('Failed to compute SHA-256', {
+      cause: err,
+    });
   }
 }
 
@@ -140,11 +143,13 @@ export class WhisperModelManager {
     const modelPath = this.activeModelFilePath
       ? this.activeModelFilePath
       : activeSize
-        ? getModelPath(MODEL_REGISTRY[activeSize])
-        : undefined;
+      ? getModelPath(MODEL_REGISTRY[activeSize])
+      : undefined;
 
     return {
-      isDownloaded: activeSize ? await this.isModelDownloaded(activeSize) : !!this.activeModelFilePath,
+      isDownloaded: activeSize
+        ? await this.isModelDownloaded(activeSize)
+        : !!this.activeModelFilePath,
       isLoaded: this.whisperContext !== null,
       isDownloading: this.isDownloading,
       activeSize: activeSize ?? undefined,
@@ -243,7 +248,9 @@ export class WhisperModelManager {
       throw new TranscriptionError(
         'INSUFFICIENT_STORAGE',
         `Need ${Math.round(requiredBytes / 1e6)}MB, have ${Math.round(freeSpace / 1e6)}MB`,
-        `Not enough storage. The ${size} model needs ${Math.round(modelInfo.expectedBytes / 1e6)}MB free.`,
+        `Not enough storage. The ${size} model needs ${Math.round(
+          modelInfo.expectedBytes / 1e6,
+        )}MB free.`,
       );
     }
 
@@ -259,34 +266,32 @@ export class WhisperModelManager {
         await FileSystem.deleteAsync(modelPath, { idempotent: true });
       }
 
-      // Download Whisper model
-      this.downloadResumable = FileSystem.createDownloadResumable(
+      // Download Whisper model (retries + mirror fallback)
+      const progressCb = (downloadProgress: FileSystem.DownloadProgressData) => {
+        if (downloadProgress.totalBytesExpectedToWrite <= 0) return;
+        const elapsed = (Date.now() - downloadStartTime) / 1000;
+        const bytesPerSec = downloadProgress.totalBytesWritten / Math.max(elapsed, 0.1);
+        const remaining =
+          (downloadProgress.totalBytesExpectedToWrite - downloadProgress.totalBytesWritten) /
+          Math.max(bytesPerSec, 1);
+
+        this.onProgressCallback?.({
+          bytesDownloaded: downloadProgress.totalBytesWritten,
+          totalBytes: downloadProgress.totalBytesExpectedToWrite,
+          percentage: Math.round(
+            (downloadProgress.totalBytesWritten / downloadProgress.totalBytesExpectedToWrite) * 100,
+          ),
+          estimatedSecondsRemaining: Math.round(remaining),
+        });
+      };
+
+      const { task: dlTask } = await createDownloadWithMirrorFallback(
         modelInfo.downloadUrl,
         modelPath,
         {},
-        (downloadProgress) => {
-          const elapsed = (Date.now() - downloadStartTime) / 1000;
-          const bytesPerSec = downloadProgress.totalBytesWritten / Math.max(elapsed, 0.1);
-          const remaining =
-            (downloadProgress.totalBytesExpectedToWrite - downloadProgress.totalBytesWritten) /
-            Math.max(bytesPerSec, 1);
-
-          this.onProgressCallback?.({
-            bytesDownloaded: downloadProgress.totalBytesWritten,
-            totalBytes: downloadProgress.totalBytesExpectedToWrite,
-            percentage: Math.round(
-              (downloadProgress.totalBytesWritten / downloadProgress.totalBytesExpectedToWrite) *
-                100,
-            ),
-            estimatedSecondsRemaining: Math.round(remaining),
-          });
-        },
+        progressCb,
       );
-
-      const result = await this.downloadResumable.downloadAsync();
-      if (!result) {
-        throw new Error('Download returned null');
-      }
+      this.downloadResumable = dlTask;
 
       // Validate downloaded file size
       const fileInfo = await FileSystem.getInfoAsync(modelPath);
@@ -389,7 +394,11 @@ export class WhisperModelManager {
       throw new TranscriptionError(
         'INSUFFICIENT_RAM',
         `Need ${modelInfo.minRamGb}GB RAM, have ~${availableRam.toFixed(1)}GB`,
-        `The ${targetSize} model needs ${modelInfo.minRamGb}GB of RAM. Your device has ~${availableRam.toFixed(1)}GB available. Try the ${targetSize === 'small' ? 'base' : 'tiny'} model instead.`,
+        `The ${targetSize} model needs ${
+          modelInfo.minRamGb
+        }GB of RAM. Your device has ~${availableRam.toFixed(1)}GB available. Try the ${
+          targetSize === 'small' ? 'base' : 'tiny'
+        } model instead.`,
       );
     }
 
@@ -572,7 +581,7 @@ export class WhisperModelManager {
   private async downloadVadModel(): Promise<void> {
     const vadPath = getVadModelPath();
     try {
-      await FileSystem.downloadAsync(VAD_MODEL_INFO.downloadUrl, vadPath);
+      await createDownloadWithMirrorFallback(VAD_MODEL_INFO.downloadUrl, vadPath, {}, () => {});
 
       // Validate VAD model
       const actualSha = await computeFileSha256(vadPath);

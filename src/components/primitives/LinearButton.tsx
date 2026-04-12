@@ -52,7 +52,7 @@ export default function LinearButton({
   const tone = textTone ?? getDefaultTextTone(variant);
   const isGlass = variant === 'glass' || variant === 'glassTinted';
   const resolvedDisabled = disabled || loading;
-  const resolvedLabel = loading ? (loadingLabel ?? null) : label;
+  const resolvedLabel = loading ? loadingLabel ?? null : label;
   const leadingDecoration = loading ? (
     <ActivityIndicator size="small" color={getSpinnerColor(tone)} />
   ) : (

@@ -20,9 +20,12 @@ jest.mock('expo-notifications', () => ({
 }));
 
 jest.mock(
-  'llama.rn',
+  'react-native-llm-litert-mediapipe',
   () => ({
-    initLlama: jest.fn(),
+    loadModel: jest.fn(),
+    generateText: jest.fn(),
+    releaseModel: jest.fn(),
+    stopGeneration: jest.fn(),
   }),
   { virtual: true },
 );

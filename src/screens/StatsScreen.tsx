@@ -199,8 +199,8 @@ function StatsScreenContent() {
           <View style={styles.header}>
             <ScreenHeader
               title="Exam Readiness"
-              subtitle="Focus on how far you've come."
               onBackPress={() => navigation.navigate('MenuHome')}
+              showSettings
             />
           </View>
 
@@ -210,7 +210,6 @@ function StatsScreenContent() {
               icon="stats-chart-outline"
               iconSize={48}
               title="No study data yet"
-              subtitle="Your first session, lecture capture, or review block will unlock streaks, projections, and coverage trends here."
               actions={[
                 {
                   label: 'Start Your First Session →',

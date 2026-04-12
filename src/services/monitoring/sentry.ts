@@ -2,7 +2,7 @@ import { Platform } from 'react-native';
 import * as Sentry from '@sentry/react-native';
 import { SENTRY_DSN } from '../../config/appConfig';
 
-const sentryEnabled = SENTRY_DSN.length > 0;
+const sentryEnabled = (SENTRY_DSN ?? '').length > 0;
 const navigationIntegration = Sentry.reactNavigationIntegration({
   enableTimeToInitialDisplay: true,
   ignoreEmptyBackNavigationTransactions: true,

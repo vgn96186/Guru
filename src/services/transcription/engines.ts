@@ -137,7 +137,9 @@ export async function transcribeRawWithGroq(
   }
   if (fileInfo.size > GROQ_MAX_SAFE_UPLOAD_BYTES) {
     throw new Error(
-      `Groq transcription is limited to ${formatMegabytes(GROQ_MAX_SAFE_UPLOAD_BYTES)} files in Guru. Use chunked transcription for larger recordings.`,
+      `Groq transcription is limited to ${formatMegabytes(
+        GROQ_MAX_SAFE_UPLOAD_BYTES,
+      )} files in Guru. Use chunked transcription for larger recordings.`,
     );
   }
   const timeoutMs = computeTranscriptionTimeoutMs(fileInfo.size);
@@ -208,7 +210,9 @@ export async function transcribeRawWithHuggingFace(
   }
   if (fileInfo.size > HUGGINGFACE_MAX_SAFE_UPLOAD_BYTES) {
     throw new Error(
-      `Hugging Face transcription is limited to ${formatMegabytes(HUGGINGFACE_MAX_SAFE_UPLOAD_BYTES)} files in Guru to avoid memory crashes. Use Groq or Local Whisper for larger recordings.`,
+      `Hugging Face transcription is limited to ${formatMegabytes(
+        HUGGINGFACE_MAX_SAFE_UPLOAD_BYTES,
+      )} files in Guru to avoid memory crashes. Use Groq or Local Whisper for larger recordings.`,
     );
   }
   const timeoutMs = computeTranscriptionTimeoutMs(fileInfo.size);
@@ -243,10 +247,10 @@ export async function transcribeRawWithHuggingFace(
     typeof data?.text === 'string'
       ? data.text
       : typeof data?.generated_text === 'string'
-        ? data.generated_text
-        : Array.isArray(data) && typeof data[0]?.text === 'string'
-          ? data[0].text
-          : '';
+      ? data.generated_text
+      : Array.isArray(data) && typeof data[0]?.text === 'string'
+      ? data[0].text
+      : '';
   const transcript = sanitizeTranscript(rawText.trim());
   if (isLikelyHallucination(transcript)) return '';
   return transcript;

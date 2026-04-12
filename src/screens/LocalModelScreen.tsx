@@ -3,6 +3,7 @@ import { View, StyleSheet, StatusBar, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as FileSystem from 'expo-file-system/legacy';
+import * as DocumentPicker from 'expo-document-picker';
 import { useAppStore } from '../store/useAppStore';
 import ScreenHeader from '../components/ScreenHeader';
 import { ResponsiveContainer } from '../hooks/useResponsive';
@@ -13,6 +14,7 @@ import LinearDivider from '../components/primitives/LinearDivider';
 import LinearSurface from '../components/primitives/LinearSurface';
 import LinearText from '../components/primitives/LinearText';
 import {
+  createDownloadWithMirrorFallback,
   deleteLocalModelFile,
   getLocalModelFilePath,
   validateLocalModelFile,
@@ -24,25 +26,29 @@ import {
   showError,
   confirmDestructive,
 } from '../components/dialogService';
+import {
+  cancelBootstrapDownload,
+  isBootstrapDownloadingModel,
+} from '../services/localModelBootstrap';
+import {
+  clearLocalModelDownload,
+  getLocalModelDownloadSnapshot,
+  subscribeToLocalModelDownload,
+  updateLocalModelDownload,
+} from '../services/localModelDownloadState';
 
 const RECOMMENDED_MODELS = [
   {
-    id: 'medgemma-4b',
-    name: 'medgemma-4b-it-q4_k_m.gguf',
-    url: 'https://huggingface.co/hungqbui/medgemma-4b-it-Q4_K_M-GGUF/resolve/main/medgemma-4b-it-q4_k_m.gguf',
-    desc: 'Recommended. MedGemma 4B instruction model tuned for medical tasks with stronger domain fit (~2.5 GB).',
+    id: 'gemma-4-e4b',
+    name: 'gemma-4-E4B-it.litertlm',
+    url: 'https://huggingface.co/litert-community/gemma-4-E4B-it-litert-lm/resolve/main/gemma-4-E4B-it.litertlm',
+    desc: 'Recommended. Gemma 4 4B with 128K context, native function calling, and advanced multi-step reasoning (~3.6 GB).',
   },
   {
-    id: 'qwen-3b',
-    name: 'qwen2.5-3b-instruct-q4_k_m.gguf',
-    url: 'https://huggingface.co/Qwen/Qwen2.5-3B-Instruct-GGUF/resolve/main/qwen2.5-3b-instruct-q4_k_m.gguf',
-    desc: 'Solid fallback. Strong JSON reliability and generally good reasoning (~2.0 GB).',
-  },
-  {
-    id: 'llama-1b',
-    name: 'Llama-3.2-1B-Instruct-Q4_K_M.gguf',
-    url: 'https://huggingface.co/bartowski/Llama-3.2-1B-Instruct-GGUF/resolve/main/Llama-3.2-1B-Instruct-Q4_K_M.gguf',
-    desc: 'Lightweight 1B model. Faster but less accurate for complex tasks (~850 MB).',
+    id: 'gemma-4-e2b',
+    name: 'gemma-4-E2B-it.litertlm',
+    url: 'https://huggingface.co/litert-community/gemma-4-E2B-it-litert-lm/resolve/main/gemma-4-E2B-it.litertlm',
+    desc: 'Lighter Gemma 4 2B model. Faster inference with native structured output (~2.6 GB).',
   },
 ];
 
@@ -78,6 +84,38 @@ const WHISPER_MODELS = [
     desc: 'Medium English model (~1.5 GB). Strong local accuracy with lower memory demand than large-v3-turbo.',
   },
 ];
+
+const MODEL_MIN_BYTES: Record<string, number> = {
+  'gemma-4-E4B-it.litertlm': 3_400_000_000,
+  'gemma-4-E2B-it.litertlm': 2_400_000_000,
+  'ggml-large-v3-turbo.bin': 750_000_000,
+  'ggml-tiny.en.bin': 70_000_000,
+  'ggml-base.en.bin': 120_000_000,
+  'ggml-small.en.bin': 380_000_000,
+  'ggml-medium.en.bin': 1_200_000_000,
+};
+
+const IMPORT_MIN_BYTES = {
+  llm: 1_000_000_000, // Accepts current 2B/4B LiteRT models while rejecting tiny/bad files
+  whisper: 70_000_000, // Smallest supported whisper.cpp model in app list
+} as const;
+
+function getModelMinBytes(modelName: string): number | undefined {
+  return MODEL_MIN_BYTES[modelName];
+}
+
+function getMinBytesForPath(path: string): number | undefined {
+  const modelName = path.split('/').pop() ?? '';
+  return getModelMinBytes(modelName);
+}
+
+function formatInstallBytes(bytes?: number): string | null {
+  if (!bytes || bytes <= 0) return null;
+  const gb = bytes / 1_000_000_000;
+  if (gb >= 1) return `${gb.toFixed(gb >= 10 ? 0 : 1)} GB`;
+  const mb = bytes / 1_000_000;
+  return `${Math.round(mb)} MB`;
+}
 
 export default function LocalModelScreen() {
   const profile = useAppStore((s) => s.profile);
@@ -116,26 +154,29 @@ export default function LocalModelScreen() {
     async function scanForExistingFiles() {
       const llmFound = new Set<string>();
       const whisperFound = new Set<string>();
+      let registeredLlmPath = localModelPath;
+      let registeredWhisperPath = localWhisperPath;
 
       for (const model of RECOMMENDED_MODELS) {
         const path = getLocalModelFilePath(model.name);
-        const info = await validateLocalModelFile({ path });
-        if (info.exists) {
+        const info = await validateLocalModelFile({ path, minBytes: getModelMinBytes(model.name) });
+        if (info.exists && info.isValid) {
           llmFound.add(model.id);
-          // If profile path is null but file exists, auto-register it
-          if (!localModelPath) {
-            setLocalModelPath(path);
+          if (!registeredLlmPath) {
+            await setLocalModelPath(path);
+            registeredLlmPath = path;
           }
         }
       }
 
       for (const model of WHISPER_MODELS) {
         const path = getLocalModelFilePath(model.name);
-        const info = await validateLocalModelFile({ path });
-        if (info.exists) {
+        const info = await validateLocalModelFile({ path, minBytes: getModelMinBytes(model.name) });
+        if (info.exists && info.isValid) {
           whisperFound.add(model.id);
-          if (!localWhisperPath) {
-            setLocalWhisperPath(path);
+          if (!registeredWhisperPath) {
+            await setLocalWhisperPath(path);
+            registeredWhisperPath = path;
           }
         }
       }
@@ -149,16 +190,21 @@ export default function LocalModelScreen() {
   // Validate that stored paths still point to real files
   useEffect(() => {
     if (localModelPath) {
-      validateLocalModelFile({ path: localModelPath }).then((info) => {
-        if (!info.exists) {
-          setLocalModelPath(null);
-          setUseLocalModel(false);
-        }
-      });
+      validateLocalModelFile({ path: localModelPath, minBytes: getMinBytesForPath(localModelPath) }).then(
+        (info) => {
+          if (!info.exists || !info.isValid) {
+            setLocalModelPath(null);
+            setUseLocalModel(false);
+          }
+        },
+      );
     }
     if (localWhisperPath) {
-      validateLocalModelFile({ path: localWhisperPath }).then((info) => {
-        if (!info.exists) {
+      validateLocalModelFile({
+        path: localWhisperPath,
+        minBytes: getMinBytesForPath(localWhisperPath),
+      }).then((info) => {
+        if (!info.exists || !info.isValid) {
           setLocalWhisperPath(null);
           setUseLocalWhisper(false);
         }
@@ -173,12 +219,59 @@ export default function LocalModelScreen() {
     setUseLocalWhisper,
   ]);
 
+  const [installSnap, setInstallSnap] = useState(getLocalModelDownloadSnapshot);
+  useEffect(() => subscribeToLocalModelDownload(setInstallSnap), []);
+
+  const isGlobalInstalling = (t: 'llm' | 'whisper') => {
+    const s = installSnap;
+    if (!s?.visible || s.type !== t) return false;
+    return s.stage === 'preparing' || s.stage === 'downloading' || s.stage === 'verifying';
+  };
+
+  const progressPercentFor = (
+    t: 'llm' | 'whisper',
+    localFrac: number,
+    downloadingLocal: boolean,
+  ) => {
+    const s = installSnap;
+    if (
+      s?.visible &&
+      s.type === t &&
+      (s.stage === 'preparing' || s.stage === 'downloading' || s.stage === 'verifying')
+    ) {
+      return Math.min(100, Math.max(0, Math.round(s.progress)));
+    }
+    if (downloadingLocal) return Math.round(localFrac * 100);
+    return 0;
+  };
+
   const handleDownload = async (
     model: { id: string; name: string; url: string; desc: string },
     type: 'llm' | 'whisper',
   ) => {
     try {
+      const dlSnap = getLocalModelDownloadSnapshot();
+      const bootstrapBusySameFile =
+        dlSnap?.visible &&
+        dlSnap.source === 'bootstrap' &&
+        dlSnap.type === type &&
+        dlSnap.modelName === model.name &&
+        (dlSnap.stage === 'preparing' || dlSnap.stage === 'downloading');
+
+      if (bootstrapBusySameFile || isBootstrapDownloadingModel(model.name, type)) {
+        void showInfo(
+          'Already downloading',
+          `${model.name} is downloading from startup. Use the progress banner or wait here — starting again would restart from the beginning.`,
+        );
+        return;
+      }
+
+      // Stop any background bootstrap download for another artifact so we don't race paths.
+      await cancelBootstrapDownload();
+      clearLocalModelDownload();
+
       const isLlm = type === 'llm';
+      const minBytes = getModelMinBytes(model.name);
       if (isLlm) {
         setDownloadingLlm(true);
         setProgressLlm(0);
@@ -187,41 +280,160 @@ export default function LocalModelScreen() {
         setProgressWhisper(0);
       }
 
-      const targetUri = getLocalModelFilePath(model.name);
-      const fileInfo = await validateLocalModelFile({ path: targetUri });
+      updateLocalModelDownload({
+        visible: true,
+        source: 'manual',
+        type,
+        stage: 'preparing',
+        modelName: model.name,
+        progress: 2,
+        message:
+          type === 'whisper' ? 'Preparing offline transcription' : 'Preparing offline study AI',
+      });
 
-      if (fileInfo.exists) {
-        if (isLlm) setLocalModelPath(targetUri);
-        else setLocalWhisperPath(targetUri);
+      const targetUri = getLocalModelFilePath(model.name);
+      const partialUri = `${targetUri}.partial`;
+      const fileInfo = await validateLocalModelFile({ path: targetUri, minBytes });
+
+      if (fileInfo.exists && fileInfo.isValid) {
+        if (isLlm) {
+          setLocalModelPath(targetUri);
+          if (!localLlmBlocked) {
+            await setUseLocalModel(true);
+          }
+        } else {
+          setLocalWhisperPath(targetUri);
+        }
         if (isLlm) setDownloadingLlm(false);
         else setDownloadingWhisper(false);
+        clearLocalModelDownload();
         void showInfo('Already Downloaded', `${model.name} is already on your device.`);
         return;
       }
 
-      const task = FileSystem.createDownloadResumable(model.url, targetUri, {}, (dp) => {
-        const pc = dp.totalBytesWritten / dp.totalBytesExpectedToWrite;
-        if (isLlm) setProgressLlm(pc);
-        else setProgressWhisper(pc);
-      });
+      if (fileInfo.exists && !fileInfo.isValid) {
+        await deleteLocalModelFile(targetUri);
+      }
+
+      // Recovery path for interrupted bootstrap downloads:
+      // if a valid `.partial` artifact exists, finalize it instead of re-downloading.
+      const partialInfo = await validateLocalModelFile({ path: partialUri, minBytes });
+      if (partialInfo.exists && partialInfo.isValid) {
+        await FileSystem.moveAsync({ from: partialUri, to: targetUri });
+        if (isLlm) {
+          setLocalModelPath(targetUri);
+          if (!localLlmBlocked) {
+            await setUseLocalModel(true);
+          }
+          setExistingLlmFiles((prev) => new Set([...prev, model.id]));
+        } else {
+          setLocalWhisperPath(targetUri);
+          setExistingWhisperFiles((prev) => new Set([...prev, model.id]));
+        }
+        if (isLlm) setDownloadingLlm(false);
+        else setDownloadingWhisper(false);
+        updateLocalModelDownload({
+          visible: true,
+          source: 'manual',
+          type,
+          stage: 'complete',
+          modelName: model.name,
+          progress: 100,
+          downloadedBytes: partialInfo.size,
+          totalBytes: partialInfo.size,
+        });
+        void showSuccess('Recovered', `${model.name} was recovered from an interrupted download.`);
+        return;
+      }
+
+      // Clean up any leftover .partial / .partial.chunkN files from
+      // previous attempts (bootstrap parallel chunks, interrupted downloads).
+      if (partialInfo.exists) {
+        await deleteLocalModelFile(partialUri);
+      }
+      for (let i = 0; i < 8; i++) {
+        await deleteLocalModelFile(`${partialUri}.chunk${i}`);
+      }
+
+      const progressCb = (dp: FileSystem.DownloadProgressData) => {
+        if (dp.totalBytesExpectedToWrite > 0) {
+          const pc = dp.totalBytesWritten / dp.totalBytesExpectedToWrite;
+          if (isLlm) setProgressLlm(pc);
+          else setProgressWhisper(pc);
+          updateLocalModelDownload({
+            visible: true,
+            source: 'manual',
+            type,
+            stage: 'downloading',
+            modelName: model.name,
+            progress: Math.round(pc * 100),
+            downloadedBytes: dp.totalBytesWritten,
+            totalBytes: dp.totalBytesExpectedToWrite,
+          });
+        }
+      };
+
+      const { task, result: res } = await createDownloadWithMirrorFallback(
+        model.url,
+        partialUri,
+        { headers: { 'Accept-Encoding': 'identity' } },
+        progressCb,
+      );
 
       if (isLlm) setTaskLlm(task);
       else setTaskWhisper(task);
-      const res = await task.downloadAsync();
 
-      if (res && res.status === 200) {
+      if (res.status === 200) {
+        updateLocalModelDownload({
+          visible: true,
+          source: 'manual',
+          type,
+          stage: 'verifying',
+          modelName: model.name,
+          progress: 100,
+          message: 'Verifying model integrity',
+        });
+        const downloaded = await validateLocalModelFile({ path: partialUri, minBytes });
+        if (!downloaded.isValid) {
+          throw new Error(
+            `${model.name} appears incomplete (${downloaded.size} bytes). Please retry the download.`,
+          );
+        }
+        await FileSystem.moveAsync({ from: partialUri, to: targetUri });
         if (isLlm) {
-          setLocalModelPath(res.uri);
+          setLocalModelPath(targetUri);
+          if (!localLlmBlocked) {
+            await setUseLocalModel(true);
+          }
           setExistingLlmFiles((prev) => new Set([...prev, model.id]));
         } else {
-          setLocalWhisperPath(res.uri);
+          setLocalWhisperPath(targetUri);
           setExistingWhisperFiles((prev) => new Set([...prev, model.id]));
         }
+        updateLocalModelDownload({
+          visible: true,
+          source: 'manual',
+          type,
+          stage: 'complete',
+          modelName: model.name,
+          progress: 100,
+          downloadedBytes: downloaded.size,
+          totalBytes: downloaded.size,
+        });
         void showSuccess('Success', `${model.name} downloaded successfully!`);
       } else {
         throw new Error('Download failed');
       }
     } catch (e: unknown) {
+      updateLocalModelDownload({
+        visible: true,
+        source: 'manual',
+        type,
+        stage: 'error',
+        modelName: model.name,
+        progress: 0,
+        message: 'Download failed',
+      });
       void showError(e, 'Failed to download model');
     } finally {
       if (type === 'llm') {
@@ -234,17 +446,95 @@ export default function LocalModelScreen() {
     }
   };
 
+  const handleImportModel = async (type: 'llm' | 'whisper') => {
+    try {
+      await cancelBootstrapDownload();
+      clearLocalModelDownload();
+
+      const picker = await DocumentPicker.getDocumentAsync({
+        type: '*/*',
+        copyToCacheDirectory: true,
+      });
+      if (picker.canceled || !picker.assets?.[0]) return;
+
+      const asset = picker.assets[0];
+      const originalName = asset.name?.trim() || `${type}-model`;
+      const lowerName = originalName.toLowerCase();
+
+      if (type === 'llm' && !lowerName.endsWith('.litertlm')) {
+        void showWarning('Wrong File Type', 'For local LLM, choose a `.litertlm` file.');
+        return;
+      }
+      if (type === 'whisper' && !lowerName.endsWith('.bin')) {
+        void showWarning('Wrong File Type', 'For local Whisper, choose a `ggml-*.bin` file.');
+        return;
+      }
+
+      const targetUri = getLocalModelFilePath(originalName);
+      await deleteLocalModelFile(targetUri);
+      await FileSystem.copyAsync({ from: asset.uri, to: targetUri });
+
+      const validation = await validateLocalModelFile({
+        path: targetUri,
+        minBytes: IMPORT_MIN_BYTES[type],
+      });
+      if (!validation.isValid) {
+        await deleteLocalModelFile(targetUri);
+        void showWarning(
+          'File Looks Incomplete',
+          `Imported file is too small (${validation.size} bytes). Please pick a full model file.`,
+        );
+        return;
+      }
+
+      if (type === 'llm') {
+        await setLocalModelPath(targetUri);
+        if (!localLlmBlocked) {
+          await setUseLocalModel(true);
+        }
+      } else {
+        await setLocalWhisperPath(targetUri);
+        await setUseLocalWhisper(true);
+      }
+
+      void showSuccess('Model Imported', `${originalName} is now available on this device.`);
+    } catch (e: unknown) {
+      void showError(e, 'Failed to import model file');
+    }
+  };
+
   const cancelDownload = async (type: 'llm' | 'whisper') => {
-    if (type === 'llm' && taskLlm) {
-      await taskLlm.cancelAsync();
-      setDownloadingLlm(false);
+    const snap = getLocalModelDownloadSnapshot();
+    const globalActive =
+      snap?.visible &&
+      snap.type === type &&
+      (snap.stage === 'preparing' || snap.stage === 'downloading' || snap.stage === 'verifying');
+
+    if (globalActive && snap.source === 'bootstrap') {
+      await cancelBootstrapDownload();
+    }
+
+    const resumable = type === 'llm' ? taskLlm : taskWhisper;
+    if (resumable) {
+      try {
+        await resumable.cancelAsync();
+      } catch {
+        // ignore
+      }
+    }
+
+    if (type === 'llm') {
       setTaskLlm(null);
+      setDownloadingLlm(false);
       setProgressLlm(0);
-    } else if (type === 'whisper' && taskWhisper) {
-      await taskWhisper.cancelAsync();
-      setDownloadingWhisper(false);
+    } else {
       setTaskWhisper(null);
+      setDownloadingWhisper(false);
       setProgressWhisper(0);
+    }
+
+    if (globalActive || resumable) {
+      clearLocalModelDownload();
     }
   };
 
@@ -272,7 +562,6 @@ export default function LocalModelScreen() {
         <ResponsiveContainer>
           <ScreenHeader
             title="On-Device AI Setup"
-            subtitle="Download and manage offline text and transcription models."
             containerStyle={styles.screenHeader}
             titleStyle={styles.screenHeaderTitle}
           />
@@ -282,6 +571,17 @@ export default function LocalModelScreen() {
           <LinearText variant="body" tone="secondary" style={styles.desc}>
             Powers flashcards, summaries, and quizzes offline.
           </LinearText>
+          {!isLlmDownloaded ? (
+            <LinearButton
+              label="Import Existing .litertlm File"
+              variant="glass"
+              style={styles.importBtn}
+              onPress={() => handleImportModel('llm')}
+              leftIcon={
+                <Ionicons name="folder-open-outline" size={18} color={n.colors.textPrimary} />
+              }
+            />
+          ) : null}
           {localLlmWarning ? (
             <LinearSurface padded={false} style={styles.warningCard}>
               <LinearText variant="label" tone="warning" style={styles.warningTitle}>
@@ -333,15 +633,44 @@ export default function LocalModelScreen() {
                 />
               </View>
             </LinearSurface>
-          ) : downloadingLlm ? (
+          ) : downloadingLlm || isGlobalInstalling('llm') ? (
             <LinearSurface padded={false} style={styles.card}>
               <View style={styles.downloadBox}>
-                <LinearText variant="bodySmall" style={styles.progressText}>
-                  Downloading: {Math.round(progressLlm * 100)}%
-                </LinearText>
-                <View style={styles.progressBarBg}>
-                  <View style={[styles.progressBarFill, { width: `${progressLlm * 100}%` }]} />
-                </View>
+                {(() => {
+                  const llmInstall =
+                    installSnap?.visible && installSnap.type === 'llm' ? installSnap : null;
+                  const llmPct = progressPercentFor('llm', progressLlm, downloadingLlm);
+                  const llmPrimary =
+                    llmInstall?.stage === 'verifying'
+                      ? llmInstall.message ?? 'Verifying model integrity'
+                      : llmInstall?.stage === 'preparing'
+                        ? llmInstall.message ?? 'Preparing download'
+                        : `Downloading: ${llmPct}%`;
+                  const dl = llmInstall?.downloadedBytes;
+                  const tl = llmInstall?.totalBytes;
+                  const llmSub =
+                    llmInstall?.stage === 'downloading' && dl && tl
+                      ? `${formatInstallBytes(dl)} / ${formatInstallBytes(tl)}`
+                      : null;
+                  return (
+                    <>
+                      <LinearText variant="bodySmall" style={styles.progressText}>
+                        {llmPrimary}
+                      </LinearText>
+                      {llmSub ? (
+                        <LinearText variant="bodySmall" tone="secondary" style={styles.progressSubText}>
+                          {llmSub}
+                        </LinearText>
+                      ) : null}
+                      <View style={styles.progressBarBg}>
+                        <View style={[styles.progressBarFill, { width: `${llmPct}%` }]} />
+                      </View>
+                      <LinearText variant="bodySmall" tone="secondary" style={styles.progressHint}>
+                        Matches the install banner (startup + this screen share one status).
+                      </LinearText>
+                    </>
+                  );
+                })()}
                 <LinearButton
                   label="Cancel"
                   variant="ghost"
@@ -393,6 +722,17 @@ export default function LocalModelScreen() {
             `whisper.cpp`-compatible files work here; Hugging Face Whisper Turbo is available as a
             cloud provider in Settings.
           </LinearText>
+          {!isWhisperDownloaded ? (
+            <LinearButton
+              label="Import Existing Whisper .bin File"
+              variant="glass"
+              style={styles.importBtn}
+              onPress={() => handleImportModel('whisper')}
+              leftIcon={
+                <Ionicons name="folder-open-outline" size={18} color={n.colors.textPrimary} />
+              }
+            />
+          ) : null}
 
           {isWhisperDownloaded ? (
             <LinearSurface padded={false} style={styles.card}>
@@ -420,15 +760,44 @@ export default function LocalModelScreen() {
                 />
               </View>
             </LinearSurface>
-          ) : downloadingWhisper ? (
+          ) : downloadingWhisper || isGlobalInstalling('whisper') ? (
             <LinearSurface padded={false} style={styles.card}>
               <View style={styles.downloadBox}>
-                <LinearText variant="bodySmall" style={styles.progressText}>
-                  Downloading: {Math.round(progressWhisper * 100)}%
-                </LinearText>
-                <View style={styles.progressBarBg}>
-                  <View style={[styles.progressBarFill, { width: `${progressWhisper * 100}%` }]} />
-                </View>
+                {(() => {
+                  const wInstall =
+                    installSnap?.visible && installSnap.type === 'whisper' ? installSnap : null;
+                  const wPct = progressPercentFor('whisper', progressWhisper, downloadingWhisper);
+                  const wPrimary =
+                    wInstall?.stage === 'verifying'
+                      ? wInstall.message ?? 'Verifying model integrity'
+                      : wInstall?.stage === 'preparing'
+                        ? wInstall.message ?? 'Preparing download'
+                        : `Downloading: ${wPct}%`;
+                  const dl = wInstall?.downloadedBytes;
+                  const tl = wInstall?.totalBytes;
+                  const wSub =
+                    wInstall?.stage === 'downloading' && dl && tl
+                      ? `${formatInstallBytes(dl)} / ${formatInstallBytes(tl)}`
+                      : null;
+                  return (
+                    <>
+                      <LinearText variant="bodySmall" style={styles.progressText}>
+                        {wPrimary}
+                      </LinearText>
+                      {wSub ? (
+                        <LinearText variant="bodySmall" tone="secondary" style={styles.progressSubText}>
+                          {wSub}
+                        </LinearText>
+                      ) : null}
+                      <View style={styles.progressBarBg}>
+                        <View style={[styles.progressBarFill, { width: `${wPct}%` }]} />
+                      </View>
+                      <LinearText variant="bodySmall" tone="secondary" style={styles.progressHint}>
+                        Matches the install banner (startup + this screen share one status).
+                      </LinearText>
+                    </>
+                  );
+                })()}
                 <LinearButton
                   label="Cancel"
                   variant="ghost"
@@ -483,6 +852,7 @@ const styles = StyleSheet.create({
   sectionHeader: { marginBottom: 8 },
   divider: { marginVertical: 30 },
   desc: { lineHeight: 22, marginBottom: 20 },
+  importBtn: { marginBottom: 12 },
   warningCard: {
     borderRadius: 12,
     padding: 16,
@@ -500,6 +870,8 @@ const styles = StyleSheet.create({
   downloadBtn: { borderRadius: 10 },
   downloadBox: { marginTop: 10 },
   progressText: { marginBottom: 8 },
+  progressSubText: { marginTop: -4, marginBottom: 8 },
+  progressHint: { marginTop: 4, marginBottom: 4, lineHeight: 18 },
   progressBarBg: {
     height: 8,
     backgroundColor: n.colors.surface,

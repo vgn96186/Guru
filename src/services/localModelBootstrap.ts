@@ -1,14 +1,14 @@
 /**
  * localModelBootstrap.ts
  *
- * Auto-downloads local AI models (Llama + Whisper) on first launch.
+ * Auto-downloads local AI models (Gemma + Whisper) on first launch.
  * Runs in the background — does not block app startup.
  * Downloads automatically when no model path is set yet.
  * This makes local LLM + Whisper "just work" on first launch,
  * while still allowing users to delete models from Settings.
  *
- * Downloads Whisper first (75MB) since it's needed for transcription,
- * then MedGemma 4B (~2.5GB) for topic extraction and content generation.
+ * Downloads Whisper first (~809MB) since it's needed for transcription,
+ * then Gemma 4 E4B (~3.6GB) for topic extraction and content generation.
  *
  * Supports pause/resume — partial downloads are kept across app restarts.
  */
@@ -18,17 +18,22 @@ import { profileRepository } from '../db/repositories';
 import { useAppStore } from '../store/useAppStore';
 import { getLocalLlmRamWarning, isLocalLlmAllowedOnThisDevice } from './deviceMemory';
 import { showToast } from '../components/Toast';
-import { updateLocalModelDownload } from './localModelDownloadState';
+import {
+  getLocalModelDownloadSnapshot,
+  updateLocalModelDownload,
+  type LocalModelDownloadSource,
+} from './localModelDownloadState';
 import { logBootstrapEvent } from './ai/runtimeDebug';
 import {
+  createDownloadWithMirrorFallback,
   deleteLocalModelFile,
   getLocalModelFilePath,
   validateLocalModelFile,
 } from './localModelFiles';
 
 const LLM_MODEL = {
-  name: 'medgemma-4b-it-q4_k_m.gguf',
-  url: 'https://huggingface.co/hungqbui/medgemma-4b-it-Q4_K_M-GGUF/resolve/main/medgemma-4b-it-q4_k_m.gguf',
+  name: 'gemma-4-E4B-it.litertlm',
+  url: 'https://huggingface.co/litert-community/gemma-4-E4B-it-litert-lm/resolve/main/gemma-4-E4B-it.litertlm',
 };
 
 const WHISPER_MODEL = {
@@ -36,10 +41,19 @@ const WHISPER_MODEL = {
   url: 'https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-large-v3-turbo.bin',
 };
 
-// Active download handles — exposed for pause/resume from UI
+// Active download handles — exposed for pause/resume from UI (bootstrap only for pause/resume)
 let activeDownload: FileSystem.DownloadResumable | null = null;
 let activeDownloadType: 'llm' | 'whisper' | null = null;
 let isPaused = false;
+/** Which pipeline owns `activeDownload` — manual installs share global progress state but cannot use bootstrap pause/resume. */
+let activeDownloadSource: LocalModelDownloadSource = 'bootstrap';
+
+function resetActiveDownloadSlot(): void {
+  activeDownload = null;
+  activeDownloadType = null;
+  isPaused = false;
+  activeDownloadSource = 'bootstrap';
+}
 
 async function refreshProfileSafely() {
   await useAppStore.getState()?.refreshProfile?.();
@@ -58,13 +72,15 @@ export async function pauseDownload(): Promise<void> {
       const resumeDataPath = getResumeDataPath(activeDownloadType);
       await FileSystem.writeAsStringAsync(resumeDataPath, JSON.stringify(savable));
     }
+    const snap = getLocalModelDownloadSnapshot();
     updateLocalModelDownload({
       visible: true,
-      source: 'bootstrap',
+      source: activeDownloadSource,
       type: activeDownloadType!,
       stage: 'error',
-      modelName: activeDownloadType === 'whisper' ? WHISPER_MODEL.name : LLM_MODEL.name,
-      progress: 0,
+      modelName:
+        snap?.modelName ?? (activeDownloadType === 'whisper' ? WHISPER_MODEL.name : LLM_MODEL.name),
+      progress: snap?.progress ?? 0,
       message: 'Download paused',
     });
     logBootstrapEvent('download_paused', { type: activeDownloadType });
@@ -91,6 +107,26 @@ export async function resumeDownload(): Promise<void> {
   }
 }
 
+/**
+ * Cancel any active bootstrap download so manual downloads don't
+ * race against it for the same file path.
+ */
+export async function cancelBootstrapDownload(): Promise<void> {
+  if (!activeDownload) return;
+  try {
+    await activeDownload.cancelAsync?.();
+  } catch {
+    // cancelAsync may not exist on all versions; swallow
+    try {
+      await activeDownload.pauseAsync();
+    } catch {
+      // Ignore secondary cancellation failure.
+    }
+  }
+  resetActiveDownloadSlot();
+  logBootstrapEvent('bootstrap_cancelled_for_manual', {});
+}
+
 export function isDownloadPaused(): boolean {
   return isPaused;
 }
@@ -99,53 +135,75 @@ export function getActiveDownloadType(): 'llm' | 'whisper' | null {
   return activeDownloadType;
 }
 
+/**
+ * True while bootstrap is actively receiving this model (same file as first-launch auto-download).
+ * When this is true, manual "Download" must not run — it would cancel bootstrap and delete the
+ * in-progress `.partial` file, restarting from 0%.
+ */
+export function isBootstrapDownloadingModel(modelName: string, type: 'llm' | 'whisper'): boolean {
+  if (activeDownloadSource !== 'bootstrap') return false;
+  if (!activeDownload || isPaused || activeDownloadType !== type) return false;
+  const bootstrapName = type === 'llm' ? LLM_MODEL.name : WHISPER_MODEL.name;
+  return modelName === bootstrapName;
+}
+
 function getResumeDataPath(type: 'llm' | 'whisper'): string {
   return `${FileSystem.documentDirectory}${type}-download-resume.json`;
 }
 
+let bootstrapInFlight: Promise<void> | null = null;
+
 /**
  * Check if local models need downloading and start background downloads.
  * Downloads Whisper first (small, needed for transcription), then LLM.
- * Safe to call multiple times — idempotent.
+ * Concurrent calls while a run is in progress share the same promise (no parallel bootstraps).
  */
 export async function bootstrapLocalModels(): Promise<void> {
-  const profile = await profileRepository.getProfile();
+  if (bootstrapInFlight) {
+    return bootstrapInFlight;
+  }
+  bootstrapInFlight = (async () => {
+    try {
+      const profile = await profileRepository.getProfile();
 
-  const llmAllowed = isLocalLlmAllowedOnThisDevice();
-  const needsLlm = !profile.localModelPath;
-  const needsWhisper = !profile.localWhisperPath;
+      const llmAllowed = isLocalLlmAllowedOnThisDevice();
+      const needsLlm = !profile.localModelPath;
+      const needsWhisper = !profile.localWhisperPath;
 
-  if (!needsLlm && !needsWhisper) return;
+      if (!needsLlm && !needsWhisper) return;
 
-  logBootstrapEvent('bootstrap_check', {
-    needsLlm,
-    needsWhisper,
-    llmAllowed,
-    hasLocalModel: !!profile.localModelPath,
-    hasLocalWhisper: !!profile.localWhisperPath,
-  });
+      logBootstrapEvent('bootstrap_check', {
+        needsLlm,
+        needsWhisper,
+        llmAllowed,
+        hasLocalModel: !!profile.localModelPath,
+        hasLocalWhisper: !!profile.localWhisperPath,
+      });
 
-  if (!llmAllowed && !profile.localModelPath) {
-    const warning = getLocalLlmRamWarning();
-    if (warning) {
-      showToast(warning, 'warning');
+      if (!llmAllowed && !profile.localModelPath) {
+        const warning = getLocalLlmRamWarning();
+        if (warning) {
+          showToast(warning, 'warning');
+        }
+      }
+
+      if (needsWhisper) {
+        await downloadModel(WHISPER_MODEL, 'whisper');
+      }
+
+      if (needsLlm) {
+        await downloadModel(LLM_MODEL, 'llm', { autoEnable: llmAllowed });
+      }
+    } finally {
+      bootstrapInFlight = null;
     }
-  }
-
-  // Download Whisper first — it's critical for transcription
-  if (needsWhisper) {
-    await downloadModel(WHISPER_MODEL, 'whisper');
-  }
-
-  // Then download LLM (~2.5GB) — used for topic extraction and content generation
-  if (needsLlm) {
-    await downloadModel(LLM_MODEL, 'llm', { autoEnable: llmAllowed });
-  }
+  })();
+  return bootstrapInFlight;
 }
 
 // Expected minimum sizes to validate downloads aren't partial
 const MIN_MODEL_SIZES: Record<string, number> = {
-  llm: 2_200_000_000, // ~2.5GB for MedGemma 4B Q4_K_M
+  llm: 3_400_000_000, // ~3.6GB for Gemma 4 E4B
   whisper: 750_000_000, // ~809MB for ggml-large-v3-turbo.bin
 };
 
@@ -191,9 +249,7 @@ async function handleDownloadComplete(type: 'llm' | 'whisper'): Promise<void> {
       progress: 0,
       message: 'File incomplete or corrupt — will retry on next launch',
     });
-    activeDownload = null;
-    activeDownloadType = null;
-    isPaused = false;
+    resetActiveDownloadSlot();
     return;
   }
 
@@ -214,9 +270,7 @@ async function handleDownloadComplete(type: 'llm' | 'whisper'): Promise<void> {
       progress: 0,
       message: 'Could not finalize download — try again',
     });
-    activeDownload = null;
-    activeDownloadType = null;
-    isPaused = false;
+    resetActiveDownloadSlot();
     return;
   }
 
@@ -246,17 +300,19 @@ async function handleDownloadComplete(type: 'llm' | 'whisper'): Promise<void> {
   // Clean up resume data
   try {
     await FileSystem.deleteAsync(getResumeDataPath(type), { idempotent: true });
-  } catch {}
+  } catch {
+    // Ignore resume cleanup failure.
+  }
 
-  activeDownload = null;
-  activeDownloadType = null;
-  isPaused = false;
+  resetActiveDownloadSlot();
   logBootstrapEvent('download_complete', {
     type,
     targetUri,
     size: downloadedValidation.size,
   });
 }
+
+// ── Single-stream progress callback ─────────────────────────────
 
 function makeProgressCallback(type: 'llm' | 'whisper', modelName: string) {
   return (progress: FileSystem.DownloadProgressData) => {
@@ -277,6 +333,8 @@ function makeProgressCallback(type: 'llm' | 'whisper', modelName: string) {
     }
   };
 }
+
+// ── Main download orchestrator ──────────────────────────────────
 
 async function downloadModel(
   model: { name: string; url: string },
@@ -378,6 +436,7 @@ async function downloadModel(
         );
         activeDownload = downloadResumable;
         activeDownloadType = type;
+        activeDownloadSource = 'bootstrap';
         isPaused = false;
 
         const result = await downloadResumable.resumeAsync();
@@ -385,6 +444,7 @@ async function downloadModel(
           await handleDownloadComplete(type);
           return;
         }
+        resetActiveDownloadSlot();
         resumed = true;
       }
     } catch {
@@ -415,7 +475,7 @@ async function downloadModel(
 
       logBootstrapEvent('download_start', { type, modelName: model.name, url: model.url });
 
-      const downloadResumable = FileSystem.createDownloadResumable(
+      const { task: downloadResumable, result } = await createDownloadWithMirrorFallback(
         model.url,
         partialUri,
         { headers: { 'Accept-Encoding': 'identity' } },
@@ -424,11 +484,10 @@ async function downloadModel(
 
       activeDownload = downloadResumable;
       activeDownloadType = type;
+      activeDownloadSource = 'bootstrap';
       isPaused = false;
 
-      const result = await downloadResumable.downloadAsync();
-
-      if (result && result.status === 200) {
+      if (result.status === 200) {
         await handleDownloadComplete(type);
       } else {
         console.warn(`[Bootstrap] ${type} download failed with status ${result?.status}`);
@@ -443,6 +502,7 @@ async function downloadModel(
           progress: 0,
           message: 'Download failed',
         });
+        resetActiveDownloadSlot();
       }
     }
   } catch (e) {
@@ -462,8 +522,6 @@ async function downloadModel(
       progress: 0,
       message: 'Install paused',
     });
-    activeDownload = null;
-    activeDownloadType = null;
-    isPaused = false;
+    resetActiveDownloadSlot();
   }
 }

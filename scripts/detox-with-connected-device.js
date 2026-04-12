@@ -25,8 +25,13 @@ function runSync(args, options = {}) {
   const result = spawnSync(ADB_CMD, args, {
     stdio: 'pipe',
     encoding: 'utf8',
+    timeout: 15_000,
     ...options,
   });
+
+  if (result.error?.code === 'ETIMEDOUT') {
+    fail(`adb ${args.join(' ')} timed out.`);
+  }
 
   if (result.error) {
     fail(`adb command failed: ${result.error.message}`);
@@ -103,7 +108,7 @@ function parseEnvArg(arg) {
 
 async function main() {
   // Ensure adb is available
-  const adbVersion = spawnSync(ADB_CMD, ['version'], { stdio: 'pipe', encoding: 'utf8' });
+  const adbVersion = spawnSync(ADB_CMD, ['version'], { stdio: 'pipe', encoding: 'utf8', timeout: 10_000 });
   if (adbVersion.status !== 0) {
     fail('adb not found. Install Android platform-tools or set ANDROID_HOME.');
   }
@@ -138,6 +143,7 @@ async function main() {
     stdio: 'inherit',
     shell: isWindows(),
     env: process.env,
+    timeout: 600_000,
   });
 
   process.exit(child.status || 0);

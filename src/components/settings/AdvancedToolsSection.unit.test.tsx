@@ -20,7 +20,7 @@ describe('AdvancedToolsSection', () => {
 
   it('renders correctly with default props', () => {
     const { getByText } = render(<AdvancedToolsSection {...defaultProps} />);
-    
+
     expect(getByText('ADVANCED TOOLS')).toBeTruthy();
     expect(getByText('Database Backup (SQLite)')).toBeTruthy();
     expect(getByText('Export .db')).toBeTruthy();
@@ -71,21 +71,25 @@ describe('AdvancedToolsSection', () => {
 
   it('shows ActivityIndicator and disables button when isExporting is true', () => {
     const { queryByText, getByTestId } = render(
-      <AdvancedToolsSection {...defaultProps} isExporting={true} />
+      <AdvancedToolsSection {...defaultProps} isExporting={true} />,
     );
-    
+
     // The text "Export .db" should NOT be present
     expect(queryByText('Export .db')).toBeNull();
-    // It should render an ActivityIndicator, but we need to check if it's there. 
+    // It should render an ActivityIndicator, but we need to check if it's there.
     // Since we don't have a testID on the ActivityIndicator, we can check by type or just assume it renders if the text is gone.
     // However, the button is disabled.
   });
 
   it('disables Import .db button when isImporting is true', () => {
-    const { getByText } = render(
-      <AdvancedToolsSection {...defaultProps} isImporting={true} />
+    const { getByText } = render(<AdvancedToolsSection {...defaultProps} isImporting={true} />);
+    let el: { parent?: any; props?: Record<string, unknown> } | null = getByText('Import .db');
+    while (el?.parent && el.props?.accessibilityRole !== 'button') {
+      el = el.parent;
+    }
+    expect(el?.props?.accessibilityRole).toBe('button');
+    expect((el?.props?.accessibilityState as { disabled?: boolean } | undefined)?.disabled).toBe(
+      true,
     );
-    const importButton = getByText('Import .db').parent;
-    // Note: checking disabled prop in RNTL can be tricky depending on how it's wrapped.
   });
 });

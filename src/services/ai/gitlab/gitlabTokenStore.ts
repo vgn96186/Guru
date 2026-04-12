@@ -148,7 +148,9 @@ export async function getValidAccessToken(): Promise<string> {
   if (refreshCooldownUntil > now) {
     const secsLeft = Math.ceil((refreshCooldownUntil - now) / 1000);
     throw new Error(
-      `GitLab Duo token refresh on cooldown (${secsLeft}s remaining after ${refreshFailCount} failed attempt${refreshFailCount > 1 ? 's' : ''}). Will retry automatically.`,
+      `GitLab Duo token refresh on cooldown (${secsLeft}s remaining after ${refreshFailCount} failed attempt${
+        refreshFailCount > 1 ? 's' : ''
+      }). Will retry automatically.`,
     );
   }
 
@@ -182,7 +184,9 @@ export async function getValidAccessToken(): Promise<string> {
       refreshCooldownUntil = Date.now() + COOLDOWN_SCHEDULE_MS[idx];
       if (__DEV__) {
         console.warn(
-          `[GitLab] Token refresh failed (attempt ${refreshFailCount}), cooldown ${COOLDOWN_SCHEDULE_MS[idx] / 1000}s`,
+          `[GitLab] Token refresh failed (attempt ${refreshFailCount}), cooldown ${
+            COOLDOWN_SCHEDULE_MS[idx] / 1000
+          }s`,
           err,
         );
       }

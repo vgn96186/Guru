@@ -67,4 +67,21 @@ describe('chatWithGuru', () => {
       'Edema happens because low **albumin** lowers plasma oncotic pressure, so fluid shifts into tissue.',
     );
   });
+
+  it('requests a continuation when the first reply looks token-truncated (study session overlay path)', async () => {
+    const truncatedBody = `${'x'.repeat(330)}`;
+    jest
+      .mocked(generateTextWithRouting)
+      .mockResolvedValueOnce({ text: truncatedBody, modelUsed: 'groq/test-model' })
+      .mockResolvedValueOnce({
+        text: ' Because the mechanism continues with counter-transport.',
+        modelUsed: 'groq/test-model',
+      });
+
+    const result = await chatWithGuru('explain the concept', 'Test topic', []);
+
+    expect(generateTextWithRouting).toHaveBeenCalledTimes(2);
+    expect(result.reply).toContain('counter-transport');
+    expect(result.reply.length).toBeGreaterThan(truncatedBody.length);
+  });
 });

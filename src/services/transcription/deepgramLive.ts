@@ -171,7 +171,10 @@ ${text.slice(-2000)}`;
 
       const { text: response } = await generateTextWithRouting(
         [
-          { role: 'system', content: 'You are a medical lecture topic extractor. Return only valid JSON.' },
+          {
+            role: 'system',
+            content: 'You are a medical lecture topic extractor. Return only valid JSON.',
+          },
           { role: 'user', content: prompt },
         ],
         { preferCloud: true },

@@ -63,7 +63,7 @@ describe('useIdleTimer', () => {
 
     // Activity
     act(() => {
-      // We simulate activity by calling resetTimer which is internal, 
+      // We simulate activity by calling resetTimer which is internal,
       // but we can trigger it via panHandlers.
       // However, the mock doesn't connect panHandlers to the internal resetTimer.
       // We need to test the returned panHandlers if possible, or just the state transition.
@@ -90,7 +90,7 @@ describe('useIdleTimer', () => {
     });
     // Treating background as idle (per implementation: resetTimer() is called)
     // Actually, resetTimer just starts the timeout.
-    
+
     act(() => {
       jest.advanceTimersByTime(timeout);
     });
@@ -120,7 +120,7 @@ describe('useIdleTimer', () => {
   it('cleans up timer on unmount', () => {
     const { unmount } = renderHook(() => useIdleTimer({ onIdle, onActive, timeout }));
     unmount();
-    
+
     act(() => {
       jest.advanceTimersByTime(timeout);
     });

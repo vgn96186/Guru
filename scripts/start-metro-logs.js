@@ -26,6 +26,7 @@ function stopMetro() {
   const result = spawnSync('node', [stopScript], {
     stdio: 'inherit',
     cwd: ROOT,
+    timeout: 15_000,
   });
 
   if (result.error) {

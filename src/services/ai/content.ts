@@ -245,7 +245,10 @@ export async function fetchContent(
       }
     }
 
-    const userPrompt = `${promptFn(topic.name, topic.subjectName)}${buildMasteryAdaptivePromptContext(topic)}${groundingBlock}`;
+    const userPrompt = `${promptFn(
+      topic.name,
+      topic.subjectName,
+    )}${buildMasteryAdaptivePromptContext(topic)}${groundingBlock}`;
     const messages: Message[] = [
       { role: 'system', content: SYSTEM_PROMPT },
       { role: 'user', content: userPrompt },

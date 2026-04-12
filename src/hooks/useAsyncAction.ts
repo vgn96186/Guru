@@ -71,7 +71,7 @@ export function useAsyncAction<TArgs extends unknown[] = [], TResult = void>(
           const msg =
             err instanceof Error
               ? err.message
-              : (optionsRef.current?.fallbackMessage ?? 'Something went wrong');
+              : optionsRef.current?.fallbackMessage ?? 'Something went wrong';
           showToast(msg, 'error');
         }
         // 'silent' does nothing

@@ -50,7 +50,7 @@ export async function enforceLocalLlmRamGuard(notify = false): Promise<boolean> 
     return true;
   }
 
-  await profileRepository.updateProfile({ useLocalModel: false });
+  await profileRepository.updateProfile({ useLocalModel: false, localModelPath: null });
   if (notify) {
     showToast(
       getLocalLlmRamWarning() ??

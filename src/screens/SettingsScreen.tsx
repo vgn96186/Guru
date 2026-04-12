@@ -1850,11 +1850,7 @@ export default function SettingsScreen() {
           keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'none'}
           overScrollMode="never"
         >
-          <ScreenHeader
-            title="Settings"
-            subtitle="Control sync, backups, AI, and study behavior."
-            onBackPress={() => navigation.navigate('MenuHome')}
-          />
+          <ScreenHeader title="Settings" onBackPress={() => navigation.navigate('MenuHome')} />
 
           <LinearSurface compact style={styles.summaryCard}>
             <View style={styles.summaryRow}>

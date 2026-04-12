@@ -1,0 +1,6 @@
+{
+  "permissions": {
+    "allow": ["Bash(type *)", "Bash(npm *)", "Bash(systeminfo)"]
+  },
+  "$version": 3
+}

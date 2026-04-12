@@ -47,8 +47,8 @@ function actionStyle(action: DialogAction, loadingActionId: string | null) {
       destructive
         ? styles.actionButtonDestructive
         : action.variant === 'secondary'
-          ? styles.actionButtonSecondary
-          : styles.actionButtonPrimary,
+        ? styles.actionButtonSecondary
+        : styles.actionButtonPrimary,
       isLoading ? styles.actionButtonDisabled : null,
     ],
     text: [
@@ -56,8 +56,8 @@ function actionStyle(action: DialogAction, loadingActionId: string | null) {
       destructive
         ? styles.actionTextDestructive
         : action.variant === 'secondary'
-          ? styles.actionTextSecondary
-          : styles.actionTextPrimary,
+        ? styles.actionTextSecondary
+        : styles.actionTextPrimary,
     ],
   };
 }

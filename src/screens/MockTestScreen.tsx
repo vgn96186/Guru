@@ -176,8 +176,8 @@ export default function MockTestScreen() {
       const borderColor = isSkipped
         ? n.colors.borderHighlight
         : isCorrect
-          ? n.colors.success
-          : n.colors.error;
+        ? n.colors.success
+        : n.colors.error;
 
       return (
         <LinearSurface

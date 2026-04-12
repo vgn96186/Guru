@@ -69,9 +69,10 @@ const TopicImage = React.memo(function TopicImage({ topicName }: TopicImageProps
 
   useEffect(() => {
     let active = true;
-    setFailed(false);
     fetchWikipediaImage(topicName).then((url) => {
-      if (active) setImageUrl(url);
+      if (!active) return;
+      setFailed(false);
+      setImageUrl(url);
     });
     return () => {
       active = false;
@@ -369,12 +370,12 @@ function ContentCard({
       hasMountedRef.current = true;
       return;
     }
-    setLiveGuruContext(undefined);
+    queueMicrotask(() => setLiveGuruContext(undefined));
   }, [content]);
 
   useEffect(() => {
     if (!topicId && flagged) {
-      setFlagged(false);
+      queueMicrotask(() => setFlagged(false));
     }
   }, [topicId, flagged]);
 
@@ -382,13 +383,13 @@ function ContentCard({
     let active = true;
     if (topicId) {
       void isContentFlagged(topicId, content.type).then((val) => {
-        if (active && val !== flagged) setFlagged(val);
+        if (active && val !== flagged) queueMicrotask(() => setFlagged(val));
       });
     }
     return () => {
       active = false;
     };
-  }, [topicId, content.type]);
+  }, [topicId, content.type, flagged]);
 
   function handleFlag() {
     if (!topicId) return;
@@ -534,44 +535,46 @@ function ContentCard({
       default:
         return null;
     }
-  }, [content, onDone, onSkip, handleQuizAnswered, onQuizComplete]);
+  }, [content, contentType, topicId, onDone, onSkip, handleQuizAnswered, onQuizComplete]);
 
   return (
-    <View style={{ flex: 1 }}>
-      {card}
-      <View style={s.cardActions}>
-        {topicId ? (
-          <TouchableOpacity
-            style={[s.flagBtn, flagged && s.flagBtnActive]}
-            onPress={handleFlag}
-            activeOpacity={0.8}
-            accessibilityRole="button"
-            accessibilityLabel={flagged ? 'Unflag content' : 'Flag for review'}
-          >
-            <LinearText style={s.flagBtnText}>{flagged ? '🚩 Flagged' : '🏳 Flag'}</LinearText>
-          </TouchableOpacity>
-        ) : (
-          <View />
-        )}
+    <LinearSurface padded={false} style={s.sessionCardShell}>
+      <View style={s.sessionCardInner}>
+        <View style={s.sessionCardBody}>{card}</View>
+        <View style={s.cardActions}>
+          {topicId ? (
+            <TouchableOpacity
+              style={[s.flagBtn, flagged && s.flagBtnActive]}
+              onPress={handleFlag}
+              activeOpacity={0.8}
+              accessibilityRole="button"
+              accessibilityLabel={flagged ? 'Unflag content' : 'Flag for review'}
+            >
+              <LinearText style={s.flagBtnText}>{flagged ? '🚩 Flagged' : '🏳 Flag'}</LinearText>
+            </TouchableOpacity>
+          ) : (
+            <View />
+          )}
+        </View>
+        {/* Floating Ask Guru FAB */}
+        <TouchableOpacity
+          style={s.askGuruFab}
+          onPress={() => setChatOpen(true)}
+          activeOpacity={0.85}
+          accessibilityRole="button"
+          accessibilityLabel="Ask Guru about this topic"
+        >
+          <Ionicons name="sparkles" size={20} color={n.colors.textPrimary} />
+        </TouchableOpacity>
+        <GuruChatOverlay
+          visible={chatOpen}
+          topicName={content.topicName}
+          syllabusTopicId={topicId ?? undefined}
+          contextText={guruContext}
+          onClose={() => setChatOpen(false)}
+        />
       </View>
-      {/* Floating Ask Guru FAB */}
-      <TouchableOpacity
-        style={s.askGuruFab}
-        onPress={() => setChatOpen(true)}
-        activeOpacity={0.85}
-        accessibilityRole="button"
-        accessibilityLabel="Ask Guru about this topic"
-      >
-        <Ionicons name="sparkles" size={20} color={n.colors.textPrimary} />
-      </TouchableOpacity>
-      <GuruChatOverlay
-        visible={chatOpen}
-        topicName={content.topicName}
-        syllabusTopicId={topicId ?? undefined}
-        contextText={guruContext}
-        onClose={() => setChatOpen(false)}
-      />
-    </View>
+    </LinearSurface>
   );
 }
 
@@ -742,7 +745,7 @@ function ExplainablePoint({
     try {
       const resp = await explainMostTestedRationale(item, topicName);
       setExplanation(resp);
-    } catch (err) {
+    } catch {
       setExplanation('Could not load explanation. Try again.');
     } finally {
       setLoading(false);
@@ -2110,8 +2113,8 @@ function ManualReviewCard({
 // ── SocraticCard ────────────────────────────────────────────────────────────
 function SocraticCard({
   content,
-  topicId,
-  contentType,
+  topicId: _topicId,
+  contentType: _contentType,
   onDone,
   onSkip,
   onContextChange,
@@ -2136,11 +2139,8 @@ function SocraticCard({
     if (!content.questions || content.questions.length === 0) onDone(3);
   }, [content.questions, onDone]);
 
-  if (!question) {
-    return null;
-  }
-
   useEffect(() => {
+    if (!question) return;
     onContextChange?.(
       compactLines(
         [
@@ -2153,6 +2153,10 @@ function SocraticCard({
       ),
     );
   }, [content.questions.length, index, onContextChange, question, revealed]);
+
+  if (!question) {
+    return null;
+  }
 
   return (
     <ScrollView
@@ -2300,6 +2304,23 @@ function SocraticCard({
 }
 
 const s = StyleSheet.create({
+  sessionCardShell: {
+    flex: 1,
+    minHeight: 0,
+    marginHorizontal: n.spacing.md,
+    marginTop: n.spacing.xs,
+    marginBottom: n.spacing.xs,
+  },
+  sessionCardInner: {
+    flex: 1,
+    minHeight: 0,
+    position: 'relative' as const,
+  },
+  sessionCardBody: {
+    flex: 1,
+    minHeight: 0,
+    minWidth: 0,
+  },
   scroll: { flex: 1, minHeight: 0, minWidth: 0 },
   // stretch: default flex-start shrink-wraps children; markdown rows then mis-measure width
   // (last words clipped on Android, esp. landscape with plenty of horizontal space).

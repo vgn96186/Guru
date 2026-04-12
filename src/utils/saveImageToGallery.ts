@@ -17,10 +17,10 @@ export async function saveImageToDeviceGallery(uri: string): Promise<void> {
     const ext = lower.includes('.png')
       ? 'png'
       : lower.includes('.jpg') || lower.includes('.jpeg')
-        ? 'jpg'
-        : lower.includes('.webp')
-          ? 'webp'
-          : 'png';
+      ? 'jpg'
+      : lower.includes('.webp')
+      ? 'webp'
+      : 'png';
     const dest = `${FileSystem.cacheDirectory}guru_save_${Date.now()}.${ext}`;
     const result = await FileSystem.downloadAsync(uri, dest);
     localUri = result.uri;

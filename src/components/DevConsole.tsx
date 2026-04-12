@@ -5,7 +5,7 @@
  * Usage: wrap your app root with <DevConsoleProvider />, then call
  * devConsole.show() or triple-tap the version label in Settings.
  */
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -45,7 +45,11 @@ function addEntry(level: LogEntry['level'], args: unknown[]) {
 
   const entry: LogEntry = { id: _nextId++, level, message, timestamp: Date.now() };
   _entries = [..._entries.slice(-(MAX_ENTRIES - 1)), entry];
-  _listeners.forEach((fn) => fn());
+  // Defer so logging during another component's render does not synchronously
+  // update DevConsole (React forbids setState on A while rendering B).
+  queueMicrotask(() => {
+    _listeners.forEach((fn) => fn());
+  });
 }
 
 /** Install console intercepts (safe to call multiple times). */
@@ -95,7 +99,9 @@ export const devConsole = {
   show: () => _showConsole?.(),
   clear: () => {
     _entries = [];
-    _listeners.forEach((fn) => fn());
+    queueMicrotask(() => {
+      _listeners.forEach((fn) => fn());
+    });
   },
 };
 
@@ -119,7 +125,13 @@ export default function DevConsole() {
   const entries = useLogEntries();
   const scrollRef = useRef<ScrollView>(null);
 
-  _showConsole = useCallback(() => setVisible(true), []);
+  useEffect(() => {
+    const show = () => setVisible(true);
+    _showConsole = show;
+    return () => {
+      if (_showConsole === show) _showConsole = null;
+    };
+  }, []);
 
   const filtered = filter === 'all' ? entries : entries.filter((e) => e.level === filter);
 

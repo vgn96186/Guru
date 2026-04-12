@@ -66,11 +66,16 @@ function runGradle(task, extraArgs = []) {
     stdio: 'inherit',
     shell: isWindows(),
     cwd: ANDROID_DIR,
+    timeout: 600_000,
     env: {
       ...process.env,
       NODE_BINARY: NODE_BIN,
     },
   });
+
+  if (result.error?.code === 'ETIMEDOUT') {
+    fail('Gradle build timed out after 10 minutes. The build may be stuck — try again.');
+  }
 
   if (result.error) {
     fail(`Gradle execution failed: ${result.error.message}`);
@@ -85,7 +90,7 @@ async function main() {
   const { abi, type } = parseArgs();
 
   const task = type === 'release' ? 'assembleRelease' : 'assembleDebug';
-  const extraArgs = ['--console=plain', '--no-daemon', `-PreactNativeArchitectures=${abi}`];
+  const extraArgs = ['--console=plain', '--build-cache', `-PreactNativeArchitectures=${abi}`];
 
   console.log(`Building ${type} APK for ${abi}...`);
   runGradle(task, extraArgs);

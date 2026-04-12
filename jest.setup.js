@@ -149,6 +149,12 @@ jest.mock('react-native', () => {
     Alert: {
       alert: jest.fn(),
     },
+    InteractionManager: {
+      runAfterInteractions: (cb) => {
+        if (typeof cb === 'function') Promise.resolve().then(() => cb());
+        return { cancel: jest.fn() };
+      },
+    },
     AppState: {
       currentState: 'active',
       addEventListener: jest.fn(() => ({ remove: jest.fn() })),

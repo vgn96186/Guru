@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef, useCallback } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Alert } from 'react-native';
 import {
   type LectureAnalysis,
@@ -201,7 +201,7 @@ Summary: ${result.lectureSummary}`;
       setSelectedSubjectName(
         resolution.requiresSelection
           ? null
-          : (resolution.matchedSubject?.name ?? resolution.normalizedSubjectName),
+          : resolution.matchedSubject?.name ?? resolution.normalizedSubjectName,
       );
     }
 
@@ -349,7 +349,7 @@ Summary: ${result.lectureSummary}`;
 
       const message = isMetroDisconnect
         ? 'Connection to dev server lost. Audio preserved — retry when reconnected.'
-        : (e?.message ?? 'Transcription failed');
+        : e?.message ?? 'Transcription failed';
 
       setActiveStage(null);
       setStageMessage('');
@@ -364,6 +364,7 @@ Summary: ${result.lectureSummary}`;
     }
   }, [
     appName,
+    cleanupAndClose,
     durationMinutes,
     logId,
     recordingPath,
@@ -599,6 +600,7 @@ Summary: ${result.lectureSummary}`;
     canTranscribe,
     logId,
     appName,
+    cleanupAndClose,
   ]);
 
   useEffect(() => {

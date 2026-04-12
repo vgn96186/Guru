@@ -1,11 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import {
-  View,
-  TouchableOpacity,
-  StyleSheet,
-  StatusBar,
-  ScrollView,
-} from 'react-native';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { View, TouchableOpacity, StyleSheet, StatusBar, ScrollView } from 'react-native';
 import LinearText from '../components/primitives/LinearText';
 import LoadingOrb from '../components/LoadingOrb';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -28,7 +22,10 @@ export default function PomodoroQuizScreen() {
   const navigation = useNavigation<Nav>();
   const route = useRoute<QuizRoute>();
   const breakPayload = route.params?.breakPayload;
-  const precomputedQuestions = breakPayload?.questions ?? [];
+  const precomputedQuestions = useMemo(
+    () => breakPayload?.questions ?? [],
+    [breakPayload?.questions],
+  );
   const [questions, setQuestions] = useState<QuizContent['questions']>([]);
   const [topic, setTopic] = useState<TopicWithProgress | null>(null);
   const [loading, setLoading] = useState(true);
@@ -41,48 +38,53 @@ export default function PomodoroQuizScreen() {
   const question = questions[currentQuestionIndex] ?? null;
   const isExternalLectureMode = breakPayload?.source === 'external_lecture';
 
+  const loadQuestion = useCallback(
+    async (isActive: boolean) => {
+      setLoading(true);
+      try {
+        if (precomputedQuestions.length > 0) {
+          if (!isActive) return;
+          setQuestions(precomputedQuestions as QuizContent['questions']);
+          setLoading(false);
+          return;
+        }
+
+        const [due, weak] = await Promise.all([getTopicsDueForReview(1), getWeakestTopics(1)]);
+        const target = due[0] || weak[0];
+        if (!target) {
+          if (isActive) setNoQuizAvailable(true);
+          if (isActive) setLoading(false);
+          return;
+        }
+        if (isActive) setTopic(target);
+        const content = await fetchContent(target, 'quiz');
+        if (content && typeof content === 'object') {
+          const quiz = content as QuizContent;
+          if (quiz.questions && quiz.questions.length > 0) {
+            if (isActive) setQuestions(quiz.questions);
+          } else {
+            if (isActive) setIsDone(true);
+          }
+        } else if (isActive) {
+          setNoQuizAvailable(true);
+        }
+      } catch {
+        if (isActive) setNoQuizAvailable(true);
+      }
+      if (isActive) setLoading(false);
+    },
+    [precomputedQuestions],
+  );
+
   useEffect(() => {
     let isActive = true;
-    void loadQuestion(isActive);
+    queueMicrotask(() => {
+      void loadQuestion(isActive);
+    });
     return () => {
       isActive = false;
     };
-  }, []);
-
-  async function loadQuestion(isActive: boolean) {
-    setLoading(true);
-    try {
-      if (precomputedQuestions.length > 0) {
-        if (!isActive) return;
-        setQuestions(precomputedQuestions as QuizContent['questions']);
-        setLoading(false);
-        return;
-      }
-
-      const [due, weak] = await Promise.all([getTopicsDueForReview(1), getWeakestTopics(1)]);
-      const target = due[0] || weak[0];
-      if (!target) {
-        if (isActive) setNoQuizAvailable(true);
-        if (isActive) setLoading(false);
-        return;
-      }
-      if (isActive) setTopic(target);
-      const content = await fetchContent(target, 'quiz');
-      if (content && typeof content === 'object') {
-        const quiz = content as QuizContent;
-        if (quiz.questions && quiz.questions.length > 0) {
-          if (isActive) setQuestions(quiz.questions);
-        } else {
-          if (isActive) setIsDone(true);
-        }
-      } else if (isActive) {
-        setNoQuizAvailable(true);
-      }
-    } catch {
-      if (isActive) setNoQuizAvailable(true);
-    }
-    if (isActive) setLoading(false);
-  }
+  }, [loadQuestion]);
 
   function handleSelect(idx: number) {
     if (selected !== null || !question) return;
@@ -163,7 +165,9 @@ export default function PomodoroQuizScreen() {
           <LinearText style={styles.title}>Break Complete</LinearText>
           <LinearText style={styles.sub}>
             {isExternalLectureMode
-              ? `You got ${score} / ${questions.length} right. Jump back into ${breakPayload?.appName ?? 'the lecture'} when you're ready.`
+              ? `You got ${score} / ${questions.length} right. Jump back into ${
+                  breakPayload?.appName ?? 'the lecture'
+                } when you're ready.`
               : 'You took a 20-minute milestone break.'}
           </LinearText>
           <TouchableOpacity
@@ -195,7 +199,9 @@ export default function PomodoroQuizScreen() {
         </LinearText>
         <LinearText style={styles.topicName}>
           {isExternalLectureMode
-            ? `${breakPayload?.appName ?? 'Lecture'}${breakPayload?.subject ? ` • ${breakPayload.subject}` : ''}`
+            ? `${breakPayload?.appName ?? 'Lecture'}${
+                breakPayload?.subject ? ` • ${breakPayload.subject}` : ''
+              }`
             : topic?.name}
         </LinearText>
 

@@ -1,9 +1,11 @@
 import React from 'react';
 import { StyleSheet, View, type StyleProp, type TextStyle, type ViewStyle } from 'react-native';
-import { useFocusEffect, useNavigation } from '@react-navigation/native';
+import { useFocusEffect, useNavigation, type NavigationProp } from '@react-navigation/native';
 import { usePersistentScreenBanner } from './PersistentScreenBanner';
 import ScreenBannerFrame from './ScreenBannerFrame';
 import { linearTheme as n } from '../theme/linearTheme';
+import SettingsIconButton from './primitives/SettingsIconButton';
+import type { TabParamList } from '../navigation/types';
 
 interface ScreenHeaderProps {
   title: string;
@@ -18,6 +20,8 @@ interface ScreenHeaderProps {
   onBackPress?: () => void;
   backButtonTestID?: string;
   showBack?: boolean;
+  /** When true, renders a settings gear button on the right side. Composes alongside rightElement if both are provided. */
+  showSettings?: boolean;
 }
 
 export default function ScreenHeader({
@@ -33,8 +37,10 @@ export default function ScreenHeader({
   onBackPress,
   backButtonTestID,
   showBack,
+  showSettings,
 }: ScreenHeaderProps) {
   const navigation = useNavigation();
+  const tabsNavigation = navigation.getParent<NavigationProp<TabParamList>>();
   const canGoBack = navigation.canGoBack();
   const shouldShowBack = showBack ?? (canGoBack || !!onBackPress);
   const bannerContext = usePersistentScreenBanner();
@@ -50,40 +56,58 @@ export default function ScreenHeader({
     navigation.goBack();
   }, [navigation, onBackPress]);
 
+  const settingsButton = showSettings ? (
+    <SettingsIconButton
+      onPress={() => tabsNavigation?.navigate('MenuTab', { screen: 'Settings' })}
+    />
+  ) : null;
+
+  const resolvedRightElement = rightElement ? (
+    <View style={styles.rightClusterInline}>
+      {rightElement}
+      {settingsButton && <View style={styles.settingsSpacer}>{settingsButton}</View>}
+    </View>
+  ) : (
+    settingsButton
+  );
+
+  // Keep the full banner config in a ref so we can read the latest values
+  // inside useFocusEffect without depending on unstable ReactNode references
+  // (JSX elements are new objects every render and would cause an infinite loop).
+  const bannerConfigRef = React.useRef<Parameters<NonNullable<typeof setBanner>>[1] | null>(null);
+  bannerConfigRef.current = {
+    title,
+    subtitle,
+    children,
+    searchElement,
+    rightElement: resolvedRightElement,
+    titleStyle,
+    subtitleStyle,
+    titleNumberOfLines,
+    onBackPress: handleBackPress,
+    showBack: shouldShowBack,
+    backButtonTestID,
+  };
+
   useFocusEffect(
     React.useCallback(() => {
       if (!setBanner || !clearBanner) return;
-      setBanner(ownerIdRef.current, {
-        title,
-        subtitle,
-        children,
-        searchElement,
-        rightElement,
-        titleStyle,
-        subtitleStyle,
-        titleNumberOfLines,
-        onBackPress: handleBackPress,
-        showBack: shouldShowBack,
-        backButtonTestID,
-      });
+      setBanner(ownerIdRef.current, bannerConfigRef.current!);
 
       return () => {
         clearBanner(ownerIdRef.current);
       };
+      // Only depend on stable primitives + context callbacks.
+      // ReactNode deps (rightElement, children, etc.) are read from bannerConfigRef.
+      // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [
-      backButtonTestID,
       clearBanner,
-      children,
-      handleBackPress,
-      searchElement,
-      rightElement,
       setBanner,
       shouldShowBack,
-      subtitle,
-      subtitleStyle,
       title,
+      subtitle,
       titleNumberOfLines,
-      titleStyle,
+      backButtonTestID,
     ]),
   );
 
@@ -98,7 +122,7 @@ export default function ScreenHeader({
         subtitle={subtitle}
         children={children}
         searchElement={searchElement}
-        rightElement={rightElement}
+        rightElement={resolvedRightElement}
         titleStyle={titleStyle}
         subtitleStyle={subtitleStyle}
         titleNumberOfLines={titleNumberOfLines}
@@ -116,5 +140,13 @@ const styles = StyleSheet.create({
   },
   spacer: {
     marginBottom: n.spacing.md,
+  },
+  rightClusterInline: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: n.spacing.sm,
+  },
+  settingsSpacer: {
+    marginLeft: 4,
   },
 });

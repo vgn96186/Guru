@@ -204,8 +204,10 @@ export function InstallModelProgressOverlay() {
     };
   }, []);
 
-  const progressWidth: DimensionValue =
-    `${Math.max(6, Math.min(100, mountedSnapshot?.progress ?? 0))}%` as `${number}%`;
+  const progressWidth: DimensionValue = `${Math.max(
+    6,
+    Math.min(100, mountedSnapshot?.progress ?? 0),
+  )}%` as `${number}%`;
   const shimmerTranslate = shimmer.interpolate({
     inputRange: [0, 1],
     outputRange: [-140, 220],
@@ -226,6 +228,9 @@ export function InstallModelProgressOverlay() {
     mountedSnapshot.stage === 'downloading' ||
     mountedSnapshot.stage === 'preparing' ||
     (mountedSnapshot.stage === 'error' && mountedSnapshot.message === 'Download paused');
+
+  /** Pause/resume only works for the startup bootstrap resumable; manual installs use a separate task. */
+  const overlayShowsPauseControls = mountedSnapshot.source === 'bootstrap' && isActive;
 
   const shouldUseCompactUi =
     minimized ||
@@ -265,8 +270,8 @@ export function InstallModelProgressOverlay() {
             {mountedSnapshot.stage === 'verifying'
               ? 'Verifying'
               : downloadedText && totalText
-                ? `${downloadedText} / ${totalText}`
-                : getStageLabel(mountedSnapshot)}
+              ? `${downloadedText} / ${totalText}`
+              : getStageLabel(mountedSnapshot)}
           </LinearText>
         </Pressable>
       </Animated.View>
@@ -304,25 +309,27 @@ export function InstallModelProgressOverlay() {
             </LinearText>
             {isActive ? (
               <>
-                <Pressable
-                  style={styles.iconBtn}
-                  onPress={() => {
-                    if (paused) {
-                      resumeDownload();
-                      setPaused(false);
-                    } else {
-                      pauseDownload();
-                      setPaused(true);
-                    }
-                  }}
-                  hitSlop={12}
-                >
-                  <Ionicons
-                    name={paused ? 'play' : 'pause'}
-                    size={15}
-                    color={n.colors.textSecondary}
-                  />
-                </Pressable>
+                {overlayShowsPauseControls ? (
+                  <Pressable
+                    style={styles.iconBtn}
+                    onPress={() => {
+                      if (paused) {
+                        resumeDownload();
+                        setPaused(false);
+                      } else {
+                        pauseDownload();
+                        setPaused(true);
+                      }
+                    }}
+                    hitSlop={12}
+                  >
+                    <Ionicons
+                      name={paused ? 'play' : 'pause'}
+                      size={15}
+                      color={n.colors.textSecondary}
+                    />
+                  </Pressable>
+                ) : null}
                 <Pressable
                   style={styles.iconBtn}
                   onPress={() => setDownloadMinimized(true)}

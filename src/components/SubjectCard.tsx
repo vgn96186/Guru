@@ -176,8 +176,8 @@ export default React.memo(function SubjectCard({
                           pct >= 80
                             ? n.colors.success
                             : pct >= 50
-                              ? n.colors.warning
-                              : n.colors.textPrimary,
+                            ? n.colors.warning
+                            : n.colors.textPrimary,
                       },
                     ]}
                     variant="caption"

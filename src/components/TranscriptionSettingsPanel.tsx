@@ -290,16 +290,16 @@ function TestButton({
             result === 'ok'
               ? 'checkmark-circle'
               : result === 'fail'
-                ? 'close-circle'
-                : 'flash-outline'
+              ? 'close-circle'
+              : 'flash-outline'
           }
           size={18}
           color={
             result === 'ok'
               ? n.colors.success
               : result === 'fail'
-                ? n.colors.error
-                : n.colors.accent
+              ? n.colors.error
+              : n.colors.accent
           }
         />
       ) : null}

@@ -116,7 +116,7 @@ export default function BedLockScreen() {
       if (anim) anim.stop();
       if (shameInterval) clearInterval(shameInterval);
     };
-  }, [phase]);
+  }, [phase, pulseAnim]);
 
   // Shake animation for encouragement
   useEffect(() => {
@@ -136,7 +136,7 @@ export default function BedLockScreen() {
     return () => {
       if (anim) anim.stop();
     };
-  }, [phase]);
+  }, [phase, shakeAnim]);
 
   async function handleForceUnlock() {
     const ok = await confirmDestructive(

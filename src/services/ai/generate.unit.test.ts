@@ -18,6 +18,7 @@ jest.mock('./llmRouting', () => ({
 jest.mock('../deviceMemory', () => ({
   getLocalLlmRamWarning: jest.fn(),
   isLocalLlmUsable: jest.fn(() => false),
+  isLocalLlmAllowedOnThisDevice: jest.fn(() => true),
 }));
 
 jest.mock('./config', () => ({
@@ -58,7 +59,8 @@ import {
   attemptLocalLLM,
 } from './llmRouting';
 import { createAiRequestTrace } from './runtimeDebug';
-import { generateJSONWithRouting } from './generate';
+import { generateJSONWithRouting, generateTextWithRouting } from './generate';
+import { getLocalLlmRamWarning, isLocalLlmAllowedOnThisDevice } from '../deviceMemory';
 
 const traceMock = {
   success: jest.fn(),
@@ -154,5 +156,40 @@ describe('generateJSONWithRouting', () => {
     expect(out.parsed).toEqual({ a: 42 });
     expect(out.modelUsed).toBe('groq/llama');
     expect(attemptCloudLLM).toHaveBeenCalled();
+  });
+
+  it('does not attempt local fallback when device RAM guard blocks local LLM', async () => {
+    jest.mocked(getApiKeys).mockReturnValue({
+      orKey: undefined,
+      groqKey: undefined,
+      geminiKey: undefined,
+      cfAccountId: undefined,
+      cfApiToken: undefined,
+      geminiFallbackKey: undefined,
+      deepseekKey: undefined,
+      githubModelsPat: undefined,
+      kiloApiKey: undefined,
+      agentRouterKey: undefined,
+      deepgramKey: undefined,
+      chatgptConnected: false,
+      githubCopilotConnected: false,
+      gitlabDuoConnected: false,
+      poeConnected: false,
+      qwenConnected: false,
+    });
+    jest.mocked(profileRepository.getProfile).mockResolvedValue({
+      ...minimalProfile,
+      useLocalModel: false,
+      localModelPath: '/models/gemma-4-E4B-it.litertlm',
+    });
+    jest.mocked(isLocalLlmAllowedOnThisDevice).mockReturnValue(false);
+    jest.mocked(getLocalLlmRamWarning).mockReturnValue('Low RAM warning');
+
+    await expect(
+      generateTextWithRouting([{ role: 'user', content: 'hi' }], {}, false),
+    ).rejects.toThrow('Low RAM warning');
+
+    expect(attemptLocalLLM).not.toHaveBeenCalled();
+    expect(attemptCloudLLM).not.toHaveBeenCalled();
   });
 });

@@ -528,7 +528,6 @@ export default function RecordingVaultScreen() {
       <ResponsiveContainer style={styles.container}>
         <ScreenHeader
           title="Recording Vault"
-          subtitle={`${recordings.length} recording${recordings.length !== 1 ? 's' : ''} found`}
           rightElement={
             <View style={styles.headerActions}>
               <TouchableOpacity onPress={handlePickFolder} style={styles.refreshBtn}>
@@ -539,6 +538,7 @@ export default function RecordingVaultScreen() {
               </TouchableOpacity>
             </View>
           }
+          showSettings
         />
 
         <LinearSurface compact style={styles.summaryCard}>
@@ -662,12 +662,7 @@ export default function RecordingVaultScreen() {
             <LoadingOrb message="Scanning recordings..." size={120} />
           </View>
         ) : recordings.length === 0 ? (
-          <EmptyState
-            icon="mic-off-outline"
-            iconSize={48}
-            title="No recordings found"
-            subtitle="Lecture recordings appear here after you use the external app recording feature. Tap the folder icon above to browse for a folder."
-          />
+          <EmptyState icon="mic-off-outline" iconSize={48} title="No recordings found" />
         ) : (
           <FlatList
             data={recordings}

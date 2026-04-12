@@ -1,0 +1,62 @@
+
+> neet_study@1.0.0 android:metro
+> npm run generate:bundled-env && cross-env NODE_ENV=development expo start --dev-client --localhost --port 8081 -c
+
+
+> neet_study@1.0.0 generate:bundled-env
+> node ./scripts/generate-bundled-env.js
+
+Starting project at C:\Guru
+[dotenv@17.3.1] injecting env (0) from .env -- tip: 🔐 prevent committing .env to code: https://dotenvx.com/precommit
+[dotenv@17.3.1] injecting env (0) from .env -- tip: ⚙️  write to custom object with { processEnv: myObject }
+[dotenv@17.3.1] injecting env (0) from .env -- tip: ⚙️  specify custom .env file path with { path: '/custom/path/.env' }
+
+===== 2026-04-11T16:56:51.321Z metro start =====
+
+===== 2026-04-11T17:10:21.096Z metro start =====
+
+===== 2026-04-11T17:19:45.420Z metro start =====
+
+===== 2026-04-12T07:12:53.706Z metro start =====
+
+===== 2026-04-12T07:27:18.170Z metro start =====
+
+===== 2026-04-12T07:40:31.479Z metro start =====
+
+===== 2026-04-12T08:09:00.058Z metro start =====
+
+===== 2026-04-12T08:41:52.496Z metro start =====
+
+===== 2026-04-12T08:42:15.392Z metro start =====
+
+===== 2026-04-12T09:15:48.970Z metro start =====
+
+===== 2026-04-12T09:16:13.181Z metro start =====
+
+===== 2026-04-12T10:27:21.961Z metro start =====
+
+===== 2026-04-12T10:33:25.887Z metro start =====
+
+===== 2026-04-12T10:37:31.563Z metro start =====
+
+===== 2026-04-12T10:39:57.000Z metro start =====
+
+===== 2026-04-12T10:42:09.274Z metro start =====
+
+===== 2026-04-12T10:43:38.681Z metro start =====
+
+===== 2026-04-12T10:44:47.248Z metro start =====
+
+===== 2026-04-12T10:51:23.334Z metro start =====
+
+===== 2026-04-12T10:58:22.471Z metro start =====
+
+===== 2026-04-12T11:07:24.495Z metro start =====
+
+===== 2026-04-12T11:07:41.697Z metro start =====
+
+===== 2026-04-12T11:13:51.822Z metro start =====
+
+===== 2026-04-12T11:16:55.238Z metro start =====
+
+===== 2026-04-12T11:17:30.719Z metro start =====

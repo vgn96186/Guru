@@ -70,10 +70,11 @@ describe('GuruChatOverlay', () => {
     fireEvent.press(getByLabelText('Send message'));
 
     await waitFor(() => {
+      // History excludes the current turn; chatWithGuru appends `q` internally.
       expect(chatWithGuruMock).toHaveBeenCalledWith(
         'Why is lead III elevated?',
         'Cardiology',
-        [{ role: 'user', text: 'Why is lead III elevated?' }],
+        [],
         undefined,
         'Card on screen: STEMI quiz explanation and ECG changes.',
       );
@@ -98,7 +99,7 @@ describe('GuruChatOverlay', () => {
       expect(chatWithGuruMock).toHaveBeenCalledWith(
         'Hi',
         'Cardiology',
-        [{ role: 'user', text: 'Hi' }],
+        [],
         undefined,
         'Syllabus topic id: 42\n\nScreen context.',
       );

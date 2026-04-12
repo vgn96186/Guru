@@ -1,9 +1,9 @@
 import React from 'react';
-import { StyleSheet, TouchableOpacity, View, type StyleProp, type TextStyle } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { StyleSheet, View, type StyleProp, type TextStyle } from 'react-native';
 import { linearTheme as n } from '../theme/linearTheme';
 import AppText from './AppText';
 import LinearSurface from './primitives/LinearSurface';
+import BackIconButton from './primitives/BackIconButton';
 
 interface ScreenBannerFrameProps {
   title: string;
@@ -36,16 +36,7 @@ export default function ScreenBannerFrame({
     <LinearSurface padded={false} style={styles.surface}>
       <View style={styles.row}>
         {showBack ? (
-          <TouchableOpacity
-            onPress={onBackPress}
-            style={styles.backBtn}
-            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-            accessibilityRole="button"
-            accessibilityLabel="Go back"
-            testID={backButtonTestID}
-          >
-            <Ionicons name="chevron-back" size={20} color={n.colors.textPrimary} />
-          </TouchableOpacity>
+          <BackIconButton onPress={onBackPress} testID={backButtonTestID} />
         ) : (
           <View style={styles.backSpacer} />
         )}
@@ -86,23 +77,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 14,
   },
-  backBtn: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 12,
-    backgroundColor: n.colors.surfaceHover,
-    borderWidth: 1,
-    borderColor: n.colors.borderHighlight,
-  },
   backSpacer: {
-    width: 54,
+    width: 48,
   },
   copy: {
     flex: 1,
     minWidth: 0,
+    marginLeft: 12,
   },
   title: {
     letterSpacing: 0.3,

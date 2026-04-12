@@ -10,7 +10,6 @@ import {
   requestAllPermissions,
 } from './appPermissions';
 
-
 jest.mock('expo-notifications', () => ({
   getPermissionsAsync: jest.fn(),
 }));
@@ -47,31 +46,35 @@ describe('appPermissions', () => {
   describe('requestNotifications', () => {
     it('returns true and refreshes if permission is already granted', async () => {
       (Notifications.getPermissionsAsync as jest.Mock).mockResolvedValue({ status: 'granted' });
-      
+
       const result = await requestNotifications();
-      
+
       expect(result).toBe(true);
       expect(NotificationService.refreshAccountabilityNotificationsSafely).toHaveBeenCalled();
       expect(NotificationService.requestNotificationPermissions).not.toHaveBeenCalled();
     });
 
     it('requests permissions if not already granted', async () => {
-      (Notifications.getPermissionsAsync as jest.Mock).mockResolvedValue({ status: 'undetermined' });
+      (Notifications.getPermissionsAsync as jest.Mock).mockResolvedValue({
+        status: 'undetermined',
+      });
       (NotificationService.requestNotificationPermissions as jest.Mock).mockResolvedValue(true);
-      
+
       const result = await requestNotifications();
-      
+
       expect(result).toBe(true);
       expect(NotificationService.requestNotificationPermissions).toHaveBeenCalled();
       expect(NotificationService.refreshAccountabilityNotificationsSafely).toHaveBeenCalled();
     });
 
     it('returns false if request fails', async () => {
-      (Notifications.getPermissionsAsync as jest.Mock).mockResolvedValue({ status: 'undetermined' });
+      (Notifications.getPermissionsAsync as jest.Mock).mockResolvedValue({
+        status: 'undetermined',
+      });
       (NotificationService.requestNotificationPermissions as jest.Mock).mockResolvedValue(false);
-      
+
       const result = await requestNotifications();
-      
+
       expect(result).toBe(false);
       expect(NotificationService.refreshAccountabilityNotificationsSafely).not.toHaveBeenCalled();
     });
@@ -79,9 +82,9 @@ describe('appPermissions', () => {
     it('falls through to request if getPermissionsAsync throws', async () => {
       (Notifications.getPermissionsAsync as jest.Mock).mockRejectedValue(new Error('fail'));
       (NotificationService.requestNotificationPermissions as jest.Mock).mockResolvedValue(true);
-      
+
       const result = await requestNotifications();
-      
+
       expect(result).toBe(true);
       expect(NotificationService.requestNotificationPermissions).toHaveBeenCalled();
     });
@@ -90,9 +93,9 @@ describe('appPermissions', () => {
   describe('requestAudio', () => {
     it('returns true if permission is already granted', async () => {
       (Audio.getPermissionsAsync as jest.Mock).mockResolvedValue({ status: 'granted' });
-      
+
       const result = await requestAudio();
-      
+
       expect(result).toBe(true);
       expect(Audio.requestPermissionsAsync).not.toHaveBeenCalled();
     });
@@ -100,9 +103,9 @@ describe('appPermissions', () => {
     it('requests permissions if not already granted and returns true if successful', async () => {
       (Audio.getPermissionsAsync as jest.Mock).mockResolvedValue({ status: 'undetermined' });
       (Audio.requestPermissionsAsync as jest.Mock).mockResolvedValue({ status: 'granted' });
-      
+
       const result = await requestAudio();
-      
+
       expect(result).toBe(true);
       expect(Audio.requestPermissionsAsync).toHaveBeenCalled();
     });
@@ -110,16 +113,16 @@ describe('appPermissions', () => {
     it('returns false if permission request is denied', async () => {
       (Audio.getPermissionsAsync as jest.Mock).mockResolvedValue({ status: 'undetermined' });
       (Audio.requestPermissionsAsync as jest.Mock).mockResolvedValue({ status: 'denied' });
-      
+
       const result = await requestAudio();
-      
+
       expect(result).toBe(false);
     });
 
     it('returns false if getPermissionsAsync throws', async () => {
-       (Audio.getPermissionsAsync as jest.Mock).mockRejectedValue(new Error('fail'));
-       const result = await requestAudio();
-       expect(result).toBe(false);
+      (Audio.getPermissionsAsync as jest.Mock).mockRejectedValue(new Error('fail'));
+      const result = await requestAudio();
+      expect(result).toBe(false);
     });
   });
 
@@ -134,9 +137,9 @@ describe('appPermissions', () => {
     it('calls requestRecordingPermissions on Android', async () => {
       Platform.OS = 'android';
       (AppLauncherPermissions.requestRecordingPermissions as jest.Mock).mockResolvedValue(true);
-      
+
       const result = await requestRecordingAndStorage();
-      
+
       expect(result).toBe(true);
       expect(AppLauncherPermissions.requestRecordingPermissions).toHaveBeenCalled();
     });

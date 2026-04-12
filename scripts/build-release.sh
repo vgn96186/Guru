@@ -39,7 +39,7 @@ cd "$PROJECT_ROOT/android"
 # Filter to arm64-v8a only via gradle property
 ./gradlew assembleRelease \
   -PreactNativeArchitectures=arm64-v8a \
-  --no-daemon \
+  --build-cache \
   --warning-mode=none \
   -q
 

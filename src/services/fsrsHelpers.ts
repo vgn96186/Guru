@@ -9,10 +9,7 @@ export function mapConfidenceToRating(confidence: number): Rating {
   return Rating.Easy;
 }
 
-export function selectReviewLogByConfidence<T>(
-  logs: Record<number, T>,
-  confidence: number,
-): T {
+export function selectReviewLogByConfidence<T>(logs: Record<number, T>, confidence: number): T {
   const rating = mapConfidenceToRating(confidence);
   return logs[rating];
 }

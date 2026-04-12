@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   View,
   TouchableOpacity,
@@ -53,9 +53,46 @@ export default function InertiaScreen() {
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const fadeAnim = useRef(new Animated.Value(0)).current;
 
+  const fadeIn = useCallback(() => {
+    fadeAnim.setValue(0);
+    Animated.timing(fadeAnim, { toValue: 1, duration: 800, useNativeDriver: true }).start();
+  }, [fadeAnim]);
+
+  async function fetchMicroWin() {
+    try {
+      const topics = await getAllTopicsWithProgress();
+      const pool = topics
+        .filter(
+          (t) =>
+            t.progress.status === 'reviewed' ||
+            t.progress.status === 'mastered' ||
+            t.inicetPriority >= 8,
+        )
+        .slice(0, 50);
+      const selected = pool[Math.floor(Math.random() * pool.length)] || topics[0];
+      if (!selected) {
+        setPhase('sit_up_prompt');
+        return;
+      }
+      setTopic(selected);
+
+      const res = await fetchContent(selected, 'detective');
+      if (res.type === 'detective') {
+        setContent(res);
+        if (phase === 'fetching') {
+          setPhase('micro_win');
+          fadeIn();
+        }
+      }
+    } catch (e) {
+      console.error('Failed to fetch mystery', e);
+    }
+  }
+
   useEffect(() => {
-    fetchMicroWin();
+    void fetchMicroWin();
     // Skip button visible immediately (was 8s delay — bad for ADHD users who need help NOW)
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- mount-only bootstrap; fetchMicroWin closes over initial phase
   }, []);
 
   useEffect(() => {
@@ -99,43 +136,7 @@ export default function InertiaScreen() {
       clearTimeout(t3);
       clearTimeout(t4);
     };
-  }, [phase]);
-
-  function fadeIn() {
-    fadeAnim.setValue(0);
-    Animated.timing(fadeAnim, { toValue: 1, duration: 800, useNativeDriver: true }).start();
-  }
-
-  async function fetchMicroWin() {
-    try {
-      const topics = await getAllTopicsWithProgress();
-      const pool = topics
-        .filter(
-          (t) =>
-            t.progress.status === 'reviewed' ||
-            t.progress.status === 'mastered' ||
-            t.inicetPriority >= 8,
-        )
-        .slice(0, 50);
-      const selected = pool[Math.floor(Math.random() * pool.length)] || topics[0];
-      if (!selected) {
-        setPhase('sit_up_prompt');
-        return;
-      }
-      setTopic(selected);
-
-      const res = await fetchContent(selected, 'detective');
-      if (res.type === 'detective') {
-        setContent(res);
-        if (phase === 'fetching') {
-          setPhase('micro_win');
-          fadeIn();
-        }
-      }
-    } catch (e) {
-      console.error('Failed to fetch mystery', e);
-    }
-  }
+  }, [phase, fadeIn, pulseAnim]);
 
   function handlePositionConfirm() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);

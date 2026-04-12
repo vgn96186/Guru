@@ -7,10 +7,8 @@ import {
   CLOUDFLARE_MODELS,
   DEEPSEEK_MODELS,
   GEMINI_MODELS,
-  GITHUB_COPILOT_MODELS,
   GITHUB_MODELS_CHAT_MODELS,
   GROQ_MODELS,
-  KILO_MODELS,
   OPENROUTER_FREE_MODELS,
   orderedGitHubCopilotModels,
   orderedGitLabDuoModels,
@@ -58,7 +56,7 @@ function useDebouncedValue<T>(value: T, delayMs: number): T {
   const [debounced, setDebounced] = useState(value);
   useEffect(() => {
     if (delayMs <= 0) {
-      setDebounced(value);
+      queueMicrotask(() => setDebounced(value));
       return;
     }
     const t = setTimeout(() => setDebounced(value), delayMs);
@@ -76,6 +74,8 @@ const EMPTY: readonly string[] = [];
 export function useLiveGuruChatModels(profile: UserProfile | null, draft?: LiveGuruChatDraftKeys) {
   const draftRef = useRef(draft);
   draftRef.current = draft;
+  const profileRef = useRef(profile);
+  profileRef.current = profile;
 
   const keysString = useMemo(
     () =>
@@ -98,6 +98,25 @@ export function useLiveGuruChatModels(profile: UserProfile | null, draft?: LiveG
 
   const debouncedKeysString = useDebouncedValue(keysString, draft ? 500 : 0);
 
+  const profileKeysSignature = useMemo(() => {
+    if (!profile) return '';
+    const k = getApiKeys(profile);
+    return [
+      k.groqKey ?? '',
+      k.orKey ?? '',
+      k.geminiKey ?? '',
+      k.cfAccountId ?? '',
+      k.cfApiToken ?? '',
+      k.kiloApiKey ?? '',
+      k.deepseekKey ?? '',
+      k.agentRouterKey ?? '',
+      k.chatgptConnected ? '1' : '0',
+      k.githubCopilotConnected ? '1' : '0',
+      k.gitlabDuoConnected ? '1' : '0',
+      k.poeConnected ? '1' : '0',
+    ].join('\0');
+  }, [profile]);
+
   const [live, setLive] = useState<LiveGuruChatModelIds | null>(null);
   const [loading, setLoading] = useState(false);
   const [refreshToken, setRefreshToken] = useState(0);
@@ -110,11 +129,12 @@ export function useLiveGuruChatModels(profile: UserProfile | null, draft?: LiveG
     let cancelled = false;
     setLoading(true);
 
+    const currentProfile = profileRef.current;
     const mergedProfile = (() => {
-      if (!profile) return null;
+      if (!currentProfile) return null;
       const d = draftRef.current;
-      if (d) return mergeDraftProfile(profile, d);
-      return profile;
+      if (d) return mergeDraftProfile(currentProfile, d);
+      return currentProfile;
     })();
 
     const {
@@ -157,7 +177,7 @@ export function useLiveGuruChatModels(profile: UserProfile | null, draft?: LiveG
       cancelled = true;
       task.cancel();
     };
-  }, [profile, debouncedKeysString, refreshToken]);
+  }, [profileKeysSignature, debouncedKeysString, refreshToken]);
 
   // Derive a stable key string from profile fields that affect which providers are connected.
   // This prevents re-creating memoized arrays when unrelated profile fields change.
@@ -185,29 +205,29 @@ export function useLiveGuruChatModels(profile: UserProfile | null, draft?: LiveG
   const gitlabPref = profile?.gitlabDuoPreferredModel ?? '';
 
   const chatgptModelIds = useMemo(
-    () => (resolvedKeys?.chatgptConnected ? (live?.chatgpt ?? [...CHATGPT_MODELS]) : EMPTY),
+    () => (resolvedKeys?.chatgptConnected ? live?.chatgpt ?? [...CHATGPT_MODELS] : EMPTY),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [providerKeyString, live?.chatgpt],
   );
   const groqModelIds = useMemo(
-    () => (resolvedKeys?.groqKey ? (live?.groq ?? [...GROQ_MODELS]) : EMPTY),
+    () => (resolvedKeys?.groqKey ? live?.groq ?? [...GROQ_MODELS] : EMPTY),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [providerKeyString, live?.groq],
   );
   const openrouterModelIds = useMemo(
-    () => (resolvedKeys?.orKey ? (live?.openrouter ?? [...OPENROUTER_FREE_MODELS]) : EMPTY),
+    () => (resolvedKeys?.orKey ? live?.openrouter ?? [...OPENROUTER_FREE_MODELS] : EMPTY),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [providerKeyString, live?.openrouter],
   );
   const geminiModelIds = useMemo(
-    () => (resolvedKeys?.geminiKey ? (live?.gemini ?? [...GEMINI_MODELS]) : EMPTY),
+    () => (resolvedKeys?.geminiKey ? live?.gemini ?? [...GEMINI_MODELS] : EMPTY),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [providerKeyString, live?.gemini],
   );
   const cloudflareModelIds = useMemo(
     () =>
       resolvedKeys?.cfAccountId && resolvedKeys?.cfApiToken
-        ? (live?.cloudflare ?? [...CLOUDFLARE_MODELS])
+        ? live?.cloudflare ?? [...CLOUDFLARE_MODELS]
         : EMPTY,
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [providerKeyString, live?.cloudflare],
@@ -232,14 +252,14 @@ export function useLiveGuruChatModels(profile: UserProfile | null, draft?: LiveG
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [providerKeyString],
   );
-  const kiloModelIds = useMemo(() => live?.kilo ?? [...KILO_MODELS], [live?.kilo]);
+  const kiloModelIds = useMemo(() => (live?.kilo ? live.kilo : EMPTY), [live?.kilo]);
   const deepseekModelIds = useMemo(
-    () => (resolvedKeys?.deepseekKey ? (live?.deepseek ?? [...DEEPSEEK_MODELS]) : EMPTY),
+    () => (resolvedKeys?.deepseekKey ? live?.deepseek ?? [...DEEPSEEK_MODELS] : EMPTY),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [providerKeyString, live?.deepseek],
   );
   const agentRouterModelIds = useMemo(
-    () => (resolvedKeys?.agentRouterKey ? (live?.agentrouter ?? [...AGENTROUTER_MODELS]) : EMPTY),
+    () => (resolvedKeys?.agentRouterKey ? live?.agentrouter ?? [...AGENTROUTER_MODELS] : EMPTY),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [providerKeyString, live?.agentrouter],
   );

@@ -28,6 +28,8 @@ export default function RootNavigator({ initialRoute }: { initialRoute: 'Tabs' |
           headerShown: false,
           animation: 'fade',
           contentStyle: { backgroundColor: n.colors.background },
+          // statusBarBackgroundColor is ignored (and warns) when edge-to-edge is active on Android.
+          statusBarStyle: 'light',
         }}
       >
         <Stack.Screen name="CheckIn" component={CheckInScreen} />

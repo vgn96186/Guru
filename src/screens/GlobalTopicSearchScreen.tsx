@@ -79,7 +79,6 @@ export default function GlobalTopicSearchScreen() {
         <ResponsiveContainer style={styles.flex}>
           <ScreenHeader
             title="Global Topic Search"
-            subtitle="Jump to any topic across all subjects."
             searchElement={
               <BannerSearchBar
                 value={query}
@@ -88,6 +87,7 @@ export default function GlobalTopicSearchScreen() {
                 autoFocus
               />
             }
+            showSettings
           ></ScreenHeader>
           <AppFlashList
             data={results}
@@ -99,15 +99,13 @@ export default function GlobalTopicSearchScreen() {
                 <EmptyState
                   icon="search-outline"
                   title="No topics found"
-                  subtitle="Try a different keyword."
                   style={styles.emptyState}
                 />
               ) : (
                 <EmptyState
                   icon="search-outline"
                   iconSize={48}
-                  title=""
-                  subtitle="Type at least 2 characters to search across all subjects."
+                  title="Type at least 2 characters to search across all subjects."
                   style={styles.emptyState}
                 />
               )

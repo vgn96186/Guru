@@ -277,8 +277,8 @@ export default function StorageSections(props: any) {
                 {freq === 'off'
                   ? 'Off'
                   : freq === '3days'
-                    ? '3 Days'
-                    : freq.charAt(0).toUpperCase() + freq.slice(1)}
+                  ? '3 Days'
+                  : freq.charAt(0).toUpperCase() + freq.slice(1)}
               </LinearText>
             </TouchableOpacity>
           ))}
@@ -531,8 +531,9 @@ export default function StorageSections(props: any) {
             runMaintenanceTask(
               'retry',
               async () => {
-                const { retryFailedTasks } =
-                  await import('../../../services/lecture/lectureSessionMonitor');
+                const { retryFailedTasks } = await import(
+                  '../../../services/lecture/lectureSessionMonitor'
+                );
                 const activeProfile = await getUserProfile();
                 return retryFailedTasks(activeProfile?.groqApiKey || undefined);
               },
@@ -560,8 +561,9 @@ export default function StorageSections(props: any) {
             runMaintenanceTask(
               'legacy',
               async () => {
-                const { autoRepairLegacyNotes } =
-                  await import('../../../services/lecture/lectureSessionMonitor');
+                const { autoRepairLegacyNotes } = await import(
+                  '../../../services/lecture/lectureSessionMonitor'
+                );
                 return autoRepairLegacyNotes();
               },
               {
@@ -588,8 +590,9 @@ export default function StorageSections(props: any) {
             runMaintenanceTask(
               'transcripts',
               async () => {
-                const { scanAndRecoverOrphanedTranscripts } =
-                  await import('../../../services/lecture/lectureSessionMonitor');
+                const { scanAndRecoverOrphanedTranscripts } = await import(
+                  '../../../services/lecture/lectureSessionMonitor'
+                );
                 return scanAndRecoverOrphanedTranscripts();
               },
               {
@@ -616,8 +619,9 @@ export default function StorageSections(props: any) {
             runMaintenanceTask(
               'recordings',
               async () => {
-                const { scanAndRecoverOrphanedRecordings } =
-                  await import('../../../services/lecture/lectureSessionMonitor');
+                const { scanAndRecoverOrphanedRecordings } = await import(
+                  '../../../services/lecture/lectureSessionMonitor'
+                );
                 return scanAndRecoverOrphanedRecordings();
               },
               {
@@ -644,8 +648,9 @@ export default function StorageSections(props: any) {
             runMaintenanceTask(
               'cleanup_artifacts',
               async () => {
-                const { cleanupFailedArtifacts } =
-                  await import('../../../services/lecture/lectureSessionMonitor');
+                const { cleanupFailedArtifacts } = await import(
+                  '../../../services/lecture/lectureSessionMonitor'
+                );
                 return cleanupFailedArtifacts();
               },
               {

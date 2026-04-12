@@ -1,8 +1,8 @@
 /**
  * Offline Lecture Transcription Engine — Barrel Export
  *
- * Import from this module:
- *   import { getWhisperModelManager, AudioRecorder, ... } from '@/services/offlineTranscription';
+ * Import from this module (use a relative path from your file), e.g.:
+ *   import { getWhisperModelManager, AudioRecorder, ... } from '../services/offlineTranscription';
  */
 
 // Types
@@ -37,16 +37,9 @@ export {
 } from './types';
 
 // Services
-export {
-  WhisperModelManager,
-  getWhisperModelManager,
-  MODEL_REGISTRY,
-} from './whisperModelManager';
+export { WhisperModelManager, getWhisperModelManager, MODEL_REGISTRY } from './whisperModelManager';
 
-export {
-  AudioRecorder,
-  getAudioRecorder,
-} from './audioRecorder';
+export { AudioRecorder, getAudioRecorder } from './audioRecorder';
 export type { PcmDataCallback, RecordingStateCallback } from './audioRecorder';
 
 export { RealtimeTranscriptionController } from './realtimeTranscriber';

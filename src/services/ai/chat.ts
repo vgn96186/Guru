@@ -19,7 +19,7 @@ import {
 import { logGroundingEvent, previewText } from './runtimeDebug';
 import { parseGuruTutorState, type GuruTutorIntent } from '../guruChatSessionSummary';
 
-const MAX_CONTINUATION_ATTEMPTS = 2;
+const MAX_CONTINUATION_ATTEMPTS = 4;
 
 const GURU_ADHD_FORMATTING_RULES = `Formatting rules:
 - Keep normal text plain. Use markdown bold only for the 3 or 4 most critical medical terms in a concept.
@@ -49,13 +49,13 @@ function buildGuruSystemPrompt(options: { grounded?: boolean; includeStudyContex
     options.grounded
       ? '12) Do not use citations inline - keep it natural, not academic.'
       : options.includeStudyContext
-        ? '12) Use the STUDY CONTEXT when it is provided so your answer matches the exact card, question, or explanation the student is viewing.'
-        : '12) Never output JSON.',
+      ? '12) Use the STUDY CONTEXT when it is provided so your answer matches the exact card, question, or explanation the student is viewing.'
+      : '12) Never output JSON.',
     options.grounded
       ? '13) NEVER refuse to answer a medical question. Always provide your best knowledge even if sources are unavailable or irrelevant.'
       : options.includeStudyContext
-        ? '13) Never output JSON.'
-        : "13) Output only Guru's next single turn. Never write Student:/User:/Guru: role labels and never invent the student's reply.",
+      ? '13) Never output JSON.'
+      : "13) Output only Guru's next single turn. Never write Student:/User:/Guru: role labels and never invent the student's reply.",
     options.grounded || options.includeStudyContext
       ? "14) Output only Guru's next single turn. Never write Student:/User:/Guru: role labels and never invent the student's reply."
       : '14) If you ask a question, that question must be the final line in your reply. Never answer your own question.',
@@ -555,11 +555,15 @@ function truncateAfterAskedQuestion(text: string): string {
   return text;
 }
 
+function hasUnclosedMarkdownBoldMarkers(text: string): boolean {
+  return (text.match(/\*\*/g) ?? []).length % 2 === 1;
+}
+
 function looksTruncatedReply(text: string): boolean {
   const t = text.trim();
   if (!t) return true;
   if (t.includes('?')) return false;
-  if (/\*\*[^*]*$/.test(t)) return true;
+  if (hasUnclosedMarkdownBoldMarkers(t)) return true;
   if (/[A-Za-z0-9]+-$/.test(t)) return true;
   if (/[([{"'`]$/.test(t)) return true;
   const openParens = (t.match(/\(/g) ?? []).length;
@@ -663,12 +667,12 @@ function extractRecentGuruQuestions(
 
     const fallbackQuestion =
       explicitQuestions.length === 0 && /\?\s*$/.test(entry.text.trim())
-        ? (entry.text
+        ? entry.text
             .trim()
             .split('\n')
             .pop()
             ?.trim()
-            .replace(/^question:\s*/i, '') ?? '')
+            .replace(/^question:\s*/i, '') ?? ''
         : '';
 
     for (const candidate of [...explicitQuestions, fallbackQuestion].filter(Boolean)) {
@@ -715,23 +719,44 @@ export async function chatWithGuru(
   const studentIntent = detectStudentIntent(question);
   const contextPrompt = `Topic: ${topicName}${
     studyContext ? `\n\nStudy context:\n${studyContext}` : ''
-  }\n\n${buildIntentInstruction(studentIntent)}\nInstruction: Prioritize exam-relevant high-yield concepts, but first repair foundational gaps. If prerequisite concepts are missing, explain those first in plain language.`;
+  }\n\n${buildIntentInstruction(
+    studentIntent,
+  )}\nInstruction: Prioritize exam-relevant high-yield concepts, but first repair foundational gaps. If prerequisite concepts are missing, explain those first in plain language.`;
   const systemPrompt = buildGuruSystemPrompt({ includeStudyContext: true });
-  const { text } = await generateTextWithRouting(
-    [
-      { role: 'system', content: systemPrompt },
-      { role: 'system', content: contextPrompt },
-      ...buildHistoryMessages(history, 4),
-      { role: 'user', content: question },
-    ],
-    { chosenModel },
-  );
+  const finalizeOpts = {
+    recentQuestions: recentGuruQuestions,
+    studentIntent,
+    studentQuestion: question,
+  };
+  const msgs: Message[] = [
+    { role: 'system', content: systemPrompt },
+    { role: 'system', content: contextPrompt },
+    ...buildHistoryMessages(history, 4),
+    { role: 'user', content: question },
+  ];
+  const { text } = await generateTextWithRouting(msgs, { chosenModel });
+  let finalReply = finalizeGuruReply(text, finalizeOpts);
+  for (let attempt = 1; attempt <= MAX_CONTINUATION_ATTEMPTS; attempt += 1) {
+    if (!looksTruncatedReply(finalReply)) break;
+    if (__DEV__) {
+      console.warn('[GuruStudyChat] Reply appears truncated, requesting continuation.', {
+        attempt,
+        maxAttempts: MAX_CONTINUATION_ATTEMPTS,
+        chars: finalReply.length,
+      });
+    }
+    const continuation = await generateTextWithRouting(
+      buildContinuationMessages(msgs, finalReply),
+      { chosenModel },
+    );
+    const continuationText = finalizeGuruReply(continuation.text, finalizeOpts);
+    if (!hasUsefulContinuation(finalReply, continuationText)) break;
+    const appended = appendContinuation(finalReply, continuationText);
+    if (appended.length <= finalReply.length) break;
+    finalReply = appended;
+  }
   return {
-    reply: finalizeGuruReply(text, {
-      recentQuestions: recentGuruQuestions,
-      studentIntent,
-      studentQuestion: question,
-    }),
+    reply: finalizeGuruReply(finalReply, finalizeOpts),
   };
 }
 
@@ -930,7 +955,9 @@ export async function chatWithGuruGroundedStreaming(
           .slice(0, 3)
           .map(
             (img, i) =>
-              `[Image ${i + 1}] ${img.title}\nURL: ${img.imageUrl}\nSource: ${img.source}${img.snippet ? `\nContext: ${img.snippet}` : ''}`,
+              `[Image ${i + 1}] ${img.title}\nURL: ${img.imageUrl}\nSource: ${img.source}${
+                img.snippet ? `\nContext: ${img.snippet}` : ''
+              }`,
           )
           .join(
             '\n\n',
@@ -1193,10 +1220,7 @@ Constraints:
  * Explain a specific medical concept, sign, or lab value mentioned in a quiz question.
  * Returns 2-3 short markdown bullet points — ideal for inline tap-to-expand explanations.
  */
-export async function explainQuizConcept(
-  concept: string,
-  topicContext: string,
-): Promise<string> {
+export async function explainQuizConcept(concept: string, topicContext: string): Promise<string> {
   const messages: Message[] = [
     {
       role: 'system',

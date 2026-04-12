@@ -3,6 +3,7 @@
  * Uses https://portal.qwen.ai/v1 as the base URL.
  */
 
+import { CLOUD_MAX_COMPLETION_TOKENS } from '../completionLimits';
 import { resolveQwenBaseUrl, getQwenAccessToken } from './qwenAuth';
 import type { Message } from '../types';
 
@@ -24,6 +25,7 @@ const QWEN_OAUTH_SYSTEM_PREAMBLE =
  */
 function sanitizeText(text: string): string {
   // Remove control characters except \n, \r, \t
+  // eslint-disable-next-line no-control-regex -- strip C0 controls before API JSON
   let cleaned = text.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '');
   // Normalize Unicode to NFC form (composed form, better for API compatibility)
   cleaned = cleaned.normalize('NFC');
@@ -124,6 +126,7 @@ export async function callQwenOauth(
     messages: cleanMessages,
     temperature: jsonMode ? 0.3 : 0.7,
     top_p: 0.95,
+    max_tokens: CLOUD_MAX_COMPLETION_TOKENS,
   };
 
   if (jsonMode) {
@@ -255,6 +258,7 @@ export async function streamQwenOauth(
     stream: true,
     temperature: 0.7,
     top_p: 0.95,
+    max_tokens: CLOUD_MAX_COMPLETION_TOKENS,
   };
 
   if (__DEV__) {

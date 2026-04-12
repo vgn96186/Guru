@@ -61,8 +61,8 @@ export default function DeviceLinkScreen() {
         <ResponsiveContainer style={styles.content}>
           <ScreenHeader
             title="Device Linking"
-            subtitle="Keep your phone and lecture device tied to the same study session."
             onBackPress={() => navigation.navigate('MenuHome')}
+            showSettings
           />
           <Ionicons
             name="sync-outline"

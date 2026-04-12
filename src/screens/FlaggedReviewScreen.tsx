@@ -164,8 +164,8 @@ export default function FlaggedReviewScreen() {
       <ResponsiveContainer>
         <ScreenHeader
           title="Flagged for Review"
-          subtitle="Recheck AI content you marked for a second look."
           rightElement={<LinearText style={styles.count}>{items.length}</LinearText>}
+          showSettings
         />
 
         {items.length === 0 ? (

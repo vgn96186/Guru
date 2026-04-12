@@ -10,7 +10,11 @@ import {
   clampMessagesForStructuredJsonRouting,
 } from './llmRouting';
 import { isTransientNetworkError } from '../offlineQueueErrors';
-import { getLocalLlmRamWarning, isLocalLlmUsable } from '../deviceMemory';
+import {
+  getLocalLlmRamWarning,
+  isLocalLlmAllowedOnThisDevice,
+  isLocalLlmUsable,
+} from '../deviceMemory';
 import { DEFAULT_PROVIDER_ORDER, type ProviderId, type UserProfile } from '../../types';
 import type { ChatGptAccountSlot } from '../../types';
 import { geminiGenerateStructuredJsonSdk } from './google/geminiStructured';
@@ -55,6 +59,17 @@ function getBackendAttemptOrder(profile: UserProfile) {
     (!d('gitlab_duo') && gitlabDuoConnected) ||
     (!d('poe') && poeConnected);
 
+  // Safety fallback:
+  // If no cloud providers are configured and a local model file exists on a supported device,
+  // still allow local inference even if the persisted toggle is currently off.
+  // This avoids "No backend available" lockouts when the toggle was reset unexpectedly.
+  const hasNoCloudFallbackLocal = !!(
+    !hasLocal &&
+    !hasCloud &&
+    profile.localModelPath &&
+    isLocalLlmAllowedOnThisDevice()
+  );
+
   const attempts: ('local' | 'cloud')[] = [];
   const chatgptSlots: ChatGptAccountSlot[] = [];
   if (profile.chatgptAccounts?.primary?.enabled && profile.chatgptAccounts?.primary?.connected) {
@@ -67,12 +82,32 @@ function getBackendAttemptOrder(profile: UserProfile) {
     chatgptSlots.push('secondary');
   }
   if (hasCloud) attempts.push('cloud');
-  if (hasLocal) attempts.push('local');
+  if (hasLocal || hasNoCloudFallbackLocal) attempts.push('local');
 
-  if (attempts.length === 0)
-    throw new Error(
-      'No AI backend available. Download a local model or add an API key in Settings.',
-    );
+  if (attempts.length === 0) {
+    if (__DEV__) {
+      console.warn('[AI] backend_unavailable', {
+        useLocalModel: !!profile.useLocalModel,
+        hasLocalModelPath: !!profile.localModelPath,
+        localModelFile: profile.localModelPath?.split('/').pop() ?? null,
+        localLlmAllowed: isLocalLlmAllowedOnThisDevice(),
+        hasCloud,
+      });
+    }
+
+    if (profile.localModelPath && !profile.useLocalModel && isLocalLlmAllowedOnThisDevice()) {
+      throw new Error(
+        'Local text model is downloaded but disabled. Enable "Local Text AI" in Settings > On-Device AI.',
+      );
+    }
+
+    const localLlmWarning = getLocalLlmRamWarning();
+    if (profile.localModelPath && localLlmWarning) {
+      throw new Error(localLlmWarning);
+    }
+
+    throw new Error('No AI backend available. Download a local model or add an API key in Settings.');
+  }
 
   return {
     attempts,
@@ -114,12 +149,6 @@ export async function generateJSONWithRouting<T>(
   providerOrderOverride?: ProviderId[],
 ): Promise<{ parsed: T; modelUsed: string }> {
   const jsonRouteMessages = clampMessagesForStructuredJsonRouting(messages);
-  const trace = createAiRequestTrace('json', jsonRouteMessages, {
-    taskComplexity,
-    queueOnFailure,
-    forceProvider: forceProvider ?? 'auto',
-    providerOrderOverride: providerOrderOverride?.join(' -> ') ?? 'default',
-  });
   const profile = await profileRepository.getProfile();
   const {
     attempts,
@@ -155,6 +184,13 @@ export async function generateJSONWithRouting<T>(
     const rest = base.filter((p) => p !== 'gemini' && p !== 'gemini_fallback');
     providerOrder = ['gemini', 'gemini_fallback', ...rest];
   }
+
+  const trace = createAiRequestTrace('json', jsonRouteMessages, {
+    taskComplexity,
+    queueOnFailure,
+    forceProvider: forceProvider ?? 'auto',
+    providerOrderOverride: providerOrderOverride?.join(' -> ') ?? 'default',
+  });
 
   let lastError: Error | null = null;
   for (const backend of attempts) {
@@ -234,12 +270,6 @@ export async function generateTextWithRouting(
   options?: { preferCloud?: boolean; chosenModel?: string; providerOrderOverride?: ProviderId[] },
   queueOnFailure = true,
 ): Promise<{ text: string; modelUsed: string }> {
-  const trace = createAiRequestTrace('text', messages, {
-    chosenModel: options?.chosenModel ?? 'auto',
-    preferCloud: options?.preferCloud ?? false,
-    providerOrderOverride: options?.providerOrderOverride?.join(' -> ') ?? 'default',
-    queueOnFailure,
-  });
   const profile = await profileRepository.getProfile();
 
   // If a specific model is chosen and it's local
@@ -250,15 +280,26 @@ export async function generateTextWithRouting(
     );
   }
   if (options?.chosenModel === 'local' && isLocalLlmUsable(profile)) {
-    const result = await attemptLocalLLM(messages, profile.localModelPath!, true);
-    trace.success({
-      backend: 'local',
-      modelUsed: result.modelUsed,
-      responseChars: result.text.length,
-      responsePreview: previewText(result.text),
-      responseText: result.text,
+    const trace = createAiRequestTrace('text', messages, {
+      chosenModel: options?.chosenModel ?? 'auto',
+      preferCloud: options?.preferCloud ?? false,
+      providerOrderOverride: options?.providerOrderOverride?.join(' -> ') ?? 'default',
+      queueOnFailure,
     });
-    return result;
+    try {
+      const result = await attemptLocalLLM(messages, profile.localModelPath!, true);
+      trace.success({
+        backend: 'local',
+        modelUsed: result.modelUsed,
+        responseChars: result.text.length,
+        responsePreview: previewText(result.text),
+        responseText: result.text,
+      });
+      return result;
+    } catch (err) {
+      trace.fail(err, { backend: 'local' });
+      throw err;
+    }
   }
 
   const {
@@ -280,6 +321,13 @@ export async function generateTextWithRouting(
     poeConnected,
     providerOrder: profileProviderOrder,
   } = getBackendAttemptOrder(profile);
+
+  const trace = createAiRequestTrace('text', messages, {
+    chosenModel: options?.chosenModel ?? 'auto',
+    preferCloud: options?.preferCloud ?? false,
+    providerOrderOverride: options?.providerOrderOverride?.join(' -> ') ?? 'default',
+    queueOnFailure,
+  });
   const textProviderOrder =
     resolveProviderOrderOverride(options?.providerOrderOverride) ?? profileProviderOrder;
   const attempts = isExplicitCloudModel(options?.chosenModel)
@@ -357,11 +405,6 @@ export async function generateTextWithRoutingStream(
   onDelta: (delta: string) => void,
   queueOnFailure = true,
 ): Promise<{ text: string; modelUsed: string }> {
-  const trace = createAiRequestTrace('stream', messages, {
-    chosenModel: options?.chosenModel ?? 'auto',
-    providerOrderOverride: options?.providerOrderOverride?.join(' -> ') ?? 'default',
-    queueOnFailure,
-  });
   const profile = await profileRepository.getProfile();
 
   if (options?.chosenModel === 'local' && profile.localModelPath && !isLocalLlmUsable(profile)) {
@@ -371,21 +414,31 @@ export async function generateTextWithRoutingStream(
     );
   }
   if (options?.chosenModel === 'local' && isLocalLlmUsable(profile)) {
-    const { text, modelUsed } = await attemptLocalLLM(messages, profile.localModelPath!, true);
-    logStreamEvent('local_single_chunk', {
-      modelUsed,
-      outputChars: text.length,
+    const trace = createAiRequestTrace('stream', messages, {
       chosenModel: options?.chosenModel ?? 'auto',
+      providerOrderOverride: options?.providerOrderOverride?.join(' -> ') ?? 'default',
+      queueOnFailure,
     });
-    onDelta(text);
-    trace.success({
-      backend: 'local',
-      modelUsed,
-      responseChars: text.length,
-      responsePreview: previewText(text),
-      responseText: text,
-    });
-    return { text, modelUsed };
+    try {
+      const { text, modelUsed } = await attemptLocalLLM(messages, profile.localModelPath!, true);
+      logStreamEvent('local_single_chunk', {
+        modelUsed,
+        outputChars: text.length,
+        chosenModel: options?.chosenModel ?? 'auto',
+      });
+      onDelta(text);
+      trace.success({
+        backend: 'local',
+        modelUsed,
+        responseChars: text.length,
+        responsePreview: previewText(text),
+        responseText: text,
+      });
+      return { text, modelUsed };
+    } catch (err) {
+      trace.fail(err, { backend: 'local' });
+      throw err;
+    }
   }
 
   const {
@@ -407,6 +460,12 @@ export async function generateTextWithRoutingStream(
     poeConnected,
     providerOrder: profileProviderOrder,
   } = getBackendAttemptOrder(profile);
+
+  const trace = createAiRequestTrace('stream', messages, {
+    chosenModel: options?.chosenModel ?? 'auto',
+    providerOrderOverride: options?.providerOrderOverride?.join(' -> ') ?? 'default',
+    queueOnFailure,
+  });
   const streamProviderOrder =
     resolveProviderOrderOverride(options?.providerOrderOverride) ?? profileProviderOrder;
   const attempts = isExplicitCloudModel(options?.chosenModel)

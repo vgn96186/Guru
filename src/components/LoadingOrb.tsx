@@ -91,8 +91,8 @@ export default React.memo(function LoadingOrb({
 
   useEffect(() => {
     if (lastMessageRef.current !== message) {
-      setDisplayMessage(getRandomVariation(message));
       lastMessageRef.current = message;
+      queueMicrotask(() => setDisplayMessage(getRandomVariation(message)));
     }
 
     const interval = setInterval(() => {
@@ -152,6 +152,8 @@ export default React.memo(function LoadingOrb({
     // Specular highlight — subtle shift synced to breathing
     highlightTranslateY.value = withRepeat(withTiming(2, normalCore), -1, true);
     highlightOpacity.value = withRepeat(withTiming(0.55, normalCore), -1, true);
+    // Shared values are stable; this effect only seeds repeating worklets on mount.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- highlight* are Reanimated shared values, not React deps
   }, []);
 
   const styleCore = useAnimatedStyle(() => ({

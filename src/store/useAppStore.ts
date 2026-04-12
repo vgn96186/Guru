@@ -8,6 +8,31 @@ import { showToast } from '../components/Toast';
 import { dbEvents, DB_EVENT_KEYS } from '../services/databaseEvents';
 
 /**
+ * Compare two UserProfile objects by value, handling nested objects/arrays
+ * (chatgptAccounts, providerOrder, etc.) that get fresh references from JSON.parse
+ * on every DB read. Without this, every refreshProfile() creates a "new" profile
+ * that triggers re-renders across the entire app even when nothing actually changed.
+ */
+function profileDataEqual(a: UserProfile | null, b: UserProfile | null): boolean {
+  if (a === b) return true;
+  if (!a || !b) return false;
+  const keysA = Object.keys(a) as (keyof UserProfile)[];
+  const keysB = Object.keys(b) as (keyof UserProfile)[];
+  if (keysA.length !== keysB.length) return false;
+  for (const key of keysA) {
+    const va = a[key];
+    const vb = b[key];
+    if (va === vb) continue;
+    if (va !== null && vb !== null && typeof va === 'object' && typeof vb === 'object') {
+      if (JSON.stringify(va) !== JSON.stringify(vb)) return false;
+      continue;
+    }
+    return false;
+  }
+  return true;
+}
+
+/**
  * Helper: optimistic profile field update with automatic rollback on DB failure.
  * Eliminates ~150 lines of repeated toggle/set boilerplate.
  */
@@ -89,10 +114,21 @@ async function fetchProfile(
   }
   set({ loading: true });
   try {
-    const profile = await profileRepository.getProfile();
-    const levelInfo = getLevelInfo(profile.totalXp, profile.currentLevel);
+    const freshProfile = await profileRepository.getProfile();
     const todayLog = await dailyLogRepository.getDailyLog();
-    set({ profile, levelInfo, hasCheckedInToday: todayLog?.checkedIn ?? false });
+    const prev = get().profile;
+    const profileChanged = !profileDataEqual(prev, freshProfile);
+    const profile = profileChanged ? freshProfile : prev!;
+    const prevLevel = get().levelInfo;
+    const levelInfo =
+      profileChanged || !prevLevel
+        ? getLevelInfo(freshProfile.totalXp, freshProfile.currentLevel)
+        : prevLevel;
+    const checkedIn = todayLog?.checkedIn ?? false;
+    if (!profileChanged && levelInfo === prevLevel && checkedIn === get().hasCheckedInToday) {
+      return;
+    }
+    set({ profile, levelInfo, hasCheckedInToday: checkedIn });
   } catch (err) {
     const label = resetOnError ? 'load' : 'refresh';
     console.error(`[useAppStore] Failed to ${label} profile:`, err);

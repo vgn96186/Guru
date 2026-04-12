@@ -420,7 +420,7 @@ export default function TranscriptHistoryScreen() {
     setManagerFilter('all');
     await loadNotes();
     setRefreshing(false);
-  }, [loadNotes]);
+  }, [loadNotes, setSearchPersisted]);
 
   const handleDelete = async (id: number) => {
     const ok = await confirmDestructive('Delete transcript?', 'This action cannot be undone.');
@@ -431,19 +431,19 @@ export default function TranscriptHistoryScreen() {
     setSelectedNote(null);
   };
 
-  const toggleSelection = (id: number) => {
+  const toggleSelection = useCallback((id: number) => {
     setSelectedIds((prev) => {
       if (prev.includes(id)) {
         return prev.filter((x) => x !== id);
       }
       return [...prev, id];
     });
-  };
+  }, []);
 
-  const handleLongPressItem = (id: number) => {
+  const handleLongPressItem = useCallback((id: number) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     toggleSelection(id);
-  };
+  }, [toggleSelection]);
 
   const cancelSelection = () => {
     setSelectedIds([]);
@@ -690,7 +690,6 @@ export default function TranscriptHistoryScreen() {
         ) : null}
         <ScreenHeader
           title="Transcript Vault"
-          subtitle="Search, review, and manage captured lectures."
           onBackPress={() => navigation.navigate('NotesHub')}
           searchElement={
             <BannerSearchBar
@@ -700,6 +699,7 @@ export default function TranscriptHistoryScreen() {
               containerStyle={styles.headerSearchRight}
             />
           }
+          showSettings
         ></ScreenHeader>
         {isSelectionMode && (
           <LinearSurface padded={false} style={styles.selectionModeBanner}>

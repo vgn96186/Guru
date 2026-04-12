@@ -28,7 +28,6 @@ type Phase = 'select' | 'loading' | 'battle' | 'answer_feedback' | 'victory' | '
 export default function BossBattleScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<HomeStackParamList>>();
   const refreshProfile = useAppStore((s) => s.refreshProfile);
-  const profile = useAppStore((s) => s.profile);
   const [phase, setPhase] = useState<Phase>('select');
   const [selectedSubject, setSelectedSubject] = useState<string | null>(null);
   const [questions, setQuestions] = useState<MockQuestion[]>([]);
@@ -181,10 +180,7 @@ export default function BossBattleScreen() {
     return (
       <SafeAreaView style={styles.safe}>
         <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
-        <ScreenHeader
-          title="Select Boss"
-          subtitle="Pick a subject and fight through five cached questions."
-        />
+        <ScreenHeader title="Select Boss" showSettings />
         <ScrollView contentContainerStyle={styles.grid}>
           <ResponsiveContainer>
             {subjects.map((s) => {

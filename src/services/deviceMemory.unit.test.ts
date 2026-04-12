@@ -181,7 +181,10 @@ describe('deviceMemory service', () => {
       const result = await enforceLocalLlmRamGuard(false); // No notify
 
       expect(result).toBe(false);
-      expect(profileRepository.updateProfile).toHaveBeenCalledWith({ useLocalModel: false });
+      expect(profileRepository.updateProfile).toHaveBeenCalledWith({
+        useLocalModel: false,
+        localModelPath: null,
+      });
       expect(showToast).not.toHaveBeenCalled();
     });
 

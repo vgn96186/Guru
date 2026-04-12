@@ -13,13 +13,14 @@ jest.mock('./generate', () => ({
 
 jest.mock('./medicalSearch', () => ({
   searchMedicalImages: jest.fn(),
+  generateVisualSearchQueries: jest.fn().mockResolvedValue([]),
 }));
 
 import { fetchContent } from './content';
 import { getCachedContent, setCachedContent } from '../../db/queries/aiCache';
 import { saveBulkQuestions } from '../../db/queries/questionBank';
 import { generateJSONWithRouting } from './generate';
-import { searchMedicalImages } from './medicalSearch';
+import { generateVisualSearchQueries, searchMedicalImages } from './medicalSearch';
 
 describe('ai content prefetching', () => {
   const topic: any = {
@@ -32,6 +33,7 @@ describe('ai content prefetching', () => {
     jest.clearAllMocks();
     (globalThis as { __DEV__?: boolean }).__DEV__ = true;
     (saveBulkQuestions as jest.Mock).mockResolvedValue(undefined);
+    (generateVisualSearchQueries as jest.Mock).mockResolvedValue([]);
   });
 
   it('reuses the same in-flight generation for duplicate content requests', async () => {

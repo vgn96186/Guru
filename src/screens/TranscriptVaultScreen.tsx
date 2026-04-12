@@ -794,7 +794,6 @@ export default function TranscriptVaultScreen() {
         <ResponsiveContainer style={styles.container}>
           <ScreenHeader
             title="Transcript Vault"
-            subtitle={`${files.length} transcript${files.length !== 1 ? 's' : ''} found`}
             rightElement={
               <View style={styles.headerActions}>
                 <TouchableOpacity
@@ -815,6 +814,7 @@ export default function TranscriptVaultScreen() {
                 </TouchableOpacity>
               </View>
             }
+            showSettings
           />
 
           {!loading && (
@@ -1075,12 +1075,7 @@ export default function TranscriptVaultScreen() {
               <LoadingOrb message="Scanning transcripts..." size={120} />
             </View>
           ) : files.length === 0 ? (
-            <EmptyState
-              icon="mic-outline"
-              iconSize={64}
-              title="No Transcripts Yet"
-              subtitle="Record or upload a lecture to get started."
-            />
+            <EmptyState icon="mic-outline" iconSize={64} title="No Transcripts Yet" />
           ) : (
             <>
               <FlatList

@@ -318,7 +318,7 @@ async function seedSubjects(db: SQLite.SQLiteDatabase): Promise<void> {
   }
 }
 
-async function seedTopics(db: SQLite.SQLiteDatabase): Promise<void> {
+async function seedTopics(_db: SQLite.SQLiteDatabase): Promise<void> {
   await runInTransaction(async (db) => {
     // Pass 1: Insert all topics without parent links (ensures parents exist)
     for (const [subjectId, name, priority, minutes] of TOPICS_SEED) {
@@ -364,7 +364,7 @@ async function seedTopics(db: SQLite.SQLiteDatabase): Promise<void> {
   });
 }
 
-async function seedVaultTopics(db: SQLite.SQLiteDatabase): Promise<void> {
+async function seedVaultTopics(_db: SQLite.SQLiteDatabase): Promise<void> {
   await runInTransaction(async (db) => {
     const vaultTopicIds: number[] = [];
 

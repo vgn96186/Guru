@@ -95,7 +95,9 @@ export async function getValidAccessToken(): Promise<string> {
       refreshCooldownUntil = Date.now() + COOLDOWN_SCHEDULE_MS[idx];
       if (__DEV__) {
         console.warn(
-          `[Poe] Token refresh failed (attempt ${refreshFailCount}), cooldown ${COOLDOWN_SCHEDULE_MS[idx] / 1000}s`,
+          `[Poe] Token refresh failed (attempt ${refreshFailCount}), cooldown ${
+            COOLDOWN_SCHEDULE_MS[idx] / 1000
+          }s`,
           err,
         );
       }

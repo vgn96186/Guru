@@ -135,7 +135,10 @@ export default React.memo(function ReviewCalendar() {
           {week.map((day, di) => {
             if (day === null) return <View key={`empty-${di}`} style={styles.dayCell} />;
 
-            const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+            const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(
+              2,
+              '0',
+            )}`;
             const review = reviewMap.get(dateStr);
             const isToday = dateStr === todayStr;
             const isSelected = selectedDay?.date === dateStr;
@@ -154,7 +157,9 @@ export default React.memo(function ReviewCalendar() {
                 accessibilityRole={review ? 'button' : undefined}
                 accessibilityLabel={
                   review
-                    ? `${day} ${MONTHS[month]}, ${review.count} review${review.count === 1 ? '' : 's'} scheduled`
+                    ? `${day} ${MONTHS[month]}, ${review.count} review${
+                        review.count === 1 ? '' : 's'
+                      } scheduled`
                     : `${day} ${MONTHS[month]}, no reviews scheduled`
                 }
               >
@@ -223,8 +228,8 @@ export default React.memo(function ReviewCalendar() {
                         t.confidence >= 3
                           ? n.colors.success
                           : t.confidence >= 2
-                            ? n.colors.warning
-                            : n.colors.error,
+                          ? n.colors.warning
+                          : n.colors.error,
                     },
                   ]}
                 />

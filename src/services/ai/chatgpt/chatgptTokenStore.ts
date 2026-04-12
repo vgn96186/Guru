@@ -104,7 +104,9 @@ export async function getValidAccessToken(slot: ChatGptAccountSlot = 'primary'):
     const secsLeft = Math.ceil((cooldownEnd - now) / 1000);
     const fails = refreshFailCount[slot] ?? 0;
     throw new Error(
-      `ChatGPT (${slot}) token refresh on cooldown (${secsLeft}s remaining after ${fails} failed attempt${fails > 1 ? 's' : ''}). Will retry automatically.`,
+      `ChatGPT (${slot}) token refresh on cooldown (${secsLeft}s remaining after ${fails} failed attempt${
+        fails > 1 ? 's' : ''
+      }). Will retry automatically.`,
     );
   }
 
@@ -126,7 +128,9 @@ export async function getValidAccessToken(slot: ChatGptAccountSlot = 'primary'):
       refreshCooldownUntil[slot] = Date.now() + COOLDOWN_SCHEDULE_MS[idx];
       if (__DEV__) {
         console.warn(
-          `[ChatGPT/${slot}] Token refresh failed (attempt ${fails}), cooldown ${COOLDOWN_SCHEDULE_MS[idx] / 1000}s`,
+          `[ChatGPT/${slot}] Token refresh failed (attempt ${fails}), cooldown ${
+            COOLDOWN_SCHEDULE_MS[idx] / 1000
+          }s`,
           err,
         );
       }

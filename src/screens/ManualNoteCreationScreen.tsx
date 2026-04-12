@@ -69,7 +69,7 @@ export default function ManualNoteCreationScreen(
       setSelectedSubjectName(
         resolution.requiresSelection
           ? null
-          : (resolution.matchedSubject?.name ?? resolution.normalizedSubjectName),
+          : resolution.matchedSubject?.name ?? resolution.normalizedSubjectName,
       );
     } catch (e: unknown) {
       showError(e);
@@ -195,8 +195,8 @@ export default function ManualNoteCreationScreen(
       <View style={styles.screenHeaderWrap}>
         <ScreenHeader
           title="Paste Transcript"
-          subtitle="Turn copied lecture text into structured notes without leaving the app flow."
           onBackPress={() => navigation.goBack()}
+          showSettings
         />
       </View>
       <ScrollView contentContainerStyle={styles.content}>

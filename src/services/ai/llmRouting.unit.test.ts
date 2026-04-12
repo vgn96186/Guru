@@ -19,19 +19,19 @@ async function loadRoutingModule() {
   (globalThis as any).__DEV__ = false;
 
   const addEventListener = jest.fn();
-  const releaseMock = jest.fn(async () => undefined);
-  const completionMock = jest.fn(async () => ({ text: 'local-text' }));
-  const initLlamaMock = jest.fn(async () => ({
-    completion: completionMock,
-    release: releaseMock,
-  }));
+  const releaseModelMock = jest.fn(async () => undefined);
+  const generateTextMock = jest.fn(async () => ({ text: 'local-text' }));
+  const loadModelMock = jest.fn(async () => ({ id: 'mock-model-id' }));
   const updateProfileMock = jest.fn(async () => undefined);
 
   jest.doMock('react-native', () => ({
     AppState: { addEventListener },
   }));
-  jest.doMock('llama.rn', () => ({
-    initLlama: initLlamaMock,
+  jest.doMock('react-native-llm-litert-mediapipe', () => ({
+    loadModel: loadModelMock,
+    generateText: generateTextMock,
+    releaseModel: releaseModelMock,
+    stopGeneration: jest.fn(),
   }));
   jest.doMock('../../db/repositories', () => ({
     profileRepository: { updateProfile: updateProfileMock },
@@ -52,8 +52,8 @@ async function loadRoutingModule() {
   const module = await import('./llmRouting');
   return {
     module,
-    initLlamaMock,
-    completionMock,
+    loadModelMock,
+    generateTextMock,
     updateProfileMock,
     addEventListener,
   };
@@ -119,6 +119,16 @@ describe('llmRouting', () => {
       'or-key',
       false,
       'groq-key',
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      ['groq', 'openrouter'],
     );
 
     expect(result.text).toBe('groq-success');
@@ -152,6 +162,16 @@ describe('llmRouting', () => {
       'or-key',
       false,
       'groq-key',
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      ['groq', 'openrouter'],
     );
 
     expect(result.text).toBe('or-success');
@@ -170,12 +190,12 @@ describe('llmRouting', () => {
   });
 
   it('clears local model profile state when model file is missing/corrupt', async () => {
-    const { module, updateProfileMock, completionMock } = await loadRoutingModule();
+    const { module, updateProfileMock, generateTextMock } = await loadRoutingModule();
 
-    completionMock.mockRejectedValueOnce(new Error('failed to load model: no such file'));
+    generateTextMock.mockRejectedValueOnce(new Error('failed to load model: no such file'));
 
     await expect(
-      module.attemptLocalLLM([{ role: 'user', content: 'hi' }], '/models/missing.gguf', false),
+      module.attemptLocalLLM([{ role: 'user', content: 'hi' }], '/models/missing.litertlm', false),
     ).rejects.toThrow('Local model file is missing or corrupt');
 
     expect(updateProfileMock).toHaveBeenCalledWith({ localModelPath: null, useLocalModel: false });
@@ -207,6 +227,16 @@ describe('llmRouting', () => {
       'or-key',
       false,
       'groq-key',
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      ['groq', 'openrouter'],
     );
 
     expect(result.text).toBe('groq-success');
@@ -247,46 +277,83 @@ describe('llmRouting', () => {
   });
 
   it('throws error when local model returns empty response', async () => {
-    const { module, completionMock } = await loadRoutingModule();
+    const { module, generateTextMock } = await loadRoutingModule();
     // In textMode=true, empty completion remains empty
-    completionMock.mockResolvedValueOnce({ text: '' });
+    generateTextMock.mockResolvedValueOnce({ text: '' });
 
     await expect(
       module.attemptLocalLLM([{ role: 'user', content: 'hi' }], '/path/to/model', true),
     ).rejects.toThrow('Local model returned an empty response');
   });
 
+  it('reports the correct local Gemma variant for E2B files', async () => {
+    const { module } = await loadRoutingModule();
+
+    const result = await module.attemptLocalLLM(
+      [{ role: 'user', content: 'hi' }],
+      '/models/gemma-4-E2B-it.litertlm',
+      true,
+    );
+
+    expect(result.modelUsed).toBe('local-gemma-4-e2b');
+  });
+
   it('releaseLlamaContext does nothing when context is in use', async () => {
-    const releaseMock = jest.fn(async () => undefined);
-    const { module, initLlamaMock, completionMock } = await loadRoutingModule();
-    
-    // Make initLlama return a stable object so we can spy on it
-    const stableCtx = {
-      completion: completionMock,
-      release: releaseMock,
-    };
-    initLlamaMock.mockResolvedValue(stableCtx);
+    const releaseModelMock = jest.fn(async () => undefined);
+    const generateTextMock = jest.fn(async () => ({ text: '{"ok":true}', finishReason: 'stop' }));
+    const loadModelMock = jest.fn(async () => ({
+      id: 'stable-model-id',
+      release: releaseModelMock,
+      isLoaded: true,
+    }));
+
+    jest.resetModules();
+    (globalThis as any).__DEV__ = false;
+
+    jest.doMock('react-native', () => ({
+      AppState: { addEventListener: jest.fn() },
+    }));
+    jest.doMock('react-native-llm-litert-mediapipe', () => ({
+      loadModel: loadModelMock,
+      generateText: generateTextMock,
+      releaseModel: releaseModelMock,
+      stopGeneration: jest.fn(),
+    }));
+    jest.doMock('../../db/repositories', () => ({
+      profileRepository: { updateProfile: jest.fn(async () => undefined) },
+      dailyLogRepository: {},
+    }));
+    jest.doMock('./config', () => ({
+      GROQ_MODELS: ['groq-a', 'groq-b'],
+      OPENROUTER_FREE_MODELS: ['or-a', 'or-b'],
+    }));
+    jest.doMock('./google/geminiChat', () => ({
+      geminiGenerateContentSdk: jest.fn().mockRejectedValue(new Error('Gemini SDK disabled')),
+      geminiGenerateContentStreamSdk: jest.fn().mockRejectedValue(new Error('Gemini SDK disabled')),
+    }));
+
+    const module = await import('./llmRouting');
 
     // Start a generation (it will be in flight)
-    let resolveCompletion: (val: { text: string }) => void;
-    const completionPromise = new Promise<{ text: string }>(resolve => { resolveCompletion = resolve; });
-    completionMock.mockReturnValue(completionPromise);
+    let resolveGenerate: (val: { text: string; finishReason: string }) => void;
+    const generatePromise = new Promise<{ text: string; finishReason: string }>(resolve => { resolveGenerate = resolve; });
+    generateTextMock.mockReturnValue(generatePromise);
 
     const generationPromise = module.attemptLocalLLM([{ role: 'user', content: 'hi' }], '/path', false);
-    
-    // Need to wait a bit for getLlamaContext to finish and set llamaContext
+
+    // Need to wait a bit for model to load
     await new Promise(r => setTimeout(r, 10));
 
     // Now try to release
     await module.releaseLlamaContext();
-    expect(releaseMock).not.toHaveBeenCalled();
+    expect(releaseModelMock).not.toHaveBeenCalled();
 
     // Finish generation
-    resolveCompletion!({ text: '{"ok":true}' });
+    resolveGenerate!({ text: '{"ok":true}', finishReason: 'stop' });
     await generationPromise;
 
     // Now release should work
     await module.releaseLlamaContext();
-    expect(releaseMock).toHaveBeenCalled();
+    expect(releaseModelMock).toHaveBeenCalled();
   });
 });

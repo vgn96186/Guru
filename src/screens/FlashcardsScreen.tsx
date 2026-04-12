@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef, useMemo } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import type { ImageStyle } from 'react-native';
 import {
   Image,
@@ -30,7 +30,6 @@ import { useAppStore } from '../store/useAppStore';
 import type { TopicWithProgress, FlashcardsContent } from '../types';
 import LoadingOrb from '../components/LoadingOrb';
 import { linearTheme as n } from '../theme/linearTheme';
-import LinearSurface from '../components/primitives/LinearSurface';
 import { ResponsiveContainer } from '../hooks/useResponsive';
 import ScreenHeader from '../components/ScreenHeader';
 
@@ -71,7 +70,7 @@ export default function FlashcardsScreen() {
   const [cardIdx, setCardIdx] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [noDueTopics, setNoDueTopics] = useState(false);
+  const [, setNoDueTopics] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
 
   const flipAnim = useRef(new Animated.Value(0)).current;
@@ -160,7 +159,7 @@ export default function FlashcardsScreen() {
         setCards([]);
         setLoading(false);
       });
-  }, [currentTopic?.id]);
+  }, [currentTopic, flipAnim]);
 
   const panResponder = useRef(
     PanResponder.create({
@@ -278,9 +277,9 @@ export default function FlashcardsScreen() {
   if (!currentCard) {
     return (
       <SafeAreaView style={styles.safe}>
-        <StatusBar barStyle="light-content" />
+        <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
         <ResponsiveContainer>
-          <ScreenHeader title="Flashcards" />
+          <ScreenHeader title="Flashcards" showSettings />
           <View style={styles.cardArea}>
             <Ionicons
               name={loadError ? 'alert-circle-outline' : 'card-outline'}
@@ -373,16 +372,16 @@ export default function FlashcardsScreen() {
   return (
     <SafeAreaView style={styles.safe}>
       <ErrorBoundary>
-        <StatusBar barStyle="light-content" />
+        <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
         <ResponsiveContainer>
           <ScreenHeader
             title={currentTopic?.name ?? 'Flashcards'}
-            subtitle={currentTopic?.subjectName}
             rightElement={
               <LinearText style={styles.progressText}>
                 {cardIdx + 1}/{cards.length} · Topic {currentIdx + 1}/{queue.length}
               </LinearText>
             }
+            showSettings
           />
 
           <View style={styles.cardArea}>

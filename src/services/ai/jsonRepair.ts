@@ -27,8 +27,8 @@ function extractBalancedJson(raw: string): string {
     objectStart === -1
       ? arrayStart
       : arrayStart === -1
-        ? objectStart
-        : Math.min(objectStart, arrayStart);
+      ? objectStart
+      : Math.min(objectStart, arrayStart);
 
   if (start === -1) return raw.trim();
 
@@ -77,6 +77,7 @@ function extractBalancedJson(raw: string): string {
 }
 
 function repairCommonJsonIssues(raw: string): string {
+  /* eslint-disable no-control-regex -- \x00 sentinels protect quoted strings during repair */
   let s = raw
     .replace(/[\u201C\u201D]/g, '"') // Smart double quotes -> regular
     .replace(/[\u2018\u2019]/g, "'") // Smart single quotes -> regular
@@ -122,6 +123,7 @@ function repairCommonJsonIssues(raw: string): string {
   // Phase 3: Restore original strings
   s = s.replace(/\x00S(\d+)\x00/g, (_: string, idx: string) => strings[parseInt(idx, 10)]);
 
+  /* eslint-enable no-control-regex */
   return s.trim();
 }
 
@@ -333,7 +335,9 @@ export async function parseStructuredJson<T>(raw: string, schema: z.ZodType<T>):
     return await parseStructuredJsonWithTimeout(raw, schema);
   } catch (err) {
     if (err instanceof Error && err.message === 'JSON parsing timeout') {
-      throw new Error('JSON repair took too long - possible ReDoS attack or malformed input');
+      throw new Error('JSON repair took too long - possible ReDoS attack or malformed input', {
+        cause: err,
+      });
     }
     throw err;
   }

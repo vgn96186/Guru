@@ -14,20 +14,20 @@ Medical student (Vishnu) preparing for NEET-PG (sub-2000 rank) and INICET. Uses 
 
 ### Technology Stack
 
-| Layer             | Technology                                                                         |
-| ----------------- | ---------------------------------------------------------------------------------- |
-| **Framework**     | Expo SDK 54, React Native 0.81.5, React 19.1.0                                     |
-| **Language**      | TypeScript (~5.9.2) with strict mode                                               |
-| **Database**      | `expo-sqlite` (SQLite, WAL mode, versioned migrations)                             |
-| **State**         | Zustand (`src/store/useAppStore.ts`)                                               |
-| **Navigation**    | React Navigation v7 (native stack + bottom tabs)                                   |
-| **AI**            | Groq (primary), OpenRouter, Gemini, Cloudflare, local LLM (llama.rn with MedGemma) |
-| **Speech**        | Whisper (cloud Groq / local whisper.rn)                                            |
-| **Testing**       | Jest (unit), Detox (E2E)                                                           |
-| **Styling**       | Custom theme (`src/theme/linearTheme.ts`) — glassmorphic Linear design system      |
-| **Fonts**         | Inter (400–900 via @expo-google-fonts)                                             |
-| **Icons**         | Ionicons (@expo/vector-icons) — no emoji in UI                                     |
-| **Native Module** | `modules/app-launcher` (Kotlin — floating overlay, face tracking, audio recording) |
+| Layer             | Technology                                                                                                 |
+| ----------------- | ---------------------------------------------------------------------------------------------------------- |
+| **Framework**     | Expo SDK 54, React Native 0.81.5, React 19.1.0                                                             |
+| **Language**      | TypeScript (~5.9.2) with strict mode                                                                       |
+| **Database**      | `expo-sqlite` (SQLite, WAL mode, versioned migrations)                                                     |
+| **State**         | Zustand (`src/store/useAppStore.ts`)                                                                       |
+| **Navigation**    | React Navigation v7 (native stack + bottom tabs)                                                           |
+| **AI**            | Groq (primary), OpenRouter, Gemini, Cloudflare, local LLM (react-native-llm-litert-mediapipe with Gemma 4) |
+| **Speech**        | Whisper (cloud Groq / local whisper.rn)                                                                    |
+| **Testing**       | Jest (unit), Detox (E2E)                                                                                   |
+| **Styling**       | Custom theme (`src/theme/linearTheme.ts`) — glassmorphic Linear design system                              |
+| **Fonts**         | Inter (400–900 via @expo-google-fonts)                                                                     |
+| **Icons**         | Ionicons (@expo/vector-icons) — no emoji in UI                                                             |
+| **Native Module** | `modules/app-launcher` (Kotlin — floating overlay, face tracking, audio recording)                         |
 
 ---
 
@@ -249,7 +249,7 @@ Both pipelines share `saveLectureChunk()` from `src/services/lecture/persistence
 6. **EXTERNAL_APPS[].id** values exactly match `SupportedMedicalApp` union type keys.
 7. **`ai_cache`** stores both AI-generated content cards AND lecture notes.
 8. **DB `confidence`** (0–3 int) vs `LectureAnalysis.estimatedConfidence` (1–3 int) — compatible, pass directly.
-9. **`useLocalWhisper` / `localWhisperPath`** = on-device Whisper (whisper.rn). Separate from `useLocalModel` / `localModelPath` (LLM via llama.rn).
+9. **`useLocalWhisper` / `localWhisperPath`** = on-device Whisper (whisper.rn). Separate from `useLocalModel` / `localModelPath` (LLM via react-native-llm-litert-mediapipe with Gemma 4 E4B/E2B).
 10. **No bundled API keys** in release builds. Users enter keys in Settings after fresh install.
 11. **`scripts/archive/`** contains deprecated regex-based patch scripts. Do not run them.
 

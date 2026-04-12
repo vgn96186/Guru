@@ -31,6 +31,7 @@ function dbgImageService(
   message: string,
   data: Record<string, unknown>,
 ): void {
+  if (typeof process !== 'undefined' && process.env.JEST_WORKER_ID) return;
   fetch('http://127.0.0.1:7507/ingest/f6a0734c-b45d-4770-9e51-aa07e5c2da6e', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': 'ca9385' },
@@ -94,7 +95,9 @@ export async function fetchWikipediaImage(topicName: string): Promise<string | n
 
   async function searchWiki(query: string): Promise<string | null> {
     try {
-      const url = `https://en.wikipedia.org/w/api.php?action=query&titles=${encodeURIComponent(query)}&prop=pageimages&format=json&pithumbsize=500&origin=*`;
+      const url = `https://en.wikipedia.org/w/api.php?action=query&titles=${encodeURIComponent(
+        query,
+      )}&prop=pageimages&format=json&pithumbsize=500&origin=*`;
       const response = await fetch(url, { headers: WIKI_API_HEADERS });
       const data = (await wikiApiJson(response, `searchWiki:${query.slice(0, 40)}`)) as {
         query?: { pages?: Record<string, { thumbnail?: { source?: string } }> };
@@ -127,7 +130,9 @@ export async function fetchWikipediaImage(topicName: string): Promise<string | n
 
   // 2. Wikipedia Search Match
   try {
-    const searchUrl = `https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(topicName)}&format=json&srlimit=1&origin=*`;
+    const searchUrl = `https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(
+      topicName,
+    )}&format=json&srlimit=1&origin=*`;
     const searchRes = await fetch(searchUrl, { headers: WIKI_API_HEADERS });
     const searchData = (await wikiApiJson(searchRes, 'wikiListSearch')) as {
       query?: { search?: Array<{ title?: string }> };
@@ -149,7 +154,9 @@ export async function fetchWikipediaImage(topicName: string): Promise<string | n
 
   // 3. Wikimedia Commons Media (Files directly)
   try {
-    const commonsUrl = `https://commons.wikimedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(cleaned)}&srnamespace=6&format=json&origin=*&srlimit=1`;
+    const commonsUrl = `https://commons.wikimedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(
+      cleaned,
+    )}&srnamespace=6&format=json&origin=*&srlimit=1`;
     const commonsRes = await fetch(commonsUrl, { headers: WIKI_API_HEADERS });
     const commonsData = (await wikiApiJson(commonsRes, 'commonsListSearch')) as {
       query?: { search?: Array<{ title?: string }> };
@@ -160,7 +167,9 @@ export async function fetchWikipediaImage(topicName: string): Promise<string | n
     const fileTitle = commonsData?.query?.search?.[0]?.title;
 
     if (fileTitle) {
-      const fileInfoUrl = `https://commons.wikimedia.org/w/api.php?action=query&titles=${encodeURIComponent(fileTitle)}&prop=imageinfo&iiprop=url&iiurlwidth=500&format=json&origin=*`;
+      const fileInfoUrl = `https://commons.wikimedia.org/w/api.php?action=query&titles=${encodeURIComponent(
+        fileTitle,
+      )}&prop=imageinfo&iiprop=url&iiurlwidth=500&format=json&origin=*`;
       const fileInfoRes = await fetch(fileInfoUrl, { headers: WIKI_API_HEADERS });
       const fileInfoData = (await wikiApiJson(fileInfoRes, 'commonsImageInfo')) as {
         query?: { pages?: Record<string, { imageinfo?: Array<{ thumburl?: string }> }> };

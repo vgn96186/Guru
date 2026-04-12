@@ -640,7 +640,11 @@ export default function LectureModeScreen() {
               ? '\n\n🚀 **High-Yield**\n' +
                 analysis.highYieldPoints.map((p: string) => `• ${p}`).join('\n')
               : '';
-          const quickNote = `🎯 **Subject**: ${analysis.subject}\n📌 **Topics**: ${analysis.topics.join(', ')}\n\n📝 **Summary**: ${analysis.lectureSummary}${conceptsText}${hyText}`;
+          const quickNote = `🎯 **Subject**: ${
+            analysis.subject
+          }\n📌 **Topics**: ${analysis.topics.join(', ')}\n\n📝 **Summary**: ${
+            analysis.lectureSummary
+          }${conceptsText}${hyText}`;
 
           // Use shared pipeline — same 5-level matching + XP as Pipeline A
           const result = await saveLectureChunk({
@@ -790,7 +794,9 @@ export default function LectureModeScreen() {
           ? '\n\n🚀 **High-Yield**\n' +
             analysis.highYieldPoints.map((p: string) => `• ${p}`).join('\n')
           : '';
-      const quickNote = `🎯 **Subject**: ${analysis.subject}\n📌 **Topics**: ${analysis.topics.join(', ')}\n\n📝 **Summary**: ${analysis.lectureSummary}${conceptsText}${hyText}`;
+      const quickNote = `🎯 **Subject**: ${analysis.subject}\n📌 **Topics**: ${analysis.topics.join(
+        ', ',
+      )}\n\n📝 **Summary**: ${analysis.lectureSummary}${conceptsText}${hyText}`;
 
       const result = await saveLectureChunk({
         analysis,

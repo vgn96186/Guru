@@ -1,7 +1,5 @@
 import React from 'react';
 import { View, StyleSheet, type ViewProps } from 'react-native';
-import { linearTheme } from '../../theme/linearTheme';
-
 interface LinearDividerProps extends ViewProps {
   vertical?: boolean;
 }

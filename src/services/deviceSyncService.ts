@@ -60,7 +60,6 @@ async function getMqtt() {
   if (mqttModule) return mqttModule;
   if (mqttUnavailable) return null;
   try {
-    // @ts-ignore - lazy load to avoid crashing the bundle if polyfills are missing
     mqttModule = require('mqtt/dist/mqtt');
     return mqttModule;
   } catch {
@@ -74,7 +73,6 @@ export function isSyncAvailable(): boolean {
   if (mqttModule) return true;
   if (mqttUnavailable) return false;
   try {
-    // @ts-ignore
     require('mqtt/dist/mqtt');
     return true;
   } catch {

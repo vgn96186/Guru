@@ -20,7 +20,7 @@ describe('fsrsService', () => {
       const card = getInitialCard();
       const now = new Date();
       const result = reviewCard(card, Rating.Good, now);
-      
+
       expect(result).toBeDefined();
       expect(result.card).toBeDefined();
       expect(result.log).toBeDefined();
@@ -33,7 +33,7 @@ describe('fsrsService', () => {
       const card = getInitialCard();
       const now = new Date();
       const result = reviewCard(card, Rating.Again, now);
-      
+
       expect(result.log.rating).toBe(Rating.Again);
       expect(result.card.state).toBe(State.Learning);
     });

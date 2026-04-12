@@ -71,8 +71,8 @@ describe('backgroundTasks', () => {
 
     it('should handle registration error gracefully', async () => {
       (TaskManager.isTaskRegisteredAsync as jest.Mock).mockRejectedValue(new Error('Failed'));
-      await registerBackgroundFetch();
-      // Should not throw
+      await expect(registerBackgroundFetch()).resolves.toBeUndefined();
+      expect(BackgroundFetch.registerTaskAsync).not.toHaveBeenCalled();
     });
   });
 

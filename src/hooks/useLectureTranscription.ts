@@ -22,24 +22,17 @@ import {
   TranscriptionState,
   TranscriptionProgress,
   LectureTranscript,
-  TranscriptSegment,
   TranscriptionError,
   WhisperModelSize,
   UseLectureTranscriptionReturn,
-  DEFAULT_REALTIME_CONFIG,
-  DEFAULT_BATCH_CONFIG,
   RealtimeTranscriptionConfig,
   BatchTranscriptionConfig,
 } from '../services/offlineTranscription/types';
 import {
   WhisperModelManager,
   getWhisperModelManager,
-  MODEL_REGISTRY,
 } from '../services/offlineTranscription/whisperModelManager';
-import {
-  AudioRecorder,
-  getAudioRecorder,
-} from '../services/offlineTranscription/audioRecorder';
+import { AudioRecorder, getAudioRecorder } from '../services/offlineTranscription/audioRecorder';
 import { RealtimeTranscriptionController } from '../services/offlineTranscription/realtimeTranscriber';
 import { BatchTranscriber } from '../services/offlineTranscription/batchTranscriber';
 import { TranscriptMerger } from '../services/offlineTranscription/transcriptMerger';
@@ -67,10 +60,8 @@ export function useLectureTranscription(
     isDownloading: false,
   });
   const [recordingState, setRecordingState] = useState<RecordingState>('idle');
-  const [transcriptionState, setTranscriptionState] =
-    useState<TranscriptionState>('idle');
-  const [progress, setProgress] =
-    useState<TranscriptionProgress>(INITIAL_PROGRESS);
+  const [transcriptionState, setTranscriptionState] = useState<TranscriptionState>('idle');
+  const [progress, setProgress] = useState<TranscriptionProgress>(INITIAL_PROGRESS);
   const [transcript, setTranscript] = useState<LectureTranscript | null>(null);
   const [error, setError] = useState<TranscriptionError | null>(null);
 
@@ -88,24 +79,22 @@ export function useLectureTranscription(
 
   // ── Cleanup on unmount ───────────────────────────────────────────────────
   useEffect(() => {
+    const recorder = recorderRef.current;
     return () => {
       realtimeRef.current?.destroy();
-      recorderRef.current?.destroy();
+      recorder?.destroy();
       // Don't destroy model manager — it's a singleton shared across screens
     };
   }, []);
 
   // ── Throttled progress updater (max 3 updates/sec for UI performance) ────
   const lastProgressUpdateRef = useRef<number>(0);
-  const throttledSetProgress = useCallback(
-    (newProgress: TranscriptionProgress) => {
-      const now = Date.now();
-      if (now - lastProgressUpdateRef.current < 333) return; // 3 Hz max
-      lastProgressUpdateRef.current = now;
-      setProgress(newProgress);
-    },
-    [],
-  );
+  const throttledSetProgress = useCallback((newProgress: TranscriptionProgress) => {
+    const now = Date.now();
+    if (now - lastProgressUpdateRef.current < 333) return; // 3 Hz max
+    lastProgressUpdateRef.current = now;
+    setProgress(newProgress);
+  }, []);
 
   // ── Refresh model state from the manager ─────────────────────────────────
   const refreshModelState = useCallback(async () => {
@@ -137,11 +126,7 @@ export function useLectureTranscription(
         const txError =
           err instanceof TranscriptionError
             ? err
-            : new TranscriptionError(
-                'DOWNLOAD_FAILED',
-                String(err),
-                'Model download failed.',
-              );
+            : new TranscriptionError('DOWNLOAD_FAILED', String(err), 'Model download failed.');
         setError(txError);
         setModelState((prev) => ({
           ...prev,
@@ -240,11 +225,7 @@ export function useLectureTranscription(
         const txError =
           err instanceof TranscriptionError
             ? err
-            : new TranscriptionError(
-                'UNKNOWN',
-                String(err),
-                'Failed to start recording.',
-              );
+            : new TranscriptionError('UNKNOWN', String(err), 'Failed to start recording.');
         setError(txError);
         setTranscriptionState('error');
         setRecordingState('error');
@@ -258,9 +239,7 @@ export function useLectureTranscription(
 
     try {
       // Stop transcription
-      const segments = realtimeRef.current
-        ? await realtimeRef.current.stop()
-        : [];
+      const segments = realtimeRef.current ? await realtimeRef.current.stop() : [];
       const vadSkipped = realtimeRef.current?.getVadSkippedSeconds() ?? 0;
 
       // Stop recording
@@ -317,10 +296,7 @@ export function useLectureTranscription(
   // ── Batch Mode ───────────────────────────────────────────────────────────
 
   const transcribeFile = useCallback(
-    async (
-      audioFilePath: string,
-      title?: string,
-    ): Promise<LectureTranscript> => {
+    async (audioFilePath: string, title?: string): Promise<LectureTranscript> => {
       setError(null);
       setTranscript(null);
       setProgress(INITIAL_PROGRESS);
@@ -337,24 +313,18 @@ export function useLectureTranscription(
         }
 
         // Create batch transcriber
-        const batch = new BatchTranscriber(
-          modelManagerRef.current,
-          batchConfig,
-        );
+        const batch = new BatchTranscriber(modelManagerRef.current, batchConfig);
         batchRef.current = batch;
 
         setTranscriptionState('transcribing');
 
-        const {
-          segments,
-          vadSkippedSeconds,
-          processingTimeSeconds,
-        } = await batch.transcribe(audioFilePath, (batchProgress) => {
-          throttledSetProgress(batchProgress);
-          setTranscriptionState(
-            batchProgress.state === 'completed' ? 'merging' : 'transcribing',
-          );
-        });
+        const { segments, vadSkippedSeconds, processingTimeSeconds } = await batch.transcribe(
+          audioFilePath,
+          (batchProgress) => {
+            throttledSetProgress(batchProgress);
+            setTranscriptionState(batchProgress.state === 'completed' ? 'merging' : 'transcribing');
+          },
+        );
 
         // Merge
         setTranscriptionState('merging');
@@ -373,8 +343,7 @@ export function useLectureTranscription(
           {
             processingTimeSeconds,
             vadSkippedSeconds,
-            realtimeFactor:
-              processingTimeSeconds / Math.max(durationSeconds, 1),
+            realtimeFactor: processingTimeSeconds / Math.max(durationSeconds, 1),
             chunksProcessed: segments.length,
           },
         );
@@ -395,11 +364,7 @@ export function useLectureTranscription(
         const txError =
           err instanceof TranscriptionError
             ? err
-            : new TranscriptionError(
-                'UNKNOWN',
-                String(err),
-                'Batch transcription failed.',
-              );
+            : new TranscriptionError('UNKNOWN', String(err), 'Batch transcription failed.');
         setError(txError);
         setTranscriptionState('error');
         throw txError;

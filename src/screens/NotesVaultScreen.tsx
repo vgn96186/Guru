@@ -680,10 +680,8 @@ export default function NotesVaultScreen() {
         <ResponsiveContainer style={styles.flex}>
           <ScreenHeader
             title="Notes Vault"
-            subtitle={`${notes.length} processed study note${notes.length !== 1 ? 's' : ''}`}
             containerStyle={styles.headerCompact}
             titleStyle={styles.headerTitleCompact}
-            subtitleStyle={styles.headerSubtitleCompact}
             searchElement={
               <BannerSearchBar
                 value={searchValue}
@@ -691,6 +689,7 @@ export default function NotesVaultScreen() {
                 placeholder="Search notes, topics, subjects..."
               />
             }
+            showSettings
           ></ScreenHeader>
 
           {notes.length > 0 && (
@@ -948,12 +947,7 @@ export default function NotesVaultScreen() {
 
           {/* List */}
           {visibleNotes.length === 0 ? (
-            <EmptyState
-              icon="document-text-outline"
-              iconSize={64}
-              title="No Notes Yet"
-              subtitle="Study a topic or import a lecture to create notes."
-            />
+            <EmptyState icon="document-text-outline" iconSize={64} title="No Notes Yet" />
           ) : (
             <>
               <FlatList
@@ -1220,11 +1214,6 @@ const styles = StyleSheet.create({
   headerTitleCompact: {
     fontSize: 24,
     lineHeight: 30,
-  },
-  headerSubtitleCompact: {
-    marginTop: 2,
-    fontSize: 13,
-    lineHeight: 18,
   },
   summaryCard: {
     marginHorizontal: 16,

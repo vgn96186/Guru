@@ -94,7 +94,9 @@ export function createAiRequestTrace(
         const chunks = splitIntoChunks(clipped.text);
         chunks.forEach((chunk, index) => {
           console.info(
-            `[AI_REPLY_TEXT] requestId=${requestId} kind=${kind} chunk=${index + 1}/${chunks.length}\n${chunk}`,
+            `[AI_REPLY_TEXT] requestId=${requestId} kind=${kind} chunk=${index + 1}/${
+              chunks.length
+            }\n${chunk}`,
           );
         });
       }

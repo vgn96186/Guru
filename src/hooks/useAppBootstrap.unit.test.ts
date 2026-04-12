@@ -54,6 +54,7 @@ jest.mock('../config/appConfig', () => ({
   BUNDLED_GROQ_KEY: '',
   BUNDLED_HF_TOKEN: '',
   BUNDLED_OPENROUTER_KEY: '',
+  SENTRY_DSN: '',
 }));
 
 jest.mock('../services/appLauncher/overlayStartupPrompt', () => ({

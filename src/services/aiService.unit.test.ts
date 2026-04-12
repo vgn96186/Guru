@@ -11,12 +11,13 @@ const baseProfile: MockProfile = {
   openrouterKey: 'or-test-key',
   groqApiKey: 'groq-test-key',
   useLocalModel: true,
-  localModelPath: '/models/qwen.gguf',
+  localModelPath: '/models/gemma-4-E4B-it.litertlm',
 };
 
 async function loadAiService(opts?: {
   profile?: Partial<MockProfile>;
   localUsable?: boolean;
+  localAllowed?: boolean;
   localCompletionText?: string;
 }) {
   jest.resetModules();
@@ -24,20 +25,21 @@ async function loadAiService(opts?: {
 
   const profile = { ...baseProfile, ...(opts?.profile ?? {}) };
   const localUsable = opts?.localUsable ?? true;
+  const localAllowed = opts?.localAllowed ?? true;
   const localCompletionText = opts?.localCompletionText ?? 'local-text';
 
-  const completionMock = jest.fn(async () => ({ text: localCompletionText }));
-  const releaseMock = jest.fn(async () => undefined);
-  const initLlamaMock = jest.fn(async () => ({
-    completion: completionMock,
-    release: releaseMock,
-  }));
+  const generateTextMock = jest.fn(async () => ({ text: localCompletionText }));
+  const releaseModelMock = jest.fn(async () => undefined);
+  const loadModelMock = jest.fn(async () => ({ id: 'mock-model-id' }));
 
   jest.doMock('react-native', () => ({
     AppState: { addEventListener: jest.fn() },
   }));
-  jest.doMock('llama.rn', () => ({
-    initLlama: initLlamaMock,
+  jest.doMock('react-native-llm-litert-mediapipe', () => ({
+    loadModel: loadModelMock,
+    generateText: generateTextMock,
+    releaseModel: releaseModelMock,
+    stopGeneration: jest.fn(),
   }));
   jest.doMock('../db/repositories', () => ({
     profileRepository: { getProfile: jest.fn(() => Promise.resolve(profile)) },
@@ -59,10 +61,11 @@ async function loadAiService(opts?: {
   jest.doMock('./deviceMemory', () => ({
     isLocalLlmUsable: jest.fn(() => localUsable),
     getLocalLlmRamWarning: jest.fn(() => 'Local model unavailable'),
+    isLocalLlmAllowedOnThisDevice: jest.fn(() => localAllowed),
   }));
 
   const aiService = await import('./aiService');
-  return { aiService, initLlamaMock, completionMock };
+  return { aiService, generateTextMock };
 }
 
 describe('aiService routing policy', () => {
@@ -135,7 +138,7 @@ describe('aiService routing policy', () => {
   });
 
   it('falls back to local only after all cloud backends fail', async () => {
-    const { aiService, initLlamaMock, completionMock } = await loadAiService({
+    const { aiService, generateTextMock } = await loadAiService({
       localCompletionText: 'local-success',
     });
     const fetchMock = jest.spyOn(globalThis, 'fetch' as any).mockImplementation(
@@ -144,15 +147,14 @@ describe('aiService routing policy', () => {
           ok: false,
           status: 500,
           text: async () => 'cloud down',
-        }) as any,
+        } as any),
     );
 
     const result = await aiService.generateTextWithRouting([{ role: 'user', content: 'hello' }]);
 
     expect(result.text).toBe('local-success');
     expect(result.modelUsed.startsWith('local-')).toBe(true);
-    expect(initLlamaMock).toHaveBeenCalledTimes(1);
-    expect(completionMock).toHaveBeenCalledTimes(1);
+    expect(generateTextMock).toHaveBeenCalledTimes(1);
     expect(fetchMock).toHaveBeenCalled();
   });
 
@@ -187,7 +189,7 @@ describe('aiService routing policy', () => {
   });
 
   it('uses local directly when local model is explicitly selected', async () => {
-    const { aiService, initLlamaMock } = await loadAiService({
+    const { aiService, generateTextMock } = await loadAiService({
       localCompletionText: 'local-only',
     });
     const fetchMock = jest.spyOn(globalThis, 'fetch' as any).mockImplementation(async () => {
@@ -200,7 +202,32 @@ describe('aiService routing policy', () => {
 
     expect(result.text).toBe('local-only');
     expect(result.modelUsed.startsWith('local-')).toBe(true);
-    expect(initLlamaMock).toHaveBeenCalledTimes(1);
+    expect(generateTextMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('uses local when no cloud keys exist but local model file is present', async () => {
+    const { aiService, generateTextMock } = await loadAiService({
+      profile: {
+        openrouterKey: '',
+        groqApiKey: '',
+        useLocalModel: false,
+        localModelPath: '/models/gemma-4-E4B-it.litertlm',
+      },
+      localUsable: false,
+      // Device must allow local so no-cloud + on-disk model can use the safety fallback path.
+      localAllowed: true,
+      localCompletionText: 'local-no-cloud',
+    });
+    const fetchMock = jest.spyOn(globalThis, 'fetch' as any).mockImplementation(async () => {
+      throw new Error('fetch should not be called when only local fallback is available');
+    });
+
+    const result = await aiService.generateTextWithRouting([{ role: 'user', content: 'hello' }]);
+
+    expect(result.text).toBe('local-no-cloud');
+    expect(result.modelUsed.startsWith('local-')).toBe(true);
+    expect(generateTextMock).toHaveBeenCalledTimes(1);
     expect(fetchMock).not.toHaveBeenCalled();
   });
 

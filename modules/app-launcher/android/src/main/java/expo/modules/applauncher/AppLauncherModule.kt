@@ -36,7 +36,7 @@ class AppLauncherModule : Module() {
     private var projectionResultCode: Int = 0
     private var projectionData: Intent? = null
 
-    // SAF folder picker handling — returns { treeUri, label, entries[] }
+    // SAF folder picker handling â€” returns { treeUri, label, entries[] }
     private var folderPickerDeferred: CompletableDeferred<Map<String, Any>>? = null
 
     private companion object {
@@ -313,7 +313,7 @@ class AppLauncherModule : Module() {
             }
         }
 
-        // ── Activity result handlers ────────────
+        // â”€â”€ Activity result handlers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         OnActivityResult { _, payload ->
             if (payload.requestCode == MEDIA_PROJECTION_RC) {
                 projectionResultCode = payload.resultCode
@@ -485,7 +485,7 @@ class AppLauncherModule : Module() {
             // Give the service a moment to start and verify it's actually recording
             runBlocking { delay(500) }
             val f = File(path)
-            Log.i(TAG, "startRecording: after 500ms — file exists=${f.exists()}, size=${f.length()}")
+            Log.i(TAG, "startRecording: after 500ms â€” file exists=${f.exists()}, size=${f.length()}")
 
             return@AsyncFunction path
         }
@@ -514,7 +514,7 @@ class AppLauncherModule : Module() {
             }
 
             if (path == null) {
-                Log.w(TAG, "stopRecording: no path stored — returning null")
+                Log.w(TAG, "stopRecording: no path stored â€” returning null")
                 return@AsyncFunction null as String?
             }
 
@@ -527,7 +527,7 @@ class AppLauncherModule : Module() {
                     if (file.length() < 50L) {
                         val content = try { file.readText() } catch (_: Exception) { "" }
                         if (content.startsWith("RECORDING_FAILED")) {
-                            Log.w(TAG, "stopRecording: found failure marker — recording never worked")
+                            Log.w(TAG, "stopRecording: found failure marker â€” recording never worked")
                             try { file.delete() } catch (_: Exception) {}
                             return@AsyncFunction null as String?
                         }
@@ -540,7 +540,7 @@ class AppLauncherModule : Module() {
             }
 
             val file = File(path)
-            Log.w(TAG, "stopRecording: after ${waitedMs}ms — exists=${file.exists()}, size=${file.length()}")
+            Log.w(TAG, "stopRecording: after ${waitedMs}ms â€” exists=${file.exists()}, size=${file.length()}")
             return@AsyncFunction if (file.exists() && file.length() > 0L) path else null
         }
 
@@ -737,7 +737,7 @@ class AppLauncherModule : Module() {
         AsyncFunction("convertToWav") { inputPath: String ->
             try {
                 val wavPath = inputPath.replace(".m4a", ".wav")
-                Log.i(TAG, "convertToWav: $inputPath → $wavPath")
+                Log.i(TAG, "convertToWav: $inputPath â†’ $wavPath")
 
                 val extractor = MediaExtractor()
                 extractor.setDataSource(inputPath)
@@ -887,11 +887,31 @@ class AppLauncherModule : Module() {
                 emptyList<Map<String, Any>>()
             }
         }
+
+        AsyncFunction("concatenateFiles") { inputPaths: List<String>, outputPath: String ->
+            return@AsyncFunction try {
+                FileOutputStream(File(outputPath)).use { output ->
+                    val buffer = ByteArray(65536)
+                    for (inputPath in inputPaths) {
+                        java.io.FileInputStream(File(inputPath)).use { input ->
+                            var bytesRead: Int
+                            while (input.read(buffer).also { bytesRead = it } != -1) {
+                                output.write(buffer, 0, bytesRead)
+                            }
+                        }
+                    }
+                }
+                true
+            } catch (e: Exception) {
+                Log.e(TAG, "concatenateFiles failed", e)
+                false
+            }
+        }
     }
 
     /**
      * Simple linear resampling of 16-bit PCM audio.
-     * Handles both sample rate conversion and stereo→mono downmix.
+     * Handles both sample rate conversion and stereoâ†’mono downmix.
      */
     private fun resamplePcm(
         input: ByteArray, srcRate: Int, srcChannels: Int,

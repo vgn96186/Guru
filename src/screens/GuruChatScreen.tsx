@@ -762,7 +762,32 @@ function GuruChatScreenContent() {
     agentrouter: arModelIds,
   } = useLiveGuruChatModels(profile);
 
+  const profileRef = useRef(profile);
+  profileRef.current = profile;
+
+  const modelListProfileKey = useMemo(() => {
+    if (!profile) return '';
+    const k = getApiKeys(profile);
+    return [
+      profile.useLocalModel ? '1' : '0',
+      profile.localModelPath ? '1' : '0',
+      profile.qwenConnected ? '1' : '0',
+      k.chatgptConnected ? '1' : '0',
+      k.groqKey ? '1' : '0',
+      k.orKey ? '1' : '0',
+      k.geminiKey ? '1' : '0',
+      k.cfAccountId && k.cfApiToken ? '1' : '0',
+      k.githubModelsPat ? '1' : '0',
+      k.githubCopilotConnected ? '1' : '0',
+      k.gitlabDuoConnected ? '1' : '0',
+      k.poeConnected ? '1' : '0',
+      k.kiloApiKey ? '1' : '0',
+      k.agentRouterKey ? '1' : '0',
+    ].join('');
+  }, [profile]);
+
   const availableModels = useMemo(() => {
+    const p = profileRef.current;
     const {
       orKey,
       groqKey,
@@ -777,10 +802,10 @@ function GuruChatScreenContent() {
       gitlabDuoConnected,
       poeConnected,
       qwenConnected,
-    } = getApiKeys(profile ?? undefined);
+    } = getApiKeys(p ?? undefined);
     const list: ModelOption[] = [{ id: 'auto', name: 'Auto Route (Smart)', group: 'Local' }];
 
-    if (profile?.useLocalModel && profile?.localModelPath && isLocalLlmAllowedOnThisDevice()) {
+    if (p?.useLocalModel && p?.localModelPath && isLocalLlmAllowedOnThisDevice()) {
       list.push({ id: 'local', name: 'On-Device LLM', group: 'Local' });
     }
 
@@ -794,9 +819,7 @@ function GuruChatScreenContent() {
       });
     }
 
-    // Qwen models - only show when OAuth is connected
-    // Based on official Qwen OAuth implementation (Cline, RooCode)
-    if (qwenConnected || profile?.qwenConnected) {
+    if (qwenConnected || p?.qwenConnected) {
       [{ id: 'qwen3-coder-plus', name: 'Qwen Coder Plus' }].forEach((m) => {
         list.push({
           id: `qwen/${m.id}`,
@@ -907,8 +930,9 @@ function GuruChatScreenContent() {
     }
 
     return list;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
-    profile,
+    modelListProfileKey,
     chatgptModelIds,
     groqModelIds,
     orModelIds,
@@ -922,8 +946,30 @@ function GuruChatScreenContent() {
     arModelIds,
   ]);
 
+  /** Stable profile key — avoids re-running effects when profile ref changes but data is identical. */
+  const profileKey = profile
+    ? `${profile.guruChatDefaultModel ?? ''}|${profile.useLocalModel ?? false}|${profile.localModelPath ?? ''}|${profile.openrouterKey?.length ?? 0}|${profile.groqApiKey?.length ?? 0}|${profile.geminiKey?.length ?? 0}`
+    : '';
+  const prevProfileKeyRef = useRef(profileKey);
+  if (prevProfileKeyRef.current !== profileKey) {
+    prevProfileKeyRef.current = profileKey;
+  }
+
+  const availableModelsKey = useMemo(
+    () =>
+      JSON.stringify(
+        availableModels.map((m) => m.id),
+      ),
+    [availableModels],
+  );
+
+  const modelSyncRunRef = useRef(0);
+
   useEffect(() => {
     if (!profile) return;
+    if (modelSyncRunRef.current > 50) return;
+    modelSyncRunRef.current += 1;
+
     const ids = availableModels.map((m) => m.id);
     const coerced = coerceGuruChatDefaultModel(profile.guruChatDefaultModel, ids);
     const key = profile.guruChatDefaultModel ?? '';
@@ -937,7 +983,10 @@ function GuruChatScreenContent() {
       if (settingsDefaultChanged) return coerced;
       return prev;
     });
-  }, [profile, profile?.guruChatDefaultModel, availableModels]);
+    // Intentionally using stable keys (profileKey, availableModelsKey) instead of
+    // profile/availableModels to avoid re-runs when Zustand refreshes the profile object.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [profileKey, availableModelsKey]);
 
   const currentModelLabel = useMemo(() => {
     if (chosenModel === 'auto') return 'Auto';
@@ -1810,13 +1859,6 @@ function GuruChatScreenContent() {
               <View style={styles.headerWrap}>
                 <ScreenHeader
                   title="Guru Chat"
-                  subtitle={
-                    currentThread && currentThread.title !== topicName
-                      ? currentThread.title
-                      : isGeneralChat
-                      ? 'Medical assistant'
-                      : topicName
-                  }
                   onBackPress={navigation.canGoBack() ? () => navigation.goBack() : undefined}
                   rightElement={
                     <View style={styles.headerActions}>
@@ -1829,16 +1871,9 @@ function GuruChatScreenContent() {
                       <BannerIconButton onPress={startNewChat} accessibilityLabel="New chat">
                         <Ionicons name="create-outline" size={18} color={n.colors.accent} />
                       </BannerIconButton>
-                      <BannerIconButton
-                        onPress={() =>
-                          navigation.getParent()?.navigate('MenuTab', { screen: 'Settings' })
-                        }
-                        accessibilityLabel="Open settings"
-                      >
-                        <Ionicons name="settings-sharp" size={18} color={n.colors.textSecondary} />
-                      </BannerIconButton>
                     </View>
                   }
+                  showSettings
                 />
               </View>
             </RevealSection>

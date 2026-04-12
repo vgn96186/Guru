@@ -1,12 +1,13 @@
 import type { GenerateContentResponse } from '@google/genai';
+import { CLOUD_MAX_COMPLETION_TOKENS } from '../completionLimits';
 import type { Message } from '../types';
 import { getGoogleGenAI } from './genaiClient';
 import { messagesToGeminiContents } from './geminiContents';
 import { isGeminiSdkRateLimitError, rethrowGeminiSdkError } from './geminiSdkErrors';
 import { logStreamEvent } from '../runtimeDebug';
 
-/** Guru chat answers are short; allow headroom for code fences / lists without truncating. */
-const MAX_OUTPUT_TOKENS = 4096;
+/** Align with OpenAI-style cloud cap; Guru answers can be long when the student asks for depth. */
+const MAX_OUTPUT_TOKENS = CLOUD_MAX_COMPLETION_TOKENS;
 /** Slightly lower than 0.7 for steadier exam-style tutoring; still conversational. */
 const TEMPERATURE = 0.65;
 

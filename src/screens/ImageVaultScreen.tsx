@@ -219,12 +219,8 @@ export default function ImageVaultScreen() {
               <>
                 <ScreenHeader
                   title="Image Vault"
-                  subtitle={`${images.length} AI-generated image${
-                    images.length !== 1 ? 's' : ''
-                  } saved`}
                   containerStyle={styles.headerCompact}
                   titleStyle={styles.headerTitleCompact}
-                  subtitleStyle={styles.headerSubtitleCompact}
                   searchElement={
                     <BannerSearchBar
                       value={searchQuery}
@@ -232,6 +228,7 @@ export default function ImageVaultScreen() {
                       placeholder="Search topic, prompt, provider..."
                     />
                   }
+                  showSettings
                 ></ScreenHeader>
 
                 <View style={styles.summaryRow}>
@@ -330,12 +327,7 @@ export default function ImageVaultScreen() {
               </>
             }
             ListEmptyComponent={
-              <EmptyState
-                icon="image-outline"
-                iconSize={64}
-                title="No Images Saved"
-                subtitle="Medical images you save during study sessions will appear here."
-              />
+              <EmptyState icon="image-outline" iconSize={64} title="No Images Saved" />
             }
             refreshControl={
               <RefreshControl
@@ -458,11 +450,6 @@ const styles = StyleSheet.create({
   headerTitleCompact: {
     fontSize: 24,
     lineHeight: 30,
-  },
-  headerSubtitleCompact: {
-    marginTop: 2,
-    fontSize: 13,
-    lineHeight: 18,
   },
   summaryRow: {
     flexDirection: 'row',

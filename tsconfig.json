@@ -6,6 +6,7 @@
     "incremental": true,
     "skipLibCheck": true,
     "baseUrl": ".",
+    // "@/*" maps to repo root only for TypeScript; Metro/Jest do not resolve it. Prefer relative imports in app code (see AGENTS.md).
     "paths": {
       "@/*": ["*"]
     }

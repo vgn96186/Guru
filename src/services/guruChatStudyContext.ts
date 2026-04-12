@@ -104,7 +104,9 @@ export async function buildBoundedGuruChatStudyContext(
         const topicParts = [
           `Current topic: ${topicRow.name} (${topicRow.subject_name})`,
           topicRow.parent_name ? `Parent topic: ${topicRow.parent_name}` : null,
-          `Topic mastery: status ${topicRow.status}, confidence ${topicRow.confidence}/3, wrongs ${topicRow.wrong_count}, nemesis ${topicRow.is_nemesis ? 'yes' : 'no'}`,
+          `Topic mastery: status ${topicRow.status}, confidence ${topicRow.confidence}/3, wrongs ${
+            topicRow.wrong_count
+          }, nemesis ${topicRow.is_nemesis ? 'yes' : 'no'}`,
           topicRow.next_review_date ? `Next review date: ${topicRow.next_review_date}` : null,
           siblingWeakRows.length > 0
             ? `Nearby weak topics: ${siblingWeakRows.map((row) => row.name).join(', ')}`

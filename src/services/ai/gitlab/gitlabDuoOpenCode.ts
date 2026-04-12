@@ -5,6 +5,7 @@
  *
  * OAuth scopes should include `api` (see OpenCode GitLab auth docs). User may need to reconnect after scope changes.
  */
+import { CLOUD_MAX_COMPLETION_TOKENS } from '../completionLimits';
 import type { Message } from '../types';
 import { RateLimitError } from '../schemas';
 import { getGitLabAiGatewayUrl, getGitLabInstanceUrl } from './gitlabInstance';
@@ -82,7 +83,11 @@ export async function fetchGitLabDirectAccessCredentials(
       if (res.status === 502 || res.status === 503) {
         const err = await res.text().catch(() => res.statusText);
         throw new Error(
-          `GitLab AI Gateway unavailable (${res.status}). This usually means Duo Pro/Enterprise is not enabled on your GitLab account, or GitLab's AI infrastructure is temporarily down. Check status.gitlab.com. ${stripHtml(err)}`.trim(),
+          `GitLab AI Gateway unavailable (${
+            res.status
+          }). This usually means Duo Pro/Enterprise is not enabled on your GitLab account, or GitLab's AI infrastructure is temporarily down. Check status.gitlab.com. ${stripHtml(
+            err,
+          )}`.trim(),
         );
       }
 
@@ -193,7 +198,7 @@ async function postAnthropicGateway(
   }
   const body: Record<string, unknown> = {
     model: anthropicModel,
-    max_tokens: 4096,
+    max_tokens: CLOUD_MAX_COMPLETION_TOKENS,
     messages: am,
   };
   if (systemOut) body.system = systemOut;
@@ -227,7 +232,7 @@ async function postOpenAIChatGateway(
   const body: Record<string, unknown> = {
     model: openaiModel,
     messages: messagesToOpenAI(messages),
-    max_tokens: 4096,
+    max_tokens: CLOUD_MAX_COMPLETION_TOKENS,
     temperature: 0.7,
   };
   if (jsonMode) {
@@ -284,7 +289,9 @@ export async function completeGitLabDuoOpenCodeGateway(
     if (msg.includes('401') || msg.includes('unauthorized') || msg.includes('invalid')) {
       invalidateGitLabDirectAccessCache();
       const text = await run(true);
-      if (!text.trim()) throw new Error('Empty response from GitLab AI Gateway');
+      if (!text.trim()) {
+        throw new Error('Empty response from GitLab AI Gateway', { cause: e });
+      }
       return text;
     }
     throw e;

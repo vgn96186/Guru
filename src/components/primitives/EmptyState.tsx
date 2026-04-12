@@ -50,8 +50,8 @@ export default function EmptyState({
     actions && actions.length > 0
       ? actions
       : action
-        ? [{ label: action.label, onPress: action.onPress }]
-        : [];
+      ? [{ label: action.label, onPress: action.onPress }]
+      : [];
 
   const inner = (
     <>

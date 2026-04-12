@@ -841,8 +841,8 @@ export default function StudyPlanScreen() {
           <View style={styles.header}>
             <ScreenHeader
               title="Dynamic Plan"
-              subtitle={`${summary.daysRemaining} days to INICET · ${summary.totalHoursLeft}h content left`}
               onBackPress={() => navigation.navigate('MenuHome')}
+              showSettings
             />
           </View>
 

@@ -14,11 +14,9 @@ describe('recordingValidation', () => {
 
   it('succeeds on first attempt if file is already valid', async () => {
     const validate = jest.fn(async () => ({ exists: true, size: 2048 }));
-    const resultPromise = validateRecordingWithBackoff(
-      '/tmp/audio.m4a',
-      validate,
-      { ...DEFAULT_RECORDING_VALIDATION_POLICY },
-    );
+    const resultPromise = validateRecordingWithBackoff('/tmp/audio.m4a', validate, {
+      ...DEFAULT_RECORDING_VALIDATION_POLICY,
+    });
 
     const result = await resultPromise;
     expect(result.validated).toBe(true);
@@ -34,17 +32,16 @@ describe('recordingValidation', () => {
       return { exists: true, size: 4096 };
     });
 
-    const resultPromise = validateRecordingWithBackoff(
-      '/tmp/audio.m4a',
-      validate,
-      { ...DEFAULT_RECORDING_VALIDATION_POLICY, baseDelayMs: 100 },
-    );
+    const resultPromise = validateRecordingWithBackoff('/tmp/audio.m4a', validate, {
+      ...DEFAULT_RECORDING_VALIDATION_POLICY,
+      baseDelayMs: 100,
+    });
 
     // Initial call happens immediately
-    await Promise.resolve(); 
-    await Promise.resolve(); 
+    await Promise.resolve();
+    await Promise.resolve();
     expect(validate).toHaveBeenCalledTimes(1);
-    
+
     // First delay (100ms base * 1.5^0 = 100)
     jest.advanceTimersByTime(100);
     await Promise.resolve();
@@ -71,15 +68,14 @@ describe('recordingValidation', () => {
       return { exists: true, size: 2048 };
     });
 
-    const resultPromise = validateRecordingWithBackoff(
-      '/tmp/audio.m4a',
-      validate,
-      { ...DEFAULT_RECORDING_VALIDATION_POLICY, baseDelayMs: 100 },
-    );
+    const resultPromise = validateRecordingWithBackoff('/tmp/audio.m4a', validate, {
+      ...DEFAULT_RECORDING_VALIDATION_POLICY,
+      baseDelayMs: 100,
+    });
 
     await Promise.resolve();
     await Promise.resolve();
-    
+
     jest.advanceTimersByTime(100);
     await Promise.resolve();
     await Promise.resolve();
@@ -91,16 +87,16 @@ describe('recordingValidation', () => {
   });
 
   it('handles null info from validateFile as invalid', async () => {
-    const validate = jest.fn(async () => (null as any));
-    const resultPromise = validateRecordingWithBackoff(
-      '/tmp/audio.m4a',
-      validate,
-      { ...DEFAULT_RECORDING_VALIDATION_POLICY, attempts: 2, baseDelayMs: 100 },
-    );
+    const validate = jest.fn(async () => null as any);
+    const resultPromise = validateRecordingWithBackoff('/tmp/audio.m4a', validate, {
+      ...DEFAULT_RECORDING_VALIDATION_POLICY,
+      attempts: 2,
+      baseDelayMs: 100,
+    });
 
     await Promise.resolve();
     await Promise.resolve();
-    
+
     jest.advanceTimersByTime(100);
     await Promise.resolve();
     await Promise.resolve();
@@ -118,11 +114,11 @@ describe('recordingValidation', () => {
       return { exists: true, size: 100 * calls }; // Never reaches 1024
     });
 
-    const resultPromise = validateRecordingWithBackoff(
-      '/tmp/audio.m4a',
-      validate,
-      { ...DEFAULT_RECORDING_VALIDATION_POLICY, attempts: 3, baseDelayMs: 100 },
-    );
+    const resultPromise = validateRecordingWithBackoff('/tmp/audio.m4a', validate, {
+      ...DEFAULT_RECORDING_VALIDATION_POLICY,
+      attempts: 3,
+      baseDelayMs: 100,
+    });
 
     // Attempt 1
     await Promise.resolve();
@@ -146,16 +142,16 @@ describe('recordingValidation', () => {
 
   it('returns false when file never reaches min size', async () => {
     const validate = jest.fn(async () => ({ exists: true, size: 128 }));
-    const resultPromise = validateRecordingWithBackoff(
-      '/tmp/audio.m4a',
-      validate,
-      { ...DEFAULT_RECORDING_VALIDATION_POLICY, attempts: 3, baseDelayMs: 100 },
-    );
+    const resultPromise = validateRecordingWithBackoff('/tmp/audio.m4a', validate, {
+      ...DEFAULT_RECORDING_VALIDATION_POLICY,
+      attempts: 3,
+      baseDelayMs: 100,
+    });
 
     for (let i = 0; i < 3; i++) {
       await Promise.resolve();
       await Promise.resolve();
-      jest.advanceTimersByTime(1000); 
+      jest.advanceTimersByTime(1000);
     }
 
     const result = await resultPromise;
@@ -165,11 +161,10 @@ describe('recordingValidation', () => {
 
   it('handles policy.attempts = 0', async () => {
     const validate = jest.fn(async () => ({ exists: true, size: 2048 }));
-    const result = await validateRecordingWithBackoff(
-      '/tmp/audio.m4a',
-      validate,
-      { ...DEFAULT_RECORDING_VALIDATION_POLICY, attempts: 0 },
-    );
+    const result = await validateRecordingWithBackoff('/tmp/audio.m4a', validate, {
+      ...DEFAULT_RECORDING_VALIDATION_POLICY,
+      attempts: 0,
+    });
 
     expect(result.validated).toBe(false);
     expect(result.attemptsUsed).toBe(0);
@@ -178,11 +173,10 @@ describe('recordingValidation', () => {
 
   it('only tries once if policy.attempts = 1', async () => {
     const validate = jest.fn(async () => ({ exists: true, size: 10 }));
-    const resultPromise = validateRecordingWithBackoff(
-      '/tmp/audio.m4a',
-      validate,
-      { ...DEFAULT_RECORDING_VALIDATION_POLICY, attempts: 1 },
-    );
+    const resultPromise = validateRecordingWithBackoff('/tmp/audio.m4a', validate, {
+      ...DEFAULT_RECORDING_VALIDATION_POLICY,
+      attempts: 1,
+    });
 
     const result = await resultPromise;
     expect(result.validated).toBe(false);
@@ -192,23 +186,24 @@ describe('recordingValidation', () => {
 
   it('validates if minValidBytes is 0', async () => {
     const validate = jest.fn(async () => ({ exists: true, size: 1 }));
-    const result = await validateRecordingWithBackoff(
-      '/tmp/audio.m4a',
-      validate,
-      { ...DEFAULT_RECORDING_VALIDATION_POLICY, minValidBytes: 0 },
-    );
+    const result = await validateRecordingWithBackoff('/tmp/audio.m4a', validate, {
+      ...DEFAULT_RECORDING_VALIDATION_POLICY,
+      minValidBytes: 0,
+    });
 
     expect(result.validated).toBe(true);
     expect(result.attemptsUsed).toBe(1);
   });
 
   it('eventually fails if validateFile always throws', async () => {
-    const validate = jest.fn(async () => { throw new Error('Deadly error'); });
-    const resultPromise = validateRecordingWithBackoff(
-      '/tmp/audio.m4a',
-      validate,
-      { ...DEFAULT_RECORDING_VALIDATION_POLICY, attempts: 3, baseDelayMs: 100 },
-    );
+    const validate = jest.fn(async () => {
+      throw new Error('Deadly error');
+    });
+    const resultPromise = validateRecordingWithBackoff('/tmp/audio.m4a', validate, {
+      ...DEFAULT_RECORDING_VALIDATION_POLICY,
+      attempts: 3,
+      baseDelayMs: 100,
+    });
 
     for (let i = 0; i < 3; i++) {
       await Promise.resolve();
@@ -224,11 +219,11 @@ describe('recordingValidation', () => {
 
   it('fails if size is exactly equal to minValidBytes', async () => {
     const validate = jest.fn(async () => ({ exists: true, size: 1024 }));
-    const result = await validateRecordingWithBackoff(
-      '/tmp/audio.m4a',
-      validate,
-      { ...DEFAULT_RECORDING_VALIDATION_POLICY, minValidBytes: 1024, attempts: 1 },
-    );
+    const result = await validateRecordingWithBackoff('/tmp/audio.m4a', validate, {
+      ...DEFAULT_RECORDING_VALIDATION_POLICY,
+      minValidBytes: 1024,
+      attempts: 1,
+    });
 
     expect(result.validated).toBe(false);
     expect(result.attemptsUsed).toBe(1);
@@ -237,11 +232,10 @@ describe('recordingValidation', () => {
   it('passes the correct path to the validation function', async () => {
     const validate = jest.fn(async () => ({ exists: true, size: 2048 }));
     const testPath = '/custom/path/to/recording.m4a';
-    await validateRecordingWithBackoff(
-      testPath,
-      validate,
-      { ...DEFAULT_RECORDING_VALIDATION_POLICY, attempts: 1 },
-    );
+    await validateRecordingWithBackoff(testPath, validate, {
+      ...DEFAULT_RECORDING_VALIDATION_POLICY,
+      attempts: 1,
+    });
 
     expect(validate).toHaveBeenCalledWith(testPath);
   });

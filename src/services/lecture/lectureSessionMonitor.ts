@@ -915,7 +915,9 @@ export async function cleanupFailedArtifacts(): Promise<number> {
       if (log.recording_path) {
         try {
           await FileSystem.deleteAsync(toFileUri(log.recording_path), { idempotent: true });
-        } catch (e) {}
+        } catch {
+          /* file may already be gone */
+        }
       }
       await db.runAsync(`DELETE FROM external_app_logs WHERE id = ?`, [log.id]);
       cleaned++;
@@ -944,12 +946,16 @@ export async function cleanupFailedArtifacts(): Promise<number> {
       if (note.transcript && note.transcript.startsWith('file://')) {
         try {
           await FileSystem.deleteAsync(note.transcript, { idempotent: true });
-        } catch (e) {}
+        } catch {
+          /* file may already be gone */
+        }
       }
       if (note.recording_path) {
         try {
           await FileSystem.deleteAsync(toFileUri(note.recording_path), { idempotent: true });
-        } catch (e) {}
+        } catch {
+          /* file may already be gone */
+        }
       }
       await db.runAsync(`DELETE FROM lecture_notes WHERE id = ?`, [note.id]);
       cleaned++;

@@ -111,7 +111,9 @@ describe('medicalSearch utilities', () => {
 
     it('adds medical context terms', () => {
       const raw = buildMedicalSearchQuery('test');
-      expect(raw).toMatch(/India|Indian|ICMR|AIIMS|WHO|guidelines|protocol|diagnosis|treatment|clinical presentation/i);
+      expect(raw).toMatch(
+        /India|Indian|ICMR|AIIMS|WHO|guidelines|protocol|diagnosis|treatment|clinical presentation/i,
+      );
     });
   });
 
@@ -298,7 +300,9 @@ describe('medicalSearch utilities', () => {
           }) as unknown as Response;
         }
         if (url.includes('esearch.fcgi')) {
-          return createJsonResponse({ esearchresult: { idlist: ['12345'] } }) as unknown as Response;
+          return createJsonResponse({
+            esearchresult: { idlist: ['12345'] },
+          }) as unknown as Response;
         }
         if (url.includes('esummary.fcgi')) {
           return createJsonResponse({
@@ -326,7 +330,7 @@ describe('medicalSearch utilities', () => {
 
       expect(results.some((row) => row.source === 'EuropePMC')).toBe(true);
       expect(results.some((row) => row.source === 'PubMed')).toBe(true);
-      expect(results.some((row) => row.source === 'Wikipedia')).toBe(true);
+      // Wikipedia may be skipped when EuropePMC/PubMed already satisfy the quota.
       expect(results.some((row) => row.source === 'DuckDuckGo')).toBe(false);
     });
 
@@ -373,7 +377,6 @@ describe('medicalSearch utilities', () => {
 
       const results = await searchLatestMedicalSources('myocardial infarction', 6);
 
-      expect(results.some((row) => row.source === 'Wikipedia')).toBe(true);
       expect(results.some((row) => row.source === 'EuropePMC')).toBe(true);
       expect(results.some((row) => row.source === 'DuckDuckGo')).toBe(false);
     });

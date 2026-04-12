@@ -1,7 +1,6 @@
 import { Platform } from 'react-native';
 import { ensureOverlayPermission, canDrawOverlays, requestOverlayPermission } from './overlay';
 
-
 jest.mock('../../../modules/app-launcher', () => ({
   canDrawOverlays: jest.fn(),
   requestOverlayPermission: jest.fn(),
@@ -31,7 +30,7 @@ describe('overlay service', () => {
     it('requests permission and returns false if not already granted on android', async () => {
       (canDrawOverlays as jest.Mock).mockResolvedValue(false);
       (requestOverlayPermission as jest.Mock).mockResolvedValue(undefined);
-      
+
       const result = await ensureOverlayPermission();
       expect(result).toBe(false);
       expect(requestOverlayPermission).toHaveBeenCalled();
@@ -40,10 +39,10 @@ describe('overlay service', () => {
     it('returns false and warns if request fails', async () => {
       (canDrawOverlays as jest.Mock).mockResolvedValue(false);
       (requestOverlayPermission as jest.Mock).mockRejectedValue(new Error('Failed'));
-      
+
       const consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation();
       const result = await ensureOverlayPermission();
-      
+
       expect(result).toBe(false);
       expect(consoleWarnSpy).toHaveBeenCalled();
       consoleWarnSpy.mockRestore();

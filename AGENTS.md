@@ -115,8 +115,8 @@ modules/
 
 - Implementation lives in `src/services/ai/` (config, types, schemas, jsonRepair, llmRouting, generate, medicalSearch, content, planning, chat, notifications, catalyze). `aiService.ts` is a thin barrel re-exporting the public API.
 - **Module aliases:** LlmRouter = llmRouting, JsonRepair = jsonRepair, MedicalGrounding = medicalSearch, ContentGeneration = content.
-- Local LLM: llama.rn / MedGemma/Qwen via `profile.localModelPath` when `profile.useLocalModel = true`.
-- Default local model: **MedGemma 4B** (best domain fit for medical reasoning on-device).
+- Local LLM: `react-native-llm-litert-mediapipe` with **Gemma 4 E4B** (default) or Gemma 4 E2B via `profile.localModelPath` when `profile.useLocalModel = true`.
+- Default local model: **Gemma 4 E4B** (128K context, native function calling, advanced multi-step reasoning, released April 2026).
 - Local Whisper: whisper.rn via `profile.localWhisperPath` when `profile.useLocalWhisper = true`.
 - Cloud routing is **provider-order driven**, using `profile.providerOrder` / `disabledProviders` with a broad provider set: ChatGPT, GitHub Copilot, GitLab Duo, Poe, OpenRouter, Groq, Qwen, AgentRouter, GitHub Models, Kilo, DeepSeek, Gemini, and Cloudflare.
 - Explicit model ids like `groq/...`, `chatgpt/...`, `github_copilot/...`, `gitlab_duo/...`, `poe/...`, `gemini/...`, `cf/...`, `qwen/...` short-circuit to the selected provider.
@@ -132,6 +132,14 @@ profile.openrouterApiKey; // = legacy field (kept for backward compatibility, no
 profile.openrouterKey; // = OpenRouter key for free model fallbacks
 profile.groqApiKey; // = Groq API key
 ```
+
+### Code conventions (exports, imports, UI primitives)
+
+- **Imports:** Use paths relative to the current file under `src/` (e.g. `../components/...`). `tsconfig` `@/*` maps to the **repo root** for TypeScript only; Metro and Jest do **not** resolve that alias for app bundles—do not add new `@/…` imports in `src/` unless you also wire Babel + Jest the same way.
+- **Screens:** Default-export screen components (`export default function FooScreen`) so navigators can pass `component={FooScreen}`.
+- **Shared / leaf UI:** Prefer named exports from cohesive modules where it helps refactors; avoid deep barrel chains that hide circular imports.
+- **UI primitives:** Prefer `src/components/primitives/` (`LinearText` with `variant`/`tone`, `LinearSurface`, `LinearButton`, `LinearIconButton`, `LinearTextInput`, `EmptyState`, etc.) and `ScreenHeader` for standard chrome instead of raw `Text` / `Pressable` with one-off styles. Reasonable exceptions: custom gestures, canvas/special layouts, or third-party components that require a specific host.
+- **Workspace:** `.gitattributes` keeps text files normalized (LF). **PR checks:** `npm run verify:ci` (lint + unit tests + logic coverage). Optional stricter local/CI pass: `npm run verify:ci:with-format` (adds `format:check:scoped` on `src/`, `modules/`, `App.tsx`, `index.ts`). Full strict: `npm run verify:strict` (includes `typecheck`).
 
 ---
 
@@ -284,7 +292,7 @@ Always call `refreshProfile()` after XP or profile mutations so UI reflects chan
   1. `npm start` (Metro bundler)
   2. `npm run detox:build:android:genymotion:dev` (Build debug binaries)
   3. `npm run detox:test:critical:genymotion:dev` (Run critical tests)
-- **CI-style check:** `npm run verify:ci` (lint, unit tests, logic coverage gate). Add `npm run typecheck` when the project is clean (`verify:strict` runs typecheck + same tests).
+- **CI-style check:** `npm run verify:ci` (lint, unit tests, logic coverage gate). Optional: `npm run verify:ci:with-format` (scoped Prettier). `npm run verify:strict` runs typecheck + the same tests and coverage gate.
 
 ---
 
@@ -317,6 +325,6 @@ When writing memory:
 - `EXTERNAL_APPS[].id` values exactly match `SupportedMedicalApp` union type keys — safe to cast `app.id as SupportedMedicalApp`.
 - `saveLectureNote()` writes to `lecture_notes`, not `ai_cache`.
 - DB `confidence` column (0–3 int) vs `LectureAnalysis.estimatedConfidence` (1–3 int) — compatible, pass directly.
-- `useLocalWhisper` / `localWhisperPath` on profile = on-device Whisper model (whisper.rn). Separate from `useLocalModel` / `localModelPath` which is the LLM (llama.rn).
+- `useLocalWhisper` / `localWhisperPath` on profile = on-device Whisper model (whisper.rn). Separate from `useLocalModel` / `localModelPath` which is the LLM (react-native-llm-litert-mediapipe with Gemma 3n/4).
 - Release builds do not ship bundled cloud API keys; provider access comes from user-entered keys or OAuth connections in Settings.
 - The `scripts/archive/` folder contains deprecated regex-based patch scripts. All their changes are already in source. Do not run them or create new patch scripts.

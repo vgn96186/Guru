@@ -126,7 +126,7 @@ describe('useLectureTranscription', () => {
   describe('Model Management', () => {
     it('should download model successfully', async () => {
       const { result } = renderHook(() => useLectureTranscription());
-      
+
       await waitFor(() => expect(mockModelManager.getState).toHaveBeenCalled());
 
       mockModelManager.downloadModel.mockImplementation(async (size: string, onProgress: any) => {
@@ -167,7 +167,7 @@ describe('useLectureTranscription', () => {
 
     it('should cancel download', async () => {
       const { result } = renderHook(() => useLectureTranscription());
-      
+
       act(() => {
         result.current.cancelDownload();
       });
@@ -185,7 +185,7 @@ describe('useLectureTranscription', () => {
       });
 
       expect(mockModelManager.deleteModel).toHaveBeenCalledWith('tiny');
-      expect(mockModelManager.getState).toHaveBeenCalled(); 
+      expect(mockModelManager.getState).toHaveBeenCalled();
     });
 
     it('should load model successfully', async () => {
@@ -251,16 +251,16 @@ describe('useLectureTranscription', () => {
     });
 
     it('should load model if not loaded when starting session', async () => {
-        const { result } = renderHook(() => useLectureTranscription());
-        await waitFor(() => expect(mockModelManager.getState).toHaveBeenCalled());
-  
-        mockModelManager.getActiveModelSize.mockReturnValue(null);
-  
-        await act(async () => {
-          await result.current.startRealtimeSession('Test Lecture');
-        });
-  
-        expect(mockModelManager.loadModel).toHaveBeenCalled();
+      const { result } = renderHook(() => useLectureTranscription());
+      await waitFor(() => expect(mockModelManager.getState).toHaveBeenCalled());
+
+      mockModelManager.getActiveModelSize.mockReturnValue(null);
+
+      await act(async () => {
+        await result.current.startRealtimeSession('Test Lecture');
+      });
+
+      expect(mockModelManager.loadModel).toHaveBeenCalled();
     });
 
     it('should handle start session error', async () => {
@@ -320,7 +320,10 @@ describe('useLectureTranscription', () => {
       });
 
       expect(BatchTranscriber).toHaveBeenCalled();
-      expect(mockBatchTranscriber.transcribe).toHaveBeenCalledWith('file:///audio.wav', expect.any(Function));
+      expect(mockBatchTranscriber.transcribe).toHaveBeenCalledWith(
+        'file:///audio.wav',
+        expect.any(Function),
+      );
       expect(result.current.transcript).toEqual(mockTranscript);
       expect(result.current.transcriptionState).toBe('completed');
       expect(finalTranscript).toEqual(mockTranscript);
@@ -346,7 +349,7 @@ describe('useLectureTranscription', () => {
       await waitFor(() => expect(mockModelManager.getState).toHaveBeenCalled());
 
       mockModelManager.getActiveModelSize.mockReturnValue('tiny');
-      
+
       // Use a deferred promise to keep the transcription active
       let resolveTranscribe: any;
       const transcribePromise = new Promise((resolve) => {
@@ -409,7 +412,7 @@ describe('useLectureTranscription', () => {
       act(() => {
         result.current.transcribeFile('file:///audio.wav');
       });
-      
+
       await waitFor(() => expect(BatchTranscriber).toHaveBeenCalled());
 
       act(() => {
@@ -472,9 +475,8 @@ describe('useLectureTranscription', () => {
 
   it('should cleanup on unmount', () => {
     const { unmount } = renderHook(() => useLectureTranscription());
-    
+
     unmount();
     expect(mockAudioRecorder.destroy).toHaveBeenCalled();
   });
 });
-

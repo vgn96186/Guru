@@ -67,10 +67,10 @@ function isConfigureMissingError(error: unknown): boolean {
     error instanceof Error
       ? error.message
       : typeof error === 'string'
-        ? error
-        : error && typeof error === 'object' && 'message' in error
-          ? String((error as any).message)
-          : '';
+      ? error
+      : error && typeof error === 'object' && 'message' in error
+      ? String((error as any).message)
+      : '';
   const normalized = message.toLowerCase();
   return normalized.includes('apiclient is null') || normalized.includes('call configure() first');
 }

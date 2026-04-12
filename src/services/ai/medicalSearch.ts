@@ -267,12 +267,12 @@ function scoreGroundingSource(source: MedicalGroundingSource, query: string): nu
     source.source === 'PubMed'
       ? 36
       : source.source === 'EuropePMC'
-        ? 34
-        : source.source === 'Wikipedia'
-          ? 22
-          : source.source === 'DuckDuckGo'
-            ? 6
-            : 18;
+      ? 34
+      : source.source === 'Wikipedia'
+      ? 22
+      : source.source === 'DuckDuckGo'
+      ? 6
+      : 18;
 
   let titleHits = 0;
   let snippetHits = 0;
@@ -463,7 +463,9 @@ async function searchWikimediaCommons(
   const blockedMimes = ['image/svg+xml', 'application/pdf', 'image/tiff', 'image/vnd.djvu'];
   const fetchLimit = maxResults * 5; // over-fetch since many will be SVGs
   // Include srprop to get MIME type, then filter before expensive imageinfo call
-  const searchUrl = `https://commons.wikimedia.org/w/api.php?action=query&list=search&srsearch=filetype:bitmap+${encodeURIComponent(query)}&srnamespace=6&srlimit=${fetchLimit}&srprop=size|wordcount|timestamp|snippet&format=json`;
+  const searchUrl = `https://commons.wikimedia.org/w/api.php?action=query&list=search&srsearch=filetype:bitmap+${encodeURIComponent(
+    query,
+  )}&srnamespace=6&srlimit=${fetchLimit}&srprop=size|wordcount|timestamp|snippet&format=json`;
 
   try {
     const searchData = await fetchJsonWithTimeout<any>(searchUrl, 8000);
@@ -480,7 +482,9 @@ async function searchWikimediaCommons(
 
     const titles = renderablePages.map((p: any) => p.title).join('|');
     // Request thumburl for smaller, more reliable images
-    const imageInfoUrl = `https://commons.wikimedia.org/w/api.php?action=query&titles=${encodeURIComponent(titles)}&prop=imageinfo&iiprop=url|thumburl|extmetadata|size|mime&format=json&iiurlwidth=400`;
+    const imageInfoUrl = `https://commons.wikimedia.org/w/api.php?action=query&titles=${encodeURIComponent(
+      titles,
+    )}&prop=imageinfo&iiprop=url|thumburl|extmetadata|size|mime&format=json&iiurlwidth=400`;
 
     const infoData = await fetchJsonWithTimeout<any>(imageInfoUrl, 8000);
     const imagePages = infoData?.query?.pages || {};
@@ -554,7 +558,9 @@ async function searchOpenI(
   maxResults: number,
   collection?: string,
 ): Promise<MedicalGroundingSource[]> {
-  let searchUrl = `https://openi.nlm.nih.gov/api/search?query=${encodeURIComponent(query)}&m=1&n=${maxResults}`;
+  let searchUrl = `https://openi.nlm.nih.gov/api/search?query=${encodeURIComponent(
+    query,
+  )}&m=1&n=${maxResults}`;
   if (collection) searchUrl += `&coll=${collection}`;
 
   const sourceLabel = collection === 'mpx' ? 'MedPix (NIH)' : 'Open i (NIH)';
@@ -577,8 +583,8 @@ async function searchOpenI(
         const imageUrl = rawImg.startsWith('//')
           ? `https:${rawImg}`
           : rawImg.startsWith('/')
-            ? `https://openi.nlm.nih.gov${rawImg}`
-            : rawImg;
+          ? `https://openi.nlm.nih.gov${rawImg}`
+          : rawImg;
         const description = r.abstract || r.description || r.title || '';
         const cleanDesc = description
           .replace(/<[^>]+>/g, ' ')
@@ -592,8 +598,12 @@ async function searchOpenI(
           id: `openi-${uid}-${imgId || imageUrl}`,
           title,
           url: uid.startsWith('MPX')
-            ? `https://openi.nlm.nih.gov/detailedresult?img=${imgId}&query=${encodeURIComponent(query)}`
-            : `https://openi.nlm.nih.gov/detailedresult?img=${imgId || uid}&query=${encodeURIComponent(query)}`,
+            ? `https://openi.nlm.nih.gov/detailedresult?img=${imgId}&query=${encodeURIComponent(
+                query,
+              )}`
+            : `https://openi.nlm.nih.gov/detailedresult?img=${
+                imgId || uid
+              }&query=${encodeURIComponent(query)}`,
           imageUrl,
           snippet: clipText(cleanDesc, 420),
           source: sourceLabel,
@@ -621,7 +631,12 @@ async function searchGoogleCustomSearch(
 
   // Search Engine ID — hardcoded from user's CSE setup
   const cx = '5085c21a1fd974c13';
-  const url = `https://www.googleapis.com/customsearch/v1?key=${encodeURIComponent(trimmed)}&cx=${cx}&q=${encodeURIComponent(query)}&searchType=image&num=${Math.min(maxResults, 10)}&safe=medium`;
+  const url = `https://www.googleapis.com/customsearch/v1?key=${encodeURIComponent(
+    trimmed,
+  )}&cx=${cx}&q=${encodeURIComponent(query)}&searchType=image&num=${Math.min(
+    maxResults,
+    10,
+  )}&safe=medium`;
 
   try {
     const data = await fetchJsonWithTimeout<{
@@ -675,7 +690,9 @@ async function searchOpeni(query: string, maxResults: number): Promise<MedicalGr
 
   if (!medicalQuery) return [];
 
-  const url = `https://openi.nlm.nih.gov/api/search?query=${encodeURIComponent(medicalQuery)}&m=1&n=${maxResults}`;
+  const url = `https://openi.nlm.nih.gov/api/search?query=${encodeURIComponent(
+    medicalQuery,
+  )}&m=1&n=${maxResults}`;
 
   try {
     const data = await fetchJsonWithTimeout<{
@@ -712,7 +729,9 @@ async function searchOpeni(query: string, maxResults: number): Promise<MedicalGr
         id: `openi-${pmcid}-${item.image?.id || 'img'}`,
         title: caption ? clipText(caption, 180) : title,
         url: pmcid
-          ? `https://openi.nlm.nih.gov/detailedresult?img=${item.image?.id || ''}&query=${encodeURIComponent(medicalQuery)}`
+          ? `https://openi.nlm.nih.gov/detailedresult?img=${
+              item.image?.id || ''
+            }&query=${encodeURIComponent(medicalQuery)}`
           : imageUrl,
         imageUrl,
         snippet: clipText(caption || title, 420),
@@ -737,7 +756,9 @@ async function searchBraveImages(
   const trimmed = braveSearchKey?.trim();
   if (!trimmed) return [];
 
-  const url = `https://api.search.brave.com/res/v1/images/search?q=${encodeURIComponent(query)}&count=${Math.min(
+  const url = `https://api.search.brave.com/res/v1/images/search?q=${encodeURIComponent(
+    query,
+  )}&count=${Math.min(
     Math.max(maxResults, 1),
     10,
   )}&search_lang=en&country=us&safesearch=strict&spellcheck=1`;
@@ -810,7 +831,9 @@ async function searchBraveText(
   const trimmed = braveSearchKey?.trim();
   if (!trimmed) return [];
 
-  const url = `https://api.search.brave.com/res/v1/web/search?q=${encodeURIComponent(query)}&count=${Math.min(
+  const url = `https://api.search.brave.com/res/v1/web/search?q=${encodeURIComponent(
+    query,
+  )}&count=${Math.min(
     Math.max(maxResults, 1),
     10,
   )}&search_lang=en&country=us&freshness=py&spellcheck=1`;
@@ -1010,7 +1033,15 @@ export async function searchMedicalImages(
 
   if (__DEV__)
     console.log(
-      `[MedicalSearch] Images found: ${collected.length} (google: ${google.status === 'fulfilled' ? google.value.length : 'failed'}, openi: ${openi.status === 'fulfilled' ? openi.value.length : 'failed'}, commons: ${commons.status === 'fulfilled' ? commons.value.length : 'failed'}, duckduckgo: ${duckduckgo.status === 'fulfilled' ? duckduckgo.value.length : 'failed'}, wikipedia: ${wikipedia.status === 'fulfilled' ? wikipedia.value.length : 'failed'}, brave: ${brave.status === 'fulfilled' ? brave.value.length : 'failed'})`,
+      `[MedicalSearch] Images found: ${collected.length} (google: ${
+        google.status === 'fulfilled' ? google.value.length : 'failed'
+      }, openi: ${openi.status === 'fulfilled' ? openi.value.length : 'failed'}, commons: ${
+        commons.status === 'fulfilled' ? commons.value.length : 'failed'
+      }, duckduckgo: ${
+        duckduckgo.status === 'fulfilled' ? duckduckgo.value.length : 'failed'
+      }, wikipedia: ${
+        wikipedia.status === 'fulfilled' ? wikipedia.value.length : 'failed'
+      }, brave: ${brave.status === 'fulfilled' ? brave.value.length : 'failed'})`,
     );
 
   if (collected.length === 0) {
@@ -1129,7 +1160,9 @@ async function searchWikipedia(
   maxResults: number,
 ): Promise<MedicalGroundingSource[]> {
   // Use the working MediaWiki action API (same as imageService.ts)
-  const url = `https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(query)}&format=json&srlimit=${maxResults}&origin=*&srprop=snippet|titlesnippet`;
+  const url = `https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(
+    query,
+  )}&format=json&srlimit=${maxResults}&origin=*&srprop=snippet|titlesnippet`;
 
   try {
     const searchData = await fetchJsonWithTimeout<any>(url, 8000);
@@ -1139,7 +1172,9 @@ async function searchWikipedia(
 
     // Get page images for the search results
     const titles = results.map((r: any) => r.title).join('|');
-    const imageInfoUrl = `https://en.wikipedia.org/w/api.php?action=query&titles=${encodeURIComponent(titles)}&prop=pageimages&format=json&pithumbsize=500&origin=*`;
+    const imageInfoUrl = `https://en.wikipedia.org/w/api.php?action=query&titles=${encodeURIComponent(
+      titles,
+    )}&prop=pageimages&format=json&pithumbsize=500&origin=*`;
 
     const imageData = await fetchJsonWithTimeout<any>(imageInfoUrl, 8000);
     const pages = imageData?.query?.pages || {};
@@ -1182,7 +1217,9 @@ async function searchEuropePMC(
   maxResults: number,
 ): Promise<MedicalGroundingSource[]> {
   const europeQuery = `(${query}) AND (HAS_ABSTRACT:y OR OPEN_ACCESS:y) NOT (veterinary OR animal OR murine OR mice OR rat OR dog OR cat)`;
-  const url = `https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=${encodeURIComponent(europeQuery)}&format=json&pageSize=${maxResults}&sort=relevance`;
+  const url = `https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=${encodeURIComponent(
+    europeQuery,
+  )}&format=json&pageSize=${maxResults}&sort=relevance`;
   const data = await fetchJsonWithTimeout<any>(url, 14000);
   const rows = Array.isArray(data?.resultList?.result) ? data.resultList.result : [];
 
@@ -1218,14 +1255,18 @@ async function searchPubMedFallback(
   maxResults: number,
 ): Promise<MedicalGroundingSource[]> {
   const term = `${query} AND (english[Language]) NOT (veterinary OR animal OR murine OR mice OR rat OR dog OR cat)`;
-  const searchUrl = `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&retmode=json&sort=pub+date&retmax=${maxResults}&term=${encodeURIComponent(term)}`;
+  const searchUrl = `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&retmode=json&sort=pub+date&retmax=${maxResults}&term=${encodeURIComponent(
+    term,
+  )}`;
   const searchData = await fetchJsonWithTimeout<any>(searchUrl);
   const ids: string[] = Array.isArray(searchData?.esearchresult?.idlist)
     ? searchData.esearchresult.idlist
     : [];
   if (ids.length === 0) return [];
 
-  const summaryUrl = `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?db=pubmed&retmode=json&id=${ids.join(',')}`;
+  const summaryUrl = `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?db=pubmed&retmode=json&id=${ids.join(
+    ',',
+  )}`;
   const summaryData = await fetchJsonWithTimeout<any>(summaryUrl);
   const uidList: string[] = Array.isArray(summaryData?.result?.uids)
     ? summaryData.result.uids
@@ -1242,7 +1283,9 @@ async function searchPubMedFallback(
         title: clipText(String(row.title), 220),
         url: `https://pubmed.ncbi.nlm.nih.gov/${uid}/`,
         snippet: clipText(
-          `Indexed on PubMed${journal ? ` in ${journal}` : ''}${publishedAt ? ` (${publishedAt})` : ''}. Open source link for abstract and full metadata.`,
+          `Indexed on PubMed${journal ? ` in ${journal}` : ''}${
+            publishedAt ? ` (${publishedAt})` : ''
+          }. Open source link for abstract and full metadata.`,
           420,
         ),
         journal,
@@ -1259,7 +1302,9 @@ async function searchPubMedFallback(
  */
 async function searchDuckDuckGo(query: string, maxResults = 4): Promise<MedicalGroundingSource[]> {
   const medicalQuery = query.replace(/\(India.*?\)/g, '').trim();
-  const url = `https://api.duckduckgo.com/?q=${encodeURIComponent(medicalQuery)}&format=json&no_html=1&skip_disambig=1`;
+  const url = `https://api.duckduckgo.com/?q=${encodeURIComponent(
+    medicalQuery,
+  )}&format=json&no_html=1&skip_disambig=1`;
   const data = await fetchJsonWithTimeout<{
     AbstractText?: string;
     AbstractSource?: string;
@@ -1319,7 +1364,9 @@ async function searchDuckDuckGoImages(
   // DuckDuckGo image search via the HTML endpoint (parses JSON from VQD)
   try {
     // Step 1: Get VQD token from search page
-    const searchUrl = `https://html.duckduckgo.com/html/?q=${encodeURIComponent(medicalQuery + ' image')}`;
+    const searchUrl = `https://html.duckduckgo.com/html/?q=${encodeURIComponent(
+      medicalQuery + ' image',
+    )}`;
     const searchController = new AbortController();
     const searchTimer = setTimeout(() => searchController.abort(), 8000);
     try {
@@ -1339,7 +1386,9 @@ async function searchDuckDuckGoImages(
       if (!vqd) return [];
 
       // Step 2: Use VQD to query image API
-      const imageUrl = `https://duckduckgo.com/i.js?q=${encodeURIComponent(medicalQuery)}&vqd=${vqd}`;
+      const imageUrl = `https://duckduckgo.com/i.js?q=${encodeURIComponent(
+        medicalQuery,
+      )}&vqd=${vqd}`;
       const imgController = new AbortController();
       const imgTimer = setTimeout(() => imgController.abort(), 8000);
       try {

@@ -103,8 +103,8 @@ export default React.memo(function AgendaItem({
                 accent === n.colors.accent
                   ? 'accent'
                   : accent === n.colors.success
-                    ? 'success'
-                    : 'warning'
+                  ? 'success'
+                  : 'warning'
               }
               style={styles.typeBadge}
             >

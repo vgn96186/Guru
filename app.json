@@ -19,19 +19,25 @@
     "splash": {
       "image": "./assets/icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#0F0F14"
+      "backgroundColor": "#000000"
     },
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.anonymous.gurustudy"
     },
     "android": {
+      "edgeToEdgeEnabled": false,
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#0F0F14"
       },
       "package": "com.anonymous.gurustudy",
       "usesCleartextTraffic": true,
+      "androidStatusBar": {
+        "barStyle": "light-content",
+        "backgroundColor": "#000000",
+        "translucent": false
+      },
       "permissions": [
         "android.permission.CAMERA",
         "android.permission.RECORD_AUDIO",
@@ -54,7 +60,6 @@
       "./modules/app-launcher/withAppLauncher",
       "expo-build-properties",
       "expo-font",
-      "llama.rn",
       "@config-plugins/detox",
       "@react-native-google-signin/google-signin"
     ],

@@ -193,8 +193,8 @@ export async function buildSession(
   const explicitTopicIds = options?.focusTopicIds?.length
     ? options.focusTopicIds
     : options?.focusTopicId
-      ? [options.focusTopicId]
-      : [];
+    ? [options.focusTopicId]
+    : [];
 
   if (explicitTopicIds.length > 0) {
     const explicitTopics = explicitTopicIds
@@ -248,8 +248,12 @@ export async function buildSession(
         mode: options?.preferredActionType === 'deep_dive' ? 'deep' : mode,
         guruMessage:
           options?.preferredActionType === 'review'
-            ? `Review set ready: ${focusNames.slice(0, 2).join(', ')}${focusNames.length > 2 ? ' and more' : ''}.`
-            : `Focused set ready: ${focusNames.slice(0, 2).join(', ')}${focusNames.length > 2 ? ' and more' : ''}.`,
+            ? `Review set ready: ${focusNames.slice(0, 2).join(', ')}${
+                focusNames.length > 2 ? ' and more' : ''
+              }.`
+            : `Focused set ready: ${focusNames.slice(0, 2).join(', ')}${
+                focusNames.length > 2 ? ' and more' : ''
+              }.`,
       };
     }
   }

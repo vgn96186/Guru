@@ -1,5 +1,11 @@
 import { AppState } from 'react-native';
-import { initLlama, LlamaContext } from 'llama.rn';
+import {
+  loadModel,
+  generateText,
+  releaseModel,
+  stopGeneration,
+} from 'react-native-llm-litert-mediapipe';
+import type { LLMModel } from 'react-native-llm-litert-mediapipe';
 import type { Message } from './types';
 import { profileRepository } from '../../db/repositories';
 import {
@@ -25,6 +31,7 @@ import { readOpenAiCompatibleSse } from './openaiSseStream';
 import { geminiGenerateContentSdk, geminiGenerateContentStreamSdk } from './google/geminiChat';
 import { callChatGpt, streamChatGpt } from './chatgpt/chatgptApi';
 import { getValidAccessToken as getGitHubCopilotToken } from './github/githubTokenStore';
+import { CLOUD_MAX_COMPLETION_TOKENS, LOCAL_LLM_MAX_COMPLETION_TOKENS } from './completionLimits';
 import { getValidAccessToken as getGitLabDuoToken } from './gitlab/gitlabTokenStore';
 import { completeGitLabDuoOpenCodeGateway } from './gitlab/gitlabDuoOpenCode';
 import { isGitLabDuoOpenCodeGatewayModel } from './gitlab/gitlabDuoGatewayModels';
@@ -33,9 +40,10 @@ import type { ChatGptAccountSlot, ProviderId } from '../../types';
 import { DEFAULT_PROVIDER_ORDER } from '../../types';
 import { logStreamEvent } from './runtimeDebug';
 
-let llamaContext: LlamaContext | null = null;
-let currentLlamaPath: string | null = null;
-let llamaContextPromise: Promise<LlamaContext> | null = null;
+/** MediaPipe LLM model handle and path tracking */
+let loadedModel: LLMModel | null = null;
+let currentModelPath: string | null = null;
+let modelLoadPromise: Promise<void> | null = null;
 type AppStateSubscription = { remove?: () => void };
 const APPSTATE_SUB_KEY = '__guru_llmRouting_appState_sub_v1';
 const KILO_MODELS_CACHE_TTL_MS = 10 * 60 * 1000;
@@ -229,8 +237,8 @@ function extractOpenRouterAssistantText(data: unknown, model: string): string {
     typeof ch0.reasoning === 'string'
       ? ch0.reasoning
       : typeof ch0.reasoning_content === 'string'
-        ? ch0.reasoning_content
-        : '';
+      ? ch0.reasoning_content
+      : '';
   const reasoning =
     [reasoningFromMsg, reasoningFromMsgDetails, reasoningFromChoice].find((s) => s.trim()) ?? '';
 
@@ -284,55 +292,57 @@ function isContextInUse(): boolean {
   return _contextLockCount > 0;
 }
 
-async function getLlamaContext(modelPath: string): Promise<LlamaContext> {
-  if (llamaContext && currentLlamaPath === modelPath) {
-    return llamaContext;
+async function getLoadedModel(modelPath: string): Promise<LLMModel> {
+  if (loadedModel && currentModelPath === modelPath) {
+    return loadedModel;
   }
   // Mutex: if another caller is already initializing, await the same promise
-  if (llamaContextPromise) {
-    await llamaContextPromise;
-    if (llamaContext && currentLlamaPath === modelPath) return llamaContext;
+  if (modelLoadPromise) {
+    await modelLoadPromise;
+    if (loadedModel && currentModelPath === modelPath) return loadedModel;
   }
-  llamaContextPromise = (async () => {
-    if (llamaContext) {
-      await llamaContext.release();
-      llamaContext = null;
+  modelLoadPromise = (async () => {
+    // Release existing model if switching
+    if (loadedModel) {
+      try {
+        await releaseModel(loadedModel);
+      } catch (err) {
+        console.warn('[LLM] Failed to release MediaPipe model:', err);
+      }
+      loadedModel = null;
     }
-    // Performance defaults tuned for quantized GGUF on mid-range Android.
-    const ctx = await initLlama({
-      model: modelPath,
-      n_context: 2048,
-      n_batch: 384,
-      k_type: 2,
-      v_type: 2,
-      use_mlock: false,
-    } as any);
-    llamaContext = ctx;
-    currentLlamaPath = modelPath;
-    return ctx;
+    // Load new model with GPU/NPU-accelerated MediaPipe LLM inference
+    loadedModel = await loadModel(modelPath, {
+      maxTokens: LOCAL_LLM_MAX_COMPLETION_TOKENS,
+      temperature: 0.7,
+      topK: 40,
+    });
+    currentModelPath = modelPath;
   })();
   try {
-    return await llamaContextPromise;
+    await modelLoadPromise;
+    if (!loadedModel) throw new Error('MediaPipe LLM model failed to load');
+    return loadedModel;
   } finally {
-    llamaContextPromise = null;
+    modelLoadPromise = null;
   }
 }
 
-/** Release the native LLM context to free memory. Safe to call at any time. */
+/** Release the MediaPipe LLM model to free GPU/NPU memory. Safe to call at any time. */
 export async function releaseLlamaContext(): Promise<void> {
-  if (isContextInUse() || llamaContextPromise) return; // don't interrupt in-flight generation or init
-  if (llamaContext) {
+  if (isContextInUse() || modelLoadPromise) return; // don't interrupt in-flight generation or init
+  if (loadedModel) {
     try {
-      await llamaContext.release();
+      await releaseModel(loadedModel);
     } catch (err) {
-      console.warn('[LLM] Failed to release native context:', err);
+      console.warn('[LLM] Failed to release MediaPipe model:', err);
     }
-    llamaContext = null;
-    currentLlamaPath = null;
+    loadedModel = null;
+    currentModelPath = null;
   }
 }
 
-// Release the 200 MB+ LLM context when app goes to background to prevent OOM kills.
+// Release the GPU/NPU LLM context when app goes to background to prevent OOM kills.
 // Store the subscription on `globalThis` so hot reload can't stack listeners.
 const prevSub = (globalThis as any)[APPSTATE_SUB_KEY] as AppStateSubscription | undefined;
 if (prevSub?.remove) prevSub.remove();
@@ -347,41 +357,13 @@ async function callLocalLLM(
   modelPath: string,
   textMode = false,
 ): Promise<string> {
-  const ctx = await getLlamaContext(modelPath);
+  const model = await getLoadedModel(modelPath);
   const release = await acquireContextLock();
   try {
-    let prompt = '';
-    const isQwen = modelPath.toLowerCase().includes('qwen');
+    const result = await generateText(model, messages);
 
-    if (isQwen) {
-      // ChatML format for Qwen
-      for (const m of messages) {
-        prompt += `<|im_start|>${m.role}\n${m.content}<|im_end|>\n`;
-      }
-      prompt += `<|im_start|>assistant\n`;
-    } else {
-      // Format as Llama-3 instruction format
-      for (const m of messages) {
-        prompt += `<|start_header_id|>${m.role}<|end_header_id|>\n\n${m.content}<|eot_id|>\n`;
-      }
-      prompt += `<|start_header_id|>assistant<|end_header_id|>\n\n`;
-    }
-
-    if (!textMode) {
-      // Force start of JSON object
-      prompt += `{`;
-    }
-
-    const n_predict = textMode ? 3072 : 2048;
-    const result = await ctx.completion({
-      prompt,
-      n_predict,
-      temperature: 0.7,
-      top_p: 0.9,
-    });
-
-    let text = result.text;
-    if (!textMode) {
+    let text = result.text || '';
+    if (!textMode && !text.trim().startsWith('{')) {
       text = `{${text}`;
     }
     return text;
@@ -404,7 +386,7 @@ async function callOpenRouter(messages: Message[], orKey: string, model: string)
       model,
       messages,
       temperature: 0.7,
-      max_tokens: 4096,
+      max_tokens: CLOUD_MAX_COMPLETION_TOKENS,
     }),
   });
 
@@ -449,7 +431,7 @@ async function callCloudflare(
         model,
         messages,
         temperature: 0.7,
-        max_tokens: 4096,
+        max_tokens: CLOUD_MAX_COMPLETION_TOKENS,
       }),
     },
   );
@@ -489,7 +471,7 @@ async function streamCloudflareChat(
         model,
         messages,
         temperature: 0.7,
-        max_tokens: 4096,
+        max_tokens: CLOUD_MAX_COMPLETION_TOKENS,
         stream: true,
       }),
     },
@@ -546,7 +528,10 @@ function truncateMessageMiddle(content: string, maxLen: number): string {
   const head = Math.floor((maxLen - 120) * 0.5);
   const tail = maxLen - head - 80;
   const omitted = content.length - head - tail;
-  return `${content.slice(0, head)}\n\n… [${omitted} characters omitted for API limit] …\n\n${content.slice(-tail)}`;
+  return `${content.slice(
+    0,
+    head,
+  )}\n\n… [${omitted} characters omitted for API limit] …\n\n${content.slice(-tail)}`;
 }
 
 function clampMessagesToCharBudget(
@@ -758,7 +743,7 @@ async function streamOpenRouterChat(
       model,
       messages,
       temperature: 0.7,
-      max_tokens: 4096,
+      max_tokens: CLOUD_MAX_COMPLETION_TOKENS,
       stream: true,
     }),
   });
@@ -871,7 +856,7 @@ async function callDeepSeek(
     model,
     messages: clonedMessages,
     temperature: 0.7,
-    max_tokens: 4096,
+    max_tokens: CLOUD_MAX_COMPLETION_TOKENS,
   };
   if (jsonMode) {
     body.response_format = { type: 'json_object' };
@@ -920,7 +905,7 @@ async function streamDeepSeekChat(
       model,
       messages,
       temperature: 0.7,
-      max_tokens: 4096,
+      max_tokens: CLOUD_MAX_COMPLETION_TOKENS,
       stream: true,
     }),
   });
@@ -1001,7 +986,7 @@ async function callGitHubModels(
     model,
     messages: clonedMessages,
     temperature: 0.7,
-    max_tokens: 4096,
+    max_tokens: CLOUD_MAX_COMPLETION_TOKENS,
   };
   if (jsonMode) {
     body.response_format = { type: 'json_object' };
@@ -1044,7 +1029,7 @@ async function streamGitHubModelsChat(
       model,
       messages,
       temperature: 0.7,
-      max_tokens: 4096,
+      max_tokens: CLOUD_MAX_COMPLETION_TOKENS,
       stream: true,
     }),
   });
@@ -1146,7 +1131,7 @@ async function callGitHubCopilot(
     model,
     messages: payloadMessages,
     temperature: 0.7,
-    max_tokens: 4096,
+    max_tokens: CLOUD_MAX_COMPLETION_TOKENS,
   };
   if (jsonMode) {
     body.response_format = { type: 'json_object' };
@@ -1180,7 +1165,7 @@ async function callGitHubCopilot(
         model,
         messages: tighter,
         temperature: 0.7,
-        max_tokens: 4096,
+        max_tokens: CLOUD_MAX_COMPLETION_TOKENS,
       };
       if (jsonMode) retryBody.response_format = { type: 'json_object' };
       const res2 = await fetch(apiUrl, {
@@ -1232,7 +1217,7 @@ async function streamGitHubCopilotChat(
         model,
         messages: payload,
         temperature: 0.7,
-        max_tokens: 4096,
+        max_tokens: CLOUD_MAX_COMPLETION_TOKENS,
         stream: true,
       }),
     });
@@ -1390,7 +1375,7 @@ async function callPoe(
     model,
     messages: clonedMessages,
     temperature: 0.7,
-    max_tokens: 4096,
+    max_tokens: CLOUD_MAX_COMPLETION_TOKENS,
   };
   if (jsonMode) {
     body.response_format = { type: 'json_object' };
@@ -1430,7 +1415,7 @@ async function streamPoeChat(
       model,
       messages,
       temperature: 0.7,
-      max_tokens: 4096,
+      max_tokens: CLOUD_MAX_COMPLETION_TOKENS,
       stream: true,
     }),
   });
@@ -1493,7 +1478,7 @@ async function callKilo(
     model,
     messages: clonedMessages,
     temperature: 0.7,
-    max_tokens: 4096,
+    max_tokens: CLOUD_MAX_COMPLETION_TOKENS,
   };
   if (jsonMode) body.response_format = { type: 'json_object' };
   const headers: Record<string, string> = { 'Content-Type': 'application/json' };
@@ -1534,7 +1519,7 @@ async function streamKiloChat(
       model,
       messages,
       temperature: 0.7,
-      max_tokens: 4096,
+      max_tokens: CLOUD_MAX_COMPLETION_TOKENS,
       stream: true,
     }),
   });
@@ -1614,7 +1599,7 @@ async function callAgentRouter(
     model,
     messages: clonedMessages,
     temperature: 0.7,
-    max_tokens: 4096,
+    max_tokens: CLOUD_MAX_COMPLETION_TOKENS,
   };
   if (jsonMode) body.response_format = { type: 'json_object' };
   if (__DEV__) console.log(`[AI] callAgentRouter: model=${model} json=${jsonMode}`);
@@ -1651,7 +1636,13 @@ async function streamAgentRouterChat(
       Authorization: `Bearer ${apiKey}`,
       ...AGENTROUTER_HEADERS,
     },
-    body: JSON.stringify({ model, messages, temperature: 0.7, max_tokens: 4096, stream: true }),
+    body: JSON.stringify({
+      model,
+      messages,
+      temperature: 0.7,
+      max_tokens: CLOUD_MAX_COMPLETION_TOKENS,
+      stream: true,
+    }),
   });
   if (res.status === 429) throw new RateLimitError(`AgentRouter rate limit on ${model}`);
   if (!res.ok) {
@@ -2558,13 +2549,20 @@ export async function attemptLocalLLM(
   localModelPath: string,
   textMode: boolean,
 ): Promise<{ text: string; modelUsed: string }> {
+  const normalizedModelPath = localModelPath.toLowerCase();
+  const isGemma = normalizedModelPath.includes('gemma');
   const isQwen = localModelPath.toLowerCase().includes('qwen');
-  const isMedGemma = localModelPath.toLowerCase().includes('medgemma');
-  const modelUsed = isMedGemma
-    ? 'local-medgemma-4b'
+  const isGemmaE2b = normalizedModelPath.includes('e2b');
+  const isGemmaE4b = normalizedModelPath.includes('e4b');
+  const modelUsed = isGemma
+    ? isGemmaE2b
+      ? 'local-gemma-4-e2b'
+      : isGemmaE4b
+      ? 'local-gemma-4-e4b'
+      : 'local-gemma'
     : isQwen
-      ? 'local-qwen-2.5-3b'
-      : 'local-llama-3.2-1b';
+    ? 'local-qwen-2.5-3b'
+    : 'local-litert';
   try {
     const text = await callLocalLLM(messages, localModelPath, textMode);
     if (!text || !text.trim()) {
@@ -2581,21 +2579,22 @@ export async function attemptLocalLLM(
       msg.toLowerCase().includes('invalid model')
     ) {
       // Important: free native memory on load failures to prevent leaks.
-      if (!isContextInUse() && llamaContext) {
+      if (!isContextInUse() && loadedModel) {
         try {
-          await llamaContext.release();
+          await releaseModel(loadedModel);
         } catch (releaseErr) {
-          console.warn('[LLM] Failed to release native context after load error:', releaseErr);
+          console.warn('[LLM] Failed to release model after load error:', releaseErr);
         }
       }
-      llamaContext = null;
-      currentLlamaPath = null;
-      llamaContextPromise = null;
+      loadedModel = null;
+      currentModelPath = null;
+      modelLoadPromise = null;
       profileRepository
         .updateProfile({ localModelPath: null, useLocalModel: false })
         .catch(() => {});
       throw new Error(
         'Local model file is missing or corrupt — it will re-download on next startup.',
+        { cause: err },
       );
     }
     throw err;

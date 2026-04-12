@@ -308,7 +308,6 @@ export default function NotesSearchScreen() {
       <ResponsiveContainer>
         <ScreenHeader
           title="Notes Search"
-          subtitle="Search notes, transcripts, and saved lecture material."
           searchElement={
             <BannerSearchBar
               value={query}
@@ -317,6 +316,7 @@ export default function NotesSearchScreen() {
               autoFocus
             />
           }
+          showSettings
         ></ScreenHeader>
         <AppFlashList
           data={results}
@@ -341,17 +341,9 @@ export default function NotesSearchScreen() {
           renderItem={renderItem}
           ListEmptyComponent={
             query.length > 1 ? (
-              <EmptyState
-                icon="search-outline"
-                title="No matches found"
-                subtitle="Try searching for 2+ characters or different keywords"
-              />
+              <EmptyState icon="search-outline" title="No matches found" />
             ) : query.length > 0 ? (
-              <EmptyState
-                icon="search-outline"
-                title="Keep typing…"
-                subtitle="Type at least 2 characters to search"
-              />
+              <EmptyState icon="search-outline" title="Type at least 2 characters to search" />
             ) : null
           }
         />

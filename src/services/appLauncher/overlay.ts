@@ -13,7 +13,7 @@ export async function ensureOverlayPermission(): Promise<boolean> {
   try {
     await requestOverlayPermission();
     // Usually requires manual user action in the opened settings
-    return false; 
+    return false;
   } catch (err) {
     console.warn('[Overlay] Failed to request overlay permission:', err);
     return false;

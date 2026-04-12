@@ -67,7 +67,7 @@ export default function PunishmentMode() {
         setUrgencyLevel(1); // < 80% = mild urgency
       else setUrgencyLevel(0); // Good progress
     });
-  }, []);
+  }, [profile]);
 
   // Nudge mode - periodic vibrations
   useEffect(() => {
@@ -157,7 +157,7 @@ export default function PunishmentMode() {
         shakeLoop?.stop();
       };
     }
-  }, [showGuiltScreen, urgencyLevel]);
+  }, [showGuiltScreen, urgencyLevel, pulseAnim, shakeAnim]);
 
   const accountabilityMessages = [
     null, // Level 0 - no nudge

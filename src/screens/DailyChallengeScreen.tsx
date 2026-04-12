@@ -259,7 +259,6 @@ export default function DailyChallengeScreen() {
           <EmptyState
             icon="time-outline"
             title="No topics due for review yet"
-            subtitle="Keep studying to unlock challenges!"
             action={{ label: 'Go Back', onPress: () => navigation.goBack() }}
           />
         </ResponsiveContainer>
@@ -296,12 +295,12 @@ export default function DailyChallengeScreen() {
       <ResponsiveContainer>
         <ScreenHeader
           title="Daily Challenge"
-          subtitle="Five quick questions from your weakest and due topics."
           rightElement={
             <LinearText variant="label" tone="accent" style={styles.headerScore}>
               {score}/{currentIdx + 1}
             </LinearText>
           }
+          showSettings
         />
 
         {/* Progress bar */}

@@ -45,7 +45,10 @@ export function extractVisualBriefForImage(sourceText: string, maxLen = 520): st
   t = t.replace(/\s+/g, ' ').trim();
 
   if (t.length > maxLen) {
-    t = `${t.slice(0, maxLen - 1).replace(/\s+\S*$/, '').trim()}…`;
+    t = `${t
+      .slice(0, maxLen - 1)
+      .replace(/\s+\S*$/, '')
+      .trim()}…`;
   }
   return t;
 }

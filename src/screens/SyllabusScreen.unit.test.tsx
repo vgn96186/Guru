@@ -45,7 +45,7 @@ jest.mock('react-native', () => {
       ...(Array.isArray(data) && typeof renderItem === 'function'
         ? data.map((item, index) => renderItem({ item, index }))
         : []),
-      Array.isArray(data) && data.length === 0 ? (ListEmptyComponent ?? null) : null,
+      Array.isArray(data) && data.length === 0 ? ListEmptyComponent ?? null : null,
     );
 
   return {

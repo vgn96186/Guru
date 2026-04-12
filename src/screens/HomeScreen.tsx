@@ -2,7 +2,6 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   Animated,
   View,
-  Text,
   ScrollView,
   TouchableOpacity,
   StyleSheet,
@@ -41,7 +40,11 @@ import { DEFAULT_INICET_DATE, DEFAULT_NEET_DATE } from '../config/appConfig';
 import type { Mood, UserProfile, TopicWithProgress } from '../types';
 import HomeSectionHeader from '../components/home/HomeSectionHeader';
 import NextLectureSection from '../components/home/NextLectureSection';
-import { HOME_SECTION_GAP, HOME_TILE_HEIGHT } from '../components/home/homeLayout';
+import {
+  HOME_GRID_STACK_BREAKPOINT,
+  HOME_SECTION_GAP,
+  HOME_TILE_HEIGHT,
+} from '../components/home/homeLayout';
 
 function isLeafTopicIdListValid(allIds: number[], validLeafIds: Set<number>): boolean {
   return allIds.every((id) => validLeafIds.has(id));
@@ -113,6 +116,8 @@ type Nav = NativeStackNavigationProp<HomeStackParamList, 'Home'>;
 
 /** Lightweight skeleton for Home to show during transitions */
 function HomeSkeleton() {
+  const { width } = useWindowDimensions();
+  const stackHomeGrid = width < HOME_GRID_STACK_BREAKPOINT;
   return (
     <View style={styles.content}>
       {/* Header Skeleton */}
@@ -153,8 +158,15 @@ function HomeSkeleton() {
       </View>
 
       {/* Grid Skeleton */}
-      <View style={[styles.gridLandscape, styles.twoColumnGrid, { opacity: 0.2, marginTop: 16 }]}>
-        <View style={styles.leftColumn}>
+      <View
+        style={[
+          styles.gridLandscape,
+          styles.twoColumnGrid,
+          stackHomeGrid && styles.homeGridStacked,
+          { opacity: 0.2, marginTop: 16 },
+        ]}
+      >
+        <View style={[styles.leftColumn, stackHomeGrid && styles.homeGridStackedColumn]}>
           <View
             style={{ width: 80, height: 12, backgroundColor: n.colors.border, marginBottom: 12 }}
           />
@@ -184,7 +196,7 @@ function HomeSkeleton() {
             }}
           />
         </View>
-        <View style={styles.rightColumn}>
+        <View style={[styles.rightColumn, stackHomeGrid && styles.homeGridStackedColumn]}>
           <View
             style={{ width: 80, height: 12, backgroundColor: n.colors.border, marginBottom: 12 }}
           />
@@ -249,8 +261,8 @@ export default function HomeScreen() {
 
 function HomeScreenContent() {
   const HOME_FOCUS_RELOAD_THROTTLE_MS = 15_000;
-  const { width, height } = useWindowDimensions();
-  const isTabletLandscape = width >= 900 && width > height;
+  const { width } = useWindowDimensions();
+  const stackHomeGrid = width < HOME_GRID_STACK_BREAKPOINT;
   const navigation = useNavigation<Nav>();
   const tabsNavigation = navigation.getParent<NavigationProp<TabParamList>>();
   const profile = useAppStore((s) => s.profile);
@@ -373,8 +385,9 @@ function HomeScreenContent() {
     });
   }, [setTodayPlan]);
 
+  const hasProfile = !!profile;
   useEffect(() => {
-    if (!profile) return;
+    if (!hasProfile) return;
     const syncedPlan = tasksToAgenda(todayTasks);
     const incoming = normalizeAgendaForCompare(syncedPlan);
     const existing = normalizeAgendaForCompare(todayPlan ?? null);
@@ -385,7 +398,7 @@ function HomeScreenContent() {
       .saveDailyAgenda(date, syncedPlan, 'local')
       .then(() => setTodayPlan(syncedPlan))
       .catch((err) => console.warn('[Home] Failed to sync computed plan:', err));
-  }, [profile, setTodayPlan, todayPlan, todayTasks]);
+  }, [hasProfile, setTodayPlan, todayPlan, todayTasks]);
 
   useEffect(() => {
     if (!profile?.syncCode) return;
@@ -572,15 +585,21 @@ function HomeScreenContent() {
             )}
 
             <StaggeredEntrance index={3}>
-              <View style={[styles.gridLandscape, styles.twoColumnGrid]}>
-                <View style={styles.leftColumn}>
+              <View
+                style={[
+                  styles.gridLandscape,
+                  styles.twoColumnGrid,
+                  stackHomeGrid && styles.homeGridStacked,
+                ]}
+              >
+                <View style={[styles.leftColumn, stackHomeGrid && styles.homeGridStackedColumn]}>
                   <NextLectureSection />
                 </View>
 
-                <View style={styles.rightColumn}>
+                <View style={[styles.rightColumn, stackHomeGrid && styles.homeGridStackedColumn]}>
                   <Section
-                    label="DO THIS NOW"
-                    accessibilityLabel="Do this now"
+                    label="DO NOW"
+                    accessibilityLabel="Do now"
                     headerAction={
                       weakTopics.length > 1 ? (
                         <TouchableOpacity
@@ -971,6 +990,14 @@ const styles = StyleSheet.create({
   },
   rightColumn: {
     flex: 1,
+  },
+  homeGridStacked: {
+    flexDirection: 'column',
+  },
+  homeGridStackedColumn: {
+    flex: 0,
+    width: '100%',
+    alignSelf: 'stretch',
   },
   rightColumnSectionGap: {
     marginTop: HOME_SECTION_GAP,

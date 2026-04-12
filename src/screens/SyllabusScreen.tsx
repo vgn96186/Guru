@@ -271,7 +271,7 @@ function SyllabusScreenContent() {
       }, 150);
       return () => clearTimeout(timer);
     }
-  }, [isFocused, sortMode, loadData, unlockNavigation]);
+  }, [isFocused, isInitialLoad, sortMode, loadData, unlockNavigation]);
 
   useEffect(() => {
     return () => {
@@ -432,7 +432,9 @@ function SyllabusScreenContent() {
     const summary = coverage
       .map(
         (c: any) =>
-          `${subjectMap.get(c.subject_id) || `ID ${c.subject_id} (NOT IN SUBJECTS)`}: ${c.c} topics`,
+          `${subjectMap.get(c.subject_id) || `ID ${c.subject_id} (NOT IN SUBJECTS)`}: ${
+            c.c
+          } topics`,
       )
       .join('\n');
 
@@ -609,13 +611,7 @@ function SyllabusScreenContent() {
           <StaggeredEntrance index={0} disabled={!entryComplete}>
             <ScreenHeader
               title="Syllabus"
-              subtitle={
-                seenTopics === 0
-                  ? 'Open any subject to start building coverage.'
-                  : 'Track coverage, due topics, and high-yield gaps across all subjects.'
-              }
               titleStyle={styles.headerTitle}
-              subtitleStyle={styles.subtitle}
               searchElement={
                 <BannerSearchBar
                   value={searchInput}
@@ -624,28 +620,20 @@ function SyllabusScreenContent() {
                 />
               }
               rightElement={
-                <View style={styles.headerActions}>
-                  <BannerIconButton
-                    onPress={handleManualSync}
-                    disabled={refreshing}
-                    accessibilityRole="button"
-                    accessibilityLabel={refreshing ? 'Syncing' : 'Refresh syllabus'}
-                  >
-                    {refreshing ? (
-                      <ActivityIndicator size="small" color={n.colors.textSecondary} />
-                    ) : (
-                      <Ionicons name="sync-outline" size={17} color={n.colors.textSecondary} />
-                    )}
-                  </BannerIconButton>
-                  <BannerIconButton
-                    onPress={() => navigation.navigate('Settings' as never)}
-                    accessibilityRole="button"
-                    accessibilityLabel="Open settings"
-                  >
-                    <Ionicons name="settings-sharp" size={17} color={n.colors.textSecondary} />
-                  </BannerIconButton>
-                </View>
+                <BannerIconButton
+                  onPress={handleManualSync}
+                  disabled={refreshing}
+                  accessibilityRole="button"
+                  accessibilityLabel={refreshing ? 'Syncing' : 'Refresh syllabus'}
+                >
+                  {refreshing ? (
+                    <ActivityIndicator size="small" color={n.colors.textSecondary} />
+                  ) : (
+                    <Ionicons name="sync-outline" size={17} color={n.colors.textSecondary} />
+                  )}
+                </BannerIconButton>
               }
+              showSettings
             ></ScreenHeader>
           </StaggeredEntrance>
 
@@ -887,10 +875,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   headerTitle: { fontSize: 24, fontWeight: '800' },
-  subtitle: {
-    lineHeight: 18,
-    marginBottom: 4,
-  },
   heroSurface: {
     marginTop: 4,
     paddingVertical: 6,

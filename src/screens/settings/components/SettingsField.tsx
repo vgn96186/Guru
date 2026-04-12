@@ -6,10 +6,8 @@ import LinearTextInput from '../../../components/primitives/LinearTextInput';
 import { linearTheme } from '../../../theme/linearTheme';
 import SettingsLabel from './SettingsLabel';
 
-interface SettingsFieldProps extends Omit<
-  ComponentProps<typeof LinearTextInput>,
-  'style' | 'containerStyle'
-> {
+interface SettingsFieldProps
+  extends Omit<ComponentProps<typeof LinearTextInput>, 'style' | 'containerStyle'> {
   label: string;
   hint?: string;
   error?: string;

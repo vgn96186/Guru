@@ -356,10 +356,7 @@ export default function NotesHubScreen() {
                 </LinearText>
               </LinearSurface>
             ) : null}
-            <ScreenHeader
-              title="My Notes"
-              subtitle="Search, revisit, and reuse your lecture notes and topic notes from one place."
-            />
+            <ScreenHeader title="My Notes" showSettings />
 
             <LinearSurface compact style={styles.overviewCard}>
               <View style={styles.overviewHeader}>
@@ -615,7 +612,6 @@ export default function NotesHubScreen() {
                 iconSize={28}
                 iconColor={n.colors.accent}
                 title="No saved notes yet"
-                subtitle="Lecture returns and topic note edits will show up here once they are saved."
                 actions={[
                   {
                     label: 'Start a lecture capture',

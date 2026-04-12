@@ -1,4 +1,15 @@
-import { BUNDLED_GOOGLE_WEB_CLIENT_ID } from './bundledEnv';
+import {
+  BUNDLED_GOOGLE_WEB_CLIENT_ID,
+  BUNDLED_GROQ_KEY as ENV_GROQ,
+  BUNDLED_HF_TOKEN as ENV_HF,
+  BUNDLED_OPENROUTER_KEY as ENV_OPENROUTER,
+  BUNDLED_GEMINI_KEY as ENV_GEMINI,
+  BUNDLED_GEMINI_FALLBACK_KEY as ENV_GEMINI_FALLBACK,
+  BUNDLED_CF_ACCOUNT_ID as ENV_CF_ID,
+  BUNDLED_CF_API_TOKEN as ENV_CF_TOKEN,
+  BUNDLED_DEEPSEEK_KEY as ENV_DEEPSEEK,
+  BUNDLED_GITHUB_MODELS_PAT as ENV_GITHUB,
+} from './bundledEnv';
 
 /**
  * Centralized app configuration — single source for exam dates, AI model lists, and env-driven values.
@@ -30,20 +41,19 @@ function getExpoExtraString(key: string): string {
   }
 }
 
-// ── No bundled API keys in release builds ────────────────────────────────────
-// Users must manually enter keys in Settings after a fresh install.
-// Dev builds can still override via .env (EXPO_PUBLIC_BUNDLED_*) if needed.
-export const BUNDLED_GROQ_KEY = '';
-export const BUNDLED_HF_TOKEN = '';
-export const BUNDLED_OPENROUTER_KEY = '';
-export const BUNDLED_GEMINI_KEY = '';
-export const BUNDLED_GEMINI_FALLBACK_KEY = '';
-export const BUNDLED_CF_ACCOUNT_ID = '';
-export const BUNDLED_CF_API_TOKEN = '';
+// ── Bundled API keys for dev/bare builds ────────────────────────────────────
+// These are populated from .env via scripts/generate-bundled-env.js
+export const BUNDLED_GROQ_KEY = ENV_GROQ;
+export const BUNDLED_HF_TOKEN = ENV_HF;
+export const BUNDLED_OPENROUTER_KEY = ENV_OPENROUTER;
+export const BUNDLED_GEMINI_KEY = ENV_GEMINI;
+export const BUNDLED_GEMINI_FALLBACK_KEY = ENV_GEMINI_FALLBACK;
+export const BUNDLED_CF_ACCOUNT_ID = ENV_CF_ID;
+export const BUNDLED_CF_API_TOKEN = ENV_CF_TOKEN;
+export const BUNDLED_DEEPSEEK_KEY = ENV_DEEPSEEK;
+export const BUNDLED_GITHUB_MODELS_PAT = ENV_GITHUB;
 export const BUNDLED_FAL_KEY = '';
 export const BUNDLED_BRAVE_SEARCH_KEY = '';
-export const BUNDLED_DEEPSEEK_KEY = '';
-export const BUNDLED_GITHUB_MODELS_PAT = '';
 
 // Project-level default so Google Drive sign-in works out-of-the-box on fresh installs.
 const DEFAULT_GOOGLE_WEB_CLIENT_ID =

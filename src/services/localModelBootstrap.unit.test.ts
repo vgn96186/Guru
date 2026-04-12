@@ -17,6 +17,10 @@ jest.mock('expo-file-system/legacy', () => ({
   },
 }));
 
+jest.mock('../../modules/app-launcher', () => ({
+  concatenateFiles: jest.fn().mockResolvedValue(true),
+}));
+
 jest.mock('../db/repositories', () => ({
   profileRepository: {
     getProfile: jest.fn(),
@@ -56,23 +60,39 @@ function getBufferSourceByteLength(data: BufferSource): number {
   return 0;
 }
 
+// Default: no Range support → single-stream fallback path
+const mockFetch = jest.fn().mockResolvedValue({
+  headers: new Map([
+    ['accept-ranges', 'none'],
+    ['content-length', '0'],
+  ]),
+});
+(global as any).fetch = mockFetch;
+
 describe('localModelBootstrap', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockRefreshProfile.mockClear();
+    // Reset fetch to no-range-support default for each test
+    mockFetch.mockResolvedValue({
+      headers: new Map([
+        ['accept-ranges', 'none'],
+        ['content-length', '0'],
+      ]),
+    });
 
-    jest.spyOn(globalThis.crypto.subtle, 'digest').mockImplementation(
-      async (_algorithm: AlgorithmIdentifier, data: BufferSource) => {
+    jest
+      .spyOn(globalThis.crypto.subtle, 'digest')
+      .mockImplementation(async (_algorithm: AlgorithmIdentifier, data: BufferSource) => {
         const byteLength = getBufferSourceByteLength(data);
         const hex = byteLength === 1 ? LLm_SHA : WHISPER_SHA;
         const typedArray = new Uint8Array(hex.match(/.{1,2}/g)!.map((byte) => parseInt(byte, 16)));
         return typedArray.buffer;
-      },
-    );
+      });
 
     // Provide deterministic base64 content so digest() can select the expected hash.
     (FileSystem.readAsStringAsync as jest.Mock).mockImplementation(async (filePath: string) => {
-      if (String(filePath).includes('medgemma-4b-it-q4_k_m.gguf')) return 'AQ=='; // 1 byte
+      if (String(filePath).includes('gemma-4-E4B-it.litertlm')) return 'AQ=='; // 1 byte
       if (String(filePath).includes('ggml-large-v3-turbo.bin')) return 'AgM='; // 2 bytes sentinel
       return 'AA==';
     });
@@ -105,14 +125,14 @@ describe('localModelBootstrap', () => {
     (FileSystem.getInfoAsync as jest.Mock)
       .mockResolvedValueOnce({ exists: false }) // target path: no complete file yet
       .mockResolvedValueOnce({ exists: false }) // partial before download
-      .mockResolvedValueOnce({ exists: true, size: 2_300_000_000 }); // validate partial after download
+      .mockResolvedValueOnce({ exists: true, size: 3_600_000_000 }); // validate partial after download
 
     await bootstrapLocalModels();
 
     expect(showToast).toHaveBeenCalledWith('Low RAM warning', 'warning');
     expect(FileSystem.createDownloadResumable).toHaveBeenCalledWith(
-      expect.stringContaining('medgemma'),
-      expect.stringContaining('medgemma-4b-it-q4_k_m.gguf.partial'),
+      expect.stringContaining('gemma-4'),
+      expect.stringContaining('gemma-4-E4B-it.litertlm.partial'),
       { headers: { 'Accept-Encoding': 'identity' } },
       expect.any(Function),
     );
@@ -135,7 +155,7 @@ describe('localModelBootstrap', () => {
     (FileSystem.getInfoAsync as jest.Mock)
       .mockResolvedValueOnce({ exists: false }) // target path
       .mockResolvedValueOnce({ exists: false }) // partial before download
-      .mockResolvedValueOnce({ exists: true, size: 800_000_000 }); // validate partial after download
+      .mockResolvedValueOnce({ exists: true, size: 810_000_000 }); // validate partial after download
 
     await bootstrapLocalModels();
 
@@ -164,13 +184,13 @@ describe('localModelBootstrap', () => {
     (FileSystem.getInfoAsync as jest.Mock)
       .mockResolvedValueOnce({ exists: false }) // target path
       .mockResolvedValueOnce({ exists: false }) // partial before download
-      .mockResolvedValueOnce({ exists: true, size: 2_300_000_000 }); // validate partial after download
+      .mockResolvedValueOnce({ exists: true, size: 3_600_000_000 }); // validate partial after download
 
     await bootstrapLocalModels();
 
     expect(FileSystem.createDownloadResumable).toHaveBeenCalledWith(
-      expect.stringContaining('medgemma'),
-      expect.stringContaining('medgemma-4b-it-q4_k_m.gguf.partial'),
+      expect.stringContaining('gemma-4'),
+      expect.stringContaining('gemma-4-E4B-it.litertlm.partial'),
       { headers: { 'Accept-Encoding': 'identity' } },
       expect.any(Function),
     );
@@ -185,7 +205,7 @@ describe('localModelBootstrap', () => {
       localWhisperPath: 'path/to/whisper',
     });
     (isLocalLlmAllowedOnThisDevice as jest.Mock).mockReturnValue(true);
-    (FileSystem.getInfoAsync as jest.Mock).mockResolvedValue({ exists: true, size: 2_500_000_000 });
+    (FileSystem.getInfoAsync as jest.Mock).mockResolvedValue({ exists: true, size: 3_600_000_000 });
 
     await bootstrapLocalModels();
 
@@ -201,7 +221,7 @@ describe('localModelBootstrap', () => {
       localWhisperPath: 'path/to/whisper',
     });
     (isLocalLlmAllowedOnThisDevice as jest.Mock).mockReturnValue(true);
-    (FileSystem.getInfoAsync as jest.Mock).mockResolvedValue({ exists: true, size: 2_500_000_000 });
+    (FileSystem.getInfoAsync as jest.Mock).mockResolvedValue({ exists: true, size: 3_600_000_000 });
     (FileSystem.readAsStringAsync as jest.Mock).mockRejectedValue(new Error('too large'));
 
     await bootstrapLocalModels();
@@ -224,7 +244,7 @@ describe('localModelBootstrap', () => {
       .mockResolvedValueOnce({ exists: true, size: 1000 }) // Initial check (too small)
       .mockResolvedValueOnce({ exists: false }) // partial does not exist
       .mockResolvedValueOnce({ exists: false }) // no resumable partial before fresh download
-      .mockResolvedValueOnce({ exists: true, size: 2_300_000_000 }); // Post-download check
+      .mockResolvedValueOnce({ exists: true, size: 3_600_000_000 }); // Post-download check
 
     const mockDownload = {
       downloadAsync: jest.fn().mockResolvedValue({ status: 200 }),
@@ -285,8 +305,8 @@ describe('localModelBootstrap', () => {
     (isLocalLlmAllowedOnThisDevice as jest.Mock).mockReturnValue(true);
     (FileSystem.getInfoAsync as jest.Mock)
       .mockResolvedValueOnce({ exists: false }) // target path missing
-      .mockResolvedValueOnce({ exists: true, size: 2_300_000_000 }) // partial path valid
-      .mockResolvedValueOnce({ exists: true, size: 2_300_000_000 }); // handleDownloadComplete validation
+      .mockResolvedValueOnce({ exists: true, size: 3_600_000_000 }) // partial path valid
+      .mockResolvedValueOnce({ exists: true, size: 3_600_000_000 }); // handleDownloadComplete validation
     (FileSystem.readAsStringAsync as jest.Mock).mockRejectedValue(new Error('no resume data'));
 
     await bootstrapLocalModels();
@@ -295,7 +315,7 @@ describe('localModelBootstrap', () => {
     expect(FileSystem.moveAsync).toHaveBeenCalledWith(
       expect.objectContaining({
         from: expect.stringContaining('.partial'),
-        to: expect.stringContaining('medgemma-4b-it-q4_k_m.gguf'),
+        to: expect.stringContaining('gemma-4-E4B-it.litertlm'),
       }),
     );
     expect(profileRepository.updateProfile).toHaveBeenCalledWith(
@@ -323,6 +343,36 @@ describe('localModelBootstrap', () => {
     );
     expect(profileRepository.updateProfile).not.toHaveBeenCalledWith(
       expect.objectContaining({ localModelPath: expect.any(String) }),
+    );
+  });
+
+  it('downloads LLM with a single resumable task (no Range / chunk probe)', async () => {
+    (profileRepository.getProfile as jest.Mock).mockResolvedValue({
+      localModelPath: '',
+      localWhisperPath: 'path/to/whisper',
+    });
+    (isLocalLlmAllowedOnThisDevice as jest.Mock).mockReturnValue(true);
+
+    const mockDownload = {
+      downloadAsync: jest.fn().mockResolvedValue({ status: 200 }),
+    };
+    (FileSystem.createDownloadResumable as jest.Mock).mockReturnValue(mockDownload);
+    (FileSystem.getInfoAsync as jest.Mock)
+      .mockResolvedValueOnce({ exists: false }) // target path
+      .mockResolvedValueOnce({ exists: false }) // partial before download
+      .mockResolvedValueOnce({ exists: true, size: 3_600_000_000 }); // validate partial after download
+
+    await bootstrapLocalModels();
+
+    expect(mockFetch).not.toHaveBeenCalled();
+    expect(FileSystem.createDownloadResumable).toHaveBeenCalledWith(
+      expect.stringContaining('gemma-4'),
+      expect.stringContaining('gemma-4-E4B-it.litertlm.partial'),
+      { headers: { 'Accept-Encoding': 'identity' } },
+      expect.any(Function),
+    );
+    expect(profileRepository.updateProfile).toHaveBeenCalledWith(
+      expect.objectContaining({ localModelPath: expect.any(String), useLocalModel: true }),
     );
   });
 });

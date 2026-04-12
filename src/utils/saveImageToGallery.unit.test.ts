@@ -27,7 +27,9 @@ describe('saveImageToDeviceGallery', () => {
   });
 
   it('downloads https URIs then saves', async () => {
-    (FileSystem.downloadAsync as jest.Mock).mockResolvedValue({ uri: 'file:///cache/guru_save_1.png' });
+    (FileSystem.downloadAsync as jest.Mock).mockResolvedValue({
+      uri: 'file:///cache/guru_save_1.png',
+    });
     await saveImageToDeviceGallery('https://example.com/a.png');
     expect(FileSystem.downloadAsync).toHaveBeenCalled();
     expect(MediaLibrary.saveToLibraryAsync).toHaveBeenCalledWith('file:///cache/guru_save_1.png');

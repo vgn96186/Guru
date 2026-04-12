@@ -105,7 +105,8 @@ describe('layoutMindMapGraph', () => {
     const cardiogenicAfter = after.find((node) => node.id === 3)!;
     const septicAfter = after.find((node) => node.id === 4)!;
 
-    expect(cardiogenicAfter.y).toBe(cardiogenicBefore.y);
+    // Cardiogenic gains a subtree and is re-centered vertically; siblings below should reflow downward.
+    expect(cardiogenicAfter.y).toBeGreaterThan(cardiogenicBefore.y);
     expect(septicAfter.y).toBeGreaterThan(septicBefore.y);
 
     for (let i = 0; i < after.length; i += 1) {

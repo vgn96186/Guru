@@ -46,7 +46,6 @@ export default function SettingsModelDropdown({
         open={open}
         onClose={() => setOpen(false)}
         title={label}
-        subtitle="Choose the default model you want Guru to use here."
         snapPoints={['72%']}
         scrollable
       >

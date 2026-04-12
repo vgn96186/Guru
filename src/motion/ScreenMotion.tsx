@@ -57,7 +57,9 @@ function ScreenMotionBase({
   }, [isEntryComplete]);
 
   useEffect(() => {
-    setCurrentPhase(trigger === 'focus-settle' ? 'focus-settle' : 'first-mount');
+    queueMicrotask(() =>
+      setCurrentPhase(trigger === 'focus-settle' ? 'focus-settle' : 'first-mount'),
+    );
   }, [trigger]);
 
   useEffect(() => {
@@ -80,7 +82,7 @@ function ScreenMotionBase({
     const nextPhase: ScreenMotionPhase =
       trigger === 'focus-settle' || playedInitialMountRef.current ? 'focus-settle' : 'first-mount';
 
-    setCurrentPhase(nextPhase);
+    queueMicrotask(() => setCurrentPhase(nextPhase));
     progress.value = 0;
 
     const duration = reducedMotion
@@ -88,8 +90,8 @@ function ScreenMotionBase({
         ? 120
         : 90
       : nextPhase === 'first-mount'
-        ? screenEnterTiming.duration
-        : screenSettleTiming.duration;
+      ? screenEnterTiming.duration
+      : screenSettleTiming.duration;
 
     progress.value = withTiming(1, {
       duration,

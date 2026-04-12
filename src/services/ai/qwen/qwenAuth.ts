@@ -464,7 +464,9 @@ export async function getQwenAccessToken(): Promise<{
         qwenRefreshCooldownUntil = Date.now() + REFRESH_COOLDOWN_MS[idx];
         if (__DEV__) {
           console.error(
-            `[Qwen OAuth] Token refresh failed (attempt ${qwenRefreshFailCount}), cooldown ${REFRESH_COOLDOWN_MS[idx] / 1000}s:`,
+            `[Qwen OAuth] Token refresh failed (attempt ${qwenRefreshFailCount}), cooldown ${
+              REFRESH_COOLDOWN_MS[idx] / 1000
+            }s:`,
             (err as Error).message,
           );
         }

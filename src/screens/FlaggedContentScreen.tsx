@@ -185,12 +185,7 @@ export default function FlaggedContentScreen() {
           <LoadingOrb message="Loading flagged content..." size={120} />
         </View>
       ) : flaggedItems.length === 0 ? (
-        <EmptyState
-          icon="checkmark-circle"
-          iconSize={64}
-          title="All Clear!"
-          subtitle="No flagged content to review."
-        />
+        <EmptyState icon="checkmark-circle" iconSize={64} title="All Clear!" />
       ) : (
         <FlatList
           data={flaggedItems}

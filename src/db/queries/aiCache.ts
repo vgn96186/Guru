@@ -124,7 +124,6 @@ export async function getMockQuestions(limit: number): Promise<MockQuestion[]> {
   );
   if (rowIds.length === 0) return [];
 
-  const selectedIds: number[] = [];
   const batchSize = Math.min(Math.max(Math.ceil(limit / 3), 8), 24);
   let offset = 0;
   let parsedQuestions: MockQuestion[] = [];

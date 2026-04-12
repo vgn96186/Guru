@@ -80,6 +80,7 @@ async function main() {
     stdio: 'inherit',
     shell: isWindows,
     env: process.env,
+    timeout: 600_000,
   });
 
   process.exit(result.status || 0);

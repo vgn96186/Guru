@@ -95,6 +95,8 @@ describe('imageService', () => {
     });
 
     it('falls back to Wikimedia Commons if Wikipedia search fails', async () => {
+      // Distinct topic avoids in-module image cache from the prior UnknownTopic search test.
+      const topic = 'ZCommonsFallbackTopic';
       (globalThis.fetch as jest.Mock)
         .mockResolvedValueOnce(mockWikiResponse({})) // Exact match fails
         .mockRejectedValueOnce(new Error('Search failed')) // Wikipedia Search fails
@@ -115,7 +117,7 @@ describe('imageService', () => {
           }),
         ); // Commons file info succeeds
 
-      const result = await fetchWikipediaImage('UnknownTopic');
+      const result = await fetchWikipediaImage(topic);
       expect(result).toBe('https://example.com/commons.jpg');
       expect(globalThis.fetch).toHaveBeenCalledTimes(4);
     });

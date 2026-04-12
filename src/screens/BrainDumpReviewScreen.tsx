@@ -59,7 +59,6 @@ export default function BrainDumpReviewScreen({ navigation }: Props) {
       <ResponsiveContainer>
         <View style={styles.header}>
           <LinearText style={styles.title}>Parked Thoughts</LinearText>
-          <LinearText style={styles.subtitle}>You safely deferred these while studying.</LinearText>
         </View>
 
         {dumps.length === 0 ? (
@@ -138,11 +137,6 @@ const styles = StyleSheet.create({
     fontSize: 28,
     fontWeight: 'bold',
     color: n.colors.textPrimary,
-    marginBottom: 8,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: n.colors.textMuted,
   },
   emptyContainer: {
     flex: 1,

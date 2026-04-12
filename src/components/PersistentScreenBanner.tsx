@@ -42,8 +42,17 @@ export function PersistentScreenBannerProvider({ children }: { children: React.R
   const [reservedHeight, setReservedHeight] = useState(DEFAULT_RESERVED_HEIGHT);
   const setBanner = useCallback((ownerId: string, banner: PersistentScreenBannerConfig) => {
     setState((prev) => {
-      if (prev.ownerId === ownerId && prev.banner === banner) {
-        return prev;
+      if (prev.ownerId === ownerId && prev.banner) {
+        const p = prev.banner;
+        if (
+          p.title === banner.title &&
+          p.subtitle === banner.subtitle &&
+          p.showBack === banner.showBack &&
+          p.titleNumberOfLines === banner.titleNumberOfLines &&
+          p.backButtonTestID === banner.backButtonTestID
+        ) {
+          return prev;
+        }
       }
       return { ownerId, banner };
     });

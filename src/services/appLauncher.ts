@@ -248,7 +248,9 @@ async function _launchMedicalAppInner(
         if (recordingPath) {
           try {
             await nativeStopRecording();
-          } catch {}
+          } catch {
+            /* ignore cleanup errors */
+          }
         }
         console.warn('[AppLauncher] Recording start failed:', e);
         alertRecordingStartFailed();
@@ -270,9 +272,10 @@ async function _launchMedicalAppInner(
           overlayTimeout,
         ]);
         await new Promise((r) => setTimeout(r, OVERLAY_START_DELAY_MS));
-      } catch (overlayErr: any) {
+      } catch (overlayErr: unknown) {
         console.error('[AppLauncher] Overlay failed:', overlayErr);
-        throw new Error(`Overlay failed: ${overlayErr?.message || 'Unknown overlay error'}`);
+        const msg = overlayErr instanceof Error ? overlayErr.message : 'Unknown overlay error';
+        throw new Error(`Overlay failed: ${msg}`, { cause: overlayErr });
       }
 
       const opened = await launchApp(targetPackage);

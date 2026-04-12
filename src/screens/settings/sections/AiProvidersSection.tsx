@@ -678,16 +678,16 @@ export default function AiProvidersSection(props: any) {
                         githubCopilotOAuthTestResult === 'ok'
                           ? 'checkmark-circle'
                           : githubCopilotOAuthTestResult === 'fail'
-                            ? 'close-circle'
-                            : 'pulse-outline'
+                          ? 'close-circle'
+                          : 'pulse-outline'
                       }
                       size={20}
                       color={
                         githubCopilotOAuthTestResult === 'ok'
                           ? linearTheme.colors.success
                           : githubCopilotOAuthTestResult === 'fail'
-                            ? linearTheme.colors.error
-                            : linearTheme.colors.accent
+                          ? linearTheme.colors.error
+                          : linearTheme.colors.accent
                       }
                     />
                   )}
@@ -881,16 +881,16 @@ export default function AiProvidersSection(props: any) {
                         gitlabDuoOAuthTestResult === 'ok'
                           ? 'checkmark-circle'
                           : gitlabDuoOAuthTestResult === 'fail'
-                            ? 'close-circle'
-                            : 'pulse-outline'
+                          ? 'close-circle'
+                          : 'pulse-outline'
                       }
                       size={20}
                       color={
                         gitlabDuoOAuthTestResult === 'ok'
                           ? linearTheme.colors.success
                           : gitlabDuoOAuthTestResult === 'fail'
-                            ? linearTheme.colors.error
-                            : linearTheme.colors.accent
+                          ? linearTheme.colors.error
+                          : linearTheme.colors.accent
                       }
                     />
                   )}
@@ -1228,16 +1228,16 @@ export default function AiProvidersSection(props: any) {
                     groqValidationStatus === 'ok'
                       ? 'checkmark-circle'
                       : groqValidationStatus === 'fail'
-                        ? 'close-circle'
-                        : 'flash-outline'
+                      ? 'close-circle'
+                      : 'flash-outline'
                   }
                   size={20}
                   color={
                     groqValidationStatus === 'ok'
                       ? linearTheme.colors.success
                       : groqValidationStatus === 'fail'
-                        ? linearTheme.colors.error
-                        : linearTheme.colors.accent
+                      ? linearTheme.colors.error
+                      : linearTheme.colors.accent
                   }
                 />
               )}
@@ -1283,16 +1283,16 @@ export default function AiProvidersSection(props: any) {
                     githubValidationStatus === 'ok'
                       ? 'checkmark-circle'
                       : githubValidationStatus === 'fail'
-                        ? 'close-circle'
-                        : 'flash-outline'
+                      ? 'close-circle'
+                      : 'flash-outline'
                   }
                   size={20}
                   color={
                     githubValidationStatus === 'ok'
                       ? linearTheme.colors.success
                       : githubValidationStatus === 'fail'
-                        ? linearTheme.colors.error
-                        : linearTheme.colors.accent
+                      ? linearTheme.colors.error
+                      : linearTheme.colors.accent
                   }
                 />
               )}
@@ -1338,16 +1338,16 @@ export default function AiProvidersSection(props: any) {
                     openRouterValidationStatus === 'ok'
                       ? 'checkmark-circle'
                       : openRouterValidationStatus === 'fail'
-                        ? 'close-circle'
-                        : 'flash-outline'
+                      ? 'close-circle'
+                      : 'flash-outline'
                   }
                   size={20}
                   color={
                     openRouterValidationStatus === 'ok'
                       ? linearTheme.colors.success
                       : openRouterValidationStatus === 'fail'
-                        ? linearTheme.colors.error
-                        : linearTheme.colors.accent
+                      ? linearTheme.colors.error
+                      : linearTheme.colors.accent
                   }
                 />
               )}
@@ -1391,16 +1391,16 @@ export default function AiProvidersSection(props: any) {
                     kiloValidationStatus === 'ok'
                       ? 'checkmark-circle'
                       : kiloValidationStatus === 'fail'
-                        ? 'close-circle'
-                        : 'flash-outline'
+                      ? 'close-circle'
+                      : 'flash-outline'
                   }
                   size={20}
                   color={
                     kiloValidationStatus === 'ok'
                       ? linearTheme.colors.success
                       : kiloValidationStatus === 'fail'
-                        ? linearTheme.colors.error
-                        : linearTheme.colors.accent
+                      ? linearTheme.colors.error
+                      : linearTheme.colors.accent
                   }
                 />
               )}
@@ -1446,16 +1446,16 @@ export default function AiProvidersSection(props: any) {
                     deepseekValidationStatus === 'ok'
                       ? 'checkmark-circle'
                       : deepseekValidationStatus === 'fail'
-                        ? 'close-circle'
-                        : 'flash-outline'
+                      ? 'close-circle'
+                      : 'flash-outline'
                   }
                   size={20}
                   color={
                     deepseekValidationStatus === 'ok'
                       ? linearTheme.colors.success
                       : deepseekValidationStatus === 'fail'
-                        ? linearTheme.colors.error
-                        : linearTheme.colors.accent
+                      ? linearTheme.colors.error
+                      : linearTheme.colors.accent
                   }
                 />
               )}
@@ -1499,16 +1499,16 @@ export default function AiProvidersSection(props: any) {
                     agentRouterValidationStatus === 'ok'
                       ? 'checkmark-circle'
                       : agentRouterValidationStatus === 'fail'
-                        ? 'close-circle'
-                        : 'flash-outline'
+                      ? 'close-circle'
+                      : 'flash-outline'
                   }
                   size={20}
                   color={
                     agentRouterValidationStatus === 'ok'
                       ? linearTheme.colors.success
                       : agentRouterValidationStatus === 'fail'
-                        ? linearTheme.colors.error
-                        : linearTheme.colors.accent
+                      ? linearTheme.colors.error
+                      : linearTheme.colors.accent
                   }
                 />
               )}
@@ -1552,16 +1552,16 @@ export default function AiProvidersSection(props: any) {
                     geminiValidationStatus === 'ok'
                       ? 'checkmark-circle'
                       : geminiValidationStatus === 'fail'
-                        ? 'close-circle'
-                        : 'flash-outline'
+                      ? 'close-circle'
+                      : 'flash-outline'
                   }
                   size={20}
                   color={
                     geminiValidationStatus === 'ok'
                       ? linearTheme.colors.success
                       : geminiValidationStatus === 'fail'
-                        ? linearTheme.colors.error
-                        : linearTheme.colors.accent
+                      ? linearTheme.colors.error
+                      : linearTheme.colors.accent
                   }
                 />
               )}
@@ -1611,16 +1611,16 @@ export default function AiProvidersSection(props: any) {
                     deepgramValidationStatus === 'ok'
                       ? 'checkmark-circle'
                       : deepgramValidationStatus === 'fail'
-                        ? 'close-circle'
-                        : 'flash-outline'
+                      ? 'close-circle'
+                      : 'flash-outline'
                   }
                   size={20}
                   color={
                     deepgramValidationStatus === 'ok'
                       ? linearTheme.colors.success
                       : deepgramValidationStatus === 'fail'
-                        ? linearTheme.colors.error
-                        : linearTheme.colors.accent
+                      ? linearTheme.colors.error
+                      : linearTheme.colors.accent
                   }
                 />
               )}
@@ -1662,16 +1662,16 @@ export default function AiProvidersSection(props: any) {
                     cloudflareValidationStatus === 'ok'
                       ? 'checkmark-circle'
                       : cloudflareValidationStatus === 'fail'
-                        ? 'close-circle'
-                        : 'flash-outline'
+                      ? 'close-circle'
+                      : 'flash-outline'
                   }
                   size={20}
                   color={
                     cloudflareValidationStatus === 'ok'
                       ? linearTheme.colors.success
                       : cloudflareValidationStatus === 'fail'
-                        ? linearTheme.colors.error
-                        : linearTheme.colors.accent
+                      ? linearTheme.colors.error
+                      : linearTheme.colors.accent
                   }
                 />
               )}
@@ -1887,16 +1887,16 @@ export default function AiProvidersSection(props: any) {
                     falValidationStatus === 'ok'
                       ? 'checkmark-circle'
                       : falValidationStatus === 'fail'
-                        ? 'close-circle'
-                        : 'flash-outline'
+                      ? 'close-circle'
+                      : 'flash-outline'
                   }
                   size={20}
                   color={
                     falValidationStatus === 'ok'
                       ? linearTheme.colors.success
                       : falValidationStatus === 'fail'
-                        ? linearTheme.colors.error
-                        : linearTheme.colors.accent
+                      ? linearTheme.colors.error
+                      : linearTheme.colors.accent
                   }
                 />
               )}
@@ -2068,16 +2068,16 @@ export default function AiProvidersSection(props: any) {
                     braveValidationStatus === 'ok'
                       ? 'checkmark-circle'
                       : braveValidationStatus === 'fail'
-                        ? 'close-circle'
-                        : 'images-outline'
+                      ? 'close-circle'
+                      : 'images-outline'
                   }
                   size={20}
                   color={
                     braveValidationStatus === 'ok'
                       ? linearTheme.colors.success
                       : braveValidationStatus === 'fail'
-                        ? linearTheme.colors.error
-                        : linearTheme.colors.accent
+                      ? linearTheme.colors.error
+                      : linearTheme.colors.accent
                   }
                 />
               )}

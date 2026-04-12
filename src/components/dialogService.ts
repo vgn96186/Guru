@@ -47,8 +47,8 @@ function toAlertButtons(actions: DialogAction[], resolve: DialogResolver) {
       action.variant === 'destructive' || action.isDestructive
         ? ('destructive' as const)
         : action.variant === 'secondary'
-          ? ('cancel' as const)
-          : ('default' as const),
+        ? ('cancel' as const)
+        : ('default' as const),
     onPress: () => resolve(action.id),
   }));
 }

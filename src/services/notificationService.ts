@@ -361,10 +361,10 @@ export async function refreshAccountabilityNotifications(): Promise<void> {
     daysSince === null
       ? 'never'
       : daysSince === 0
-        ? 'today'
-        : daysSince === 1
-          ? 'yesterday'
-          : `${daysSince} days ago`;
+      ? 'today'
+      : daysSince === 1
+      ? 'yesterday'
+      : `${daysSince} days ago`;
 
   const daysToInicet = profileRepository.getDaysToExam(profile.inicetDate);
   const daysToNeetPg = profileRepository.getDaysToExam(profile.neetDate);
@@ -434,7 +434,9 @@ export async function refreshAccountabilityNotifications(): Promise<void> {
           body:
             nemesisTopics.length > 0
               ? `${nemesisTopics[0].name} beat you before. Today you finish it.`
-              : `${daysToInicet > 0 ? `${daysToInicet}d to INI-CET. ` : ''}One more topic before bed.`,
+              : `${
+                  daysToInicet > 0 ? `${daysToInicet}d to INI-CET. ` : ''
+                }One more topic before bed.`,
           scheduledFor: 'evening',
         },
         {

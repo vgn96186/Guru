@@ -74,9 +74,7 @@ describe('cleanupStaleCheckpointDirs', () => {
       'transcripts_checkpoint_bad',
       'transcripts_checkpoint_good',
     ]);
-    mockDeleteAsync
-      .mockRejectedValueOnce(new Error('locked'))
-      .mockResolvedValueOnce(undefined);
+    mockDeleteAsync.mockRejectedValueOnce(new Error('locked')).mockResolvedValueOnce(undefined);
 
     await expect(cleanupStaleCheckpointDirs()).resolves.toBeUndefined();
     expect(mockDeleteAsync).toHaveBeenCalledTimes(2);
@@ -192,8 +190,8 @@ describe('transcribeWithGroqChunking', () => {
     mockConvertToWav.mockResolvedValue(null);
     mockMakeDirectoryAsync.mockResolvedValue(undefined);
 
-    await expect(
-      transcribeWithGroqChunking('/test/large.m4a', 'groq-key'),
-    ).rejects.toThrow('WAV conversion failed');
+    await expect(transcribeWithGroqChunking('/test/large.m4a', 'groq-key')).rejects.toThrow(
+      'WAV conversion failed',
+    );
   });
 });

@@ -57,16 +57,16 @@ describe('lecture health service', () => {
   it('starts and stops the health check timer', () => {
     startRecordingHealthCheck('path/to/record', 'TestApp');
     expect(setIntervalSpy).toHaveBeenCalledTimes(1);
-    
+
     stopRecordingHealthCheck();
     expect(clearIntervalSpy).toHaveBeenCalled();
   });
 
   it('notifies when recording is stalled', async () => {
     (validateRecordingFile as jest.Mock).mockResolvedValue({ exists: true, size: 100 });
-    
+
     startRecordingHealthCheck('path/to/record', 'TestApp');
-    
+
     // First check: size 100
     await jest.advanceTimersByTimeAsync(60_000);
     expect(notifyRecordingHealthIssue).not.toHaveBeenCalled();
@@ -89,23 +89,23 @@ describe('lecture health service', () => {
       .mockResolvedValueOnce({ exists: true, size: 100 })
       .mockResolvedValueOnce({ exists: true, size: 100 })
       .mockResolvedValueOnce({ exists: true, size: 200 });
-    
+
     startRecordingHealthCheck('path/to/record', 'TestApp');
-    
+
     await jest.advanceTimersByTimeAsync(60_000); // size 100
     await jest.advanceTimersByTimeAsync(60_000); // size 100 (stalled count = 1)
     await jest.advanceTimersByTimeAsync(60_000); // size 200 (stalled count reset)
-    
+
     expect(notifyRecordingHealthIssue).not.toHaveBeenCalled();
   });
 
   it('runs transcription evidence check with Groq', async () => {
     (transcribeRawWithGroq as jest.Mock).mockResolvedValue('Some transcript');
-    
+
     startRecordingHealthCheck('path/to/record', 'TestApp', { groqKey: 'test-key' });
-    
+
     await jest.advanceTimersByTimeAsync(90_000);
-    
+
     expect(transcribeRawWithGroq).toHaveBeenCalledWith('path/to/record', 'test-key');
     expect(notifyTranscriptionEvidenceOk).toHaveBeenCalledWith('TestApp');
   });
@@ -113,14 +113,14 @@ describe('lecture health service', () => {
   it('falls back to Hugging Face if Groq transcript is empty', async () => {
     (transcribeRawWithGroq as jest.Mock).mockResolvedValue('');
     (transcribeRawWithHuggingFace as jest.Mock).mockResolvedValue('HF transcript');
-    
-    startRecordingHealthCheck('path/to/record', 'TestApp', { 
-      groqKey: 'test-key', 
-      huggingFaceToken: 'hf-token' 
+
+    startRecordingHealthCheck('path/to/record', 'TestApp', {
+      groqKey: 'test-key',
+      huggingFaceToken: 'hf-token',
     });
-    
+
     await jest.advanceTimersByTimeAsync(90_000);
-    
+
     expect(transcribeRawWithGroq).toHaveBeenCalled();
     expect(transcribeRawWithHuggingFace).toHaveBeenCalled();
     expect(notifyTranscriptionEvidenceOk).toHaveBeenCalledWith('TestApp');
@@ -128,23 +128,23 @@ describe('lecture health service', () => {
 
   it('notifies no speech if all engines return empty', async () => {
     (transcribeRawWithGroq as jest.Mock).mockResolvedValue('');
-    
+
     startRecordingHealthCheck('path/to/record', 'TestApp', { groqKey: 'test-key' });
-    
+
     await jest.advanceTimersByTimeAsync(90_000);
-    
+
     expect(notifyTranscriptionEvidenceNoSpeech).toHaveBeenCalledWith('TestApp');
   });
 
   it('stops health check when app goes to background', () => {
     const removeSpy = jest.fn();
     (AppState.addEventListener as jest.Mock).mockReturnValue({ remove: removeSpy });
-    
+
     startRecordingHealthCheck('path/to/record', 'TestApp');
-    
+
     const handler = (AppState.addEventListener as jest.Mock).mock.calls[0][1];
     handler('background');
-    
+
     expect(clearIntervalSpy).toHaveBeenCalled();
     expect(removeSpy).toHaveBeenCalled();
   });

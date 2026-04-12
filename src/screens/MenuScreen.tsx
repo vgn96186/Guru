@@ -8,7 +8,6 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { MenuStackParamList, TabParamList } from '../navigation/types';
 import { ResponsiveContainer } from '../hooks/useResponsive';
 import { linearTheme as n } from '../theme/linearTheme';
-import BannerIconButton from '../components/BannerIconButton';
 import ScreenHeader from '../components/ScreenHeader';
 import LinearSurface from '../components/primitives/LinearSurface';
 
@@ -17,79 +16,43 @@ type Nav = NativeStackNavigationProp<MenuStackParamList, 'MenuHome'>;
 const PRIMARY_DESTINATIONS: Array<{
   route: keyof Omit<MenuStackParamList, 'MenuHome'>;
   title: string;
-  subtitle: string;
   icon: keyof typeof Ionicons.glyphMap;
   tint: string;
 }> = [
-  {
-    route: 'StudyPlan',
-    title: 'Study Plan',
-    subtitle: 'Daily agenda, buckets, and next best moves.',
-    icon: 'calendar-outline',
-    tint: n.colors.accent,
-  },
-  {
-    route: 'Stats',
-    title: 'Stats',
-    subtitle: 'Progress, streaks, and weekly momentum.',
-    icon: 'bar-chart-outline',
-    tint: n.colors.warning,
-  },
-  {
-    route: 'Flashcards',
-    title: 'Flashcards',
-    subtitle: 'Spaced repetition: High-yield recall for due topics.',
-    icon: 'albums-outline',
-    tint: n.colors.accent,
-  },
-  {
-    route: 'MindMap',
-    title: 'Mind Map',
-    subtitle: 'Stub route for your future visual concept graph.',
-    icon: 'git-network-outline',
-    tint: '#4FC3F7',
-  },
-  {
-    route: 'ImageVault',
-    title: 'Image Vault',
-    subtitle: 'All AI-generated diagrams, charts, and visual aids.',
-    icon: 'images-outline',
-    tint: '#FFD166',
-  },
-  {
-    route: 'NotesVault',
-    title: 'Notes Vault',
-    subtitle: 'Clean AI study notes — processed and ready to review.',
-    icon: 'library-outline',
-    tint: '#7ED6A7',
-  },
+  { route: 'StudyPlan', title: 'Study Plan', icon: 'calendar-outline', tint: n.colors.accent },
+  { route: 'Stats', title: 'Stats', icon: 'bar-chart-outline', tint: n.colors.warning },
+  { route: 'Flashcards', title: 'Flashcards', icon: 'albums-outline', tint: n.colors.accent },
+  { route: 'ImageVault', title: 'Image Vault', icon: 'images-outline', tint: '#FFD166' },
+  { route: 'NotesVault', title: 'Notes Vault', icon: 'library-outline', tint: '#7ED6A7' },
   {
     route: 'TranscriptVault',
     title: 'Transcript Vault',
-    subtitle: 'Backed-up transcript files from Documents/Guru.',
     icon: 'document-text-outline',
     tint: '#64B5F6',
   },
+  { route: 'RecordingVault', title: 'Recording Vault', icon: 'mic-outline', tint: '#FF7043' },
+  { route: 'QuestionBank', title: 'Question Bank', icon: 'help-circle-outline', tint: '#E040FB' },
+  { route: 'NotesHub', title: 'Notes Hub', icon: 'create-outline', tint: n.colors.accent },
+  { route: 'NotesSearch', title: 'Notes Search', icon: 'search-outline', tint: '#7ED6A7' },
+  { route: 'ManualNoteCreation', title: 'Manual Note', icon: 'pencil-outline', tint: '#FF7043' },
   {
-    route: 'RecordingVault',
-    title: 'Recording Vault',
-    subtitle: 'Browse lecture audio files and re-process them.',
-    icon: 'mic-outline',
-    tint: '#FF7043',
+    route: 'TranscriptHistory',
+    title: 'Transcript History',
+    icon: 'time-outline',
+    tint: '#64B5F6',
   },
   {
-    route: 'QuestionBank',
-    title: 'Question Bank',
-    subtitle: 'All your MCQs — practice, review, and master.',
-    icon: 'help-circle-outline',
-    tint: '#E040FB',
+    route: 'FlaggedContent',
+    title: 'Flagged Content',
+    icon: 'flag-outline',
+    tint: n.colors.warning,
   },
+  { route: 'DeviceLink', title: 'Device Link', icon: 'link-outline', tint: '#4FC3F7' },
 ];
 
 export default function MenuScreen() {
   const navigation = useNavigation<Nav>();
   const tabsNavigation = navigation.getParent<NavigationProp<TabParamList>>();
-  const destinationCount = PRIMARY_DESTINATIONS.length;
 
   return (
     <SafeAreaView style={styles.safe} testID="menu-screen">
@@ -98,40 +61,10 @@ export default function MenuScreen() {
         <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
           <ScreenHeader
             title="Menu"
-            subtitle="Use this hub for planning, stats, notes, and deeper configuration. Fast actions live in the center Action Hub."
             showBack
             onBackPress={() => tabsNavigation?.navigate('HomeTab')}
-            rightElement={
-              <BannerIconButton
-                onPress={() => navigation.navigate('Settings' as never)}
-                accessibilityRole="button"
-                accessibilityLabel="Open settings"
-              >
-                <Ionicons name="settings-sharp" size={18} color={n.colors.textSecondary} />
-              </BannerIconButton>
-            }
+            showSettings
           />
-
-          <LinearSurface compact style={styles.summaryCard}>
-            <View style={styles.summaryRow}>
-              <View style={styles.summaryCopy}>
-                <LinearText variant="meta" tone="accent" style={styles.summaryEyebrow}>
-                  ROUTE MAP
-                </LinearText>
-                <LinearText variant="sectionTitle" style={styles.summaryTitle}>
-                  {destinationCount} focused destinations
-                </LinearText>
-                <LinearText variant="bodySmall" tone="secondary" style={styles.summaryText}>
-                  Planning, vaults, practice, and setup now live in one calmer navigation hub.
-                </LinearText>
-              </View>
-              <View style={styles.summaryPill}>
-                <LinearText variant="chip" tone="accent">
-                  Fast access
-                </LinearText>
-              </View>
-            </View>
-          </LinearSurface>
 
           <View style={styles.destinations}>
             <LinearText variant="meta" tone="muted" style={styles.destinationsLabel}>
@@ -145,7 +78,7 @@ export default function MenuScreen() {
                   android_ripple={{ color: `${item.tint}22` }}
                   onPress={() => navigation.navigate(item.route as never)}
                   accessibilityRole="button"
-                  accessibilityLabel={`${item.title}. ${item.subtitle}`}
+                  accessibilityLabel={item.title}
                 >
                   <LinearSurface compact padded={false} style={styles.listItemSurface}>
                     <View style={styles.listItem}>
@@ -160,13 +93,6 @@ export default function MenuScreen() {
                       <View style={styles.listTextContent}>
                         <LinearText variant="label" style={styles.listTitle}>
                           {item.title}
-                        </LinearText>
-                        <LinearText
-                          variant="bodySmall"
-                          tone="secondary"
-                          style={styles.listSubtitle}
-                        >
-                          {item.subtitle}
                         </LinearText>
                       </View>
                       <View style={styles.chevronWrap}>
@@ -196,38 +122,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: n.spacing.md,
     paddingTop: n.spacing.sm,
     paddingBottom: 56,
-    gap: n.spacing.lg,
-  },
-  summaryCard: {
-    borderColor: n.colors.borderHighlight,
-  },
-  summaryRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    justifyContent: 'space-between',
     gap: n.spacing.md,
-  },
-  summaryCopy: {
-    flex: 1,
-    gap: 4,
-  },
-  summaryEyebrow: {
-    letterSpacing: 1.2,
-  },
-  summaryTitle: {
-    color: n.colors.textPrimary,
-  },
-  summaryText: {
-    lineHeight: 20,
-  },
-  summaryPill: {
-    alignSelf: 'flex-start',
-    paddingHorizontal: n.spacing.sm,
-    paddingVertical: n.spacing.xs,
-    borderRadius: n.radius.full,
-    backgroundColor: n.colors.primaryTintSoft,
-    borderWidth: 1,
-    borderColor: `${n.colors.accent}44`,
   },
   destinations: {
     gap: n.spacing.sm,
@@ -267,9 +162,6 @@ const styles = StyleSheet.create({
   },
   listTitle: {
     color: n.colors.textPrimary,
-  },
-  listSubtitle: {
-    lineHeight: 19,
   },
   chevronWrap: {
     alignSelf: 'center',

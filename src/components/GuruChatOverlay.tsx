@@ -12,7 +12,6 @@ import {
   ActivityIndicator,
   Animated,
   StatusBar,
-  Alert,
   Image,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -258,7 +257,7 @@ export default function GuruChatOverlay({
       onRequestClose={handleClose}
       accessibilityViewIsModal
     >
-      <StatusBar barStyle="light-content" />
+      <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
       <TouchableOpacity
         style={s.backdrop}
         activeOpacity={1}

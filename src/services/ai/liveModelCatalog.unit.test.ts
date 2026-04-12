@@ -5,10 +5,17 @@ import {
   fetchGroqChatModelIds,
   fetchOpenRouterFreeModelIds,
 } from './liveModelCatalog';
-import { CLOUDFLARE_MODELS, GEMINI_MODELS, GROQ_MODELS, OPENROUTER_FREE_MODELS } from '../../config/appConfig';
+import {
+  CLOUDFLARE_MODELS,
+  GEMINI_MODELS,
+  GROQ_MODELS,
+  OPENROUTER_FREE_MODELS,
+} from '../../config/appConfig';
 
 jest.mock('./google/geminiListModels', () => {
-  const actual = jest.requireActual<typeof import('./google/geminiListModels')>('./google/geminiListModels');
+  const actual = jest.requireActual<typeof import('./google/geminiListModels')>(
+    './google/geminiListModels',
+  );
   return {
     ...actual,
     fetchGeminiChatModelIdsViaSdk: jest.fn().mockResolvedValue([]),
@@ -140,7 +147,9 @@ describe('liveModelCatalog', () => {
         if (url.includes('openrouter')) {
           return Promise.resolve({
             ok: true,
-            json: async () => ({ data: [{ id: 'm/n:free', pricing: { prompt: 0, completion: 0 } }] }),
+            json: async () => ({
+              data: [{ id: 'm/n:free', pricing: { prompt: 0, completion: 0 } }],
+            }),
           });
         }
         if (url.includes('googleapis.com')) {

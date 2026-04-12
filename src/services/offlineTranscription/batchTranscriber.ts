@@ -265,7 +265,9 @@ export class BatchTranscriber {
 
     if (__DEV__)
       console.log(
-        `[Batch] Split ${totalDurationSec.toFixed(0)}s audio into ${chunks.length} chunks (${chunkDuration}s each, ${overlap}s overlap)`,
+        `[Batch] Split ${totalDurationSec.toFixed(0)}s audio into ${
+          chunks.length
+        } chunks (${chunkDuration}s each, ${overlap}s overlap)`,
       );
 
     return chunks;

@@ -45,16 +45,18 @@ describe('permissions service', () => {
     it('requests missing permissions and returns true if RECORD_AUDIO is granted', async () => {
       (PermissionsAndroid.check as jest.Mock)
         .mockResolvedValueOnce(false) // RECORD_AUDIO
-        .mockResolvedValueOnce(true)  // WRITE_EXTERNAL_STORAGE
+        .mockResolvedValueOnce(true) // WRITE_EXTERNAL_STORAGE
         .mockResolvedValueOnce(true); // READ_EXTERNAL_STORAGE
-      
+
       (PermissionsAndroid.requestMultiple as jest.Mock).mockResolvedValue({
         'android.permission.RECORD_AUDIO': 'granted',
       });
 
       const result = await requestRecordingPermissions();
       expect(result).toBe(true);
-      expect(PermissionsAndroid.requestMultiple).toHaveBeenCalledWith(['android.permission.RECORD_AUDIO']);
+      expect(PermissionsAndroid.requestMultiple).toHaveBeenCalledWith([
+        'android.permission.RECORD_AUDIO',
+      ]);
     });
 
     it('returns false if RECORD_AUDIO is denied', async () => {
@@ -68,9 +70,11 @@ describe('permissions service', () => {
     });
 
     it('returns false and warns if an error occurs', async () => {
-      (PermissionsAndroid.check as jest.Mock).mockRejectedValue(new Error('Permission check error'));
+      (PermissionsAndroid.check as jest.Mock).mockRejectedValue(
+        new Error('Permission check error'),
+      );
       const consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation();
-      
+
       const result = await requestRecordingPermissions();
       expect(result).toBe(false);
       expect(consoleWarnSpy).toHaveBeenCalled();

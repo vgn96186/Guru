@@ -335,3 +335,17 @@ export async function pickFolderAndScan(): Promise<FolderPickResult | null> {
 export async function scanSafUri(uriString: string): Promise<NativeRecordingEntry[]> {
   return GuruAppLauncher.scanSafUri(uriString);
 }
+
+/**
+ * Concatenates multiple files into a single output file using streaming I/O.
+ * Used by parallel chunk downloads to merge parts without loading them into memory.
+ * @param inputPaths - Absolute paths to chunk files, in order.
+ * @param outputPath - Absolute path for the merged output file.
+ * @returns `true` if all chunks were concatenated successfully.
+ */
+export async function concatenateFiles(
+  inputPaths: string[],
+  outputPath: string,
+): Promise<boolean> {
+  return GuruAppLauncher.concatenateFiles(inputPaths, outputPath);
+}

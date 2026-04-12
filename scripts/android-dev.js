@@ -24,11 +24,18 @@ function fail(message) {
 }
 
 function runSync(command, args, options = {}) {
-  return spawnSync(command, args, {
+  const result = spawnSync(command, args, {
     stdio: 'pipe',
     encoding: 'utf8',
+    timeout: 15_000,
     ...options,
   });
+
+  if (result.error?.code === 'ETIMEDOUT') {
+    console.warn(`[android-dev] ${command} ${args[0] || ''} timed out.`);
+  }
+
+  return result;
 }
 
 function ensureAdbAvailable() {
@@ -129,8 +136,13 @@ function openDevClient() {
     ],
     {
       stdio: 'inherit',
+      timeout: 15_000,
     },
   );
+
+  if (result.error?.code === 'ETIMEDOUT') {
+    fail('adb shell am start timed out.');
+  }
 
   if (result.error) {
     fail(result.error.message);

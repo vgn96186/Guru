@@ -231,8 +231,8 @@ function buildFallbackDailyAgenda(
         type === 'review'
           ? `Rescue ${topic.name}`
           : type === 'test'
-            ? `Test ${topic.name}`
-            : `Build ${topic.name}`,
+          ? `Test ${topic.name}`
+          : `Build ${topic.name}`,
       topicIds: [topic.id],
       durationMinutes,
       startTime: formatAgendaTime(cursorMinutes),

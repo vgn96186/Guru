@@ -1,4 +1,4 @@
-import type { Mood, ContentType, TopicWithProgress } from '../types';
+import type { Mood, ContentType } from '../types';
 
 export const SYSTEM_PROMPT = `You are Guru, an elite, highly demanding NEET-PG/INICET exam tutor.
 You always respond with valid JSON only. No markdown fences. No extra text.
@@ -296,7 +296,7 @@ Return JSON:
 ${MEDICAL_ACCURACY_GUARDRAIL}`;
 }
 
-export function buildManualPrompt(topicName: string, subjectName: string): string {
+export function buildManualPrompt(topicName: string, _subjectName: string): string {
   return `Return strict JSON:
 {
   "type": "manual",

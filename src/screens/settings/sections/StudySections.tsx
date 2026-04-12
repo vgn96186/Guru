@@ -365,8 +365,8 @@ export default function StudySections(props: StudySectionsProps) {
               color: pomodoroLectureQuizReady
                 ? linearTheme.colors.success
                 : pomodoroEnabled
-                  ? linearTheme.colors.error
-                  : linearTheme.colors.textMuted,
+                ? linearTheme.colors.error
+                : linearTheme.colors.textMuted,
             },
           ]}
           variant="body"
@@ -375,8 +375,8 @@ export default function StudySections(props: StudySectionsProps) {
           {pomodoroLectureQuizReady
             ? 'Lecture-aware break quizzes are ready.'
             : pomodoroEnabled
-              ? 'Currently this will only suggest a break until overlay permission, Groq, and Deepgram are configured.'
-              : 'Pomodoro break suggestions are off.'}
+            ? 'Currently this will only suggest a break until overlay permission, Groq, and Deepgram are configured.'
+            : 'Pomodoro break suggestions are off.'}
         </LinearText>
         {!hasPomodoroOverlayPermission ? (
           <TouchableOpacity

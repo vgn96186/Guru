@@ -30,14 +30,14 @@ export function buildTranscriptionProviderOrder(
     preferredProvider === 'groq'
       ? ['groq', 'cloudflare', 'huggingface', 'deepgram', 'local']
       : preferredProvider === 'cloudflare'
-        ? ['cloudflare', 'groq', 'huggingface', 'deepgram', 'local']
-        : preferredProvider === 'huggingface'
-          ? ['huggingface', 'groq', 'cloudflare', 'deepgram', 'local']
-          : preferredProvider === 'deepgram'
-            ? ['deepgram', 'groq', 'cloudflare', 'huggingface', 'local']
-            : preferredProvider === 'local'
-              ? ['local', 'groq', 'cloudflare', 'huggingface', 'deepgram']
-              : ['groq', 'cloudflare', 'huggingface', 'deepgram', 'local'];
+      ? ['cloudflare', 'groq', 'huggingface', 'deepgram', 'local']
+      : preferredProvider === 'huggingface'
+      ? ['huggingface', 'groq', 'cloudflare', 'deepgram', 'local']
+      : preferredProvider === 'deepgram'
+      ? ['deepgram', 'groq', 'cloudflare', 'huggingface', 'local']
+      : preferredProvider === 'local'
+      ? ['local', 'groq', 'cloudflare', 'huggingface', 'deepgram']
+      : ['groq', 'cloudflare', 'huggingface', 'deepgram', 'local'];
 
   return orderedProviders.filter((provider, index) => {
     if (!availability[provider]) return false;

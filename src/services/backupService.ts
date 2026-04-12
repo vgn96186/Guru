@@ -39,7 +39,9 @@ export async function exportDatabase() {
     }
 
     // Copy to a temporary file with a readable name
-    const tempPath = `${FileSystem.cacheDirectory}neet_study_backup_${new Date().toISOString().slice(0, 10)}.db`;
+    const tempPath = `${FileSystem.cacheDirectory}neet_study_backup_${new Date()
+      .toISOString()
+      .slice(0, 10)}.db`;
     await FileSystem.copyAsync({ from: DB_PATH, to: tempPath });
 
     await shareBackupFileOrAlert(tempPath, {

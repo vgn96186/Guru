@@ -57,7 +57,7 @@ module.exports = [
       'no-empty': 'warn',
       'no-useless-assignment': 'off',
       'no-useless-escape': 'warn',
-      'prefer-const': 'warn',
+      'prefer-const': 'error',
       'preserve-caught-error': 'warn',
       'react-hooks/exhaustive-deps': 'warn',
     },
@@ -83,6 +83,14 @@ module.exports = [
     plugins: { jest },
     rules: {
       ...jest.configs.recommended.rules,
+    },
+  },
+
+  // Tests lean heavily on partial mocks; typing every mock is low ROI vs app code.
+  {
+    files: ['**/*.{test,spec}.{ts,tsx}', '**/*.unit.test.{ts,tsx}'],
+    rules: {
+      '@typescript-eslint/no-explicit-any': 'off',
     },
   },
 

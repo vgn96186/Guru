@@ -31,8 +31,8 @@ function tasksToAgenda(tasks: TodayTask[]): DailyAgenda {
         task.type === 'review'
           ? 'due for review'
           : task.type === 'deep_dive'
-            ? 'weak, needs deep dive'
-            : 'new topic to cover'
+          ? 'weak, needs deep dive'
+          : 'new topic to cover'
       }`,
     })),
     guruNote:
@@ -116,8 +116,8 @@ export default function TodayPlanCard() {
     nextTask?.type === 'review'
       ? n.colors.warning
       : nextTask?.type === 'test'
-        ? '#E05252'
-        : n.colors.accent;
+      ? '#E05252'
+      : n.colors.accent;
 
   return (
     <LinearSurface
@@ -171,8 +171,8 @@ export default function TodayPlanCard() {
                 nextTask.type === 'review'
                   ? 'review'
                   : nextTask.type === 'test'
-                    ? 'deep_dive'
-                    : 'study',
+                  ? 'deep_dive'
+                  : 'study',
               forcedMinutes: nextTask.durationMinutes,
             })
           }

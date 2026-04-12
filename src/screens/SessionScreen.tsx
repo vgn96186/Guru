@@ -372,12 +372,12 @@ export default function SessionScreen() {
     const sessionLength = forcedMinutes
       ? forcedMinutes
       : isWarmup
-        ? 5
-        : forcedMode === 'sprint'
-          ? 10
-          : dailyAvailability && dailyAvailability > 0
-            ? dailyAvailability
-            : (profile?.preferredSessionLength ?? 45);
+      ? 5
+      : forcedMode === 'sprint'
+      ? 10
+      : dailyAvailability && dailyAvailability > 0
+      ? dailyAvailability
+      : profile?.preferredSessionLength ?? 45;
 
     for (let attempt = 0; attempt <= PLANNING_AUTO_RETRY_DELAYS_MS.length; attempt += 1) {
       try {
@@ -932,18 +932,18 @@ export default function SessionScreen() {
             fg: n.colors.error,
           }
         : agenda.mode === 'sprint'
-          ? {
-              label: 'SPRINT',
-              bg: `${n.colors.warning}22`,
-              border: `${n.colors.warning}55`,
-              fg: n.colors.warning,
-            }
-          : {
-              label: 'STUDY',
-              bg: `${n.colors.success}22`,
-              border: `${n.colors.success}55`,
-              fg: n.colors.success,
-            };
+        ? {
+            label: 'SPRINT',
+            bg: `${n.colors.warning}22`,
+            border: `${n.colors.warning}55`,
+            fg: n.colors.warning,
+          }
+        : {
+            label: 'STUDY',
+            bg: `${n.colors.success}22`,
+            border: `${n.colors.success}55`,
+            fg: n.colors.success,
+          };
 
     return (
       <SafeAreaView style={styles.safe}>
@@ -1166,8 +1166,8 @@ export default function SessionScreen() {
     (forcedMinutes
       ? forcedMinutes
       : forcedMode === 'sprint'
-        ? 10
-        : (profile?.preferredSessionLength ?? 45)) * 60;
+      ? 10
+      : profile?.preferredSessionLength ?? 45) * 60;
   const timeProgressPercent = Math.min(
     100,
     Math.round((activeElapsedSeconds / totalSessionSeconds) * 100),
@@ -1190,19 +1190,19 @@ export default function SessionScreen() {
                   isPaused
                     ? 'Paused'
                     : isOnBreak
-                      ? 'Break'
-                      : sessionState === 'studying'
-                        ? 'Studying'
-                        : 'Done'
+                    ? 'Break'
+                    : sessionState === 'studying'
+                    ? 'Studying'
+                    : 'Done'
                 }
                 variant={
                   isPaused
                     ? 'warning'
                     : isOnBreak
-                      ? 'accent'
-                      : sessionState === 'studying'
-                        ? 'default'
-                        : 'success'
+                    ? 'accent'
+                    : sessionState === 'studying'
+                    ? 'default'
+                    : 'success'
                 }
                 style={styles.phaseBadge}
               />
@@ -1695,8 +1695,8 @@ function SessionDoneScreen({
                   const barColor = good
                     ? n.colors.success
                     : r.pct >= 50
-                      ? n.colors.warning
-                      : n.colors.error;
+                    ? n.colors.warning
+                    : n.colors.error;
                   return (
                     <View
                       key={r.topicId}

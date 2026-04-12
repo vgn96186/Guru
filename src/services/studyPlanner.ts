@@ -454,7 +454,7 @@ export async function generateStudyPlan(
   const daysToExam = examIntelligence.daysToTarget;
   const dailyGoal =
     (options?.dailyGoalOverrideMinutes ?? profile.dailyGoalMinutes) > 0
-      ? (options?.dailyGoalOverrideMinutes ?? profile.dailyGoalMinutes)
+      ? options?.dailyGoalOverrideMinutes ?? profile.dailyGoalMinutes
       : 120;
 
   // Get exam dates to mark as rest days
@@ -486,9 +486,7 @@ export async function generateStudyPlan(
     resourceMode,
     subjectWeights,
     liveClassStartDate:
-      resourceMode === 'btr'
-        ? (profile.btrStartDate ?? null)
-        : (profile.dbmciClassStartDate ?? null),
+      resourceMode === 'btr' ? profile.btrStartDate ?? null : profile.dbmciClassStartDate ?? null,
   });
 
   // B. Weak Topics (Priority 2 - Deep Dive)
@@ -604,7 +602,11 @@ export async function generateStudyPlan(
     if (i === 0) label = 'Today';
     else if (i === 1) label = 'Tomorrow';
     else if (isExamDay)
-      label = `🎯 ${currentDate.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })} (EXAM)`;
+      label = `🎯 ${currentDate.toLocaleDateString('en-US', {
+        weekday: 'short',
+        month: 'short',
+        day: 'numeric',
+      })} (EXAM)`;
     else
       label = currentDate.toLocaleDateString('en-US', {
         weekday: 'short',
@@ -789,7 +791,7 @@ export async function generateStudyPlan(
   const isFeasible = remainingQueueMinutes === 0 && rawRequiredMinutesPerDay <= dailyGoal * 1.15;
 
   const lastPlannedDay = [...plan].reverse().find((day) => day.totalMinutes > 0);
-  const projectedFinishDate = remainingQueueMinutes > 0 ? null : (lastPlannedDay?.date ?? null);
+  const projectedFinishDate = remainingQueueMinutes > 0 ? null : lastPlannedDay?.date ?? null;
   const projectedFinishOffset = projectedFinishDate
     ? Math.max(
         0,
@@ -810,15 +812,21 @@ export async function generateStudyPlan(
   else if (foundationalGapsNeedPriority)
     message = `Foundational gaps are ~${foundationalGapDays}d deep — plan is prioritizing weak basics before adding many new topics.`;
   else if (hoursPerDayCapped)
-    message = `Impossible timeline: needs ${Number((rawRequiredMinutesPerDay / 60).toFixed(1))}h/day. Extend the exam date, reduce scope, or lower resource load.`;
+    message = `Impossible timeline: needs ${Number(
+      (rawRequiredMinutesPerDay / 60).toFixed(1),
+    )}h/day. Extend the exam date, reduce scope, or lower resource load.`;
   else if (hasWorkBeyondHorizon)
     message = `Planned work extends beyond the visible ${daysToPlan}-day horizon. Continue daily and roll forward.`;
   else if (remainingQueueMinutes > 0)
     message = `Course load exceeds the current horizon. Raise the daily goal or switch to a lighter resource profile.`;
   else if (rawRequiredMinutesPerDay > dailyGoal)
-    message = `Heavy load! ${Number((rawRequiredMinutesPerDay / 60).toFixed(1))}h/day required with ${resourceProfile.label}.`;
+    message = `Heavy load! ${Number(
+      (rawRequiredMinutesPerDay / 60).toFixed(1),
+    )}h/day required with ${resourceProfile.label}.`;
   else if (projectedFinishDate)
-    message = `Projected finish ${projectedFinishDate}${bufferDays > 0 ? ` with ${bufferDays} buffer days.` : '.'}`;
+    message = `Projected finish ${projectedFinishDate}${
+      bufferDays > 0 ? ` with ${bufferDays} buffer days.` : '.'
+    }`;
   else message = 'Plan looks solid. Stick to it!';
 
   message = `${message} ${examIntelligence.targetExam} phase: ${examIntelligence.phaseLabel}. ${examIntelligence.plannerFocus}`;

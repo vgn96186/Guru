@@ -58,7 +58,7 @@ export function useGuruPresence({
         messagesRef.current = msgs;
       })
       .catch((err) => console.warn('[useGuruPresence] Failed to generate ambient messages:', err));
-  }, [activeTopicKey, allTopicsKey, promptTopicNames]);
+  }, [activeTopicKey, allTopicsKey, allTopicNames, promptTopicNames]);
 
   // Pulse animation — run when active, pause otherwise
   useEffect(() => {
@@ -79,7 +79,7 @@ export function useGuruPresence({
       pulseAnimRef.current?.stop();
       Animated.timing(presencePulse, { toValue: 1, duration: 200, useNativeDriver: true }).start();
     }
-  }, [isActive]);
+  }, [isActive, presencePulse]);
 
   const showMessage = useCallback(
     (text: string) => {

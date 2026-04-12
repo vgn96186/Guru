@@ -79,7 +79,9 @@ describe('ai/imageGeneration', () => {
     });
     makeDirectoryAsyncMock.mockResolvedValue(undefined);
     writeAsStringAsyncMock.mockResolvedValue(undefined);
-    downloadAsyncMock.mockResolvedValue({ uri: 'file:///test-docs/generated_images/guru_img_123.png' });
+    downloadAsyncMock.mockResolvedValue({
+      uri: 'file:///test-docs/generated_images/guru_img_123.png',
+    });
   });
 
   it('uses Gemini first and saves the generated image locally', async () => {
@@ -196,7 +198,9 @@ describe('ai/imageGeneration', () => {
 
     const { generateImage } = await loadModule();
 
-    await expect(generateImage('draw RAAS')).rejects.toThrow('No image generation backend available');
+    await expect(generateImage('draw RAAS')).rejects.toThrow(
+      'No image generation backend available',
+    );
     expect(globalThis.fetch).toHaveBeenCalledTimes(1);
   });
 

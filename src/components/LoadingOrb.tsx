@@ -12,6 +12,11 @@ import Svg, { Defs, RadialGradient, Stop, Circle, Ellipse } from 'react-native-s
 import { linearTheme as n } from '../theme/linearTheme';
 import LinearText from './primitives/LinearText';
 
+// Derived accent shades for 3-D glass-sphere look
+const ACCENT_LIGHT = '#9BA3EE';
+const ACCENT_DEEP = '#4450C0';
+const ACCENT_DARK = '#2E3BAC';
+
 interface Props {
   message?: string;
   size?: number;
@@ -108,6 +113,10 @@ export default React.memo(function LoadingOrb({
   // Ambient glow
   const opacityGlow = useSharedValue(0.4);
 
+  // Inner tight ring
+  const scaleRing0 = useSharedValue(1);
+  const opacityRing0 = useSharedValue(0.7);
+
   // Ripple rings
   const scaleRing1 = useSharedValue(1);
   const scaleRing2 = useSharedValue(1);
@@ -130,6 +139,16 @@ export default React.memo(function LoadingOrb({
 
     // Ambient glow — synced to core
     opacityGlow.value = withRepeat(withTiming(0.5, normalCore), -1, true);
+
+    // Ring 0 — tight inner energy pulse
+    scaleRing0.value = withDelay(
+      0,
+      withRepeat(withTiming(1.9, { duration: 1100, easing: Easing.out(Easing.quad) }), -1, false),
+    );
+    opacityRing0.value = withDelay(
+      0,
+      withRepeat(withTiming(0, { duration: 1100, easing: Easing.out(Easing.quad) }), -1, false),
+    );
 
     // Ring 1 — inner ripple
     scaleRing1.value = withDelay(0, withRepeat(withTiming(3.0, normalEmit), -1, false));
@@ -165,6 +184,11 @@ export default React.memo(function LoadingOrb({
     opacity: opacityGlow.value,
   }));
 
+  const styleRing0 = useAnimatedStyle(() => ({
+    transform: [{ scale: scaleRing0.value }],
+    opacity: opacityRing0.value,
+  }));
+
   const styleRing1 = useAnimatedStyle(() => ({
     transform: [{ scale: scaleRing1.value }],
     opacity: opacityRing1.value,
@@ -186,10 +210,12 @@ export default React.memo(function LoadingOrb({
   return (
     <View style={styles.container}>
       <View style={[styles.orbWrapper, { width: size, height: size, marginBottom: 0 }]}>
-        {/* Ripple rings */}
+        {/* Ripple rings — outer to inner */}
         <Animated.View style={[styles.rippleRing, styleRing3]} />
         <Animated.View style={[styles.rippleRing, styleRing2]} />
         <Animated.View style={[styles.rippleRing, styleRing1]} />
+        {/* Inner tight energy ring */}
+        <Animated.View style={[styles.rippleRingInner, styleRing0]} />
 
         {/* Core sphere with shadow-based glow */}
         <Animated.View style={[styles.coreShadow, styleCore]}>
@@ -208,9 +234,10 @@ export default React.memo(function LoadingOrb({
                   fx="45%"
                   fy="45%"
                 >
-                  <Stop offset="0%" stopColor={n.colors.accent} stopOpacity="1" />
-                  <Stop offset="60%" stopColor={n.colors.accent} stopOpacity="1" />
-                  <Stop offset="100%" stopColor={n.colors.accent} stopOpacity="1" />
+                  <Stop offset="0%" stopColor={ACCENT_LIGHT} stopOpacity="1" />
+                  <Stop offset="40%" stopColor={n.colors.accent} stopOpacity="1" />
+                  <Stop offset="72%" stopColor={ACCENT_DEEP} stopOpacity="1" />
+                  <Stop offset="100%" stopColor={ACCENT_DARK} stopOpacity="1" />
                 </RadialGradient>
                 <RadialGradient
                   id="loLightGrad"
@@ -221,11 +248,11 @@ export default React.memo(function LoadingOrb({
                   fx="30%"
                   fy="28%"
                 >
-                  <Stop offset="0%" stopColor="#ffffff" stopOpacity="0.6" />
-                  <Stop offset="35%" stopColor="#ffffff" stopOpacity="0.1" />
-                  <Stop offset="65%" stopColor="#000000" stopOpacity="0.0" />
-                  <Stop offset="85%" stopColor="#000000" stopOpacity="0.25" />
-                  <Stop offset="100%" stopColor="#000000" stopOpacity="0.5" />
+                  <Stop offset="0%" stopColor="#ffffff" stopOpacity="0.75" />
+                  <Stop offset="30%" stopColor="#ffffff" stopOpacity="0.12" />
+                  <Stop offset="60%" stopColor="#000000" stopOpacity="0.0" />
+                  <Stop offset="82%" stopColor="#000000" stopOpacity="0.18" />
+                  <Stop offset="100%" stopColor="#000000" stopOpacity="0.38" />
                 </RadialGradient>
               </Defs>
               <Circle cx="50" cy="50" r="50" fill="url(#loColorGrad)" />
@@ -285,6 +312,17 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent',
     borderWidth: 2,
     borderColor: n.colors.accent,
+    left: 0,
+    top: 0,
+  },
+  rippleRingInner: {
+    position: 'absolute',
+    width: '100%',
+    height: '100%',
+    borderRadius: 9999,
+    backgroundColor: 'transparent',
+    borderWidth: 2.5,
+    borderColor: ACCENT_LIGHT,
     left: 0,
     top: 0,
   },

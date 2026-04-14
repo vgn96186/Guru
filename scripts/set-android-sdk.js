@@ -73,8 +73,8 @@ async function main() {
   }
 
   const isWindows = process.platform === 'win32';
-  const cmd = isWindows && args[0].includes('npx') ? 'npx.cmd' : args[0];
-  const cmdArgs = isWindows && args[0].includes('npx') ? args.slice(1) : args.slice(1);
+  const cmd = isWindows && args[0].includes('npx') ? 'npx' : args[0];
+  const cmdArgs = args.slice(1);
 
   const result = spawnSync(cmd, cmdArgs, {
     stdio: 'inherit',

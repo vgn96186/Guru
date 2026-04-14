@@ -15,14 +15,23 @@ export function RevealSection({
 }) {
   const reducedMotion = useReducedMotion();
   const progress = useRef(new Animated.Value(active ? 1 : 0)).current;
+  const hasCommittedInitialStateRef = useRef(false);
 
   useEffect(() => {
     if (!active) {
+      hasCommittedInitialStateRef.current = true;
       progress.setValue(0);
       return undefined;
     }
 
     if (reducedMotion) {
+      hasCommittedInitialStateRef.current = true;
+      progress.setValue(1);
+      return undefined;
+    }
+
+    if (!hasCommittedInitialStateRef.current) {
+      hasCommittedInitialStateRef.current = true;
       progress.setValue(1);
       return undefined;
     }

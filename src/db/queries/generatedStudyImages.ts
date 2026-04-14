@@ -158,6 +158,44 @@ export async function getGeneratedStudyImagesForContext(
   return rows.map(mapRow);
 }
 
+export async function listGeneratedStudyImagesForContexts(
+  contextType: GeneratedStudyImageContextType,
+  contextKeys: string[],
+): Promise<GeneratedStudyImageRecord[]> {
+  const normalizedKeys = Array.from(new Set(contextKeys.map((key) => key.trim()).filter(Boolean)));
+  if (normalizedKeys.length === 0) {
+    return [];
+  }
+
+  const db = getDb();
+  const placeholders = normalizedKeys.map(() => '?').join(', ');
+  const rows = await db.getAllAsync<{
+    id: number;
+    context_type: GeneratedStudyImageContextType;
+    context_key: string;
+    topic_id: number | null;
+    topic_name: string;
+    lecture_note_id: number | null;
+    style: GeneratedStudyImageStyle;
+    prompt: string;
+    provider: string;
+    model_used: string;
+    mime_type: string;
+    local_uri: string;
+    remote_url: string | null;
+    width: number | null;
+    height: number | null;
+    created_at: number;
+  }>(
+    `SELECT *
+     FROM generated_study_images
+     WHERE context_type = ? AND context_key IN (${placeholders})
+     ORDER BY created_at DESC`,
+    [contextType, ...normalizedKeys],
+  );
+  return rows.map(mapRow);
+}
+
 export async function listGeneratedStudyImagesForTopic(
   contextType: GeneratedStudyImageContextType,
   topicName: string,

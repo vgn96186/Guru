@@ -106,7 +106,9 @@ function getBackendAttemptOrder(profile: UserProfile) {
       throw new Error(localLlmWarning);
     }
 
-    throw new Error('No AI backend available. Download a local model or add an API key in Settings.');
+    throw new Error(
+      'No AI backend available. Download a local model or add an API key in Settings.',
+    );
   }
 
   return {
@@ -138,6 +140,16 @@ function isExplicitCloudModel(chosenModel?: string): boolean {
 
 function resolveProviderOrderOverride(override?: ProviderId[]): ProviderId[] | undefined {
   return override?.length ? override : undefined;
+}
+
+function isLocalCrashContainmentError(error: unknown): boolean {
+  const msg = (error as Error)?.message?.toLowerCase?.() ?? String(error).toLowerCase();
+  return (
+    msg.includes('temporarily disabled after a native failure') ||
+    msg.includes('temporarily disabled to prevent repeated app crashes') ||
+    msg.includes('caused a native crash on the last attempt') ||
+    msg.includes('crashed during initialization')
+  );
 }
 
 export async function generateJSONWithRouting<T>(
@@ -196,16 +208,27 @@ export async function generateJSONWithRouting<T>(
   for (const backend of attempts) {
     try {
       if (backend === 'local') {
-        const { text, modelUsed } = await attemptLocalLLM(messages, profile.localModelPath!, false);
-        const parsed = await parseStructuredJson(text, schema);
-        trace.success({
-          backend,
-          modelUsed,
-          responseChars: text.length,
-          responsePreview: previewText(text),
-          responseText: text,
-        });
-        return { parsed, modelUsed };
+        try {
+          const { text, modelUsed } = await attemptLocalLLM(
+            jsonRouteMessages,
+            profile.localModelPath!,
+            false,
+          );
+          const parsed = await parseStructuredJson(text, schema);
+          trace.success({
+            backend,
+            modelUsed,
+            responseChars: text.length,
+            responsePreview: previewText(text),
+            responseText: text,
+          });
+          return { parsed, modelUsed };
+        } catch (err) {
+          if (!isLocalCrashContainmentError(err)) throw err;
+          trace.fail(err, { backend: 'local', contained: true });
+          lastError = err as Error;
+          continue;
+        }
       }
 
       const { text, modelUsed } = await attemptCloudLLM(
@@ -297,6 +320,9 @@ export async function generateTextWithRouting(
       });
       return result;
     } catch (err) {
+      if (isLocalCrashContainmentError(err) && options?.chosenModel === 'local') {
+        trace.fail(err, { backend: 'local', contained: true, fallbackBlocked: true });
+      }
       trace.fail(err, { backend: 'local' });
       throw err;
     }
@@ -378,6 +404,11 @@ export async function generateTextWithRouting(
       });
       return { text, modelUsed };
     } catch (err) {
+      if (backend === 'local' && isLocalCrashContainmentError(err)) {
+        trace.fail(err, { backend, contained: true });
+        lastError = err as Error;
+        continue;
+      }
       trace.fail(err, { backend });
       if (__DEV__) console.warn(`[AI] ${backend} inference failed:`, (err as Error).message);
       lastError = err as Error;
@@ -436,6 +467,9 @@ export async function generateTextWithRoutingStream(
       });
       return { text, modelUsed };
     } catch (err) {
+      if (isLocalCrashContainmentError(err) && options?.chosenModel === 'local') {
+        trace.fail(err, { backend: 'local', contained: true, fallbackBlocked: true });
+      }
       trace.fail(err, { backend: 'local' });
       throw err;
     }
@@ -476,21 +510,32 @@ export async function generateTextWithRoutingStream(
   for (const backend of attempts) {
     try {
       if (backend === 'local') {
-        const { text, modelUsed } = await attemptLocalLLM(messages, profile.localModelPath!, true);
-        logStreamEvent('local_single_chunk', {
-          modelUsed,
-          outputChars: text.length,
-          chosenModel: options?.chosenModel ?? 'auto',
-        });
-        onDelta(text);
-        trace.success({
-          backend,
-          modelUsed,
-          responseChars: text.length,
-          responsePreview: previewText(text),
-          responseText: text,
-        });
-        return { text, modelUsed };
+        try {
+          const { text, modelUsed } = await attemptLocalLLM(
+            messages,
+            profile.localModelPath!,
+            true,
+          );
+          logStreamEvent('local_single_chunk', {
+            modelUsed,
+            outputChars: text.length,
+            chosenModel: options?.chosenModel ?? 'auto',
+          });
+          onDelta(text);
+          trace.success({
+            backend,
+            modelUsed,
+            responseChars: text.length,
+            responsePreview: previewText(text),
+            responseText: text,
+          });
+          return { text, modelUsed };
+        } catch (err) {
+          if (!isLocalCrashContainmentError(err)) throw err;
+          trace.fail(err, { backend, contained: true });
+          lastError = err as Error;
+          continue;
+        }
       }
       const result = await attemptCloudLLMStream(
         messages,

@@ -22,9 +22,9 @@ class LectureInsightGenerator(
     private val executor = Executors.newSingleThreadExecutor()
     private val inFlight = AtomicBoolean(false)
     private val client = OkHttpClient.Builder()
-        .connectTimeout(10, TimeUnit.SECONDS)
-        .writeTimeout(20, TimeUnit.SECONDS)
-        .readTimeout(40, TimeUnit.SECONDS)
+        .connectTimeout(60, TimeUnit.SECONDS)
+        .writeTimeout(120, TimeUnit.SECONDS)
+        .readTimeout(180, TimeUnit.SECONDS) // Groq can be slow for large transcripts
         .build()
 
     @Volatile

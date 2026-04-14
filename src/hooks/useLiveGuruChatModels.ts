@@ -70,8 +70,14 @@ const EMPTY: readonly string[] = [];
 /**
  * Loads provider model IDs from live APIs (with static fallbacks in `liveModelCatalog`).
  * When `draft` is passed (Settings form), refetches are debounced while keys are edited.
+ * Set `options.enabled` to false to skip mount-time live fetches while still returning static fallbacks.
  */
-export function useLiveGuruChatModels(profile: UserProfile | null, draft?: LiveGuruChatDraftKeys) {
+export function useLiveGuruChatModels(
+  profile: UserProfile | null,
+  draft?: LiveGuruChatDraftKeys,
+  options?: { enabled?: boolean },
+) {
+  const enabled = options?.enabled ?? true;
   const draftRef = useRef(draft);
   draftRef.current = draft;
   const profileRef = useRef(profile);
@@ -126,6 +132,11 @@ export function useLiveGuruChatModels(profile: UserProfile | null, draft?: LiveG
   }, []);
 
   useEffect(() => {
+    if (!enabled) {
+      setLoading(false);
+      return undefined;
+    }
+
     let cancelled = false;
     setLoading(true);
 
@@ -177,7 +188,7 @@ export function useLiveGuruChatModels(profile: UserProfile | null, draft?: LiveG
       cancelled = true;
       task.cancel();
     };
-  }, [profileKeysSignature, debouncedKeysString, refreshToken]);
+  }, [debouncedKeysString, enabled, profileKeysSignature, refreshToken]);
 
   // Derive a stable key string from profile fields that affect which providers are connected.
   // This prevents re-creating memoized arrays when unrelated profile fields change.
@@ -205,29 +216,29 @@ export function useLiveGuruChatModels(profile: UserProfile | null, draft?: LiveG
   const gitlabPref = profile?.gitlabDuoPreferredModel ?? '';
 
   const chatgptModelIds = useMemo(
-    () => (resolvedKeys?.chatgptConnected ? live?.chatgpt ?? [...CHATGPT_MODELS] : EMPTY),
+    () => (resolvedKeys?.chatgptConnected ? (live?.chatgpt ?? [...CHATGPT_MODELS]) : EMPTY),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [providerKeyString, live?.chatgpt],
   );
   const groqModelIds = useMemo(
-    () => (resolvedKeys?.groqKey ? live?.groq ?? [...GROQ_MODELS] : EMPTY),
+    () => (resolvedKeys?.groqKey ? (live?.groq ?? [...GROQ_MODELS]) : EMPTY),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [providerKeyString, live?.groq],
   );
   const openrouterModelIds = useMemo(
-    () => (resolvedKeys?.orKey ? live?.openrouter ?? [...OPENROUTER_FREE_MODELS] : EMPTY),
+    () => (resolvedKeys?.orKey ? (live?.openrouter ?? [...OPENROUTER_FREE_MODELS]) : EMPTY),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [providerKeyString, live?.openrouter],
   );
   const geminiModelIds = useMemo(
-    () => (resolvedKeys?.geminiKey ? live?.gemini ?? [...GEMINI_MODELS] : EMPTY),
+    () => (resolvedKeys?.geminiKey ? (live?.gemini ?? [...GEMINI_MODELS]) : EMPTY),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [providerKeyString, live?.gemini],
   );
   const cloudflareModelIds = useMemo(
     () =>
       resolvedKeys?.cfAccountId && resolvedKeys?.cfApiToken
-        ? live?.cloudflare ?? [...CLOUDFLARE_MODELS]
+        ? (live?.cloudflare ?? [...CLOUDFLARE_MODELS])
         : EMPTY,
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [providerKeyString, live?.cloudflare],
@@ -254,12 +265,12 @@ export function useLiveGuruChatModels(profile: UserProfile | null, draft?: LiveG
   );
   const kiloModelIds = useMemo(() => (live?.kilo ? live.kilo : EMPTY), [live?.kilo]);
   const deepseekModelIds = useMemo(
-    () => (resolvedKeys?.deepseekKey ? live?.deepseek ?? [...DEEPSEEK_MODELS] : EMPTY),
+    () => (resolvedKeys?.deepseekKey ? (live?.deepseek ?? [...DEEPSEEK_MODELS]) : EMPTY),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [providerKeyString, live?.deepseek],
   );
   const agentRouterModelIds = useMemo(
-    () => (resolvedKeys?.agentRouterKey ? live?.agentrouter ?? [...AGENTROUTER_MODELS] : EMPTY),
+    () => (resolvedKeys?.agentRouterKey ? (live?.agentrouter ?? [...AGENTROUTER_MODELS]) : EMPTY),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [providerKeyString, live?.agentrouter],
   );

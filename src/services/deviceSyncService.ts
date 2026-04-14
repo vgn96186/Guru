@@ -161,7 +161,7 @@ async function ensureConnected(code: string): Promise<void> {
     const nextClient = mqtt.connect(BROKER_URL, {
       clientId,
       // Add connection timeout and keepalive
-      connectTimeout: 10 * 1000,
+      connectTimeout: 30 * 1000,
       keepalive: 60,
       clean: true,
       // Reject unauthorized connections (basic auth not supported by public broker)

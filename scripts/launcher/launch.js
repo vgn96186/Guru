@@ -15,6 +15,8 @@ const SERVER_SCRIPT = path.join(__dirname, 'server.js');
 const ROOT = path.join(__dirname, '..', '..');
 const READY_TIMEOUT_MS = 20_000;
 const READY_POLL_MS = 500;
+const EXPECTED_BUILD_ID =
+  '2026-04-13 doctor-v9 (adbCmd fix + connect/reload recovery + startup health checks)';
 
 function log(msg) {
   console.log(`[launcher] ${msg}`);
@@ -91,17 +93,32 @@ function probeServer() {
     const req = http.get(`http://127.0.0.1:${PORT}/api/status`, (res) => {
       let body = '';
       res.on('data', (c) => (body += c));
-      res.on('end', () => resolve(body.includes('"busy"')));
+      res.on('end', () => {
+        try {
+          const parsed = JSON.parse(body);
+          resolve({
+            ok: true,
+            body: parsed,
+            matchesExpectedBuild: parsed?.launcherBuildId === EXPECTED_BUILD_ID,
+          });
+        } catch {
+          resolve({ ok: false, body: null, matchesExpectedBuild: false });
+        }
+      });
     });
-    req.on('error', () => resolve(false));
-    req.setTimeout(2_000, () => { req.destroy(); resolve(false); });
+    req.on('error', () => resolve({ ok: false, body: null, matchesExpectedBuild: false }));
+    req.setTimeout(5_000, () => {
+      req.destroy();
+      resolve({ ok: false, body: null, matchesExpectedBuild: false });
+    });
   });
 }
 
 async function waitForServer() {
   const deadline = Date.now() + READY_TIMEOUT_MS;
   while (Date.now() < deadline) {
-    if (await probeServer()) return true;
+    const probe = await probeServer();
+    if (probe.ok && probe.matchesExpectedBuild) return true;
     await new Promise((r) => setTimeout(r, READY_POLL_MS));
   }
   return false;
@@ -110,10 +127,17 @@ async function waitForServer() {
 async function main() {
   // First check: is the launcher already running and healthy?
   log('Checking if launcher is already running...');
-  if (await probeServer()) {
+  const probe = await probeServer();
+  if (probe.ok && probe.matchesExpectedBuild) {
     log('Launcher is already running. Opening browser.');
     openBrowser();
     return;
+  }
+
+  if (probe.ok && !probe.matchesExpectedBuild) {
+    log(
+      `A stale launcher instance is running on port ${PORT} (build: ${probe.body?.launcherBuildId || 'unknown'}). Replacing it...`,
+    );
   }
 
   // Kill whatever is on the port (stale/crashed instance)

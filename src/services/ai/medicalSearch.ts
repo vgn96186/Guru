@@ -44,7 +44,7 @@ function buildMedicalSearchQuery(question: string, topicName?: string): string {
   );
 }
 
-async function fetchJsonWithTimeout<T>(url: string, timeoutMs = 12000): Promise<T> {
+async function fetchJsonWithTimeout<T>(url: string, timeoutMs = 30000): Promise<T> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
@@ -267,12 +267,12 @@ function scoreGroundingSource(source: MedicalGroundingSource, query: string): nu
     source.source === 'PubMed'
       ? 36
       : source.source === 'EuropePMC'
-      ? 34
-      : source.source === 'Wikipedia'
-      ? 22
-      : source.source === 'DuckDuckGo'
-      ? 6
-      : 18;
+        ? 34
+        : source.source === 'Wikipedia'
+          ? 22
+          : source.source === 'DuckDuckGo'
+            ? 6
+            : 18;
 
   let titleHits = 0;
   let snippetHits = 0;
@@ -468,7 +468,7 @@ async function searchWikimediaCommons(
   )}&srnamespace=6&srlimit=${fetchLimit}&srprop=size|wordcount|timestamp|snippet&format=json`;
 
   try {
-    const searchData = await fetchJsonWithTimeout<any>(searchUrl, 8000);
+    const searchData = await fetchJsonWithTimeout<any>(searchUrl, 12000);
     const pages = searchData?.query?.search || [];
     if (pages.length === 0) return [];
 
@@ -486,7 +486,7 @@ async function searchWikimediaCommons(
       titles,
     )}&prop=imageinfo&iiprop=url|thumburl|extmetadata|size|mime&format=json&iiurlwidth=400`;
 
-    const infoData = await fetchJsonWithTimeout<any>(imageInfoUrl, 8000);
+    const infoData = await fetchJsonWithTimeout<any>(imageInfoUrl, 12000);
     const imagePages = infoData?.query?.pages || {};
 
     const scored: Array<{ source: MedicalGroundingSource; score: number }> = [];
@@ -583,8 +583,8 @@ async function searchOpenI(
         const imageUrl = rawImg.startsWith('//')
           ? `https:${rawImg}`
           : rawImg.startsWith('/')
-          ? `https://openi.nlm.nih.gov${rawImg}`
-          : rawImg;
+            ? `https://openi.nlm.nih.gov${rawImg}`
+            : rawImg;
         const description = r.abstract || r.description || r.title || '';
         const cleanDesc = description
           .replace(/<[^>]+>/g, ' ')
@@ -1220,7 +1220,7 @@ async function searchEuropePMC(
   const url = `https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=${encodeURIComponent(
     europeQuery,
   )}&format=json&pageSize=${maxResults}&sort=relevance`;
-  const data = await fetchJsonWithTimeout<any>(url, 14000);
+  const data = await fetchJsonWithTimeout<any>(url, 20000);
   const rows = Array.isArray(data?.resultList?.result) ? data.resultList.result : [];
 
   return rows

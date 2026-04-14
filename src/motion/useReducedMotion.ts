@@ -8,9 +8,7 @@ type AccessibilityInfoLike = {
   isReduceMotionEnabled(): Promise<boolean>;
 };
 
-const AccessibilityInfo =
-  require('react-native/Libraries/Components/AccessibilityInfo/AccessibilityInfo')
-    .default as AccessibilityInfoLike;
+import { AccessibilityInfo } from 'react-native';
 
 export function useReducedMotion(): boolean {
   const [reducedMotion, setReducedMotion] = useState(false);

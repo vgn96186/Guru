@@ -190,14 +190,15 @@ export default function LocalModelScreen() {
   // Validate that stored paths still point to real files
   useEffect(() => {
     if (localModelPath) {
-      validateLocalModelFile({ path: localModelPath, minBytes: getMinBytesForPath(localModelPath) }).then(
-        (info) => {
-          if (!info.exists || !info.isValid) {
-            setLocalModelPath(null);
-            setUseLocalModel(false);
-          }
-        },
-      );
+      validateLocalModelFile({
+        path: localModelPath,
+        minBytes: getMinBytesForPath(localModelPath),
+      }).then((info) => {
+        if (!info.exists || !info.isValid) {
+          setLocalModelPath(null);
+          setUseLocalModel(false);
+        }
+      });
     }
     if (localWhisperPath) {
       validateLocalModelFile({
@@ -571,17 +572,19 @@ export default function LocalModelScreen() {
           <LinearText variant="body" tone="secondary" style={styles.desc}>
             Powers flashcards, summaries, and quizzes offline.
           </LinearText>
-          {!isLlmDownloaded ? (
-            <LinearButton
-              label="Import Existing .litertlm File"
-              variant="glass"
-              style={styles.importBtn}
-              onPress={() => handleImportModel('llm')}
-              leftIcon={
-                <Ionicons name="folder-open-outline" size={18} color={n.colors.textPrimary} />
-              }
-            />
-          ) : null}
+          <LinearButton
+            label={
+              isLlmDownloaded
+                ? 'Replace with Another .litertlm File'
+                : 'Import Existing .litertlm File'
+            }
+            variant="glass"
+            style={styles.importBtn}
+            onPress={() => handleImportModel('llm')}
+            leftIcon={
+              <Ionicons name="folder-open-outline" size={18} color={n.colors.textPrimary} />
+            }
+          />
           {localLlmWarning ? (
             <LinearSurface padded={false} style={styles.warningCard}>
               <LinearText variant="label" tone="warning" style={styles.warningTitle}>
@@ -631,6 +634,19 @@ export default function LocalModelScreen() {
                   textStyle={styles.deleteBtnText}
                   onPress={() => handleDelete('llm')}
                 />
+                <LinearButton
+                  label="Replace LLM File"
+                  variant="glass"
+                  style={styles.importBtn}
+                  onPress={() => handleImportModel('llm')}
+                  leftIcon={
+                    <Ionicons
+                      name="swap-horizontal-outline"
+                      size={18}
+                      color={n.colors.textPrimary}
+                    />
+                  }
+                />
               </View>
             </LinearSurface>
           ) : downloadingLlm || isGlobalInstalling('llm') ? (
@@ -642,9 +658,9 @@ export default function LocalModelScreen() {
                   const llmPct = progressPercentFor('llm', progressLlm, downloadingLlm);
                   const llmPrimary =
                     llmInstall?.stage === 'verifying'
-                      ? llmInstall.message ?? 'Verifying model integrity'
+                      ? (llmInstall.message ?? 'Verifying model integrity')
                       : llmInstall?.stage === 'preparing'
-                        ? llmInstall.message ?? 'Preparing download'
+                        ? (llmInstall.message ?? 'Preparing download')
                         : `Downloading: ${llmPct}%`;
                   const dl = llmInstall?.downloadedBytes;
                   const tl = llmInstall?.totalBytes;
@@ -658,7 +674,11 @@ export default function LocalModelScreen() {
                         {llmPrimary}
                       </LinearText>
                       {llmSub ? (
-                        <LinearText variant="bodySmall" tone="secondary" style={styles.progressSubText}>
+                        <LinearText
+                          variant="bodySmall"
+                          tone="secondary"
+                          style={styles.progressSubText}
+                        >
                           {llmSub}
                         </LinearText>
                       ) : null}
@@ -769,9 +789,9 @@ export default function LocalModelScreen() {
                   const wPct = progressPercentFor('whisper', progressWhisper, downloadingWhisper);
                   const wPrimary =
                     wInstall?.stage === 'verifying'
-                      ? wInstall.message ?? 'Verifying model integrity'
+                      ? (wInstall.message ?? 'Verifying model integrity')
                       : wInstall?.stage === 'preparing'
-                        ? wInstall.message ?? 'Preparing download'
+                        ? (wInstall.message ?? 'Preparing download')
                         : `Downloading: ${wPct}%`;
                   const dl = wInstall?.downloadedBytes;
                   const tl = wInstall?.totalBytes;
@@ -785,7 +805,11 @@ export default function LocalModelScreen() {
                         {wPrimary}
                       </LinearText>
                       {wSub ? (
-                        <LinearText variant="bodySmall" tone="secondary" style={styles.progressSubText}>
+                        <LinearText
+                          variant="bodySmall"
+                          tone="secondary"
+                          style={styles.progressSubText}
+                        >
                           {wSub}
                         </LinearText>
                       ) : null}

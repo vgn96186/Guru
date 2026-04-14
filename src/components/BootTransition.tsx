@@ -16,10 +16,16 @@ import { linearTheme as n } from '../theme/linearTheme';
 import { useAppStore } from '../store/useAppStore';
 
 const ORB_SIZE = 180;
+const ORB_HALF = ORB_SIZE / 2;
 const PHONE_BUTTON_SIZE = 156;
 const TABLET_BUTTON_SIZE = 220;
 const TABLET_BREAKPOINT = 600;
 const MIN_BOOT_DISPLAY_MS = 800;
+
+// Derived accent shades for a 3-D glass-sphere look
+const ACCENT_LIGHT = '#9BA3EE'; // bright inner core (~160% of accent)
+const ACCENT_DEEP = '#4450C0'; // darker mid-shadow  (~80%)
+const ACCENT_DARK = '#2E3BAC'; // deep indigo edge   (~60%)
 
 const MESSAGE_VARIATIONS: Record<string, string[]> = {
   'Guru is waking up...': [
@@ -74,46 +80,80 @@ export default function BootTransition() {
   }, [bootPhase]);
 
   // --- Shared values ---
+  // Entry animation
+  const mountProgress = useSharedValue(0);
+  const mountScale = useSharedValue(0.45);
+  // Core breathing
   const scaleCore = useSharedValue(0.95);
   const opacityCore = useSharedValue(0.85);
+  // Ambient glow
   const opacityGlow = useSharedValue(0.4);
+  // Ripple rings (0 = tight inner pulse, 1-3 = expanding outer waves)
+  const scaleRing0 = useSharedValue(1);
+  const opacityRing0 = useSharedValue(0.7);
   const scaleRing1 = useSharedValue(1);
   const scaleRing2 = useSharedValue(1);
   const scaleRing3 = useSharedValue(1);
   const opacityRing1 = useSharedValue(0.5);
   const opacityRing2 = useSharedValue(0.3);
   const opacityRing3 = useSharedValue(0.18);
+  // Specular
   const highlightTranslateY = useSharedValue(0);
   const highlightOpacity = useSharedValue(0.45);
+  // Jitter
   const jitterX = useSharedValue(0);
   const jitterY = useSharedValue(0);
   const jitterDamping = useSharedValue(1);
+  // Settle
   const settleProgress = useSharedValue(0);
   const bgOpacity = useSharedValue(1);
   const loadingTextOpacity = useSharedValue(1);
   const ctaTextOpacity = useSharedValue(0);
+  // Floating particles
+  const particlesOpacity = useSharedValue(0);
+  const p1FloatY = useSharedValue(0);
+  const p2FloatY = useSharedValue(6);
+  const p3FloatY = useSharedValue(-4);
 
-  // --- Phase 1: Jittery ---
+  // --- Phase 1: Jittery (starts on mount) ---
   useEffect(() => {
     const jitterConfig = { duration: 150, easing: Easing.inOut(Easing.ease) };
     const fastCore = { duration: 1200, easing: Easing.inOut(Easing.ease) };
     const fastEmit = { duration: 2300, easing: Easing.out(Easing.quad) };
 
+    // Entry: sphere materialises — scale up + fade in
+    mountProgress.value = withTiming(1, { duration: 650, easing: Easing.out(Easing.ease) });
+    mountScale.value = withTiming(1, { duration: 850, easing: Easing.out(Easing.cubic) });
+
+    // Particles drift in after sphere is visible
+    particlesOpacity.value = withDelay(700, withTiming(0.9, { duration: 600 }));
+
+    // Core breathing (fast / energetic during boot)
     scaleCore.value = withRepeat(withTiming(1.1, fastCore), -1, true);
     opacityCore.value = withRepeat(withTiming(1, fastCore), -1, true);
-
     opacityGlow.value = withRepeat(withTiming(0.7, fastCore), -1, true);
 
-    scaleRing1.value = withDelay(0, withRepeat(withTiming(3.0, fastEmit), -1, false));
-    opacityRing1.value = withDelay(0, withRepeat(withTiming(0, fastEmit), -1, false));
-    scaleRing2.value = withDelay(800, withRepeat(withTiming(4.5, fastEmit), -1, false));
-    opacityRing2.value = withDelay(800, withRepeat(withTiming(0, fastEmit), -1, false));
+    // Inner ring: tight, fast energy pulse (starts 200 ms after mount)
+    scaleRing0.value = withDelay(
+      200,
+      withRepeat(withTiming(1.9, { duration: 900, easing: Easing.out(Easing.quad) }), -1, false),
+    );
+    opacityRing0.value = withDelay(
+      200,
+      withRepeat(withTiming(0, { duration: 900, easing: Easing.out(Easing.quad) }), -1, false),
+    );
+
+    // Outer rings: staggered wave expansion (start after sphere appears)
+    scaleRing1.value = withDelay(400, withRepeat(withTiming(3.0, fastEmit), -1, false));
+    opacityRing1.value = withDelay(400, withRepeat(withTiming(0, fastEmit), -1, false));
+    scaleRing2.value = withDelay(1200, withRepeat(withTiming(4.5, fastEmit), -1, false));
+    opacityRing2.value = withDelay(1200, withRepeat(withTiming(0, fastEmit), -1, false));
     scaleRing3.value = withDelay(
-      1600,
+      2000,
       withRepeat(withTiming(6.5, { ...fastEmit, duration: 2800 }), -1, false),
     );
     opacityRing3.value = withDelay(
-      1600,
+      2000,
       withRepeat(withTiming(0, { ...fastEmit, duration: 2800 }), -1, false),
     );
 
@@ -121,34 +161,66 @@ export default function BootTransition() {
     highlightOpacity.value = withRepeat(withTiming(0.55, fastCore), -1, true);
     jitterDamping.value = 1;
 
-    // Jitter: ±7px rapid erratic shake
-    jitterX.value = withRepeat(
-      withSequence(
-        withTiming(7, jitterConfig),
-        withTiming(-5, jitterConfig),
-        withTiming(-7, jitterConfig),
-        withTiming(3, jitterConfig),
-        withTiming(6, jitterConfig),
-        withTiming(-4, jitterConfig),
-        withTiming(-2, jitterConfig),
-        withTiming(5, jitterConfig),
+    // Jitter starts 500 ms after mount so the sphere materialises cleanly first
+    jitterX.value = withDelay(
+      500,
+      withRepeat(
+        withSequence(
+          withTiming(7, jitterConfig),
+          withTiming(-5, jitterConfig),
+          withTiming(-7, jitterConfig),
+          withTiming(3, jitterConfig),
+          withTiming(6, jitterConfig),
+          withTiming(-4, jitterConfig),
+          withTiming(-2, jitterConfig),
+          withTiming(5, jitterConfig),
+        ),
+        -1,
+        true,
       ),
-      -1,
-      true,
     );
-    jitterY.value = withRepeat(
+    jitterY.value = withDelay(
+      500,
+      withRepeat(
+        withSequence(
+          withTiming(-5, jitterConfig),
+          withTiming(7, jitterConfig),
+          withTiming(3, jitterConfig),
+          withTiming(-7, jitterConfig),
+          withTiming(-3, jitterConfig),
+          withTiming(6, jitterConfig),
+          withTiming(2, jitterConfig),
+          withTiming(-4, jitterConfig),
+        ),
+        -1,
+        true,
+      ),
+    );
+
+    // Particle float oscillations (staggered phases for organic feel)
+    p1FloatY.value = withRepeat(
       withSequence(
-        withTiming(-5, jitterConfig),
-        withTiming(7, jitterConfig),
-        withTiming(3, jitterConfig),
-        withTiming(-7, jitterConfig),
-        withTiming(-3, jitterConfig),
-        withTiming(6, jitterConfig),
-        withTiming(2, jitterConfig),
-        withTiming(-4, jitterConfig),
+        withTiming(-13, { duration: 2100, easing: Easing.inOut(Easing.ease) }),
+        withTiming(13, { duration: 2100, easing: Easing.inOut(Easing.ease) }),
       ),
       -1,
-      true,
+      false,
+    );
+    p2FloatY.value = withRepeat(
+      withSequence(
+        withTiming(10, { duration: 2500, easing: Easing.inOut(Easing.ease) }),
+        withTiming(-10, { duration: 2500, easing: Easing.inOut(Easing.ease) }),
+      ),
+      -1,
+      false,
+    );
+    p3FloatY.value = withRepeat(
+      withSequence(
+        withTiming(-9, { duration: 1900, easing: Easing.inOut(Easing.ease) }),
+        withTiming(9, { duration: 1900, easing: Easing.inOut(Easing.ease) }),
+      ),
+      -1,
+      false,
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -163,13 +235,11 @@ export default function BootTransition() {
     let stopJitterTimer: ReturnType<typeof setTimeout> | null = null;
     const calmJitterEasing = Easing.bezier(0.22, 1, 0.36, 1);
 
-    // Safety net: if HomeScreen never advances the phase within 4 s, force settle.
     const safetyTimer = setTimeout(() => {
       setBootPhase('settling');
     }, 4000);
 
     const timer = setTimeout(() => {
-      // Smoothly damp the erratic movement before zeroing the jitter values.
       jitterDamping.value = withTiming(0, { duration: 1400, easing: calmJitterEasing });
       stopJitterTimer = setTimeout(() => {
         cancelAnimation(jitterX);
@@ -181,14 +251,36 @@ export default function BootTransition() {
       const normalCore = { duration: 1800, easing: Easing.inOut(Easing.ease) };
       const normalEmit = { duration: 3500, easing: Easing.out(Easing.quad) };
 
-      // Stagger cancellations to avoid worklet thread flooding (microstutter fix)
+      // Particles fade out
+      particlesOpacity.value = withTiming(0, { duration: 900 });
+
+      // Glow: brief brightness flash → calm breathe
+      cancelAnimation(opacityGlow);
+      opacityGlow.value = withSequence(
+        withTiming(0.95, { duration: 250 }),
+        withTiming(0.55, { duration: 450 }),
+        withRepeat(withTiming(0.5, normalCore), -1, true),
+      );
+
+      // Core: transition to calm breathing
       cancelAnimation(scaleCore);
       cancelAnimation(opacityCore);
-      cancelAnimation(opacityGlow);
       scaleCore.value = withDelay(50, withRepeat(withTiming(1.06, normalCore), -1, true));
       opacityCore.value = withDelay(50, withRepeat(withTiming(1, normalCore), -1, true));
-      opacityGlow.value = withDelay(50, withRepeat(withTiming(0.5, normalCore), -1, true));
 
+      // Inner ring: slower pace
+      cancelAnimation(scaleRing0);
+      cancelAnimation(opacityRing0);
+      scaleRing0.value = withDelay(
+        100,
+        withRepeat(withTiming(1.9, { duration: 1800, easing: Easing.out(Easing.quad) }), -1, false),
+      );
+      opacityRing0.value = withDelay(
+        100,
+        withRepeat(withTiming(0, { duration: 1800, easing: Easing.out(Easing.quad) }), -1, false),
+      );
+
+      // Outer rings: calmer wave speed
       cancelAnimation(scaleRing1);
       cancelAnimation(opacityRing1);
       scaleRing1.value = withDelay(100, withRepeat(withTiming(3.0, normalEmit), -1, false));
@@ -220,50 +312,44 @@ export default function BootTransition() {
   }, [bootPhase]);
 
   // --- Phase 3: Settle ---
-  // Handles both with and without startButtonLayout (graceful fallback)
   useEffect(() => {
     if (bootPhase !== 'settling') return;
 
     const settleEasing = Easing.bezier(0.4, 0.0, 0.2, 1);
 
-    // Fade rings out
+    // Cancel all ripple rings
+    cancelAnimation(scaleRing0);
+    cancelAnimation(opacityRing0);
     cancelAnimation(scaleRing1);
     cancelAnimation(opacityRing1);
     cancelAnimation(scaleRing2);
     cancelAnimation(opacityRing2);
     cancelAnimation(scaleRing3);
     cancelAnimation(opacityRing3);
+    opacityRing0.value = withTiming(0, { duration: 800 });
     opacityRing1.value = withTiming(0, { duration: 1000 });
     opacityRing2.value = withTiming(0, { duration: 1000 });
     opacityRing3.value = withTiming(0, { duration: 1000 });
 
-    // Fade glow
     cancelAnimation(opacityGlow);
     opacityGlow.value = withTiming(0, { duration: 1200 });
 
-    // Stop core breathing — settle to steady
     cancelAnimation(scaleCore);
     cancelAnimation(opacityCore);
     scaleCore.value = withTiming(1, { duration: 1600, easing: settleEasing });
     opacityCore.value = withTiming(1, { duration: 1600 });
 
-    // Animate position + size (works even if startButtonLayout is null — stays centered)
     settleProgress.value = withDelay(100, withTiming(1, { duration: 2400, easing: settleEasing }));
 
-    // Background fade out
     bgOpacity.value = withTiming(0, { duration: 1800, easing: settleEasing });
-
-    // Text crossfade: loading out, then CTA in
     loadingTextOpacity.value = withTiming(0, { duration: 600 });
     ctaTextOpacity.value = withDelay(800, withTiming(1, { duration: 800 }));
 
-    // Specular — settle
     cancelAnimation(highlightOpacity);
     highlightOpacity.value = withTiming(0.45, { duration: 1600 });
     cancelAnimation(highlightTranslateY);
     highlightTranslateY.value = withTiming(0, { duration: 1600 });
 
-    // Complete after animation
     const completeTimer = setTimeout(() => {
       setBootPhase('done');
     }, 2800);
@@ -299,31 +385,36 @@ export default function BootTransition() {
     };
   });
 
+  // mountScale multiplied in so the sphere scales up on entry
   const styleCore = useAnimatedStyle(() => ({
-    transform: [{ scale: scaleCore.value }],
-    opacity: opacityCore.value,
+    transform: [{ scale: scaleCore.value * mountScale.value }],
+    opacity: opacityCore.value * mountProgress.value,
   }));
 
   const styleGlow = useAnimatedStyle(() => ({
-    opacity: opacityGlow.value,
+    opacity: opacityGlow.value * mountProgress.value,
   }));
 
+  const styleRing0 = useAnimatedStyle(() => ({
+    transform: [{ scale: scaleRing0.value }],
+    opacity: opacityRing0.value * mountProgress.value,
+  }));
   const styleRing1 = useAnimatedStyle(() => ({
     transform: [{ scale: scaleRing1.value }],
-    opacity: opacityRing1.value,
+    opacity: opacityRing1.value * mountProgress.value,
   }));
   const styleRing2 = useAnimatedStyle(() => ({
     transform: [{ scale: scaleRing2.value }],
-    opacity: opacityRing2.value,
+    opacity: opacityRing2.value * mountProgress.value,
   }));
   const styleRing3 = useAnimatedStyle(() => ({
     transform: [{ scale: scaleRing3.value }],
-    opacity: opacityRing3.value,
+    opacity: opacityRing3.value * mountProgress.value,
   }));
 
   const styleHighlight = useAnimatedStyle(() => ({
     transform: [{ translateY: highlightTranslateY.value }],
-    opacity: highlightOpacity.value,
+    opacity: highlightOpacity.value * mountProgress.value,
   }));
 
   const styleBg = useAnimatedStyle(() => ({
@@ -338,6 +429,19 @@ export default function BootTransition() {
     opacity: ctaTextOpacity.value,
   }));
 
+  const styleP1 = useAnimatedStyle(() => ({
+    opacity: particlesOpacity.value,
+    transform: [{ translateY: p1FloatY.value }],
+  }));
+  const styleP2 = useAnimatedStyle(() => ({
+    opacity: particlesOpacity.value * 0.7,
+    transform: [{ translateY: p2FloatY.value }],
+  }));
+  const styleP3 = useAnimatedStyle(() => ({
+    opacity: particlesOpacity.value * 0.55,
+    transform: [{ translateY: p3FloatY.value }],
+  }));
+
   if (bootPhase === 'done') return null;
 
   return (
@@ -345,19 +449,26 @@ export default function BootTransition() {
       <Animated.View style={[styles.background, styleBg]} />
 
       <Animated.View style={styleOrb}>
-        {/* Ripple rings */}
+        {/* Floating energy particles (visible during boot / calming) */}
+        <Animated.View style={[styles.particle, styles.particle1, styleP1]} />
+        <Animated.View style={[styles.particle, styles.particle2, styleP2]} />
+        <Animated.View style={[styles.particle, styles.particle3, styleP3]} />
+
+        {/* Ripple rings — rendered back to front (outer → inner) */}
         <Animated.View style={[styles.rippleRing, styleRing3]} />
         <Animated.View style={[styles.rippleRing, styleRing2]} />
         <Animated.View style={[styles.rippleRing, styleRing1]} />
+        {/* Inner tight energy ring */}
+        <Animated.View style={[styles.rippleRingInner, styleRing0]} />
 
         {/* Core sphere with shadow-based glow */}
         <Animated.View style={[styles.coreShadow, styleCore]}>
-          {/* Glow layer using shadow only — no solid bg circle */}
           <Animated.View style={[styles.glowShadow, styleGlow]} />
 
           <View style={styles.coreInner}>
             <Svg height="100%" width="100%" viewBox="0 0 100 100" style={StyleSheet.absoluteFill}>
               <Defs>
+                {/* Colour gradient: bright inner core → accent → deep indigo edge */}
                 <RadialGradient
                   id="btColorGrad"
                   cx="45%"
@@ -367,10 +478,12 @@ export default function BootTransition() {
                   fx="45%"
                   fy="45%"
                 >
-                  <Stop offset="0%" stopColor={n.colors.accent} stopOpacity="1" />
-                  <Stop offset="60%" stopColor={n.colors.accent} stopOpacity="1" />
-                  <Stop offset="100%" stopColor={n.colors.accent} stopOpacity="1" />
+                  <Stop offset="0%" stopColor={ACCENT_LIGHT} stopOpacity="1" />
+                  <Stop offset="40%" stopColor={n.colors.accent} stopOpacity="1" />
+                  <Stop offset="72%" stopColor={ACCENT_DEEP} stopOpacity="1" />
+                  <Stop offset="100%" stopColor={ACCENT_DARK} stopOpacity="1" />
                 </RadialGradient>
+                {/* Lighting overlay: bright specular patch + soft rim shadow */}
                 <RadialGradient
                   id="btLightGrad"
                   cx="30%"
@@ -380,11 +493,11 @@ export default function BootTransition() {
                   fx="30%"
                   fy="28%"
                 >
-                  <Stop offset="0%" stopColor="#ffffff" stopOpacity="0.6" />
-                  <Stop offset="35%" stopColor="#ffffff" stopOpacity="0.1" />
-                  <Stop offset="65%" stopColor="#000000" stopOpacity="0.0" />
-                  <Stop offset="85%" stopColor="#000000" stopOpacity="0.25" />
-                  <Stop offset="100%" stopColor="#000000" stopOpacity="0.5" />
+                  <Stop offset="0%" stopColor="#ffffff" stopOpacity="0.75" />
+                  <Stop offset="30%" stopColor="#ffffff" stopOpacity="0.12" />
+                  <Stop offset="60%" stopColor="#000000" stopOpacity="0.0" />
+                  <Stop offset="82%" stopColor="#000000" stopOpacity="0.18" />
+                  <Stop offset="100%" stopColor="#000000" stopOpacity="0.38" />
                 </RadialGradient>
               </Defs>
               <Circle cx="50" cy="50" r="50" fill="url(#btColorGrad)" />
@@ -458,6 +571,17 @@ const styles = StyleSheet.create({
     left: 0,
     top: 0,
   },
+  rippleRingInner: {
+    position: 'absolute',
+    width: '100%',
+    height: '100%',
+    borderRadius: 9999,
+    backgroundColor: 'transparent',
+    borderWidth: 2.5,
+    borderColor: ACCENT_LIGHT,
+    left: 0,
+    top: 0,
+  },
   coreShadow: {
     position: 'absolute',
     width: '100%',
@@ -528,5 +652,36 @@ const styles = StyleSheet.create({
     fontStyle: 'italic',
     fontWeight: '500',
     letterSpacing: 0.5,
+  },
+  // Floating energy particles
+  particle: {
+    position: 'absolute',
+    borderRadius: 9999,
+    backgroundColor: n.colors.accent,
+    shadowColor: n.colors.accent,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 1,
+    elevation: 8,
+  },
+  particle1: {
+    width: 8,
+    height: 8,
+    left: ORB_HALF + 52, // top-right edge
+    top: ORB_HALF - 70,
+    shadowRadius: 8,
+  },
+  particle2: {
+    width: 6,
+    height: 6,
+    left: ORB_HALF - 82, // left edge
+    top: ORB_HALF + 28,
+    shadowRadius: 6,
+  },
+  particle3: {
+    width: 5,
+    height: 5,
+    left: ORB_HALF + 64, // bottom-right edge
+    top: ORB_HALF + 58,
+    shadowRadius: 5,
   },
 });

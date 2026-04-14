@@ -10,8 +10,8 @@ const path = require('path');
 const { resolveAdbCommand } = require('../android-tooling');
 
 const ROOT = path.join(__dirname, '..', '..');
-const ADB_TIMEOUT_MS = 15_000;
-const ADB_DISCOVERY_TIMEOUT_MS = 5_000;
+const ADB_TIMEOUT_MS = 30_000;
+const ADB_DISCOVERY_TIMEOUT_MS = 10_000;
 const ADB_NON_SCOPED_COMMANDS = new Set([
   'version',
   'start-server',
@@ -294,7 +294,10 @@ class Runner extends EventEmitter {
       });
 
       if (result.error?.code === 'ETIMEDOUT') {
-        this.log(`[error] taskkill timed out for ${task.name}. Process may still be running.`, 'error');
+        this.log(
+          `[error] taskkill timed out for ${task.name}. Process may still be running.`,
+          'error',
+        );
         return false;
       }
 

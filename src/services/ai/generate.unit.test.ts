@@ -158,6 +158,50 @@ describe('generateJSONWithRouting', () => {
     expect(attemptCloudLLM).toHaveBeenCalled();
   });
 
+  it('uses the clamped message set for local structured generation', async () => {
+    const clamped = [{ role: 'user', content: 'clamped-json-prompt' }] as any;
+    jest.mocked(clampMessagesForStructuredJsonRouting).mockReturnValue(clamped);
+    jest.mocked(getApiKeys).mockReturnValue({
+      orKey: undefined,
+      groqKey: undefined,
+      geminiKey: undefined,
+      cfAccountId: undefined,
+      cfApiToken: undefined,
+      geminiFallbackKey: undefined,
+      deepseekKey: undefined,
+      githubModelsPat: undefined,
+      kiloApiKey: undefined,
+      agentRouterKey: undefined,
+      deepgramKey: undefined,
+      chatgptConnected: false,
+      githubCopilotConnected: false,
+      gitlabDuoConnected: false,
+      poeConnected: false,
+      qwenConnected: false,
+    });
+    jest.mocked(profileRepository.getProfile).mockResolvedValue({
+      ...minimalProfile,
+      useLocalModel: true,
+      localModelPath: '/models/gemma-4-E4B-it.litertlm',
+    });
+    jest.mocked(isLocalLlmAllowedOnThisDevice).mockReturnValue(true);
+    jest.mocked(attemptLocalLLM).mockResolvedValue({
+      text: '{"a":7}',
+      modelUsed: 'local-gemma-4-e4b',
+    });
+
+    const schema = z.object({ a: z.number() });
+    const out = await generateJSONWithRouting(
+      [{ role: 'user', content: 'original-oversized-prompt' }],
+      schema,
+      'low',
+      false,
+    );
+
+    expect(out.parsed).toEqual({ a: 7 });
+    expect(attemptLocalLLM).toHaveBeenCalledWith(clamped, '/models/gemma-4-E4B-it.litertlm', false);
+  });
+
   it('does not attempt local fallback when device RAM guard blocks local LLM', async () => {
     jest.mocked(getApiKeys).mockReturnValue({
       orKey: undefined,

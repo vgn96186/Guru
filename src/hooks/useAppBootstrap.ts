@@ -14,7 +14,7 @@ import { warmAiContentCache } from '../services/backgroundTasks';
 import { tryCompleteGitLabDuoOAuth } from '../services/ai/gitlab';
 import { validateAiProvidersOnBoot } from '../services/ai/bootProviderValidation';
 import { shouldRunAutoBackup, runAutoBackup } from '../services/unifiedBackupService';
-import { captureException } from '../services/monitoring/sentry';
+import { reportStartupHealth } from '../services/startupHealth';
 
 /**
  * Master initialization hook.
@@ -149,7 +149,7 @@ export function useAppBootstrap(onFatalError?: (message: string) => void): void 
 
     void bootstrap().catch((e) => {
       console.error('[AppBootstrap] Fatal startup error:', e);
-      captureException(e, { component: 'useAppBootstrap' });
+      reportStartupHealth('runtime_error', e instanceof Error ? e.message : 'App startup failed');
       initialized.current = false; // Allow retry on next mount
       onFatalError?.(e instanceof Error ? e.message : 'App startup failed');
     });
@@ -176,9 +176,8 @@ export function useAppBootstrap(onFatalError?: (message: string) => void): void 
  */
 async function checkForNewerGDriveBackup(): Promise<void> {
   try {
-    const { isGDriveConnected, listGDriveBackups, downloadBackupFromGDrive } = await import(
-      '../services/gdriveBackupService'
-    );
+    const { isGDriveConnected, listGDriveBackups, downloadBackupFromGDrive } =
+      await import('../services/gdriveBackupService');
     if (!(await isGDriveConnected())) return;
 
     const profile = await profileRepository.getProfile();
@@ -218,9 +217,8 @@ async function checkForNewerGDriveBackup(): Promise<void> {
                 return;
               }
               // Use the existing import flow
-              const { importUnifiedBackupFromPath } = await import(
-                '../services/unifiedBackupService'
-              );
+              const { importUnifiedBackupFromPath } =
+                await import('../services/unifiedBackupService');
               const result = await importUnifiedBackupFromPath(localPath);
               if (result.ok) {
                 const { refreshProfile } = useAppStore.getState();

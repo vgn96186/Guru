@@ -3,8 +3,8 @@ import { showToast } from '../components/Toast';
 import { profileRepository } from '../db/repositories';
 import type { UserProfile } from '../types';
 
-export const MIN_LOCAL_LLM_RAM_BYTES = 4 * 1024 * 1024 * 1024;
-export const MIN_BACKGROUND_TASK_RAM_BYTES = 3 * 1024 * 1024 * 1024;
+export const MIN_LOCAL_LLM_RAM_BYTES = 6 * 1024 * 1024 * 1024;
+export const MIN_BACKGROUND_TASK_RAM_BYTES = 4 * 1024 * 1024 * 1024;
 
 function formatRam(bytes: number): string {
   return `${(bytes / (1024 * 1024 * 1024)).toFixed(1)} GB`;
@@ -29,7 +29,7 @@ export function getLocalLlmRamWarning(): string | null {
     return null;
   }
 
-  return `This device has ${formatRam(totalMemory)} RAM. Guru disables on-device text AI below 4.0 GB to avoid crashes.`;
+  return `This device has ${formatRam(totalMemory)} RAM. Guru disables on-device text AI below 6.0 GB for Gemma 4 to avoid crashes.`;
 }
 
 export function isLocalLlmUsable(

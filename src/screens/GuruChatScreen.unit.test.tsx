@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, waitFor } from '@testing-library/react-native';
+import { fireEvent, render, waitFor } from '@testing-library/react-native';
 import { Platform } from 'react-native';
 import GuruChatScreen from './GuruChatScreen';
 
@@ -119,7 +119,35 @@ jest.mock('../motion/useReducedMotion', () => ({
 }));
 
 jest.mock('../services/aiService', () => ({
-  chatWithGuruGroundedStreaming: jest.fn(),
+  chatWithGuruGroundedStreaming: jest.fn(async (_question, _topic, _history, _model, onDelta) => {
+    onDelta?.('Hello');
+    return {
+      reply: 'Hello',
+      sources: [],
+      referenceImages: [],
+      modelUsed: 'local',
+      searchQuery: null,
+    };
+  }),
+  getApiKeys: () => ({
+    chatgptConnected: false,
+    geminiKey: '',
+    cfAccountId: '',
+    cfApiToken: '',
+    falKey: '',
+    orKey: '',
+    groqKey: '',
+    githubModelsPat: '',
+    githubCopilotConnected: false,
+    gitlabDuoConnected: false,
+    kiloApiKey: '',
+    agentRouterKey: '',
+    poeConnected: false,
+    qwenConnected: false,
+  }),
+}));
+
+jest.mock('../services/ai/llmRouting', () => ({
   getApiKeys: () => ({
     geminiKey: '',
     cfAccountId: '',
@@ -127,6 +155,13 @@ jest.mock('../services/aiService', () => ({
     falKey: '',
     orKey: '',
   }),
+}));
+
+jest.mock('../components/dialogService', () => ({
+  showInfo: jest.fn(),
+  showError: jest.fn(),
+  confirm: jest.fn(async () => true),
+  confirmDestructive: jest.fn(async () => true),
 }));
 
 jest.mock('../store/useAppStore', () => ({
@@ -185,7 +220,17 @@ jest.mock('../services/ai/guruChatModelPreference', () => ({
 
 jest.mock('../hooks/useLiveGuruChatModels', () => ({
   useLiveGuruChatModels: () => ({
-    availableModels: [{ id: 'auto', name: 'Auto', group: 'Local' }],
+    chatgpt: [],
+    groq: [],
+    openrouter: [],
+    gemini: [],
+    cloudflare: [],
+    github: [],
+    githubCopilot: [],
+    gitlabDuo: [],
+    poe: [],
+    kilo: [],
+    agentrouter: [],
   }),
 }));
 
@@ -220,10 +265,15 @@ const originalConsoleError = console.error;
 
 describe('GuruChatScreen', () => {
   beforeEach(() => {
+    const guruChatMemory = require('../db/queries/guruChatMemory');
     Object.defineProperty(Platform, 'OS', {
       configurable: true,
       get: () => 'ios',
     });
+    global.requestAnimationFrame = ((cb: FrameRequestCallback) =>
+      setTimeout(() => cb(Date.now()), 0)) as typeof requestAnimationFrame;
+    global.cancelAnimationFrame = ((id: number) => clearTimeout(id)) as typeof cancelAnimationFrame;
+    guruChatMemory.getSessionMemoryRow.mockResolvedValue(null);
     console.error = jest.fn((...args: unknown[]) => {
       const firstArg = args[0];
       if (
@@ -248,5 +298,34 @@ describe('GuruChatScreen', () => {
     await waitFor(() => {
       expect(getByTestId('reveal-80')).toHaveStyle({ flex: 1 });
     });
+  });
+
+  it('recovers by creating a thread on send when initial thread hydration fails', async () => {
+    const aiCache = require('../db/queries/aiCache');
+    const aiService = require('../services/aiService');
+
+    aiCache.getLatestGuruChatThread.mockRejectedValueOnce(new Error('hydrate failed'));
+    aiCache.getOrCreateLatestGuruChatThread.mockResolvedValueOnce({
+      id: 7,
+      topicName: 'General Medicine',
+      title: 'General Medicine',
+      lastMessageAt: Date.now(),
+      lastMessagePreview: '',
+    });
+
+    const { getByPlaceholderText, getByLabelText } = render(<GuruChatScreen />);
+
+    await waitFor(() => {
+      expect(getByPlaceholderText('Ask Guru anything...')).toBeTruthy();
+    });
+
+    fireEvent.changeText(getByPlaceholderText('Ask Guru anything...'), 'Explain shock');
+    fireEvent.press(getByLabelText('Send message'));
+
+    await waitFor(() => {
+      expect(aiService.chatWithGuruGroundedStreaming).toHaveBeenCalled();
+    });
+
+    expect(aiCache.getOrCreateLatestGuruChatThread).toHaveBeenCalled();
   });
 });

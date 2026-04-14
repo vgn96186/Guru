@@ -31,6 +31,7 @@ import { showToast } from '../components/Toast';
 import { unzip } from 'react-native-zip-archive';
 import { validateBackupFile } from './unifiedBackupService';
 import { GOOGLE_WEB_CLIENT_ID } from '../config/appConfig';
+import { reportStartupHealth } from './startupHealth';
 
 export interface BootstrapResult {
   success: true;
@@ -215,6 +216,7 @@ export async function resolveInitialRoute(): Promise<InitialRoute> {
  */
 export async function runAppBootstrap(): Promise<BootstrapOutcome> {
   try {
+    reportStartupHealth('bootstrap_started');
     await SplashScreen.preventAutoHideAsync();
 
     // Configure Google Sign-In early (non-blocking, no-op if client ID not set)
@@ -277,9 +279,14 @@ export async function runAppBootstrap(): Promise<BootstrapOutcome> {
       console.log('[AppBootstrap] Skipping heavy background tasks — low RAM device.');
     }
 
+    reportStartupHealth('bootstrap_succeeded');
     return { success: true };
   } catch (e) {
     console.error('App initialization failed:', e);
+    reportStartupHealth(
+      'bootstrap_failed',
+      e instanceof Error ? e.message : 'Application initialization failed',
+    );
     return {
       success: false,
       message: e instanceof Error ? e.message : 'Application initialization failed',

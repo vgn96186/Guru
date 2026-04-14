@@ -15,8 +15,8 @@ const WAIT_TIMEOUT_MS = 45_000;
 const POLL_INTERVAL_MS = 1_000;
 
 const ADB_CMD = resolveAdbCommand();
-const NPX_CMD = process.platform === 'win32' ? 'npx.cmd' : 'npx';
-const USE_SHELL_FOR_NPX = process.platform === 'win32';
+const NPX_CMD = 'npx';
+const USE_SHELL_FOR_NPX = true;
 
 function fail(message) {
   console.error(message);

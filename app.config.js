@@ -2,10 +2,13 @@ require('dotenv').config();
 
 const requiredEnvVars = ['EXPO_PUBLIC_BUNDLED_GROQ_KEY'];
 
-const missing = requiredEnvVars.filter((key) => !process.env[key]);
+const missing = requiredEnvVars.filter((key) => process.env[key] === undefined);
 const isDev = process.env.NODE_ENV !== 'production';
-if (missing.length > 0 && isDev) {
-  console.warn(`[app.config] Missing environment variables: ${missing.join(', ')}`);
+
+// Only warn once per process to avoid cluttering Expo startup logs
+if (missing.length > 0 && isDev && !global._guruConfigWarned) {
+  console.warn(`[app.config] Optional bundled keys missing in .env: ${missing.join(', ')}`);
+  global._guruConfigWarned = true;
 }
 
 const appJson = require('./app.json');
@@ -18,6 +21,5 @@ module.exports = {
     bundledGroqKey: process.env.EXPO_PUBLIC_BUNDLED_GROQ_KEY ?? '',
     bundledHfToken: process.env.EXPO_PUBLIC_BUNDLED_HF_TOKEN ?? '',
     googleWebClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID ?? DEFAULT_GOOGLE_WEB_CLIENT_ID,
-    sentryDsn: process.env.EXPO_PUBLIC_SENTRY_DSN ?? '',
   },
 };

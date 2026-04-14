@@ -1,7 +1,6 @@
 import * as BackgroundFetch from 'expo-background-fetch';
 import * as TaskManager from 'expo-task-manager';
 import { getAllTopicsWithProgress } from '../db/queries/topics';
-import { prefetchTopicContent } from './aiService';
 import { profileRepository } from '../db/repositories';
 import { refreshAccountabilityNotificationsSafely } from './notificationService';
 import { getMoodContentTypes } from '../constants/prompts';
@@ -32,6 +31,7 @@ export async function warmAiContentCache(options?: {
   topicLimit?: number;
   refreshNotifications?: boolean;
 }): Promise<number> {
+  const { prefetchTopicContent } = await import('./aiService');
   const profile = await profileRepository.getProfile();
   const allTopics = await getAllTopicsWithProgress();
   const candidates = selectPrefetchCandidates(

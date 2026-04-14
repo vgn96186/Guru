@@ -22,9 +22,13 @@ const DEV_CLIENT_URL =
   encodeURIComponent(`http://127.0.0.1:${ADB_PORT}`);
 
 const ADB_CMD = resolveAdbCommand();
-const ADB_TIMEOUT_MS = 15_000;
+const ADB_TIMEOUT_MS = 30_000;
+const APP_READY_TIMEOUT_MS = 45_000;
+const HEALTH_LOG_TAG = 'GURU_HEALTH:';
 const REQUESTED_DEVICE_SERIAL = process.env.GURU_ANDROID_SERIAL?.trim() || '';
 let activeDeviceSerial = '';
+const RELOAD_ONLY = process.argv.includes('--reload');
+const CONNECT_ONLY = process.argv.includes('--connect-only');
 
 function fail(message) {
   console.error(message);
@@ -33,6 +37,10 @@ function fail(message) {
 
 function logStep(message) {
   console.log(`[android-open] ${message}`);
+}
+
+function warnStep(message) {
+  console.warn(`[android-open] ${message}`);
 }
 
 function runSync(args, options = {}) {
@@ -89,6 +97,14 @@ function runDeviceSync(args, options = {}) {
   return runSync(scopedArgs, options);
 }
 
+function clearAppHealthLogs() {
+  logStep('Clearing app logcat buffer for fresh startup health check...');
+  runDeviceSync(['logcat', '-c'], {
+    stdio: 'pipe',
+    timeout: 15_000,
+  });
+}
+
 function parseAdbDeviceRows(output) {
   return output
     .split(/\r?\n/)
@@ -137,7 +153,9 @@ function ensureAdbServerRunning() {
       });
     }
   } else {
-    logStep('Ensuring adb server is running (no full reset — set GURU_ADB_HARD_RESET=1 if adb is stuck)...');
+    logStep(
+      'Ensuring adb server is running (no full reset — set GURU_ADB_HARD_RESET=1 if adb is stuck)...',
+    );
   }
 
   const result = spawnSync(ADB_CMD, ['start-server'], {
@@ -165,7 +183,51 @@ function ensureDeviceConnected() {
     fail('Failed to query adb devices.');
   }
 
-  const readyDevices = parseAdbDeviceRows(result.stdout).filter((row) => row.state === 'device');
+  const rows = parseAdbDeviceRows(result.stdout);
+  const readyDevices = rows.filter((row) => row.state === 'device');
+  const unauthorizedDevices = rows.filter((row) => row.state === 'unauthorized');
+  const offlineDevices = rows.filter((row) => row.state === 'offline');
+
+  if (unauthorizedDevices.length) {
+    fail(
+      [
+        `ADB device detected but not authorized: ${unauthorizedDevices.map((row) => row.serial).join(', ')}`,
+        'Unlock the phone/tablet and accept the USB debugging prompt, then click Connect again.',
+      ].join(' '),
+    );
+  }
+
+  if (offlineDevices.length && !readyDevices.length) {
+    warnStep(
+      `ADB device is offline: ${offlineDevices.map((row) => row.serial).join(', ')}. Restarting adb server once...`,
+    );
+    runSync(['kill-server']);
+    ensureAdbServerRunning();
+    const retried = runSync(['devices', '-l']);
+    const retriedRows = parseAdbDeviceRows(retried.stdout);
+    const retriedReady = retriedRows.filter((row) => row.state === 'device');
+    if (!retriedReady.length) {
+      fail(
+        [
+          `ADB device is still offline: ${offlineDevices.map((row) => row.serial).join(', ')}`,
+          'Reconnect the USB cable, enable USB debugging, and click Connect again.',
+        ].join(' '),
+      );
+    }
+    activeDeviceSerial = retriedReady[0].serial;
+    if (REQUESTED_DEVICE_SERIAL) {
+      const requestedRetried = retriedReady.find((row) => row.serial === REQUESTED_DEVICE_SERIAL);
+      if (!requestedRetried) {
+        fail(
+          `Requested device "${REQUESTED_DEVICE_SERIAL}" was not found after adb recovery. Available devices: ${retriedReady.map((row) => row.serial).join(', ')}.`,
+        );
+      }
+      activeDeviceSerial = requestedRetried.serial;
+    }
+    logStep(`Using device after adb recovery: ${activeDeviceSerial}`);
+    return;
+  }
+
   if (!readyDevices.length) {
     fail('No adb device detected. Connect a device and run `adb devices`.');
   }
@@ -200,15 +262,133 @@ function ensureAdbReverse() {
   if (result.status !== 0) {
     fail('Failed to set adb reverse for Metro on port 8081.');
   }
+
+  // Give adb reverse time to propagate to the device
+  logStep('Waiting 2s for adb reverse to take effect...');
+  sleepMs(2000);
+}
+
+function ensureAppProcessStopped() {
+  logStep('Stopping Guru app before reopen/reload...');
+  runDeviceSync(['shell', 'am', 'force-stop', APP_PACKAGE], {
+    stdio: 'pipe',
+    timeout: 15_000,
+  });
+  sleepMs(800);
+}
+
+function ensureMainActivityLaunch() {
+  logStep('Launching Guru main activity...');
+  const result = runDeviceSync(['shell', 'am', 'start', '-n', `${APP_PACKAGE}/${APP_ACTIVITY}`], {
+    stdio: 'inherit',
+    timeout: ADB_TIMEOUT_MS,
+  });
+
+  if (result.error) {
+    fail(result.error.message);
+  }
+
+  if (typeof result.status === 'number' && result.status !== 0) {
+    process.exit(result.status);
+  }
+}
+
+/**
+ * Read health log lines from device logcat.
+ *
+ * Previous implementation used `logcat -d -t 200 *:S ReactNativeJS:I ReactNative:V`
+ * which had two problems on Windows + Samsung:
+ *   1. `*:S` is a glob that Node's spawnSync can silently misinterpret.
+ *   2. -t 200 is far too small — Samsung tablets can emit 200+ system log
+ *      entries per second, causing GURU_HEALTH lines to rotate out before
+ *      the next poll.
+ *
+ * Fix: dump a large chunk unfiltered and filter GURU_HEALTH in JS.
+ */
+function readHealthLog() {
+  const result = runDeviceSync(['logcat', '-d', '-t', '5000'], {
+    stdio: 'pipe',
+    timeout: 20_000,
+  });
+
+  const combined = `${result.stdout || ''}\n${result.stderr || ''}`;
+  const lines = combined
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter((line) => line.includes(HEALTH_LOG_TAG));
+  return lines;
+}
+
+function parseLatestHealthState(lines) {
+  for (let i = lines.length - 1; i >= 0; i -= 1) {
+    const line = lines[i];
+    const markerIndex = line.indexOf(HEALTH_LOG_TAG);
+    if (markerIndex < 0) continue;
+    const raw = line.slice(markerIndex + HEALTH_LOG_TAG.length).trim();
+    const [stage, ...rest] = raw.split(':');
+    return {
+      stage: (stage || '').trim(),
+      detail: rest.join(':').trim(),
+      raw,
+    };
+  }
+  return null;
+}
+
+/** Stages that count as "app is running and rendered". */
+const READY_STAGES = new Set(['ui_ready', 'route_ready']);
+const FAILURE_STAGES = new Set(['bootstrap_failed', 'runtime_error', 'render_error']);
+
+function waitForAppReady() {
+  logStep('Waiting for Guru startup health signal...');
+  const deadline = Date.now() + APP_READY_TIMEOUT_MS;
+
+  // Accumulate all health lines we've ever seen across polls so we survive
+  // ring-buffer rotation.  Map stage → first occurrence detail.
+  const seenStages = new Map();
+
+  while (Date.now() < deadline) {
+    const freshLines = readHealthLog();
+    for (const line of freshLines) {
+      const markerIndex = line.indexOf(HEALTH_LOG_TAG);
+      if (markerIndex < 0) continue;
+      const raw = line.slice(markerIndex + HEALTH_LOG_TAG.length).trim();
+      const [stage, ...rest] = raw.split(':');
+      const key = (stage || '').trim();
+      if (key && !seenStages.has(key)) {
+        seenStages.set(key, rest.join(':').trim());
+      }
+    }
+
+    // Check accumulated stages for success
+    for (const readyStage of READY_STAGES) {
+      if (seenStages.has(readyStage)) {
+        const detail = seenStages.get(readyStage);
+        logStep(`Guru reported ${readyStage}${detail ? ` (${detail})` : ''}.`);
+        return true;
+      }
+    }
+
+    // Check accumulated stages for failure
+    for (const failStage of FAILURE_STAGES) {
+      if (seenStages.has(failStage)) {
+        const detail = seenStages.get(failStage);
+        fail(`Guru reported startup failure: ${failStage}${detail ? ` — ${detail}` : ''}`);
+      }
+    }
+
+    sleepMs(800);
+  }
+  return false;
 }
 
 function sleepMs(ms) {
   if (process.platform === 'win32') {
-    spawnSync(
-      'powershell',
-      ['-NoProfile', '-Command', `Start-Sleep -Milliseconds ${ms}`],
-      { stdio: 'pipe', timeout: 5_000, windowsHide: true },
-    );
+    spawnSync('powershell', ['-NoProfile', '-Command', `Start-Sleep -Milliseconds ${ms}`], {
+      stdio: 'pipe',
+      timeout: 5_000,
+      windowsHide: true,
+    });
   } else {
     spawnSync('sleep', [String(Math.max(1, Math.ceil(ms / 1000)))], { stdio: 'pipe' });
   }
@@ -225,7 +405,9 @@ function waitForPackageVisible(maxAttempts = 8) {
 }
 
 function tryInstallDevApkWithAdb() {
-  logStep('Dev client missing — running adb-install-dev-apk.js --if-missing (needs app-debug.apk on disk)...');
+  logStep(
+    'Dev client missing — running adb-install-dev-apk.js --if-missing (needs app-debug.apk on disk)...',
+  );
   const r = spawnSync(process.execPath, [INSTALL_DEV_SCRIPT, '--if-missing'], {
     cwd: REPO_ROOT,
     stdio: 'inherit',
@@ -289,10 +471,32 @@ function openDevClient() {
   }
 }
 
+function reloadApp() {
+  ensureAppProcessStopped();
+  if (CONNECT_ONLY) {
+    ensureMainActivityLaunch();
+    return;
+  }
+  openDevClient();
+}
+
 ensureAdbAvailable();
 ensureAdbServerRunning();
 ensureDeviceConnected();
 ensureDevClientInstalled();
 ensureAdbReverse();
-openDevClient();
-logStep('Dev client open command sent.');
+clearAppHealthLogs();
+
+if (RELOAD_ONLY) {
+  reloadApp();
+  if (!waitForAppReady()) {
+    fail('Guru did not report ui_ready after reload.');
+  }
+  logStep('Guru app reload command sent and verified.');
+} else {
+  openDevClient();
+  if (!waitForAppReady()) {
+    fail('Guru did not report ui_ready after open.');
+  }
+  logStep('Dev client open command sent and verified.');
+}

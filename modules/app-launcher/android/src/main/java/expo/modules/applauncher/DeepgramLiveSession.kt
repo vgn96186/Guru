@@ -21,7 +21,9 @@ class DeepgramLiveSession(
 ) {
     private val transcriptFile = File(transcriptPath)
     private val client = OkHttpClient.Builder()
-        .readTimeout(0, TimeUnit.MILLISECONDS)
+        .connectTimeout(30, TimeUnit.SECONDS)
+        .writeTimeout(30, TimeUnit.SECONDS)
+        .readTimeout(0, TimeUnit.MILLISECONDS) // No timeout for streaming
         .pingInterval(8, TimeUnit.SECONDS)
         .build()
     private val reconnectHandler = Handler(Looper.getMainLooper())

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { runAppBootstrap, resolveInitialRoute, type InitialRoute } from '../services/appBootstrap';
+import { reportStartupHealth } from '../services/startupHealth';
 
 export interface AppInitializationState {
   dbReady: boolean;
@@ -18,9 +19,11 @@ export function useAppInitialization(): AppInitializationState {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    reportStartupHealth('launching');
     runAppBootstrap().then((outcome) => {
       if (outcome.success) {
         setDbReady(true);
+        reportStartupHealth('db_ready');
       } else {
         setError(outcome.message);
       }
@@ -30,10 +33,14 @@ export function useAppInitialization(): AppInitializationState {
   useEffect(() => {
     if (!dbReady) return;
     resolveInitialRoute()
-      .then((route) => setInitialRoute(route))
+      .then((route) => {
+        setInitialRoute(route);
+        reportStartupHealth('route_ready', route);
+      })
       .catch((e) => {
         console.warn('[App] resolveInitialRoute failed:', e);
         setInitialRoute('CheckIn');
+        reportStartupHealth('route_ready', 'CheckIn');
       });
   }, [dbReady]);
 

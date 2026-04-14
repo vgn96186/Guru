@@ -161,7 +161,7 @@ function htmlToText(html: string): string {
     .trim();
 }
 
-async function fetchWithTimeout(url: string, timeoutMs = 12000): Promise<string> {
+async function fetchWithTimeout(url: string, timeoutMs = 30000): Promise<string> {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), timeoutMs);
   try {

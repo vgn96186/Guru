@@ -1,4 +1,6 @@
 import { AppState } from 'react-native';
+import * as Device from 'expo-device';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   loadModel,
   generateText,
@@ -31,7 +33,7 @@ import { readOpenAiCompatibleSse } from './openaiSseStream';
 import { geminiGenerateContentSdk, geminiGenerateContentStreamSdk } from './google/geminiChat';
 import { callChatGpt, streamChatGpt } from './chatgpt/chatgptApi';
 import { getValidAccessToken as getGitHubCopilotToken } from './github/githubTokenStore';
-import { CLOUD_MAX_COMPLETION_TOKENS, LOCAL_LLM_MAX_COMPLETION_TOKENS } from './completionLimits';
+import { CLOUD_MAX_COMPLETION_TOKENS } from './completionLimits';
 import { getValidAccessToken as getGitLabDuoToken } from './gitlab/gitlabTokenStore';
 import { completeGitLabDuoOpenCodeGateway } from './gitlab/gitlabDuoOpenCode';
 import { isGitLabDuoOpenCodeGatewayModel } from './gitlab/gitlabDuoGatewayModels';
@@ -39,11 +41,15 @@ import { getValidAccessToken as getPoeToken } from './poe/poeTokenStore';
 import type { ChatGptAccountSlot, ProviderId } from '../../types';
 import { DEFAULT_PROVIDER_ORDER } from '../../types';
 import { logStreamEvent } from './runtimeDebug';
+import { stripFileUri } from '../fileUri';
 
 /** MediaPipe LLM model handle and path tracking */
 let loadedModel: LLMModel | null = null;
 let currentModelPath: string | null = null;
 let modelLoadPromise: Promise<void> | null = null;
+let localLlmTemporarilyDisabledUntil = 0;
+/** Tracks consecutive generation failures for escalating cooldowns (5m → 30m → 2h). */
+let consecutiveLocalFailures = 0;
 type AppStateSubscription = { remove?: () => void };
 const APPSTATE_SUB_KEY = '__guru_llmRouting_appState_sub_v1';
 const KILO_MODELS_CACHE_TTL_MS = 10 * 60 * 1000;
@@ -237,8 +243,8 @@ function extractOpenRouterAssistantText(data: unknown, model: string): string {
     typeof ch0.reasoning === 'string'
       ? ch0.reasoning
       : typeof ch0.reasoning_content === 'string'
-      ? ch0.reasoning_content
-      : '';
+        ? ch0.reasoning_content
+        : '';
   const reasoning =
     [reasoningFromMsg, reasoningFromMsgDetails, reasoningFromChoice].find((s) => s.trim()) ?? '';
 
@@ -292,7 +298,60 @@ function isContextInUse(): boolean {
   return _contextLockCount > 0;
 }
 
+function markLocalLlmTemporarilyDisabled() {
+  consecutiveLocalFailures++;
+  // Escalating cooldown: 5 min → 30 min → 2 hours
+  const cooldowns = [5 * 60_000, 30 * 60_000, 2 * 60 * 60_000];
+  const ms = cooldowns[Math.min(consecutiveLocalFailures - 1, cooldowns.length - 1)]!;
+  localLlmTemporarilyDisabledUntil = Date.now() + ms;
+  console.warn(
+    `[LLM] Temporarily disabled for ${ms / 60_000}m (failure #${consecutiveLocalFailures})`,
+  );
+}
+
+function resetLocalLlmFailureCount() {
+  consecutiveLocalFailures = 0;
+  localLlmTemporarilyDisabledUntil = 0;
+}
+
+function ensureLocalLlmNotTemporarilyDisabled() {
+  if (localLlmTemporarilyDisabledUntil > Date.now()) {
+    throw new Error(
+      'On-device AI was temporarily disabled after a native failure to prevent repeated app crashes. Please retry in a few minutes.',
+    );
+  }
+}
+
+/**
+ * Expo stores models under `documentDirectory` as `file:///...` URIs.
+ * LiteRT's Android native layer expects a plain absolute path (same fix as
+ * `stripFileUri` uses elsewhere in bootstrap).
+ */
+function normalizeLocalModelPathForNative(modelPath: string): string {
+  const t = modelPath.trim();
+  const stripped = stripFileUri(t);
+  if (stripped === t) return t;
+  try {
+    return decodeURIComponent(stripped);
+  } catch {
+    return stripped;
+  }
+}
+
+/**
+ * Returns undefined for .litertlm models so the native SDK uses the model's
+ * built-in default (e.g. 8192 for Gemma 4). Capping to 2048 previously caused
+ * KV-cache alignment issues on GPU backends. For non-.litertlm legacy models
+ * we still cap to 2048 to prevent OOM on CPU.
+ */
+function getLocalModelLoadMaxTokens(modelPath: string): number | undefined {
+  const normalized = modelPath.toLowerCase();
+  if (normalized.endsWith('.litertlm')) return undefined; // Let native SDK decide
+  return 2048;
+}
+
 async function getLoadedModel(modelPath: string): Promise<LLMModel> {
+  ensureLocalLlmNotTemporarilyDisabled();
   if (loadedModel && currentModelPath === modelPath) {
     return loadedModel;
   }
@@ -311,13 +370,117 @@ async function getLoadedModel(modelPath: string): Promise<LLMModel> {
       }
       loadedModel = null;
     }
+    const totalMemory = Device.totalMemory;
+    const modelFileName = modelPath.split('/').pop();
+    if (__DEV__) {
+      console.log(`[LLM] getLoadedModel requested: ${modelFileName}`, {
+        totalMemory: totalMemory ? `${(totalMemory / 1024 / 1024 / 1024).toFixed(1)}GB` : 'unknown',
+      });
+    }
+
+    // --- Crash guard: detect if previous loadModel() caused a native abort ---
+    // Instead of permanently disabling, we use a temporary cooldown so the user
+    // can retry. The crash count persists across restarts via AsyncStorage.
+    try {
+      const guardRaw = await AsyncStorage.getItem('llm_crash_guard');
+      if (guardRaw) {
+        let guardPath: string | null = null;
+        let crashCount = 1;
+        try {
+          const parsed = JSON.parse(guardRaw);
+          guardPath = typeof parsed?.path === 'string' ? parsed.path : guardRaw;
+          crashCount = typeof parsed?.count === 'number' ? parsed.count : 1;
+        } catch {
+          guardPath = guardRaw; // Legacy plain-string format
+        }
+        await AsyncStorage.removeItem('llm_crash_guard');
+        if (guardPath === modelPath) {
+          // Escalating cooldown: 1st crash → 2 min, 2nd → 10 min, 3rd+ → 60 min
+          const cooldowns = [2 * 60_000, 10 * 60_000, 60 * 60_000];
+          const cooldownMs = cooldowns[Math.min(crashCount - 1, cooldowns.length - 1)]!;
+          console.warn(
+            `[LLM] CRASH_GUARD: ${modelFileName} caused native crash #${crashCount}. ` +
+              `Cooling down for ${cooldownMs / 60_000}m (re-enable in Settings > On-Device AI).`,
+          );
+          // Persist crash count for next attempt
+          await AsyncStorage.setItem(
+            'llm_crash_history',
+            JSON.stringify({ path: modelPath, count: crashCount }),
+          ).catch(() => {});
+          // Apply temporary cooldown instead of permanent disable
+          localLlmTemporarilyDisabledUntil = Date.now() + cooldownMs;
+          throw new Error(
+            `Local model crashed during initialization (attempt #${crashCount}). ` +
+              `Will retry automatically in ${cooldownMs / 60_000} minutes, or re-enable in Settings > On-Device AI.`,
+          );
+        }
+        // Guard was for a different model — clear it and proceed
+      }
+    } catch (e) {
+      // Re-throw our own cooldown errors, swallow AsyncStorage failures
+      if ((e as Error)?.message?.includes('crashed during initialization')) throw e;
+    }
+
+    // Read crash history to track consecutive native aborts
+    let crashCount = 0;
+    try {
+      const historyRaw = await AsyncStorage.getItem('llm_crash_history');
+      if (historyRaw) {
+        const h = JSON.parse(historyRaw);
+        if (h?.path === modelPath) crashCount = typeof h.count === 'number' ? h.count : 0;
+      }
+    } catch {
+      /* ignore */
+    }
+
+    try {
+      await AsyncStorage.setItem(
+        'llm_crash_guard',
+        JSON.stringify({ path: modelPath, count: crashCount + 1 }),
+      );
+    } catch {
+      // Ignore
+    }
+
     // Load new model with GPU/NPU-accelerated MediaPipe LLM inference
-    loadedModel = await loadModel(modelPath, {
-      maxTokens: LOCAL_LLM_MAX_COMPLETION_TOKENS,
+    const nativePath = normalizeLocalModelPathForNative(modelPath);
+    const maxTokens = getLocalModelLoadMaxTokens(modelPath);
+
+    // WARN: The pre-compiled litertlm_jni native library detects Gemma 4 models
+    // by checking the file path for "gemma-4-" / "gemma4". If the file was renamed
+    // to something generic (e.g. "model.litertlm"), the GPU workarounds (external_
+    // tensor_mode=false, hint_waiting_for_completion=true) won't be applied and GPU
+    // init may fail silently. Log a warning so this is diagnosable.
+    if (nativePath.endsWith('.litertlm') && !nativePath.toLowerCase().includes('gemma')) {
+      console.warn(
+        `[LLM] WARNING: .litertlm model path does not contain "gemma" — ` +
+          `native GPU workarounds may not apply. Consider renaming the file ` +
+          `to include "gemma-4" in the name. Path: ${nativePath}`,
+      );
+    }
+
+    if (__DEV__) console.info(`[LLM] Invoking native loadModel for ${modelFileName}...`);
+    loadedModel = await loadModel(nativePath, {
       temperature: 0.7,
       topK: 40,
+      // For .litertlm models maxTokens is undefined → native SDK uses model default.
+      // This avoids KV-cache alignment issues on GPU backends.
+      ...(maxTokens != null ? { maxTokens } : {}),
+      // Vision modality disabled — all local LLM calls in Guru are text-only.
+      enableVisionModality: false,
     });
+
+    if (__DEV__) console.info(`[LLM] native loadModel SUCCESS for ${modelFileName}`);
     currentModelPath = modelPath;
+
+    // Success — clear crash guard AND crash history (model loaded fine)
+    try {
+      await AsyncStorage.multiRemove(['llm_crash_guard', 'llm_crash_history']);
+    } catch {
+      // Ignore
+    }
+    // Reset failure counters so next generation error starts fresh
+    resetLocalLlmFailureCount();
   })();
   try {
     await modelLoadPromise;
@@ -328,9 +491,27 @@ async function getLoadedModel(modelPath: string): Promise<LLMModel> {
   }
 }
 
-/** Release the MediaPipe LLM model to free GPU/NPU memory. Safe to call at any time. */
-export async function releaseLlamaContext(): Promise<void> {
-  if (isContextInUse() || modelLoadPromise) return; // don't interrupt in-flight generation or init
+/**
+ * Release the MediaPipe LLM model to free GPU/NPU memory.
+ * @param force  If true, cancel in-flight generation and release anyway.
+ *               Used when app goes to background to prevent OOM kills.
+ */
+export async function releaseLlamaContext(force = false): Promise<void> {
+  if (!force && (isContextInUse() || modelLoadPromise)) return;
+
+  // If generation is in-flight and we're forcing, cancel it first
+  if (force && isContextInUse() && loadedModel) {
+    try {
+      await stopGeneration(loadedModel);
+      console.warn('[LLM] Cancelled in-flight generation for forced release (app backgrounded)');
+    } catch {
+      // Best-effort cancel — proceed with release anyway
+    }
+  }
+
+  // Don't fight an active loadModel() even in force mode — native init can't be cancelled
+  if (modelLoadPromise) return;
+
   if (loadedModel) {
     try {
       await releaseModel(loadedModel);
@@ -343,12 +524,12 @@ export async function releaseLlamaContext(): Promise<void> {
 }
 
 // Release the GPU/NPU LLM context when app goes to background to prevent OOM kills.
-// Store the subscription on `globalThis` so hot reload can't stack listeners.
+// force=true cancels in-flight generation so the model is always freed.
 const prevSub = (globalThis as any)[APPSTATE_SUB_KEY] as AppStateSubscription | undefined;
 if (prevSub?.remove) prevSub.remove();
 (globalThis as any)[APPSTATE_SUB_KEY] = AppState.addEventListener('change', async (state) => {
   if (state === 'background' || state === 'inactive') {
-    await releaseLlamaContext();
+    await releaseLlamaContext(/* force */ true);
   }
 }) as AppStateSubscription;
 
@@ -357,6 +538,7 @@ async function callLocalLLM(
   modelPath: string,
   textMode = false,
 ): Promise<string> {
+  ensureLocalLlmNotTemporarilyDisabled();
   const model = await getLoadedModel(modelPath);
   const release = await acquireContextLock();
   try {
@@ -367,6 +549,32 @@ async function callLocalLLM(
       text = `{${text}`;
     }
     return text;
+  } catch (err) {
+    const msg = (err as Error)?.message?.toLowerCase?.() ?? String(err).toLowerCase();
+    if (msg.includes('cancelled') || msg.includes('canceled') || msg.includes('aborted')) {
+      throw err;
+    }
+    if (
+      msg.includes('failed to load') ||
+      msg.includes('loadmodel failed') ||
+      msg.includes('model_creation_failed') ||
+      msg.includes('no such file') ||
+      msg.includes('invalid model') ||
+      msg.includes('enoent')
+    ) {
+      throw err;
+    }
+
+    markLocalLlmTemporarilyDisabled();
+    try {
+      await releaseLlamaContext();
+    } catch {
+      // Ignore release errors during crash containment.
+    }
+    throw new Error(
+      'On-device AI failed and was temporarily disabled to prevent repeated app crashes. Cloud AI will be used until the cooldown expires.',
+      { cause: err },
+    );
   } finally {
     release();
   }
@@ -2558,11 +2766,11 @@ export async function attemptLocalLLM(
     ? isGemmaE2b
       ? 'local-gemma-4-e2b'
       : isGemmaE4b
-      ? 'local-gemma-4-e4b'
-      : 'local-gemma'
+        ? 'local-gemma-4-e4b'
+        : 'local-gemma'
     : isQwen
-    ? 'local-qwen-2.5-3b'
-    : 'local-litert';
+      ? 'local-qwen-2.5-3b'
+      : 'local-litert';
   try {
     const text = await callLocalLLM(messages, localModelPath, textMode);
     if (!text || !text.trim()) {
@@ -2571,12 +2779,17 @@ export async function attemptLocalLLM(
     return { text, modelUsed };
   } catch (err: unknown) {
     const msg = (err as Error)?.message ?? String(err);
+    const lower = msg.toLowerCase();
     // If the model file failed to load (corrupt/missing), clear the stored path
     // so the bootstrap will re-download it on next startup.
+    // react-native-llm-litert-mediapipe logs "loadModel failed" (not "failed to load").
     if (
-      msg.toLowerCase().includes('failed to load') ||
-      msg.toLowerCase().includes('no such file') ||
-      msg.toLowerCase().includes('invalid model')
+      lower.includes('failed to load') ||
+      lower.includes('loadmodel failed') ||
+      lower.includes('model_creation_failed') ||
+      lower.includes('no such file') ||
+      lower.includes('invalid model') ||
+      lower.includes('enoent')
     ) {
       // Important: free native memory on load failures to prevent leaks.
       if (!isContextInUse() && loadedModel) {
@@ -2596,6 +2809,11 @@ export async function attemptLocalLLM(
         'Local model file is missing or corrupt — it will re-download on next startup.',
         { cause: err },
       );
+    }
+    // Crash guard cooldown errors — don't clear model path, just propagate
+    // so the routing layer falls back to cloud without nuking the model.
+    if (lower.includes('crashed during initialization')) {
+      throw err;
     }
     throw err;
   }

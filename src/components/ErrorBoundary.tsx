@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import AppRecoveryScreen from './AppRecoveryScreen';
-import { captureException } from '../services/monitoring/sentry';
+import { reportStartupHealth } from '../services/startupHealth';
 
 const Updates = (() => {
   try {
@@ -29,12 +29,7 @@ export default class ErrorBoundary extends React.Component<React.PropsWithChildr
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
     console.error('ErrorBoundary caught an error', error, errorInfo);
-    captureException(error, {
-      component: 'ErrorBoundary',
-      extras: {
-        componentStack: errorInfo.componentStack ?? '',
-      },
-    });
+    reportStartupHealth('render_error', error.message || 'Unknown rendering error');
     this.setState({ errorMessage: error.message || 'Unknown rendering error' });
   }
 

@@ -43,7 +43,9 @@ async function loadRoutingModule() {
   }));
 
   jest.doMock('./google/geminiChat', () => ({
-    geminiGenerateContentSdk: jest.fn().mockRejectedValue(new Error('Gemini SDK disabled in llmRouting unit test')),
+    geminiGenerateContentSdk: jest
+      .fn()
+      .mockRejectedValue(new Error('Gemini SDK disabled in llmRouting unit test')),
     geminiGenerateContentStreamSdk: jest
       .fn()
       .mockRejectedValue(new Error('Gemini SDK disabled in llmRouting unit test')),
@@ -298,6 +300,24 @@ describe('llmRouting', () => {
     expect(result.modelUsed).toBe('local-gemma-4-e2b');
   });
 
+  it('loads Gemma 4 without overriding the native token budget', async () => {
+    const { module, loadModelMock } = await loadRoutingModule();
+
+    await module.attemptLocalLLM(
+      [{ role: 'user', content: 'hi' }],
+      '/models/gemma-4-E4B-it.litertlm',
+      true,
+    );
+
+    expect(loadModelMock).toHaveBeenCalledWith(
+      '/models/gemma-4-E4B-it.litertlm',
+      expect.objectContaining({
+        enableVisionModality: false,
+      }),
+    );
+    expect(loadModelMock.mock.calls[0]?.[1]?.maxTokens).toBeUndefined();
+  });
+
   it('releaseLlamaContext does nothing when context is in use', async () => {
     const releaseModelMock = jest.fn(async () => undefined);
     const generateTextMock = jest.fn(async () => ({ text: '{"ok":true}', finishReason: 'stop' }));
@@ -336,13 +356,19 @@ describe('llmRouting', () => {
 
     // Start a generation (it will be in flight)
     let resolveGenerate: (val: { text: string; finishReason: string }) => void;
-    const generatePromise = new Promise<{ text: string; finishReason: string }>(resolve => { resolveGenerate = resolve; });
+    const generatePromise = new Promise<{ text: string; finishReason: string }>((resolve) => {
+      resolveGenerate = resolve;
+    });
     generateTextMock.mockReturnValue(generatePromise);
 
-    const generationPromise = module.attemptLocalLLM([{ role: 'user', content: 'hi' }], '/path', false);
+    const generationPromise = module.attemptLocalLLM(
+      [{ role: 'user', content: 'hi' }],
+      '/path',
+      false,
+    );
 
     // Need to wait a bit for model to load
-    await new Promise(r => setTimeout(r, 10));
+    await new Promise((r) => setTimeout(r, 10));
 
     // Now try to release
     await module.releaseLlamaContext();

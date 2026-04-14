@@ -597,5 +597,8 @@ export async function prefetchTopicContent(
   contentTypes: ContentType[],
   forceProvider?: 'groq' | 'gemini',
 ): Promise<void> {
-  await Promise.allSettled(contentTypes.map((ct) => fetchContent(topic, ct, forceProvider)));
+  // Startup/background prefetch must never trigger on-device LiteRT initialization.
+  // Force a cloud provider here so warmup cannot fall through to local routing.
+  const safeProvider = forceProvider ?? 'groq';
+  await Promise.allSettled(contentTypes.map((ct) => fetchContent(topic, ct, safeProvider)));
 }

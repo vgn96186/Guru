@@ -8,14 +8,13 @@
 const { spawnSync } = require('child_process');
 
 function sleepMs(ms) {
-  if (process.platform === 'win32') {
-    spawnSync(
-      'powershell',
-      ['-NoProfile', '-Command', `Start-Sleep -Milliseconds ${ms}`],
-      { stdio: 'pipe', timeout: 30_000, windowsHide: true },
-    );
-  } else {
-    spawnSync('sleep', [String(Math.max(1, Math.ceil(ms / 1000)))], { stdio: 'pipe' });
+  try {
+    const sab = new SharedArrayBuffer(4);
+    const int32 = new Int32Array(sab);
+    Atomics.wait(int32, 0, 0, ms);
+  } catch (e) {
+    const start = Date.now();
+    while (Date.now() - start < ms) {}
   }
 }
 
@@ -65,7 +64,14 @@ function freeListeningPort(port) {
   if (!stdout) {
     return { reclaimed: false, detail: 'port was free' };
   }
-  const pids = [...new Set(stdout.split(/\s+/).map((s) => Number(s)).filter((n) => n > 0))];
+  const pids = [
+    ...new Set(
+      stdout
+        .split(/\s+/)
+        .map((s) => Number(s))
+        .filter((n) => n > 0),
+    ),
+  ];
   for (const pid of pids) {
     try {
       process.kill(pid, 'SIGKILL');
@@ -74,7 +80,10 @@ function freeListeningPort(port) {
     }
   }
   sleepMs(400);
-  return { reclaimed: pids.length > 0, detail: pids.length ? `killed pids ${pids.join(',')}` : 'none' };
+  return {
+    reclaimed: pids.length > 0,
+    detail: pids.length ? `killed pids ${pids.join(',')}` : 'none',
+  };
 }
 
 module.exports = { freeListeningPort };

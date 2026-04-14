@@ -31,13 +31,12 @@ import { useAppStore } from './src/store/useAppStore';
 import { useAppBootstrap } from './src/hooks/useAppBootstrap';
 import linking from './src/navigation/linking';
 import { theme } from './src/constants/theme';
-import { initializeSentry, registerNavigationContainer } from './src/services/monitoring/sentry';
+import { reportStartupHealth } from './src/services/startupHealth';
 
 // Install console interceptors early so all logs are captured
 installDevConsoleInterceptors();
 enableScreens(true);
 enableFreeze(true);
-initializeSentry();
 
 const textComponent = Text as typeof Text & {
   defaultProps?: React.ComponentProps<typeof Text>;
@@ -86,6 +85,10 @@ function AppContent({
 }) {
   useAppBootstrap(onFatalError);
 
+  useEffect(() => {
+    reportStartupHealth('ui_ready', initialRoute);
+  }, [initialRoute]);
+
   return (
     <>
       <ToastContainer />
@@ -94,7 +97,6 @@ function AppContent({
       <NavigationContainer
         ref={navigationRef}
         linking={linking}
-        onReady={() => registerNavigationContainer(navigationRef)}
         theme={{
           ...DarkTheme,
           colors: { ...DarkTheme.colors, background: '#000000', card: '#000000' },
@@ -235,6 +237,7 @@ export default function App() {
   };
 
   if (runtimeError) {
+    reportStartupHealth('runtime_error', runtimeError);
     return (
       <GestureHandlerRootView style={styles.root}>
         <SafeAreaProvider>

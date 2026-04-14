@@ -5,6 +5,8 @@
  */
 import { Platform } from 'react-native';
 import * as Notifications from 'expo-notifications';
+// TODO: Migrate from expo-av to expo-audio/expo-video when available
+// expo-av is deprecated and will be removed in SDK 54
 import { Audio } from 'expo-av';
 import {
   requestNotificationPermissions,

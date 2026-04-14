@@ -108,7 +108,11 @@ function parseEnvArg(arg) {
 
 async function main() {
   // Ensure adb is available
-  const adbVersion = spawnSync(ADB_CMD, ['version'], { stdio: 'pipe', encoding: 'utf8', timeout: 10_000 });
+  const adbVersion = spawnSync(ADB_CMD, ['version'], {
+    stdio: 'pipe',
+    encoding: 'utf8',
+    timeout: 10_000,
+  });
   if (adbVersion.status !== 0) {
     fail('adb not found. Install Android platform-tools or set ANDROID_HOME.');
   }
@@ -132,8 +136,8 @@ async function main() {
   }
 
   // Execute the command with DETOX_ADB_NAME set
-  const NPX_CMD = isWindows() ? 'npx.cmd' : 'npx';
-  const NODE_CMD = isWindows() ? 'node.exe' : 'node';
+  const NPX_CMD = 'npx';
+  const NODE_CMD = 'node';
 
   // Determine the command to run
   const cmdToRun = args[0].includes('npx') ? NPX_CMD : NODE_CMD;

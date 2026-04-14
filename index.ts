@@ -1,13 +1,14 @@
+import { setupAiSdkPolyfills } from 'react-native-llm-litert-mediapipe';
+
+setupAiSdkPolyfills({ verbose: __DEV__ });
+
 import 'react-native-gesture-handler';
 import { registerRootComponent } from 'expo';
 import { LogBox, Text, TextInput, Platform } from 'react-native';
 import * as Crypto from 'expo-crypto';
-import { setupAiSdkPolyfills } from 'react-native-llm-litert-mediapipe';
 
 // Setup AI SDK polyfills for MediaPipe LLM (required for streaming to work on mobile)
-if (Platform.OS === 'android' || Platform.OS === 'ios') {
-  setupAiSdkPolyfills({ verbose: __DEV__ });
-}
+// Must run before most other imports per the wrapper's integration contract.
 
 // Polyfill for Web Crypto API (required for sync and unique ID generation)
 if (typeof globalThis.crypto === 'undefined') {

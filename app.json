@@ -56,7 +56,6 @@
       "expo-sqlite",
       "expo-media-library",
       "expo-notifications",
-      "@sentry/react-native",
       "./modules/app-launcher/withAppLauncher",
       "expo-build-properties",
       "expo-font",

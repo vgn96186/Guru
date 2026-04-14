@@ -705,7 +705,9 @@ function GuruChatScreenContent() {
     }
     void Promise.all([
       getChatHistory(currentThread.id, CHAT_HISTORY_LIMIT),
-      listGeneratedStudyImagesForTopic('chat', currentThread.topicName).catch(() => []),
+      Promise.resolve(listGeneratedStudyImagesForTopic('chat', currentThread.topicName)).catch(
+        () => [],
+      ),
     ])
       .then(([history, images]) => {
         if (history.length === 0) {
@@ -732,9 +734,9 @@ function GuruChatScreenContent() {
             modelUsed: entry.modelUsed,
             images:
               entry.role === 'guru'
-                ? imagesByKey.get(
+                ? (imagesByKey.get(
                     buildChatImageContextKey(currentThread.topicName, entry.timestamp),
-                  ) ?? []
+                  ) ?? [])
                 : [],
           })),
         );
@@ -956,10 +958,7 @@ function GuruChatScreenContent() {
   }
 
   const availableModelsKey = useMemo(
-    () =>
-      JSON.stringify(
-        availableModels.map((m) => m.id),
-      ),
+    () => JSON.stringify(availableModels.map((m) => m.id)),
     [availableModels],
   );
 
@@ -1165,7 +1164,19 @@ function GuruChatScreenContent() {
   const handleSend = useCallback(
     async (questionOverride?: string) => {
       const question = (questionOverride ?? input).trim();
-      if (!question || loading || !currentThreadId) return;
+      if (!question || loading) return;
+
+      let resolvedThreadId = currentThreadId;
+      if (!resolvedThreadId) {
+        try {
+          const recoveredThread = await getOrCreateLatestGuruChatThread(topicName, syllabusTopicId);
+          setCurrentThread(recoveredThread);
+          resolvedThreadId = recoveredThread.id;
+        } catch {
+          return;
+        }
+      }
+
       const wantsImage = isExplicitImageRequest(question);
       const requestedImageStyle = inferRequestedImageStyle(question);
       const canGenerateImage = canAutoGenerateStudyImage(profile);
@@ -1185,7 +1196,7 @@ function GuruChatScreenContent() {
       scrollToLatest();
 
       try {
-        await saveChatMessage(currentThreadId, topicName, 'user', question, Date.now());
+        await saveChatMessage(resolvedThreadId, topicName, 'user', question, Date.now());
         await refreshThreads();
       } catch {
         // Persistence should not block the main conversation flow.
@@ -1343,7 +1354,7 @@ function GuruChatScreenContent() {
 
         try {
           await saveChatMessage(
-            currentThreadId,
+            resolvedThreadId,
             topicName,
             'guru',
             finalGuruText,
@@ -1366,8 +1377,8 @@ function GuruChatScreenContent() {
           }
         }
         try {
-          await maybeSummarizeGuruSession(currentThreadId, topicName);
-          const row = await getSessionMemoryRow(currentThreadId);
+          await maybeSummarizeGuruSession(resolvedThreadId, topicName);
+          const row = await getSessionMemoryRow(resolvedThreadId);
           setSessionSummary(row?.summaryText ?? '');
           setSessionStateJson(row?.stateJson ?? '{}');
         } catch {
@@ -1469,7 +1480,7 @@ function GuruChatScreenContent() {
       const hasSources = !!message.sources?.length;
       const sourcesExpanded = expandedSourcesMessageId === message.id;
       const isLatestGuruMessage = message.id === latestGuruMessageId;
-      const guruGeneratedImages = message.role === 'guru' ? message.images ?? [] : [];
+      const guruGeneratedImages = message.role === 'guru' ? (message.images ?? []) : [];
       const guruReferenceImages =
         message.role === 'guru'
           ? (message.referenceImages ?? []).filter(isDisplayableReferenceImage)

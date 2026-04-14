@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useRef } from 'react';
+// TODO: Migrate from expo-av to expo-audio/expo-video when available
+// expo-av is deprecated and will be removed in SDK 54
 import { Audio } from 'expo-av';
 import {
   stopRecording,

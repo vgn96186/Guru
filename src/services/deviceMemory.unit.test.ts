@@ -112,7 +112,7 @@ describe('deviceMemory service', () => {
       // 3.5 GB
       global.__EXPO_DEVICE_TOTAL_MEMORY__ = 3.5 * 1024 * 1024 * 1024;
       expect(getLocalLlmRamWarning()).toBe(
-        'This device has 3.5 GB RAM. Guru disables on-device text AI below 4.0 GB to avoid crashes.'
+        'This device has 3.5 GB RAM. Guru disables on-device text AI below 6.0 GB for Gemma 4 to avoid crashes.',
       );
     });
   });
@@ -195,8 +195,8 @@ describe('deviceMemory service', () => {
       await enforceLocalLlmRamGuard(true);
 
       expect(showToast).toHaveBeenCalledWith(
-        'This device has 3.0 GB RAM. Guru disables on-device text AI below 4.0 GB to avoid crashes.',
-        'warning'
+        'This device has 3.0 GB RAM. Guru disables on-device text AI below 6.0 GB for Gemma 4 to avoid crashes.',
+        'warning',
       );
     });
   });

@@ -41,6 +41,7 @@ import {
   chatWithGuruGroundedStreaming,
   type MedicalGroundingSource,
   getApiKeys,
+  addLlmStateListener,
 } from '../services/aiService';
 import { showInfo, showError, confirm, confirmDestructive } from '../components/dialogService';
 import { useAppStore } from '../store/useAppStore';
@@ -591,6 +592,14 @@ function GuruChatScreenContent() {
   const groundingTitle = route.params?.groundingTitle;
   const groundingContext = route.params?.groundingContext;
   const profile = useAppStore((s) => s.profile);
+
+  const [isInitializing, setIsInitializing] = useState(false);
+
+  useEffect(() => {
+    return addLlmStateListener((state) => {
+      setIsInitializing(state === 'initializing');
+    });
+  }, []);
   const flatListRef = useRef<FlashListRef<ChatItem>>(null);
 
   const isGeneralChat = !route.params?.topicName || topicName === 'General Medicine';
@@ -1461,7 +1470,7 @@ function GuruChatScreenContent() {
                     •
                   </LinearText>
                   <LinearText variant="meta" tone="muted" style={styles.msgMetaText}>
-                    Thinking...
+                    {isInitializing ? 'Waking up on-device AI...' : 'Thinking...'}
                   </LinearText>
                 </View>
                 <View style={[styles.bubbleWrap, styles.bubbleWrapGuru]}>

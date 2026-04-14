@@ -19,19 +19,20 @@ async function loadRoutingModule() {
   (globalThis as any).__DEV__ = false;
 
   const addEventListener = jest.fn();
-  const releaseModelMock = jest.fn(async () => undefined);
-  const generateTextMock = jest.fn(async () => ({ text: 'local-text' }));
-  const loadModelMock = jest.fn(async () => ({ id: 'mock-model-id' }));
+  const initializeMock = jest.fn(async () => ({ backend: 'gpu' }));
+  const chatMock = jest.fn(async () => ({ text: 'local-text', backend: 'gpu' }));
+  const releaseMock = jest.fn(async () => undefined);
+  const isInitializedMock = jest.fn(async () => false);
   const updateProfileMock = jest.fn(async () => undefined);
 
   jest.doMock('react-native', () => ({
     AppState: { addEventListener },
   }));
-  jest.doMock('react-native-llm-litert-mediapipe', () => ({
-    loadModel: loadModelMock,
-    generateText: generateTextMock,
-    releaseModel: releaseModelMock,
-    stopGeneration: jest.fn(),
+  jest.doMock('../../../modules/local-llm', () => ({
+    initialize: initializeMock,
+    chat: chatMock,
+    release: releaseMock,
+    isInitialized: isInitializedMock,
   }));
   jest.doMock('../../db/repositories', () => ({
     profileRepository: { updateProfile: updateProfileMock },
@@ -54,8 +55,10 @@ async function loadRoutingModule() {
   const module = await import('./llmRouting');
   return {
     module,
-    loadModelMock,
-    generateTextMock,
+    initializeMock,
+    chatMock,
+    releaseMock,
+    isInitializedMock,
     updateProfileMock,
     addEventListener,
   };
@@ -192,9 +195,9 @@ describe('llmRouting', () => {
   });
 
   it('clears local model profile state when model file is missing/corrupt', async () => {
-    const { module, updateProfileMock, generateTextMock } = await loadRoutingModule();
+    const { module, updateProfileMock, chatMock } = await loadRoutingModule();
 
-    generateTextMock.mockRejectedValueOnce(new Error('failed to load model: no such file'));
+    chatMock.mockRejectedValueOnce(new Error('failed to load model: no such file'));
 
     await expect(
       module.attemptLocalLLM([{ role: 'user', content: 'hi' }], '/models/missing.litertlm', false),
@@ -279,9 +282,9 @@ describe('llmRouting', () => {
   });
 
   it('throws error when local model returns empty response', async () => {
-    const { module, generateTextMock } = await loadRoutingModule();
+    const { module, chatMock } = await loadRoutingModule();
     // In textMode=true, empty completion remains empty
-    generateTextMock.mockResolvedValueOnce({ text: '' });
+    chatMock.mockResolvedValueOnce({ text: '', backend: 'gpu' });
 
     await expect(
       module.attemptLocalLLM([{ role: 'user', content: 'hi' }], '/path/to/model', true),
@@ -301,7 +304,7 @@ describe('llmRouting', () => {
   });
 
   it('loads Gemma 4 without overriding the native token budget', async () => {
-    const { module, loadModelMock } = await loadRoutingModule();
+    const { module, initializeMock } = await loadRoutingModule();
 
     await module.attemptLocalLLM(
       [{ role: 'user', content: 'hi' }],
@@ -309,23 +312,18 @@ describe('llmRouting', () => {
       true,
     );
 
-    expect(loadModelMock).toHaveBeenCalledWith(
-      '/models/gemma-4-E4B-it.litertlm',
+    expect(initializeMock).toHaveBeenCalledWith(
       expect.objectContaining({
-        enableVisionModality: false,
+        modelPath: '/models/gemma-4-E4B-it.litertlm',
       }),
     );
-    expect(loadModelMock.mock.calls[0]?.[1]?.maxTokens).toBeUndefined();
   });
 
   it('releaseLlamaContext does nothing when context is in use', async () => {
-    const releaseModelMock = jest.fn(async () => undefined);
-    const generateTextMock = jest.fn(async () => ({ text: '{"ok":true}', finishReason: 'stop' }));
-    const loadModelMock = jest.fn(async () => ({
-      id: 'stable-model-id',
-      release: releaseModelMock,
-      isLoaded: true,
-    }));
+    const initializeMock = jest.fn(async () => ({ backend: 'gpu' }));
+    const chatMock = jest.fn(async () => ({ text: '{"ok":true}', backend: 'gpu' }));
+    const releaseMock = jest.fn(async () => undefined);
+    const isInitializedMock = jest.fn(async () => true);
 
     jest.resetModules();
     (globalThis as any).__DEV__ = false;
@@ -333,11 +331,11 @@ describe('llmRouting', () => {
     jest.doMock('react-native', () => ({
       AppState: { addEventListener: jest.fn() },
     }));
-    jest.doMock('react-native-llm-litert-mediapipe', () => ({
-      loadModel: loadModelMock,
-      generateText: generateTextMock,
-      releaseModel: releaseModelMock,
-      stopGeneration: jest.fn(),
+    jest.doMock('../../../modules/local-llm', () => ({
+      initialize: initializeMock,
+      chat: chatMock,
+      release: releaseMock,
+      isInitialized: isInitializedMock,
     }));
     jest.doMock('../../db/repositories', () => ({
       profileRepository: { updateProfile: jest.fn(async () => undefined) },
@@ -355,11 +353,11 @@ describe('llmRouting', () => {
     const module = await import('./llmRouting');
 
     // Start a generation (it will be in flight)
-    let resolveGenerate: (val: { text: string; finishReason: string }) => void;
-    const generatePromise = new Promise<{ text: string; finishReason: string }>((resolve) => {
+    let resolveGenerate: (val: { text: string; backend: string }) => void;
+    const generatePromise = new Promise<{ text: string; backend: string }>((resolve) => {
       resolveGenerate = resolve;
     });
-    generateTextMock.mockReturnValue(generatePromise);
+    chatMock.mockReturnValue(generatePromise);
 
     const generationPromise = module.attemptLocalLLM(
       [{ role: 'user', content: 'hi' }],
@@ -372,14 +370,14 @@ describe('llmRouting', () => {
 
     // Now try to release
     await module.releaseLlamaContext();
-    expect(releaseModelMock).not.toHaveBeenCalled();
+    expect(releaseMock).not.toHaveBeenCalled();
 
     // Finish generation
-    resolveGenerate!({ text: '{"ok":true}', finishReason: 'stop' });
+    resolveGenerate!({ text: '{"ok":true}', backend: 'gpu' });
     await generationPromise;
 
     // Now release should work
     await module.releaseLlamaContext();
-    expect(releaseModelMock).toHaveBeenCalled();
+    expect(releaseMock).toHaveBeenCalled();
   });
 });

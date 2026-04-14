@@ -5,6 +5,7 @@ import { getApiKeys } from './config';
 import { parseStructuredJson } from './jsonRepair';
 import {
   attemptLocalLLM,
+  attemptLocalLLMStream,
   attemptCloudLLM,
   attemptCloudLLMStream,
   clampMessagesForStructuredJsonRouting,
@@ -23,7 +24,7 @@ import { createAiRequestTrace, logStreamEvent, previewText } from './runtimeDebu
 import { sanitizeProviderOrder } from '../../utils/providerOrder';
 
 /** Resolve backend attempt order from profile. Used by both JSON and text routing. */
-function getBackendAttemptOrder(profile: UserProfile) {
+function getBackendAttemptOrder(profile: UserProfile, options?: { isBackgroundTask?: boolean }) {
   const {
     orKey,
     groqKey,
@@ -82,7 +83,14 @@ function getBackendAttemptOrder(profile: UserProfile) {
     chatgptSlots.push('secondary');
   }
   if (hasCloud) attempts.push('cloud');
-  if (hasLocal || hasNoCloudFallbackLocal) attempts.push('local');
+
+  // NEVER route background tasks to the local LLM unless there is literally no cloud alternative.
+  // This prevents background queue crunching (like note enhancement) from locking the GPU and
+  // causing "Session already in use" crashes when the user tries to chat simultaneously.
+  const isBackground = options?.isBackgroundTask === true;
+  if ((hasLocal && !isBackground) || hasNoCloudFallbackLocal) {
+    attempts.push('local');
+  }
 
   if (attempts.length === 0) {
     if (__DEV__) {
@@ -159,6 +167,7 @@ export async function generateJSONWithRouting<T>(
   queueOnFailure = true,
   forceProvider?: 'groq' | 'gemini',
   providerOrderOverride?: ProviderId[],
+  options?: { isBackgroundTask?: boolean },
 ): Promise<{ parsed: T; modelUsed: string }> {
   const jsonRouteMessages = clampMessagesForStructuredJsonRouting(messages);
   const profile = await profileRepository.getProfile();
@@ -180,7 +189,7 @@ export async function generateJSONWithRouting<T>(
     gitlabDuoConnected,
     poeConnected,
     providerOrder: profileProviderOrder,
-  } = getBackendAttemptOrder(profile);
+  } = getBackendAttemptOrder(profile, { isBackgroundTask: options?.isBackgroundTask });
   let providerOrder = resolveProviderOrderOverride(providerOrderOverride) ?? profileProviderOrder;
 
   if (forceProvider === 'groq') {
@@ -290,7 +299,12 @@ export async function generateJSONWithRouting<T>(
 
 export async function generateTextWithRouting(
   messages: Message[],
-  options?: { preferCloud?: boolean; chosenModel?: string; providerOrderOverride?: ProviderId[] },
+  options?: {
+    preferCloud?: boolean;
+    chosenModel?: string;
+    providerOrderOverride?: ProviderId[];
+    isBackgroundTask?: boolean;
+  },
   queueOnFailure = true,
 ): Promise<{ text: string; modelUsed: string }> {
   const profile = await profileRepository.getProfile();
@@ -346,7 +360,7 @@ export async function generateTextWithRouting(
     gitlabDuoConnected,
     poeConnected,
     providerOrder: profileProviderOrder,
-  } = getBackendAttemptOrder(profile);
+  } = getBackendAttemptOrder(profile, { isBackgroundTask: options?.isBackgroundTask });
 
   const trace = createAiRequestTrace('text', messages, {
     chosenModel: options?.chosenModel ?? 'auto',
@@ -432,7 +446,9 @@ export async function generateTextWithRouting(
  */
 export async function generateTextWithRoutingStream(
   messages: Message[],
-  options: { chosenModel?: string; providerOrderOverride?: ProviderId[] } | undefined,
+  options:
+    | { chosenModel?: string; providerOrderOverride?: ProviderId[]; isBackgroundTask?: boolean }
+    | undefined,
   onDelta: (delta: string) => void,
   queueOnFailure = true,
 ): Promise<{ text: string; modelUsed: string }> {
@@ -451,13 +467,12 @@ export async function generateTextWithRoutingStream(
       queueOnFailure,
     });
     try {
-      const { text, modelUsed } = await attemptLocalLLM(messages, profile.localModelPath!, true);
-      logStreamEvent('local_single_chunk', {
-        modelUsed,
-        outputChars: text.length,
-        chosenModel: options?.chosenModel ?? 'auto',
-      });
-      onDelta(text);
+      const { text, modelUsed } = await attemptLocalLLMStream(
+        messages,
+        profile.localModelPath!,
+        true,
+        onDelta,
+      );
       trace.success({
         backend: 'local',
         modelUsed,
@@ -493,7 +508,7 @@ export async function generateTextWithRoutingStream(
     gitlabDuoConnected,
     poeConnected,
     providerOrder: profileProviderOrder,
-  } = getBackendAttemptOrder(profile);
+  } = getBackendAttemptOrder(profile, { isBackgroundTask: options?.isBackgroundTask });
 
   const trace = createAiRequestTrace('stream', messages, {
     chosenModel: options?.chosenModel ?? 'auto',
@@ -511,17 +526,12 @@ export async function generateTextWithRoutingStream(
     try {
       if (backend === 'local') {
         try {
-          const { text, modelUsed } = await attemptLocalLLM(
+          const { text, modelUsed } = await attemptLocalLLMStream(
             messages,
             profile.localModelPath!,
             true,
+            onDelta,
           );
-          logStreamEvent('local_single_chunk', {
-            modelUsed,
-            outputChars: text.length,
-            chosenModel: options?.chosenModel ?? 'auto',
-          });
-          onDelta(text);
           trace.success({
             backend,
             modelUsed,

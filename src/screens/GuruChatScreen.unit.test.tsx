@@ -271,7 +271,7 @@ describe('GuruChatScreen', () => {
       get: () => 'ios',
     });
     global.requestAnimationFrame = ((cb: FrameRequestCallback) =>
-      setTimeout(() => cb(Date.now()), 0)) as typeof requestAnimationFrame;
+      setTimeout(() => cb(Date.now()), 0)) as unknown as typeof requestAnimationFrame;
     global.cancelAnimationFrame = ((id: number) => clearTimeout(id)) as typeof cancelAnimationFrame;
     guruChatMemory.getSessionMemoryRow.mockResolvedValue(null);
     console.error = jest.fn((...args: unknown[]) => {

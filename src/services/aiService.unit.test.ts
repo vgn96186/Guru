@@ -28,18 +28,19 @@ async function loadAiService(opts?: {
   const localAllowed = opts?.localAllowed ?? true;
   const localCompletionText = opts?.localCompletionText ?? 'local-text';
 
-  const generateTextMock = jest.fn(async () => ({ text: localCompletionText }));
-  const releaseModelMock = jest.fn(async () => undefined);
-  const loadModelMock = jest.fn(async () => ({ id: 'mock-model-id' }));
+  const initializeMock = jest.fn(async () => ({ backend: 'gpu' }));
+  const chatMock = jest.fn(async () => ({ text: localCompletionText, backend: 'gpu' }));
+  const releaseMock = jest.fn(async () => undefined);
+  const isInitializedMock = jest.fn(async () => false);
 
   jest.doMock('react-native', () => ({
     AppState: { addEventListener: jest.fn() },
   }));
-  jest.doMock('react-native-llm-litert-mediapipe', () => ({
-    loadModel: loadModelMock,
-    generateText: generateTextMock,
-    releaseModel: releaseModelMock,
-    stopGeneration: jest.fn(),
+  jest.doMock('../../modules/local-llm', () => ({
+    initialize: initializeMock,
+    chat: chatMock,
+    release: releaseMock,
+    isInitialized: isInitializedMock,
   }));
   jest.doMock('../db/repositories', () => ({
     profileRepository: { getProfile: jest.fn(() => Promise.resolve(profile)) },
@@ -65,7 +66,7 @@ async function loadAiService(opts?: {
   }));
 
   const aiService = await import('./aiService');
-  return { aiService, generateTextMock };
+  return { aiService, chatMock };
 }
 
 describe('aiService routing policy', () => {
@@ -138,7 +139,7 @@ describe('aiService routing policy', () => {
   });
 
   it('falls back to local only after all cloud backends fail', async () => {
-    const { aiService, generateTextMock } = await loadAiService({
+    const { aiService, chatMock } = await loadAiService({
       localCompletionText: 'local-success',
     });
     const fetchMock = jest.spyOn(globalThis, 'fetch' as any).mockImplementation(
@@ -147,14 +148,14 @@ describe('aiService routing policy', () => {
           ok: false,
           status: 500,
           text: async () => 'cloud down',
-        } as any),
+        }) as any,
     );
 
     const result = await aiService.generateTextWithRouting([{ role: 'user', content: 'hello' }]);
 
     expect(result.text).toBe('local-success');
     expect(result.modelUsed.startsWith('local-')).toBe(true);
-    expect(generateTextMock).toHaveBeenCalledTimes(1);
+    expect(chatMock).toHaveBeenCalledTimes(1);
     expect(fetchMock).toHaveBeenCalled();
   });
 
@@ -189,7 +190,7 @@ describe('aiService routing policy', () => {
   });
 
   it('uses local directly when local model is explicitly selected', async () => {
-    const { aiService, generateTextMock } = await loadAiService({
+    const { aiService, chatMock } = await loadAiService({
       localCompletionText: 'local-only',
     });
     const fetchMock = jest.spyOn(globalThis, 'fetch' as any).mockImplementation(async () => {
@@ -202,12 +203,12 @@ describe('aiService routing policy', () => {
 
     expect(result.text).toBe('local-only');
     expect(result.modelUsed.startsWith('local-')).toBe(true);
-    expect(generateTextMock).toHaveBeenCalledTimes(1);
+    expect(chatMock).toHaveBeenCalledTimes(1);
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
   it('uses local when no cloud keys exist but local model file is present', async () => {
-    const { aiService, generateTextMock } = await loadAiService({
+    const { aiService, chatMock } = await loadAiService({
       profile: {
         openrouterKey: '',
         groqApiKey: '',
@@ -227,7 +228,7 @@ describe('aiService routing policy', () => {
 
     expect(result.text).toBe('local-no-cloud');
     expect(result.modelUsed.startsWith('local-')).toBe(true);
-    expect(generateTextMock).toHaveBeenCalledTimes(1);
+    expect(chatMock).toHaveBeenCalledTimes(1);
     expect(fetchMock).not.toHaveBeenCalled();
   });
 

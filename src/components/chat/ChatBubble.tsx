@@ -19,6 +19,7 @@ interface ChatBubbleProps {
   expandedSourcesMessageId: string | null;
   imageJobKey: string | null;
   loading: boolean;
+  isInitializing?: boolean;
   copyMessage: (text: string) => void;
   openSource: (url: string) => void;
   setLightboxUri: (uri: string) => void;
@@ -39,6 +40,7 @@ const ChatBubbleComponent = ({
   expandedSourcesMessageId,
   imageJobKey,
   loading,
+  isInitializing = false,
   copyMessage,
   openSource,
   setLightboxUri,
@@ -62,7 +64,7 @@ const ChatBubbleComponent = ({
                 •
               </LinearText>
               <LinearText variant="meta" tone="muted" style={styles.msgMetaText}>
-                Thinking...
+                {isInitializing ? 'Waking up on-device AI...' : 'Thinking...'}
               </LinearText>
             </View>
             <View style={[styles.bubbleWrap, styles.bubbleWrapGuru]}>

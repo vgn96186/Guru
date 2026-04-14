@@ -1,7 +1,3 @@
-import { setupAiSdkPolyfills } from 'react-native-llm-litert-mediapipe';
-
-setupAiSdkPolyfills({ verbose: __DEV__ });
-
 import 'react-native-gesture-handler';
 import { registerRootComponent } from 'expo';
 import { LogBox, Text, TextInput, Platform } from 'react-native';

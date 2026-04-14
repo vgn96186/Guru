@@ -1,0 +1,65 @@
+buildscript {
+    ext {
+        localLlmAgpVersion = rootProject.ext.has('androidGradlePluginVersion')
+            ? rootProject.ext.get('androidGradlePluginVersion')
+            : '8.7.3'
+        localLlmKotlinVersion = rootProject.ext.has('kotlinVersion')
+            ? rootProject.ext.get('kotlinVersion')
+            : '2.1.20'
+    }
+
+    repositories {
+        google()
+        mavenCentral()
+    }
+
+    dependencies {
+        classpath("com.android.tools.build:gradle:${localLlmAgpVersion}")
+        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:${localLlmKotlinVersion}")
+    }
+}
+
+apply plugin: 'com.android.library'
+apply plugin: 'org.jetbrains.kotlin.android'
+
+group = 'expo.modules.localllm'
+
+android {
+    namespace = "expo.modules.localllm"
+    compileSdkVersion safeExtGet("compileSdkVersion", 36)
+
+    defaultConfig {
+        minSdkVersion safeExtGet("minSdkVersion", 28)
+        targetSdkVersion safeExtGet("targetSdkVersion", 36)
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+
+    kotlinOptions {
+        jvmTarget = "17"
+    }
+}
+
+repositories {
+    google()
+    mavenCentral()
+}
+
+dependencies {
+    def expoModulesCoreProject = findProject(':expo-modules-core')
+    if (expoModulesCoreProject != null) {
+        implementation expoModulesCoreProject
+    }
+
+    // LiteRT-LM on-device LLM inference (Google AI Edge) — same coordinate used by PokeClaw.
+    implementation("com.google.ai.edge.litertlm:litertlm-android:0.10.0")
+
+    implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1"
+}
+
+def safeExtGet(prop, fallback) {
+    rootProject.ext.has(prop) ? rootProject.ext.get(prop) : fallback
+}

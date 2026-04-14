@@ -146,6 +146,10 @@ jest.mock('react-native', () => {
     Modal,
     KeyboardAvoidingView,
     StatusBar,
+    AccessibilityInfo: {
+      isReduceMotionEnabled: jest.fn(() => Promise.resolve(false)),
+      addEventListener: jest.fn(() => ({ remove: jest.fn() })),
+    },
     Alert: {
       alert: jest.fn(),
     },

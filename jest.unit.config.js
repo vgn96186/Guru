@@ -32,8 +32,6 @@ module.exports = {
     '^expo-network$': '<rootDir>/__mocks__/expo-network.js',
     '^whisper.rn$': '<rootDir>/__mocks__/whisper.rn.js',
     '^whisper\\.rn/index\\.js$': '<rootDir>/__mocks__/whisper.rn.js',
-    '^react-native-llm-litert-mediapipe$':
-      '<rootDir>/__mocks__/react-native-llm-litert-mediapipe.js',
     '^expo-sqlite$': '<rootDir>/__mocks__/expo-sqlite.js',
     '^react-native-worklets$': '<rootDir>/__mocks__/react-native-worklets.js',
     '^react-native-worklets-core$': '<rootDir>/__mocks__/react-native-worklets.js',

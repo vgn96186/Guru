@@ -189,6 +189,8 @@ async function runSingleAnalysisPass(text: string): Promise<LectureAnalysis> {
     ANALYSIS_COMPLEXITY,
     true,
     'groq',
+    undefined,
+    { isBackgroundTask: true },
   );
   return { ...mapParsedAnalysis(parsed), modelUsed };
 }

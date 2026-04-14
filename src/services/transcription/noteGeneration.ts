@@ -83,7 +83,7 @@ ${transcriptExcerpt || '(No transcript available)'}`;
         { role: 'system', content: ADHD_NOTE_SYSTEM_PROMPT },
         { role: 'user', content: input },
       ],
-      { providerOrderOverride: DEFAULT_PROVIDER_ORDER },
+      { providerOrderOverride: DEFAULT_PROVIDER_ORDER, isBackgroundTask: true },
     );
     return text.trim();
   } catch {

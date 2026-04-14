@@ -100,6 +100,8 @@ export async function generateAccountabilityMessages(stats: {
     'high',
     true,
     'groq',
+    undefined,
+    { isBackgroundTask: true },
   );
   return parsed.messages;
 }
@@ -231,8 +233,8 @@ function buildFallbackDailyAgenda(
         type === 'review'
           ? `Rescue ${topic.name}`
           : type === 'test'
-          ? `Test ${topic.name}`
-          : `Build ${topic.name}`,
+            ? `Test ${topic.name}`
+            : `Build ${topic.name}`,
       topicIds: [topic.id],
       durationMinutes,
       startTime: formatAgendaTime(cursorMinutes),
@@ -305,6 +307,8 @@ export async function replanDayWithRouting(
     'high',
     true,
     'groq',
+    undefined,
+    { isBackgroundTask: true },
   );
   return parsed;
 }

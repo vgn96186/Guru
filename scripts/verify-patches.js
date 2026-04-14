@@ -18,26 +18,11 @@ const NM = path.join(ROOT, 'node_modules');
 
 // ── Patch markers ────────────────────────────────────────────────────────────
 // Each entry: [relative path inside node_modules, substring that MUST exist]
-const PATCH_MARKERS = [
-  // GPU backend re-enabled with auto strategy (NPU→GPU→CPU)
-  [
-    'react-native-llm-litert-mediapipe/android/src/main/java/com/mediapipellm/LiteRtLmEngine.kt',
-    'selectBackendPlans',
-  ],
-  // backendPreference wired through RN bridge
-  [
-    'react-native-llm-litert-mediapipe/android/src/main/java/com/mediapipellm/MediaPipeLlmModule.kt',
-    'getStringSafe',
-  ],
-  // backendPreference in JS types
-  ['react-native-llm-litert-mediapipe/src/LlmApi.types.ts', 'backendPreference'],
-  // backendPreference forwarded in loadModel
-  ['react-native-llm-litert-mediapipe/src/LlmApi.ts', 'backendPreference'],
-];
+const PATCH_MARKERS = [];
 
 // ── Patch files that should exist ────────────────────────────────────────────
 const PATCH_DIR = path.join(ROOT, 'patches');
-const EXPECTED_PATCHES = ['react-native-llm-litert-mediapipe+1.0.0.patch'];
+const EXPECTED_PATCHES = [];
 
 // ── Run checks ───────────────────────────────────────────────────────────────
 const flags = new Set(process.argv.slice(2));

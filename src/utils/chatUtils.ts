@@ -1,4 +1,4 @@
-import { getApiKeys } from '../services/ai/llmRouting';
+import { getApiKeys } from '../services/ai/config';
 import { GeneratedStudyImageStyle } from '../db/queries/generatedStudyImages';
 import { ChatMessage } from '../types/chat';
 

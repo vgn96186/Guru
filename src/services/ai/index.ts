@@ -25,7 +25,7 @@ export type {
 export { parseStructuredJson } from './jsonRepair';
 
 // LlmRouter — local vs cloud fallbacks, mutexes
-export { releaseLlamaContext } from './llmRouting';
+export { releaseLlamaContext, addLlmStateListener } from './llmRouting';
 
 // Core generation
 export {

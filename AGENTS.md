@@ -115,7 +115,7 @@ modules/
 
 - Implementation lives in `src/services/ai/` (config, types, schemas, jsonRepair, llmRouting, generate, medicalSearch, content, planning, chat, notifications, catalyze). `aiService.ts` is a thin barrel re-exporting the public API.
 - **Module aliases:** LlmRouter = llmRouting, JsonRepair = jsonRepair, MedicalGrounding = medicalSearch, ContentGeneration = content.
-- Local LLM: `react-native-llm-litert-mediapipe` with **Gemma 4 E4B** (default) or Gemma 4 E2B via `profile.localModelPath` when `profile.useLocalModel = true`.
+- Local LLM: `local-llm` module with **Gemma 4 E4B** (default) or Gemma 4 E2B via `profile.localModelPath` when `profile.useLocalModel = true`.
 - Default local model: **Gemma 4 E4B** (128K context, native function calling, advanced multi-step reasoning, released April 2026).
 - Local Whisper: whisper.rn via `profile.localWhisperPath` when `profile.useLocalWhisper = true`.
 - Cloud routing is **provider-order driven**, using `profile.providerOrder` / `disabledProviders` with a broad provider set: ChatGPT, GitHub Copilot, GitLab Duo, Poe, OpenRouter, Groq, Qwen, AgentRouter, GitHub Models, Kilo, DeepSeek, Gemini, and Cloudflare.
@@ -325,6 +325,6 @@ When writing memory:
 - `EXTERNAL_APPS[].id` values exactly match `SupportedMedicalApp` union type keys — safe to cast `app.id as SupportedMedicalApp`.
 - `saveLectureNote()` writes to `lecture_notes`, not `ai_cache`.
 - DB `confidence` column (0–3 int) vs `LectureAnalysis.estimatedConfidence` (1–3 int) — compatible, pass directly.
-- `useLocalWhisper` / `localWhisperPath` on profile = on-device Whisper model (whisper.rn). Separate from `useLocalModel` / `localModelPath` which is the LLM (react-native-llm-litert-mediapipe with Gemma 3n/4).
+- `useLocalWhisper` / `localWhisperPath` on profile = on-device Whisper model (whisper.rn). Separate from `useLocalModel` / `localModelPath` which is the LLM (local-llm module with Gemma 3n/4).
 - Release builds do not ship bundled cloud API keys; provider access comes from user-entered keys or OAuth connections in Settings.
 - The `scripts/archive/` folder contains deprecated regex-based patch scripts. All their changes are already in source. Do not run them or create new patch scripts.

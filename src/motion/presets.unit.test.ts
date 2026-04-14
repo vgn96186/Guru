@@ -13,22 +13,7 @@ const TestRenderer = require('react-test-renderer') as {
   act: (callback: () => void | Promise<void>) => Promise<void>;
 };
 
-type AccessibilityInfoMock = {
-  addEventListener: jest.Mock;
-  isReduceMotionEnabled: jest.Mock<Promise<boolean>, []>;
-};
-
-const AccessibilityInfo =
-  require('react-native/Libraries/Components/AccessibilityInfo/AccessibilityInfo')
-    .default as AccessibilityInfoMock;
-
-jest.mock('react-native/Libraries/Components/AccessibilityInfo/AccessibilityInfo', () => ({
-  __esModule: true,
-  default: {
-    addEventListener: jest.fn(() => ({ remove: jest.fn() })),
-    isReduceMotionEnabled: jest.fn(() => Promise.resolve(false)),
-  },
-}));
+import { AccessibilityInfo } from 'react-native';
 
 jest.mock('../motion/ScreenMotion', () => ({
   __esModule: true,

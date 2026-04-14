@@ -1,0 +1,1351 @@
+diff --git a/node_modules/react-native-llm-litert-mediapipe/android/build.gradle b/node_modules/react-native-llm-litert-mediapipe/android/build.gradle
+index daf1ed5..d244417 100644
+--- a/node_modules/react-native-llm-litert-mediapipe/android/build.gradle
++++ b/node_modules/react-native-llm-litert-mediapipe/android/build.gradle
+@@ -33,6 +33,7 @@ android {
+   
+   kotlinOptions {
+     jvmTarget = "17"
++    freeCompilerArgs += ["-Xskip-metadata-version-check"]
+   }
+   
+   sourceSets {
+@@ -62,5 +63,5 @@ dependencies {
+   implementation "com.google.mediapipe:tasks-vision:0.10.29"
+   
+   // LiteRT-LM (for .litertlm models with audio support)
+-  implementation "com.google.ai.edge.litertlm:litertlm-android:0.9.0-alpha01"
++  implementation "com.google.ai.edge.litertlm:litertlm-android:0.10.0"
+ }
+diff --git a/node_modules/react-native-llm-litert-mediapipe/android/build/generated/source/buildConfig/debug/com/mediapipellm/BuildConfig.java b/node_modules/react-native-llm-litert-mediapipe/android/build/generated/source/buildConfig/debug/com/mediapipellm/BuildConfig.java
+new file mode 100644
+index 0000000..87cc7ab
+--- /dev/null
++++ b/node_modules/react-native-llm-litert-mediapipe/android/build/generated/source/buildConfig/debug/com/mediapipellm/BuildConfig.java
+@@ -0,0 +1,10 @@
++/**
++ * Automatically generated file. DO NOT MODIFY
++ */
++package com.mediapipellm;
++
++public final class BuildConfig {
++  public static final boolean DEBUG = Boolean.parseBoolean("true");
++  public static final String LIBRARY_PACKAGE_NAME = "com.mediapipellm";
++  public static final String BUILD_TYPE = "debug";
++}
+diff --git a/node_modules/react-native-llm-litert-mediapipe/android/build/intermediates/aapt_friendly_merged_manifests/debug/processDebugManifest/aapt/AndroidManifest.xml b/node_modules/react-native-llm-litert-mediapipe/android/build/intermediates/aapt_friendly_merged_manifests/debug/processDebugManifest/aapt/AndroidManifest.xml
+new file mode 100644
+index 0000000..551df0b
+--- /dev/null
++++ b/node_modules/react-native-llm-litert-mediapipe/android/build/intermediates/aapt_friendly_merged_manifests/debug/processDebugManifest/aapt/AndroidManifest.xml
+@@ -0,0 +1,30 @@
++<?xml version="1.0" encoding="utf-8"?>
++<manifest xmlns:android="http://schemas.android.com/apk/res/android"
++    package="com.mediapipellm" >
++
++    <uses-sdk android:minSdkVersion="24" />
++
++    <application>
++
++        <!--
++        OpenCL native libraries for GPU acceleration (optional, fallback to CPU if not
++        available)
++        -->
++        <!-- Required for MediaPipe GPU backend -->
++        <uses-native-library
++            android:name="libOpenCL.so"
++            android:required="false" />
++        <uses-native-library
++            android:name="libOpenCL-car.so"
++            android:required="false" />
++        <uses-native-library
++            android:name="libOpenCL-pixel.so"
++            android:required="false" />
++
++        <!-- Required for LiteRT-LM GPU backend -->
++        <uses-native-library
++            android:name="libvndksupport.so"
++            android:required="false" />
++    </application>
++
++</manifest>
+\ No newline at end of file
+diff --git a/node_modules/react-native-llm-litert-mediapipe/android/build/intermediates/aapt_friendly_merged_manifests/debug/processDebugManifest/aapt/output-metadata.json b/node_modules/react-native-llm-litert-mediapipe/android/build/intermediates/aapt_friendly_merged_manifests/debug/processDebugManifest/aapt/output-metadata.json
+new file mode 100644
+index 0000000..6362fab
+--- /dev/null
++++ b/node_modules/react-native-llm-litert-mediapipe/android/build/intermediates/aapt_friendly_merged_manifests/debug/processDebugManifest/aapt/output-metadata.json
+@@ -0,0 +1,18 @@
++{
++  "version": 3,
++  "artifactType": {
++    "type": "AAPT_FRIENDLY_MERGED_MANIFESTS",
++    "kind": "Directory"
++  },
++  "applicationId": "com.mediapipellm",
++  "variantName": "debug",
++  "elements": [
++    {
++      "type": "SINGLE",
++      "filters": [],
++      "attributes": [],
++      "outputFile": "AndroidManifest.xml"
++    }
++  ],
++  "elementType": "File"
++}
+\ No newline at end of file
+diff --git a/node_modules/react-native-llm-litert-mediapipe/android/build/intermediates/aar_metadata/debug/writeDebugAarMetadata/aar-metadata.properties b/node_modules/react-native-llm-litert-mediapipe/android/build/intermediates/aar_metadata/debug/writeDebugAarMetadata/aar-metadata.properties
+new file mode 100644
+index 0000000..1211b1e
+--- /dev/null
++++ b/node_modules/react-native-llm-litert-mediapipe/android/build/intermediates/aar_metadata/debug/writeDebugAarMetadata/aar-metadata.properties
+@@ -0,0 +1,6 @@
++aarFormatVersion=1.0
++aarMetadataVersion=1.0
++minCompileSdk=1
++minCompileSdkExtension=0
++minAndroidGradlePluginVersion=1.0.0
++coreLibraryDesugaringEnabled=false
+diff --git a/node_modules/react-native-llm-litert-mediapipe/android/build/intermediates/annotation_processor_list/debug/javaPreCompileDebug/annotationProcessors.json b/node_modules/react-native-llm-litert-mediapipe/android/build/intermediates/annotation_processor_list/debug/javaPreCompileDebug/annotationProcessors.json
+new file mode 100644
+index 0000000..9e26dfe
+--- /dev/null
++++ b/node_modules/react-native-llm-litert-mediapipe/android/build/intermediates/annotation_processor_list/debug/javaPreCompileDebug/annotationProcessors.json
+@@ -0,0 +1 @@
++{}
+\ No newline at end of file
+diff --git a/node_modules/react-native-llm-litert-mediapipe/android/build/intermediates/compile_r_class_jar/debug/generateDebugRFile/R.jar b/node_modules/react-native-llm-litert-mediapipe/android/build/intermediates/compile_r_class_jar/debug/generateDebugRFile/R.jar
+new file mode 100644
+index 0000000..c13a9fc
+Binary files /dev/null and b/node_modules/react-native-llm-litert-mediapipe/android/build/intermediates/compile_r_class_jar/debug/generateDebugRFile/R.jar differ
+diff --git a/node_modules/react-native-llm-litert-mediapipe/android/build/intermediates/compile_symbol_list/debug/generateDebugRFile/R.txt b/node_modules/react-native-llm-litert-mediapipe/android/build/intermediates/compile_symbol_list/debug/generateDebugRFile/R.txt
+new file mode 100644
+index 0000000..e69de29
+diff --git a/node_modules/react-native-llm-litert-mediapipe/android/build/intermediates/incremental/debug/packageDebugResources/compile-file-map.properties b/node_modules/react-native-llm-litert-mediapipe/android/build/intermediates/incremental/debug/packageDebugResources/compile-file-map.properties
+new file mode 100644
+index 0000000..d1ce19a
+--- /dev/null
++++ b/node_modules/react-native-llm-litert-mediapipe/android/build/intermediates/incremental/debug/packageDebugResources/compile-file-map.properties
+@@ -0,0 +1 @@
++#Mon Apr 13 15:36:43 IST 2026
+diff --git a/node_modules/react-native-llm-litert-mediapipe/android/build/intermediates/incremental/debug/packageDebugResources/merger.xml b/node_modules/react-native-llm-litert-mediapipe/android/build/intermediates/incremental/debug/packageDebugResources/merger.xml
+new file mode 100644
+index 0000000..49e3c81
+--- /dev/null
++++ b/node_modules/react-native-llm-litert-mediapipe/android/build/intermediates/incremental/debug/packageDebugResources/merger.xml
+@@ -0,0 +1,2 @@
++<?xml version="1.0" encoding="utf-8"?>
++<merger version="3"><dataSet aapt-namespace="http://schemas.android.com/apk/res-auto" config="main$Generated" generated="true" ignore_pattern="!.svn:!.git:!.ds_store:!*.scc:.*:&lt;dir>_*:!CVS:!thumbs.db:!picasa.ini:!*~"><source path="C:\Guru\node_modules\react-native-llm-litert-mediapipe\android\src\main\res"/></dataSet><dataSet aapt-namespace="http://schemas.android.com/apk/res-auto" config="main" generated-set="main$Generated" ignore_pattern="!.svn:!.git:!.ds_store:!*.scc:.*:&lt;dir>_*:!CVS:!thumbs.db:!picasa.ini:!*~"><source path="C:\Guru\node_modules\react-native-llm-litert-mediapipe\android\src\main\res"/></dataSet><dataSet aapt-namespace="http://schemas.android.com/apk/res-auto" config="debug$Generated" generated="true" ignore_pattern="!.svn:!.git:!.ds_store:!*.scc:.*:&lt;dir>_*:!CVS:!thumbs.db:!picasa.ini:!*~"><source path="C:\Guru\node_modules\react-native-llm-litert-mediapipe\android\src\debug\res"/></dataSet><dataSet aapt-namespace="http://schemas.android.com/apk/res-auto" config="debug" generated-set="debug$Generated" ignore_pattern="!.svn:!.git:!.ds_store:!*.scc:.*:&lt;dir>_*:!CVS:!thumbs.db:!picasa.ini:!*~"><source path="C:\Guru\node_modules\react-native-llm-litert-mediapipe\android\src\debug\res"/></dataSet><dataSet aapt-namespace="http://schemas.android.com/apk/res-auto" config="generated$Generated" generated="true" ignore_pattern="!.svn:!.git:!.ds_store:!*.scc:.*:&lt;dir>_*:!CVS:!thumbs.db:!picasa.ini:!*~"><source path="C:\Guru\node_modules\react-native-llm-litert-mediapipe\android\build\generated\res\resValues\debug"/></dataSet><dataSet aapt-namespace="http://schemas.android.com/apk/res-auto" config="generated" generated-set="generated$Generated" ignore_pattern="!.svn:!.git:!.ds_store:!*.scc:.*:&lt;dir>_*:!CVS:!thumbs.db:!picasa.ini:!*~"><source path="C:\Guru\node_modules\react-native-llm-litert-mediapipe\android\build\generated\res\resValues\debug"/></dataSet><mergedItems/></merger>
+\ No newline at end of file
+diff --git a/node_modules/react-native-llm-litert-mediapipe/android/build/intermediates/local_only_symbol_list/debug/parseDebugLocalResources/R-def.txt b/node_modules/react-native-llm-litert-mediapipe/android/build/intermediates/local_only_symbol_list/debug/parseDebugLocalResources/R-def.txt
+new file mode 100644
+index 0000000..78ac5b8
+--- /dev/null
++++ b/node_modules/react-native-llm-litert-mediapipe/android/build/intermediates/local_only_symbol_list/debug/parseDebugLocalResources/R-def.txt
+@@ -0,0 +1,2 @@
++R_DEF: Internal format may change without notice
++local
+diff --git a/node_modules/react-native-llm-litert-mediapipe/android/build/intermediates/manifest_merge_blame_file/debug/processDebugManifest/manifest-merger-blame-debug-report.txt b/node_modules/react-native-llm-litert-mediapipe/android/build/intermediates/manifest_merge_blame_file/debug/processDebugManifest/manifest-merger-blame-debug-report.txt
+new file mode 100644
+index 0000000..ac59d6a
+--- /dev/null
++++ b/node_modules/react-native-llm-litert-mediapipe/android/build/intermediates/manifest_merge_blame_file/debug/processDebugManifest/manifest-merger-blame-debug-report.txt
+@@ -0,0 +1,43 @@
++1<?xml version="1.0" encoding="utf-8"?>
++2<manifest xmlns:android="http://schemas.android.com/apk/res/android"
++3    package="com.mediapipellm" >
++4
++5    <uses-sdk android:minSdkVersion="24" />
++6
++7    <application>
++7-->C:\Guru\node_modules\react-native-llm-litert-mediapipe\android\src\main\AndroidManifest.xml:3:5-13:19
++8
++9        <!--
++10        OpenCL native libraries for GPU acceleration (optional, fallback to CPU if not
++11        available)
++12        -->
++13        <!-- Required for MediaPipe GPU backend -->
++14        <uses-native-library
++14-->C:\Guru\node_modules\react-native-llm-litert-mediapipe\android\src\main\AndroidManifest.xml:7:9-85
++15            android:name="libOpenCL.so"
++15-->C:\Guru\node_modules\react-native-llm-litert-mediapipe\android\src\main\AndroidManifest.xml:7:30-57
++16            android:required="false" />
++16-->C:\Guru\node_modules\react-native-llm-litert-mediapipe\android\src\main\AndroidManifest.xml:7:58-82
++17        <uses-native-library
++17-->C:\Guru\node_modules\react-native-llm-litert-mediapipe\android\src\main\AndroidManifest.xml:7:9-85
++18            android:name="libOpenCL-car.so"
++18-->C:\Guru\node_modules\react-native-llm-litert-mediapipe\android\src\main\AndroidManifest.xml:7:30-57
++19            android:required="false" />
++19-->C:\Guru\node_modules\react-native-llm-litert-mediapipe\android\src\main\AndroidManifest.xml:7:58-82
++20        <uses-native-library
++20-->C:\Guru\node_modules\react-native-llm-litert-mediapipe\android\src\main\AndroidManifest.xml:7:9-85
++21            android:name="libOpenCL-pixel.so"
++21-->C:\Guru\node_modules\react-native-llm-litert-mediapipe\android\src\main\AndroidManifest.xml:7:30-57
++22            android:required="false" />
++22-->C:\Guru\node_modules\react-native-llm-litert-mediapipe\android\src\main\AndroidManifest.xml:7:58-82
++23
++24        <!-- Required for LiteRT-LM GPU backend -->
++25        <uses-native-library
++25-->C:\Guru\node_modules\react-native-llm-litert-mediapipe\android\src\main\AndroidManifest.xml:7:9-85
++26            android:name="libvndksupport.so"
++26-->C:\Guru\node_modules\react-native-llm-litert-mediapipe\android\src\main\AndroidManifest.xml:7:30-57
++27            android:required="false" />
++27-->C:\Guru\node_modules\react-native-llm-litert-mediapipe\android\src\main\AndroidManifest.xml:7:58-82
++28    </application>
++29
++30</manifest>
+diff --git a/node_modules/react-native-llm-litert-mediapipe/android/build/intermediates/merged_manifest/debug/processDebugManifest/AndroidManifest.xml b/node_modules/react-native-llm-litert-mediapipe/android/build/intermediates/merged_manifest/debug/processDebugManifest/AndroidManifest.xml
+new file mode 100644
+index 0000000..551df0b
+--- /dev/null
++++ b/node_modules/react-native-llm-litert-mediapipe/android/build/intermediates/merged_manifest/debug/processDebugManifest/AndroidManifest.xml
+@@ -0,0 +1,30 @@
++<?xml version="1.0" encoding="utf-8"?>
++<manifest xmlns:android="http://schemas.android.com/apk/res/android"
++    package="com.mediapipellm" >
++
++    <uses-sdk android:minSdkVersion="24" />
++
++    <application>
++
++        <!--
++        OpenCL native libraries for GPU acceleration (optional, fallback to CPU if not
++        available)
++        -->
++        <!-- Required for MediaPipe GPU backend -->
++        <uses-native-library
++            android:name="libOpenCL.so"
++            android:required="false" />
++        <uses-native-library
++            android:name="libOpenCL-car.so"
++            android:required="false" />
++        <uses-native-library
++            android:name="libOpenCL-pixel.so"
++            android:required="false" />
++
++        <!-- Required for LiteRT-LM GPU backend -->
++        <uses-native-library
++            android:name="libvndksupport.so"
++            android:required="false" />
++    </application>
++
++</manifest>
+\ No newline at end of file
+diff --git a/node_modules/react-native-llm-litert-mediapipe/android/build/intermediates/navigation_json/debug/extractDeepLinksDebug/navigation.json b/node_modules/react-native-llm-litert-mediapipe/android/build/intermediates/navigation_json/debug/extractDeepLinksDebug/navigation.json
+new file mode 100644
+index 0000000..0637a08
+--- /dev/null
++++ b/node_modules/react-native-llm-litert-mediapipe/android/build/intermediates/navigation_json/debug/extractDeepLinksDebug/navigation.json
+@@ -0,0 +1 @@
++[]
+\ No newline at end of file
+diff --git a/node_modules/react-native-llm-litert-mediapipe/android/build/intermediates/nested_resources_validation_report/debug/generateDebugResources/nestedResourcesValidationReport.txt b/node_modules/react-native-llm-litert-mediapipe/android/build/intermediates/nested_resources_validation_report/debug/generateDebugResources/nestedResourcesValidationReport.txt
+new file mode 100644
+index 0000000..08f4ebe
+--- /dev/null
++++ b/node_modules/react-native-llm-litert-mediapipe/android/build/intermediates/nested_resources_validation_report/debug/generateDebugResources/nestedResourcesValidationReport.txt
+@@ -0,0 +1 @@
++0 Warning/Error
+\ No newline at end of file
+diff --git a/node_modules/react-native-llm-litert-mediapipe/android/build/intermediates/symbol_list_with_package_name/debug/generateDebugRFile/package-aware-r.txt b/node_modules/react-native-llm-litert-mediapipe/android/build/intermediates/symbol_list_with_package_name/debug/generateDebugRFile/package-aware-r.txt
+new file mode 100644
+index 0000000..42101fa
+--- /dev/null
++++ b/node_modules/react-native-llm-litert-mediapipe/android/build/intermediates/symbol_list_with_package_name/debug/generateDebugRFile/package-aware-r.txt
+@@ -0,0 +1 @@
++com.mediapipellm
+diff --git a/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/inputs/source-to-output.tab b/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/inputs/source-to-output.tab
+new file mode 100644
+index 0000000..30456d5
+Binary files /dev/null and b/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/inputs/source-to-output.tab differ
+diff --git a/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/inputs/source-to-output.tab.keystream b/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/inputs/source-to-output.tab.keystream
+new file mode 100644
+index 0000000..99d05a4
+Binary files /dev/null and b/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/inputs/source-to-output.tab.keystream differ
+diff --git a/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/inputs/source-to-output.tab.keystream.len b/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/inputs/source-to-output.tab.keystream.len
+new file mode 100644
+index 0000000..bad0daf
+Binary files /dev/null and b/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/inputs/source-to-output.tab.keystream.len differ
+diff --git a/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/inputs/source-to-output.tab.len b/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/inputs/source-to-output.tab.len
+new file mode 100644
+index 0000000..ec8f944
+Binary files /dev/null and b/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/inputs/source-to-output.tab.len differ
+diff --git a/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/inputs/source-to-output.tab.values.at b/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/inputs/source-to-output.tab.values.at
+new file mode 100644
+index 0000000..06d68bf
+Binary files /dev/null and b/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/inputs/source-to-output.tab.values.at differ
+diff --git a/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/inputs/source-to-output.tab_i b/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/inputs/source-to-output.tab_i
+new file mode 100644
+index 0000000..d5a61ed
+Binary files /dev/null and b/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/inputs/source-to-output.tab_i differ
+diff --git a/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/inputs/source-to-output.tab_i.len b/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/inputs/source-to-output.tab_i.len
+new file mode 100644
+index 0000000..131e265
+Binary files /dev/null and b/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/inputs/source-to-output.tab_i.len differ
+diff --git a/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-attributes.tab b/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-attributes.tab
+new file mode 100644
+index 0000000..6ec9be3
+Binary files /dev/null and b/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-attributes.tab differ
+diff --git a/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-attributes.tab.keystream b/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-attributes.tab.keystream
+new file mode 100644
+index 0000000..20ef6ec
+Binary files /dev/null and b/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-attributes.tab.keystream differ
+diff --git a/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-attributes.tab.keystream.len b/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-attributes.tab.keystream.len
+new file mode 100644
+index 0000000..bba171d
+Binary files /dev/null and b/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-attributes.tab.keystream.len differ
+diff --git a/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-attributes.tab.len b/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-attributes.tab.len
+new file mode 100644
+index 0000000..fd5292d
+Binary files /dev/null and b/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-attributes.tab.len differ
+diff --git a/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-attributes.tab.values.at b/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-attributes.tab.values.at
+new file mode 100644
+index 0000000..9e593fa
+Binary files /dev/null and b/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-attributes.tab.values.at differ
+diff --git a/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-attributes.tab_i b/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-attributes.tab_i
+new file mode 100644
+index 0000000..5aa5633
+Binary files /dev/null and b/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-attributes.tab_i differ
+diff --git a/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-attributes.tab_i.len b/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-attributes.tab_i.len
+new file mode 100644
+index 0000000..131e265
+Binary files /dev/null and b/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-attributes.tab_i.len differ
+diff --git a/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-fq-name-to-source.tab b/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-fq-name-to-source.tab
+new file mode 100644
+index 0000000..c01ce3d
+Binary files /dev/null and b/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-fq-name-to-source.tab differ
+diff --git a/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-fq-name-to-source.tab.keystream b/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-fq-name-to-source.tab.keystream
+new file mode 100644
+index 0000000..20ef6ec
+Binary files /dev/null and b/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-fq-name-to-source.tab.keystream differ
+diff --git a/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-fq-name-to-source.tab.keystream.len b/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-fq-name-to-source.tab.keystream.len
+new file mode 100644
+index 0000000..bba171d
+Binary files /dev/null and b/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-fq-name-to-source.tab.keystream.len differ
+diff --git a/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-fq-name-to-source.tab.len b/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-fq-name-to-source.tab.len
+new file mode 100644
+index 0000000..fd5292d
+Binary files /dev/null and b/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-fq-name-to-source.tab.len differ
+diff --git a/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-fq-name-to-source.tab.values.at b/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-fq-name-to-source.tab.values.at
+new file mode 100644
+index 0000000..20d7f32
+Binary files /dev/null and b/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-fq-name-to-source.tab.values.at differ
+diff --git a/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-fq-name-to-source.tab_i b/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-fq-name-to-source.tab_i
+new file mode 100644
+index 0000000..5aa5633
+Binary files /dev/null and b/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-fq-name-to-source.tab_i differ
+diff --git a/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-fq-name-to-source.tab_i.len b/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-fq-name-to-source.tab_i.len
+new file mode 100644
+index 0000000..131e265
+Binary files /dev/null and b/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-fq-name-to-source.tab_i.len differ
+diff --git a/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/internal-name-to-source.tab b/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/internal-name-to-source.tab
+new file mode 100644
+index 0000000..f52dc1b
+Binary files /dev/null and b/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/internal-name-to-source.tab differ
+diff --git a/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/internal-name-to-source.tab.keystream b/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/internal-name-to-source.tab.keystream
+new file mode 100644
+index 0000000..6682904
+Binary files /dev/null and b/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/internal-name-to-source.tab.keystream differ
+diff --git a/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/internal-name-to-source.tab.keystream.len b/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/internal-name-to-source.tab.keystream.len
+new file mode 100644
+index 0000000..e82bbf9
+Binary files /dev/null and b/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/internal-name-to-source.tab.keystream.len differ
+diff --git a/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/internal-name-to-source.tab.len b/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/internal-name-to-source.tab.len
+new file mode 100644
+index 0000000..c14ff15
+Binary files /dev/null and b/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/internal-name-to-source.tab.len differ
+diff --git a/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/internal-name-to-source.tab.values.at b/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/internal-name-to-source.tab.values.at
+new file mode 100644
+index 0000000..5adc08a
+Binary files /dev/null and b/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/internal-name-to-source.tab.values.at differ
+diff --git a/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/internal-name-to-source.tab_i b/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/internal-name-to-source.tab_i
+new file mode 100644
+index 0000000..7140832
+Binary files /dev/null and b/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/internal-name-to-source.tab_i differ
+diff --git a/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/internal-name-to-source.tab_i.len b/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/internal-name-to-source.tab_i.len
+new file mode 100644
+index 0000000..131e265
+Binary files /dev/null and b/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/internal-name-to-source.tab_i.len differ
+diff --git a/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/package-parts.tab b/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/package-parts.tab
+new file mode 100644
+index 0000000..bdf584a
+Binary files /dev/null and b/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/package-parts.tab differ
+diff --git a/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/package-parts.tab.keystream b/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/package-parts.tab.keystream
+new file mode 100644
+index 0000000..04f10e3
+Binary files /dev/null and b/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/package-parts.tab.keystream differ
+diff --git a/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/package-parts.tab.keystream.len b/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/package-parts.tab.keystream.len
+new file mode 100644
+index 0000000..826d10c
+Binary files /dev/null and b/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/package-parts.tab.keystream.len differ
+diff --git a/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/package-parts.tab.len b/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/package-parts.tab.len
+new file mode 100644
+index 0000000..2a17e6e
+Binary files /dev/null and b/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/package-parts.tab.len differ
+diff --git a/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/package-parts.tab.values.at b/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/package-parts.tab.values.at
+new file mode 100644
+index 0000000..46d6744
+Binary files /dev/null and b/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/package-parts.tab.values.at differ
+diff --git a/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/package-parts.tab_i b/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/package-parts.tab_i
+new file mode 100644
+index 0000000..ec64c0e
+Binary files /dev/null and b/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/package-parts.tab_i differ
+diff --git a/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/package-parts.tab_i.len b/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/package-parts.tab_i.len
+new file mode 100644
+index 0000000..131e265
+Binary files /dev/null and b/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/package-parts.tab_i.len differ
+diff --git a/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/proto.tab b/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/proto.tab
+new file mode 100644
+index 0000000..471e760
+Binary files /dev/null and b/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/proto.tab differ
+diff --git a/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/proto.tab.keystream b/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/proto.tab.keystream
+new file mode 100644
+index 0000000..7ac8e3c
+Binary files /dev/null and b/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/proto.tab.keystream differ
+diff --git a/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/proto.tab.keystream.len b/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/proto.tab.keystream.len
+new file mode 100644
+index 0000000..06c6b27
+Binary files /dev/null and b/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/proto.tab.keystream.len differ
+diff --git a/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/proto.tab.len b/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/proto.tab.len
+new file mode 100644
+index 0000000..a363176
+Binary files /dev/null and b/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/proto.tab.len differ
+diff --git a/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/proto.tab.values.at b/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/proto.tab.values.at
+new file mode 100644
+index 0000000..46ff73a
+Binary files /dev/null and b/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/proto.tab.values.at differ
+diff --git a/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/proto.tab_i b/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/proto.tab_i
+new file mode 100644
+index 0000000..1e061bc
+Binary files /dev/null and b/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/proto.tab_i differ
+diff --git a/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/proto.tab_i.len b/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/proto.tab_i.len
+new file mode 100644
+index 0000000..131e265
+Binary files /dev/null and b/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/proto.tab_i.len differ
+diff --git a/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/source-to-classes.tab b/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/source-to-classes.tab
+new file mode 100644
+index 0000000..1c4364e
+Binary files /dev/null and b/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/source-to-classes.tab differ
+diff --git a/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/source-to-classes.tab.keystream b/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/source-to-classes.tab.keystream
+new file mode 100644
+index 0000000..99d05a4
+Binary files /dev/null and b/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/source-to-classes.tab.keystream differ
+diff --git a/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/source-to-classes.tab.keystream.len b/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/source-to-classes.tab.keystream.len
+new file mode 100644
+index 0000000..bad0daf
+Binary files /dev/null and b/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/source-to-classes.tab.keystream.len differ
+diff --git a/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/source-to-classes.tab.len b/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/source-to-classes.tab.len
+new file mode 100644
+index 0000000..ec8f944
+Binary files /dev/null and b/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/source-to-classes.tab.len differ
+diff --git a/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/source-to-classes.tab.values.at b/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/source-to-classes.tab.values.at
+new file mode 100644
+index 0000000..962af66
+Binary files /dev/null and b/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/source-to-classes.tab.values.at differ
+diff --git a/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/source-to-classes.tab_i b/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/source-to-classes.tab_i
+new file mode 100644
+index 0000000..d5a61ed
+Binary files /dev/null and b/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/source-to-classes.tab_i differ
+diff --git a/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/source-to-classes.tab_i.len b/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/source-to-classes.tab_i.len
+new file mode 100644
+index 0000000..131e265
+Binary files /dev/null and b/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/source-to-classes.tab_i.len differ
+diff --git a/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/subtypes.tab b/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/subtypes.tab
+new file mode 100644
+index 0000000..a0497f2
+Binary files /dev/null and b/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/subtypes.tab differ
+diff --git a/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/subtypes.tab.keystream b/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/subtypes.tab.keystream
+new file mode 100644
+index 0000000..43bda86
+Binary files /dev/null and b/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/subtypes.tab.keystream differ
+diff --git a/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/subtypes.tab.keystream.len b/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/subtypes.tab.keystream.len
+new file mode 100644
+index 0000000..9a568e9
+Binary files /dev/null and b/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/subtypes.tab.keystream.len differ
+diff --git a/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/subtypes.tab.len b/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/subtypes.tab.len
+new file mode 100644
+index 0000000..93a595b
+Binary files /dev/null and b/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/subtypes.tab.len differ
+diff --git a/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/subtypes.tab.values.at b/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/subtypes.tab.values.at
+new file mode 100644
+index 0000000..3da4bf8
+Binary files /dev/null and b/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/subtypes.tab.values.at differ
+diff --git a/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/subtypes.tab_i b/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/subtypes.tab_i
+new file mode 100644
+index 0000000..70f6ebe
+Binary files /dev/null and b/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/subtypes.tab_i differ
+diff --git a/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/subtypes.tab_i.len b/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/subtypes.tab_i.len
+new file mode 100644
+index 0000000..131e265
+Binary files /dev/null and b/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/subtypes.tab_i.len differ
+diff --git a/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/supertypes.tab b/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/supertypes.tab
+new file mode 100644
+index 0000000..d873333
+Binary files /dev/null and b/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/supertypes.tab differ
+diff --git a/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/supertypes.tab.keystream b/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/supertypes.tab.keystream
+new file mode 100644
+index 0000000..dacd508
+Binary files /dev/null and b/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/supertypes.tab.keystream differ
+diff --git a/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/supertypes.tab.keystream.len b/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/supertypes.tab.keystream.len
+new file mode 100644
+index 0000000..69ac1cb
+Binary files /dev/null and b/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/supertypes.tab.keystream.len differ
+diff --git a/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/supertypes.tab.len b/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/supertypes.tab.len
+new file mode 100644
+index 0000000..ec8f944
+Binary files /dev/null and b/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/supertypes.tab.len differ
+diff --git a/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/supertypes.tab.values.at b/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/supertypes.tab.values.at
+new file mode 100644
+index 0000000..3198399
+Binary files /dev/null and b/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/supertypes.tab.values.at differ
+diff --git a/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/supertypes.tab_i b/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/supertypes.tab_i
+new file mode 100644
+index 0000000..a1f1b94
+Binary files /dev/null and b/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/supertypes.tab_i differ
+diff --git a/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/supertypes.tab_i.len b/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/supertypes.tab_i.len
+new file mode 100644
+index 0000000..131e265
+Binary files /dev/null and b/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/supertypes.tab_i.len differ
+diff --git a/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/counters.tab b/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/counters.tab
+new file mode 100644
+index 0000000..4a12dea
+--- /dev/null
++++ b/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/counters.tab
+@@ -0,0 +1,2 @@
++5
++0
+\ No newline at end of file
+diff --git a/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/file-to-id.tab b/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/file-to-id.tab
+new file mode 100644
+index 0000000..0a13597
+Binary files /dev/null and b/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/file-to-id.tab differ
+diff --git a/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/file-to-id.tab.keystream b/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/file-to-id.tab.keystream
+new file mode 100644
+index 0000000..99d05a4
+Binary files /dev/null and b/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/file-to-id.tab.keystream differ
+diff --git a/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/file-to-id.tab.keystream.len b/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/file-to-id.tab.keystream.len
+new file mode 100644
+index 0000000..bad0daf
+Binary files /dev/null and b/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/file-to-id.tab.keystream.len differ
+diff --git a/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/file-to-id.tab.len b/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/file-to-id.tab.len
+new file mode 100644
+index 0000000..ec8f944
+Binary files /dev/null and b/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/file-to-id.tab.len differ
+diff --git a/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/file-to-id.tab.values.at b/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/file-to-id.tab.values.at
+new file mode 100644
+index 0000000..f6a4f17
+Binary files /dev/null and b/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/file-to-id.tab.values.at differ
+diff --git a/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/file-to-id.tab_i b/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/file-to-id.tab_i
+new file mode 100644
+index 0000000..d5a61ed
+Binary files /dev/null and b/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/file-to-id.tab_i differ
+diff --git a/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/file-to-id.tab_i.len b/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/file-to-id.tab_i.len
+new file mode 100644
+index 0000000..131e265
+Binary files /dev/null and b/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/file-to-id.tab_i.len differ
+diff --git a/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/id-to-file.tab b/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/id-to-file.tab
+new file mode 100644
+index 0000000..64ed7e3
+Binary files /dev/null and b/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/id-to-file.tab differ
+diff --git a/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/id-to-file.tab.keystream b/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/id-to-file.tab.keystream
+new file mode 100644
+index 0000000..1dd772c
+Binary files /dev/null and b/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/id-to-file.tab.keystream differ
+diff --git a/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/id-to-file.tab.keystream.len b/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/id-to-file.tab.keystream.len
+new file mode 100644
+index 0000000..62f3e6f
+Binary files /dev/null and b/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/id-to-file.tab.keystream.len differ
+diff --git a/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/id-to-file.tab.len b/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/id-to-file.tab.len
+new file mode 100644
+index 0000000..ec8f944
+Binary files /dev/null and b/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/id-to-file.tab.len differ
+diff --git a/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/id-to-file.tab.values.at b/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/id-to-file.tab.values.at
+new file mode 100644
+index 0000000..d4fca0e
+Binary files /dev/null and b/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/id-to-file.tab.values.at differ
+diff --git a/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/id-to-file.tab_i b/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/id-to-file.tab_i
+new file mode 100644
+index 0000000..e6ff6ac
+Binary files /dev/null and b/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/id-to-file.tab_i differ
+diff --git a/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/id-to-file.tab_i.len b/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/id-to-file.tab_i.len
+new file mode 100644
+index 0000000..131e265
+Binary files /dev/null and b/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/id-to-file.tab_i.len differ
+diff --git a/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/lookups.tab b/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/lookups.tab
+new file mode 100644
+index 0000000..e63ed24
+Binary files /dev/null and b/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/lookups.tab differ
+diff --git a/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/lookups.tab.keystream b/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/lookups.tab.keystream
+new file mode 100644
+index 0000000..8ede2ea
+Binary files /dev/null and b/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/lookups.tab.keystream differ
+diff --git a/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/lookups.tab.keystream.len b/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/lookups.tab.keystream.len
+new file mode 100644
+index 0000000..9ec7508
+Binary files /dev/null and b/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/lookups.tab.keystream.len differ
+diff --git a/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/lookups.tab.len b/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/lookups.tab.len
+new file mode 100644
+index 0000000..2c54fb5
+Binary files /dev/null and b/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/lookups.tab.len differ
+diff --git a/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/lookups.tab.values.at b/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/lookups.tab.values.at
+new file mode 100644
+index 0000000..c14221d
+Binary files /dev/null and b/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/lookups.tab.values.at differ
+diff --git a/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/lookups.tab_i b/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/lookups.tab_i
+new file mode 100644
+index 0000000..8e6e959
+Binary files /dev/null and b/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/lookups.tab_i differ
+diff --git a/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/lookups.tab_i.len b/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/lookups.tab_i.len
+new file mode 100644
+index 0000000..131e265
+Binary files /dev/null and b/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/lookups.tab_i.len differ
+diff --git a/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/last-build.bin b/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/last-build.bin
+new file mode 100644
+index 0000000..03b75c0
+Binary files /dev/null and b/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/cacheable/last-build.bin differ
+diff --git a/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/classpath-snapshot/shrunk-classpath-snapshot.bin b/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/classpath-snapshot/shrunk-classpath-snapshot.bin
+new file mode 100644
+index 0000000..2e53d58
+Binary files /dev/null and b/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/classpath-snapshot/shrunk-classpath-snapshot.bin differ
+diff --git a/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/local-state/build-history.bin b/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/local-state/build-history.bin
+new file mode 100644
+index 0000000..a0cb567
+Binary files /dev/null and b/node_modules/react-native-llm-litert-mediapipe/android/build/kotlin/compileDebugKotlin/local-state/build-history.bin differ
+diff --git a/node_modules/react-native-llm-litert-mediapipe/android/build/outputs/logs/manifest-merger-debug-report.txt b/node_modules/react-native-llm-litert-mediapipe/android/build/outputs/logs/manifest-merger-debug-report.txt
+new file mode 100644
+index 0000000..ed29d68
+--- /dev/null
++++ b/node_modules/react-native-llm-litert-mediapipe/android/build/outputs/logs/manifest-merger-debug-report.txt
+@@ -0,0 +1,24 @@
++-- Merging decision tree log ---
++manifest
++ADDED from C:\Guru\node_modules\react-native-llm-litert-mediapipe\android\src\main\AndroidManifest.xml:2:1-14:12
++INJECTED from C:\Guru\node_modules\react-native-llm-litert-mediapipe\android\src\main\AndroidManifest.xml:2:1-14:12
++	package
++		INJECTED from C:\Guru\node_modules\react-native-llm-litert-mediapipe\android\src\main\AndroidManifest.xml
++	xmlns:android
++		ADDED from C:\Guru\node_modules\react-native-llm-litert-mediapipe\android\src\main\AndroidManifest.xml:2:11-69
++application
++ADDED from C:\Guru\node_modules\react-native-llm-litert-mediapipe\android\src\main\AndroidManifest.xml:3:5-13:19
++uses-native-library
++ADDED from C:\Guru\node_modules\react-native-llm-litert-mediapipe\android\src\main\AndroidManifest.xml:7:9-85
++	android:required
++		ADDED from C:\Guru\node_modules\react-native-llm-litert-mediapipe\android\src\main\AndroidManifest.xml:7:58-82
++	android:name
++		ADDED from C:\Guru\node_modules\react-native-llm-litert-mediapipe\android\src\main\AndroidManifest.xml:7:30-57
++uses-sdk
++INJECTED from C:\Guru\node_modules\react-native-llm-litert-mediapipe\android\src\main\AndroidManifest.xml reason: use-sdk injection requested
++INJECTED from C:\Guru\node_modules\react-native-llm-litert-mediapipe\android\src\main\AndroidManifest.xml
++INJECTED from C:\Guru\node_modules\react-native-llm-litert-mediapipe\android\src\main\AndroidManifest.xml
++	android:targetSdkVersion
++		INJECTED from C:\Guru\node_modules\react-native-llm-litert-mediapipe\android\src\main\AndroidManifest.xml
++	android:minSdkVersion
++		INJECTED from C:\Guru\node_modules\react-native-llm-litert-mediapipe\android\src\main\AndroidManifest.xml
+diff --git a/node_modules/react-native-llm-litert-mediapipe/android/build/tmp/kotlin-classes/debug/META-INF/react-native-llm-litert-mediapipe_debug.kotlin_module b/node_modules/react-native-llm-litert-mediapipe/android/build/tmp/kotlin-classes/debug/META-INF/react-native-llm-litert-mediapipe_debug.kotlin_module
+new file mode 100644
+index 0000000..9cc0b40
+Binary files /dev/null and b/node_modules/react-native-llm-litert-mediapipe/android/build/tmp/kotlin-classes/debug/META-INF/react-native-llm-litert-mediapipe_debug.kotlin_module differ
+diff --git a/node_modules/react-native-llm-litert-mediapipe/android/build/tmp/kotlin-classes/debug/com/mediapipellm/InferenceListener.class b/node_modules/react-native-llm-litert-mediapipe/android/build/tmp/kotlin-classes/debug/com/mediapipellm/InferenceListener.class
+new file mode 100644
+index 0000000..074068e
+Binary files /dev/null and b/node_modules/react-native-llm-litert-mediapipe/android/build/tmp/kotlin-classes/debug/com/mediapipellm/InferenceListener.class differ
+diff --git a/node_modules/react-native-llm-litert-mediapipe/android/build/tmp/kotlin-classes/debug/com/mediapipellm/LiteRtLmEngine$Companion$BackendPlan.class b/node_modules/react-native-llm-litert-mediapipe/android/build/tmp/kotlin-classes/debug/com/mediapipellm/LiteRtLmEngine$Companion$BackendPlan.class
+new file mode 100644
+index 0000000..474ada7
+Binary files /dev/null and b/node_modules/react-native-llm-litert-mediapipe/android/build/tmp/kotlin-classes/debug/com/mediapipellm/LiteRtLmEngine$Companion$BackendPlan.class differ
+diff --git a/node_modules/react-native-llm-litert-mediapipe/android/build/tmp/kotlin-classes/debug/com/mediapipellm/LiteRtLmEngine$Companion.class b/node_modules/react-native-llm-litert-mediapipe/android/build/tmp/kotlin-classes/debug/com/mediapipellm/LiteRtLmEngine$Companion.class
+new file mode 100644
+index 0000000..cbc909f
+Binary files /dev/null and b/node_modules/react-native-llm-litert-mediapipe/android/build/tmp/kotlin-classes/debug/com/mediapipellm/LiteRtLmEngine$Companion.class differ
+diff --git a/node_modules/react-native-llm-litert-mediapipe/android/build/tmp/kotlin-classes/debug/com/mediapipellm/LiteRtLmEngine$generateResponseAsync$1$messageCallback$1.class b/node_modules/react-native-llm-litert-mediapipe/android/build/tmp/kotlin-classes/debug/com/mediapipellm/LiteRtLmEngine$generateResponseAsync$1$messageCallback$1.class
+new file mode 100644
+index 0000000..13e35d5
+Binary files /dev/null and b/node_modules/react-native-llm-litert-mediapipe/android/build/tmp/kotlin-classes/debug/com/mediapipellm/LiteRtLmEngine$generateResponseAsync$1$messageCallback$1.class differ
+diff --git a/node_modules/react-native-llm-litert-mediapipe/android/build/tmp/kotlin-classes/debug/com/mediapipellm/LiteRtLmEngine$generateResponseAsync$1.class b/node_modules/react-native-llm-litert-mediapipe/android/build/tmp/kotlin-classes/debug/com/mediapipellm/LiteRtLmEngine$generateResponseAsync$1.class
+new file mode 100644
+index 0000000..06015ad
+Binary files /dev/null and b/node_modules/react-native-llm-litert-mediapipe/android/build/tmp/kotlin-classes/debug/com/mediapipellm/LiteRtLmEngine$generateResponseAsync$1.class differ
+diff --git a/node_modules/react-native-llm-litert-mediapipe/android/build/tmp/kotlin-classes/debug/com/mediapipellm/LiteRtLmEngine.class b/node_modules/react-native-llm-litert-mediapipe/android/build/tmp/kotlin-classes/debug/com/mediapipellm/LiteRtLmEngine.class
+new file mode 100644
+index 0000000..16e90df
+Binary files /dev/null and b/node_modules/react-native-llm-litert-mediapipe/android/build/tmp/kotlin-classes/debug/com/mediapipellm/LiteRtLmEngine.class differ
+diff --git a/node_modules/react-native-llm-litert-mediapipe/android/build/tmp/kotlin-classes/debug/com/mediapipellm/LlmEngine$DefaultImpls.class b/node_modules/react-native-llm-litert-mediapipe/android/build/tmp/kotlin-classes/debug/com/mediapipellm/LlmEngine$DefaultImpls.class
+new file mode 100644
+index 0000000..9e1a537
+Binary files /dev/null and b/node_modules/react-native-llm-litert-mediapipe/android/build/tmp/kotlin-classes/debug/com/mediapipellm/LlmEngine$DefaultImpls.class differ
+diff --git a/node_modules/react-native-llm-litert-mediapipe/android/build/tmp/kotlin-classes/debug/com/mediapipellm/LlmEngine.class b/node_modules/react-native-llm-litert-mediapipe/android/build/tmp/kotlin-classes/debug/com/mediapipellm/LlmEngine.class
+new file mode 100644
+index 0000000..c221865
+Binary files /dev/null and b/node_modules/react-native-llm-litert-mediapipe/android/build/tmp/kotlin-classes/debug/com/mediapipellm/LlmEngine.class differ
+diff --git a/node_modules/react-native-llm-litert-mediapipe/android/build/tmp/kotlin-classes/debug/com/mediapipellm/LlmEngineConfig.class b/node_modules/react-native-llm-litert-mediapipe/android/build/tmp/kotlin-classes/debug/com/mediapipellm/LlmEngineConfig.class
+new file mode 100644
+index 0000000..fc0ab71
+Binary files /dev/null and b/node_modules/react-native-llm-litert-mediapipe/android/build/tmp/kotlin-classes/debug/com/mediapipellm/LlmEngineConfig.class differ
+diff --git a/node_modules/react-native-llm-litert-mediapipe/android/build/tmp/kotlin-classes/debug/com/mediapipellm/MediaPipeLlmEngine$generateResponseAsync$1.class b/node_modules/react-native-llm-litert-mediapipe/android/build/tmp/kotlin-classes/debug/com/mediapipellm/MediaPipeLlmEngine$generateResponseAsync$1.class
+new file mode 100644
+index 0000000..c8c03f7
+Binary files /dev/null and b/node_modules/react-native-llm-litert-mediapipe/android/build/tmp/kotlin-classes/debug/com/mediapipellm/MediaPipeLlmEngine$generateResponseAsync$1.class differ
+diff --git a/node_modules/react-native-llm-litert-mediapipe/android/build/tmp/kotlin-classes/debug/com/mediapipellm/MediaPipeLlmEngine.class b/node_modules/react-native-llm-litert-mediapipe/android/build/tmp/kotlin-classes/debug/com/mediapipellm/MediaPipeLlmEngine.class
+new file mode 100644
+index 0000000..1a80d90
+Binary files /dev/null and b/node_modules/react-native-llm-litert-mediapipe/android/build/tmp/kotlin-classes/debug/com/mediapipellm/MediaPipeLlmEngine.class differ
+diff --git a/node_modules/react-native-llm-litert-mediapipe/android/build/tmp/kotlin-classes/debug/com/mediapipellm/MediaPipeLlmModule$createInferenceListener$1.class b/node_modules/react-native-llm-litert-mediapipe/android/build/tmp/kotlin-classes/debug/com/mediapipellm/MediaPipeLlmModule$createInferenceListener$1.class
+new file mode 100644
+index 0000000..f158c1e
+Binary files /dev/null and b/node_modules/react-native-llm-litert-mediapipe/android/build/tmp/kotlin-classes/debug/com/mediapipellm/MediaPipeLlmModule$createInferenceListener$1.class differ
+diff --git a/node_modules/react-native-llm-litert-mediapipe/android/build/tmp/kotlin-classes/debug/com/mediapipellm/MediaPipeLlmModule$downloadModel$downloadJob$1$3.class b/node_modules/react-native-llm-litert-mediapipe/android/build/tmp/kotlin-classes/debug/com/mediapipellm/MediaPipeLlmModule$downloadModel$downloadJob$1$3.class
+new file mode 100644
+index 0000000..7b513a4
+Binary files /dev/null and b/node_modules/react-native-llm-litert-mediapipe/android/build/tmp/kotlin-classes/debug/com/mediapipellm/MediaPipeLlmModule$downloadModel$downloadJob$1$3.class differ
+diff --git a/node_modules/react-native-llm-litert-mediapipe/android/build/tmp/kotlin-classes/debug/com/mediapipellm/MediaPipeLlmModule$downloadModel$downloadJob$1$4.class b/node_modules/react-native-llm-litert-mediapipe/android/build/tmp/kotlin-classes/debug/com/mediapipellm/MediaPipeLlmModule$downloadModel$downloadJob$1$4.class
+new file mode 100644
+index 0000000..53be52c
+Binary files /dev/null and b/node_modules/react-native-llm-litert-mediapipe/android/build/tmp/kotlin-classes/debug/com/mediapipellm/MediaPipeLlmModule$downloadModel$downloadJob$1$4.class differ
+diff --git a/node_modules/react-native-llm-litert-mediapipe/android/build/tmp/kotlin-classes/debug/com/mediapipellm/MediaPipeLlmModule$downloadModel$downloadJob$1.class b/node_modules/react-native-llm-litert-mediapipe/android/build/tmp/kotlin-classes/debug/com/mediapipellm/MediaPipeLlmModule$downloadModel$downloadJob$1.class
+new file mode 100644
+index 0000000..0c9f3f0
+Binary files /dev/null and b/node_modules/react-native-llm-litert-mediapipe/android/build/tmp/kotlin-classes/debug/com/mediapipellm/MediaPipeLlmModule$downloadModel$downloadJob$1.class differ
+diff --git a/node_modules/react-native-llm-litert-mediapipe/android/build/tmp/kotlin-classes/debug/com/mediapipellm/MediaPipeLlmModule$generateStructuredOutput$1$1.class b/node_modules/react-native-llm-litert-mediapipe/android/build/tmp/kotlin-classes/debug/com/mediapipellm/MediaPipeLlmModule$generateStructuredOutput$1$1.class
+new file mode 100644
+index 0000000..19a1512
+Binary files /dev/null and b/node_modules/react-native-llm-litert-mediapipe/android/build/tmp/kotlin-classes/debug/com/mediapipellm/MediaPipeLlmModule$generateStructuredOutput$1$1.class differ
+diff --git a/node_modules/react-native-llm-litert-mediapipe/android/build/tmp/kotlin-classes/debug/com/mediapipellm/MediaPipeLlmModule$generateStructuredOutput$1$2.class b/node_modules/react-native-llm-litert-mediapipe/android/build/tmp/kotlin-classes/debug/com/mediapipellm/MediaPipeLlmModule$generateStructuredOutput$1$2.class
+new file mode 100644
+index 0000000..6410a6e
+Binary files /dev/null and b/node_modules/react-native-llm-litert-mediapipe/android/build/tmp/kotlin-classes/debug/com/mediapipellm/MediaPipeLlmModule$generateStructuredOutput$1$2.class differ
+diff --git a/node_modules/react-native-llm-litert-mediapipe/android/build/tmp/kotlin-classes/debug/com/mediapipellm/MediaPipeLlmModule$generateStructuredOutput$1$3.class b/node_modules/react-native-llm-litert-mediapipe/android/build/tmp/kotlin-classes/debug/com/mediapipellm/MediaPipeLlmModule$generateStructuredOutput$1$3.class
+new file mode 100644
+index 0000000..8a0b837
+Binary files /dev/null and b/node_modules/react-native-llm-litert-mediapipe/android/build/tmp/kotlin-classes/debug/com/mediapipellm/MediaPipeLlmModule$generateStructuredOutput$1$3.class differ
+diff --git a/node_modules/react-native-llm-litert-mediapipe/android/build/tmp/kotlin-classes/debug/com/mediapipellm/MediaPipeLlmModule$generateStructuredOutput$1.class b/node_modules/react-native-llm-litert-mediapipe/android/build/tmp/kotlin-classes/debug/com/mediapipellm/MediaPipeLlmModule$generateStructuredOutput$1.class
+new file mode 100644
+index 0000000..c7a1c02
+Binary files /dev/null and b/node_modules/react-native-llm-litert-mediapipe/android/build/tmp/kotlin-classes/debug/com/mediapipellm/MediaPipeLlmModule$generateStructuredOutput$1.class differ
+diff --git a/node_modules/react-native-llm-litert-mediapipe/android/build/tmp/kotlin-classes/debug/com/mediapipellm/MediaPipeLlmModule.class b/node_modules/react-native-llm-litert-mediapipe/android/build/tmp/kotlin-classes/debug/com/mediapipellm/MediaPipeLlmModule.class
+new file mode 100644
+index 0000000..b132916
+Binary files /dev/null and b/node_modules/react-native-llm-litert-mediapipe/android/build/tmp/kotlin-classes/debug/com/mediapipellm/MediaPipeLlmModule.class differ
+diff --git a/node_modules/react-native-llm-litert-mediapipe/android/build/tmp/kotlin-classes/debug/com/mediapipellm/MediaPipeLlmModuleKt.class b/node_modules/react-native-llm-litert-mediapipe/android/build/tmp/kotlin-classes/debug/com/mediapipellm/MediaPipeLlmModuleKt.class
+new file mode 100644
+index 0000000..399814e
+Binary files /dev/null and b/node_modules/react-native-llm-litert-mediapipe/android/build/tmp/kotlin-classes/debug/com/mediapipellm/MediaPipeLlmModuleKt.class differ
+diff --git a/node_modules/react-native-llm-litert-mediapipe/android/build/tmp/kotlin-classes/debug/com/mediapipellm/MediaPipeLlmPackage.class b/node_modules/react-native-llm-litert-mediapipe/android/build/tmp/kotlin-classes/debug/com/mediapipellm/MediaPipeLlmPackage.class
+new file mode 100644
+index 0000000..5ffbe8e
+Binary files /dev/null and b/node_modules/react-native-llm-litert-mediapipe/android/build/tmp/kotlin-classes/debug/com/mediapipellm/MediaPipeLlmPackage.class differ
+diff --git a/node_modules/react-native-llm-litert-mediapipe/android/build/tmp/kotlin-classes/debug/com/mediapipellm/StructuredOutputTool.class b/node_modules/react-native-llm-litert-mediapipe/android/build/tmp/kotlin-classes/debug/com/mediapipellm/StructuredOutputTool.class
+new file mode 100644
+index 0000000..8a7e889
+Binary files /dev/null and b/node_modules/react-native-llm-litert-mediapipe/android/build/tmp/kotlin-classes/debug/com/mediapipellm/StructuredOutputTool.class differ
+diff --git a/node_modules/react-native-llm-litert-mediapipe/android/src/main/java/com/mediapipellm/LiteRtLmEngine.kt b/node_modules/react-native-llm-litert-mediapipe/android/src/main/java/com/mediapipellm/LiteRtLmEngine.kt
+index cf4902e..87330c7 100644
+--- a/node_modules/react-native-llm-litert-mediapipe/android/src/main/java/com/mediapipellm/LiteRtLmEngine.kt
++++ b/node_modules/react-native-llm-litert-mediapipe/android/src/main/java/com/mediapipellm/LiteRtLmEngine.kt
+@@ -1,10 +1,12 @@
+ package com.mediapipellm
+ 
+ import android.content.Context
++import android.os.Build
+ import android.graphics.Bitmap
+ import android.graphics.BitmapFactory
+ import com.google.ai.edge.litertlm.Backend
+ import com.google.ai.edge.litertlm.Content
++import com.google.ai.edge.litertlm.Contents
+ import com.google.ai.edge.litertlm.Conversation
+ import com.google.ai.edge.litertlm.ConversationConfig
+ import com.google.ai.edge.litertlm.Engine
+@@ -14,6 +16,8 @@ import com.google.ai.edge.litertlm.MessageCallback
+ import com.google.ai.edge.litertlm.SamplerConfig
+ import com.google.ai.edge.litertlm.Tool
+ import com.google.ai.edge.litertlm.ToolParam
++import com.google.ai.edge.litertlm.ToolSet
++import com.google.ai.edge.litertlm.tool
+ import kotlinx.coroutines.CoroutineScope
+ import kotlinx.coroutines.Dispatchers
+ import kotlinx.coroutines.Job
+@@ -23,6 +27,7 @@ import org.json.JSONObject
+ import org.json.JSONArray
+ import java.io.ByteArrayOutputStream
+ import java.io.File
++import java.util.concurrent.CancellationException
+ 
+ /**
+  * LLM Engine implementation using LiteRT-LM SDK.
+@@ -50,28 +55,45 @@ class LiteRtLmEngine(
+     // Job reference for cancellation
+     private var currentJob: Job? = null
+ 
++    @Volatile
++    private var isClosed: Boolean = false
++
++    @Volatile
++    private var isGenerating: Boolean = false
++
++    private val selectedBackendPlan: BackendPlan
++    
+     init {
+         inferenceListener?.logging("Init LiteRtLmEngine: vision=${config.enableVisionModality}, audio=${config.enableAudioModality}")
+         
+-        // Configure engine with backends (matching Gallery app defaults)
+-        val engineConfig = EngineConfig(
+-            modelPath = config.modelPath,
+-            backend = Backend.GPU,  // Main backend: GPU (fallback to CPU if unavailable)
+-            visionBackend = if (config.enableVisionModality) Backend.GPU else null,  // Vision: GPU for Gemma 3n
+-            audioBackend = if (config.enableAudioModality) Backend.CPU else null,    // Audio: CPU for Gemma 3n
+-            maxNumTokens = config.maxTokens,
+-            cacheDir = context.cacheDir.absolutePath
+-        )
++        val backendPlans = selectBackendPlans(context, config, inferenceListener)
+ 
+-        try {
+-            engine = Engine(engineConfig)
+-            engine.initialize()
+-            inferenceListener?.logging("LiteRT-LM engine initialized successfully")
+-        } catch (e: Exception) {
+-            inferenceListener?.logging("Error initializing LiteRT-LM engine: ${e.message}")
+-            throw e
++        var initializedEngine: Engine? = null
++        var chosenPlan: BackendPlan? = null
++        var lastInitError: Exception? = null
++
++        for (plan in backendPlans) {
++            try {
++                inferenceListener?.logging("LiteRT-LM init attempt with backend=${plan.label}")
++                val candidateEngine = Engine(plan.engineConfig)
++                candidateEngine.initialize()
++                initializedEngine = candidateEngine
++                chosenPlan = plan
++                inferenceListener?.logging("LiteRT-LM engine initialized successfully with backend=${plan.label}")
++                break
++            } catch (e: Exception) {
++                lastInitError = e
++                inferenceListener?.logging("LiteRT-LM init failed for backend=${plan.label}: ${e.message}")
++            }
++        }
++
++        if (initializedEngine == null || chosenPlan == null) {
++            throw (lastInitError ?: IllegalStateException("LiteRT-LM engine failed to initialize"))
+         }
+ 
++        engine = initializedEngine
++        selectedBackendPlan = chosenPlan
++        
+         // Create initial conversation with sampling config
+         try {
+             val conversationConfig = ConversationConfig(
+@@ -125,41 +147,54 @@ class LiteRtLmEngine(
+     }
+     
+     override fun generateResponse(requestId: Int, prompt: String): String {
++        checkNotClosed()
+         return try {
++            isGenerating = true
+             val message = buildMessage(prompt)
+             val response = conversation.sendMessage(message)
+ 
+-            // Clear pending media after sending
+-            clearPendingMedia()
+-            
+             response.toString()
++        } catch (e: CancellationException) {
++            inferenceListener?.logging("Generation cancelled")
++            throw e
+         } catch (e: Exception) {
+             inferenceListener?.onError(requestId, e.message ?: "Unknown error")
+             throw e
++        } finally {
++            isGenerating = false
++            clearPendingMedia()
+         }
+     }
+     
+     override fun generateResponseAsync(requestId: Int, prompt: String, callback: (String) -> Unit) {
++        checkNotClosed()
++        if (isGenerating) {
++            val message = "Generation already in progress"
++            inferenceListener?.onError(requestId, message)
++            callback("")
++            return
++        }
+         requestResult = ""
++        isGenerating = true
+         currentJob = coroutineScope.launch {
+             try {
+                 val message = buildMessage(prompt)
+ 
+-                // Clear pending media after building message
+-                clearPendingMedia()
+-
+                 val messageCallback = object : MessageCallback {
+                     override fun onMessage(message: Message) {
++                        if (isClosed) return
+                         val partialResult = message.toString()
+                         requestResult += partialResult
+                         inferenceListener?.onResults(requestId, partialResult)
+                     }
+ 
+                     override fun onDone() {
++                        isGenerating = false
+                         callback(requestResult)
+                     }
+ 
+                     override fun onError(throwable: Throwable) {
++                        isGenerating = false
+                         if (!isActive) {
+                             inferenceListener?.logging("Generation was cancelled")
+                         } else {
+@@ -170,27 +205,41 @@ class LiteRtLmEngine(
+                 }
+ 
+                 conversation.sendMessageAsync(message, messageCallback)
++            } catch (e: CancellationException) {
++                isGenerating = false
++                inferenceListener?.logging("Generation was cancelled")
++                callback("")
+             } catch (e: Exception) {
++                isGenerating = false
+                 if (!isActive) {
+                     inferenceListener?.logging("Generation was cancelled")
+                 } else {
+                     inferenceListener?.onError(requestId, e.message ?: "Unknown error")
+                     callback("")
+                 }
++            } finally {
++                clearPendingMedia()
+             }
+         }
+     }
+     
+     override fun cancelGeneration() {
+-        currentJob?.cancel()
+-        currentJob = null
+-        conversation.cancelProcess()
+-        inferenceListener?.logging("Generation cancelled via cancelProcess()")
++        try {
++            currentJob?.cancel(CancellationException("Cancelled by user"))
++            currentJob = null
++        } catch (e: Exception) {
++            inferenceListener?.logging("Error cancelling coroutine job: ${e.message}")
++        }
++        isGenerating = false
++        inferenceListener?.logging("Generation cancelled")
+     }
+ 
+     override fun close() {
++        if (isClosed) return
++        isClosed = true
+         currentJob?.cancel()
+         currentJob = null
++        isGenerating = false
+         try {
+             conversation.close()
+         } catch (e: Exception) {
+@@ -258,6 +307,7 @@ class LiteRtLmEngine(
+         outputSchema: String,
+         systemPrompt: String?
+     ): String {
++        checkNotClosed()
+         inferenceListener?.logging("generateStructuredOutput: Starting with schema length=${outputSchema.length}, customSystemPrompt=${systemPrompt != null}")
+ 
+         try {
+@@ -274,8 +324,8 @@ class LiteRtLmEngine(
+ 
+             // Create a new conversation with the tool registered
+             val toolConversationConfig = ConversationConfig(
+-                systemMessage = Message.of(listOf(Content.Text(finalSystemPrompt))),
+-                tools = listOf(structuredOutputTool),
++                systemInstruction = Contents.of(finalSystemPrompt),
++                tools = listOf(tool(structuredOutputTool)),
+                 samplerConfig = SamplerConfig(
+                     topK = config.topK,
+                     topP = 0.95,
+@@ -291,15 +341,14 @@ class LiteRtLmEngine(
+                 val userMessage = Message.of(listOf(Content.Text(prompt)))
+                 inferenceListener?.logging("generateStructuredOutput: Sending message to model")
+ 
+-                val response = toolConversation.sendMessage(userMessage)
+-                val responseText = response.toString()
+-                inferenceListener?.logging("generateStructuredOutput: Received response length=${responseText.length}")
+-
+-                // Extract structured output from the response
+-                val structuredOutput = extractStructuredOutput(responseText, schemaJson)
+-                inferenceListener?.logging("generateStructuredOutput: Extracted structured output")
++                toolConversation.sendMessage(userMessage)
++                val toolJson = structuredOutputTool.getLastJsonData()
++                if (!toolJson.isNullOrBlank()) {
++                    inferenceListener?.logging("generateStructuredOutput: Received structured tool payload length=${toolJson.length}")
++                    return normalizeStructuredJson(toolJson)
++                }
+ 
+-                return structuredOutput
++                throw IllegalStateException("Model did not return structured_output tool data")
+             } finally {
+                 // Always close the tool conversation
+                 try {
+@@ -339,6 +388,187 @@ Analyze the user's request and provide your response by calling the structured_o
+         """.trimIndent()
+     }
+ 
++    private fun normalizeStructuredJson(raw: String): String {
++        return try {
++            JSONObject(raw).toString()
++        } catch (_: Exception) {
++            try {
++                JSONArray(raw).toString()
++            } catch (_: Exception) {
++                throw IllegalStateException("Structured output tool returned invalid JSON")
++            }
++        }
++    }
++
++    private fun checkNotClosed() {
++        check(!isClosed) { "LiteRT-LM engine is already closed." }
++    }
++
++    companion object {
++        private data class BackendPlan(
++            val label: String,
++            val engineConfig: EngineConfig,
++        )
++
++        private fun selectBackendPlans(
++            context: Context,
++            config: LlmEngineConfig,
++            listener: InferenceListener?,
++        ): List<BackendPlan> {
++            val isLegacyAndroid = Build.VERSION.SDK_INT < Build.VERSION_CODES.S_V2
++            val deviceModel = Build.MODEL?.lowercase().orEmpty()
++            val manufacturer = Build.MANUFACTURER?.lowercase().orEmpty()
++            val nativeLibraryDir = context.applicationInfo.nativeLibraryDir ?: ""
++            val cacheDirPath = context.cacheDir?.absolutePath ?: ":nocache"
++
++            // Try to detect if the essential QNN libraries were successfully
++            // extracted by Android into our nativeLibraryDir. If they exist,
++            // we know we are safe to attempt NPU initialization without
++            // triggering a fatal SIGABRT.
++            val hasQnnLibs = File(nativeLibraryDir, "libQnnHtp.so").exists()
++
++            fun buildConfig(
++                mainBackend: Backend,
++                visionBackend: Backend?,
++                audioBackend: Backend?,
++                cacheDir: String,
++            ): EngineConfig = EngineConfig(
++                modelPath = config.modelPath,
++                backend = mainBackend,
++                visionBackend = if (config.enableVisionModality) visionBackend else null,
++                audioBackend = if (config.enableAudioModality) audioBackend else null,
++                // CRITICAL OOM FIX: Do NOT let the model's native metadata dictate
++                // the KV cache buffer. Gemma defaults to 8K or 128K context bounds
++                // which attempts to allocate gigabytes of CPU RAM instantly causing
++                // Android's lmkd to send a fatal SIGKILL (Signal 9). Always enforce
++                // the JS-side configuration constraints.
++                maxNumTokens = config.maxTokens,
++                cacheDir = cacheDir,
++            )
++
++            // Detect Adreno GPU (Qualcomm/Snapdragon) — Issue #1850: OpenCL sampler
++            // crashes on Adreno with Gemma 4. Safe to use GPU on Mali (MediaTek/Samsung)
++            // and other non-Adreno GPUs.
++            val socManufacturer = try { Build.SOC_MANUFACTURER?.lowercase().orEmpty() } catch (_: Exception) { "" }
++            val hardware = Build.HARDWARE?.lowercase().orEmpty()
++            val isAdreno = socManufacturer.contains("qualcomm") ||
++                hardware.contains("qcom") ||
++                hardware.contains("kona") ||
++                hardware.contains("lahaina") ||
++                hardware.contains("taro") ||
++                hardware.contains("kalama") ||
++                hardware.contains("pineapple")
++            val gpuSafeForAuto = !isAdreno
++
++            // 1. Forced CPU
++            if (config.backendPreference.equals("cpu", ignoreCase = true)) {
++                listener?.logging("Backend: CPU forced by user preference")
++                return listOf(
++                    BackendPlan(
++                        label = "cpu-forced",
++                        engineConfig = buildConfig(Backend.CPU(), Backend.CPU(), Backend.CPU(), cacheDirPath),
++                    )
++                )
++            }
++
++            // 2. Forced GPU
++            if (config.backendPreference.equals("gpu", ignoreCase = true)) {
++                listener?.logging("Backend: GPU forced by user preference")
++                return listOf(
++                    BackendPlan(
++                        label = "gpu-forced",
++                        engineConfig = buildConfig(Backend.GPU(), Backend.CPU(), Backend.CPU(), cacheDirPath),
++                    ),
++                    BackendPlan(
++                        label = "cpu-fallback",
++                        engineConfig = buildConfig(Backend.CPU(), Backend.CPU(), Backend.CPU(), cacheDirPath),
++                    )
++                )
++            }
++
++            // 3. Forced NPU
++            if (config.backendPreference.equals("npu", ignoreCase = true)) {
++                listener?.logging("Backend: NPU forced by user preference")
++                return listOf(
++                    BackendPlan(
++                        label = "npu-forced",
++                        engineConfig = buildConfig(
++                            mainBackend = Backend.NPU(nativeLibraryDir = nativeLibraryDir),
++                            visionBackend = Backend.CPU(),
++                            audioBackend = Backend.CPU(),
++                            cacheDir = cacheDirPath,
++                        ),
++                    ),
++                    BackendPlan(
++                        label = "cpu-fallback",
++                        engineConfig = buildConfig(Backend.CPU(), Backend.CPU(), Backend.CPU(), cacheDirPath),
++                    )
++                )
++            }
++
++            if (isLegacyAndroid) {
++                listener?.logging("Backend: CPU-only auto mode on Android < 12L for stability")
++                return listOf(
++                    BackendPlan(
++                        label = "cpu-legacy-android",
++                        engineConfig = buildConfig(Backend.CPU(), Backend.CPU(), Backend.CPU(), cacheDirPath),
++                    )
++                )
++            }
++
++            // ---------------------------------------------------------------
++            // Default "auto" strategy: NPU → GPU → CPU
++            // GPU is enabled for non-Adreno devices (Mali, etc.). Adreno GPUs
++            // are skipped due to OpenCL sampler bug (Issue #1850). The native
++            // layer auto-applies Gemma 4 GPU workarounds (external_tensor_mode
++            // = false, hint_waiting_for_completion = true, FLOAT32 activation).
++            // ---------------------------------------------------------------
++
++            val plans = mutableListOf<BackendPlan>()
++
++            if (hasQnnLibs) {
++                listener?.logging("Backend: QNN libraries detected. Prioritizing NPU for Qualcomm hardware.")
++                plans.add(
++                    BackendPlan(
++                        label = "npu-primary",
++                        engineConfig = buildConfig(
++                            mainBackend = Backend.NPU(nativeLibraryDir = nativeLibraryDir),
++                            visionBackend = Backend.CPU(),
++                            audioBackend = Backend.CPU(),
++                            cacheDir = cacheDirPath,
++                        )
++                    )
++                )
++            } else {
++                listener?.logging("Backend: QNN libraries not found in nativeLibraryDir. Bypassing NPU to prevent native aborts.")
++            }
++
++            // GPU — safe on Mali (MediaTek, Samsung Exynos) and most non-Adreno GPUs.
++            // Skipped on Adreno/Qualcomm due to Issue #1850 OpenCL sampler crash.
++            if (gpuSafeForAuto) {
++                listener?.logging("Backend: GPU enabled for auto mode (non-Adreno device: soc=$socManufacturer hw=$hardware)")
++                plans.add(
++                    BackendPlan(
++                        label = "gpu-primary",
++                        engineConfig = buildConfig(Backend.GPU(), Backend.CPU(), Backend.CPU(), cacheDirPath),
++                    )
++                )
++            } else {
++                listener?.logging("Backend: Skipping GPU in auto mode — Adreno detected (soc=$socManufacturer hw=$hardware). Issue #1850 workaround.")
++            }
++
++            // CPU is always our ultimate safe fallback
++            plans.add(
++                BackendPlan(
++                    label = "cpu-safe",
++                    engineConfig = buildConfig(Backend.CPU(), Backend.CPU(), Backend.CPU(), cacheDirPath),
++                )
++            )
++
++            return plans
++        }
++    }
++
+     /**
+      * Extract structured output from the model's response.
+      * The response may contain a tool call or plain JSON.
+@@ -481,7 +711,7 @@ Analyze the user's request and provide your response by calling the structured_o
+ class StructuredOutputTool(
+     private val schema: JSONObject,
+     private val listener: InferenceListener? = null
+-) {
++) : ToolSet {
+     // Store the last received JSON data for retrieval
+     private var lastJsonData: String? = null
+ 
+diff --git a/node_modules/react-native-llm-litert-mediapipe/android/src/main/java/com/mediapipellm/LlmEngine.kt b/node_modules/react-native-llm-litert-mediapipe/android/src/main/java/com/mediapipellm/LlmEngine.kt
+index 12a72a8..8904331 100644
+--- a/node_modules/react-native-llm-litert-mediapipe/android/src/main/java/com/mediapipellm/LlmEngine.kt
++++ b/node_modules/react-native-llm-litert-mediapipe/android/src/main/java/com/mediapipellm/LlmEngine.kt
+@@ -82,5 +82,6 @@ data class LlmEngineConfig(
+     val randomSeed: Int = 42,
+     val enableVisionModality: Boolean = false,
+     val enableAudioModality: Boolean = false,
+-    val maxNumImages: Int = 10
++    val maxNumImages: Int = 10,
++    val backendPreference: String = "auto"
+ )
+diff --git a/node_modules/react-native-llm-litert-mediapipe/android/src/main/java/com/mediapipellm/MediaPipeLlmModule.kt b/node_modules/react-native-llm-litert-mediapipe/android/src/main/java/com/mediapipellm/MediaPipeLlmModule.kt
+index e6f965e..14acdcf 100644
+--- a/node_modules/react-native-llm-litert-mediapipe/android/src/main/java/com/mediapipellm/MediaPipeLlmModule.kt
++++ b/node_modules/react-native-llm-litert-mediapipe/android/src/main/java/com/mediapipellm/MediaPipeLlmModule.kt
+@@ -22,6 +22,10 @@ private fun ReadableMap.getBooleanSafe(key: String, default: Boolean = false): B
+ private fun ReadableMap.getIntSafe(key: String, default: Int): Int {
+     return if (hasKey(key)) getInt(key) else default
+ }
++
++private fun ReadableMap.getStringSafe(key: String, default: String): String {
++    return if (hasKey(key)) getString(key) ?: default else default
++}
+ private const val DOWNLOAD_DIRECTORY = "llm_models"
+ 
+ class MediaPipeLlmModule(reactContext: ReactApplicationContext) : 
+@@ -205,7 +209,8 @@ class MediaPipeLlmModule(reactContext: ReactApplicationContext) :
+         randomSeed: Int,
+         enableVisionModality: Boolean = false,
+         enableAudioModality: Boolean = false,
+-        maxNumImages: Int = 10
++        maxNumImages: Int = 10,
++        backendPreference: String = "auto"
+     ): Int {
+         val modelHandle = nextHandle++
+         
+@@ -217,7 +222,8 @@ class MediaPipeLlmModule(reactContext: ReactApplicationContext) :
+             randomSeed = randomSeed,
+             enableVisionModality = enableVisionModality,
+             enableAudioModality = enableAudioModality,
+-            maxNumImages = maxNumImages
++            maxNumImages = maxNumImages,
++            backendPreference = backendPreference
+         )
+         
+         val engine = createEngine(modelHandle, config)
+@@ -239,9 +245,10 @@ class MediaPipeLlmModule(reactContext: ReactApplicationContext) :
+             val enableVisionModality = options?.getBooleanSafe("enableVisionModality", false) ?: false
+             val enableAudioModality = options?.getBooleanSafe("enableAudioModality", false) ?: false
+             val maxNumImages = options?.getIntSafe("maxNumImages", 10) ?: 10
++            val backendPref = options?.getStringSafe("backendPreference", "auto") ?: "auto"
+ 
+             sendEvent("logging", mapOf(
+-                "message" to "Creating model from path: $modelPath (vision=$enableVisionModality, audio=$enableAudioModality)"
++                "message" to "Creating model from path: $modelPath (vision=$enableVisionModality, audio=$enableAudioModality, backend=$backendPref)"
+             ))
+ 
+             val handle = createEngineInternal(
+@@ -252,7 +259,8 @@ class MediaPipeLlmModule(reactContext: ReactApplicationContext) :
+                 randomSeed,
+                 enableVisionModality = enableVisionModality,
+                 enableAudioModality = enableAudioModality,
+-                maxNumImages = maxNumImages
++                maxNumImages = maxNumImages,
++                backendPreference = backendPref
+             )
+             promise.resolve(handle)
+         } catch (e: Exception) {
+@@ -277,9 +285,10 @@ class MediaPipeLlmModule(reactContext: ReactApplicationContext) :
+             val enableVisionModality = options?.getBooleanSafe("enableVisionModality", false) ?: false
+             val enableAudioModality = options?.getBooleanSafe("enableAudioModality", false) ?: false
+             val maxNumImages = options?.getIntSafe("maxNumImages", 10) ?: 10
++            val backendPref = options?.getStringSafe("backendPreference", "auto") ?: "auto"
+ 
+             sendEvent("logging", mapOf(
+-                "message" to "Creating model from asset: $modelName (vision=$enableVisionModality, audio=$enableAudioModality)"
++                "message" to "Creating model from asset: $modelName (vision=$enableVisionModality, audio=$enableAudioModality, backend=$backendPref)"
+             ))
+ 
+             val modelPath = copyFileToInternalStorageIfNeeded(modelName, reactApplicationContext).path
+@@ -296,7 +305,8 @@ class MediaPipeLlmModule(reactContext: ReactApplicationContext) :
+                 randomSeed,
+                 enableVisionModality = enableVisionModality,
+                 enableAudioModality = enableAudioModality,
+-                maxNumImages = maxNumImages
++                maxNumImages = maxNumImages,
++                backendPreference = backendPref
+             )
+             promise.resolve(handle)
+         } catch (e: Exception) {
+@@ -562,6 +572,7 @@ class MediaPipeLlmModule(reactContext: ReactApplicationContext) :
+         val enableVisionModality = options?.getBooleanSafe("enableVisionModality", false) ?: false
+         val enableAudioModality = options?.getBooleanSafe("enableAudioModality", false) ?: false
+         val maxNumImages = options?.getIntSafe("maxNumImages", 10) ?: 10
++        val backendPref = options?.getStringSafe("backendPreference", "auto") ?: "auto"
+ 
+         try {
+             val handle = createEngineInternal(
+@@ -572,7 +583,8 @@ class MediaPipeLlmModule(reactContext: ReactApplicationContext) :
+                 randomSeed ?: 42,
+                 enableVisionModality = enableVisionModality,
+                 enableAudioModality = enableAudioModality,
+-                maxNumImages = maxNumImages
++                maxNumImages = maxNumImages,
++                backendPreference = backendPref
+             )
+             promise.resolve(handle)
+         } catch (e: Exception) {
+diff --git a/node_modules/react-native-llm-litert-mediapipe/src/LitertLlm.types.ts b/node_modules/react-native-llm-litert-mediapipe/src/LitertLlm.types.ts
+index 75ebeed..89393eb 100644
+--- a/node_modules/react-native-llm-litert-mediapipe/src/LitertLlm.types.ts
++++ b/node_modules/react-native-llm-litert-mediapipe/src/LitertLlm.types.ts
+@@ -58,6 +58,8 @@ export interface MultimodalOptions {
+   enableAudioModality?: boolean;
+   /** Maximum number of images per session (default: 10) */
+   maxNumImages?: number;
++  /** Backend preference: 'auto' (NPU→GPU→CPU), 'gpu', 'cpu', 'npu' */
++  backendPreference?: string;
+ }
+ 
+ // Subscription interface
+diff --git a/node_modules/react-native-llm-litert-mediapipe/src/LlmApi.ts b/node_modules/react-native-llm-litert-mediapipe/src/LlmApi.ts
+index cf1e865..29242ef 100644
+--- a/node_modules/react-native-llm-litert-mediapipe/src/LlmApi.ts
++++ b/node_modules/react-native-llm-litert-mediapipe/src/LlmApi.ts
+@@ -89,12 +89,14 @@ export async function loadModel(
+     enableVisionModality = false,
+     enableAudioModality = false,
+     maxNumImages = 10,
++    backendPreference = 'auto',
+   } = config;
+ 
+   const multimodalOptions: MultimodalOptions = {
+     enableVisionModality,
+     enableAudioModality,
+     maxNumImages,
++    backendPreference,
+   };
+ 
+   try {
+@@ -162,12 +164,14 @@ export async function loadModelFromAsset(
+     enableVisionModality = false,
+     enableAudioModality = false,
+     maxNumImages = 10,
++    backendPreference = 'auto',
+   } = config;
+ 
+   const multimodalOptions: MultimodalOptions = {
+     enableVisionModality,
+     enableAudioModality,
+     maxNumImages,
++    backendPreference,
+   };
+ 
+   try {
+diff --git a/node_modules/react-native-llm-litert-mediapipe/src/LlmApi.types.ts b/node_modules/react-native-llm-litert-mediapipe/src/LlmApi.types.ts
+index ec0f35a..eb9ca33 100644
+--- a/node_modules/react-native-llm-litert-mediapipe/src/LlmApi.types.ts
++++ b/node_modules/react-native-llm-litert-mediapipe/src/LlmApi.types.ts
+@@ -92,6 +92,8 @@ export interface LoadModelConfig {
+   enableAudioModality?: boolean;
+   /** Maximum number of images per session */
+   maxNumImages?: number;
++  /** Backend preference: 'auto' (NPU→GPU→CPU fallback), 'gpu', 'cpu', or 'npu' */
++  backendPreference?: 'auto' | 'gpu' | 'cpu' | 'npu';
+ }
+ 
+ /**

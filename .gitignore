@@ -82,6 +82,7 @@ dump.xml
 window_dump.xml
 logcat_dump.txt
 *.patch
+!patches/react-native-llm-litert-mediapipe+1.0.0.patch
 
 # Detox test artifacts
 artifacts/

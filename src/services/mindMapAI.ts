@@ -1,7 +1,9 @@
 import { z } from 'zod';
-import { generateTextWithRouting } from './ai/generate';
+import { profileRepository } from '../db/repositories/profileRepository';
+import { createGuruFallbackModel } from './ai/v2/providers/guruFallback';
+import { generateText } from './ai/v2/generateText';
 import { parseStructuredJson } from './ai/jsonRepair';
-import type { Message } from './ai/types';
+import type { ModelMessage } from './ai/v2/spec';
 
 // ── Schema ─────────────────────────────────────────────────────────────────
 
@@ -394,7 +396,7 @@ export async function generateMindMap(
       ? 'Each branch MUST have 2-4 children with concise, high-yield sub-concepts.'
       : 'Each branch should have 1-3 children where useful.';
 
-  const messages: Message[] = [
+  const messages: ModelMessage[] = [
     {
       role: 'system',
       content: `You are Guru, a NEET-PG/INICET medical study expert. Your job is to generate a **comprehensive mind map** that helps a student learn a topic from scratch and master it for the exam.
@@ -434,10 +436,12 @@ ${JSON_EXAMPLE}`,
     },
   ];
 
-  const { text, modelUsed } = await generateTextWithRouting(messages);
+  const profile = await profileRepository.getProfile();
+  const model = createGuruFallbackModel({ profile });
+  const { text } = await generateText({ model, messages });
 
   if (__DEV__) {
-    console.info('[MindMapAI] Raw response', { length: text.length, modelUsed });
+    console.info('[MindMapAI] Raw response', { length: text.length });
   }
 
   const parsed = await parseMindMapJson(text);
@@ -450,7 +454,7 @@ export async function expandNode(
   existingLabels: string[],
   subject?: string,
 ): Promise<MindMapLayout> {
-  const messages: Message[] = [
+  const messages: ModelMessage[] = [
     {
       role: 'system',
       content: `You are Guru, an elite NEET-PG/INICET tutor. Expand a mind map node into detailed sub-branches to deepen the student's understanding.
@@ -479,7 +483,9 @@ ${JSON_EXAMPLE}`,
     },
   ];
 
-  const { text } = await generateTextWithRouting(messages);
+  const profile = await profileRepository.getProfile();
+  const model = createGuruFallbackModel({ profile });
+  const { text } = await generateText({ model, messages });
   const parsed = await parseMindMapJson(text);
   return layoutFromAIResponse(parsed);
 }
@@ -489,7 +495,7 @@ export async function explainMindMapNode(
   nodeLabel: string,
   parentLabel?: string,
 ): Promise<string> {
-  const messages: Message[] = [
+  const messages: ModelMessage[] = [
     {
       role: 'system',
       content: `You are Guru, a medical tutor explaining a mind map concept to a student learning from scratch.
@@ -508,6 +514,8 @@ Rules:
     },
   ];
 
-  const { text } = await generateTextWithRouting(messages);
+  const profile = await profileRepository.getProfile();
+  const model = createGuruFallbackModel({ profile });
+  const { text } = await generateText({ model, messages });
   return normalizeMindMapExplanation(text);
 }

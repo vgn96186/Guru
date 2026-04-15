@@ -1,5 +1,8 @@
-import { generateJSONWithRouting } from '../aiService';
 import { z } from 'zod';
+import { profileRepository } from '../../db/repositories/profileRepository';
+import { createGuruFallbackModel } from '../ai/v2/providers/guruFallback';
+import { generateObject } from '../ai/v2/generateObject';
+import type { ProviderId } from '../../types';
 
 export const LectureAnalysisSchema = z.object({
   subject: z.string().nullable().catch('Unknown'),
@@ -43,7 +46,23 @@ const isDev = typeof __DEV__ !== 'undefined' && __DEV__;
 
 const MEDICAL_EXTRACT_PROMPT = `You are a medical scribe. Extract key clinical facts, subject, and topics from the following transcript segment.`;
 const META_SUMMARIZE_PROMPT = `Combine the following medical transcript segment analyses into a single coherent lecture analysis.`;
-const ANALYSIS_COMPLEXITY = 'low' as const;
+
+const GROQ_FIRST_ORDER: ProviderId[] = [
+  'groq',
+  'openrouter',
+  'deepseek',
+  'cloudflare',
+  'github',
+  'gemini',
+  'gemini_fallback',
+  'agentrouter',
+  'kilo',
+  'chatgpt',
+  'github_copilot',
+  'gitlab_duo',
+  'poe',
+  'qwen',
+];
 
 function normalizeSummary(summary: string | null | undefined): string {
   return summary?.trim().replace(/[.]+$/, '') ?? '';
@@ -183,16 +202,14 @@ export function isMeaningfulLectureAnalysis(analysis: Partial<LectureAnalysis> |
 
 async function runSingleAnalysisPass(text: string): Promise<LectureAnalysis> {
   const extractPrompt = `${MEDICAL_EXTRACT_PROMPT}\n\nHere is the transcript segment:\n"""\n${text}\n"""`;
-  const { parsed, modelUsed } = await generateJSONWithRouting(
-    [{ role: 'user', content: extractPrompt }],
-    LectureAnalysisSchema,
-    ANALYSIS_COMPLEXITY,
-    true,
-    'groq',
-    undefined,
-    { isBackgroundTask: true },
-  );
-  return { ...mapParsedAnalysis(parsed), modelUsed };
+  const profile = await profileRepository.getProfile();
+  const model = createGuruFallbackModel({ profile, forceOrder: GROQ_FIRST_ORDER });
+  const { object } = await generateObject({
+    model,
+    messages: [{ role: 'user', content: extractPrompt }],
+    schema: LectureAnalysisSchema,
+  });
+  return mapParsedAnalysis(object);
 }
 
 async function metaSummarize(analyses: LectureAnalysis[]): Promise<LectureAnalysis> {
@@ -213,14 +230,14 @@ Segment ${i + 1}:
 
   if (isDev) console.log('[Analysis] Running final meta-summarization pass...');
   try {
-    const { parsed, modelUsed } = await generateJSONWithRouting(
-      [{ role: 'user', content: extractPrompt }],
-      LectureAnalysisSchema,
-      ANALYSIS_COMPLEXITY,
-      true,
-      'groq',
-    );
-    return { ...mapParsedAnalysis(parsed), modelUsed };
+    const profile = await profileRepository.getProfile();
+    const model = createGuruFallbackModel({ profile, forceOrder: GROQ_FIRST_ORDER });
+    const { object } = await generateObject({
+      model,
+      messages: [{ role: 'user', content: extractPrompt }],
+      schema: LectureAnalysisSchema,
+    });
+    return mapParsedAnalysis(object);
   } catch (_err) {
     console.warn('[Analysis] Meta-summarization failed, using basic aggregation fallback.');
     // Fallback: Just smash everything together and take the first few

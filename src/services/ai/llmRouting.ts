@@ -1151,7 +1151,7 @@ async function resolveCopilotSessionToken(oauthToken: string): Promise<string> {
   return oauthToken;
 }
 
-async function callGitHubCopilot(
+export async function callGitHubCopilot(
   messages: Message[],
   oauthToken: string,
   model: string,
@@ -1255,7 +1255,7 @@ async function callGitHubCopilot(
   return text;
 }
 
-async function streamGitHubCopilotChat(
+export async function streamGitHubCopilotChat(
   messages: Message[],
   oauthToken: string,
   model: string,
@@ -1337,7 +1337,7 @@ async function streamGitHubCopilotChat(
 // → GitLab AI Gateway (`EXPO_PUBLIC_GITLAB_AI_GATEWAY_URL`, default cloud.gitlab.com) Anthropic/OpenAI proxy.
 // The legacy `POST {instance}/api/v4/chat/completions` is deprecated (502 on most instances).
 
-async function callGitLabDuo(
+export async function callGitLabDuo(
   messages: Message[],
   accessToken: string,
   model: string,
@@ -1373,7 +1373,7 @@ async function callGitLabDuo(
   return completeGitLabDuoOpenCodeGateway(clonedMessages, accessToken, model, jsonMode);
 }
 
-async function streamGitLabDuoChat(
+export async function streamGitLabDuoChat(
   messages: Message[],
   accessToken: string,
   model: string,
@@ -1401,7 +1401,7 @@ function poeHeaders(accessToken: string): Record<string, string> {
 
 const POE_API_URL = 'https://api.poe.com/v1/chat/completions';
 
-async function callPoe(
+export async function callPoe(
   messages: Message[],
   accessToken: string,
   model: string,
@@ -1458,7 +1458,7 @@ async function callPoe(
   return text;
 }
 
-async function streamPoeChat(
+export async function streamPoeChat(
   messages: Message[],
   accessToken: string,
   model: string,

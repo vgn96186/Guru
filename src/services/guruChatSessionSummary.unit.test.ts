@@ -1,10 +1,20 @@
 import { maybeSummarizeGuruSession, GURU_SESSION_SUMMARY_INTERVAL } from './guruChatSessionSummary';
-import { generateJSONWithRouting } from './ai/generate';
+import { generateObject } from './ai/v2/generateObject';
+import { createGuruFallbackModel } from './ai/v2/providers/guruFallback';
+import { profileRepository } from '../db/repositories/profileRepository';
 import { getChatHistory, getChatMessageCount } from '../db/queries/aiCache';
 import { getSessionMemoryRow, upsertSessionMemory } from '../db/queries/guruChatMemory';
 
-jest.mock('./ai/generate', () => ({
-  generateJSONWithRouting: jest.fn(),
+jest.mock('./ai/v2/generateObject', () => ({
+  generateObject: jest.fn(),
+}));
+
+jest.mock('./ai/v2/providers/guruFallback', () => ({
+  createGuruFallbackModel: jest.fn(),
+}));
+
+jest.mock('../db/repositories/profileRepository', () => ({
+  profileRepository: { getProfile: jest.fn() },
 }));
 
 jest.mock('../db/queries/aiCache', () => ({
@@ -17,14 +27,18 @@ jest.mock('../db/queries/guruChatMemory', () => ({
   upsertSessionMemory: jest.fn(),
 }));
 
-const mockGenerate = generateJSONWithRouting as jest.MockedFunction<typeof generateJSONWithRouting>;
+const mockGenerate = generateObject as jest.MockedFunction<typeof generateObject>;
+const mockCreateModel = createGuruFallbackModel as jest.MockedFunction<typeof createGuruFallbackModel>;
+const mockGetProfile = profileRepository.getProfile as jest.MockedFunction<
+  typeof profileRepository.getProfile
+>;
 const mockCount = getChatMessageCount as jest.MockedFunction<typeof getChatMessageCount>;
 const mockHistory = getChatHistory as jest.MockedFunction<typeof getChatHistory>;
 const mockRow = getSessionMemoryRow as jest.MockedFunction<typeof getSessionMemoryRow>;
 const mockUpsert = upsertSessionMemory as jest.MockedFunction<typeof upsertSessionMemory>;
 
 const structuredSummary = {
-  parsed: {
+  object: {
     summaryBullets: ['Point one'],
     state: {
       version: 1,
@@ -43,13 +57,16 @@ const structuredSummary = {
       tangentParkingLot: [],
     },
   },
-  modelUsed: 'm',
+  finishReason: 'stop' as const,
+  usage: {},
 } as const;
 
 describe('guruChatSessionSummary', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockGenerate.mockResolvedValue(structuredSummary as any);
+    mockCreateModel.mockReturnValue({} as any);
+    mockGetProfile.mockResolvedValue({} as any);
     mockHistory.mockResolvedValue([
       { id: 1, threadId: 7, topicName: 't', role: 'user', message: 'hi', timestamp: 1 },
       { id: 2, threadId: 7, topicName: 't', role: 'guru', message: 'hello', timestamp: 2 },
@@ -139,8 +156,8 @@ describe('guruChatSessionSummary', () => {
       messagesAtLastSummary: 0,
     });
     mockGenerate.mockResolvedValue({
-      parsed: { ...structuredSummary.parsed, summaryBullets: ['   '] },
-      modelUsed: 'm',
+      ...structuredSummary,
+      object: { ...structuredSummary.object, summaryBullets: ['   '] },
     } as any);
 
     await maybeSummarizeGuruSession(7, 'x');

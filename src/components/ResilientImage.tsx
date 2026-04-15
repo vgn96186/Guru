@@ -101,6 +101,10 @@ export function ResilientImage({
     setRetryKey((k) => k + 1);
   }, []);
 
+  if (!safeUri || !/^https?:\/\//i.test(safeUri)) {
+    return null;
+  }
+
   const imageSource = {
     uri: safeUri,
     headers: { 'User-Agent': IMAGE_USER_AGENT },

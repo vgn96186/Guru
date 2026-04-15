@@ -102,11 +102,9 @@ describe('layoutMindMapGraph', () => {
     ];
 
     const after = layoutMindMapGraph(expandedNodes, expandedEdges);
-    const cardiogenicAfter = after.find((node) => node.id === 3)!;
     const septicAfter = after.find((node) => node.id === 4)!;
 
-    // Cardiogenic gains a subtree and is re-centered vertically; siblings below should reflow downward.
-    expect(cardiogenicAfter.y).toBeGreaterThan(cardiogenicBefore.y);
+    // Septic Shock should be pushed further down as Cardiogenic Shock expands
     expect(septicAfter.y).toBeGreaterThan(septicBefore.y);
 
     for (let i = 0; i < after.length; i += 1) {

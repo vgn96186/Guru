@@ -271,17 +271,21 @@ describe('medicalSearch utilities', () => {
       const fetchMock = global.fetch as jest.MockedFunction<typeof fetch>;
       fetchMock.mockImplementation(async (input: string | URL | Request) => {
         const url = String(input);
-        if (url.includes('wikipedia.org')) {
+        if (url.includes('wikipedia.org') && url.includes('list=search')) {
           return createJsonResponse({
-            pages: [
-              {
-                id: 1,
-                key: 'Diabetic_ketoacidosis',
-                title: 'Diabetic ketoacidosis',
-                excerpt: 'A serious complication of diabetes caused by insulin deficiency.',
-              },
-            ],
+            query: {
+              search: [
+                {
+                  pageid: 1,
+                  title: 'Diabetic ketoacidosis',
+                  snippet: 'A serious complication of diabetes caused by insulin deficiency.',
+                },
+              ],
+            },
           }) as unknown as Response;
+        }
+        if (url.includes('wikipedia.org') && url.includes('prop=pageimages')) {
+          return createJsonResponse({ query: { pages: {} } }) as unknown as Response;
         }
         if (url.includes('europepmc')) {
           return createJsonResponse({
@@ -338,17 +342,21 @@ describe('medicalSearch utilities', () => {
       const fetchMock = global.fetch as jest.MockedFunction<typeof fetch>;
       fetchMock.mockImplementation(async (input: string | URL | Request) => {
         const url = String(input);
-        if (url.includes('wikipedia.org')) {
+        if (url.includes('wikipedia.org') && url.includes('list=search')) {
           return createJsonResponse({
-            pages: [
-              {
-                id: 1,
-                key: 'Myocardial_infarction',
-                title: 'Myocardial infarction',
-                excerpt: 'Heart attack due to ischemia.',
-              },
-            ],
+            query: {
+              search: [
+                {
+                  pageid: 1,
+                  title: 'Myocardial infarction',
+                  snippet: 'Heart attack due to ischemia.',
+                },
+              ],
+            },
           }) as unknown as Response;
+        }
+        if (url.includes('wikipedia.org') && url.includes('prop=pageimages')) {
+          return createJsonResponse({ query: { pages: {} } }) as unknown as Response;
         }
         if (url.includes('api.duckduckgo.com')) {
           throw new Error('DuckDuckGo offline');

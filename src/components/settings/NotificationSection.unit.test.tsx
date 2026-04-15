@@ -1,5 +1,6 @@
 import React from 'react';
 import { render, fireEvent } from '@testing-library/react-native';
+import { Switch } from 'react-native';
 import NotificationSection from './NotificationSection';
 
 describe('NotificationSection', () => {
@@ -33,6 +34,9 @@ describe('NotificationSection', () => {
   });
 
   it('triggers onEnabledChange when Switch is toggled', () => {
+    const { getByRole } = render(<NotificationSection {...defaultProps} />);
+    // In React Native, Switch might be found by role 'switch' or just use the component.
+    // RNTL fireEvent.valueChange for Switch.
     const switchComponent = render(<NotificationSection {...defaultProps} />).UNSAFE_getByType(
       require('react-native').Switch,
     );
@@ -67,8 +71,9 @@ describe('NotificationSection', () => {
   it('applies active styling to the current frequency button text', () => {
     const { getByText } = render(<NotificationSection {...defaultProps} frequency="frequent" />);
     const activeText = getByText('Frequent');
-    const flattenedStyles = activeText.props.style.flat(Infinity);
-    expect(flattenedStyles).toContainEqual({ color: '#5E6AD2', fontWeight: '700' });
+    // Styles may be nested arrays; flatten before checking
+    const flatStyle = [activeText.props.style].flat(Infinity);
+    expect(flatStyle).toContainEqual({ color: '#5E6AD2', fontWeight: '700' });
   });
 
   it('uses number-pad keyboard for hour input', () => {

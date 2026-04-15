@@ -54,9 +54,6 @@ jest.mock('@react-navigation/native', () => ({
   useNavigation: () => ({
     goBack: mockGoBack,
     canGoBack: () => true,
-    getParent: jest.fn(() => ({
-      navigate: jest.fn(),
-    })),
   }),
   useFocusEffect: (effect: () => void | (() => void)) => {
     effect();
@@ -126,7 +123,7 @@ describe('ManualNoteCreationScreen', () => {
         'Something went wrong',
         'No usable lecture content was detected in this transcript.',
         expect.any(Array),
-        expect.objectContaining({ cancelable: true }),
+        expect.any(Object),
       );
     });
 

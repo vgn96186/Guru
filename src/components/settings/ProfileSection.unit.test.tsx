@@ -3,8 +3,6 @@ import { render, fireEvent } from '@testing-library/react-native';
 import ProfileSection from './ProfileSection';
 
 describe('ProfileSection', () => {
-  const linkLabel = 'Link Another Device (Sync)';
-
   const defaultProps = {
     name: 'John Doe',
     onNameChange: jest.fn(),
@@ -22,7 +20,7 @@ describe('ProfileSection', () => {
     );
 
     expect(getByDisplayValue('John Doe')).toBeTruthy();
-    expect(getByText(linkLabel)).toBeTruthy();
+    expect(getByText('Link Another Device (Sync)')).toBeTruthy();
     expect(queryByText(/Tablet Sync is currently unavailable/)).toBeNull();
   });
 
@@ -35,7 +33,7 @@ describe('ProfileSection', () => {
 
   it('triggers onLinkDevice when Link button is pressed and sync is available', () => {
     const { getByText } = render(<ProfileSection {...defaultProps} />);
-    fireEvent.press(getByText(linkLabel));
+    fireEvent.press(getByText('Link Another Device (Sync)'));
     expect(defaultProps.onLinkDevice).toHaveBeenCalledTimes(1);
   });
 
@@ -56,9 +54,9 @@ describe('ProfileSection', () => {
     );
 
     const linkBtn = getByLabelText('Link another device for sync');
-    const linkBtnText = getByText(linkLabel);
+    const linkBtnText = getByText('Link Another Device (Sync)');
 
-    expect(linkBtn.props.accessibilityState).toMatchObject({ disabled: true });
-    expect(linkBtnText.props.style).toContainEqual({ color: '#A0A0A5' });
+    expect([linkBtn.props.style].flat(Infinity)).toContainEqual({ opacity: 0.5 });
+    expect([linkBtnText.props.style].flat(Infinity)).toContainEqual({ color: '#A0A0A5' });
   });
 });

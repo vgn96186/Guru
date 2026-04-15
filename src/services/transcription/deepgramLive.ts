@@ -163,22 +163,29 @@ export class DeepgramLiveTranscriber {
 
     try {
       // Lazy-import to avoid circular deps and keep this module lightweight
-      const { generateTextWithRouting } = await import('../ai/generate');
+      const [{ generateText }, { createGuruFallbackModel }, { profileRepository }] =
+        await Promise.all([
+          import('../ai/v2/generateText'),
+          import('../ai/v2/providers/guruFallback'),
+          import('../../db/repositories/profileRepository'),
+        ]);
       const prompt = `Extract the medical topics and key concepts from this lecture transcript segment. Return ONLY a JSON object like: {"topics": ["topic1", "topic2"], "concepts": ["concept1", "concept2"]}
 
 Transcript:
 ${text.slice(-2000)}`;
 
-      const { text: response } = await generateTextWithRouting(
-        [
+      const profile = await profileRepository.getProfile();
+      const model = createGuruFallbackModel({ profile });
+      const { text: response } = await generateText({
+        model,
+        messages: [
           {
             role: 'system',
             content: 'You are a medical lecture topic extractor. Return only valid JSON.',
           },
           { role: 'user', content: prompt },
         ],
-        { preferCloud: true },
-      );
+      });
 
       const parsed = JSON.parse(response);
       if (parsed.topics || parsed.concepts) {

@@ -1,7 +1,9 @@
 import { z } from 'zod';
 import { SYSTEM_PROMPT } from '../../constants/prompts';
 import { CatalystSchema } from './schemas';
-import { generateJSONWithRouting } from './generate';
+import { profileRepository } from '../../db/repositories/profileRepository';
+import { createGuruFallbackModel } from './v2/providers/guruFallback';
+import { generateObject } from './v2/generateObject';
 import { saveBulkQuestions } from '../../db/queries/questionBank';
 import { DEFAULT_PROVIDER_ORDER } from '../../types';
 import type { SaveQuestionInput } from '../../types';
@@ -35,19 +37,20 @@ Return ONLY a JSON object matching this structure:
 }
 `;
 
-  const messages = [
-    { role: 'system' as const, content: SYSTEM_PROMPT },
-    { role: 'user' as const, content: userPrompt },
-  ];
+  const profile = await profileRepository.getProfile();
+  const model = createGuruFallbackModel({
+    profile,
+    forceOrder: DEFAULT_PROVIDER_ORDER,
+  });
 
-  const { parsed } = await generateJSONWithRouting(
-    messages,
-    CatalystSchema,
-    'high',
-    true,
-    undefined,
-    DEFAULT_PROVIDER_ORDER,
-  );
+  const { object: parsed } = await generateObject({
+    model,
+    messages: [
+      { role: 'system', content: SYSTEM_PROMPT },
+      { role: 'user', content: userPrompt },
+    ],
+    schema: CatalystSchema,
+  });
 
   // Auto-save quiz questions to Question Bank
   if (parsed.quiz?.questions?.length) {

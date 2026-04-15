@@ -1,0 +1,33 @@
+﻿diff --git a/kotlin/java/com/google/ai/edge/litertlm/jni/litertlm.cc b/kotlin/java/com/google/ai/edge/litertlm/jni/litertlm.cc
+index 93b6247..c39357f 100644
+--- a/kotlin/java/com/google/ai/edge/litertlm/jni/litertlm.cc
++++ b/kotlin/java/com/google/ai/edge/litertlm/jni/litertlm.cc
+@@ -529,6 +529,28 @@ LITERTLM_JNIEXPORT jlong JNICALL JNI_METHOD(nativeCreateEngine)(
+     }
+   }
+ 
++  const bool is_gemma4_model =
++      model_path_str.find("gemma-4-") != std::string::npos ||
++      model_path_str.find("Gemma-4-") != std::string::npos ||
++      model_path_str.find("gemma4") != std::string::npos ||
++      model_path_str.find("Gemma4") != std::string::npos;
++
++  if (backend_enum.value() == litert::lm::Backend::kGPU && is_gemma4_model) {
++    auto gpu_config = settings->GetMutableMainExecutorSettings()
++                          .MutableBackendConfig<litert::lm::GpuConfig>();
++    if (gpu_config.ok()) {
++      litert::lm::GpuConfig config = *gpu_config;
++      config.external_tensor_mode = false;
++      settings->GetMutableMainExecutorSettings().SetBackendConfig(config);
++    }
++    auto advanced_settings =
++        settings->GetMainExecutorSettings().GetAdvancedSettings().value_or(
++            litert::lm::AdvancedSettings());
++    advanced_settings.hint_waiting_for_completion = true;
++    settings->GetMutableMainExecutorSettings().SetAdvancedSettings(
++        advanced_settings);
++  }
++
+   if (audio_backend_optional.has_value() && audio_backend_num_threads > 0) {
+     settings->GetMutableAudioExecutorSettings()->SetNumThreads(
+         audio_backend_num_threads);

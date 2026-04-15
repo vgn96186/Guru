@@ -1,9 +1,11 @@
 import { z } from 'zod';
 import { getChatHistory, getChatMessageCount } from '../db/queries/aiCache';
 import { getSessionMemoryRow, upsertSessionMemory } from '../db/queries/guruChatMemory';
-import { generateJSONWithRouting } from './ai/generate';
+import { profileRepository } from '../db/repositories/profileRepository';
+import { createGuruFallbackModel } from './ai/v2/providers/guruFallback';
+import { generateObject } from './ai/v2/generateObject';
 import { NON_STUDY_PROVIDER_ORDER } from '../types';
-import type { Message } from './ai/types';
+import type { ModelMessage } from './ai/v2/spec';
 
 /** Regenerate rolling summary after this many new chat_history rows since last summary. */
 export const GURU_SESSION_SUMMARY_INTERVAL = 8;
@@ -186,20 +188,22 @@ export async function maybeSummarizeGuruSession(
     '\nReturn updated memory JSON.',
   ].join('\n');
 
-  const messages: Message[] = [
+  const messages: ModelMessage[] = [
     { role: 'system', content: SUMMARY_SYSTEM },
     { role: 'user', content: userContent.slice(0, 12000) },
   ];
 
   try {
-    const { parsed } = await generateJSONWithRouting(
+    const profile = await profileRepository.getProfile();
+    const model = createGuruFallbackModel({
+      profile,
+      forceOrder: NON_STUDY_PROVIDER_ORDER,
+    });
+    const { object: parsed } = await generateObject({
+      model,
       messages,
-      SummaryPayloadSchema,
-      'low',
-      true,
-      undefined,
-      NON_STUDY_PROVIDER_ORDER,
-    );
+      schema: SummaryPayloadSchema,
+    });
     const summary = parsed.summaryBullets
       .map((bullet) => bullet.trim())
       .filter(Boolean)

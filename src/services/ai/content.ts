@@ -15,8 +15,13 @@ import { getCachedContent, setCachedContent } from '../../db/queries/aiCache';
 import { saveBulkQuestions } from '../../db/queries/questionBank';
 import type { Message } from './types';
 import { AIContentSchema } from './schemas';
-import { generateJSONWithRouting } from './generate';
 import { scheduleBackgroundFactCheck } from './medicalFactCheck';
+import { profileRepository } from '../../db/repositories/profileRepository';
+import { createGuruFallbackModel } from './v2/providers/guruFallback';
+import { generateObject } from './v2/generateObject';
+import type { ModelMessage } from './v2/spec';
+import { DEFAULT_PROVIDER_ORDER } from '../../types';
+import type { ProviderId } from '../../types';
 import {
   searchMedicalImages,
   generateVisualSearchQueries,
@@ -256,19 +261,34 @@ export async function fetchContent(
     let modelUsed = '';
     let contentWithMeta: AIContent | null = null;
 
+    const profile = await profileRepository.getProfile();
+    const forceOrder = forceProvider
+      ? ([
+          forceProvider,
+          ...DEFAULT_PROVIDER_ORDER.filter((p) => p !== forceProvider),
+        ] as ProviderId[])
+      : undefined;
+    const model = createGuruFallbackModel({
+      profile,
+      forceOrder,
+      onProviderSuccess: (provider, modelId) => {
+        modelUsed = `${provider}/${modelId}`;
+      },
+    });
+    const modelMessages: ModelMessage[] = messages.map((m) => ({
+      role: m.role as 'system' | 'user' | 'assistant',
+      content: m.content,
+    }));
+
     const maxAttempts = 3;
     let lastContent: AIContent | null = null;
     for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
-      // Omit providerOrderOverride so Settings → Provider routing order (and llmRouting defaults) apply.
-      const generated = await generateJSONWithRouting(
-        messages,
-        AIContentSchema,
-        'low',
-        true,
-        forceProvider,
-      );
-      modelUsed = generated.modelUsed;
-      contentWithMeta = { ...generated.parsed, modelUsed } as AIContent;
+      const generated = await generateObject({
+        model,
+        messages: modelMessages,
+        schema: AIContentSchema,
+      });
+      contentWithMeta = { ...generated.object, modelUsed } as AIContent;
 
       if (contentWithMeta.type !== contentType) {
         if (__DEV__) {
@@ -585,8 +605,24 @@ export async function generateEscalatingQuiz(
     { role: 'system', content: SYSTEM_PROMPT },
     { role: 'user', content: userPrompt },
   ];
-  const generated = await generateJSONWithRouting(messages, AIContentSchema, 'low', true);
-  const parsed = { ...generated.parsed, modelUsed: generated.modelUsed } as AIContent;
+  const profile = await profileRepository.getProfile();
+  let modelUsed = '';
+  const model = createGuruFallbackModel({
+    profile,
+    onProviderSuccess: (provider, modelId) => {
+      modelUsed = `${provider}/${modelId}`;
+    },
+  });
+  const modelMessages: ModelMessage[] = messages.map((m) => ({
+    role: m.role as 'system' | 'user' | 'assistant',
+    content: m.content,
+  }));
+  const generated = await generateObject({
+    model,
+    messages: modelMessages,
+    schema: AIContentSchema,
+  });
+  const parsed = { ...generated.object, modelUsed } as AIContent;
   if (parsed.type !== 'quiz') throw new Error('AI returned wrong content type for escalating quiz');
   const withImages = await resolveQuizImages(parsed as QuizContent & { modelUsed?: string });
   return withImages as QuizContent;

@@ -1,4 +1,6 @@
-import { generateTextWithRouting } from '../aiService';
+import { profileRepository } from '../../db/repositories/profileRepository';
+import { createGuruFallbackModel } from '../ai/v2/providers/guruFallback';
+import { generateText } from '../ai/v2/generateText';
 import { DEFAULT_PROVIDER_ORDER } from '../../types';
 import type { LectureAnalysis } from './analysis';
 
@@ -78,13 +80,15 @@ Transcript:
 ${transcriptExcerpt || '(No transcript available)'}`;
 
   try {
-    const { text } = await generateTextWithRouting(
-      [
+    const profile = await profileRepository.getProfile();
+    const model = createGuruFallbackModel({ profile, forceOrder: DEFAULT_PROVIDER_ORDER });
+    const { text } = await generateText({
+      model,
+      messages: [
         { role: 'system', content: ADHD_NOTE_SYSTEM_PROMPT },
         { role: 'user', content: input },
       ],
-      { providerOrderOverride: DEFAULT_PROVIDER_ORDER, isBackgroundTask: true },
-    );
+    });
     return text.trim();
   } catch {
     console.warn('[NoteGen] ADHD note generation failed, using fallback.');

@@ -1,11 +1,12 @@
 import { z } from 'zod';
 import { SYSTEM_PROMPT } from '../../constants/prompts';
 import type { MedicalGroundingSource, Message } from './types';
-import {
-  generateJSONWithRouting,
-  generateTextWithRouting,
-  generateTextWithRoutingStream,
-} from './generate';
+import { profileRepository } from '../../db/repositories/profileRepository';
+import { createGuruFallbackModel } from './v2/providers/guruFallback';
+import { generateObject } from './v2/generateObject';
+import { generateText } from './v2/generateText';
+import { streamText } from './v2/streamText';
+import type { ModelMessage } from './v2/spec';
 import {
   searchLatestMedicalSources,
   searchMedicalImages,
@@ -20,6 +21,15 @@ import { logGroundingEvent, previewText } from './runtimeDebug';
 import { parseGuruTutorState, type GuruTutorIntent } from '../guruChatSessionSummary';
 
 const MAX_CONTINUATION_ATTEMPTS = 4;
+
+function toModelMessages(msgs: Message[]): ModelMessage[] {
+  return msgs.map((m) => ({ role: m.role as 'system' | 'user' | 'assistant', content: m.content }));
+}
+
+async function buildChatModel(): Promise<ReturnType<typeof createGuruFallbackModel>> {
+  const profile = await profileRepository.getProfile();
+  return createGuruFallbackModel({ profile });
+}
 
 const GURU_ADHD_FORMATTING_RULES = `Formatting rules:
 - Keep normal text plain. Use markdown bold only for the 3 or 4 most critical medical terms in a concept.
@@ -49,13 +59,13 @@ function buildGuruSystemPrompt(options: { grounded?: boolean; includeStudyContex
     options.grounded
       ? '12) Do not use citations inline - keep it natural, not academic.'
       : options.includeStudyContext
-      ? '12) Use the STUDY CONTEXT when it is provided so your answer matches the exact card, question, or explanation the student is viewing.'
-      : '12) Never output JSON.',
+        ? '12) Use the STUDY CONTEXT when it is provided so your answer matches the exact card, question, or explanation the student is viewing.'
+        : '12) Never output JSON.',
     options.grounded
       ? '13) NEVER refuse to answer a medical question. Always provide your best knowledge even if sources are unavailable or irrelevant.'
       : options.includeStudyContext
-      ? '13) Never output JSON.'
-      : "13) Output only Guru's next single turn. Never write Student:/User:/Guru: role labels and never invent the student's reply.",
+        ? '13) Never output JSON.'
+        : "13) Output only Guru's next single turn. Never write Student:/User:/Guru: role labels and never invent the student's reply.",
     options.grounded || options.includeStudyContext
       ? "14) Output only Guru's next single turn. Never write Student:/User:/Guru: role labels and never invent the student's reply."
       : '14) If you ask a question, that question must be the final line in your reply. Never answer your own question.',
@@ -667,12 +677,12 @@ function extractRecentGuruQuestions(
 
     const fallbackQuestion =
       explicitQuestions.length === 0 && /\?\s*$/.test(entry.text.trim())
-        ? entry.text
+        ? (entry.text
             .trim()
             .split('\n')
             .pop()
             ?.trim()
-            .replace(/^question:\s*/i, '') ?? ''
+            .replace(/^question:\s*/i, '') ?? '')
         : '';
 
     for (const candidate of [...explicitQuestions, fallbackQuestion].filter(Boolean)) {
@@ -734,7 +744,8 @@ export async function chatWithGuru(
     ...buildHistoryMessages(history, 4),
     { role: 'user', content: question },
   ];
-  const { text } = await generateTextWithRouting(msgs, { chosenModel });
+  const model = await buildChatModel();
+  const { text } = await generateText({ model, messages: toModelMessages(msgs) });
   let finalReply = finalizeGuruReply(text, finalizeOpts);
   for (let attempt = 1; attempt <= MAX_CONTINUATION_ATTEMPTS; attempt += 1) {
     if (!looksTruncatedReply(finalReply)) break;
@@ -745,10 +756,10 @@ export async function chatWithGuru(
         chars: finalReply.length,
       });
     }
-    const continuation = await generateTextWithRouting(
-      buildContinuationMessages(msgs, finalReply),
-      { chosenModel },
-    );
+    const continuation = await generateText({
+      model,
+      messages: toModelMessages(buildContinuationMessages(msgs, finalReply)),
+    });
     const continuationText = finalizeGuruReply(continuation.text, finalizeOpts);
     if (!hasUsefulContinuation(finalReply, continuationText)) break;
     const appended = appendContinuation(finalReply, continuationText);
@@ -800,11 +811,16 @@ If the student may not know prerequisites, explain prerequisite basics first and
   ];
 
   try {
-    const response = await generateTextWithRouting(msgs, {
-      chosenModel,
+    let modelUsed: string | undefined;
+    const profile = await profileRepository.getProfile();
+    const model = createGuruFallbackModel({
+      profile,
+      onProviderSuccess: (provider, modelId) => {
+        modelUsed = `${provider}/${modelId}`;
+      },
     });
+    const response = await generateText({ model, messages: toModelMessages(msgs) });
     let finalReply = finalizeGuruReply(response.text, recentGuruQuestions);
-    let modelUsed = response.modelUsed;
     for (let attempt = 1; attempt <= MAX_CONTINUATION_ATTEMPTS; attempt += 1) {
       if (!looksTruncatedReply(finalReply)) break;
       if (__DEV__) {
@@ -814,16 +830,15 @@ If the student may not know prerequisites, explain prerequisite basics first and
           chars: finalReply.length,
         });
       }
-      const continuation = await generateTextWithRouting(
-        buildContinuationMessages(msgs, finalReply),
-        { chosenModel },
-      );
+      const continuation = await generateText({
+        model,
+        messages: toModelMessages(buildContinuationMessages(msgs, finalReply)),
+      });
       const continuationText = finalizeGuruReply(continuation.text, recentGuruQuestions);
       if (!hasUsefulContinuation(finalReply, continuationText)) break;
       const appended = appendContinuation(finalReply, continuationText);
       if (appended.length <= finalReply.length) break;
       finalReply = appended;
-      modelUsed = continuation.modelUsed || modelUsed;
     }
     return {
       reply: finalReply,
@@ -1028,13 +1043,26 @@ If the student may not know prerequisites, explain prerequisite basics first and
       if (cleanDelta) onReplyDelta(cleanDelta);
     };
 
-    const response = await generateTextWithRoutingStream(msgs, { chosenModel }, safeEmitDelta);
-    let finalReply = finalizeGuruReply(response.text, {
+    let modelUsed: string | undefined;
+    const profile = await profileRepository.getProfile();
+    const model = createGuruFallbackModel({
+      profile,
+      onProviderSuccess: (provider, modelId) => {
+        modelUsed = `${provider}/${modelId}`;
+      },
+    });
+    const finalizeOpts = {
       recentQuestions: recentGuruQuestions,
       studentIntent,
       blockedConcepts: allBlockedConcepts,
       studentQuestion: trimmedQuestion,
-    });
+    };
+    const streamResult = streamText({ model, messages: toModelMessages(msgs) });
+    for await (const delta of streamResult.textStream) {
+      safeEmitDelta(delta);
+    }
+    const rawText = await streamResult.text;
+    let finalReply = finalizeGuruReply(rawText, finalizeOpts);
     if (finalReply.length > emittedReply.length) {
       const remaining = finalReply.slice(emittedReply.length);
       if (remaining) {
@@ -1042,7 +1070,6 @@ If the student may not know prerequisites, explain prerequisite basics first and
         emittedReply = finalReply;
       }
     }
-    let modelUsed = response.modelUsed;
     for (let attempt = 1; attempt <= MAX_CONTINUATION_ATTEMPTS; attempt += 1) {
       if (!looksTruncatedReply(finalReply)) break;
       if (__DEV__) {
@@ -1052,17 +1079,14 @@ If the student may not know prerequisites, explain prerequisite basics first and
           chars: finalReply.length,
         });
       }
-      const continuation = await generateTextWithRoutingStream(
-        buildContinuationMessages(msgs, finalReply),
-        { chosenModel },
-        safeEmitDelta,
-      );
-      const continuationText = finalizeGuruReply(continuation.text, {
-        recentQuestions: recentGuruQuestions,
-        studentIntent,
-        blockedConcepts: allBlockedConcepts,
-        studentQuestion: trimmedQuestion,
+      const contStream = streamText({
+        model,
+        messages: toModelMessages(buildContinuationMessages(msgs, finalReply)),
       });
+      for await (const delta of contStream.textStream) {
+        safeEmitDelta(delta);
+      }
+      const continuationText = finalizeGuruReply(await contStream.text, finalizeOpts);
       if (!hasUsefulContinuation(finalReply, continuationText)) break;
       const appended = appendContinuation(finalReply, continuationText);
       if (appended.length <= finalReply.length) break;
@@ -1074,7 +1098,6 @@ If the student may not know prerequisites, explain prerequisite basics first and
           emittedReply = finalReply;
         }
       }
-      modelUsed = continuation.modelUsed || modelUsed;
     }
     return {
       reply: finalReply,
@@ -1105,15 +1128,9 @@ Formatting rules:
     },
     { role: 'user', content: `Context: ${context}\n\nStudent answer: ${question}` },
   ];
-  const { parsed } = await generateJSONWithRouting(
-    messages,
-    schema,
-    'low',
-    true,
-    undefined,
-    undefined,
-  );
-  return JSON.stringify(parsed);
+  const model = await buildChatModel();
+  const { object } = await generateObject({ model, messages: toModelMessages(messages), schema });
+  return JSON.stringify(object);
 }
 
 export async function explainMostTestedRationale(
@@ -1144,7 +1161,8 @@ If one dimension is not applicable, state that briefly but still cover the other
 Do not just restate the definition.`,
     },
   ];
-  const { text } = await generateTextWithRouting(messages, {});
+  const model = await buildChatModel();
+  const { text } = await generateText({ model, messages: toModelMessages(messages) });
   return text.trim();
 }
 
@@ -1212,7 +1230,8 @@ Constraints:
 - Bold only the most important 4-6 terms total.`,
     },
   ];
-  const { text } = await generateTextWithRouting(messages, {});
+  const model = await buildChatModel();
+  const { text } = await generateText({ model, messages: toModelMessages(messages) });
   return text.trim();
 }
 
@@ -1238,7 +1257,8 @@ Cover:
 Keep it under 60 words total. Bold only the 1-2 most testable values or terms.`,
     },
   ];
-  const { text } = await generateTextWithRouting(messages, {});
+  const model = await buildChatModel();
+  const { text } = await generateText({ model, messages: toModelMessages(messages) });
   return text.trim();
 }
 

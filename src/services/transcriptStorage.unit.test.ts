@@ -15,6 +15,7 @@ async function loadService() {
     copyAsync: jest.fn(async (_o: { from: string; to: string }) => {}),
     deleteAsync: jest.fn(async (_u: string, _o?: any) => {}),
     moveAsync: jest.fn(async (_o: { from: string; to: string }) => {}),
+    deleteAsync: jest.fn(async (_u: string, _o?: { idempotent?: boolean }) => {}),
     StorageAccessFramework: {
       createFileAsync: jest.fn(
         async (_u: string, _f: string, _m: string) => 'content://mock/uri/file.txt',

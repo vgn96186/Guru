@@ -16,7 +16,7 @@ const ROOT = path.join(__dirname, '..', '..');
 const READY_TIMEOUT_MS = 20_000;
 const READY_POLL_MS = 500;
 const EXPECTED_BUILD_ID =
-  '2026-04-13 doctor-v9 (adbCmd fix + connect/reload recovery + startup health checks)';
+  '2026-04-14 doctor-v10 (patch verification + adbCmd fix + connect/reload recovery + startup health checks)';
 
 function log(msg) {
   console.log(`[launcher] ${msg}`);

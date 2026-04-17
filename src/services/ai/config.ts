@@ -113,6 +113,7 @@ export function getApiKeys(
     kiloApiKey?: string;
     agentRouterKey?: string;
     deepgramApiKey?: string;
+    jinaApiKey?: string;
     chatgptAccounts?: {
       primary?: { enabled?: boolean; connected?: boolean };
       secondary?: { enabled?: boolean; connected?: boolean };
@@ -139,6 +140,7 @@ export function getApiKeys(
   kiloApiKey: string | undefined;
   agentRouterKey: string | undefined;
   deepgramKey: string | undefined;
+  jinaKey: string | undefined;
   chatgptConnected: boolean;
   githubCopilotConnected: boolean;
   gitlabDuoConnected: boolean;
@@ -162,6 +164,7 @@ export function getApiKeys(
       kiloApiKey: undefined,
       agentRouterKey: undefined,
       deepgramKey: undefined,
+      jinaKey: undefined,
       chatgptConnected: false,
       githubCopilotConnected: false,
       gitlabDuoConnected: false,
@@ -185,6 +188,7 @@ export function getApiKeys(
     kiloApiKey: profile.kiloApiKey?.trim() || undefined,
     agentRouterKey: profile.agentRouterKey?.trim() || undefined,
     deepgramKey: profile.deepgramApiKey?.trim() || undefined,
+    jinaKey: profile.jinaApiKey?.trim() || undefined,
     chatgptConnected: resolveChatGptConnected(profile),
     githubCopilotConnected: !!profile.githubCopilotConnected,
     gitlabDuoConnected: !!profile.gitlabDuoConnected,

@@ -17,16 +17,28 @@ import type { ToolSet } from './tool';
 export type UIMessageRole = 'system' | 'user' | 'assistant';
 
 /** UI-layer message — optimized for rendering, lossy about tool internals. */
+import type { MedicalGroundingSource } from '../types';
+import type { GeneratedStudyImageRecord } from '../../../db/queries/generatedStudyImages';
+
 export interface UIMessage {
   id: string;
   role: UIMessageRole;
   /** Rendered text (aggregated deltas for streaming assistant turns). */
   text: string;
+  /** Rendered reasoning text (aggregated deltas for reasoning models). */
+  reasoning?: string;
   /** Tool calls the assistant made in this turn (for UI affordances). */
   toolCalls?: ToolCallPart[];
   /** Tool results received after the call. */
   toolResults?: ToolResultPart[];
   createdAt: number;
+
+  // Guru-specific extensions for grounding and UI
+  sources?: MedicalGroundingSource[];
+  referenceImages?: MedicalGroundingSource[];
+  images?: GeneratedStudyImageRecord[];
+  modelUsed?: string;
+  searchQuery?: string;
 }
 
 export type ChatStatus = 'idle' | 'streaming' | 'submitted' | 'error';
@@ -46,10 +58,11 @@ export interface UseChatReturn {
   messages: UIMessage[];
   status: ChatStatus;
   error: unknown;
-  sendMessage: (text: string) => Promise<void>;
+  sendMessage: (text: string, contextOverride?: Record<string, unknown>) => Promise<void>;
   stop: () => void;
   regenerate: () => Promise<void>;
-  setMessages: (messages: UIMessage[]) => void;
+  setMessages: React.Dispatch<React.SetStateAction<UIMessage[]>>;
+  addToolResult: (toolCallId: string, result: unknown) => Promise<void>;
 }
 
 let idCounter = 0;
@@ -62,7 +75,7 @@ export function useChat(options: UseChatOptions): UseChatReturn {
   const abortRef = useRef<AbortController | null>(null);
 
   const runAssistantTurn = useCallback(
-    async (history: UIMessage[]) => {
+    async (history: UIMessage[], contextOverride?: Record<string, unknown>) => {
       setStatus('submitted');
       setError(null);
       const ac = new AbortController();
@@ -76,13 +89,43 @@ export function useChat(options: UseChatOptions): UseChatReturn {
         toolCalls: [],
         toolResults: [],
         createdAt: Date.now(),
+        sources: (contextOverride?.sources ?? options.context?.sources) as
+          | MedicalGroundingSource[]
+          | undefined,
+        referenceImages: (contextOverride?.referenceImages ?? options.context?.referenceImages) as
+          | MedicalGroundingSource[]
+          | undefined,
+        searchQuery: (contextOverride?.searchQuery ?? options.context?.searchQuery) as
+          | string
+          | undefined,
       };
       setMessages((prev) => [...prev, assistantMsg]);
 
-      const modelMessages: ModelMessage[] = history.map((m) => ({
-        role: m.role as 'user' | 'assistant' | 'system',
-        content: m.text,
-      }));
+      const modelMessages: ModelMessage[] = history.flatMap((m) => {
+        if (m.role === 'system') return [{ role: 'system', content: m.text }];
+        if (m.role === 'user') return [{ role: 'user', content: m.text }];
+
+        // Assistant message
+        const assistantContent: Array<{ type: 'text'; text: string } | ToolCallPart> = [];
+        if (m.text) assistantContent.push({ type: 'text', text: m.text });
+        if (m.toolCalls) {
+          for (const tc of m.toolCalls) assistantContent.push(tc);
+        }
+
+        const msgs: ModelMessage[] = [];
+        if (assistantContent.length > 0) {
+          msgs.push({ role: 'assistant', content: assistantContent });
+        } else if (!m.toolResults || m.toolResults.length === 0) {
+          // Fallback for empty assistant message without tools
+          msgs.push({ role: 'assistant', content: m.text });
+        }
+
+        if (m.toolResults && m.toolResults.length > 0) {
+          msgs.push({ role: 'tool', content: m.toolResults });
+        }
+
+        return msgs;
+      });
 
       try {
         const result = streamText({
@@ -90,7 +133,7 @@ export function useChat(options: UseChatOptions): UseChatReturn {
           messages: modelMessages,
           system: options.system,
           tools: options.tools,
-          context: options.context,
+          context: contextOverride ?? options.context,
           abortSignal: ac.signal,
         });
 
@@ -99,6 +142,12 @@ export function useChat(options: UseChatOptions): UseChatReturn {
           if (part.type === 'text-delta') {
             setMessages((prev) =>
               prev.map((m) => (m.id === assistantId ? { ...m, text: m.text + part.text } : m)),
+            );
+          } else if (part.type === 'reasoning-delta') {
+            setMessages((prev) =>
+              prev.map((m) =>
+                m.id === assistantId ? { ...m, reasoning: (m.reasoning || '') + part.text } : m,
+              ),
             );
           } else if (part.type === 'tool-call') {
             setMessages((prev) =>
@@ -145,7 +194,12 @@ export function useChat(options: UseChatOptions): UseChatReturn {
         }
 
         setStatus('idle');
-        options.onFinish?.(assistantMsg);
+        // We need to pass the updated message to onFinish, not the initial empty one
+        setMessages((current) => {
+          const finalMsg = current.find((m) => m.id === assistantId);
+          if (finalMsg) options.onFinish?.(finalMsg);
+          return current;
+        });
       } catch (err) {
         setStatus('error');
         setError(err);
@@ -158,7 +212,7 @@ export function useChat(options: UseChatOptions): UseChatReturn {
   );
 
   const sendMessage = useCallback(
-    async (text: string) => {
+    async (text: string, contextOverride?: Record<string, unknown>) => {
       const userMsg: UIMessage = {
         id: genId(),
         role: 'user',
@@ -167,7 +221,7 @@ export function useChat(options: UseChatOptions): UseChatReturn {
       };
       const next = [...messages, userMsg];
       setMessages(next);
-      await runAssistantTurn(next);
+      await runAssistantTurn(next, contextOverride);
     },
     [messages, runAssistantTurn],
   );
@@ -188,5 +242,43 @@ export function useChat(options: UseChatOptions): UseChatReturn {
     setStatus('idle');
   }, []);
 
-  return { messages, status, error, sendMessage, stop, regenerate, setMessages };
+  const addToolResult = useCallback(
+    async (toolCallId: string, result: unknown) => {
+      // Find the message with this tool call
+      const msgIndex = messages.findIndex((m) =>
+        m.toolCalls?.some((tc) => tc.toolCallId === toolCallId),
+      );
+
+      if (msgIndex === -1) return;
+
+      const msg = messages[msgIndex];
+      const toolCall = msg.toolCalls?.find((tc) => tc.toolCallId === toolCallId);
+
+      if (!toolCall) return;
+
+      // Add the result to the message
+      const updatedMsg = {
+        ...msg,
+        toolResults: [
+          ...(msg.toolResults ?? []),
+          {
+            type: 'tool-result' as const,
+            toolCallId,
+            toolName: toolCall.toolName,
+            output: result,
+          },
+        ],
+      };
+
+      const nextMessages = [...messages];
+      nextMessages[msgIndex] = updatedMsg;
+      setMessages(nextMessages);
+
+      // Resume the turn with the new tool result
+      await runAssistantTurn(nextMessages);
+    },
+    [messages, runAssistantTurn],
+  );
+
+  return { messages, status, error, sendMessage, stop, regenerate, setMessages, addToolResult };
 }

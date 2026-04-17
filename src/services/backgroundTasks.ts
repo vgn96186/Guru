@@ -1,5 +1,6 @@
-import * as BackgroundFetch from 'expo-background-fetch';
+import * as BackgroundTask from 'expo-background-task';
 import * as TaskManager from 'expo-task-manager';
+import { Platform } from 'react-native';
 import { getAllTopicsWithProgress } from '../db/queries/topics';
 import { profileRepository } from '../db/repositories';
 import { refreshAccountabilityNotificationsSafely } from './notificationService';
@@ -66,30 +67,33 @@ try {
       });
 
       if (prefetchedCount === 0) {
-        return BackgroundFetch.BackgroundFetchResult.NoData;
+        return BackgroundTask.BackgroundTaskResult.Success;
       }
 
-      return BackgroundFetch.BackgroundFetchResult.NewData;
+      return BackgroundTask.BackgroundTaskResult.Success;
     } catch (error) {
-      if (__DEV__) console.error('Background fetch failed:', error);
-      return BackgroundFetch.BackgroundFetchResult.Failed;
+      if (__DEV__) console.error('Background task failed:', error);
+      return BackgroundTask.BackgroundTaskResult.Failed;
     }
   });
 } catch (e) {
   if (__DEV__) console.warn('Failed to define background task:', e);
 }
 
+/** Registers deferred AI prefetch (expo-background-task; replaces deprecated expo-background-fetch). */
 export async function registerBackgroundFetch() {
+  if (Platform.OS === 'web') return;
   try {
+    // Defer one tick so the RN / Expo native module bridge is ready (avoids rare
+    // "runtime not ready" / task lookup failures on cold boot).
+    await new Promise<void>((resolve) => setTimeout(resolve, 0));
     const isRegistered = await TaskManager.isTaskRegisteredAsync(PREFETCH_TASK);
     if (!isRegistered) {
-      await BackgroundFetch.registerTaskAsync(PREFETCH_TASK, {
-        minimumInterval: 60 * 60 * 12, // 12 hours
-        stopOnTerminate: false,
-        startOnBoot: true,
+      await BackgroundTask.registerTaskAsync(PREFETCH_TASK, {
+        minimumInterval: 12 * 60,
       });
     }
   } catch (e) {
-    if (__DEV__) console.warn('Failed to register background fetch:', e);
+    if (__DEV__) console.warn('Failed to register background task:', e);
   }
 }

@@ -3,7 +3,6 @@ import { getAiCacheDb } from '../aiCacheDatabase';
 import type { AIContent, ContentType } from '../../types';
 import { embeddingToBlob } from '../../services/ai/embeddingService';
 import { saveTranscriptToFile } from '../../services/transcriptStorage';
-import { safeJsonParse } from '../../utils/safeJsonParse';
 
 export async function getCachedContent(
   topicId: number,
@@ -124,6 +123,7 @@ export async function getMockQuestions(limit: number): Promise<MockQuestion[]> {
   );
   if (rowIds.length === 0) return [];
 
+  const selectedIds: number[] = [];
   const batchSize = Math.min(Math.max(Math.ceil(limit / 3), 8), 24);
   let offset = 0;
   let parsedQuestions: MockQuestion[] = [];
@@ -262,7 +262,7 @@ export async function getFlaggedContent(): Promise<FlaggedItem[]> {
     topicName: r.topic_name,
     subjectName: r.subject_name,
     contentType: r.content_type as ContentType,
-    content: safeJsonParse<AIContent>(r.content_json, {} as AIContent),
+    content: JSON.parse(r.content_json) as AIContent,
     modelUsed: r.model_used,
     createdAt: r.created_at,
   }));
@@ -475,7 +475,7 @@ export async function getLectureNoteById(noteId: number): Promise<LectureHistory
     note: row.note,
     transcript: row.transcript,
     summary: row.summary,
-    topics: safeJsonParse(row.topics_json, []),
+    topics: row.topics_json ? JSON.parse(row.topics_json) : [],
     appName: row.app_name,
     durationMinutes: row.duration_minutes,
     confidence: row.confidence ?? 2,
@@ -515,7 +515,7 @@ export async function getLectureHistory(limit = 50): Promise<LectureHistoryItem[
     note: r.note,
     transcript: r.transcript,
     summary: r.summary,
-    topics: safeJsonParse(r.topics_json, []),
+    topics: r.topics_json ? JSON.parse(r.topics_json) : [],
     appName: r.app_name,
     durationMinutes: r.duration_minutes,
     confidence: r.confidence ?? 2,
@@ -557,7 +557,7 @@ export async function searchLectureNotes(query: string, limit = 20): Promise<Lec
     note: r.note,
     transcript: r.transcript,
     summary: r.summary,
-    topics: safeJsonParse(r.topics_json, []),
+    topics: r.topics_json ? JSON.parse(r.topics_json) : [],
     appName: r.app_name,
     durationMinutes: r.duration_minutes,
     confidence: r.confidence ?? 2,
@@ -601,7 +601,7 @@ export async function getLegacyLectureNotes(limit = 5): Promise<LectureHistoryIt
     note: r.note,
     transcript: r.transcript,
     summary: r.summary,
-    topics: safeJsonParse(r.topics_json, []),
+    topics: r.topics_json ? JSON.parse(r.topics_json) : [],
     appName: r.app_name,
     durationMinutes: r.duration_minutes,
     confidence: r.confidence ?? 2,
@@ -658,7 +658,7 @@ export async function getLectureTranscriptsBySubject(
     note: r.note,
     transcript: r.transcript,
     summary: r.summary,
-    topics: safeJsonParse(r.topics_json, []),
+    topics: r.topics_json ? JSON.parse(r.topics_json) : [],
     appName: r.app_name,
     durationMinutes: r.duration_minutes,
     confidence: r.confidence ?? 2,

@@ -1,6 +1,4 @@
 import { AppState } from 'react-native';
-import * as Device from 'expo-device';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as LocalLlm from '../../../modules/local-llm';
 import type { Message } from './types';
 import { profileRepository } from '../../db/repositories';
@@ -10,24 +8,27 @@ import {
   GEMINI_MODELS,
   CLOUDFLARE_MODELS,
   DEEPSEEK_MODELS,
-  KILO_MODELS,
   AGENTROUTER_MODELS,
   CHATGPT_MODELS,
   GITHUB_MODELS_CHAT_MODELS,
-  GITHUB_MODELS_API_VERSION,
-  getGitHubModelsChatCompletionsUrl,
-  GITHUB_COPILOT_MODELS,
   orderedGitHubCopilotModels,
-  GITLAB_DUO_MODELS,
   orderedGitLabDuoModels,
   POE_MODELS,
 } from './config';
 import { RateLimitError } from './schemas';
-import { readOpenAiCompatibleSse } from './openaiSseStream';
+import { readOpenAiCompatibleSse } from './openaiChatCompletionsSse';
+import { callOpenRouter, streamOpenRouterChat } from './providers/openrouter';
+import { callCloudflare, streamCloudflareChat } from './providers/cloudflare';
+import { callGroq, streamGroqChat } from './providers/groq';
+import { callDeepSeek, streamDeepSeekChat } from './providers/deepseek';
+import { callGitHubModels, streamGitHubModelsChat } from './providers/githubModels';
+import { callGitHubCopilot, streamGitHubCopilotChat } from './providers/githubCopilot';
+import { callKilo, streamKiloChat, getKiloPreferredModels } from './providers/kilo';
+import { callAgentRouter, streamAgentRouterChat } from './providers/agentrouter';
+import { emitPseudoStreamFallback, ensureJsonModeHint, clampMessagesToCharBudget } from './providers/utils';
 import { geminiGenerateContentSdk, geminiGenerateContentStreamSdk } from './google/geminiChat';
 import { callChatGpt, streamChatGpt } from './chatgpt/chatgptApi';
 import { getValidAccessToken as getGitHubCopilotToken } from './github/githubTokenStore';
-import { CLOUD_MAX_COMPLETION_TOKENS } from './completionLimits';
 import { getValidAccessToken as getGitLabDuoToken } from './gitlab/gitlabTokenStore';
 import { completeGitLabDuoOpenCodeGateway } from './gitlab/gitlabDuoOpenCode';
 import { isGitLabDuoOpenCodeGatewayModel } from './gitlab/gitlabDuoGatewayModels';
@@ -35,250 +36,12 @@ import { getValidAccessToken as getPoeToken } from './poe/poeTokenStore';
 import type { ChatGptAccountSlot, ProviderId } from '../../types';
 import { DEFAULT_PROVIDER_ORDER } from '../../types';
 import { logStreamEvent } from './runtimeDebug';
-import { stripFileUri } from '../fileUri';
 
-/** Local LiteRT-LM state */
-let modelLoadPromise: Promise<any> | null = null;
-
-export type LlmStateListener = (state: 'initializing' | 'ready') => void;
-const llmStateListeners: LlmStateListener[] = [];
-
-export function addLlmStateListener(cb: LlmStateListener) {
-  llmStateListeners.push(cb);
-  return () => {
-    const idx = llmStateListeners.indexOf(cb);
-    if (idx > -1) llmStateListeners.splice(idx, 1);
-  };
-}
-
-function notifyLlmState(state: 'initializing' | 'ready') {
-  llmStateListeners.forEach((cb) => cb(state));
-}
+let localLlmLoaded = false;
+let currentLlamaPath: string | null = null;
+let llamaContextPromise: Promise<void> | null = null;
 type AppStateSubscription = { remove?: () => void };
 const APPSTATE_SUB_KEY = '__guru_llmRouting_appState_sub_v1';
-const KILO_MODELS_CACHE_TTL_MS = 10 * 60 * 1000;
-let kiloModelsCache: { expiresAt: number; models: string[] } | null = null;
-
-/** Metro / RN debugger only — physical devices cannot reach host `127.0.0.1` debug ingest. */
-function devLogOpenRouter(message: string, data: Record<string, unknown>) {
-  if (__DEV__) console.log(`[Guru:OpenRouter] ${message}`, data);
-}
-
-function splitForPseudoStream(text: string, targetChunkChars = 34): string[] {
-  const parts = text.split(/(\s+)/).filter((part) => part.length > 0);
-  const chunks: string[] = [];
-  let current = '';
-  for (const part of parts) {
-    if (current.length > 0 && current.length + part.length > targetChunkChars) {
-      chunks.push(current);
-      current = part;
-      continue;
-    }
-    current += part;
-  }
-  if (current.length > 0) chunks.push(current);
-  return chunks.length > 0 ? chunks : [text];
-}
-
-async function emitPseudoStreamFallback(
-  text: string,
-  onDelta: (delta: string) => void,
-  meta: {
-    provider: string;
-    model: string;
-    reason: 'no_body' | 'empty_sse' | 'v4_chat_no_sse' | 'gateway_no_sse';
-  },
-) {
-  const chunks = splitForPseudoStream(text);
-  const targetDurationMs = Math.min(1400, Math.max(280, Math.round(text.length * 2.2)));
-  const delayMs =
-    chunks.length > 1
-      ? Math.max(12, Math.min(56, Math.round(targetDurationMs / (chunks.length - 1))))
-      : 0;
-
-  logStreamEvent('fallback_chunk_stream_start', {
-    provider: meta.provider,
-    model: meta.model,
-    reason: meta.reason,
-    outputChars: text.length,
-    chunks: chunks.length,
-    delayMs,
-  });
-
-  for (let i = 0; i < chunks.length; i += 1) {
-    onDelta(chunks[i]);
-    if (delayMs > 0 && i < chunks.length - 1) {
-      await new Promise((resolve) => setTimeout(resolve, delayMs));
-    }
-  }
-
-  logStreamEvent('fallback_chunk_stream_complete', {
-    provider: meta.provider,
-    model: meta.model,
-    reason: meta.reason,
-    outputChars: text.length,
-    chunks: chunks.length,
-    delayMs,
-  });
-}
-
-/** Multimodal `message.content` arrays from OpenRouter / OpenAI chat. */
-function stringifyChatMessageContentParts(content: unknown): string {
-  if (typeof content === 'string') return content;
-  if (!Array.isArray(content)) return '';
-  return content
-    .map((part) => {
-      if (!part || typeof part !== 'object') return '';
-      const p = part as Record<string, unknown>;
-      if (p.type === 'text' && typeof p.text === 'string') return p.text;
-      if (typeof p.text === 'string') return p.text;
-      return '';
-    })
-    .filter(Boolean)
-    .join('\n');
-}
-
-function isLikelyFreeKiloModel(row: Record<string, unknown>): boolean {
-  const flags = [
-    row.free,
-    row.is_free,
-    row.isFree,
-    row.has_free_tier,
-    row.hasFreeTier,
-    row.free_tier,
-    row.freeTier,
-  ];
-  if (flags.some((v) => v === true)) return true;
-
-  const pricing = row.pricing;
-  if (pricing && typeof pricing === 'object') {
-    const p = pricing as Record<string, unknown>;
-    const prompt = Number(p.prompt ?? p.input ?? p.prompt_tokens ?? NaN);
-    const completion = Number(p.completion ?? p.output ?? p.completion_tokens ?? NaN);
-    if (
-      Number.isFinite(prompt) &&
-      Number.isFinite(completion) &&
-      prompt === 0 &&
-      completion === 0
-    ) {
-      return true;
-    }
-  }
-
-  const rawTagFields = [row.tier, row.plan, row.label, row.category, row.type, row.tags];
-  const tagText = rawTagFields
-    .flatMap((v) => (Array.isArray(v) ? v : [v]))
-    .filter((v): v is string => typeof v === 'string')
-    .join(' ')
-    .toLowerCase();
-  return /\bfree\b/.test(tagText);
-}
-
-async function getKiloPreferredModels(kiloApiKey: string): Promise<string[]> {
-  const now = Date.now();
-  if (kiloModelsCache && kiloModelsCache.expiresAt > now && kiloModelsCache.models.length > 0) {
-    return kiloModelsCache.models;
-  }
-
-  try {
-    const res = await fetch('https://api.kilo.ai/api/gateway/models', {
-      headers: { Authorization: `Bearer ${kiloApiKey}` },
-    });
-    if (!res.ok) {
-      return [...KILO_MODELS];
-    }
-    const data = (await res.json()) as { data?: Record<string, unknown>[] };
-    const rows = Array.isArray(data.data) ? data.data : [];
-    const all = rows
-      .map((r) => r.id)
-      .filter((id): id is string => typeof id === 'string' && id.length > 0);
-    const free = rows
-      .filter((r) => isLikelyFreeKiloModel(r))
-      .map((r) => r.id)
-      .filter((id): id is string => typeof id === 'string' && id.length > 0);
-    const preferred = [...new Set([...(free.length > 0 ? free : all), ...KILO_MODELS])];
-    if (preferred.length > 0) {
-      kiloModelsCache = { expiresAt: now + KILO_MODELS_CACHE_TTL_MS, models: preferred };
-      return preferred;
-    }
-  } catch {
-    // Ignore — fallback list below
-  }
-
-  return [...KILO_MODELS];
-}
-
-/**
- * OpenRouter chat completion JSON: normal `message.content`, multimodal arrays,
- * reasoning-only models (e.g. some Nemotron streams), top-level `error`, or `refusal`.
- */
-function extractOpenRouterAssistantText(data: unknown, model: string): string {
-  if (!data || typeof data !== 'object') {
-    throw new Error(`OpenRouter invalid response body for ${model}`);
-  }
-  const d = data as Record<string, unknown>;
-  const topErr = d.error;
-  if (topErr && typeof topErr === 'object') {
-    const em = (topErr as Record<string, unknown>).message;
-    throw new Error(
-      `OpenRouter error (${model}): ${typeof em === 'string' ? em : JSON.stringify(topErr)}`,
-    );
-  }
-
-  const choices = d.choices;
-  if (!Array.isArray(choices) || choices.length === 0) {
-    throw new Error(`OpenRouter returned no choices for ${model}`);
-  }
-
-  const ch0 = choices[0] as Record<string, unknown>;
-  const msg = ch0.message as Record<string, unknown> | undefined;
-
-  if (msg && typeof msg.refusal === 'string' && msg.refusal.trim()) {
-    throw new Error(`OpenRouter model ${model} refused: ${msg.refusal.trim()}`);
-  }
-
-  const fromContent = msg ? stringifyChatMessageContentParts(msg.content) : '';
-  if (fromContent.trim()) return fromContent.trim();
-
-  const reasoningFromMsg = typeof msg?.reasoning === 'string' ? msg.reasoning : '';
-  const reasoningFromMsgDetails =
-    typeof msg?.reasoning_details === 'string' ? msg.reasoning_details : '';
-  const reasoningFromChoice =
-    typeof ch0.reasoning === 'string'
-      ? ch0.reasoning
-      : typeof ch0.reasoning_content === 'string'
-        ? ch0.reasoning_content
-        : '';
-  const reasoning =
-    [reasoningFromMsg, reasoningFromMsgDetails, reasoningFromChoice].find((s) => s.trim()) ?? '';
-
-  if (reasoning.trim()) {
-    devLogOpenRouter('reasoning_text_used', { model, contentLen: reasoning.trim().length });
-    // #region agent log
-    fetch('http://127.0.0.1:7507/ingest/f6a0734c-b45d-4770-9e51-aa07e5c2da6e', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': 'ca9385' },
-      body: JSON.stringify({
-        sessionId: 'ca9385',
-        hypothesisId: 'H4',
-        location: 'llmRouting.extractOpenRouterAssistantText',
-        message: 'openrouter_reasoning_fallback',
-        data: { model, contentLen: reasoning.trim().length },
-        timestamp: Date.now(),
-      }),
-    }).catch(() => {});
-    // #endregion
-    return reasoning.trim();
-  }
-
-  const legacyText = typeof ch0.text === 'string' ? ch0.text : '';
-  if (legacyText.trim()) return legacyText.trim();
-
-  const fr = ch0.finish_reason;
-  throw new Error(
-    `Empty response from OpenRouter model ${model} (finish_reason: ${String(fr ?? 'n/a')})`,
-  );
-}
 
 // Promise-based mutex: prevents concurrent LLM generation which corrupts native context.
 // Unlike a boolean flag, this properly queues callers and can't deadlock on thrown errors.
@@ -302,347 +65,77 @@ function isContextInUse(): boolean {
   return _contextLockCount > 0;
 }
 
-/**
- * Expo stores models under `documentDirectory` as `file:///...` URIs.
- * LiteRT's Android native layer expects a plain absolute path.
- */
-function normalizeLocalModelPathForNative(modelPath: string): string {
-  const t = modelPath.trim();
-  const stripped = stripFileUri(t);
-  if (stripped === t) return t;
-  try {
-    return decodeURIComponent(stripped);
-  } catch {
-    return stripped;
-  }
-}
-
 async function ensureLocalLlmLoaded(modelPath: string): Promise<void> {
-  if (await LocalLlm.isInitialized()) {
-    // We don't track the path in JS anymore, Kotlin handles switching models internally.
-    // To be safe we could re-call initialize if we wanted to enforce a specific path,
-    // but Kotlin EngineHolder.ensureLoaded already checks if the path changed.
+  if (localLlmLoaded && currentLlamaPath === modelPath) return;
+  // Mutex: if another caller is already initializing, await the same promise
+  if (llamaContextPromise) {
+    await llamaContextPromise;
+    if (localLlmLoaded && currentLlamaPath === modelPath) return;
   }
-
-  if (modelLoadPromise) {
-    await modelLoadPromise;
-    return;
-  }
-
-  modelLoadPromise = (async () => {
-    const nativePath = normalizeLocalModelPathForNative(modelPath);
-    const modelFileName = modelPath.split('/').pop();
-    if (__DEV__) console.info(`[LLM] Initializing LocalLlm for ${modelFileName}...`);
-    notifyLlmState('initializing');
-
-    try {
-      const { backend } = await LocalLlm.initialize({
-        modelPath: nativePath,
-        preferredBackend: 'auto',
-      });
-      if (__DEV__) console.info(`[LLM] LocalLlm initialized on ${backend} for ${modelFileName}`);
-    } catch (err) {
-      console.error(`[LLM] LocalLlm failed to initialize: ${err}`);
-      throw err;
-    } finally {
-      notifyLlmState('ready');
+  llamaContextPromise = (async () => {
+    if (localLlmLoaded) {
+      await LocalLlm.release();
+      localLlmLoaded = false;
     }
+    await LocalLlm.initialize({ modelPath, maxNumTokens: 3072 });
+    localLlmLoaded = true;
+    currentLlamaPath = modelPath;
   })();
-
   try {
-    await modelLoadPromise;
+    await llamaContextPromise;
   } finally {
-    modelLoadPromise = null;
+    llamaContextPromise = null;
   }
 }
 
-/**
- * Release the LocalLlm engine to free GPU/CPU memory.
- * @param force  If true, release regardless of active lock.
- */
-export async function releaseLlamaContext(force = false): Promise<void> {
-  if (!force && (isContextInUse() || modelLoadPromise)) return;
-  try {
-    await LocalLlm.release();
-  } catch (err) {
-    console.warn('[LLM] Failed to release LocalLlm:', err);
+/** Release the native LLM context to free memory. Safe to call at any time. */
+export async function releaseLlamaContext(): Promise<void> {
+  if (isContextInUse() || llamaContextPromise) return; // don't interrupt in-flight generation or init
+  if (localLlmLoaded) {
+    try {
+      await LocalLlm.release();
+    } catch (err) {
+      console.warn('[LLM] Failed to release native context:', err);
+    }
+    localLlmLoaded = false;
+    currentLlamaPath = null;
   }
 }
 
-// Release the GPU/CPU LLM context when app goes to background to prevent OOM kills.
-const prevSub = (globalThis as any)[APPSTATE_SUB_KEY] as AppStateSubscription | undefined;
+// Release the 200 MB+ LLM context when app goes to background to prevent OOM kills.
+// Store the subscription on `globalThis` so hot reload can't stack listeners.
+const prevSub = (globalThis as Record<string, unknown>)[APPSTATE_SUB_KEY] as
+  | AppStateSubscription
+  | undefined;
 if (prevSub?.remove) prevSub.remove();
-(globalThis as any)[APPSTATE_SUB_KEY] = AppState.addEventListener('change', async (state) => {
-  if (state === 'background' || state === 'inactive') {
-    await releaseLlamaContext(/* force */ true);
-  }
-}) as AppStateSubscription;
+(globalThis as Record<string, unknown>)[APPSTATE_SUB_KEY] = AppState.addEventListener(
+  'change',
+  async (state) => {
+    if (state === 'background' || state === 'inactive') {
+      await releaseLlamaContext();
+    }
+  },
+) as AppStateSubscription;
 
 async function callLocalLLM(
   messages: Message[],
   modelPath: string,
-  textMode = false,
+  _textMode = false,
 ): Promise<string> {
   await ensureLocalLlmLoaded(modelPath);
   const release = await acquireContextLock();
   try {
-    // Guru uses a simplified stateless call: we combine messages into a single prompt.
-    // In a more complex app we'd use Conversation to keep state, but Guru manages
-    // history in JS and sends it all every time.
-    const systemIdx = messages.findIndex((m) => m.role === 'system');
-    const systemInstruction = systemIdx !== -1 ? messages[systemIdx].content : undefined;
-    const promptMessages = messages
-      .filter((m) => m.role !== 'system')
-      .map((m) => ({
-        role: m.role,
-        content: m.content,
-      }));
-
-    const result = await LocalLlm.chat(promptMessages, {
-      modelPath: normalizeLocalModelPathForNative(modelPath),
-      systemInstruction,
-      temperature: 0.7,
-    });
-
-    let text = result.text || '';
-    if (!textMode && !text.trim().startsWith('{')) {
-      text = `{${text}`;
-    }
-    return text;
-  } catch (err) {
-    const msg = (err as Error)?.message?.toLowerCase?.() ?? String(err).toLowerCase();
-    if (msg.includes('cancelled') || msg.includes('canceled') || msg.includes('aborted')) {
-      throw err;
-    }
-
-    // On failure, try releasing to clean up
-    try {
-      await releaseLlamaContext(/* force */ true);
-    } catch {
-      // Ignore
-    }
-
-    throw err;
+    const chatMessages: LocalLlm.ChatMessage[] = messages.map((m) => ({
+      role: m.role,
+      content: m.content,
+    }));
+    const result = await LocalLlm.chat(chatMessages, { temperature: 0.7, topP: 0.9 });
+    return result.text;
   } finally {
     release();
   }
 }
 
-async function callOpenRouter(messages: Message[], orKey: string, model: string): Promise<string> {
-  const t0 = Date.now();
-  const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${orKey}`,
-      'HTTP-Referer': 'neet-study-app',
-      'X-Title': 'Guru Study App',
-    },
-    body: JSON.stringify({
-      model,
-      messages,
-      temperature: 0.7,
-      max_tokens: CLOUD_MAX_COMPLETION_TOKENS,
-    }),
-  });
-
-  devLogOpenRouter('nonstream_http_status', {
-    model,
-    ms: Date.now() - t0,
-    status: res.status,
-    ok: res.ok,
-  });
-
-  if (res.status === 429) {
-    throw new RateLimitError(`OpenRouter rate limit on ${model}`);
-  }
-
-  if (!res.ok) {
-    const err = await res.text().catch(() => res.status.toString());
-    throw new Error(`OpenRouter error ${res.status} (${model}): ${err}`);
-  }
-
-  const data = await res.json();
-  const text = extractOpenRouterAssistantText(data, model);
-  devLogOpenRouter('nonstream_done', { model, ms: Date.now() - t0, outLen: text.length });
-  return text;
-}
-
-/** Cloudflare Workers AI — OpenAI-compatible endpoint. */
-async function callCloudflare(
-  messages: Message[],
-  accountId: string,
-  apiToken: string,
-  model: string,
-): Promise<string> {
-  const res = await fetch(
-    `https://api.cloudflare.com/client/v4/accounts/${accountId}/ai/v1/chat/completions`,
-    {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${apiToken}`,
-      },
-      body: JSON.stringify({
-        model,
-        messages,
-        temperature: 0.7,
-        max_tokens: CLOUD_MAX_COMPLETION_TOKENS,
-      }),
-    },
-  );
-
-  if (res.status === 429) {
-    throw new RateLimitError(`Cloudflare rate limit on ${model}`);
-  }
-
-  if (!res.ok) {
-    const err = await res.text().catch(() => res.status.toString());
-    throw new Error(`Cloudflare error ${res.status} (${model}): ${err}`);
-  }
-
-  const data = await res.json();
-  const text = data?.choices?.[0]?.message?.content;
-  if (!text || !text.trim()) throw new Error(`Empty response from Cloudflare model ${model}`);
-  return text;
-}
-
-/** Cloudflare Workers AI chat with SSE streaming. */
-async function streamCloudflareChat(
-  messages: Message[],
-  accountId: string,
-  apiToken: string,
-  model: string,
-  onDelta: (delta: string) => void,
-): Promise<string> {
-  const res = await fetch(
-    `https://api.cloudflare.com/client/v4/accounts/${accountId}/ai/v1/chat/completions`,
-    {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${apiToken}`,
-      },
-      body: JSON.stringify({
-        model,
-        messages,
-        temperature: 0.7,
-        max_tokens: CLOUD_MAX_COMPLETION_TOKENS,
-        stream: true,
-      }),
-    },
-  );
-
-  if (res.status === 429) {
-    throw new RateLimitError(`Cloudflare rate limit on ${model}`);
-  }
-
-  if (!res.ok) {
-    const err = await res.text().catch(() => res.status.toString());
-    throw new Error(`Cloudflare error ${res.status} (${model}): ${err}`);
-  }
-
-  if (!res.body) {
-    logStreamEvent('no_body_fallback', { provider: 'cloudflare', model });
-    const text = await callCloudflare(messages, accountId, apiToken, model);
-    await emitPseudoStreamFallback(text, onDelta, {
-      provider: 'cloudflare',
-      model,
-      reason: 'no_body',
-    });
-    logStreamEvent('fallback_complete', {
-      provider: 'cloudflare',
-      model,
-      mode: 'nonstream_chunked',
-      outputChars: text.length,
-    });
-    return text;
-  }
-
-  const text = await readOpenAiCompatibleSse(res, onDelta);
-  logStreamEvent('sse_complete', {
-    provider: 'cloudflare',
-    model,
-    outputChars: text.length,
-  });
-  if (!text.trim()) throw new Error(`Empty response from Cloudflare model ${model}`);
-  return text;
-}
-
-/** Groq returns 400 if prompt + max_tokens exceeds the model window; some models are tighter than 128k. */
-const GROQ_MAX_COMPLETION_TOKENS = 2048;
-/** Soft cap on total message characters before middle-truncating (rough token safety). */
-const GROQ_MESSAGES_CHAR_BUDGET = 72_000;
-/**
- * Copilot gpt-4.1 / gpt-4o enforce ~64k prompt tokens. Dense/code-heavy text can approach ~1 token/char
- * in worst cases; keep a conservative cap and rely on retry for `model_max_prompt_tokens_exceeded`.
- */
-const GITHUB_COPILOT_MESSAGES_CHAR_BUDGET = 52_000;
-
-function truncateMessageMiddle(content: string, maxLen: number): string {
-  if (content.length <= maxLen) return content;
-  const head = Math.floor((maxLen - 120) * 0.5);
-  const tail = maxLen - head - 80;
-  const omitted = content.length - head - tail;
-  return `${content.slice(
-    0,
-    head,
-  )}\n\n… [${omitted} characters omitted for API limit] …\n\n${content.slice(-tail)}`;
-}
-
-function clampMessagesToCharBudget(
-  messages: Message[],
-  charBudget: number,
-  devLogName: string,
-): Message[] {
-  const origChars = messages.reduce((s, m) => s + m.content.length, 0);
-  const out = messages.map((m) => ({ role: m.role, content: m.content }));
-
-  for (let guard = 0; guard < 24; guard += 1) {
-    const total = out.reduce((s, m) => s + m.content.length, 0);
-    if (total <= charBudget) {
-      if (__DEV__ && origChars > charBudget) {
-        console.warn(`[AI] ${devLogName} messages clamped: ${origChars} → ${total} chars`);
-      }
-      return out;
-    }
-    let bestI = 0;
-    let bestLen = 0;
-    for (let i = 0; i < out.length; i += 1) {
-      if (out[i].content.length > bestLen) {
-        bestLen = out[i].content.length;
-        bestI = i;
-      }
-    }
-    if (bestLen < 900) break;
-    const totalNow = out.reduce((s, m) => s + m.content.length, 0);
-    const target = Math.max(800, bestLen - (totalNow - charBudget) - 400);
-    out[bestI] = {
-      ...out[bestI],
-      content: truncateMessageMiddle(out[bestI].content, target),
-    };
-  }
-
-  if (__DEV__) {
-    const finalTotal = out.reduce((s, m) => s + m.content.length, 0);
-    if (finalTotal > charBudget) {
-      console.warn(
-        `[AI] ${devLogName} clamp: messages still ~${finalTotal} chars (budget ${charBudget})`,
-      );
-    } else if (origChars > charBudget) {
-      console.warn(`[AI] ${devLogName} messages clamped: ${origChars} → ${finalTotal} chars`);
-    }
-  }
-  return out;
-}
-
-function clampMessagesForGroq(messages: Message[]): Message[] {
-  return clampMessagesToCharBudget(messages, GROQ_MESSAGES_CHAR_BUDGET, 'Groq');
-}
-
-function clampMessagesForGitHubCopilot(messages: Message[]): Message[] {
-  return clampMessagesToCharBudget(messages, GITHUB_COPILOT_MESSAGES_CHAR_BUDGET, 'GitHub Copilot');
-}
 
 /**
  * Single ceiling for {@link generateJSONWithRouting} before any cloud/local structured call.
@@ -658,679 +151,6 @@ export function clampMessagesForStructuredJsonRouting(messages: Message[]): Mess
   );
 }
 
-async function callGroq(
-  messages: Message[],
-  groqKey: string,
-  model: string,
-  jsonMode = true,
-): Promise<string> {
-  const clonedMessages = [...messages];
-  if (jsonMode) {
-    // Groq requires the word "json" to be present in the prompt when using json_object format.
-    const hasJsonWord = clonedMessages.some((m) => m.content.toLowerCase().includes('json'));
-    if (!hasJsonWord) {
-      const systemIdx = clonedMessages.findIndex((m) => m.role === 'system');
-      if (systemIdx !== -1) {
-        clonedMessages[systemIdx] = {
-          ...clonedMessages[systemIdx],
-          content: clonedMessages[systemIdx].content + '\nRespond in JSON format.',
-        };
-      } else {
-        clonedMessages[0] = {
-          ...clonedMessages[0],
-          content: clonedMessages[0].content + '\nRespond in JSON format.',
-        };
-      }
-    }
-  }
-
-  const payloadMessages = clampMessagesForGroq(jsonMode ? clonedMessages : messages);
-
-  const body: Record<string, unknown> = {
-    model,
-    messages: payloadMessages,
-    temperature: 0.7,
-    max_tokens: GROQ_MAX_COMPLETION_TOKENS,
-  };
-  if (jsonMode) {
-    body.response_format = { type: 'json_object' };
-  }
-
-  const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${groqKey}`,
-    },
-    body: JSON.stringify(body),
-  });
-
-  if (res.status === 429) {
-    throw new RateLimitError(`Groq rate limit on ${model}`);
-  }
-
-  if (!res.ok) {
-    const err = await res.text().catch(() => res.status.toString());
-    throw new Error(`Groq error ${res.status} (${model}): ${err}`);
-  }
-
-  const data = await res.json();
-  const text = data?.choices?.[0]?.message?.content;
-  if (!text || !text.trim()) throw new Error(`Empty response from Groq model ${model}`);
-  return text;
-}
-
-/** Groq chat with SSE; falls back to non-streaming JSON if the runtime has no response body stream. */
-async function streamGroqChat(
-  messages: Message[],
-  groqKey: string,
-  model: string,
-  onDelta: (delta: string) => void,
-): Promise<string> {
-  const payloadMessages = clampMessagesForGroq(messages);
-  const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${groqKey}`,
-    },
-    body: JSON.stringify({
-      model,
-      messages: payloadMessages,
-      temperature: 0.7,
-      max_tokens: GROQ_MAX_COMPLETION_TOKENS,
-      stream: true,
-    }),
-  });
-
-  if (res.status === 429) {
-    throw new RateLimitError(`Groq rate limit on ${model}`);
-  }
-
-  if (!res.ok) {
-    const err = await res.text().catch(() => res.status.toString());
-    throw new Error(`Groq error ${res.status} (${model}): ${err}`);
-  }
-
-  if (!res.body) {
-    logStreamEvent('no_body_fallback', { provider: 'groq', model });
-    const text = await callGroq(payloadMessages, groqKey, model, false);
-    await emitPseudoStreamFallback(text, onDelta, {
-      provider: 'groq',
-      model,
-      reason: 'no_body',
-    });
-    logStreamEvent('fallback_complete', {
-      provider: 'groq',
-      model,
-      mode: 'nonstream_chunked',
-      outputChars: text.length,
-    });
-    return text;
-  }
-
-  const text = await readOpenAiCompatibleSse(res, onDelta);
-  logStreamEvent('sse_complete', {
-    provider: 'groq',
-    model,
-    outputChars: text.length,
-  });
-  if (!text.trim()) throw new Error(`Empty response from Groq model ${model}`);
-  return text;
-}
-
-/** OpenRouter chat with SSE; falls back to non-streaming if no body stream. */
-async function streamOpenRouterChat(
-  messages: Message[],
-  orKey: string,
-  model: string,
-  onDelta: (delta: string) => void,
-): Promise<string> {
-  const t0 = Date.now();
-  const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${orKey}`,
-      'HTTP-Referer': 'neet-study-app',
-      'X-Title': 'Guru Study App',
-    },
-    body: JSON.stringify({
-      model,
-      messages,
-      temperature: 0.7,
-      max_tokens: CLOUD_MAX_COMPLETION_TOKENS,
-      stream: true,
-    }),
-  });
-
-  devLogOpenRouter('stream_first_http', {
-    model,
-    msToHeaders: Date.now() - t0,
-    status: res.status,
-    hasBody: !!res.body,
-  });
-
-  if (res.status === 429) {
-    throw new RateLimitError(`OpenRouter rate limit on ${model}`);
-  }
-
-  if (!res.ok) {
-    const err = await res.text().catch(() => res.status.toString());
-    throw new Error(`OpenRouter error ${res.status} (${model}): ${err}`);
-  }
-
-  if (!res.body) {
-    devLogOpenRouter('stream_no_body_using_nonstream', { model });
-    logStreamEvent('no_body_fallback', { provider: 'openrouter', model });
-    const text = await callOpenRouter(messages, orKey, model);
-    await emitPseudoStreamFallback(text, onDelta, {
-      provider: 'openrouter',
-      model,
-      reason: 'no_body',
-    });
-    logStreamEvent('fallback_complete', {
-      provider: 'openrouter',
-      model,
-      mode: 'nonstream_chunked',
-      outputChars: text.length,
-    });
-    devLogOpenRouter('stream_path_done', {
-      model,
-      msTotal: Date.now() - t0,
-      path: 'nonstream_only',
-    });
-    return text;
-  }
-
-  const tSse = Date.now();
-  let text = await readOpenAiCompatibleSse(res, onDelta);
-  const sseMs = Date.now() - tSse;
-  let usedNonstreamRetry = false;
-  if (!text.trim()) {
-    devLogOpenRouter('stream_empty_retry_nonstream', { model, sseMs, accumulatedLen: text.length });
-    logStreamEvent('empty_sse_retry_nonstream', {
-      provider: 'openrouter',
-      model,
-      sseMs,
-      accumulatedChars: text.length,
-    });
-    const tRetry = Date.now();
-    text = await callOpenRouter(messages, orKey, model);
-    usedNonstreamRetry = true;
-    devLogOpenRouter('stream_retry_nonstream_ms', { model, retryMs: Date.now() - tRetry });
-    await emitPseudoStreamFallback(text, onDelta, {
-      provider: 'openrouter',
-      model,
-      reason: 'empty_sse',
-    });
-  }
-  logStreamEvent('sse_complete', {
-    provider: 'openrouter',
-    model,
-    outputChars: text.length,
-    sseMs,
-    usedNonstreamRetry,
-  });
-  devLogOpenRouter('stream_path_done', {
-    model,
-    msTotal: Date.now() - t0,
-    sseMs,
-    usedNonstreamRetry,
-    outLen: text.length,
-  });
-  return text;
-}
-
-async function callDeepSeek(
-  messages: Message[],
-  deepseekKey: string,
-  model: string,
-  jsonMode = true,
-): Promise<string> {
-  if (__DEV__) console.log(`[AI] callDeepSeek attempt: model=${model} json=${jsonMode}`);
-  const clonedMessages = [...messages];
-  if (jsonMode) {
-    const hasJsonWord = clonedMessages.some((m) => m.content.toLowerCase().includes('json'));
-    if (!hasJsonWord) {
-      const systemIdx = clonedMessages.findIndex((m) => m.role === 'system');
-      if (systemIdx !== -1) {
-        clonedMessages[systemIdx] = {
-          ...clonedMessages[systemIdx],
-          content: clonedMessages[systemIdx].content + '\nRespond in JSON format.',
-        };
-      } else {
-        clonedMessages[0] = {
-          ...clonedMessages[0],
-          content: clonedMessages[0].content + '\nRespond in JSON format.',
-        };
-      }
-    }
-  }
-
-  const body: Record<string, unknown> = {
-    model,
-    messages: clonedMessages,
-    temperature: 0.7,
-    max_tokens: CLOUD_MAX_COMPLETION_TOKENS,
-  };
-  if (jsonMode) {
-    body.response_format = { type: 'json_object' };
-  }
-
-  const res = await fetch('https://api.deepseek.com/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${deepseekKey}`,
-    },
-    body: JSON.stringify(body),
-  });
-
-  if (res.status === 429) {
-    if (__DEV__) console.warn(`[AI] DeepSeek 429: ${model}`);
-    throw new RateLimitError(`DeepSeek rate limit on ${model}`);
-  }
-
-  if (!res.ok) {
-    const err = await res.text().catch(() => res.status.toString());
-    if (__DEV__) console.error(`[AI] DeepSeek ${res.status} (${model}):`, err);
-    throw new Error(`DeepSeek error ${res.status} (${model}): ${err}`);
-  }
-
-  const data = await res.json();
-  const text = data?.choices?.[0]?.message?.content;
-  if (!text || !text.trim()) throw new Error(`Empty response from DeepSeek model ${model}`);
-  if (__DEV__) console.log(`[AI] DeepSeek success: ${model} (${text.length} chars)`);
-  return text;
-}
-
-async function streamDeepSeekChat(
-  messages: Message[],
-  deepseekKey: string,
-  model: string,
-  onDelta: (delta: string) => void,
-): Promise<string> {
-  const res = await fetch('https://api.deepseek.com/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${deepseekKey}`,
-    },
-    body: JSON.stringify({
-      model,
-      messages,
-      temperature: 0.7,
-      max_tokens: CLOUD_MAX_COMPLETION_TOKENS,
-      stream: true,
-    }),
-  });
-
-  if (res.status === 429) {
-    throw new RateLimitError(`DeepSeek rate limit on ${model}`);
-  }
-
-  if (!res.ok) {
-    const err = await res.text().catch(() => res.status.toString());
-    throw new Error(`DeepSeek error ${res.status} (${model}): ${err}`);
-  }
-
-  if (!res.body) {
-    logStreamEvent('no_body_fallback', { provider: 'deepseek', model });
-    const text = await callDeepSeek(messages, deepseekKey, model, false);
-    await emitPseudoStreamFallback(text, onDelta, {
-      provider: 'deepseek',
-      model,
-      reason: 'no_body',
-    });
-    logStreamEvent('fallback_complete', {
-      provider: 'deepseek',
-      model,
-      mode: 'nonstream_chunked',
-      outputChars: text.length,
-    });
-    return text;
-  }
-
-  const text = await readOpenAiCompatibleSse(res, onDelta);
-  logStreamEvent('sse_complete', {
-    provider: 'deepseek',
-    model,
-    outputChars: text.length,
-  });
-  if (!text.trim()) throw new Error(`Empty response from DeepSeek model ${model}`);
-  return text;
-}
-
-function githubModelsHeaders(pat: string): Record<string, string> {
-  return {
-    'Content-Type': 'application/json',
-    Accept: 'application/vnd.github+json',
-    'X-GitHub-Api-Version': GITHUB_MODELS_API_VERSION,
-    Authorization: `Bearer ${pat}`,
-  };
-}
-
-/** GitHub Models — OpenAI-style chat at models.github.ai (REST inference API). */
-async function callGitHubModels(
-  messages: Message[],
-  pat: string,
-  model: string,
-  jsonMode = true,
-): Promise<string> {
-  if (__DEV__) console.log(`[AI] callGitHubModels attempt: model=${model} json=${jsonMode}`);
-  const clonedMessages = [...messages];
-  if (jsonMode) {
-    const hasJsonWord = clonedMessages.some((m) => m.content.toLowerCase().includes('json'));
-    if (!hasJsonWord) {
-      const systemIdx = clonedMessages.findIndex((m) => m.role === 'system');
-      if (systemIdx !== -1) {
-        clonedMessages[systemIdx] = {
-          ...clonedMessages[systemIdx],
-          content: clonedMessages[systemIdx].content + '\nRespond in JSON format.',
-        };
-      } else {
-        clonedMessages[0] = {
-          ...clonedMessages[0],
-          content: clonedMessages[0].content + '\nRespond in JSON format.',
-        };
-      }
-    }
-  }
-
-  const body: Record<string, unknown> = {
-    model,
-    messages: clonedMessages,
-    temperature: 0.7,
-    max_tokens: CLOUD_MAX_COMPLETION_TOKENS,
-  };
-  if (jsonMode) {
-    body.response_format = { type: 'json_object' };
-  }
-
-  const res = await fetch(getGitHubModelsChatCompletionsUrl(), {
-    method: 'POST',
-    headers: githubModelsHeaders(pat),
-    body: JSON.stringify(body),
-  });
-
-  if (res.status === 429) {
-    if (__DEV__) console.warn(`[AI] GitHub Models 429: ${model}`);
-    throw new RateLimitError(`GitHub Models rate limit on ${model}`);
-  }
-
-  if (!res.ok) {
-    const err = await res.text().catch(() => res.status.toString());
-    if (__DEV__) console.error(`[AI] GitHub Models ${res.status} (${model}):`, err);
-    throw new Error(`GitHub Models error ${res.status} (${model}): ${err}`);
-  }
-
-  const data = await res.json();
-  const text = data?.choices?.[0]?.message?.content;
-  if (!text || !text.trim()) throw new Error(`Empty response from GitHub model ${model}`);
-  if (__DEV__) console.log(`[AI] GitHub Models success: ${model} (${text.length} chars)`);
-  return text;
-}
-
-async function streamGitHubModelsChat(
-  messages: Message[],
-  pat: string,
-  model: string,
-  onDelta: (delta: string) => void,
-): Promise<string> {
-  const res = await fetch(getGitHubModelsChatCompletionsUrl(), {
-    method: 'POST',
-    headers: githubModelsHeaders(pat),
-    body: JSON.stringify({
-      model,
-      messages,
-      temperature: 0.7,
-      max_tokens: CLOUD_MAX_COMPLETION_TOKENS,
-      stream: true,
-    }),
-  });
-
-  if (res.status === 429) {
-    throw new RateLimitError(`GitHub Models rate limit on ${model}`);
-  }
-
-  if (!res.ok) {
-    const err = await res.text().catch(() => res.status.toString());
-    throw new Error(`GitHub Models error ${res.status} (${model}): ${err}`);
-  }
-
-  if (!res.body) {
-    logStreamEvent('no_body_fallback', { provider: 'github', model });
-    const text = await callGitHubModels(messages, pat, model, false);
-    await emitPseudoStreamFallback(text, onDelta, {
-      provider: 'github',
-      model,
-      reason: 'no_body',
-    });
-    logStreamEvent('fallback_complete', {
-      provider: 'github',
-      model,
-      mode: 'nonstream_chunked',
-      outputChars: text.length,
-    });
-    return text;
-  }
-
-  const text = await readOpenAiCompatibleSse(res, onDelta);
-  logStreamEvent('sse_complete', {
-    provider: 'github',
-    model,
-    outputChars: text.length,
-  });
-  if (!text.trim()) throw new Error(`Empty response from GitHub model ${model}`);
-  return text;
-}
-
-// ── GitHub Copilot (OAuth token → chat/completions directly) ────────────
-// Matches OpenCode's approach: send OAuth access token as Bearer directly
-// to api.githubcopilot.com/chat/completions. No session token exchange.
-import {
-  getGitHubCopilotEditorVersion,
-  getGitHubCopilotIntegrationId,
-  getGitHubCopilotChatCompletionsUrl,
-} from './github/githubCopilotEnv';
-
-function githubCopilotHeaders(oauthToken: string): Record<string, string> {
-  return {
-    'Content-Type': 'application/json',
-    Authorization: `Bearer ${oauthToken}`,
-    'User-Agent': 'GuruStudy/1.0',
-    'Editor-Version': getGitHubCopilotEditorVersion(),
-    'Copilot-Integration-Id': getGitHubCopilotIntegrationId(),
-    'Openai-Intent': 'conversation-edits',
-  };
-}
-
-/** OAuth token is sent directly — no session token exchange needed. */
-async function resolveCopilotSessionToken(oauthToken: string): Promise<string> {
-  return oauthToken;
-}
-
-export async function callGitHubCopilot(
-  messages: Message[],
-  oauthToken: string,
-  model: string,
-  jsonMode = true,
-): Promise<string> {
-  if (__DEV__) console.log(`[AI] callGitHubCopilot attempt: model=${model} json=${jsonMode}`);
-
-  const sessionToken = await resolveCopilotSessionToken(oauthToken);
-
-  const clonedMessages = [...messages];
-  if (jsonMode) {
-    const hasJsonWord = clonedMessages.some((m) => m.content.toLowerCase().includes('json'));
-    if (!hasJsonWord) {
-      const systemIdx = clonedMessages.findIndex((m) => m.role === 'system');
-      if (systemIdx !== -1) {
-        clonedMessages[systemIdx] = {
-          ...clonedMessages[systemIdx],
-          content: clonedMessages[systemIdx].content + '\nRespond in JSON format.',
-        };
-      } else {
-        clonedMessages[0] = {
-          ...clonedMessages[0],
-          content: clonedMessages[0].content + '\nRespond in JSON format.',
-        };
-      }
-    }
-  }
-
-  const payloadMessages = clampMessagesForGitHubCopilot(clonedMessages);
-  const apiUrl = getGitHubCopilotChatCompletionsUrl();
-
-  const body: Record<string, unknown> = {
-    model,
-    messages: payloadMessages,
-    temperature: 0.7,
-    max_tokens: CLOUD_MAX_COMPLETION_TOKENS,
-  };
-  if (jsonMode) {
-    body.response_format = { type: 'json_object' };
-  }
-
-  const res = await fetch(apiUrl, {
-    method: 'POST',
-    headers: githubCopilotHeaders(sessionToken),
-    body: JSON.stringify(body),
-  });
-
-  if (res.status === 429) {
-    if (__DEV__) console.warn(`[AI] GitHub Copilot 429: ${model}`);
-    throw new RateLimitError(`GitHub Copilot rate limit on ${model}`);
-  }
-
-  if (!res.ok) {
-    const err = await res.text().catch(() => res.status.toString());
-    if (__DEV__) console.error(`[AI] GitHub Copilot ${res.status} (${model}):`, err);
-    const errLower = err.toLowerCase();
-    if (
-      errLower.includes('model_max_prompt_tokens_exceeded') &&
-      payloadMessages.reduce((s, m) => s + m.content.length, 0) > 12_000
-    ) {
-      const tighter = clampMessagesToCharBudget(
-        clonedMessages,
-        Math.floor(GITHUB_COPILOT_MESSAGES_CHAR_BUDGET * 0.45),
-        'GitHub Copilot (retry)',
-      );
-      const retryBody: Record<string, unknown> = {
-        model,
-        messages: tighter,
-        temperature: 0.7,
-        max_tokens: CLOUD_MAX_COMPLETION_TOKENS,
-      };
-      if (jsonMode) retryBody.response_format = { type: 'json_object' };
-      const res2 = await fetch(apiUrl, {
-        method: 'POST',
-        headers: githubCopilotHeaders(sessionToken),
-        body: JSON.stringify(retryBody),
-      });
-      if (res2.status === 429) {
-        throw new RateLimitError(`GitHub Copilot rate limit on ${model}`);
-      }
-      if (!res2.ok) {
-        const err2 = await res2.text().catch(() => res2.status.toString());
-        if (__DEV__) console.error(`[AI] GitHub Copilot retry ${res2.status} (${model}):`, err2);
-        throw new Error(`GitHub Copilot error ${res2.status} (${model}): ${err2}`);
-      }
-      const data2 = await res2.json();
-      const text2 = data2?.choices?.[0]?.message?.content;
-      if (!text2 || !text2.trim()) {
-        throw new Error(`Empty response from GitHub Copilot model ${model}`);
-      }
-      if (__DEV__) console.log(`[AI] GitHub Copilot success (after prompt clamp retry): ${model}`);
-      return text2;
-    }
-    throw new Error(`GitHub Copilot error ${res.status} (${model}): ${err}`);
-  }
-
-  const data = await res.json();
-  const text = data?.choices?.[0]?.message?.content;
-  if (!text || !text.trim()) throw new Error(`Empty response from GitHub Copilot model ${model}`);
-  if (__DEV__) console.log(`[AI] GitHub Copilot success: ${model} (${text.length} chars)`);
-  return text;
-}
-
-export async function streamGitHubCopilotChat(
-  messages: Message[],
-  oauthToken: string,
-  model: string,
-  onDelta: (delta: string) => void,
-): Promise<string> {
-  const sessionToken = await resolveCopilotSessionToken(oauthToken);
-  const apiUrl = getGitHubCopilotChatCompletionsUrl();
-  const payloadMessages = clampMessagesForGitHubCopilot(messages);
-
-  const postStream = (payload: Message[]) =>
-    fetch(apiUrl, {
-      method: 'POST',
-      headers: githubCopilotHeaders(sessionToken),
-      body: JSON.stringify({
-        model,
-        messages: payload,
-        temperature: 0.7,
-        max_tokens: CLOUD_MAX_COMPLETION_TOKENS,
-        stream: true,
-      }),
-    });
-
-  let res = await postStream(payloadMessages);
-
-  if (res.status === 429) {
-    throw new RateLimitError(`GitHub Copilot rate limit on ${model}`);
-  }
-
-  if (!res.ok) {
-    const err = await res.text().catch(() => res.status.toString());
-    const errLower = err.toLowerCase();
-    if (
-      errLower.includes('model_max_prompt_tokens_exceeded') &&
-      payloadMessages.reduce((s, m) => s + m.content.length, 0) > 12_000
-    ) {
-      const tighter = clampMessagesToCharBudget(
-        messages,
-        Math.floor(GITHUB_COPILOT_MESSAGES_CHAR_BUDGET * 0.45),
-        'GitHub Copilot stream (retry)',
-      );
-      res = await postStream(tighter);
-      if (res.status === 429) {
-        throw new RateLimitError(`GitHub Copilot rate limit on ${model}`);
-      }
-      if (!res.ok) {
-        const err2 = await res.text().catch(() => res.status.toString());
-        if (__DEV__)
-          console.error(`[AI] GitHub Copilot stream retry ${res.status} (${model}):`, err2);
-        throw new Error(`GitHub Copilot error ${res.status} (${model}): ${err2}`);
-      }
-    } else {
-      throw new Error(`GitHub Copilot error ${res.status} (${model}): ${err}`);
-    }
-  }
-
-  if (!res.body) {
-    logStreamEvent('no_body_fallback', { provider: 'github_copilot', model });
-    const text = await callGitHubCopilot(messages, oauthToken, model, false);
-    await emitPseudoStreamFallback(text, onDelta, {
-      provider: 'github_copilot',
-      model,
-      reason: 'no_body',
-    });
-    return text;
-  }
-
-  const text = await readOpenAiCompatibleSse(res, onDelta);
-  logStreamEvent('sse_complete', {
-    provider: 'github_copilot',
-    model,
-    outputChars: text.length,
-  });
-  if (!text.trim()) throw new Error(`Empty response from GitHub Copilot model ${model}`);
-  return text;
-}
 
 // ── GitLab Duo (OpenCode gateway only) ─────────────────────────────────
 // All models route through: OAuth `read_user api` → `POST .../api/v4/ai/third_party_agents/direct_access`
@@ -1344,24 +164,7 @@ export async function callGitLabDuo(
   jsonMode = true,
 ): Promise<string> {
   if (__DEV__) console.log(`[AI] callGitLabDuo attempt: model=${model} json=${jsonMode}`);
-  const clonedMessages = [...messages];
-  if (jsonMode) {
-    const hasJsonWord = clonedMessages.some((m) => m.content.toLowerCase().includes('json'));
-    if (!hasJsonWord) {
-      const systemIdx = clonedMessages.findIndex((m) => m.role === 'system');
-      if (systemIdx !== -1) {
-        clonedMessages[systemIdx] = {
-          ...clonedMessages[systemIdx],
-          content: clonedMessages[systemIdx].content + '\nRespond in JSON format.',
-        };
-      } else {
-        clonedMessages[0] = {
-          ...clonedMessages[0],
-          content: clonedMessages[0].content + '\nRespond in JSON format.',
-        };
-      }
-    }
-  }
+  const clonedMessages = jsonMode ? ensureJsonModeHint(messages) : [...messages];
 
   if (!isGitLabDuoOpenCodeGatewayModel(model)) {
     throw new Error(
@@ -1408,30 +211,13 @@ export async function callPoe(
   jsonMode = true,
 ): Promise<string> {
   if (__DEV__) console.log(`[AI] callPoe attempt: model=${model} json=${jsonMode}`);
-  const clonedMessages = [...messages];
-  if (jsonMode) {
-    const hasJsonWord = clonedMessages.some((m) => m.content.toLowerCase().includes('json'));
-    if (!hasJsonWord) {
-      const systemIdx = clonedMessages.findIndex((m) => m.role === 'system');
-      if (systemIdx !== -1) {
-        clonedMessages[systemIdx] = {
-          ...clonedMessages[systemIdx],
-          content: clonedMessages[systemIdx].content + '\nRespond in JSON format.',
-        };
-      } else {
-        clonedMessages[0] = {
-          ...clonedMessages[0],
-          content: clonedMessages[0].content + '\nRespond in JSON format.',
-        };
-      }
-    }
-  }
+  const clonedMessages = jsonMode ? ensureJsonModeHint(messages) : [...messages];
 
   const body: Record<string, unknown> = {
     model,
     messages: clonedMessages,
     temperature: 0.7,
-    max_tokens: CLOUD_MAX_COMPLETION_TOKENS,
+    max_tokens: 4096,
   };
   if (jsonMode) {
     body.response_format = { type: 'json_object' };
@@ -1471,7 +257,7 @@ export async function streamPoeChat(
       model,
       messages,
       temperature: 0.7,
-      max_tokens: CLOUD_MAX_COMPLETION_TOKENS,
+      max_tokens: 4096,
       stream: true,
     }),
   });
@@ -1506,230 +292,6 @@ export async function streamPoeChat(
   return text;
 }
 
-async function callKilo(
-  messages: Message[],
-  kiloApiKey: string | undefined,
-  model: string,
-  jsonMode = true,
-): Promise<string> {
-  const clonedMessages = [...messages];
-  if (jsonMode) {
-    const hasJsonWord = clonedMessages.some((m) => m.content.toLowerCase().includes('json'));
-    if (!hasJsonWord) {
-      const systemIdx = clonedMessages.findIndex((m) => m.role === 'system');
-      if (systemIdx !== -1) {
-        clonedMessages[systemIdx] = {
-          ...clonedMessages[systemIdx],
-          content: clonedMessages[systemIdx].content + '\nRespond in JSON format.',
-        };
-      } else {
-        clonedMessages[0] = {
-          ...clonedMessages[0],
-          content: clonedMessages[0].content + '\nRespond in JSON format.',
-        };
-      }
-    }
-  }
-  const body: Record<string, unknown> = {
-    model,
-    messages: clonedMessages,
-    temperature: 0.7,
-    max_tokens: CLOUD_MAX_COMPLETION_TOKENS,
-  };
-  if (jsonMode) body.response_format = { type: 'json_object' };
-  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-  if (kiloApiKey) headers['Authorization'] = `Bearer ${kiloApiKey}`;
-  const res = await fetch('https://api.kilo.ai/api/gateway/chat/completions', {
-    method: 'POST',
-    headers,
-    body: JSON.stringify(body),
-  });
-  if (res.status === 429) {
-    throw new RateLimitError(`Kilo rate limit on ${model}`);
-  }
-  if (!res.ok) {
-    const err = await res.text().catch(() => res.status.toString());
-    throw new Error(`Kilo error ${res.status} (${model}): ${err}`);
-  }
-  const data = await res.json();
-  const msg = data?.choices?.[0]?.message;
-  const text = msg?.content;
-  if (text && text.trim()) return text.trim();
-  const reasoning = typeof msg?.reasoning === 'string' ? msg.reasoning : '';
-  if (reasoning.trim()) return reasoning.trim();
-  throw new Error(`Empty response from Kilo model ${model}`);
-}
-
-async function streamKiloChat(
-  messages: Message[],
-  kiloApiKey: string | undefined,
-  model: string,
-  onDelta: (delta: string) => void,
-): Promise<string> {
-  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-  if (kiloApiKey) headers['Authorization'] = `Bearer ${kiloApiKey}`;
-  const res = await fetch('https://api.kilo.ai/api/gateway/chat/completions', {
-    method: 'POST',
-    headers,
-    body: JSON.stringify({
-      model,
-      messages,
-      temperature: 0.7,
-      max_tokens: CLOUD_MAX_COMPLETION_TOKENS,
-      stream: true,
-    }),
-  });
-  if (res.status === 429) {
-    throw new RateLimitError(`Kilo rate limit on ${model}`);
-  }
-  if (!res.ok) {
-    const err = await res.text().catch(() => res.status.toString());
-    throw new Error(`Kilo error ${res.status} (${model}): ${err}`);
-  }
-  if (!res.body) {
-    logStreamEvent('no_body_fallback', { provider: 'kilo', model });
-    const text = await callKilo(messages, kiloApiKey, model, false);
-    await emitPseudoStreamFallback(text, onDelta, {
-      provider: 'kilo',
-      model,
-      reason: 'no_body',
-    });
-    logStreamEvent('fallback_complete', {
-      provider: 'kilo',
-      model,
-      mode: 'nonstream_chunked',
-      outputChars: text.length,
-    });
-    return text;
-  }
-  const text = await readOpenAiCompatibleSse(res, onDelta);
-  logStreamEvent('sse_complete', {
-    provider: 'kilo',
-    model,
-    outputChars: text.length,
-  });
-  if (!text.trim()) throw new Error(`Empty response from Kilo model ${model}`);
-  return text;
-}
-
-/** Headers that satisfy AgentRouter's OpenAI-SDK client fingerprint check. */
-const AGENTROUTER_HEADERS = {
-  'User-Agent': 'Kilo-Code/5.11.0',
-  'HTTP-Referer': 'https://kilocode.ai',
-  'X-Title': 'Kilo Code',
-  'X-KiloCode-Version': '5.11.0',
-  'x-stainless-arch': 'x64',
-  'x-stainless-lang': 'js',
-  'x-stainless-os': 'Android',
-  'x-stainless-package-version': '6.32.0',
-  'x-stainless-retry-count': '0',
-  'x-stainless-runtime': 'node',
-  'x-stainless-runtime-version': 'v20.20.0',
-} as const;
-
-async function callAgentRouter(
-  messages: Message[],
-  apiKey: string,
-  model: string,
-  jsonMode = true,
-): Promise<string> {
-  const clonedMessages = [...messages];
-  if (jsonMode) {
-    const hasJsonWord = clonedMessages.some((m) => m.content.toLowerCase().includes('json'));
-    if (!hasJsonWord) {
-      const systemIdx = clonedMessages.findIndex((m) => m.role === 'system');
-      if (systemIdx !== -1) {
-        clonedMessages[systemIdx] = {
-          ...clonedMessages[systemIdx],
-          content: clonedMessages[systemIdx].content + '\nRespond in JSON format.',
-        };
-      } else {
-        clonedMessages[0] = {
-          ...clonedMessages[0],
-          content: clonedMessages[0].content + '\nRespond in JSON format.',
-        };
-      }
-    }
-  }
-  const body: Record<string, unknown> = {
-    model,
-    messages: clonedMessages,
-    temperature: 0.7,
-    max_tokens: CLOUD_MAX_COMPLETION_TOKENS,
-  };
-  if (jsonMode) body.response_format = { type: 'json_object' };
-  if (__DEV__) console.log(`[AI] callAgentRouter: model=${model} json=${jsonMode}`);
-  const res = await fetch('https://agentrouter.org/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${apiKey}`,
-      ...AGENTROUTER_HEADERS,
-    },
-    body: JSON.stringify(body),
-  });
-  if (res.status === 429) throw new RateLimitError(`AgentRouter rate limit on ${model}`);
-  if (!res.ok) {
-    const err = await res.text().catch(() => res.status.toString());
-    throw new Error(`AgentRouter error ${res.status} (${model}): ${err}`);
-  }
-  const data = await res.json();
-  const text = data?.choices?.[0]?.message?.content;
-  if (!text || !text.trim()) throw new Error(`Empty response from AgentRouter model ${model}`);
-  return text;
-}
-
-async function streamAgentRouterChat(
-  messages: Message[],
-  apiKey: string,
-  model: string,
-  onDelta: (delta: string) => void,
-): Promise<string> {
-  const res = await fetch('https://agentrouter.org/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${apiKey}`,
-      ...AGENTROUTER_HEADERS,
-    },
-    body: JSON.stringify({
-      model,
-      messages,
-      temperature: 0.7,
-      max_tokens: CLOUD_MAX_COMPLETION_TOKENS,
-      stream: true,
-    }),
-  });
-  if (res.status === 429) throw new RateLimitError(`AgentRouter rate limit on ${model}`);
-  if (!res.ok) {
-    const err = await res.text().catch(() => res.status.toString());
-    throw new Error(`AgentRouter error ${res.status} (${model}): ${err}`);
-  }
-  if (!res.body) {
-    logStreamEvent('no_body_fallback', { provider: 'agentrouter', model });
-    const text = await callAgentRouter(messages, apiKey, model, false);
-    await emitPseudoStreamFallback(text, onDelta, {
-      provider: 'agentrouter',
-      model,
-      reason: 'no_body',
-    });
-    logStreamEvent('fallback_complete', {
-      provider: 'agentrouter',
-      model,
-      mode: 'nonstream_chunked',
-      outputChars: text.length,
-    });
-    return text;
-  }
-  const text = await readOpenAiCompatibleSse(res, onDelta);
-  logStreamEvent('sse_complete', {
-    provider: 'agentrouter',
-    model,
-    outputChars: text.length,
-  });
-  if (!text.trim()) throw new Error(`Empty response from AgentRouter model ${model}`);
-  return text;
-}
 
 /** Keys bag shared by the provider loop helpers. */
 interface ProviderKeys {
@@ -1752,7 +314,6 @@ interface ProviderKeys {
   /** When set, GitLab Duo auto-routing tries this model id first (must be in {@link GITLAB_DUO_MODELS}). */
   gitlabDuoPreferredModel?: string;
   poeConnected?: boolean;
-  qwenConnected?: boolean;
 }
 
 /** Ensure chatgpt is in the provider order (old saved orders won't have it). */
@@ -1790,8 +351,6 @@ function providerHasKey(provider: ProviderId, keys: ProviderKeys): boolean {
       return !!keys.orKey;
     case 'cloudflare':
       return !!(keys.cfAccountId && keys.cfApiToken);
-    case 'qwen':
-      return !!keys.qwenConnected;
     default:
       return false;
   }
@@ -1913,198 +472,16 @@ async function streamChatGptWithFallback(
   throw lastError ?? new Error('ChatGPT failed for all configured accounts');
 }
 
-/** Try all models for a single provider (streaming). Returns result, or null if none succeeded. */
-async function tryStreamProvider(
+/**
+ * Try all models for a single provider. Pass `onDelta` for streaming, omit for non-streaming.
+ * Returns result or null if no model succeeded.
+ */
+async function tryProviderUnified(
   provider: ProviderId,
   messages: Message[],
-  onDelta: (delta: string) => void,
+  { json = false, onDelta }: { json?: boolean; onDelta?: (delta: string) => void },
   skipModel: string | undefined,
   keys: ProviderKeys,
-): Promise<{ text: string; modelUsed: string } | null> {
-  let lastErr: Error | null = null;
-  const tryModels = async (
-    models: readonly string[],
-    fn: (model: string) => Promise<string>,
-    prefix: string,
-  ): Promise<{ text: string; modelUsed: string } | null> => {
-    for (const model of models) {
-      if (skipModel && model === skipModel) continue;
-      try {
-        if (__DEV__) console.log(`[AI] trying ${prefix || 'or'}/${model}...`);
-        const text = await fn(model);
-        return { text, modelUsed: prefix ? `${prefix}/${model}` : model };
-      } catch (err) {
-        if (__DEV__)
-          console.warn(`[AI] ${prefix || 'or'}/${model} failed:`, (err as Error).message);
-        lastErr = err as Error;
-        continue;
-      }
-    }
-    return null;
-  };
-
-  switch (provider) {
-    case 'chatgpt':
-      if (!keys.chatgptConnected) return null;
-      return tryModels(
-        CHATGPT_MODELS,
-        (m) => streamChatGptWithFallback(messages, m, onDelta, getChatGptFallbackSlots(keys)),
-        'chatgpt',
-      );
-    case 'github_copilot': {
-      if (!keys.githubCopilotConnected) return null;
-      let copilotStreamToken: string;
-      try {
-        copilotStreamToken = await getGitHubCopilotToken();
-      } catch (err) {
-        if (__DEV__) console.warn(`[AI] github_copilot skipped:`, (err as Error).message);
-        return null;
-      }
-      return tryModels(
-        orderedGitHubCopilotModels(keys.githubCopilotPreferredModel),
-        (m) => streamGitHubCopilotChat(messages, copilotStreamToken, m, onDelta),
-        'github_copilot',
-      );
-    }
-    case 'gitlab_duo':
-      if (!keys.gitlabDuoConnected) return null;
-      return tryModels(
-        orderedGitLabDuoModels(keys.gitlabDuoPreferredModel),
-        async (m) => {
-          const token = await getGitLabDuoToken();
-          return streamGitLabDuoChat(messages, token, m, onDelta);
-        },
-        'gitlab_duo',
-      );
-    case 'poe':
-      if (!keys.poeConnected) return null;
-      return tryModels(
-        POE_MODELS,
-        async (m) => {
-          const token = await getPoeToken();
-          return streamPoeChat(messages, token, m, onDelta);
-        },
-        'poe',
-      );
-    case 'qwen':
-      if (!keys.qwenConnected) return null;
-      return tryQwenProviderStream(messages, onDelta);
-    case 'groq':
-      if (!keys.groqKey) return null;
-      return tryModels(
-        GROQ_MODELS,
-        (m) => streamGroqChat(messages, keys.groqKey!, m, onDelta),
-        'groq',
-      );
-    case 'github':
-      if (!keys.githubModelsPat) return null;
-      return tryModels(
-        GITHUB_MODELS_CHAT_MODELS,
-        (m) => streamGitHubModelsChat(messages, keys.githubModelsPat!, m, onDelta),
-        'github',
-      );
-    case 'kilo':
-      if (!keys.kiloApiKey) return null;
-      return tryModels(
-        await getKiloPreferredModels(keys.kiloApiKey),
-        (m) => streamKiloChat(messages, keys.kiloApiKey!, m, onDelta),
-        'kilo',
-      );
-    case 'deepseek':
-      if (!keys.deepseekKey) return null;
-      return tryModels(
-        DEEPSEEK_MODELS,
-        (m) => streamDeepSeekChat(messages, keys.deepseekKey!, m, onDelta),
-        'deepseek',
-      );
-    case 'agentrouter':
-      if (!keys.agentRouterKey) return null;
-      return tryModels(
-        AGENTROUTER_MODELS,
-        (m) => streamAgentRouterChat(messages, keys.agentRouterKey!, m, onDelta),
-        'ar',
-      );
-    case 'gemini':
-      if (!keys.geminiKey) return null;
-      return tryModels(
-        GEMINI_MODELS,
-        (m) => geminiGenerateContentStreamSdk(messages, keys.geminiKey!, m, onDelta),
-        'gemini',
-      );
-    case 'gemini_fallback':
-      if (!keys.geminiFallbackKey) return null;
-      return tryModels(
-        GEMINI_MODELS,
-        (m) => geminiGenerateContentStreamSdk(messages, keys.geminiFallbackKey!, m, onDelta),
-        'gemini',
-      );
-    case 'openrouter':
-      if (!keys.orKey) return null;
-      return tryModels(
-        OPENROUTER_FREE_MODELS,
-        (m) => streamOpenRouterChat(messages, keys.orKey!, m, onDelta),
-        '',
-      );
-    case 'cloudflare':
-      if (!keys.cfAccountId || !keys.cfApiToken) return null;
-      return tryModels(
-        CLOUDFLARE_MODELS,
-        (m) => streamCloudflareChat(messages, keys.cfAccountId!, keys.cfApiToken!, m, onDelta),
-        'cf',
-      );
-    default:
-      return null;
-  }
-}
-
-// ─── Qwen OAuth Provider ─────────────────────────────────────────────────────
-
-const QWEN_MODELS = ['qwen3-coder-plus'] as const;
-
-async function tryQwenProvider(
-  messages: Message[],
-  json: boolean,
-): Promise<{ text: string; modelUsed: string } | null> {
-  const { callQwenOauth } = await import('./qwen/qwenApi');
-  for (const model of QWEN_MODELS) {
-    try {
-      if (__DEV__) console.log(`[AI] trying qwen/${model}...`);
-      const text = await callQwenOauth(messages, model, json);
-      return { text, modelUsed: `qwen/${model}` };
-    } catch (err) {
-      if (__DEV__) console.warn(`[AI] qwen/${model} failed:`, (err as Error).message);
-      continue;
-    }
-  }
-  return null;
-}
-
-async function tryQwenProviderStream(
-  messages: Message[],
-  onDelta: (delta: string) => void,
-): Promise<{ text: string; modelUsed: string } | null> {
-  const { streamQwenOauth } = await import('./qwen/qwenApi');
-  for (const model of QWEN_MODELS) {
-    try {
-      if (__DEV__) console.log(`[AI] streaming qwen/${model}...`);
-      const text = await streamQwenOauth(messages, model, onDelta);
-      if (text) return { text, modelUsed: `qwen/${model}` };
-    } catch (err) {
-      if (__DEV__) console.warn(`[AI] qwen/${model} stream failed:`, (err as Error).message);
-      continue;
-    }
-  }
-  return null;
-}
-
-/** Try all models for a single provider (non-streaming). Returns result, or null if none succeeded. */
-async function tryProvider(
-  provider: ProviderId,
-  messages: Message[],
-  textMode: boolean,
-  skipModel: string | undefined,
-  keys: ProviderKeys,
-  groqPrimaryOnly?: boolean,
 ): Promise<{ text: string; modelUsed: string } | null> {
   const tryModels = async (
     models: readonly string[],
@@ -2126,13 +503,14 @@ async function tryProvider(
     return null;
   };
 
-  const json = !textMode;
   switch (provider) {
     case 'chatgpt':
       if (!keys.chatgptConnected) return null;
       return tryModels(
         CHATGPT_MODELS,
-        (m) => callChatGptWithFallback(messages, m, json, getChatGptFallbackSlots(keys)),
+        onDelta
+          ? (m) => streamChatGptWithFallback(messages, m, onDelta, getChatGptFallbackSlots(keys))
+          : (m) => callChatGptWithFallback(messages, m, json, getChatGptFallbackSlots(keys)),
         'chatgpt',
       );
     case 'github_copilot': {
@@ -2146,7 +524,9 @@ async function tryProvider(
       }
       return tryModels(
         orderedGitHubCopilotModels(keys.githubCopilotPreferredModel),
-        (m) => callGitHubCopilot(messages, copilotToken, m, json),
+        onDelta
+          ? (m) => streamGitHubCopilotChat(messages, copilotToken, m, onDelta)
+          : (m) => callGitHubCopilot(messages, copilotToken, m, json),
         'github_copilot',
       );
     }
@@ -2156,7 +536,9 @@ async function tryProvider(
         orderedGitLabDuoModels(keys.gitlabDuoPreferredModel),
         async (m) => {
           const token = await getGitLabDuoToken();
-          return callGitLabDuo(messages, token, m, json);
+          return onDelta
+            ? streamGitLabDuoChat(messages, token, m, onDelta)
+            : callGitLabDuo(messages, token, m, json);
         },
         'gitlab_duo',
       );
@@ -2166,83 +548,91 @@ async function tryProvider(
         POE_MODELS,
         async (m) => {
           const token = await getPoeToken();
-          return callPoe(messages, token, m, json);
+          return onDelta
+            ? streamPoeChat(messages, token, m, onDelta)
+            : callPoe(messages, token, m, json);
         },
         'poe',
       );
-    case 'qwen':
-      // Always attempt Qwen - the API client checks SecureStore for tokens
-      return tryQwenProvider(messages, json);
     case 'groq':
       if (!keys.groqKey) return null;
-      // When forceProvider === 'groq' (groqPrimaryOnly=true), only try the primary
-      // model (gpt-oss-120b) for speed — no silent Llama fallback.
-      // When Groq is reached naturally (user's preferred provider), try all
-      // GROQ_MODELS so Llama fallbacks work as the user expects.
-      if (groqPrimaryOnly) {
-        const primaryGroqModel = GROQ_MODELS[0];
-        if (!primaryGroqModel) return null;
-        try {
-          if (__DEV__) console.log(`[AI] trying groq/${primaryGroqModel}...`);
-          const text = await callGroq(messages, keys.groqKey!, primaryGroqModel, json);
-          return { text, modelUsed: `groq/${primaryGroqModel}` };
-        } catch (err) {
-          if (__DEV__)
-            console.warn(`[AI] groq/${primaryGroqModel} failed:`, (err as Error).message);
-          return null;
-        }
-      }
-      return tryModels(GROQ_MODELS, (m) => callGroq(messages, keys.groqKey!, m, json), 'groq');
+      return tryModels(
+        GROQ_MODELS,
+        onDelta
+          ? (m) => streamGroqChat(messages, keys.groqKey!, m, onDelta)
+          : (m) => callGroq(messages, keys.groqKey!, m, json),
+        'groq',
+      );
     case 'github':
       if (!keys.githubModelsPat) return null;
       return tryModels(
         GITHUB_MODELS_CHAT_MODELS,
-        (m) => callGitHubModels(messages, keys.githubModelsPat!, m, json),
+        onDelta
+          ? (m) => streamGitHubModelsChat(messages, keys.githubModelsPat!, m, onDelta)
+          : (m) => callGitHubModels(messages, keys.githubModelsPat!, m, json),
         'github',
       );
     case 'kilo':
       if (!keys.kiloApiKey) return null;
       return tryModels(
         await getKiloPreferredModels(keys.kiloApiKey),
-        (m) => callKilo(messages, keys.kiloApiKey!, m, json),
+        onDelta
+          ? (m) => streamKiloChat(messages, keys.kiloApiKey!, m, onDelta)
+          : (m) => callKilo(messages, keys.kiloApiKey!, m, json),
         'kilo',
       );
     case 'deepseek':
       if (!keys.deepseekKey) return null;
       return tryModels(
         DEEPSEEK_MODELS,
-        (m) => callDeepSeek(messages, keys.deepseekKey!, m, json),
+        onDelta
+          ? (m) => streamDeepSeekChat(messages, keys.deepseekKey!, m, onDelta)
+          : (m) => callDeepSeek(messages, keys.deepseekKey!, m, json),
         'deepseek',
       );
     case 'agentrouter':
       if (!keys.agentRouterKey) return null;
       return tryModels(
         AGENTROUTER_MODELS,
-        (m) => callAgentRouter(messages, keys.agentRouterKey!, m, json),
+        onDelta
+          ? (m) => streamAgentRouterChat(messages, keys.agentRouterKey!, m, onDelta)
+          : (m) => callAgentRouter(messages, keys.agentRouterKey!, m, json),
         'ar',
       );
     case 'gemini':
       if (!keys.geminiKey) return null;
       return tryModels(
         GEMINI_MODELS,
-        (m) => geminiGenerateContentSdk(messages, keys.geminiKey!, m),
+        onDelta
+          ? (m) => geminiGenerateContentStreamSdk(messages, keys.geminiKey!, m, onDelta)
+          : (m) => geminiGenerateContentSdk(messages, keys.geminiKey!, m),
         'gemini',
       );
     case 'gemini_fallback':
       if (!keys.geminiFallbackKey) return null;
       return tryModels(
         GEMINI_MODELS,
-        (m) => geminiGenerateContentSdk(messages, keys.geminiFallbackKey!, m),
+        onDelta
+          ? (m) => geminiGenerateContentStreamSdk(messages, keys.geminiFallbackKey!, m, onDelta)
+          : (m) => geminiGenerateContentSdk(messages, keys.geminiFallbackKey!, m),
         'gemini',
       );
     case 'openrouter':
       if (!keys.orKey) return null;
-      return tryModels(OPENROUTER_FREE_MODELS, (m) => callOpenRouter(messages, keys.orKey!, m), '');
+      return tryModels(
+        OPENROUTER_FREE_MODELS,
+        onDelta
+          ? (m) => streamOpenRouterChat(messages, keys.orKey!, m, onDelta)
+          : (m) => callOpenRouter(messages, keys.orKey!, m),
+        '',
+      );
     case 'cloudflare':
       if (!keys.cfAccountId || !keys.cfApiToken) return null;
       return tryModels(
         CLOUDFLARE_MODELS,
-        (m) => callCloudflare(messages, keys.cfAccountId!, keys.cfApiToken!, m),
+        onDelta
+          ? (m) => streamCloudflareChat(messages, keys.cfAccountId!, keys.cfApiToken!, m, onDelta)
+          : (m) => callCloudflare(messages, keys.cfAccountId!, keys.cfApiToken!, m),
         'cf',
       );
     default:
@@ -2250,34 +640,22 @@ async function tryProvider(
   }
 }
 
-/**
- * Same routing policy as attemptCloudLLM, but streams assistant tokens via onDelta.
- * (JSON / structured output is not streamed — use {@link attemptCloudLLM} instead.)
- */
-export async function attemptCloudLLMStream(
-  messages: Message[],
-  orKey: string | undefined,
-  groqKey: string | undefined,
-  chosenModel: string | undefined,
-  onDelta: (delta: string) => void,
-  geminiKey?: string | undefined,
-  geminiFallbackKey?: string | undefined,
-  cfAccountId?: string | undefined,
-  cfApiToken?: string | undefined,
-  deepseekKey?: string | undefined,
-  githubModelsPat?: string | undefined,
-  kiloApiKey?: string | undefined,
-  agentRouterKey?: string | undefined,
-  providerOrder?: ProviderId[],
-  chatgptConnected?: boolean,
-  chatgptSlots?: ChatGptAccountSlot[],
-  githubCopilotConnected?: boolean,
-  gitlabDuoConnected?: boolean,
-  poeConnected?: boolean,
-  githubCopilotPreferredModel?: string,
-  gitlabDuoPreferredModel?: string,
-  groqPrimaryOnly?: boolean,
-): Promise<{ text: string; modelUsed: string }> {
+interface ParsedChosenModel {
+  preferredGroqModel: string | undefined;
+  preferredGeminiModel: string | undefined;
+  preferredCfModel: string | undefined;
+  preferredDeepseekModel: string | undefined;
+  preferredGithubModel: string | undefined;
+  preferredKiloModel: string | undefined;
+  preferredAgentRouterModel: string | undefined;
+  preferredChatGptModel: string | undefined;
+  preferredGithubCopilotModel: string | undefined;
+  preferredGitlabDuoModel: string | undefined;
+  preferredPoeModel: string | undefined;
+  preferredOpenRouterModel: string | undefined;
+}
+
+function parseChosenModel(chosenModel: string | undefined): ParsedChosenModel {
   const preferredGroqModel = chosenModel?.startsWith('groq/')
     ? chosenModel.replace('groq/', '')
     : undefined;
@@ -2311,9 +689,6 @@ export async function attemptCloudLLMStream(
   const preferredPoeModel = chosenModel?.startsWith('poe/')
     ? chosenModel.replace('poe/', '')
     : undefined;
-  const preferredQwenModel = chosenModel?.startsWith('qwen/')
-    ? chosenModel.replace('qwen/', '')
-    : undefined;
   const preferredOpenRouterModel =
     chosenModel &&
     !preferredGroqModel &&
@@ -2327,31 +702,67 @@ export async function attemptCloudLLMStream(
     !preferredGithubCopilotModel &&
     !preferredGitlabDuoModel &&
     !preferredPoeModel &&
-    !preferredQwenModel &&
     chosenModel !== 'local' &&
     chosenModel !== 'auto'
       ? chosenModel
       : undefined;
+  return {
+    preferredGroqModel,
+    preferredGeminiModel,
+    preferredCfModel,
+    preferredDeepseekModel,
+    preferredGithubModel,
+    preferredKiloModel,
+    preferredAgentRouterModel,
+    preferredChatGptModel,
+    preferredGithubCopilotModel,
+    preferredGitlabDuoModel,
+    preferredPoeModel,
+    preferredOpenRouterModel,
+  };
+}
 
-  // #region agent log
-  fetch('http://127.0.0.1:7507/ingest/f6a0734c-b45d-4770-9e51-aa07e5c2da6e', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': 'ca9385' },
-    body: JSON.stringify({
-      sessionId: 'ca9385',
-      hypothesisId: 'H2',
-      location: 'llmRouting.attemptCloudLLMStream',
-      message: 'stream_routing_inputs',
-      data: {
-        chosenModel: chosenModel ?? 'undefined',
-        preferredGroq: preferredGroqModel ?? null,
-        preferredOr: preferredOpenRouterModel ?? null,
-        preferredDeepseek: preferredDeepseekModel ?? null,
-      },
-      timestamp: Date.now(),
-    }),
-  }).catch(() => {});
-  // #endregion
+/**
+ * Same routing policy as attemptCloudLLM, but streams assistant tokens via onDelta.
+ * (JSON / structured output is not streamed — use {@link attemptCloudLLM} instead.)
+ */
+export async function attemptCloudLLMStream(
+  messages: Message[],
+  orKey: string | undefined,
+  groqKey: string | undefined,
+  chosenModel: string | undefined,
+  onDelta: (delta: string) => void,
+  geminiKey?: string | undefined,
+  geminiFallbackKey?: string | undefined,
+  cfAccountId?: string | undefined,
+  cfApiToken?: string | undefined,
+  deepseekKey?: string | undefined,
+  githubModelsPat?: string | undefined,
+  kiloApiKey?: string | undefined,
+  agentRouterKey?: string | undefined,
+  providerOrder?: ProviderId[],
+  chatgptConnected?: boolean,
+  chatgptSlots?: ChatGptAccountSlot[],
+  githubCopilotConnected?: boolean,
+  gitlabDuoConnected?: boolean,
+  poeConnected?: boolean,
+  githubCopilotPreferredModel?: string,
+  gitlabDuoPreferredModel?: string,
+): Promise<{ text: string; modelUsed: string }> {
+  const {
+    preferredGroqModel,
+    preferredGeminiModel,
+    preferredCfModel,
+    preferredDeepseekModel,
+    preferredGithubModel,
+    preferredKiloModel,
+    preferredAgentRouterModel,
+    preferredChatGptModel,
+    preferredGithubCopilotModel,
+    preferredGitlabDuoModel,
+    preferredPoeModel,
+    preferredOpenRouterModel,
+  } = parseChosenModel(chosenModel);
 
   let lastCloudError: Error | null = null;
 
@@ -2498,16 +909,6 @@ export async function attemptCloudLLMStream(
     }
   }
 
-  if (preferredQwenModel) {
-    try {
-      const { streamQwenOauth } = await import('./qwen/qwenApi');
-      const text = await streamQwenOauth(messages, preferredQwenModel, onDelta);
-      return { text, modelUsed: `qwen/${preferredQwenModel}` };
-    } catch (err) {
-      lastCloudError = err as Error;
-    }
-  }
-
   const userPickedSpecificModel =
     !!chosenModel && chosenModel !== 'auto' && chosenModel !== 'local';
   if (userPickedSpecificModel) {
@@ -2556,7 +957,6 @@ export async function attemptCloudLLMStream(
     gitlabDuoConnected,
     gitlabDuoPreferredModel: (gitlabDuoPreferredModel ?? '').trim() || undefined,
     poeConnected,
-    qwenConnected: true, // Qwen uses SecureStore, not a simple key
   };
   const skipModels: Record<string, string | undefined> = {
     chatgpt: preferredChatGptModel,
@@ -2572,7 +972,6 @@ export async function attemptCloudLLMStream(
     github_copilot: preferredGithubCopilotModel,
     gitlab_duo: preferredGitlabDuoModel,
     poe: preferredPoeModel,
-    qwen: preferredQwenModel,
   };
 
   if (__DEV__) {
@@ -2589,7 +988,7 @@ export async function attemptCloudLLMStream(
       continue;
     }
     const skip = skipModels[provider];
-    const result = await tryStreamProvider(provider, messages, onDelta, skip, keys);
+    const result = await tryProviderUnified(provider, messages, { onDelta }, skip, keys);
     if (result) return result;
   }
 
@@ -2605,20 +1004,13 @@ export async function attemptLocalLLM(
   localModelPath: string,
   textMode: boolean,
 ): Promise<{ text: string; modelUsed: string }> {
-  const normalizedModelPath = localModelPath.toLowerCase();
-  const isGemma = normalizedModelPath.includes('gemma');
   const isQwen = localModelPath.toLowerCase().includes('qwen');
-  const isGemmaE2b = normalizedModelPath.includes('e2b');
-  const isGemmaE4b = normalizedModelPath.includes('e4b');
-  const modelUsed = isGemma
-    ? isGemmaE2b
-      ? 'local-gemma-4-e2b'
-      : isGemmaE4b
-        ? 'local-gemma-4-e4b'
-        : 'local-gemma'
+  const isMedGemma = localModelPath.toLowerCase().includes('medgemma');
+  const modelUsed = isMedGemma
+    ? 'local-medgemma-4b'
     : isQwen
       ? 'local-qwen-2.5-3b'
-      : 'local-litert';
+      : 'local-llama-3.2-1b';
   try {
     const text = await callLocalLLM(messages, localModelPath, textMode);
     if (!text || !text.trim()) {
@@ -2627,21 +1019,24 @@ export async function attemptLocalLLM(
     return { text, modelUsed };
   } catch (err: unknown) {
     const msg = (err as Error)?.message ?? String(err);
-    const lower = msg.toLowerCase();
     // If the model file failed to load (corrupt/missing), clear the stored path
     // so the bootstrap will re-download it on next startup.
-    // local-llm logs "loadModel failed" (not "failed to load").
     if (
-      lower.includes('failed to load') ||
-      lower.includes('loadmodel failed') ||
-      lower.includes('model_creation_failed') ||
-      lower.includes('no such file') ||
-      lower.includes('invalid model') ||
-      lower.includes('enoent')
+      msg.toLowerCase().includes('failed to load') ||
+      msg.toLowerCase().includes('no such file') ||
+      msg.toLowerCase().includes('invalid model')
     ) {
       // Important: free native memory on load failures to prevent leaks.
-      await releaseLlamaContext(/* force */ true);
-
+      if (!isContextInUse() && localLlmLoaded) {
+        try {
+          await LocalLlm.release();
+        } catch (releaseErr) {
+          console.warn('[LLM] Failed to release native context after load error:', releaseErr);
+        }
+      }
+      localLlmLoaded = false;
+      currentLlamaPath = null;
+      llamaContextPromise = null;
       profileRepository
         .updateProfile({ localModelPath: null, useLocalModel: false })
         .catch(() => {});
@@ -2656,83 +1051,42 @@ export async function attemptLocalLLM(
 
 export async function attemptLocalLLMStream(
   messages: Message[],
-  modelPath: string,
-  textMode = false,
+  localModelPath: string,
+  _textMode: boolean,
   onDelta: (delta: string) => void,
-): Promise<{ text: string; modelUsed: string }> {
-  await ensureLocalLlmLoaded(modelPath);
+): Promise<void> {
+  await ensureLocalLlmLoaded(localModelPath);
   const release = await acquireContextLock();
-  try {
-    const systemIdx = messages.findIndex((m) => m.role === 'system');
-    const systemInstruction = systemIdx !== -1 ? messages[systemIdx].content : undefined;
-    const promptMessages = messages
-      .filter((m) => m.role !== 'system')
-      .map((m) => ({
-        role: m.role,
-        content: m.content,
-      }));
-
-    return await new Promise<{ text: string; modelUsed: string }>((resolve, reject) => {
-      let isResolved = false;
-      const subs = [
-        LocalLlm.addLlmTokenListener((e) => {
-          onDelta(e.token);
-        }),
-        LocalLlm.addLlmCompleteListener((e) => {
-          if (isResolved) return;
-          isResolved = true;
-          subs.forEach((s) => s.remove());
-          resolve({ text: e.text, modelUsed: `local-${e.backend.toLowerCase()}` });
-        }),
-        LocalLlm.addLlmErrorListener((e) => {
-          if (isResolved) return;
-          isResolved = true;
-          subs.forEach((s) => s.remove());
-          reject(new Error(`Local LLM streaming error: ${e.error}`));
-        }),
-      ];
-
-      LocalLlm.chatStream(promptMessages, {
-        modelPath: normalizeLocalModelPathForNative(modelPath),
-        systemInstruction,
-        temperature: 0.7,
-      }).catch((err) => {
-        if (!isResolved) {
-          isResolved = true;
-          subs.forEach((s) => s.remove());
-          reject(err);
-        }
-      });
+  return new Promise<void>((resolve, reject) => {
+    const chatMessages: LocalLlm.ChatMessage[] = messages.map((m) => ({
+      role: m.role,
+      content: m.content,
+    }));
+    const tokenSub = LocalLlm.addLlmTokenListener(({ token }) => {
+      onDelta(token);
     });
-  } catch (err: unknown) {
-    const msg = (err as Error)?.message ?? String(err);
-    const lower = msg.toLowerCase();
-    if (
-      lower.includes('failed to load') ||
-      lower.includes('loadmodel failed') ||
-      lower.includes('model_creation_failed') ||
-      lower.includes('no such file') ||
-      lower.includes('invalid model') ||
-      lower.includes('enoent')
-    ) {
-      await releaseLlamaContext(/* force */ true);
-      profileRepository
-        .updateProfile({ localModelPath: null, useLocalModel: false })
-        .catch(() => {});
-      throw new Error(
-        'Local model file is missing or corrupt — it will re-download on next startup.',
-        { cause: err },
-      );
-    }
-
-    try {
-      await releaseLlamaContext(/* force */ true);
-    } catch {}
-
-    throw err;
-  } finally {
-    release();
-  }
+    const completeSub = LocalLlm.addLlmCompleteListener(() => {
+      tokenSub.remove();
+      completeSub.remove();
+      errorSub.remove();
+      release();
+      resolve();
+    });
+    const errorSub = LocalLlm.addLlmErrorListener(({ error }) => {
+      tokenSub.remove();
+      completeSub.remove();
+      errorSub.remove();
+      release();
+      reject(new Error(error));
+    });
+    LocalLlm.chatStream(chatMessages, { temperature: 0.7, topP: 0.9 }).catch((err: unknown) => {
+      tokenSub.remove();
+      completeSub.remove();
+      errorSub.remove();
+      release();
+      reject(err);
+    });
+  });
 }
 
 export async function attemptCloudLLM(
@@ -2757,62 +1111,21 @@ export async function attemptCloudLLM(
   poeConnected?: boolean,
   githubCopilotPreferredModel?: string,
   gitlabDuoPreferredModel?: string,
-  groqPrimaryOnly?: boolean,
 ): Promise<{ text: string; modelUsed: string }> {
-  const preferredGroqModel = chosenModel?.startsWith('groq/')
-    ? chosenModel.replace('groq/', '')
-    : undefined;
-  const preferredGeminiModel = chosenModel?.startsWith('gemini/')
-    ? chosenModel.replace('gemini/', '')
-    : undefined;
-  const preferredCfModel = chosenModel?.startsWith('cf/')
-    ? chosenModel.replace('cf/', '')
-    : undefined;
-  const preferredDeepseekModel = chosenModel?.startsWith('deepseek/')
-    ? chosenModel.replace('deepseek/', '')
-    : undefined;
-  const preferredGithubModel = chosenModel?.startsWith('github/')
-    ? chosenModel.replace('github/', '')
-    : undefined;
-  const preferredKiloModel = chosenModel?.startsWith('kilo/')
-    ? chosenModel.replace('kilo/', '')
-    : undefined;
-  const preferredAgentRouterModel = chosenModel?.startsWith('ar/')
-    ? chosenModel.replace('ar/', '')
-    : undefined;
-  const preferredChatGptModel = chosenModel?.startsWith('chatgpt/')
-    ? chosenModel.replace('chatgpt/', '')
-    : undefined;
-  const preferredGithubCopilotModel = chosenModel?.startsWith('github_copilot/')
-    ? chosenModel.replace('github_copilot/', '')
-    : undefined;
-  const preferredGitlabDuoModel = chosenModel?.startsWith('gitlab_duo/')
-    ? chosenModel.replace('gitlab_duo/', '')
-    : undefined;
-  const preferredPoeModel = chosenModel?.startsWith('poe/')
-    ? chosenModel.replace('poe/', '')
-    : undefined;
-  const preferredQwenModel = chosenModel?.startsWith('qwen/')
-    ? chosenModel.replace('qwen/', '')
-    : undefined;
-  const preferredOpenRouterModel =
-    chosenModel &&
-    !preferredGroqModel &&
-    !preferredGeminiModel &&
-    !preferredCfModel &&
-    !preferredDeepseekModel &&
-    !preferredGithubModel &&
-    !preferredKiloModel &&
-    !preferredAgentRouterModel &&
-    !preferredChatGptModel &&
-    !preferredGithubCopilotModel &&
-    !preferredGitlabDuoModel &&
-    !preferredPoeModel &&
-    !preferredQwenModel &&
-    chosenModel !== 'local' &&
-    chosenModel !== 'auto'
-      ? chosenModel
-      : undefined;
+  const {
+    preferredGroqModel,
+    preferredGeminiModel,
+    preferredCfModel,
+    preferredDeepseekModel,
+    preferredGithubModel,
+    preferredKiloModel,
+    preferredAgentRouterModel,
+    preferredChatGptModel,
+    preferredGithubCopilotModel,
+    preferredGitlabDuoModel,
+    preferredPoeModel,
+    preferredOpenRouterModel,
+  } = parseChosenModel(chosenModel);
 
   let lastCloudError: Error | null = null;
 
@@ -2949,16 +1262,6 @@ export async function attemptCloudLLM(
     }
   }
 
-  if (preferredQwenModel) {
-    try {
-      const { callQwenOauth } = await import('./qwen/qwenApi');
-      const text = await callQwenOauth(messages, preferredQwenModel, textMode);
-      return { text, modelUsed: `qwen/${preferredQwenModel}` };
-    } catch (err) {
-      lastCloudError = err as Error;
-    }
-  }
-
   // 2. Default Routing — iterate providers in user-defined (or default) order
   const order = ensureChatGptInOrder(
     providerOrder?.length ? providerOrder : DEFAULT_PROVIDER_ORDER,
@@ -2981,7 +1284,6 @@ export async function attemptCloudLLM(
     gitlabDuoConnected,
     gitlabDuoPreferredModel: (gitlabDuoPreferredModel ?? '').trim() || undefined,
     poeConnected,
-    qwenConnected: true, // Qwen uses SecureStore, not a simple key
   };
   const skipModels: Record<string, string | undefined> = {
     chatgpt: preferredChatGptModel,
@@ -2997,7 +1299,6 @@ export async function attemptCloudLLM(
     github_copilot: preferredGithubCopilotModel,
     gitlab_duo: preferredGitlabDuoModel,
     poe: preferredPoeModel,
-    qwen: preferredQwenModel,
   };
 
   if (__DEV__) {
@@ -3013,7 +1314,7 @@ export async function attemptCloudLLM(
   for (const provider of order) {
     if (!providerHasKey(provider, keys2)) continue;
     const skip = skipModels[provider];
-    const result = await tryProvider(provider, messages, textMode, skip, keys2, groqPrimaryOnly);
+    const result = await tryProviderUnified(provider, messages, { json: !textMode }, skip, keys2);
     if (result) return result;
   }
 

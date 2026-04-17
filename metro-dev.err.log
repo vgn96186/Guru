@@ -1,66 +1,21 @@
+===== 2026-04-17T14:09:34.056Z metro start =====
 [generate-bundled-env] Wrote empty bundled keys (missing .env values).
 [app.config] Missing environment variables: EXPO_PUBLIC_BUNDLED_GROQ_KEY
-[33m› [1m[@sentry/react-native/expo][22m Missing config for [1morganization, project[22m. Environment variables will be used as a fallback during the build. https://docs.sentry.io/platforms/react-native/manual-setup/[0m
 [app.config] Missing environment variables: EXPO_PUBLIC_BUNDLED_GROQ_KEY
 [app.config] Missing environment variables: EXPO_PUBLIC_BUNDLED_GROQ_KEY
-Error [ERR_UNSUPPORTED_ESM_URL_SCHEME]: Error loading Metro config at: C:\Guru\metro.config.js
-Only URLs with a scheme in: file, data, and node are supported by the default ESM loader. On Windows, absolute paths must be valid file:// URLs. Received protocol 'c:'
-Error: Only URLs with a scheme in: file, data, and node are supported by the default ESM loader. On Windows, absolute paths must be valid file:// URLs. Received protocol 'c:'
-    at throwIfUnsupportedURLScheme (node:internal/modules/esm/load:241:11)
-    at defaultLoad (node:internal/modules/esm/load:132:3)
-    at ModuleLoader.load (node:internal/modules/esm/loader:724:12)
-    at ModuleLoader.loadAndTranslate (node:internal/modules/esm/loader:543:56)
-    at ModuleLoader.#createModuleJob (node:internal/modules/esm/loader:567:36)
-    at ModuleLoader.#getJobFromResolveResult (node:internal/modules/esm/loader:297:34)
-    at ModuleLoader.getModuleJobForImport (node:internal/modules/esm/loader:265:41)
-    at ModuleLoader.import (node:internal/modules/esm/loader:605:23)
-
-===== 2026-04-11T16:56:51.321Z metro start =====
-
-===== 2026-04-11T17:10:21.096Z metro start =====
-
-===== 2026-04-11T17:19:45.420Z metro start =====
-
-===== 2026-04-12T07:12:53.706Z metro start =====
-
-===== 2026-04-12T07:27:18.170Z metro start =====
-
-===== 2026-04-12T07:40:31.479Z metro start =====
-
-===== 2026-04-12T08:09:00.058Z metro start =====
-
-===== 2026-04-12T08:41:52.496Z metro start =====
-
-===== 2026-04-12T08:42:15.392Z metro start =====
-
-===== 2026-04-12T09:15:48.970Z metro start =====
-
-===== 2026-04-12T09:16:13.181Z metro start =====
-
-===== 2026-04-12T10:27:21.961Z metro start =====
-
-===== 2026-04-12T10:33:25.887Z metro start =====
-
-===== 2026-04-12T10:37:31.563Z metro start =====
-
-===== 2026-04-12T10:39:57.000Z metro start =====
-
-===== 2026-04-12T10:42:09.274Z metro start =====
-
-===== 2026-04-12T10:43:38.681Z metro start =====
-
-===== 2026-04-12T10:44:47.248Z metro start =====
-
-===== 2026-04-12T10:51:23.334Z metro start =====
-
-===== 2026-04-12T10:58:22.471Z metro start =====
-
-===== 2026-04-12T11:07:24.495Z metro start =====
-
-===== 2026-04-12T11:07:41.697Z metro start =====
-
-===== 2026-04-12T11:13:51.822Z metro start =====
-
-===== 2026-04-12T11:16:55.238Z metro start =====
-
-===== 2026-04-12T11:17:30.719Z metro start =====
+[app.config] Missing environment variables: EXPO_PUBLIC_BUNDLED_GROQ_KEY
+[app.config] Missing environment variables: EXPO_PUBLIC_BUNDLED_GROQ_KEY
+[app.config] Missing environment variables: EXPO_PUBLIC_BUNDLED_GROQ_KEY
+[app.config] Missing environment variables: EXPO_PUBLIC_BUNDLED_GROQ_KEY
+[app.config] Missing environment variables: EXPO_PUBLIC_BUNDLED_GROQ_KEY
+[app.config] Missing environment variables: EXPO_PUBLIC_BUNDLED_GROQ_KEY
+[app.config] Missing environment variables: EXPO_PUBLIC_BUNDLED_GROQ_KEY
+[app.config] Missing environment variables: EXPO_PUBLIC_BUNDLED_GROQ_KEY
+[app.config] Missing environment variables: EXPO_PUBLIC_BUNDLED_GROQ_KEY
+[app.config] Missing environment variables: EXPO_PUBLIC_BUNDLED_GROQ_KEY
+[app.config] Missing environment variables: EXPO_PUBLIC_BUNDLED_GROQ_KEY
+[app.config] Missing environment variables: EXPO_PUBLIC_BUNDLED_GROQ_KEY
+[app.config] Missing environment variables: EXPO_PUBLIC_BUNDLED_GROQ_KEY
+[app.config] Missing environment variables: EXPO_PUBLIC_BUNDLED_GROQ_KEY
+[app.config] Missing environment variables: EXPO_PUBLIC_BUNDLED_GROQ_KEY
+[app.config] Missing environment variables: EXPO_PUBLIC_BUNDLED_GROQ_KEY

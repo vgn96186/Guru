@@ -46,6 +46,9 @@ function main() {
   const bundledDeepseek = (env.EXPO_PUBLIC_BUNDLED_DEEPSEEK_KEY ?? '').trim();
   const bundledGithubModelsPat = (env.EXPO_PUBLIC_BUNDLED_GITHUB_MODELS_PAT ?? '').trim();
   const bundledGoogleWebClientId = (env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID ?? '').trim();
+  const sentryDsn = (env.EXPO_PUBLIC_SENTRY_DSN ?? '').trim();
+  const sentryOrg = (env.SENTRY_ORG ?? '').trim();
+  const sentryProject = (env.SENTRY_PROJECT ?? '').trim();
 
   const content = `/**
  * Auto-generated from .env by scripts/generate-bundled-env.js
@@ -61,6 +64,9 @@ export const BUNDLED_CF_API_TOKEN = '${escapeForSingleQuotes(bundledCloudflareAp
 export const BUNDLED_DEEPSEEK_KEY = '${escapeForSingleQuotes(bundledDeepseek)}';
 export const BUNDLED_GITHUB_MODELS_PAT = '${escapeForSingleQuotes(bundledGithubModelsPat)}';
 export const BUNDLED_GOOGLE_WEB_CLIENT_ID = '${escapeForSingleQuotes(bundledGoogleWebClientId)}';
+export const SENTRY_DSN = '${escapeForSingleQuotes(sentryDsn)}';
+export const SENTRY_ORG = '${escapeForSingleQuotes(sentryOrg)}';
+export const SENTRY_PROJECT = '${escapeForSingleQuotes(sentryProject)}';
 `;
 
   fs.writeFileSync(outPath, content, 'utf8');

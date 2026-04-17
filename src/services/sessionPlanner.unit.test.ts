@@ -120,7 +120,7 @@ describe('sessionPlanner', () => {
 
   it('should throw error if no topics available', async () => {
     (getAllTopicsWithProgress as jest.Mock).mockResolvedValue([]);
-    await expect(buildSession('okay', 30, 'key')).rejects.toThrow(/No topics available/i);
+    await expect(buildSession({ mood: 'okay', preferredMinutes: 30, apiKey: 'key' })).rejects.toThrow(/No topics available/i);
   });
 
   it('should build a session using AI if key is provided', async () => {
@@ -130,7 +130,7 @@ describe('sessionPlanner', () => {
       guruMessage: 'AI Message',
     });
 
-    const agenda = await buildSession('okay', 30, 'key');
+    const agenda = await buildSession({ mood: 'okay', preferredMinutes: 30, apiKey: 'key' });
 
     expect(agenda.items.length).toBe(1);
     expect(agenda.items[0].topic.id).toBe(1);
@@ -141,15 +141,18 @@ describe('sessionPlanner', () => {
   it('should use fallback if AI fails', async () => {
     (planSessionWithAI as jest.Mock).mockRejectedValue(new Error('AI fail'));
 
-    const agenda = await buildSession('okay', 30, 'key');
+    const agenda = await buildSession({ mood: 'okay', preferredMinutes: 30, apiKey: 'key' });
 
     expect(agenda.items.length).toBeGreaterThan(0);
     expect(agenda.focusNote).toContain('Today:');
   });
 
   it('should handle explicit focus topics', async () => {
-    const agenda = await buildSession('okay', 30, 'key', undefined, undefined, {
-      focusTopicId: 2,
+    const agenda = await buildSession({
+      mood: 'okay',
+      preferredMinutes: 30,
+      apiKey: 'key',
+      options: { focusTopicId: 2 },
     });
 
     expect(agenda.items.length).toBe(1);
@@ -158,8 +161,11 @@ describe('sessionPlanner', () => {
   });
 
   it('should handle multiple explicit focus topics', async () => {
-    const agenda = await buildSession('okay', 30, 'key', undefined, undefined, {
-      focusTopicIds: [1, 2],
+    const agenda = await buildSession({
+      mood: 'okay',
+      preferredMinutes: 30,
+      apiKey: 'key',
+      options: { focusTopicIds: [1, 2] },
     });
 
     // Interleaved: Topic 1 gets [keypoints, quiz], Topic 2 (overdue) gets [keypoints, quiz] = 4 items
@@ -183,7 +189,7 @@ describe('sessionPlanner', () => {
       guruMessage: 'Msg',
     });
 
-    const agenda = await buildSession('okay', 30, 'key');
+    const agenda = await buildSession({ mood: 'okay', preferredMinutes: 30, apiKey: 'key' });
 
     expect(agenda.items[0].contentTypes).not.toContain('quiz');
   });
@@ -195,7 +201,7 @@ describe('sessionPlanner', () => {
       guruMessage: 'Msg',
     });
 
-    const agenda = await buildSession('distracted', 60, 'key');
+    const agenda = await buildSession({ mood: 'distracted', preferredMinutes: 60, apiKey: 'key' });
 
     expect(agenda.totalMinutes).toBe(10); // Distracted mood overrides length
     expect(agenda.mode).toBe('sprint');
@@ -208,7 +214,7 @@ describe('sessionPlanner', () => {
       guruMessage: 'Msg',
     });
 
-    const agenda = await buildSession('energetic', 60, 'key');
+    const agenda = await buildSession({ mood: 'energetic', preferredMinutes: 60, apiKey: 'key' });
 
     expect(agenda.mode).toBe('deep');
   });
@@ -220,7 +226,7 @@ describe('sessionPlanner', () => {
       guruMessage: 'Msg',
     });
 
-    const agenda = await buildSession('tired', 60, 'key');
+    const agenda = await buildSession({ mood: 'tired', preferredMinutes: 60, apiKey: 'key' });
 
     expect(agenda.totalMinutes).toBe(30);
     expect(agenda.mode).toBe('gentle');
@@ -233,16 +239,18 @@ describe('sessionPlanner', () => {
       guruMessage: 'Msg',
     });
 
-    const agenda = await buildSession('stressed', 60, 'key');
+    const agenda = await buildSession({ mood: 'stressed', preferredMinutes: 60, apiKey: 'key' });
 
     expect(agenda.totalMinutes).toBe(20);
     expect(agenda.mode).toBe('gentle');
   });
 
   it('should handle preferredActionType: review', async () => {
-    const agenda = await buildSession('okay', 30, 'key', undefined, undefined, {
-      focusTopicId: 1,
-      preferredActionType: 'review',
+    const agenda = await buildSession({
+      mood: 'okay',
+      preferredMinutes: 30,
+      apiKey: 'key',
+      options: { focusTopicId: 1, preferredActionType: 'review' },
     });
 
     expect(agenda.focusNote).toContain('Focused review');
@@ -251,9 +259,11 @@ describe('sessionPlanner', () => {
   });
 
   it('should handle preferredActionType: deep_dive', async () => {
-    const agenda = await buildSession('okay', 30, 'key', undefined, undefined, {
-      focusTopicId: 1,
-      preferredActionType: 'deep_dive',
+    const agenda = await buildSession({
+      mood: 'okay',
+      preferredMinutes: 30,
+      apiKey: 'key',
+      options: { focusTopicId: 1, preferredActionType: 'deep_dive' },
     });
 
     expect(agenda.focusNote).toContain('Focused deep_dive');
@@ -261,8 +271,11 @@ describe('sessionPlanner', () => {
   });
 
   it('should handle warmup mode fast path', async () => {
-    const agenda = await buildSession('okay', 30, 'key', undefined, undefined, {
-      mode: 'warmup',
+    const agenda = await buildSession({
+      mood: 'okay',
+      preferredMinutes: 30,
+      apiKey: 'key',
+      options: { mode: 'warmup' },
     });
 
     expect(agenda.mode).toBe('warmup');
@@ -272,8 +285,11 @@ describe('sessionPlanner', () => {
   });
 
   it('should handle mcq_block mode fast path', async () => {
-    const agenda = await buildSession('okay', 30, 'key', undefined, undefined, {
-      mode: 'mcq_block',
+    const agenda = await buildSession({
+      mood: 'okay',
+      preferredMinutes: 30,
+      apiKey: 'key',
+      options: { mode: 'mcq_block' },
     });
 
     expect(agenda.mode).toBe('mcq_block');
@@ -296,7 +312,7 @@ describe('sessionPlanner', () => {
       guruMessage: 'Msg',
     });
 
-    const agenda = await buildSession('okay', 30, 'key');
+    const agenda = await buildSession({ mood: 'okay', preferredMinutes: 30, apiKey: 'key' });
 
     expect(agenda.items[0].contentTypes).toEqual(['keypoints', 'quiz']);
   });
@@ -312,7 +328,7 @@ describe('sessionPlanner', () => {
       guruMessage: 'Msg',
     });
 
-    const agenda = await buildSession('okay', 30, 'key');
+    const agenda = await buildSession({ mood: 'okay', preferredMinutes: 30, apiKey: 'key' });
 
     expect(agenda.items.every((i) => i.topic.subjectId === 102)).toBe(true);
   });
@@ -323,7 +339,7 @@ describe('sessionPlanner', () => {
       useLocalModel: true,
     });
 
-    const agenda = await buildSession('okay', 30, '');
+    const agenda = await buildSession({ mood: 'okay', preferredMinutes: 30, apiKey: '' });
 
     expect(planSessionWithAI).toHaveBeenCalled(); // Local model still calls planSessionWithAI
   });
@@ -334,7 +350,7 @@ describe('sessionPlanner', () => {
       useLocalModel: false,
     });
 
-    const agenda = await buildSession('okay', 30, '');
+    const agenda = await buildSession({ mood: 'okay', preferredMinutes: 30, apiKey: '' });
 
     expect(planSessionWithAI).not.toHaveBeenCalled();
     expect(agenda.items.length).toBeGreaterThan(0);
@@ -343,7 +359,7 @@ describe('sessionPlanner', () => {
   // --- Edge Case Tests ---
 
   it('should handle empty strings for all API keys', async () => {
-    const agenda = await buildSession('okay', 30, '  ', ' ', '');
+    const agenda = await buildSession({ mood: 'okay', preferredMinutes: 30, apiKey: '  ', orKey: ' ', groqKey: '' });
     expect(planSessionWithAI).not.toHaveBeenCalled();
     expect(agenda.items.length).toBeGreaterThan(0);
   });
@@ -354,7 +370,7 @@ describe('sessionPlanner', () => {
       blockedContentTypes: ['keypoints', 'quiz', 'socratic', 'story', 'detective', 'error_hunt'],
     });
 
-    const agenda = await buildSession('okay', 30, 'key');
+    const agenda = await buildSession({ mood: 'okay', preferredMinutes: 30, apiKey: 'key' });
 
     // Should fallback to 'keypoints' as per code:
     // const safeContentTypes = contentTypes.length > 0 ? contentTypes : ['keypoints' as ContentType];
@@ -368,7 +384,7 @@ describe('sessionPlanner', () => {
       guruMessage: 'Bad AI Message',
     });
 
-    const agenda = await buildSession('okay', 30, 'key');
+    const agenda = await buildSession({ mood: 'okay', preferredMinutes: 30, apiKey: 'key' });
 
     expect(agenda.items.length).toBe(1); // Should fallback to candidates[0]
     expect(agenda.items[0].topic.id).toBe(1); // Top scored topic
@@ -388,7 +404,7 @@ describe('sessionPlanner', () => {
       };
     });
 
-    const agenda = await buildSession('okay', 30, 'key');
+    const agenda = await buildSession({ mood: 'okay', preferredMinutes: 30, apiKey: 'key' });
     expect(agenda.items[0].topic.id).toBe(1);
   });
 
@@ -415,7 +431,7 @@ describe('sessionPlanner', () => {
       };
     });
 
-    const agenda = await buildSession('okay', 30, 'key');
+    const agenda = await buildSession({ mood: 'okay', preferredMinutes: 30, apiKey: 'key' });
     expect(agenda.items[0].topic.id).toBe(1);
   });
 });

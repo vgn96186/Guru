@@ -9,12 +9,11 @@ jest.mock('expo-task-manager', () => ({
   isTaskRegisteredAsync: jest.fn(),
 }));
 
-jest.mock('expo-background-fetch', () => ({
+jest.mock('expo-background-task', () => ({
   registerTaskAsync: jest.fn(),
-  BackgroundFetchResult: {
-    NewData: 1,
-    NoData: 2,
-    Failed: 3,
+  BackgroundTaskResult: {
+    Success: 1,
+    Failed: 2,
   },
 }));
 
@@ -37,7 +36,7 @@ jest.mock('./notificationService', () => ({
   refreshAccountabilityNotificationsSafely: jest.fn(() => Promise.resolve()),
 }));
 
-import * as BackgroundFetch from 'expo-background-fetch';
+import * as BackgroundTask from 'expo-background-task';
 import * as TaskManager from 'expo-task-manager';
 import { getAllTopicsWithProgress } from '../db/queries/topics';
 import { prefetchTopicContent } from './aiService';
@@ -57,22 +56,22 @@ describe('backgroundTasks', () => {
     it('should register task if not already registered', async () => {
       (TaskManager.isTaskRegisteredAsync as jest.Mock).mockResolvedValue(false);
       await registerBackgroundFetch();
-      expect(BackgroundFetch.registerTaskAsync).toHaveBeenCalledWith(
+      expect(BackgroundTask.registerTaskAsync).toHaveBeenCalledWith(
         PREFETCH_TASK,
-        expect.any(Object),
+        expect.objectContaining({ minimumInterval: 12 * 60 }),
       );
     });
 
     it('should not register task if already registered', async () => {
       (TaskManager.isTaskRegisteredAsync as jest.Mock).mockResolvedValue(true);
       await registerBackgroundFetch();
-      expect(BackgroundFetch.registerTaskAsync).not.toHaveBeenCalled();
+      expect(BackgroundTask.registerTaskAsync).not.toHaveBeenCalled();
     });
 
     it('should handle registration error gracefully', async () => {
       (TaskManager.isTaskRegisteredAsync as jest.Mock).mockRejectedValue(new Error('Failed'));
       await expect(registerBackgroundFetch()).resolves.toBeUndefined();
-      expect(BackgroundFetch.registerTaskAsync).not.toHaveBeenCalled();
+      expect(BackgroundTask.registerTaskAsync).not.toHaveBeenCalled();
     });
   });
 
@@ -107,7 +106,7 @@ describe('backgroundTasks', () => {
 
       const result = await capturedTaskCallback();
 
-      expect(result).toBe(BackgroundFetch.BackgroundFetchResult.NewData);
+      expect(result).toBe(BackgroundTask.BackgroundTaskResult.Success);
       expect(prefetchTopicContent).toHaveBeenCalledTimes(2); // Topic 1 and Topic 2
       expect(prefetchTopicContent).toHaveBeenNthCalledWith(
         1,
@@ -132,7 +131,7 @@ describe('backgroundTasks', () => {
 
       const result = await capturedTaskCallback();
 
-      expect(result).toBe(BackgroundFetch.BackgroundFetchResult.NoData);
+      expect(result).toBe(BackgroundTask.BackgroundTaskResult.Success);
     });
 
     it('should return Failed if an error occurs', async () => {
@@ -140,7 +139,7 @@ describe('backgroundTasks', () => {
 
       const result = await capturedTaskCallback();
 
-      expect(result).toBe(BackgroundFetch.BackgroundFetchResult.Failed);
+      expect(result).toBe(BackgroundTask.BackgroundTaskResult.Failed);
     });
 
     it('should filter blocked content types', async () => {

@@ -29,7 +29,7 @@ const QuizQuestionSchema = z.object({
     .optional()
     .describe('Direct https image URL when known; otherwise omit and use imageSearchQuery'),
 });
-const QuizSchema = z.object({
+export const QuizSchema = z.object({
   type: z.literal('quiz').describe('Discriminator for quiz card'),
   topicName: z.string().describe('Topic title aligned with the syllabus'),
   questions: z.array(QuizQuestionSchema).describe('Typically 3–5 MCQs'),

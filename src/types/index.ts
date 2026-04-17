@@ -131,7 +131,8 @@ export interface UserProfile {
   visualTimersEnabled?: boolean;
   faceTrackingEnabled?: boolean;
   syncCode: string | null;
-  openrouterApiKey: string; // Legacy API key field (kept for backward compatibility)
+  /** @deprecated Legacy API key field - use openrouterKey instead */
+  openrouterApiKey: string;
   openrouterKey: string; // Actual OpenRouter key for free model fallbacks
   groqApiKey: string; // Groq API key for fast cloud inference fallback
   geminiKey?: string;
@@ -192,6 +193,8 @@ export interface UserProfile {
   providerOrder?: ProviderId[];
   /** Deepgram API key for batch + live WebSocket transcription. */
   deepgramApiKey?: string;
+  /** Jina AI API key for embeddings (jina-embeddings-v3). */
+  jinaApiKey?: string;
   /** Persisted provider validation metadata used by Settings key status indicators. */
   apiValidation?: Partial<
     Record<
@@ -481,7 +484,6 @@ export type SessionState =
   | 'planning'
   | 'agenda_reveal'
   | 'studying'
-  | 'quiz'
   | 'topic_done'
   | 'session_done';
 

@@ -24,7 +24,7 @@
  *   - Empty chunks: logged and skipped, not errors
  */
 
-import { initWhisper } from 'whisper.rn';
+import { initWhisper } from 'whisper.rn/index.js';
 
 type WhisperContextType = Awaited<ReturnType<typeof initWhisper>>;
 import {
@@ -46,7 +46,7 @@ let AudioPcmStreamAdapter: any = null;
 let initWhisperVad: any = null;
 
 try {
-  const whisperRn = require('whisper.rn');
+  const whisperRn = require('whisper.rn/index.js');
   RealtimeTranscriber = whisperRn.RealtimeTranscriber;
   AudioPcmStreamAdapter = whisperRn.AudioPcmStreamAdapter;
   initWhisperVad = whisperRn.initWhisperVad;

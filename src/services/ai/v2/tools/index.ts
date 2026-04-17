@@ -1,0 +1,35 @@
+/**
+ * Guru Core Tools — aggregated tool sets for the AI SDK.
+ */
+
+import { planSessionTool, dailyAgendaTool } from './planningTools';
+import { analyzeLectureTool } from './lectureTools';
+import { createQuizTool, fetchContentTool } from './contentTools';
+import { guruMedicalTools } from './medicalTools';
+
+export const guruPlanningTools = {
+  plan_session: planSessionTool,
+  daily_agenda: dailyAgendaTool,
+};
+
+export const guruLectureTools = {
+  analyze_lecture: analyzeLectureTool,
+};
+
+export const guruContentTools = {
+  create_quiz: createQuizTool,
+  fetch_content: fetchContentTool,
+};
+
+/**
+ * The complete suite of tools available to the Guru AI agent.
+ */
+export const guruCoreTools = {
+  ...guruMedicalTools,
+  ...guruPlanningTools,
+  ...guruLectureTools,
+  ...guruContentTools,
+};
+
+// Re-export individual tools for direct usage if needed
+export { planSessionTool, dailyAgendaTool, analyzeLectureTool, createQuizTool, fetchContentTool };

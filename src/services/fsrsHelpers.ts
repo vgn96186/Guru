@@ -1,11 +1,9 @@
 import { Rating } from 'ts-fsrs';
 
 export function mapConfidenceToRating(confidence: number): Rating {
-  // App confidence is 0-3:
-  // 0 = Again, 1 = Hard, 2 = Good, 3 = Easy
-  if (confidence <= 0) return Rating.Again;
-  if (confidence === 1) return Rating.Hard;
-  if (confidence === 2) return Rating.Good;
+  if (confidence <= 1) return Rating.Again;
+  if (confidence === 2) return Rating.Hard;
+  if (confidence === 3) return Rating.Good;
   return Rating.Easy;
 }
 

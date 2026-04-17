@@ -102,8 +102,21 @@ function resolveApkPath() {
   return { path: DEFAULT_APK, source: 'default build output' };
 }
 
+function uninstallPackage(packageName) {
+  log(`Attempting to uninstall ${packageName}...`);
+  const result = runDeviceSync(['uninstall', packageName], { stdio: 'pipe' });
+  if (result.status === 0) {
+    log(`Successfully uninstalled ${packageName}`);
+  } else {
+    // It's okay if uninstall fails (package might not exist)
+    log(`Package ${packageName} not installed or couldn't be uninstalled: ${result.stderr || 'unknown error'}`);
+  }
+}
+
 function main() {
   ensureDeviceConnected();
+
+  const PRODUCTION_PACKAGE = 'com.anonymous.gurustudy';
 
   if (IF_MISSING && isAndroidPackageInstalled(ADB_CMD, activeDeviceSerial, GURU_DEBUG_PACKAGE)) {
     log(`${GURU_DEBUG_PACKAGE} is already installed — skipping.`);
@@ -140,21 +153,33 @@ function main() {
     );
   }
 
+  // Uninstall any existing packages that might cause version downgrade errors
+  // Try both the debug package and the production package
+  uninstallPackage(GURU_DEBUG_PACKAGE);
+  uninstallPackage(PRODUCTION_PACKAGE);
+
   log(`Installing ${apkPath} → ${activeDeviceSerial || 'default device'} ...`);
   const result = runDeviceSync(['install', '-r', apkPath], { stdio: 'inherit' });
   if (result.status !== 0) {
     fail('adb install failed. Check USB debugging, storage space, and that the APK matches this device ABI.');
   }
-  if (!isAndroidPackageInstalled(ADB_CMD, activeDeviceSerial, GURU_DEBUG_PACKAGE)) {
+  // Check if either the debug package or production package is installed
+  const debugInstalled = isAndroidPackageInstalled(ADB_CMD, activeDeviceSerial, GURU_DEBUG_PACKAGE);
+  const prodInstalled = isAndroidPackageInstalled(ADB_CMD, activeDeviceSerial, PRODUCTION_PACKAGE);
+  
+  if (!debugInstalled && !prodInstalled) {
     fail(
       [
-        'adb install reported success but package is still missing:',
-        `  ${GURU_DEBUG_PACKAGE}`,
-        'You probably installed a release APK (different app id). Use the debug dev-client APK (…gurustudy.dev).',
+        'adb install reported success but neither package is installed:',
+        `  Debug package: ${GURU_DEBUG_PACKAGE}`,
+        `  Production package: ${PRODUCTION_PACKAGE}`,
+        'The APK may have a different applicationId. Check build.gradle flavors.',
       ].join('\n'),
     );
   }
-  log('Install finished. You can use Open Dev Client or Doctor next.');
+  
+  const installedPackage = debugInstalled ? GURU_DEBUG_PACKAGE : PRODUCTION_PACKAGE;
+  log(`Install finished (package: ${installedPackage}). You can use Open Dev Client or Doctor next.`);
 }
 
 main();

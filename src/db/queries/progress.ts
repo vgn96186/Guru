@@ -186,6 +186,7 @@ export async function getUserProfile(): Promise<UserProfile> {
     btr_start_date?: string | null;
     home_novelty_cooldown_hours?: number | null;
     disabled_providers?: string;
+    jina_api_key?: string;
   }>('SELECT * FROM user_profile WHERE id = 1');
 
   if (!r) {
@@ -388,6 +389,7 @@ export async function getUserProfile(): Promise<UserProfile> {
     deepseekKey: r.deepseek_key ?? '',
     agentRouterKey: r.agentrouter_key ?? '',
     deepgramApiKey: r.deepgram_api_key ?? '',
+    jinaApiKey: r.jina_api_key ?? '',
     providerOrder: sanitizeProviderOrder(
       (() => {
         try {
@@ -495,6 +497,7 @@ export async function updateUserProfile(updates: Partial<UserProfile>): Promise<
     deepseekKey: 'deepseek_key',
     agentRouterKey: 'agentrouter_key',
     deepgramApiKey: 'deepgram_api_key',
+    jinaApiKey: 'jina_api_key',
     apiValidation: 'api_validation_json',
     chatgptConnected: 'chatgpt_connected',
     chatgptAccounts: 'chatgpt_accounts_json',

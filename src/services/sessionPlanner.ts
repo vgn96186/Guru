@@ -20,6 +20,15 @@ interface BuildSessionOptions {
   mode?: SessionMode;
 }
 
+export interface BuildSessionConfig {
+  mood: Mood;
+  preferredMinutes: number;
+  apiKey?: string;
+  orKey?: string;
+  groqKey?: string;
+  options?: BuildSessionOptions;
+}
+
 function scoreTopicForSession(
   topic: TopicWithProgress,
   mood: Mood,
@@ -27,55 +36,45 @@ function scoreTopicForSession(
 ): number {
   let score = 0;
 
-  // Base: INICET priority (1-10 scale)
   score += topic.inicetPriority * 1.5;
 
-  // FSRS Scoring
   if (topic.progress.status === 'unseen') {
-    score += 15; // Highest priority for new cards
+    score += 15;
   } else if (topic.progress.fsrsDue) {
     const dueTime = new Date(topic.progress.fsrsDue).getTime();
     const nowTime = Date.now();
 
     if (isNaN(dueTime)) {
-      // Invalid date string — skip FSRS scoring
+      // skip
     } else if (nowTime > dueTime) {
-      // Overdue cards get a massive boost based on how overdue they are, capped
       const daysOverdue = (nowTime - dueTime) / MS_PER_DAY;
       score += 10 + Math.min(daysOverdue * 2, 10);
     } else {
-      // Not due yet, penalty
       const daysUntilDue = (dueTime - nowTime) / MS_PER_DAY;
       score -= daysUntilDue * 5;
     }
   }
 
-  // Recency penalty: avoid immediate repetition (within 24 hours unless due)
   if (topic.progress.lastStudiedAt) {
     const hoursSince = (Date.now() - topic.progress.lastStudiedAt) / 3600000;
     if (hoursSince < 12) score -= 20;
   }
 
-  // Sibling/parent recency penalty: if any topic sharing the same parent was
-  // recently studied, penalize this topic to avoid clustering siblings
-  // (e.g. studying all 8 Brachial Plexus sub-topics in one session)
   if (topic.parentTopicId && recentParentIds?.has(topic.parentTopicId)) {
     score -= 15;
   }
 
-  // Mood adjustments
   if (mood === 'tired' || mood === 'stressed') {
     if (topic.progress.status === 'unseen') score -= 10;
-    if (topic.progress.status === 'mastered') score += 5; // easy win
+    if (topic.progress.status === 'mastered') score += 5;
   }
   if (mood === 'energetic') {
     if (topic.progress.status === 'unseen') score += 5;
     if (topic.inicetPriority >= 8) score += 5;
   }
 
-  // Nemesis Massive Boost
   if (topic.progress.isNemesis) {
-    score += 50; // Force nemesis topics to the top of the queue
+    score += 50;
   }
 
   return score;
@@ -93,7 +92,6 @@ function getSessionMode(mood: Mood): SessionMode {
 }
 
 function getSessionLength(mood: Mood, preferred: number): number {
-  // Use the mood-appropriate cap, but respect user preference when it's shorter
   if (mood === 'distracted') return Math.min(preferred, 10);
   if (mood === 'stressed') return Math.min(preferred, 20);
   if (mood === 'tired') return Math.min(preferred, 30);
@@ -136,18 +134,9 @@ function resolveFocusedContentTypes(
   return withKeypointsFirst(focusedTypes, blockedContentTypes);
 }
 
-/**
- * Interleave agenda items so topics alternate (ADHD-friendly).
- * Instead of: A-keypoints, A-quiz, A-story, B-keypoints, B-quiz
- * Produces:   A-keypoints, B-keypoints, A-quiz, B-quiz, A-story
- *
- * Each original multi-content item is split into single-content items,
- * then round-robined by content-type slot across topics.
- */
 function interleaveAgendaItems(items: AgendaItem[]): AgendaItem[] {
   if (items.length <= 1) return items;
 
-  // Split each item into per-content-type items
   const perTopic: AgendaItem[][] = items.map((item) =>
     item.contentTypes.map((ct) => ({
       topic: item.topic,
@@ -156,7 +145,6 @@ function interleaveAgendaItems(items: AgendaItem[]): AgendaItem[] {
     })),
   );
 
-  // Round-robin: slot 0 of each topic, then slot 1, etc.
   const maxSlots = Math.max(...perTopic.map((t) => t.length));
   const result: AgendaItem[] = [];
   for (let slot = 0; slot < maxSlots; slot++) {
@@ -169,15 +157,13 @@ function interleaveAgendaItems(items: AgendaItem[]): AgendaItem[] {
   return result;
 }
 
-export async function buildSession(
-  mood: Mood,
-  preferredMinutes: number,
-  apiKey: string,
-  orKey?: string,
-  groqKey?: string,
-  options?: BuildSessionOptions,
-): Promise<Agenda> {
+export async function buildSession(config: BuildSessionConfig): Promise<Agenda> {
+  const { mood, preferredMinutes, options } = config;
+
   const profile = await profileRepository.getProfile();
+  const apiKey = config.apiKey ?? profile.openrouterKey ?? '';
+  const orKey = config.orKey ?? profile.openrouterKey;
+  const groqKey = config.groqKey ?? profile.groqApiKey;
   const focusSubjectIds = profile.focusSubjectIds ?? [];
   const blockedContentTypes = new Set<ContentType>(profile.blockedContentTypes ?? []);
 
@@ -258,7 +244,6 @@ export async function buildSession(
     }
   }
 
-  // Apply focus filter — if subjects are pinned, restrict to those
   const topicPool =
     focusSubjectIds.length > 0
       ? allTopics.filter((t) => focusSubjectIds.includes(t.subjectId))
@@ -270,8 +255,6 @@ export async function buildSession(
     );
   }
 
-  // Build set of parent IDs for topics studied in the last 24 hours
-  // to penalize sibling clustering (e.g. all Brachial Plexus sub-topics)
   const recentParentIds = new Set<number>();
   for (const t of topicPool) {
     if (
@@ -283,15 +266,12 @@ export async function buildSession(
     }
   }
 
-  // Score and rank all topics
   const scored = topicPool
     .map((t) => ({ ...t, score: scoreTopicForSession(t, mood, recentParentIds) }))
     .sort((a, b) => b.score - a.score);
 
-  // Take top 15 as candidates
   const candidates = scored.slice(0, 15);
 
-  // ── Warmup fast path: unlimited quiz questions, no AI call, no breaks ────────
   if (options?.mode === 'warmup') {
     const warmupTopics = scored.length > 0 ? scored : candidates;
     return {
@@ -314,7 +294,6 @@ export async function buildSession(
     };
   }
 
-  // ── MCQ Block fast path: 12 topics, quiz-only, no breaks ────────────────────
   if (options?.mode === 'mcq_block') {
     const blockTopics = scored.slice(0, 12);
     return {
@@ -333,7 +312,6 @@ export async function buildSession(
     };
   }
 
-  // Ask AI to pick from candidates (skip AI entirely if no API key configured)
   let agendaResponse: { selectedTopicIds: number[]; focusNote: string; guruMessage: string };
   const hasAiKey =
     !!apiKey?.trim() || !!orKey?.trim() || !!groqKey?.trim() || profile.useLocalModel;
@@ -341,7 +319,6 @@ export async function buildSession(
     try {
       agendaResponse = await planSessionWithAI(candidates, sessionMinutes, mood, recentTopics);
     } catch {
-      // Fallback: just take top 2-3 by score
       const count = mode === 'sprint' ? 1 : mode === 'gentle' ? 1 : 2;
       const recentSet = new Set(recentTopics);
       const fallbackTopics = candidates.filter((t) => !recentSet.has(t.name)).slice(0, count);
@@ -356,7 +333,6 @@ export async function buildSession(
       };
     }
   } else {
-    // No AI keys at all — use smart local fallback (no network call)
     const count =
       mode === 'sprint' ? 1 : mode === 'gentle' ? 1 : Math.min(3, Math.ceil(sessionMinutes / 15));
     const recentSet = new Set(recentTopics);
@@ -385,7 +361,6 @@ export async function buildSession(
     .map((id) => topicMap.get(id))
     .filter(Boolean)
     .map((topic) => {
-      // SRS Override: If topic is strictly due, FORCE QUIZ only.
       const dueDate = topicDueDate(topic!);
       if (dueDate && dueDate <= today && !blockedContentTypes.has('quiz')) {
         return {
@@ -401,7 +376,6 @@ export async function buildSession(
       };
     });
 
-  // Fallback if AI returned bad IDs
   if (items.length === 0) {
     const fallback = candidates[0];
     items.push({

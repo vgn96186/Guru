@@ -53,6 +53,7 @@
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
+      "expo-background-task",
       "expo-sqlite",
       "expo-media-library",
       "expo-notifications",

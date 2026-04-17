@@ -2,6 +2,7 @@ import * as FileSystem from 'expo-file-system/legacy';
 import * as DocumentPicker from 'expo-document-picker';
 import { Alert } from 'react-native';
 import { shareBackupFileOrAlert } from './backupShare';
+import { DB_DIR, DB_PATH } from '../db/database';
 
 const Updates = (() => {
   try {
@@ -11,9 +12,6 @@ const Updates = (() => {
   }
 })();
 
-const DB_NAME = 'neet_study.db';
-const DB_DIR = `${FileSystem.documentDirectory}SQLite`;
-const DB_PATH = `${DB_DIR}/${DB_NAME}`;
 const SQLITE_HEADER = 'SQLite format 3';
 
 async function hasSQLiteHeader(filePath: string): Promise<boolean> {

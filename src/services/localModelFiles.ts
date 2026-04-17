@@ -34,11 +34,51 @@ export async function computeLocalModelFileSha256(filePath: string): Promise<str
   return hashArray.map((b) => b.toString(16).padStart(2, '0')).join('');
 }
 
+export async function validateModelMagicBytes(
+  path: string,
+  type: 'llm' | 'whisper',
+): Promise<boolean> {
+  try {
+    const base64 = await FileSystem.readAsStringAsync(path, {
+      encoding: FileSystem.EncodingType.Base64,
+      position: 0,
+      length: 16,
+    });
+    const buffer = Buffer.from(base64, 'base64');
+
+    if (type === 'llm') {
+      // LiteRT (TFLite) models have 'TFL3' at offset 4
+      if (buffer.length >= 8) {
+        const magic = buffer.toString('utf8', 4, 8);
+        if (magic === 'TFL3') return true;
+      }
+      // Also allow GGUF magic just in case
+      if (buffer.length >= 4) {
+        const magic = buffer.toString('utf8', 0, 4);
+        if (magic === 'GGUF') return true;
+      }
+      return false;
+    } else if (type === 'whisper') {
+      // ggml models have magic bytes at the beginning
+      if (buffer.length >= 4) {
+        const magic = buffer.toString('utf8', 0, 4);
+        const validMagics = ['ggml', 'ggjt', 'ggla', 'ggsn', 'GGUF'];
+        if (validMagics.includes(magic)) return true;
+      }
+      return false;
+    }
+    return true;
+  } catch (e) {
+    console.warn('[validateModelMagicBytes] Failed to read magic bytes:', e);
+    return false;
+  }
+}
+
 export async function validateLocalModelFile(
-  options: LocalModelFileValidationOptions,
+  options: LocalModelFileValidationOptions & { type?: 'llm' | 'whisper' },
 ): Promise<LocalModelFileValidationResult> {
   const info = await FileSystem.getInfoAsync(options.path);
-  let size = info.exists ? info.size ?? 0 : 0;
+  let size = info.exists ? (info.size ?? 0) : 0;
 
   // Fix for Android 32-bit integer overflow on files > 2GB (Expo FileSystem bug)
   if (size < 0) {
@@ -51,6 +91,13 @@ export async function validateLocalModelFile(
 
   if (options.minBytes && size < options.minBytes) {
     return { exists: true, size, isValid: false };
+  }
+
+  if (options.type) {
+    const hasValidMagic = await validateModelMagicBytes(options.path, options.type);
+    if (!hasValidMagic) {
+      return { exists: true, size, isValid: false };
+    }
   }
 
   if (options.sha256) {

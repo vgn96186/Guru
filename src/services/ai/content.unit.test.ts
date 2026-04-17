@@ -7,8 +7,17 @@ jest.mock('../../db/queries/questionBank', () => ({
   saveBulkQuestions: jest.fn(),
 }));
 
-jest.mock('./generate', () => ({
-  generateJSONWithRouting: jest.fn(),
+jest.mock('./v2/generateObject', () => ({
+  generateObject: jest.fn(),
+}));
+
+jest.mock('./v2/providers/guruFallback', () => ({
+  createGuruFallbackModel: jest.fn().mockReturnValue({
+    provider: 'groq',
+    modelId: 'test-model',
+    doGenerate: jest.fn(),
+    doStream: jest.fn(),
+  }),
 }));
 
 jest.mock('./medicalSearch', () => ({
@@ -20,11 +29,28 @@ jest.mock('./medicalFactCheck', () => ({
   scheduleBackgroundFactCheck: jest.fn(),
 }));
 
+jest.mock('../../db/repositories/profileRepository', () => ({
+  profileRepository: {
+    getProfile: jest.fn().mockResolvedValue({}),
+  },
+}));
+
 import { fetchContent } from './content';
 import { getCachedContent, setCachedContent } from '../../db/queries/aiCache';
 import { saveBulkQuestions } from '../../db/queries/questionBank';
-import { generateJSONWithRouting } from './generate';
+import { generateObject } from './v2/generateObject';
 import { searchMedicalImages, generateVisualSearchQueries } from './medicalSearch';
+
+const mockGetCachedContent = getCachedContent as jest.MockedFunction<typeof getCachedContent>;
+const mockSetCachedContent = setCachedContent as jest.MockedFunction<typeof setCachedContent>;
+const mockSaveBulkQuestions = saveBulkQuestions as jest.MockedFunction<typeof saveBulkQuestions>;
+const mockGenerateObject = generateObject as jest.MockedFunction<typeof generateObject>;
+const mockSearchMedicalImages = searchMedicalImages as jest.MockedFunction<
+  typeof searchMedicalImages
+>;
+const mockGenerateVisualSearchQueries = generateVisualSearchQueries as jest.MockedFunction<
+  typeof generateVisualSearchQueries
+>;
 
 describe('ai content prefetching', () => {
   const topic: any = {
@@ -35,15 +61,15 @@ describe('ai content prefetching', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    (globalThis as { __DEV__?: boolean }).__DEV__ = true;
-    (saveBulkQuestions as jest.Mock).mockResolvedValue(undefined);
-    (generateVisualSearchQueries as jest.Mock).mockResolvedValue(['mocked query']);
+    (global as any).__DEV__ = true;
+    mockSaveBulkQuestions.mockResolvedValue(0 as any);
+    mockGenerateVisualSearchQueries.mockResolvedValue(['mocked query']);
   });
 
   it('reuses the same in-flight generation for duplicate content requests', async () => {
-    let resolveGeneration: ((value: unknown) => void) | null = null;
-    (getCachedContent as jest.Mock).mockResolvedValue(null);
-    (generateJSONWithRouting as jest.Mock).mockImplementation(
+    let resolveGeneration: ((value: any) => void) | null = null;
+    mockGetCachedContent.mockResolvedValue(null);
+    mockGenerateObject.mockImplementation(
       () =>
         new Promise((resolve) => {
           resolveGeneration = resolve;
@@ -55,17 +81,17 @@ describe('ai content prefetching', () => {
     const second = fetchContent(topic, 'keypoints');
     await Promise.resolve();
 
-    expect(generateJSONWithRouting).toHaveBeenCalledTimes(1);
+    expect(generateObject).toHaveBeenCalledTimes(1);
 
     expect(resolveGeneration).toBeTruthy();
     resolveGeneration!({
-      parsed: {
+      object: {
         type: 'keypoints',
         topicName: 'Hypertension',
         points: ['Point 1', 'Point 2', 'Point 3', 'Point 4'],
         memoryHook: 'A memorable hook for hypertension.',
       },
-      modelUsed: 'groq/test-model',
+      rawText: '',
     });
 
     const [firstResult, secondResult] = await Promise.all([first, second]);
@@ -77,9 +103,9 @@ describe('ai content prefetching', () => {
   it('retries once when the generated card is obviously incomplete', async () => {
     (getCachedContent as jest.Mock).mockResolvedValue(null);
     (setCachedContent as jest.Mock).mockResolvedValue(undefined);
-    (generateJSONWithRouting as jest.Mock)
+    (generateObject as jest.Mock)
       .mockResolvedValueOnce({
-        parsed: {
+        object: {
           type: 'quiz',
           topicName: 'Hypertension',
           questions: [
@@ -91,10 +117,10 @@ describe('ai content prefetching', () => {
             },
           ],
         },
-        modelUsed: 'groq/first-pass',
+        rawText: '',
       })
       .mockResolvedValueOnce({
-        parsed: {
+        object: {
           type: 'quiz',
           topicName: 'Hypertension',
           questions: [
@@ -139,12 +165,12 @@ describe('ai content prefetching', () => {
             },
           ],
         },
-        modelUsed: 'groq/retry-pass',
+        rawText: '',
       });
 
     const result = await fetchContent(topic, 'quiz');
 
-    expect(generateJSONWithRouting).toHaveBeenCalledTimes(2);
+    expect(generateObject).toHaveBeenCalledTimes(2);
     expect(result.type).toBe('quiz');
     expect((result as any).questions).toHaveLength(3);
   });
@@ -152,8 +178,8 @@ describe('ai content prefetching', () => {
   it('accepts and caches must_know content', async () => {
     (getCachedContent as jest.Mock).mockResolvedValue(null);
     (setCachedContent as jest.Mock).mockResolvedValue(undefined);
-    (generateJSONWithRouting as jest.Mock).mockResolvedValue({
-      parsed: {
+    (generateObject as jest.Mock).mockResolvedValue({
+      object: {
         type: 'must_know',
         topicName: 'Hypertension',
         mustKnow: [
@@ -170,12 +196,12 @@ describe('ai content prefetching', () => {
         ],
         examTip: 'First decide urgency versus emergency before choosing the drug.',
       },
-      modelUsed: 'groq/test-model',
+      rawText: '',
     });
 
     const result = await fetchContent(topic, 'must_know');
 
-    expect(generateJSONWithRouting).toHaveBeenCalledTimes(1);
+    expect(generateObject).toHaveBeenCalledTimes(1);
     expect(result.type).toBe('must_know');
     expect(setCachedContent).toHaveBeenCalledWith(
       topic.id,
@@ -201,8 +227,8 @@ describe('ai content prefetching', () => {
         source: 'Wikipedia',
       },
     ]);
-    (generateJSONWithRouting as jest.Mock).mockResolvedValue({
-      parsed: {
+    (generateObject as jest.Mock).mockResolvedValue({
+      object: {
         type: 'quiz',
         topicName: 'Hypertension',
         questions: [
@@ -221,7 +247,7 @@ describe('ai content prefetching', () => {
           },
         ],
       },
-      modelUsed: 'groq/test-model',
+      rawText: '',
     });
 
     const result = await fetchContent(topic, 'quiz');
@@ -246,8 +272,8 @@ describe('ai content prefetching', () => {
         source: 'Wikipedia',
       },
     ]);
-    (generateJSONWithRouting as jest.Mock).mockResolvedValue({
-      parsed: {
+    (generateObject as jest.Mock).mockResolvedValue({
+      object: {
         type: 'flashcards',
         topicName: 'Hypertension',
         cards: [
@@ -266,7 +292,7 @@ describe('ai content prefetching', () => {
           },
         ],
       },
-      modelUsed: 'groq/test-model',
+      rawText: '',
     });
 
     const result = await fetchContent(topic, 'flashcards');

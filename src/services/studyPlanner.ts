@@ -454,7 +454,7 @@ export async function generateStudyPlan(
   const daysToExam = examIntelligence.daysToTarget;
   const dailyGoal =
     (options?.dailyGoalOverrideMinutes ?? profile.dailyGoalMinutes) > 0
-      ? options?.dailyGoalOverrideMinutes ?? profile.dailyGoalMinutes
+      ? (options?.dailyGoalOverrideMinutes ?? profile.dailyGoalMinutes)
       : 120;
 
   // Get exam dates to mark as rest days
@@ -486,7 +486,9 @@ export async function generateStudyPlan(
     resourceMode,
     subjectWeights,
     liveClassStartDate:
-      resourceMode === 'btr' ? profile.btrStartDate ?? null : profile.dbmciClassStartDate ?? null,
+      resourceMode === 'btr'
+        ? (profile.btrStartDate ?? null)
+        : (profile.dbmciClassStartDate ?? null),
   });
 
   // B. Weak Topics (Priority 2 - Deep Dive)
@@ -602,11 +604,7 @@ export async function generateStudyPlan(
     if (i === 0) label = 'Today';
     else if (i === 1) label = 'Tomorrow';
     else if (isExamDay)
-      label = `🎯 ${currentDate.toLocaleDateString('en-US', {
-        weekday: 'short',
-        month: 'short',
-        day: 'numeric',
-      })} (EXAM)`;
+      label = `🎯 ${currentDate.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })} (EXAM)`;
     else
       label = currentDate.toLocaleDateString('en-US', {
         weekday: 'short',
@@ -629,13 +627,11 @@ export async function generateStudyPlan(
       continue;
     }
 
-    const MAX_DAY_MINUTES = 1440;
-
     // 1. Must-do: Future Scheduled Reviews (SRS simulation)
     const scheduledToday = futureReviews.get(i) || [];
     futureReviews.delete(i);
     for (const item of scheduledToday) {
-      if (dayMinutes + item.duration <= Math.min(dailyGoal * 1.2, MAX_DAY_MINUTES)) {
+      if (dayMinutes + item.duration <= dailyGoal * 1.2) {
         // Allow slight overflow for reviews
         dayItems.push(item);
         dayMinutes += item.duration;
@@ -649,7 +645,7 @@ export async function generateStudyPlan(
     }
 
     // 2. Backlog Reviews
-    while (queueReviews.length > 0 && dayMinutes < dailyGoal && dayMinutes < MAX_DAY_MINUTES) {
+    while (queueReviews.length > 0 && dayMinutes < dailyGoal) {
       const item = queueReviews.shift()!;
       dayItems.push(item);
       dayMinutes += item.duration;
@@ -663,7 +659,7 @@ export async function generateStudyPlan(
         dailyGoal * resourceProfile.deepDiveDailyBudgetMultiplier * examIntelligence.deepDiveBias,
       ),
     );
-    while (queueDeep.length > 0 && dayMinutes < deepDiveBudget && dayMinutes < MAX_DAY_MINUTES) {
+    while (queueDeep.length > 0 && dayMinutes < deepDiveBudget) {
       const diveLimit = mode === 'exam_crunch' ? 2 : 1;
       const deepThreshold = mode === 'high_yield' ? deepDiveBudget * 0.85 : deepDiveBudget * 0.7;
       if (divesToday >= diveLimit && dayMinutes > deepThreshold) break; // Balance
@@ -697,7 +693,7 @@ export async function generateStudyPlan(
     const newTopicBudgetMultiplier =
       mode === 'exam_crunch' ? 0.55 : mode === 'high_yield' ? 0.8 : 1;
     const backlogGateFactor = newTopicsGated
-      ? Math.max(0.25, 1 - Math.log2(Math.max(1, overdueBacklogDays - 3)) * 0.2) // logarithmic decay as backlog grows
+      ? Math.max(0.1, 1 - (overdueBacklogDays - 4) * 0.15) // ramp down as backlog grows
       : 1;
     const foundationalGapGateFactor = foundationalGapsNeedPriority
       ? Math.max(0.2, 1 - Math.max(0, foundationalGapDays - 2) * 0.18)
@@ -708,7 +704,7 @@ export async function generateStudyPlan(
       examIntelligence.newTopicBias *
       backlogGateFactor *
       foundationalGapGateFactor;
-    while (queueNew.length > 0 && dayMinutes < newTopicBudget && dayMinutes < MAX_DAY_MINUTES) {
+    while (queueNew.length > 0 && dayMinutes < newTopicBudget) {
       const item = queueNew.shift()!;
       dayItems.push(item);
       dayMinutes += item.duration;
@@ -791,7 +787,7 @@ export async function generateStudyPlan(
   const isFeasible = remainingQueueMinutes === 0 && rawRequiredMinutesPerDay <= dailyGoal * 1.15;
 
   const lastPlannedDay = [...plan].reverse().find((day) => day.totalMinutes > 0);
-  const projectedFinishDate = remainingQueueMinutes > 0 ? null : lastPlannedDay?.date ?? null;
+  const projectedFinishDate = remainingQueueMinutes > 0 ? null : (lastPlannedDay?.date ?? null);
   const projectedFinishOffset = projectedFinishDate
     ? Math.max(
         0,
@@ -812,21 +808,15 @@ export async function generateStudyPlan(
   else if (foundationalGapsNeedPriority)
     message = `Foundational gaps are ~${foundationalGapDays}d deep — plan is prioritizing weak basics before adding many new topics.`;
   else if (hoursPerDayCapped)
-    message = `Impossible timeline: needs ${Number(
-      (rawRequiredMinutesPerDay / 60).toFixed(1),
-    )}h/day. Extend the exam date, reduce scope, or lower resource load.`;
+    message = `Impossible timeline: needs ${Number((rawRequiredMinutesPerDay / 60).toFixed(1))}h/day. Extend the exam date, reduce scope, or lower resource load.`;
   else if (hasWorkBeyondHorizon)
     message = `Planned work extends beyond the visible ${daysToPlan}-day horizon. Continue daily and roll forward.`;
   else if (remainingQueueMinutes > 0)
     message = `Course load exceeds the current horizon. Raise the daily goal or switch to a lighter resource profile.`;
   else if (rawRequiredMinutesPerDay > dailyGoal)
-    message = `Heavy load! ${Number(
-      (rawRequiredMinutesPerDay / 60).toFixed(1),
-    )}h/day required with ${resourceProfile.label}.`;
+    message = `Heavy load! ${Number((rawRequiredMinutesPerDay / 60).toFixed(1))}h/day required with ${resourceProfile.label}.`;
   else if (projectedFinishDate)
-    message = `Projected finish ${projectedFinishDate}${
-      bufferDays > 0 ? ` with ${bufferDays} buffer days.` : '.'
-    }`;
+    message = `Projected finish ${projectedFinishDate}${bufferDays > 0 ? ` with ${bufferDays} buffer days.` : '.'}`;
   else message = 'Plan looks solid. Stick to it!';
 
   message = `${message} ${examIntelligence.targetExam} phase: ${examIntelligence.phaseLabel}. ${examIntelligence.plannerFocus}`;

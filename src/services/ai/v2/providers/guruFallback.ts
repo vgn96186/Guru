@@ -89,7 +89,7 @@ export function createGuruFallbackModel(opts: GuruFallbackOptions): LanguageMode
 
   if (!models.length) {
     throw new Error(
-      'createGuruFallbackModel: no providers available. Add a key or connect an account in Settings.',
+      'createGuruFallbackModel: no providers available. Save an API key or connect OAuth in Settings. (Kilo: startup probe can succeed without a key; routed chat/embeddings still need a stored Kilo API key.)',
     );
   }
 

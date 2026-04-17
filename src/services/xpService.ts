@@ -2,7 +2,16 @@ import { XP_REWARDS, LEVELS } from '../constants/gamification';
 import { profileRepository } from '../db/repositories';
 import { runInTransaction } from '../db/database';
 import { addXpInTx } from '../db/queries/progress';
-import type { TopicWithProgress, LevelInfo } from '../types';
+import type { TopicWithProgress, LevelInfo, TopicStatus } from '../types';
+
+export function deriveSessionProgressStatus(
+  previousStatus: TopicStatus,
+  confidence: number,
+): 'seen' | 'reviewed' {
+  if (confidence <= 1) return 'seen';
+  if (previousStatus === 'unseen') return 'seen';
+  return 'reviewed';
+}
 
 export interface XpBreakdown {
   label: string;

@@ -1,0 +1,75 @@
+{
+    "$schema": "https://opencode.ai/config.json",
+    "provider": {
+        "g4f": {
+            "npm": "@ai-sdk/openai-compatible",
+            "name": "G4F Pro (Free Engine)",
+            "options": {
+                "baseURL": "http://localhost:8082/v1",
+                "apiKey": "ignored"
+            },
+            "models": {
+                "deepseek-r1": { "name": "DeepSeek R1" },
+                "gemini-3-flash-preview": { "name": "Gemini 3 Flash" }
+            }
+        },
+        "pollinations": {
+            "npm": "@ai-sdk/openai-compatible",
+            "name": "Pollinations Pro",
+            "options": {
+                "baseURL": "http://localhost:8083/v1",
+                "apiKey": "ignored"
+            },
+            "models": {
+                "openai-large": { "name": "OpenAI Large" },
+                "claude-large": { "name": "Claude Large" }
+            }
+        },
+        "ollama_cloud": {
+            "npm": "@ai-sdk/openai-compatible",
+            "name": "Ollama Cloud",
+            "options": {
+                "baseURL": "https://api.ollama.ai/v1",
+                "apiKey": "000ef6a13b4c428e96c697a64b28fc5f.kcR6EoqYovecjxPGWh2WAAMe"
+            },
+            "models": {
+                "llama-3.2-3b": { "name": "Llama 3.2 3B" },
+                "deepseek-v3": { "name": "DeepSeek V3" }
+            }
+        },
+        "nvidia": {
+            "npm": "@ai-sdk/openai-compatible",
+            "name": "NVIDIA NIM",
+            "options": {
+                "baseURL": "https://integrate.api.nvidia.com/v1",
+                "apiKey": "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"
+            },
+            "models": {
+                "minimaxai/minimax-m2.7": { "name": "Minimax M2.7" }
+            }
+        },
+        "mistral": {
+            "npm": "@ai-sdk/openai-compatible",
+            "name": "Mistral (Codestral)",
+            "options": {
+                "baseURL": "https://codestral.mistral.ai/v1",
+                "apiKey": "fugVV7SlAlxgiNSvw1AWEQafQ6XdgHnN"
+            },
+            "models": {
+                "codestral-latest": { "name": "Codestral Latest" }
+            }
+        },
+        "modal": {
+            "npm": "@ai-sdk/openai-compatible",
+            "name": "Modal Cloud",
+            "options": {
+                "baseURL": "https://api.us-west-2.modal.direct/v1",
+                "apiKey": "{env:LLM_BACKEND_API_KEY}"
+            },
+            "models": {
+                "zai-org/GLM-5-FP8": { "name": "GLM-5" }
+            }
+        }
+    },
+    "model": "mistral/codestral-latest"
+}

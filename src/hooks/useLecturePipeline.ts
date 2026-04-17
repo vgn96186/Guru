@@ -18,7 +18,7 @@ import {
   updateSessionTranscriptionStatus,
   updateSessionNoteEnhancementStatus,
 } from '../db/queries/externalLogs';
-import { useAppStore } from '../store/useAppStore';
+import { useProfileQuery } from './queries/useProfile';
 import { resolveLectureSubjectRequirement } from '../services/lecture/lectureSubjectRequirement';
 
 export interface QuizQuestion {
@@ -60,7 +60,7 @@ export function useLecturePipeline({
   groqKey,
   onDone,
 }: UseLecturePipelineProps) {
-  const profile = useAppStore((s) => s.profile);
+  const { data: profile } = useProfileQuery();
   const [phase, setPhase] = useState<Phase>('intro');
   const [analysis, setAnalysis] = useState<LectureAnalysis | null>(null);
   const [errorMsg, setErrorMsg] = useState('');

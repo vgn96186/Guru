@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { showError } from '../components/dialogService';
+import { showError } from '../components/notificationService';
 import { showToast } from '../components/Toast';
 
 type FeedbackMode = 'dialog' | 'toast' | 'silent';

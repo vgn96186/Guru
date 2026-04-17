@@ -7,6 +7,10 @@ import { VAULT_TOPICS_SEED } from '../constants/vaultTopics';
 import { MS_PER_DAY } from '../constants/time';
 import { DEFAULT_INICET_DATE, DEFAULT_NEET_DATE } from '../config/appConfig';
 
+export const DB_NAME = 'neet_study.db';
+export const DB_DIR = `${FileSystem.documentDirectory}SQLite`;
+export const DB_PATH = `${DB_DIR}/${DB_NAME}`;
+
 let _db: SQLite.SQLiteDatabase | null = null;
 
 /** Typed access to the global DB slot and init queue (survives hot reloads in dev). */
@@ -124,9 +128,9 @@ export async function initDatabase(forceSeed = false): Promise<void> {
 async function initDatabaseInternal(forceSeed = false): Promise<void> {
   if (!_globalDb.__GURU_DB__ || forceSeed) {
     // ─── Database File Migration (Stale Filenames) ───────────────────────────
-    const dbDir = FileSystem.documentDirectory + 'SQLite/';
+    const dbDir = DB_DIR + '/';
     const oldDbPath = dbDir + 'study_guru.db';
-    const newDbPath = dbDir + 'neet_study.db';
+    const newDbPath = DB_PATH;
 
     try {
       const oldInfo = await FileSystem.getInfoAsync(oldDbPath);
@@ -141,7 +145,7 @@ async function initDatabaseInternal(forceSeed = false): Promise<void> {
       console.warn('[DB] Migration check failed:', err);
     }
 
-    _db = await SQLite.openDatabaseAsync('neet_study.db');
+    _db = await SQLite.openDatabaseAsync(DB_NAME);
     // Enable WAL mode for better concurrency (simultaneous reads and writes)
     await _db.execAsync('PRAGMA journal_mode = WAL');
     await _db.execAsync('PRAGMA busy_timeout = 5000');
@@ -481,6 +485,7 @@ async function ensureCriticalColumns(db: SQLite.SQLiteDatabase): Promise<void> {
       ],
       ['auto_backup_frequency', "TEXT NOT NULL DEFAULT 'off'"],
       ['last_auto_backup_at', 'TEXT'],
+      ['jina_api_key', "TEXT NOT NULL DEFAULT ''"],
       ['github_copilot_connected', 'INTEGER NOT NULL DEFAULT 0'],
       ['github_copilot_preferred_model', "TEXT NOT NULL DEFAULT ''"],
       ['gitlab_duo_connected', 'INTEGER NOT NULL DEFAULT 0'],

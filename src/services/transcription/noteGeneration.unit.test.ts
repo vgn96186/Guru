@@ -3,12 +3,23 @@ import {
   buildQuickLectureNote,
   shouldReplaceLectureNote,
 } from './noteGeneration';
-import { generateTextWithRouting } from '../aiService';
+import { generateText } from '../ai/v2/generateText';
 import type { LectureAnalysis } from './analysis';
 
-jest.mock('../aiService', () => ({
-  generateTextWithRouting: jest.fn(),
+jest.mock('../ai/v2/generateText', () => ({
+  generateText: jest.fn(),
 }));
+
+jest.mock('../ai/v2/providers/guruFallback', () => ({
+  createGuruFallbackModel: jest.fn(() => ({ provider: 'test', modelId: 'test' })),
+}));
+
+jest.mock('../../db/repositories/profileRepository', () => ({
+  profileRepository: { getProfile: jest.fn(async () => ({})) },
+}));
+
+// Alias so existing test assertions can reference either name
+const generateTextWithRouting = generateText;
 
 describe('Note Generation Service', () => {
   const mockAnalysis: LectureAnalysis = {

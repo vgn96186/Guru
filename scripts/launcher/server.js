@@ -17,7 +17,7 @@ const { waitForMetroReady, getMetroHealthSnapshot, isMetroRunning } = require('.
 const { freeListeningPort } = require('./freePortKill');
 const {
   resolveAdbCommand,
-  isAndroidPackageInstalled,
+  isGuruDevClientInstalled,
   GURU_DEBUG_PACKAGE,
   resolvePrimaryAdbDevice,
 } = require('../android-tooling');
@@ -790,7 +790,7 @@ function buildActions() {
           const earlyAdbCmd = resolveAdbCommand();
           const earlyPicked = resolvePrimaryAdbDevice(earlyAdbCmd);
           if (earlyPicked && !('error' in earlyPicked && earlyPicked.error)) {
-            if (!isAndroidPackageInstalled(earlyAdbCmd, earlyPicked.serial, GURU_DEBUG_PACKAGE)) {
+            if (!isGuruDevClientInstalled(earlyAdbCmd, earlyPicked.serial)) {
               runner.log(
                 '[doctor] ⚠ APK install command succeeded but the app is not showing on the device. This can happen if the device was busy. Trying a forced install...',
                 'warning',
@@ -872,7 +872,7 @@ function buildActions() {
           installDev &&
           picked &&
           !('error' in picked && picked.error) &&
-          isAndroidPackageInstalled(adbCmd, picked.serial, GURU_DEBUG_PACKAGE);
+          isGuruDevClientInstalled(adbCmd, picked.serial);
 
         if (installDev && picked && !('error' in picked && picked.error) && !canOpen) {
           runner.log(
@@ -886,7 +886,7 @@ function buildActions() {
             { shell: false },
           );
           canOpen =
-            Boolean(forced) && isAndroidPackageInstalled(adbCmd, picked.serial, GURU_DEBUG_PACKAGE);
+            Boolean(forced) && isGuruDevClientInstalled(adbCmd, picked.serial);
           if (installDev && forced && !canOpen) {
             runner.log(
               '[doctor] Forced install finished but the dev package is still missing on the target device. Check GURU_ANDROID_SERIAL if multiple devices are connected.',
@@ -1061,6 +1061,76 @@ async function handleAPI(req, res, url) {
     return;
   }
 
+  if (req.method === 'GET' && apiPath === '/api/logs') {
+    // Stream ADB logcat output
+    const { spawn } = require('child_process');
+    const { resolveAdbCommand } = require('../android-tooling');
+    
+    // Get query parameters
+    const level = url.searchParams.get('level') || 'V';
+    const packageName = url.searchParams.get('package') || GURU_DEBUG_PACKAGE;
+    const follow = url.searchParams.get('follow') !== 'false'; // default true
+    
+    const validLevels = ['V', 'D', 'I', 'W', 'E', 'S'];
+    if (!validLevels.includes(level)) {
+      sendJson(res, 400, { error: `Invalid level: ${level}. Must be one of ${validLevels.join(', ')}` });
+      return;
+    }
+
+    // Check if ADB is available
+    let adbCmd;
+    try {
+      adbCmd = resolveAdbCommand();
+    } catch (error) {
+      sendJson(res, 500, { error: 'ADB not available. Make sure Android SDK is installed.' });
+      return;
+    }
+
+    // Set up streaming response
+    res.writeHead(200, {
+      'Content-Type': 'text/plain; charset=utf-8',
+      'Transfer-Encoding': 'chunked',
+      'Cache-Control': 'no-cache',
+      'Connection': 'keep-alive',
+    });
+
+    // Construct logcat command
+    const logcatArgs = ['logcat'];
+    if (!follow) {
+      logcatArgs.push('-d'); // dump and exit
+    }
+    logcatArgs.push(`${packageName}:${level}`, `ReactNativeJS:${level}`, '*:S');
+
+    const logcat = spawn(adbCmd, logcatArgs);
+    
+    // Pipe output to response
+    logcat.stdout.on('data', (chunk) => {
+      res.write(chunk);
+    });
+    
+    logcat.stderr.on('data', (chunk) => {
+      res.write(chunk);
+    });
+
+    logcat.on('close', (code) => {
+      res.end(`\n[logcat process exited with code ${code}]\n`);
+    });
+
+    logcat.on('error', (err) => {
+      res.write(`[logcat error: ${err.message}]\n`);
+      res.end();
+    });
+
+    // Handle client disconnect
+    req.on('close', () => {
+      if (!logcat.killed) {
+        logcat.kill('SIGINT');
+      }
+    });
+
+    return;
+  }
+
   if (req.method === 'POST' && apiPath === '/api/run') {
     let data = {};
 
@@ -1198,15 +1268,17 @@ function startFileWatcher() {
             runner.log(`[launcher] File changed: ${path.basename(file)}. Restarting...`, 'info');
             console.log(`\n[launcher] Restarting due to file change...`);
 
+            let didRestart = false;
             const doRestart = () => {
+              if (didRestart) return;
+              didRestart = true;
               setTimeout(() => {
-                const { spawn } = require('child_process');
                 const child = spawn(process.execPath, [__filename, ...process.argv.slice(2)], {
-                  stdio: 'inherit',
-                  detached: false,
+                  stdio: 'ignore',
+                  detached: true,
                   env: { ...process.env, GURU_LAUNCHER_NO_KILL_PORT: '1' },
                 });
-                child.on('close', (code) => process.exit(code || 0));
+                child.unref();
                 process.exit(0);
               }, 500);
             };

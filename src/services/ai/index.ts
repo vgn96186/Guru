@@ -25,14 +25,7 @@ export type {
 export { parseStructuredJson } from './jsonRepair';
 
 // LlmRouter — local vs cloud fallbacks, mutexes
-export { releaseLlamaContext, addLlmStateListener } from './llmRouting';
-
-// Core generation
-export {
-  generateJSONWithRouting,
-  generateTextWithRouting,
-  generateTextWithRoutingStream,
-} from './generate';
+export { releaseLlamaContext } from './llmRouting';
 
 // MedicalGrounding — Wikipedia, PubMed, EuropePMC
 export {
@@ -74,3 +67,27 @@ export { catalyzeTranscript } from './catalyze';
 
 // Image generation
 export { generateImage, isImageGenerationAvailable } from './imageGeneration';
+
+// New standardized hooks
+export { useObject, type UseObjectOptions, type UseObjectResult } from './v2/hooks/useObject';
+
+export {
+  useChat,
+  type UseChatOptions,
+  type UseChatReturn,
+  type UIMessage,
+  type ChatStatus,
+} from './v2';
+
+// Standardized tools
+export {
+  planSessionTool,
+  dailyAgendaTool,
+  analyzeLectureTool,
+  createQuizTool,
+  fetchContentTool,
+  guruPlanningTools,
+  guruLectureTools,
+  guruContentTools,
+  guruCoreTools,
+} from './v2';

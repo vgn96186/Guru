@@ -14,7 +14,9 @@ import {
   startRecordingHealthCheck,
   stopRecordingHealthCheck,
 } from './lecture/lectureSessionMonitor';
-import { useAppStore } from '../store/useAppStore';
+import { queryClient } from './queryClient';
+import { PROFILE_QUERY_KEY } from '../hooks/queries/useProfile';
+import type { UserProfile } from '../types';
 import {
   MOCK_EXTERNAL_LECTURE_AUDIO_ENABLED,
   MOCK_EXTERNAL_LECTURE_AUDIO_URL,
@@ -258,7 +260,7 @@ async function _launchMedicalAppInner(
       }
 
       try {
-        const { profile } = useAppStore.getState();
+        const profile = queryClient.getQueryData<UserProfile>(PROFILE_QUERY_KEY);
         const overlayTimeout = new Promise<never>((_, reject) =>
           setTimeout(() => reject(new Error('Overlay start timed out')), 5000),
         );
@@ -360,7 +362,7 @@ async function launchMockLectureAudio(
     );
     logId = await startExternalAppSession(`${appName} (Mock Audio)`, recordingPath);
 
-    const { profile } = useAppStore.getState();
+    const profile = queryClient.getQueryData<UserProfile>(PROFILE_QUERY_KEY);
     await showOverlay(
       `${appName} Mock`,
       faceTracking,

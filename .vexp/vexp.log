@@ -1,0 +1,12 @@
+
+--- vexp daemon start at 2026-04-15T09:01:03.909Z ---
+dyld[59988]: Library not loaded: @rpath/libggml-base.0.dylib
+  Referenced from: <445D509D-823C-3807-9446-3FC83B57264E> /Users/vishnugnair/.blackbox-editor/extensions/vexp.vexp-vscode-2.0.3-darwin-arm64/binaries/vexp-core-darwin-arm64/vexp-core
+  Reason: no LC_RPATH's found
+[daemon] exited with code=null signal=SIGABRT
+
+--- vexp daemon start at 2026-04-16T05:27:18.641Z ---
+dyld[55409]: Library not loaded: @rpath/libggml-base.0.dylib
+  Referenced from: <445D509D-823C-3807-9446-3FC83B57264E> /Users/vishnugnair/.vscode/extensions/vexp.vexp-vscode-2.0.3-darwin-arm64/binaries/vexp-core-darwin-arm64/vexp-core
+  Reason: no LC_RPATH's found
+[daemon] exited with code=null signal=SIGABRT

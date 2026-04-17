@@ -66,7 +66,7 @@ function runGradle(task, extraArgs = []) {
     stdio: 'inherit',
     shell: isWindows(),
     cwd: ANDROID_DIR,
-    timeout: 600_000,
+    timeout: 1_800_000,
     env: {
       ...process.env,
       NODE_BINARY: NODE_BIN,
@@ -74,7 +74,7 @@ function runGradle(task, extraArgs = []) {
   });
 
   if (result.error?.code === 'ETIMEDOUT') {
-    fail('Gradle build timed out after 10 minutes. The build may be stuck — try again.');
+    fail('Gradle build timed out after 30 minutes. The build may be stuck — try again.');
   }
 
   if (result.error) {

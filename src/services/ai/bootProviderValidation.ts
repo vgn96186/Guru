@@ -348,6 +348,9 @@ export async function validateAiProvidersOnBoot(): Promise<void> {
       const r = byId.get(id);
       if (!r) return `${id}=n/a`;
       if (r.skipped) return `${id}=skip`;
+      if (id === 'kilo' && r.ok && !(keys.kiloApiKey ?? '').trim()) {
+        return `${id}=probe`;
+      }
       return r.ok ? `${id}=ok` : `${id}=fail(${r.status || 'err'})`;
     })
     .join(' ');
@@ -357,7 +360,11 @@ export async function validateAiProvidersOnBoot(): Promise<void> {
     const r = byId.get(id);
     if (!r || r.skipped) continue;
     if (r.ok) {
-      console.log(`[AI_BOOT] ${id}: ok (${r.status}) ${r.ms}ms`);
+      const suffix =
+        id === 'kilo' && !(keys.kiloApiKey ?? '').trim()
+          ? ' — endpoint reachable; add Kilo API key in Settings to enable chat routing'
+          : '';
+      console.log(`[AI_BOOT] ${id}: ok (${r.status}) ${r.ms}ms${suffix}`);
     } else {
       console.warn(`[AI_BOOT] ${id}: fail (${r.status}) ${r.ms}ms — ${brief(r.message)}`);
     }

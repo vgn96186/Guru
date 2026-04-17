@@ -13,7 +13,49 @@ import { getApiKeys } from './config';
 let _embeddingFailCount = 0;
 const EMBEDDING_FAIL_THRESHOLD = 2;
 
-export async function generateEmbedding(text: string): Promise<number[] | null> {
+/** Serialize embedding work so session circuit state and logging stay coherent under concurrency. */
+let _embeddingMutexChain: Promise<void> = Promise.resolve();
+
+async function withEmbeddingMutex<T>(task: () => Promise<T>): Promise<T> {
+  const previous = _embeddingMutexChain;
+  let release!: () => void;
+  _embeddingMutexChain = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  await previous.catch(() => {});
+  try {
+    return await task();
+  } finally {
+    release();
+  }
+}
+
+/** After Jina returns 401/403, skip further Jina calls this session (optional provider). */
+let _jinaDisabledForSession = false;
+
+let _embeddingOptionalNoticeLogged = false;
+let _jinaNonAuthErrorLogged = false;
+
+function logEmbeddingDegradedOnce(message: string): void {
+  if (!__DEV__ || _embeddingOptionalNoticeLogged) return;
+  _embeddingOptionalNoticeLogged = true;
+  console.log(message);
+}
+
+/** Test helper — Jest runs many cases in one worker; module state must not leak across tests. */
+export function __resetEmbeddingSessionStateForTests(): void {
+  _embeddingFailCount = 0;
+  _jinaDisabledForSession = false;
+  _embeddingOptionalNoticeLogged = false;
+  _jinaNonAuthErrorLogged = false;
+  _embeddingMutexChain = Promise.resolve();
+}
+
+export function generateEmbedding(text: string): Promise<number[] | null> {
+  return withEmbeddingMutex(() => generateEmbeddingCore(text));
+}
+
+async function generateEmbeddingCore(text: string): Promise<number[] | null> {
   // Circuit breaker: stop trying after repeated auth failures this session
   if (_embeddingFailCount >= EMBEDDING_FAIL_THRESHOLD) return null;
 
@@ -21,7 +63,7 @@ export async function generateEmbedding(text: string): Promise<number[] | null> 
   if (!normalized) return null;
 
   const profile = await profileRepository.getProfile();
-  const { orKey, geminiKey } = getApiKeys(profile);
+  const { orKey, geminiKey, jinaKey } = getApiKeys(profile);
 
   // 1. Primary: Use Gemini (text-embedding-004) if key is present (High quality, high free quota)
   if (geminiKey) {
@@ -51,10 +93,10 @@ export async function generateEmbedding(text: string): Promise<number[] | null> 
         }
       } else {
         const err = await response.text();
-        if (__DEV__) console.warn('[Embedding] Gemini endpoint failed, trying OpenRouter:', err);
+        if (__DEV__) console.log('[Embedding] Gemini endpoint failed, trying OpenRouter:', err);
       }
     } catch (err) {
-      if (__DEV__) console.warn('[Embedding] Gemini exception:', err);
+      if (__DEV__) console.log('[Embedding] Gemini exception:', err);
     }
   }
 
@@ -91,9 +133,65 @@ export async function generateEmbedding(text: string): Promise<number[] | null> 
     }
   }
 
-  // Embeddings are optional — don't spam logs, just return null
-  if (__DEV__ && _embeddingFailCount === 1)
-    console.log('[Embedding] No working embedding provider; topic search will use text matching');
+  // 3. Fallback: Jina AI jina-embeddings-v3 (optional key for quota; invalid stored keys get a no-auth retry)
+  if (!_jinaDisabledForSession) {
+    try {
+      const jinaBody = JSON.stringify({
+        model: 'jina-embeddings-v3',
+        task: 'text-matching',
+        input: [normalized.slice(0, 8192)],
+        dimensions: 768,
+      });
+
+      const jinaFetch = (withAuth: boolean) =>
+        fetch('https://api.jina.ai/v1/embeddings', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(withAuth && jinaKey ? { Authorization: `Bearer ${jinaKey}` } : {}),
+          },
+          body: jinaBody,
+        });
+
+      let response = await jinaFetch(!!jinaKey);
+      if (response.status === 401 && jinaKey) {
+        if (__DEV__)
+          console.log('[Embedding] Jina 401 with stored key; retrying without Authorization');
+        response = await jinaFetch(false);
+      }
+
+      if (response.ok) {
+        _embeddingFailCount = 0;
+        const data = await response.json();
+        const embedding = data?.data?.[0]?.embedding;
+        if (Array.isArray(embedding) && embedding.length > 0) {
+          if (__DEV__)
+            console.log(`[Embedding] Jina success: jina-embeddings-v3 (${embedding.length} dims)`);
+          return embedding;
+        }
+        if (__DEV__) console.log('[Embedding] Jina OK but missing embedding array');
+        return null;
+      }
+
+      const st = response.status;
+      if (st === 401 || st === 403) {
+        _embeddingFailCount++;
+        _jinaDisabledForSession = true;
+        logEmbeddingDegradedOnce(
+          '[Embedding] Jina embeddings unavailable (auth/quota). Semantic search falls back to text matching until a valid key or another provider is configured.',
+        );
+      } else if (__DEV__ && !_jinaNonAuthErrorLogged) {
+        _jinaNonAuthErrorLogged = true;
+        console.log('[Embedding] Jina failed:', st);
+      }
+    } catch (err) {
+      if (__DEV__) console.log('[Embedding] Jina exception:', err);
+    }
+  }
+
+  logEmbeddingDegradedOnce(
+    '[Embedding] No embedding vector this session; topic search uses text matching where needed.',
+  );
   return null;
 }
 
@@ -104,7 +202,7 @@ export function startMissingTopicEmbeddingSeed(): void {
   const db = getDb();
   _embeddingSeedTask = seedMissingTopicEmbeddings(db)
     .catch((e) => {
-      if (__DEV__) console.warn('[DB] Embedding pre-seed failed:', e);
+      if (__DEV__) console.log('[DB] Embedding pre-seed failed:', e);
     })
     .finally(() => {
       _embeddingSeedTask = null;
@@ -128,7 +226,7 @@ async function seedMissingTopicEmbeddings(db: SQLite.SQLiteDatabase) {
         row.id,
       ]);
     } catch (e) {
-      if (__DEV__) console.warn(`[DB] Failed to embed topic ${row.name}:`, e);
+      if (__DEV__) console.log(`[DB] Failed to embed topic ${row.name}:`, e);
     }
   }
 }

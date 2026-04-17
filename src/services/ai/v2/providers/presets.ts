@@ -8,6 +8,7 @@
 
 import { createOpenAICompatibleModel } from './openaiCompatible';
 import type { LanguageModelV2 } from '../spec';
+import { G4F_PROXY_URL } from '../../../../config/appConfig';
 
 export function createGroqModel(opts: { modelId: string; apiKey: string }): LanguageModelV2 {
   return createOpenAICompatibleModel({
@@ -67,5 +68,29 @@ export function createGitHubModelsModel(opts: {
     modelId: opts.modelId,
     url: 'https://models.inference.ai.azure.com/chat/completions',
     headers: () => ({ Authorization: `Bearer ${opts.token}` }),
+  });
+}
+
+export function createG4FModel(opts: {
+  modelId?: string;
+  url?: string;
+  apiKey?: string;
+} = {}): LanguageModelV2 {
+  const url = opts.url ?? G4F_PROXY_URL ?? '';
+  if (!url) {
+    throw new Error(
+      'G4F proxy URL not configured. Set EXPO_PUBLIC_G4F_URL in .env ' +
+      '(see deploy/g4f/README.md) or pass { url } explicitly.'
+    );
+  }
+  return createOpenAICompatibleModel({
+    provider: 'g4f',
+    modelId: opts.modelId ?? 'auto',
+    url,
+    headers: () => {
+      const h: Record<string, string> = {};
+      if (opts.apiKey) h.Authorization = `Bearer ${opts.apiKey}`;
+      return h;
+    },
   });
 }

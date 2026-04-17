@@ -4,7 +4,8 @@
  */
 import { updateUserProfile } from '../../../db/queries/progress';
 import { showToast } from '../../../components/Toast';
-import { useAppStore } from '../../../store/useAppStore';
+import { queryClient } from '../../queryClient';
+import { PROFILE_QUERY_KEY } from '../../../hooks/queries/useProfile';
 import { exchangeCodeForTokens, parseGitLabOAuthCallback } from './gitlabAuth';
 import {
   saveTokens,
@@ -63,7 +64,7 @@ export async function tryCompleteGitLabDuoOAuth(url: string): Promise<boolean> {
       await saveTokens(tokens, pending.oauthClientId, clientSecret);
       await clearPendingOAuthSession();
       await updateUserProfile({ gitlabDuoConnected: true });
-      await useAppStore.getState().refreshProfile();
+      queryClient.invalidateQueries({ queryKey: PROFILE_QUERY_KEY });
       showToast('GitLab Duo connected.', 'success');
       return true;
     } catch (e) {

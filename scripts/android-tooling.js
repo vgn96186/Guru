@@ -6,6 +6,8 @@ const { spawnSync } = require('child_process');
 
 /** Debug build `applicationId` (see android/app/build.gradle `applicationIdSuffix '.dev'`). */
 const GURU_DEBUG_PACKAGE = 'com.anonymous.gurustudy.dev';
+/** Production `applicationId` — used when APK was built without the .dev suffix. */
+const GURU_PRODUCTION_PACKAGE = 'com.anonymous.gurustudy';
 /** Kotlin/Java namespace for MainActivity (unchanged by applicationId suffix). */
 const GURU_MAIN_ACTIVITY_CLASS = 'com.anonymous.gurustudy.MainActivity';
 
@@ -129,11 +131,24 @@ function resolvePrimaryAdbDevice(adbCmd) {
   return { serial: ready[0].serial, readyCount: ready.length, requested: '' };
 }
 
+/**
+ * True if either the debug (.dev) or production package is installed.
+ * APKs built without applicationIdSuffix install as the production ID.
+ */
+function isGuruDevClientInstalled(adbCmd, deviceSerial) {
+  return (
+    isAndroidPackageInstalled(adbCmd, deviceSerial, GURU_DEBUG_PACKAGE) ||
+    isAndroidPackageInstalled(adbCmd, deviceSerial, GURU_PRODUCTION_PACKAGE)
+  );
+}
+
 module.exports = {
   resolveAdbCommand,
   GURU_DEBUG_PACKAGE,
+  GURU_PRODUCTION_PACKAGE,
   GURU_MAIN_ACTIVITY_CLASS,
   isAndroidPackageInstalled,
+  isGuruDevClientInstalled,
   guruDevClientMissingMessage,
   resolvePrimaryAdbDevice,
 };

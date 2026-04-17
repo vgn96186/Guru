@@ -5,24 +5,28 @@ adapters + tests. Ready to start wiring into Guru's existing screens.
 
 ## What's built
 
-| File | Purpose | Status |
-|---|---|---|
-| `spec.ts` | `LanguageModelV2` interface, stream parts, messages | ✅ |
-| `tool.ts` | `tool()` helper + Zod→JSON-Schema converter | ✅ (minimal zod coverage) |
-| `streamText.ts` | Unified streaming + agentic tool-calling loop + reasoning-delta | ✅ + tests |
-| `generateText.ts` | Non-streaming wrapper | ✅ |
-| `generateObject.ts` | Zod-validated structured output (reuses `jsonRepair`) | ✅ |
-| `streamObject.ts` | Partial-object streaming (lenient JSON parse per chunk) | ✅ |
-| `middleware.ts` | `withMiddleware()` for telemetry/logging around any model | ✅ |
-| `providers/openaiCompatible.ts` | OpenAI-wire adapter (SSE, tool calls, reasoning) | ✅ |
-| `providers/presets.ts` | Groq, OpenRouter, DeepSeek, Cloudflare, GitHub Models | ✅ |
-| `providers/gemini.ts` | Native Gemini REST adapter (multimodal + tools + JSON schema) | ✅ |
-| `providers/localLlm.ts` | Wraps `attemptLocalLLM()` (Gemma 4) as `LanguageModelV2` | ✅ |
-| `providers/fallback.ts` | Multi-provider fallback as a `LanguageModelV2` | ✅ + tests |
-| `providers/guruFallback.ts` | `createGuruFallbackModel(profile)` — profile-driven chain | ✅ |
-| `tools/medicalTools.ts` | `search_medical`, `lookup_topic`, `get_quiz_questions` | ✅ |
-| `useChat.ts` | React hook (sendMessage / regenerate / stop / streaming state) | ✅ |
-| `index.ts` | Public barrel | ✅ |
+| File                            | Purpose                                                         | Status                    |
+| ------------------------------- | --------------------------------------------------------------- | ------------------------- |
+| `spec.ts`                       | `LanguageModelV2` interface, stream parts, messages             | ✅                        |
+| `tool.ts`                       | `tool()` helper + Zod→JSON-Schema converter                     | ✅ (minimal zod coverage) |
+| `streamText.ts`                 | Unified streaming + agentic tool-calling loop + reasoning-delta | ✅ + tests                |
+| `generateText.ts`               | Non-streaming wrapper                                           | ✅                        |
+| `generateObject.ts`             | Zod-validated structured output (reuses `jsonRepair`)           | ✅                        |
+| `streamObject.ts`               | Partial-object streaming (lenient JSON parse per chunk)         | ✅                        |
+| `middleware.ts`                 | `withMiddleware()` for telemetry/logging around any model       | ✅                        |
+| `providers/openaiCompatible.ts` | OpenAI-wire adapter (SSE, tool calls, reasoning)                | ✅                        |
+| `providers/presets.ts`          | Groq, OpenRouter, DeepSeek, Cloudflare, GitHub Models           | ✅                        |
+| `providers/gemini.ts`           | Native Gemini REST adapter (multimodal + tools + JSON schema)   | ✅                        |
+| `providers/localLlm.ts`         | Wraps `attemptLocalLLM()` (Gemma 4) as `LanguageModelV2`        | ✅                        |
+| `providers/fallback.ts`         | Multi-provider fallback as a `LanguageModelV2`                  | ✅ + tests                |
+| `providers/guruFallback.ts`     | `createGuruFallbackModel(profile)` — profile-driven chain       | ✅                        |
+| `tools/medicalTools.ts`         | `search_medical`, `lookup_topic`, `get_quiz_questions`          | ✅                        |
+| `tools/planningTools.ts`        | `plan_session`, `daily_agenda`                                  | ✅                        |
+| `tools/lectureTools.ts`         | `analyze_lecture`                                               | ✅                        |
+| `tools/contentTools.ts`         | `create_quiz`, `fetch_content`                                  | ✅                        |
+| `tools/index.ts`                | `guruCoreTools` (aggregates all tools)                          | ✅                        |
+| `useChat.ts`                    | React hook (sendMessage / regenerate / stop / streaming state)  | ✅                        |
+| `index.ts`                      | Public barrel                                                   | ✅                        |
 
 **Tests:** 9/9 passing (streamText agentic loop + fallback semantics).
 
@@ -36,7 +40,7 @@ import {
   streamObject,
   tool,
   createGuruFallbackModel,
-  guruMedicalTools,
+  guruCoreTools,
   stepCountIs,
 } from '../services/ai/v2';
 
@@ -47,11 +51,11 @@ const model = createGuruFallbackModel({
   onProviderSuccess: (p, m) => providerHealth.recordSuccess(p, m),
 });
 
-// Tool calling — ready-made medical tools from Guru's services
+// Tool calling — ready-made tools from Guru's services
 const result = streamText({
   model,
-  messages: [{ role: 'user', content: 'Explain MI pathogenesis.' }],
-  tools: guruMedicalTools, // search_medical, lookup_topic, get_quiz_questions
+  messages: [{ role: 'user', content: 'Explain MI pathogenesis and create a quiz.' }],
+  tools: guruCoreTools, // search_medical, lookup_topic, create_quiz, etc.
   stopWhen: stepCountIs(5),
 });
 
@@ -62,11 +66,13 @@ const { object } = await generateObject({
   model,
   messages: [{ role: 'user', content: 'Generate 3 NEET-PG MCQs on diabetes.' }],
   schema: z.object({
-    questions: z.array(z.object({
-      stem: z.string(),
-      options: z.array(z.string()).length(4),
-      correctIndex: z.number(),
-    })),
+    questions: z.array(
+      z.object({
+        stem: z.string(),
+        options: z.array(z.string()).length(4),
+        correctIndex: z.number(),
+      }),
+    ),
   }),
 });
 ```
@@ -91,6 +97,7 @@ For each: reuse the existing session/token-refresh code, only implement the
 ### P0.5 — More tools
 
 `tools/medicalTools.ts` has 3 tools. Consider adding:
+
 - `fact_check` — wraps `medicalFactCheck.ts`
 - `generate_image` — wraps `imageGeneration.ts`
 - `save_to_notes` — write to `notes` table

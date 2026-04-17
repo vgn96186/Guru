@@ -20,7 +20,7 @@
  */
 
 import * as FileSystem from 'expo-file-system/legacy';
-import { initWhisper } from 'whisper.rn';
+import { initWhisper } from 'whisper.rn/index.js';
 import { splitWavIntoChunks } from '../../../modules/app-launcher';
 import { stripFileUri } from '../fileUri';
 
@@ -38,7 +38,7 @@ import { WhisperModelManager } from './whisperModelManager';
 
 let initWhisperVad: any = null;
 try {
-  initWhisperVad = require('whisper.rn').initWhisperVad;
+  initWhisperVad = require('whisper.rn/index.js').initWhisperVad;
 } catch {
   console.warn('[BatchTranscriber] initWhisperVad not available');
 }

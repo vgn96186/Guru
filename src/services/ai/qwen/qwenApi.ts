@@ -56,23 +56,6 @@ export async function callQwenOauth(
   // Resolve the correct API base URL from the OAuth resource_url
   const apiBaseUrl = resolveQwenBaseUrl(tokenResult.resourceUrl);
 
-  if (__DEV__) {
-    console.log(`[Qwen API] === API CALL DEBUG ===`);
-    console.log(`[Qwen API] Raw model param: ${model}`);
-    console.log(
-      `[Qwen API] Has api_key: ${!!tokenResult.apiKey} (${tokenResult.apiKey?.length || 0} chars)`,
-    );
-    console.log(
-      `[Qwen API] Has access_token: ${!!tokenResult.accessToken} (${tokenResult.accessToken.length} chars)`,
-    );
-    console.log(
-      `[Qwen API] Using auth key (${authKey === tokenResult.apiKey ? 'api_key' : 'access_token'}): ${authKey.length} chars`,
-    );
-    console.log(`[Qwen API] Auth key preview: ${authKey.slice(0, 30)}...`);
-    console.log(`[Qwen API] Resource URL: ${tokenResult.resourceUrl || '(none)'}`);
-    console.log(`[Qwen API] Resolved base URL: ${apiBaseUrl}`);
-  }
-
   const resolvedModel = resolveQwenModel(model);
   const userAgent = 'QwenCode/0.14.0 (Windows_NT; x64)';
 
@@ -135,13 +118,6 @@ export async function callQwenOauth(
 
   const jsonBody = JSON.stringify(body);
 
-  if (__DEV__) {
-    console.log(`[Qwen JSON] === QWEN API CALL ===`);
-    console.log(`[Qwen JSON] Model: ${resolvedModel} (raw: ${model})`);
-    console.log(`[Qwen JSON] JSON bytes: ${jsonBody.length}`);
-    console.log(`[Qwen JSON] =====================`);
-  }
-
   const response = await fetch(`${apiBaseUrl}/chat/completions`, {
     method: 'POST',
     headers: {
@@ -154,11 +130,6 @@ export async function callQwenOauth(
     },
     body: jsonBody,
   });
-
-  if (__DEV__) {
-    console.log(`[Qwen API] Response status: ${response.status} ${response.statusText}`);
-    console.log(`[Qwen API] Response headers:`, Object.fromEntries(response.headers.entries()));
-  }
 
   if (!response.ok) {
     const text = await response.text().catch(() => String(response.status));
@@ -177,10 +148,6 @@ export async function callQwenOauth(
     choices?: Array<{ message?: { content?: string } }>;
     error?: Record<string, unknown>;
   };
-
-  if (__DEV__) {
-    console.log(`[Qwen API] Response preview:`, JSON.stringify(data, null, 2).slice(0, 500));
-  }
 
   const content = data.choices?.[0]?.message?.content;
   if (!content) {
@@ -261,15 +228,6 @@ export async function streamQwenOauth(
     max_tokens: CLOUD_MAX_COMPLETION_TOKENS,
   };
 
-  if (__DEV__) {
-    console.log(`[Qwen Stream] === STREAMING API CALL ===`);
-    console.log(`[Qwen Stream] Model: ${resolvedModel} (raw: ${model})`);
-    console.log(`[Qwen Stream] Has auth: ${authKey.length} chars`);
-    console.log(`[Qwen Stream] Resolved base URL: ${apiBaseUrl}`);
-    console.log(`[Qwen Stream] Messages: ${cleanMessages.length}`);
-    console.log(`[Qwen Stream] =====================`);
-  }
-
   const jsonBody = JSON.stringify(body);
 
   const response = await fetch(`${apiBaseUrl}/chat/completions`, {
@@ -284,10 +242,6 @@ export async function streamQwenOauth(
     },
     body: jsonBody,
   });
-
-  if (__DEV__) {
-    console.log(`[Qwen Stream] Response status: ${response.status} ${response.statusText}`);
-  }
 
   if (!response.ok) {
     const text = await response.text().catch(() => String(response.status));
@@ -306,9 +260,6 @@ export async function streamQwenOauth(
   if (!reader) {
     // React Native fetch may not support ReadableStream — fall back to reading
     // the already-received response as text (avoids a second network call).
-    if (__DEV__) {
-      console.log(`[Qwen Stream] No readable body, parsing response as non-stream`);
-    }
     // The response is a streaming SSE response, parse it to extract the text.
     const rawBody = await response.text();
     let fullText = '';
@@ -333,9 +284,6 @@ export async function streamQwenOauth(
       return fullText;
     }
     // If SSE parsing yielded nothing, fall back to a non-streaming call
-    if (__DEV__) {
-      console.log(`[Qwen Stream] SSE parse empty, falling back to non-streaming call`);
-    }
     const fallbackText = await callQwenOauth(messages, model, false);
     onDelta(fallbackText);
     return fallbackText;

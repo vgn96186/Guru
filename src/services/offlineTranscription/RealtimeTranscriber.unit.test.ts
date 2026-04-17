@@ -1,6 +1,6 @@
 import { RealtimeTranscriptionController } from './realtimeTranscriber';
 import { getWhisperModelManager } from './whisperModelManager';
-import * as whisper from 'whisper.rn';
+import * as whisper from 'whisper.rn/index.js';
 
 jest.mock('./whisperModelManager', () => ({
   getWhisperModelManager: jest.fn(() => ({
@@ -24,7 +24,7 @@ describe('RealtimeTranscriptionController', () => {
       })),
     }));
 
-    jest.doMock('whisper.rn', () => ({
+    jest.doMock('whisper.rn/index.js', () => ({
       AudioPcmStreamAdapter: jest.fn(),
       RealtimeTranscriber: jest
         .fn()
@@ -37,7 +37,7 @@ describe('RealtimeTranscriptionController', () => {
     RealtimeTranscriptionController =
       require('./realtimeTranscriber').RealtimeTranscriptionController;
     modelManager = require('./whisperModelManager').getWhisperModelManager();
-    whisper = require('whisper.rn');
+    whisper = require('whisper.rn/index.js');
     controller = new RealtimeTranscriptionController(modelManager);
   });
 

@@ -1,6 +1,5 @@
 import { getDb, nowTs, runInTransaction } from '../database';
 import type { QuestionBankItem, SaveQuestionInput, QuestionFilters } from '../../types';
-import { safeJsonParse } from '../../utils/safeJsonParse';
 
 // ── Spaced-repetition intervals (ms) ──────────────────────────────────────────
 const SR_INTERVALS = [
@@ -21,7 +20,7 @@ function rowToItem(r: any): QuestionBankItem {
   return {
     id: r.id,
     question: r.question,
-    options: safeJsonParse<[string, string, string, string]>(r.options, ['', '', '', '']),
+    options: JSON.parse(r.options),
     correctIndex: r.correct_index,
     explanation: r.explanation,
     topicId: r.topic_id,

@@ -6,6 +6,7 @@
 | ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
 | `force_seed.ts`         | Force-reseeds the database by calling `initDatabase(true)`. Run with `npx ts-node scripts/force_seed.ts`.                                 |
 | `generateStaticSeed.js` | Generates `guru_seed.json` from syllabus constants. Used for backup/export templates.                                                     |
+| `fetchLogs.js`          | Fetches runtime logs and errors from the connected Android device (or emulator). Run with `npm run logs:guru`.                            |
 | `adb-reverse.js`        | Reverses Metro's port `8081` to the connected Android device. Run with `npm run adb:reverse`.                                             |
 | `android-dev.js`        | Development workflow: starts Metro with cleared cache and launches the app on a connected Android device. Run with `npm run android:dev`. |
 

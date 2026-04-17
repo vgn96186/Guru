@@ -15,7 +15,8 @@
 
 import * as FileSystem from 'expo-file-system/legacy';
 import { profileRepository } from '../db/repositories';
-import { useAppStore } from '../store/useAppStore';
+import { queryClient } from './queryClient';
+import { PROFILE_QUERY_KEY } from '../hooks/queries/useProfile';
 import { getLocalLlmRamWarning, isLocalLlmAllowedOnThisDevice } from './deviceMemory';
 import { showToast } from '../components/Toast';
 import {
@@ -55,8 +56,8 @@ function resetActiveDownloadSlot(): void {
   activeDownloadSource = 'bootstrap';
 }
 
-async function refreshProfileSafely() {
-  await useAppStore.getState()?.refreshProfile?.();
+function refreshProfileSafely() {
+  queryClient.invalidateQueries({ queryKey: PROFILE_QUERY_KEY });
 }
 
 /**

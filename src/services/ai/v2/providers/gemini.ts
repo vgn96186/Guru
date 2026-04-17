@@ -190,18 +190,33 @@ function convertMessagesToGemini(messages: ModelMessage[]): {
 
 // ─── Response parsing ───────────────────────────────────────────────────────
 
-function parseGeminiResponse(json: any): LanguageModelV2GenerateResult {
-  const candidate = json?.candidates?.[0];
+type GeminiResponseJson = {
+  candidates?: Array<{
+    content?: { parts?: Array<Record<string, unknown>> };
+    finishReason?: string;
+  }>;
+  usageMetadata?: {
+    promptTokenCount?: number;
+    candidatesTokenCount?: number;
+    totalTokenCount?: number;
+  };
+};
+
+function parseGeminiResponse(json: unknown): LanguageModelV2GenerateResult {
+  const r = json as GeminiResponseJson;
+  const candidate = r?.candidates?.[0];
   const parts: Array<TextPart | ToolCallPart> = [];
   let toolCallCounter = 0;
   for (const p of candidate?.content?.parts ?? []) {
-    if (typeof p.text === 'string' && p.text) parts.push({ type: 'text', text: p.text });
-    if (p.functionCall) {
+    if (typeof p['text'] === 'string' && p['text'])
+      parts.push({ type: 'text', text: p['text'] as string });
+    const fc = p['functionCall'] as { name: string; args?: unknown } | undefined;
+    if (fc) {
       parts.push({
         type: 'tool-call',
         toolCallId: `gemini_tc_${++toolCallCounter}`,
-        toolName: p.functionCall.name,
-        input: p.functionCall.args ?? {},
+        toolName: fc.name,
+        input: fc.args ?? {},
       });
     }
   }
@@ -209,9 +224,9 @@ function parseGeminiResponse(json: any): LanguageModelV2GenerateResult {
     content: parts,
     finishReason: mapGeminiFinish(candidate?.finishReason),
     usage: {
-      inputTokens: json?.usageMetadata?.promptTokenCount,
-      outputTokens: json?.usageMetadata?.candidatesTokenCount,
-      totalTokens: json?.usageMetadata?.totalTokenCount,
+      inputTokens: r?.usageMetadata?.promptTokenCount,
+      outputTokens: r?.usageMetadata?.candidatesTokenCount,
+      totalTokens: r?.usageMetadata?.totalTokenCount,
     },
     rawResponse: json,
   };
@@ -273,6 +288,9 @@ async function* geminiSseToStreamParts(
                 yield { type: 'text-start', id: textId };
               }
               yield { type: 'text-delta', id: textId, delta: p.text };
+            }
+            if (p.thought) {
+              yield { type: 'text-delta', id: 'reasoning-0', delta: String(p.thought) };
             }
             if (p.functionCall) {
               yield {

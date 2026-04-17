@@ -28,7 +28,7 @@ function splitLines(raw) {
     .filter(Boolean);
 }
 
-const TASK_TIMEOUT_MS = 300_000;
+const TASK_TIMEOUT_MS = 1_800_000;
 
 class Runner extends EventEmitter {
   constructor() {

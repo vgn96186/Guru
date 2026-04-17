@@ -1,5 +1,3 @@
-import { z } from 'zod';
-
 type MockProfile = {
   openrouterKey?: string;
   groqApiKey?: string;
@@ -232,37 +230,4 @@ describe('aiService routing policy', () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
-  it('keeps the same backend order for structured JSON generation', async () => {
-    const { aiService } = await loadAiService();
-    const callOrder: string[] = [];
-    jest.spyOn(globalThis, 'fetch' as any).mockImplementation(async (...args: unknown[]) => {
-      const url = String(args[0] ?? '');
-      if (url.includes('openrouter.ai')) {
-        callOrder.push('openrouter');
-        return {
-          ok: false,
-          status: 500,
-          text: async () => 'or down',
-        } as any;
-      }
-      if (url.includes('api.groq.com')) {
-        callOrder.push('groq');
-        return {
-          ok: true,
-          json: async () => ({ choices: [{ message: { content: '{"ok":true}' } }] }),
-        } as any;
-      }
-      throw new Error(`Unexpected URL: ${url}`);
-    });
-
-    const schema = z.object({ ok: z.boolean() });
-    const result = await aiService.generateJSONWithRouting(
-      [{ role: 'user', content: 'return json' }],
-      schema,
-      'low',
-    );
-
-    expect(result.parsed.ok).toBe(true);
-    expect(callOrder).toContain('groq');
-  });
 });

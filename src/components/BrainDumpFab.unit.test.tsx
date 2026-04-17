@@ -53,7 +53,7 @@ describe('BrainDumpFab', () => {
     const closeButton = getByLabelText('Close');
     fireEvent.press(closeButton);
 
-    expect(queryByText('Park a Thought')).toBeNull();
+    expect(queryByText('Park a Thought 🧠')).toBeNull();
   });
 
   it('updates note text when typing', () => {
@@ -100,7 +100,7 @@ describe('BrainDumpFab', () => {
     expect(addBrainDump).toHaveBeenCalledWith('Valuable insight');
     await waitFor(
       () => {
-        expect(queryByText('Park a Thought')).toBeNull();
+        expect(queryByText('Park a Thought 🧠')).toBeNull();
       },
       { timeout: 5000 },
     );

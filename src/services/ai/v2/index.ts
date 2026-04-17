@@ -31,12 +31,7 @@ export type { ToolDefinition, ToolSet, ToolExecuteContext } from './tool';
 
 // High-level APIs
 export { streamText, stepCountIs, hasToolCall } from './streamText';
-export type {
-  StreamTextOptions,
-  StreamTextResult,
-  StopCondition,
-  StepResult,
-} from './streamText';
+export type { StreamTextOptions, StreamTextResult, StopCondition, StepResult } from './streamText';
 
 export { generateText } from './generateText';
 export type { GenerateTextOptions, GenerateTextResult } from './generateText';
@@ -59,6 +54,7 @@ export {
   createDeepSeekModel,
   createCloudflareModel,
   createGitHubModelsModel,
+  createG4FModel,
 } from './providers/presets';
 export { createGeminiModel } from './providers/gemini';
 export type { GeminiConfig } from './providers/gemini';
@@ -89,9 +85,27 @@ export {
   guruMedicalTools,
 } from './tools/medicalTools';
 
+export {
+  planSessionTool,
+  dailyAgendaTool,
+  analyzeLectureTool,
+  createQuizTool,
+  fetchContentTool,
+  guruPlanningTools,
+  guruLectureTools,
+  guruContentTools,
+  guruCoreTools,
+} from './tools';
+
 // React
 export { useChat } from './useChat';
 export type { UseChatOptions, UseChatReturn, UIMessage, ChatStatus } from './useChat';
+
+export { useObject } from './hooks/useObject';
+export type { UseObjectOptions, UseObjectResult, SubmitObjectOptions } from './hooks/useObject';
+
+export { useCompletion } from './hooks/useCompletion';
+export type { UseCompletionOptions, UseCompletionReturn, CompletionStatus } from './hooks/useCompletion';
 
 // Compatibility layer — drop-in replacements for legacy generate/chat APIs
 export {
@@ -101,3 +115,17 @@ export {
   chatWithGuruV2,
   chatWithGuruStreamV2,
 } from './compat';
+
+// Vercel AI SDK compatibility
+export {
+  fromVercelMessage,
+  toVercelMessage,
+  fromVercelTool,
+  toVercelTool,
+  createModel,
+  streamText as vercelStreamText,
+  experimental_ObjectStream,
+  type CoreMessage,
+  type CoreTool,
+  type LanguageModel,
+} from './vercelCompat';

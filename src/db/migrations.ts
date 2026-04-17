@@ -538,6 +538,7 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_qb_dedup ON question_bank(question)`,
     sql: `
 -- Rebuild user_profile to widen the transcription_provider CHECK constraint to include 'deepgram'.
 -- SQLite cannot ALTER a CHECK, so we recreate the table.
+DROP TABLE IF EXISTS user_profile_new;
 CREATE TABLE user_profile_new (
   id INTEGER PRIMARY KEY DEFAULT 1,
   display_name TEXT NOT NULL DEFAULT 'Doctor',
@@ -1088,7 +1089,12 @@ DROP TABLE ai_cache_old;`,
 )`,
     description: 'Add user_content_flags table for manual content flagging',
   },
+  {
+    version: 164,
+    sql: `ALTER TABLE user_profile ADD COLUMN jina_api_key TEXT NOT NULL DEFAULT ''`,
+    description: 'Add Jina AI API key for embedding fallback',
+  },
 ];
 
 /** Latest schema version. Bump when adding new migrations. */
-export const LATEST_VERSION = 163;
+export const LATEST_VERSION = 164;

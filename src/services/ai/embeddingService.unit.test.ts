@@ -3,6 +3,7 @@ import {
   cosineSimilarity,
   embeddingToBlob,
   blobToEmbedding,
+  __resetEmbeddingSessionStateForTests,
 } from './embeddingService';
 
 jest.mock('../../db/repositories', () => ({
@@ -22,6 +23,7 @@ describe('embeddingService', () => {
   afterEach(() => {
     global.fetch = origFetch;
     jest.clearAllMocks();
+    __resetEmbeddingSessionStateForTests();
   });
 
   describe('pure helpers', () => {

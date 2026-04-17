@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { jsonrepair } from 'jsonrepair';
 import {
   logJsonParseFailure,
   logJsonParseSuccess,
@@ -6,17 +7,15 @@ import {
   previewText,
 } from './runtimeDebug';
 
-// Timeout for JSON repair operations (ms)
 const JSON_REPAIR_TIMEOUT = 5000;
-
-// Limit input size to prevent DoS
-const MAX_INPUT_SIZE = 100_000; // 100KB
+const MAX_INPUT_SIZE = 100_000;
 
 function stripJsonCodeFences(raw: string): string {
   return raw
     .replace(/^\uFEFF/, '')
     .replace(/```json\s*/gi, '')
     .replace(/```/g, '')
+    .replace(/^json\s*/i, '')
     .trim();
 }
 
@@ -76,96 +75,12 @@ function extractBalancedJson(raw: string): string {
   return raw.slice(start).trim();
 }
 
-function repairCommonJsonIssues(raw: string): string {
-  /* eslint-disable no-control-regex -- \x00 sentinels protect quoted strings during repair */
-  let s = raw
-    .replace(/[\u201C\u201D]/g, '"') // Smart double quotes -> regular
-    .replace(/[\u2018\u2019]/g, "'") // Smart single quotes -> regular
-    .replace(/^json\s*/i, ''); // Strip leading "json" prefix
-
-  // Phase 1: Protect existing double-quoted strings with placeholders
-  const strings: string[] = [];
-  s = s.replace(/"([^"\\]*(?:\\.[^"\\]*)*)"/g, (match) => {
-    strings.push(match);
-    return `\x00S${strings.length - 1}\x00`;
-  });
-
-  // Phase 2: Structural repairs (no double-quoted strings present, safe to regex)
-
-  // Strip // line comments (non-greedy to avoid ReDoS)
-  s = s.replace(/\/\/[^\n]*/g, '');
-
-  // Fix single-quoted keys: { 'key': value }
-  s = s.replace(
-    /([{,]\s*)'([^'\\]*(?:\\.[^'\\]*)*)'(\s*:)/g,
-    (_m: string, pre: string, key: string, suf: string) =>
-      `${pre}"${key.replace(/"/g, '\\"')}"${suf}`,
-  );
-
-  // Fix single-quoted values: : 'value'
-  s = s.replace(
-    /(:\s*)'([^'\\]*(?:\\.[^'\\]*)*)'(?=\s*[,}\]\x00])/g,
-    (_m: string, pre: string, val: string) => `${pre}"${val.replace(/"/g, '\\"')}"`,
-  );
-
-  // Fix unquoted keys (now safe - real strings are placeholders so won't be corrupted)
-  s = s.replace(/([{,]\s*)([A-Za-z_$][A-Za-z0-9_$]*)(\s*:)/g, '$1"$2"$3');
-
-  // Insert missing commas between properties:
-  //   placeholder or } or ] or digit at end, then newline, then placeholder or "key"
-  s = s.replace(/(\x00)(\s*\n\s*)(\x00|")/g, '$1,$2$3');
-  s = s.replace(/([\]}\d])(\s*\n\s*)(\x00|")/g, '$1,$2$3');
-  s = s.replace(/(true|false|null)(\s*\n\s*)(\x00|")/g, '$1,$2$3');
-
-  // Fix trailing commas
-  s = s.replace(/,\s*([}\]])/g, '$1');
-
-  // Phase 3: Restore original strings
-  s = s.replace(/\x00S(\d+)\x00/g, (_: string, idx: string) => strings[parseInt(idx, 10)]);
-
-  /* eslint-enable no-control-regex */
-  return s.trim();
-}
-
-function repairTruncatedJson(raw: string): string {
-  let inString = false;
-  let escaped = false;
-  const stack: string[] = [];
-
-  for (let i = 0; i < raw.length; i++) {
-    const ch = raw[i];
-    if (inString) {
-      if (escaped) {
-        escaped = false;
-        continue;
-      }
-      if (ch === '\\') {
-        escaped = true;
-        continue;
-      }
-      if (ch === '"') {
-        inString = false;
-      }
-      continue;
-    }
-    if (ch === '"') {
-      inString = true;
-      continue;
-    }
-    if (ch === '{') stack.push('}');
-    else if (ch === '[') stack.push(']');
-    else if (ch === '}' || ch === ']') {
-      if (stack.length > 0 && stack[stack.length - 1] === ch) stack.pop();
-    }
+function repairJson(raw: string): string {
+  try {
+    return jsonrepair(raw);
+  } catch {
+    return raw;
   }
-
-  if (stack.length === 0) return raw;
-
-  // If we were inside an unclosed string, close it first
-  let suffix = inString ? '"' : '';
-  // Close all open braces/brackets in reverse order
-  while (stack.length > 0) suffix += stack.pop();
-  return raw + suffix;
 }
 
 export function normalizeRootForSchema<T>(value: unknown, schema: z.ZodType<T>): unknown {
@@ -264,7 +179,6 @@ async function parseStructuredJsonWithTimeout<T>(
 ): Promise<T> {
   return Promise.race([
     (async () => {
-      // Size limit check
       if (raw.length > MAX_INPUT_SIZE) {
         throw new Error(
           `Input too large for JSON repair: ${raw.length} bytes (max ${MAX_INPUT_SIZE})`,
@@ -279,11 +193,8 @@ async function parseStructuredJsonWithTimeout<T>(
           [
             cleaned,
             extracted,
-            repairCommonJsonIssues(cleaned),
-            repairCommonJsonIssues(extracted),
-            // Also try repairing truncated JSON (local model can hit token limit)
-            repairCommonJsonIssues(repairTruncatedJson(cleaned)),
-            repairCommonJsonIssues(repairTruncatedJson(extracted)),
+            repairJson(cleaned),
+            repairJson(extracted),
           ].filter(Boolean),
         ),
       );
@@ -310,7 +221,7 @@ async function parseStructuredJsonWithTimeout<T>(
           return parsed;
         } catch (err) {
           if (err instanceof z.ZodError && (err as any).rawText === undefined) {
-            (err as any).rawText = raw; // Attach for the generator's trace.fail
+            (err as any).rawText = raw;
           }
           lastError = err as Error;
         }

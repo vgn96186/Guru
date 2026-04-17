@@ -1,7 +1,9 @@
 import { useEffect, useRef } from 'react';
 import { Alert, Linking } from 'react-native';
 import * as Notifications from 'expo-notifications';
-import { useAppStore } from '../store/useAppStore';
+import { useRefreshProfile, PROFILE_QUERY_KEY } from './queries/useProfile';
+import { queryClient } from '../services/queryClient';
+import type { UserProfile } from '../types';
 import { syncExamDatesIfStale } from '../services/examDateSyncService';
 import { refreshAccountabilityNotificationsSafely } from '../services/notificationService';
 import { navigationRef } from '../navigation/navigationRef';
@@ -21,8 +23,7 @@ import { reportStartupHealth } from '../services/startupHealth';
  * Orchestrates all startup side-effects in a single, predictable flow.
  */
 export function useAppBootstrap(onFatalError?: (message: string) => void): void {
-  const loadProfile = useAppStore((s) => s.loadProfile);
-  const refreshProfile = useAppStore((s) => s.refreshProfile);
+  const refreshProfile = useRefreshProfile();
   const initialized = useRef(false);
   const backupTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const warmCacheTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -64,15 +65,12 @@ export function useAppBootstrap(onFatalError?: (message: string) => void): void 
     initialized.current = true;
 
     const bootstrap = async () => {
-      // 1. Load core state
-      await loadProfile();
-
-      // 2. Seed bundled API keys into the profile on first run.
+      // 1. Seed bundled API keys into the profile on first run.
       //    This makes bundled defaults persist across Expo + bare RN builds without copy/paste.
       const bundledGroq = BUNDLED_GROQ_KEY.trim();
       const bundledHf = BUNDLED_HF_TOKEN.trim();
       const bundledOr = BUNDLED_OPENROUTER_KEY.trim();
-      const currentProfile = useAppStore.getState().profile;
+      const currentProfile = await profileRepository.getProfile();
       const needsGroq = !!bundledGroq && !currentProfile?.groqApiKey;
       const needsHf = !!bundledHf && !currentProfile?.huggingFaceToken;
       const needsOr = !!bundledOr && !currentProfile?.openrouterKey;
@@ -167,7 +165,7 @@ export function useAppBootstrap(onFatalError?: (message: string) => void): void 
       if (warmCacheTimerRef.current) clearTimeout(warmCacheTimerRef.current);
       if (validateTimerRef.current) clearTimeout(validateTimerRef.current);
     };
-  }, [loadProfile, onFatalError, refreshProfile]);
+  }, [onFatalError, refreshProfile]);
 }
 
 /**
@@ -221,8 +219,7 @@ async function checkForNewerGDriveBackup(): Promise<void> {
                 await import('../services/unifiedBackupService');
               const result = await importUnifiedBackupFromPath(localPath);
               if (result.ok) {
-                const { refreshProfile } = useAppStore.getState();
-                refreshProfile();
+                queryClient.invalidateQueries({ queryKey: PROFILE_QUERY_KEY });
               } else {
                 Alert.alert('Restore failed', result.message);
               }

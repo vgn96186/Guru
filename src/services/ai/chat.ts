@@ -843,7 +843,7 @@ If the student may not know prerequisites, explain prerequisite basics first and
     return {
       reply: finalReply,
       sources,
-      modelUsed,
+      modelUsed: modelUsed ?? '',
       searchQuery,
     };
   } catch (error: unknown) {
@@ -1103,7 +1103,7 @@ If the student may not know prerequisites, explain prerequisite basics first and
       reply: finalReply,
       sources,
       referenceImages,
-      modelUsed,
+      modelUsed: modelUsed ?? '',
       searchQuery,
     };
   } catch (error: unknown) {

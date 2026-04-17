@@ -4,4 +4,9 @@ module.exports = {
       packageName: 'com.anonymous.gurustudy',
     },
   },
+  dependencies: {
+    'local-llm': {
+      root: './modules/local-llm',
+    },
+  },
 };

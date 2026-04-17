@@ -1,0 +1,23 @@
+# Fly.io deploy for G4F (gpt4free) OpenAI-compatible proxy.
+# Change `app` below to a unique name before first deploy.
+
+app = "guru-g4f-CHANGEME"
+primary_region = "bom"   # Mumbai — lowest latency from India. Change if elsewhere.
+
+[build]
+  image = "hlohaus789/g4f:latest"
+
+[env]
+  G4F_API_KEY = ""        # optional bearer; leave empty for no-auth
+
+[http_service]
+  internal_port = 1337
+  force_https = true
+  auto_stop_machines = "stop"
+  auto_start_machines = true
+  min_machines_running = 0
+  processes = ["app"]
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "1gb"

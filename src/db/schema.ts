@@ -221,6 +221,7 @@ CREATE TABLE IF NOT EXISTS user_profile (
   , btr_start_date TEXT
   , home_novelty_cooldown_hours INTEGER NOT NULL DEFAULT 6
   , disabled_providers TEXT NOT NULL DEFAULT '[]'
+  , jina_api_key TEXT NOT NULL DEFAULT ''
 )`;
 
 export const CREATE_GURU_CHAT_SESSION_MEMORY = `

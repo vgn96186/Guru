@@ -68,10 +68,7 @@ export interface StreamTextResult {
 
 // ─── Stop conditions ─────────────────────────────────────────────────────────
 
-export type StopCondition = (state: {
-  steps: number;
-  lastFinishReason: FinishReason;
-}) => boolean;
+export type StopCondition = (state: { steps: number; lastFinishReason: FinishReason }) => boolean;
 
 export const stepCountIs =
   (n: number): StopCondition =>
@@ -234,9 +231,7 @@ export function streamText(options: StreamTextOptions): StreamTextResult {
         lastFinish = stepFinish;
 
         // Persist this step's assistant message.
-        const assistantContent: Array<
-          { type: 'text'; text: string } | ToolCallPart
-        > = [];
+        const assistantContent: Array<{ type: 'text'; text: string } | ToolCallPart> = [];
         if (stepText) assistantContent.push({ type: 'text', text: stepText });
         for (const tc of stepToolCalls) assistantContent.push(tc);
         if (assistantContent.length) {
@@ -246,6 +241,8 @@ export function streamText(options: StreamTextOptions): StreamTextResult {
 
         // Execute tools if the model requested them.
         const stepToolResults: ToolResultPart[] = [];
+        let requiresApproval = false;
+
         if (stepToolCalls.length && options.tools) {
           for (const call of stepToolCalls) {
             const toolDef = options.tools[call.toolName];
@@ -263,7 +260,7 @@ export function streamText(options: StreamTextOptions): StreamTextResult {
             }
             if (toolDef.needsApproval) {
               // Caller handles resumption — emit the call and stop.
-              // (Minimal framework: treat as finish.)
+              requiresApproval = true;
               continue;
             }
             try {
@@ -316,7 +313,8 @@ export function streamText(options: StreamTextOptions): StreamTextResult {
         const shouldStop =
           !finishedWithToolCalls ||
           stopWhen({ steps: step + 1, lastFinishReason: stepFinish }) ||
-          !stepToolCalls.length;
+          !stepToolCalls.length ||
+          requiresApproval;
         if (shouldStop) break;
       }
 
@@ -360,7 +358,7 @@ function dispatchProviderPart(
 ): void {
   switch (part.type) {
     case 'text-delta':
-      // Reasoning is routed via a special id prefix (see openaiCompatible.ts).
+      // Reasoning is routed via a special id prefix (see openaiChatCompletionsSse.ts).
       if (part.id.startsWith('reasoning-')) {
         handlers.onReasoning?.(part.delta);
       } else {

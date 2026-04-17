@@ -52,7 +52,7 @@ function makeTextResult(text: string) {
     toolCalls: [],
     toolResults: [],
     finishReason: 'stop' as const,
-    usage: { promptTokens: 0, completionTokens: 0 },
+    usage: { inputTokens: 0, outputTokens: 0 },
     responseMessages: [],
   };
 }

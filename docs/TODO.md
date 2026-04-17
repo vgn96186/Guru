@@ -4,7 +4,7 @@
 
 - [x] Redesign LoadingOrb with layered glass visual (ambient glow, thin ripple rings, dual SVG gradients, specular highlight)
 - [x] Fix LoadingOrb centering on SessionScreen contentArea
-- [ ] Implement boot-to-start-button orb morph transition (spec: `docs/superpowers/specs/2026-04-01-boot-transition-design.md`)
+- [x] Implement boot-to-start-button orb morph transition (spec: `docs/superpowers/specs/2026-04-01-boot-transition-design.md`)
   - Phase 1: Jittery orb during app boot (fast breathing, shake animation)
   - Phase 2: Calming during home data load (jitter fades, breathing slows)
   - Phase 3: Settle — orb shrinks and morphs into StartButton position with text crossfade
@@ -29,7 +29,7 @@ Goal: Replace non-critical `Alert.alert(...)` usage with inline toasts/banners, 
 
 ### Scope Summary
 
-- Total `Alert.alert` call sites in `src/`: 142
+- Total `Alert.alert` call sites in `src/`: 145 (as of 2026-04-15)
 - Critical (keep modal): ~16
 - Very important (mostly keep modal): up to ~45
 - Non-critical target for inline conversion: ~97
@@ -77,7 +77,7 @@ These may currently block a flow; decide case-by-case:
 
 ### Reusable Notification Layer
 
-- [ ] Confirm `ToastContainer` is mounted near app root
+- [x] Confirm `ToastContainer` is mounted near app root
 - [ ] Standardize helper wrappers:
   - `notifyInfo(msg)`
   - `notifySuccess(msg)`

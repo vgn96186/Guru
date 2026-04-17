@@ -106,7 +106,9 @@ export async function saveLecturePersistence(opts: {
     try {
       embeddingForMatching = await generateEmbedding(analysis.lectureSummary);
     } catch (embErr) {
-      console.warn('[Persistence] generateEmbedding failed, proceeding without embedding:', embErr);
+      if (__DEV__) {
+        console.log('[Persistence] generateEmbedding failed, proceeding without embedding:', embErr);
+      }
       embeddingForMatching = null;
     }
   }
@@ -283,7 +285,9 @@ export async function saveLectureChunk(opts: {
     try {
       embeddingForMatching = await generateEmbedding(analysis.lectureSummary);
     } catch (embErr) {
-      console.warn('[saveLectureChunk] Embedding failed, proceeding without:', embErr);
+      if (__DEV__) {
+        console.log('[saveLectureChunk] Embedding failed, proceeding without:', embErr);
+      }
       embeddingForMatching = null;
     }
   }

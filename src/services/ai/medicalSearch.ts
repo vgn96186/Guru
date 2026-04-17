@@ -1,5 +1,6 @@
 import type { MedicalGroundingSource, Message } from './types';
-import { generateTextWithRouting } from './generate';
+import { generateText } from './v2/generateText';
+import { createGuruFallbackModel } from './v2/providers/guruFallback';
 import { logGroundingEvent, previewText } from './runtimeDebug';
 import { profileRepository } from '../../db/repositories';
 import { getApiKeys } from './config';
@@ -1098,9 +1099,9 @@ export async function generateImageSearchQuery(
     },
   ];
   try {
-    const { text } = await generateTextWithRouting(msgs, {
-      providerOrderOverride: DEFAULT_PROVIDER_ORDER,
-    });
+    const profile = await profileRepository.getProfile();
+    const model = createGuruFallbackModel({ profile, forceOrder: DEFAULT_PROVIDER_ORDER });
+    const { text } = await generateText({ model, messages: msgs as any });
     const candidate = text
       .replace(/^["']|["']$/g, '')
       .trim()
@@ -1131,9 +1132,9 @@ export async function generateVisualSearchQueries(topicName: string): Promise<st
     },
   ];
   try {
-    const { text } = await generateTextWithRouting(msgs, {
-      providerOrderOverride: DEFAULT_PROVIDER_ORDER,
-    });
+    const profile = await profileRepository.getProfile();
+    const model = createGuruFallbackModel({ profile, forceOrder: DEFAULT_PROVIDER_ORDER });
+    const { text } = await generateText({ model, messages: msgs as any });
     // Try to parse as JSON array
     const cleaned = text.trim().replace(/^```json\n?|\n?```$/g, '');
     const parsed = JSON.parse(cleaned) as string[];

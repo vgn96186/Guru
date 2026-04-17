@@ -1,8 +1,16 @@
-jest.mock('./generate', () => ({
-  generateJSONWithRouting: jest.fn(),
+jest.mock('./v2/generateObject', () => ({
+  generateObject: jest.fn(),
 }));
 
-import { generateJSONWithRouting } from './generate';
+jest.mock('../../db/repositories/profileRepository', () => ({
+  profileRepository: { getProfile: jest.fn(async () => ({})) },
+}));
+
+jest.mock('./v2/providers/guruFallback', () => ({
+  createGuruFallbackModel: jest.fn(() => ({})),
+}));
+
+import { generateObject } from './v2/generateObject';
 import { generateGuruPresenceMessages } from './planning';
 
 describe('generateGuruPresenceMessages', () => {
@@ -11,14 +19,14 @@ describe('generateGuruPresenceMessages', () => {
   });
 
   it('returns messages when the model responds with an object root', async () => {
-    jest.mocked(generateJSONWithRouting).mockResolvedValue({
-      parsed: {
+    jest.mocked(generateObject).mockResolvedValue({
+      object: {
         messages: [
           { text: 'Keep moving through Pharmacology.', trigger: 'periodic' },
           { text: 'One more question locked in.', trigger: 'card_done' },
         ],
       },
-      modelUsed: 'groq/test',
+      rawText: '',
     });
 
     const result = await generateGuruPresenceMessages(['Pharmacology'], ['Pharmacology']);
@@ -30,9 +38,9 @@ describe('generateGuruPresenceMessages', () => {
   });
 
   it('returns messages when the model responds with a legacy array root', async () => {
-    jest.mocked(generateJSONWithRouting).mockResolvedValue({
-      parsed: [{ text: 'Still here with Biochemistry.', trigger: 'periodic' }],
-      modelUsed: 'groq/test',
+    jest.mocked(generateObject).mockResolvedValue({
+      object: [{ text: 'Still here with Biochemistry.', trigger: 'periodic' }],
+      rawText: '',
     });
 
     const result = await generateGuruPresenceMessages(['Biochemistry'], ['Biochemistry']);

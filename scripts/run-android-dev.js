@@ -133,7 +133,7 @@ function ensureDevice() {
         spawnSync(ADB_CMD, ['wait-for-device'], { timeout: 5_000, stdio: 'pipe' });
         continue;
       }
-      fail('No adb device detected. Connect your tablet via USB and make sure USB debugging is on.');
+      fail('No adb device detected. Start an Android emulator (AVD) or connect a device with USB debugging enabled.');
     }
 
     if (REQUESTED_DEVICE_SERIAL) {
@@ -247,22 +247,54 @@ async function ensureMetro() {
 
 // ─── Step 5: Build and install ──────────────────────────────────────────────
 
+const KNOWN_ABIS = new Set(['arm64-v8a', 'armeabi-v7a', 'x86', 'x86_64']);
+
+function getDevicePrimaryAbi() {
+  const result = adb(['shell', 'getprop', 'ro.product.cpu.abi'], {
+    stdio: 'pipe',
+    encoding: 'utf8',
+    timeout: 15_000,
+  });
+  if (result.error || result.status !== 0) return '';
+  const abi = String(result.stdout || '').trim();
+  return KNOWN_ABIS.has(abi) ? abi : '';
+}
+
 function installApp() {
   log('Building and installing debug app...');
+  const envArch = process.env.GURU_REACT_NATIVE_ARCHITECTURES?.trim();
+  const deviceAbi = getDevicePrimaryAbi();
+  const archArg = envArch || deviceAbi;
+
+  const gradleArgs = [
+    ':app:installDevDebug',
+    '--console=plain',
+    '--build-cache',
+  ];
+  // Speed: single ABI matching the connected device/emulator. Omit to use android/gradle.properties
+  // (slower first build). Typical AVDs are x86_64; ARM tablets/phones are arm64-v8a.
+  if (archArg) {
+    gradleArgs.push(`-PreactNativeArchitectures=${archArg}`);
+    log(`Native libs: -PreactNativeArchitectures=${archArg}${envArch ? ' (from GURU_REACT_NATIVE_ARCHITECTURES)' : deviceAbi ? ' (from device)' : ''}`);
+  } else {
+    log('Native libs: using default reactNativeArchitectures from Gradle (no single-ABI override).');
+  }
+
   const result = spawnSync(
     GRADLE_CMD,
-    [':app:installDebug', '--console=plain', '--build-cache', '-PreactNativeArchitectures=arm64-v8a'],
+    // Product flavor `dev` — plain `installDebug` is ambiguous when multiple flavors exist.
+    gradleArgs,
     {
       stdio: 'inherit',
       shell: process.platform === 'win32',
       cwd: ANDROID_DIR,
       env: process.env,
-      timeout: 600_000,
+      timeout: 1_800_000,
     },
   );
 
   if (result.error?.code === 'ETIMEDOUT') {
-    fail('Gradle build timed out after 10 minutes. The build may be stuck — try again.');
+    fail('Gradle build timed out after 30 minutes. The build may be stuck — try again.');
   }
   if (result.error) throw result.error;
   if (typeof result.status === 'number' && result.status !== 0) {
@@ -313,7 +345,7 @@ async function main() {
   installApp();
   openApp();
 
-  log('=== Done. App should be running on your tablet. ===');
+  log('=== Done. App should be running on the selected device or emulator. ===');
 }
 
 main().catch((error) => {

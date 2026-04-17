@@ -2,7 +2,14 @@ import * as FileSystem from 'expo-file-system/legacy';
 import * as DocumentPicker from 'expo-document-picker';
 import { Alert, Platform } from 'react-native';
 import { zip, unzip } from 'react-native-zip-archive';
-import { getDb, resetDbSingleton, walCheckpoint, closeDbGracefully } from '../db/database';
+import {
+  getDb,
+  resetDbSingleton,
+  walCheckpoint,
+  closeDbGracefully,
+  initDatabase,
+  DB_PATH,
+} from '../db/database';
 import { profileRepository } from '../db/repositories';
 import { shareBackupFileOrAlert } from './backupShare';
 import { copyFileToPublicBackup } from '../../modules/app-launcher';
@@ -23,11 +30,6 @@ const Updates = (() => {
 export const BACKUP_VERSION = 1;
 const GURU_EXTENSION = '.guru';
 const TEMP_EXTRACT_DIR = `${FileSystem.cacheDirectory}guru_restore_temp/`;
-
-// Database paths
-const DB_NAME = 'neet_study.db';
-const DB_DIR = `${FileSystem.documentDirectory}SQLite`;
-const DB_PATH = `${DB_DIR}/${DB_NAME}`;
 
 // External asset directories
 const TRANSCRIPTS_DIR = `${FileSystem.documentDirectory}transcripts/`;
@@ -449,6 +451,9 @@ async function _importUnifiedBackup(
 
       // Replace database file
       await FileSystem.copyAsync({ from: importedDbPath, to: DB_PATH });
+
+      // Reinitialize the database singleton after replacing the file
+      await initDatabase();
     }
 
     // Restore assets with error collection (DB is already committed at this point)
@@ -530,6 +535,8 @@ async function _importUnifiedBackup(
         if (rollbackInfo.exists) {
           resetDbSingleton();
           await FileSystem.copyAsync({ from: rollbackDbPath, to: DB_PATH });
+          // Reinitialize the database after restoring the original file
+          await initDatabase();
         }
         return {
           ok: false,
@@ -569,6 +576,8 @@ async function _importUnifiedBackup(
       if (rollbackInfo.exists) {
         resetDbSingleton();
         await FileSystem.copyAsync({ from: rollbackDbPath, to: DB_PATH });
+        // Reinitialize the database after restoring the original file
+        await initDatabase();
       }
     } catch (rollbackErr) {
       console.error('[Backup] Rollback also failed:', rollbackErr);
@@ -713,9 +722,8 @@ export async function runAutoBackup(): Promise<boolean> {
  */
 async function uploadToGDriveIfConnected(backupPath: string): Promise<void> {
   try {
-    const { isGDriveConnected, uploadBackupToGDrive, cleanupOldGDriveBackups } = await import(
-      './gdriveBackupService'
-    );
+    const { isGDriveConnected, uploadBackupToGDrive, cleanupOldGDriveBackups } =
+      await import('./gdriveBackupService');
     if (!(await isGDriveConnected())) return;
     const uploaded = await uploadBackupToGDrive(backupPath);
     if (uploaded) {
@@ -740,7 +748,7 @@ export async function getBackupInfo(uri: string): Promise<BackupInfo | null> {
     return {
       uri,
       name: uri.split('/').pop() || 'backup.guru',
-      size: 'size' in fileInfo ? fileInfo.size ?? 0 : 0,
+      size: 'size' in fileInfo ? (fileInfo.size ?? 0) : 0,
       manifest: validation.manifest,
     };
   } catch {

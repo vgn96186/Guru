@@ -58,6 +58,13 @@ jest.mock('expo-linear-gradient', () => {
   };
 });
 
+jest.mock('expo-blur', () => {
+  const React = require('react');
+  const { View } = require('react-native');
+  const BlurView = ({ children, ...props }) => React.createElement(View, props, children);
+  return { __esModule: true, BlurView };
+});
+
 jest.mock('react-native-reanimated', () => {
   try {
     const mock = require('react-native-reanimated/mock');

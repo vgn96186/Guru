@@ -41,11 +41,21 @@ module.exports = {
     '^@shopify/flash-list$': '<rootDir>/__mocks__/shopify-flash-list.js',
   },
   transform: {
-    '^.+\\.(ts|tsx)$': ['ts-jest', { tsconfig: { module: 'commonjs', jsx: 'react' } }],
+    '^.+\\.(ts|tsx)$': [
+      'ts-jest',
+      {
+        tsconfig: {
+          module: 'commonjs',
+          jsx: 'react',
+          rootDir: '.',
+          ignoreDeprecations: '6.0',
+        },
+      },
+    ],
     '^.+\\.(js|jsx)$': 'babel-jest',
     'node_modules/.+\\.(js|jsx|ts|tsx)$': 'babel-jest',
   },
   transformIgnorePatterns: [
-    'node_modules/(?!(jest-runner|@react-native|react-native|react-native-reanimated|react-native-markdown-display|@react-navigation|expo/.*|expo-.*|@expo/.*|@unimodules/.*|unimodules|sentry-expo|native-base|@sentry/.*)/)',
+    'node_modules/(?!(jest-runner|@react-native|react-native|react-native-reanimated|react-native-markdown-display|@react-navigation|expo/.*|expo-.*|@expo/.*|@unimodules/.*|unimodules|sentry-expo|native-base|@sentry/.*|jsonrepair)/)',
   ],
 };

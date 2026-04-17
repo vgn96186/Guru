@@ -1,62 +1,888 @@
+===== 2026-04-17T14:09:34.056Z metro start =====
 
 > neet_study@1.0.0 android:metro
-> npm run generate:bundled-env && cross-env NODE_ENV=development expo start --dev-client --localhost --port 8081 -c
+> npm run generate:bundled-env && cross-env NODE_ENV=development NODE_OPTIONS="--loader ./scripts/fix-esm-windows.mjs --no-warnings" expo start --dev-client --localhost --port 8081
 
 
 > neet_study@1.0.0 generate:bundled-env
 > node ./scripts/generate-bundled-env.js
 
-Starting project at C:\Guru
-[dotenv@17.3.1] injecting env (0) from .env -- tip: 🔐 prevent committing .env to code: https://dotenvx.com/precommit
-[dotenv@17.3.1] injecting env (0) from .env -- tip: ⚙️  write to custom object with { processEnv: myObject }
+env: load .env
+env: export EXPO_PUBLIC_SENTRY_DSN
+Starting project at /Users/vishnugnair/Guru/debug
+[dotenv@17.3.1] injecting env (10) from .env -- tip: ⚙️  enable debug logging with { debug: true }
 [dotenv@17.3.1] injecting env (0) from .env -- tip: ⚙️  specify custom .env file path with { path: '/custom/path/.env' }
+[dotenv@17.3.1] injecting env (0) from .env -- tip: 🤖 agentic secret storage: https://dotenvx.com/as2
+[dotenv@17.3.1] injecting env (0) from .env -- tip: ⚙️  load multiple .env files with { path: ['.env.local', '.env'] }
+Starting Metro Bundler
+[dotenv@17.3.1] injecting env (0) from .env -- tip: 🔐 encrypt with Dotenvx: https://dotenvx.com
+[dotenv@17.3.1] injecting env (0) from .env -- tip: 🤖 agentic secret storage: https://dotenvx.com/as2
+[dotenv@17.3.1] injecting env (0) from .env -- tip: ⚙️  enable debug logging with { debug: true }
+[dotenv@17.3.1] injecting env (0) from .env -- tip: 🛡️ auth for agents: https://vestauth.com
+Waiting on http://localhost:8081
+Logs for your project will appear below.
+[dotenv@17.3.1] injecting env (0) from .env -- tip: ⚙️  load multiple .env files with { path: ['.env.local', '.env'] }
+[dotenv@17.3.1] injecting env (0) from .env -- tip: ⚙️  write to custom object with { processEnv: myObject }
+Android ./index.ts ▓░░░░░░░░░░░░░░░ 11.9% ( 86/263)
+Android ./index.ts ▓▓▓▓░░░░░░░░░░░░ 30.3% ( 553/1004)
+Android ./index.ts ▓▓▓▓▓░░░░░░░░░░░ 33.0% ( 915/1601)
+Android ./index.ts ▓▓▓▓▓▓▓▓░░░░░░░░ 53.8% (1349/1839)
+Android ./index.ts ▓▓▓▓▓▓▓▓▓▓▓░░░░░ 69.6% (1811/2171)
+Android ./index.ts ▓▓▓▓▓▓▓▓▓▓▓▓▓░░░ 84.8% (2355/2615)
+Android ./index.ts ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓░ 99.4% (3117/3127)
+Android Bundled 23998ms index.ts (3132 modules)
+ WARN  [expo-av]: Expo AV has been deprecated and will be removed in SDK 54. Use the `expo-audio` and `expo-video` packages to replace the required functionality.
+ WARN  Require cycle: src/services/ai/v2/index.ts -> src/services/ai/v2/vercelCompat.ts -> src/services/ai/v2/index.ts
 
-===== 2026-04-11T16:56:51.321Z metro start =====
+Require cycles are allowed, but can result in uninitialized values. Consider refactoring to remove the need for a cycle.
+ LOG  [Sentry] Initialized successfully.
+ LOG  GURU_HEALTH:launching
+ LOG  GURU_HEALTH:bootstrap_started
+Android Bundled 1901ms src/services/gdriveBackupService.ts (1074 modules)
+ LOG  [DB] Recovered missing column: user_profile.harassment_tone
+ WARN  expo-background-fetch: This library is deprecated. Use expo-background-task instead.
+Android Bundled 597ms src/db/database.ts (590 modules)
+Android Bundled 647ms src/services/deviceMemory.ts (1021 modules)
+ LOG  GURU_HEALTH:bootstrap_succeeded
+ LOG  GURU_HEALTH:db_ready
+ LOG  [DB] Pre-seeding 20 topic embeddings...
+ LOG  GURU_HEALTH:route_ready:CheckIn
+ INFO  [BOOTSTRAP_TRACE] {"event": "bootstrap_check", "hasLocalModel": false, "hasLocalWhisper": false, "llmAllowed": true, "needsLlm": true, "needsWhisper": true}
+ INFO  [BOOTSTRAP_TRACE] {"event": "download_prepare", "modelName": "ggml-large-v3-turbo.bin", "type": "whisper"}
+ LOG  GURU_HEALTH:ui_ready:CheckIn
+ INFO  [BOOTSTRAP_TRACE] {"event": "download_start", "modelName": "ggml-large-v3-turbo.bin", "type": "whisper", "url": "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-large-v3-turbo.bin"}
+ ERROR  [TypeError: state.className.split is not a function (it is undefined)]
+ LOG  [DB_EVENT] Notifying: PROFILE_UPDATED
+ WARN  [Embedding] Jina failed: 401
+ WARN  [Notifications] AI generation failed, using smart fallbacks: [Error: createGuruFallbackModel: no providers available. Add a key or connect an account in Settings.]
+ WARN  [Embedding] Jina failed: 401
+ WARN  [Embedding] Jina failed: 401
+ WARN  [Embedding] Jina failed: 401
+ WARN  [Embedding] Jina failed: 401
+ WARN  [Embedding] Jina failed: 401
+ WARN  [Embedding] Jina failed: 401
+ WARN  [Embedding] Jina failed: 401
+ WARN  [Embedding] Jina failed: 401
+ LOG  [AI_BOOT] provider validation: chatgpt=skip github_copilot=skip gitlab_duo=skip poe=skip groq=n/a qwen=skip github=n/a kilo=ok deepseek=n/a agentrouter=n/a gemini=n/a gemini_fallback=n/a openrouter=n/a cloudflare=n/a
+ LOG  [AI_BOOT] kilo: ok (200) 1986ms
+Android Bundled 514ms src/services/aiService.ts (1258 modules)
+ WARN  [Embedding] Jina failed: 401
+ WARN  [Embedding] Jina failed: 401
+ WARN  [Embedding] Jina failed: 401
+ LOG  [AutoBackup] Running scheduled auto-backup...
+ WARN  [Embedding] Jina failed: 401
+ LOG  [DB_EVENT] Notifying: PROFILE_UPDATED
+ LOG  [AutoBackup] Auto-backup completed successfully.
+ WARN  [Embedding] Jina failed: 401
+ WARN  [Embedding] Jina failed: 401
+ LOG  [DB_EVENT] Notifying: PROFILE_UPDATED
+ WARN  [Embedding] Jina failed: 401
+ WARN  [Embedding] Jina failed: 401
+ WARN  [Embedding] Jina failed: 401
+ WARN  [Embedding] Jina failed: 401
+ WARN  [Embedding] Jina failed: 401
+ WARN  Ignoring DevTools app debug target for 'com.anonymous.gurustudy.dev' with title 'com.anonymous.gurustudy.dev (SM-X820)' and 'nativePageReloads' capability set to 'false'. 
+ INFO  Launching DevTools...
+ LOG  GURU_HEALTH:launching
+ LOG  GURU_HEALTH:bootstrap_started
+ LOG  GURU_HEALTH:bootstrap_succeeded
+ LOG  GURU_HEALTH:db_ready
+ LOG  [DB] Pre-seeding 20 topic embeddings...
+ LOG  GURU_HEALTH:route_ready:CheckIn
+ LOG  GURU_HEALTH:ui_ready:CheckIn
+ WARN  [Embedding] Jina failed: 401
+ WARN  [Embedding] Jina failed: 401
+ WARN  [Embedding] Jina failed: 401
+ WARN  [Embedding] Jina failed: 401
+ WARN  [Embedding] Jina failed: 401
+ WARN  [Embedding] Jina failed: 401
+ WARN  [Embedding] Jina failed: 401
+ LOG  [AI_BOOT] provider validation: chatgpt=skip github_copilot=skip gitlab_duo=skip poe=skip groq=n/a qwen=skip github=n/a kilo=ok deepseek=n/a agentrouter=n/a gemini=n/a gemini_fallback=n/a openrouter=n/a cloudflare=n/a
+ LOG  [AI_BOOT] kilo: ok (200) 1787ms
+ WARN  [Embedding] Jina failed: 401
+ WARN  [Embedding] Jina failed: 401
+ WARN  [Embedding] Jina failed: 401
+ WARN  [Embedding] Jina failed: 401
+ WARN  [Embedding] Jina failed: 401
+ WARN  [Embedding] Jina failed: 401
+ WARN  [Embedding] Jina failed: 401
+ WARN  [Embedding] Jina failed: 401
+ WARN  [Embedding] Jina failed: 401
+ WARN  [Embedding] Jina failed: 401
+ WARN  [Embedding] Jina failed: 401
+ WARN  [Embedding] Jina failed: 401
+ WARN  [Embedding] Jina failed: 401
+ INFO  [BOOTSTRAP_TRACE] {"event": "download_verifying", "targetUri": "file:///data/user/0/com.anonymous.gurustudy.dev/files/ggml-large-v3-turbo.bin", "type": "whisper"}
+ LOG  [DB_EVENT] Notifying: PROFILE_UPDATED
+ INFO  [BOOTSTRAP_TRACE] {"event": "download_complete", "size": 1624555275, "targetUri": "file:///data/user/0/com.anonymous.gurustudy.dev/files/ggml-large-v3-turbo.bin", "type": "whisper"}
+ INFO  [BOOTSTRAP_TRACE] {"event": "download_prepare", "modelName": "gemma-4-E4B-it.litertlm", "type": "llm"}
+ INFO  [BOOTSTRAP_TRACE] {"event": "download_start", "modelName": "gemma-4-E4B-it.litertlm", "type": "llm", "url": "https://huggingface.co/litert-community/gemma-4-E4B-it-litert-lm/resolve/main/gemma-4-E4B-it.litertlm"}
+ LOG  [DB_EVENT] Notifying: PROGRESS_UPDATED
+ LOG  [DB_EVENT] Notifying: PROFILE_UPDATED
+ ERROR  TypeError: Duplicate declaration "mapFinishReason"
+  209 | }
+  210 |
+> 211 | function mapFinishReason(r: string | undefined): FinishReason {
+      |          ^^^^^^^^^^^^^^^
+  212 |   switch (r) {
+  213 |     case 'stop':
+  214 |       return 'stop';
+    at File.buildCodeFrameError (/Users/vishnugnair/Guru/debug/node_modules/@babel/core/lib/transformation/file/file.js:189:12)
+    at Scope.checkBlockScopedCollisions (/Users/vishnugnair/Guru/debug/node_modules/@babel/traverse/lib/scope/index.js:433:27)
+    at Scope.registerBinding (/Users/vishnugnair/Guru/debug/node_modules/@babel/traverse/lib/scope/index.js:530:16)
+    at Scope.registerDeclaration (/Users/vishnugnair/Guru/debug/node_modules/@babel/traverse/lib/scope/index.js:475:12)
+    at Object.BlockScoped (/Users/vishnugnair/Guru/debug/node_modules/@babel/traverse/lib/scope/index.js:276:12)
+    at Object.newFn (/Users/vishnugnair/Guru/debug/node_modules/@babel/traverse/lib/visitors.js:203:17)
+    at NodePath._call (/Users/vishnugnair/Guru/debug/node_modules/@babel/traverse/lib/path/context.js:50:20)
+    at NodePath.call (/Users/vishnugnair/Guru/debug/node_modules/@babel/traverse/lib/path/context.js:40:18)
+    at NodePath.visit (/Users/vishnugnair/Guru/debug/node_modules/@babel/traverse/lib/path/context.js:87:31)
+    at TraversalContext.visitQueue (/Users/vishnugnair/Guru/debug/node_modules/@babel/traverse/lib/context.js:96:16)
+    at TraversalContext.visitMultiple (/Users/vishnugnair/Guru/debug/node_modules/@babel/traverse/lib/context.js:68:17)
+    at TraversalContext.visit (/Users/vishnugnair/Guru/debug/node_modules/@babel/traverse/lib/context.js:117:19)
+    at traverseNode (/Users/vishnugnair/Guru/debug/node_modules/@babel/traverse/lib/traverse-node.js:130:17)
+    at traverse (/Users/vishnugnair/Guru/debug/node_modules/@babel/traverse/lib/index.js:53:34)
+    at NodePath.traverse (/Users/vishnugnair/Guru/debug/node_modules/@babel/traverse/lib/path/index.js:120:24)
+    at Scope.crawl (/Users/vishnugnair/Guru/debug/node_modules/@babel/traverse/lib/scope/index.js:695:10)
+    at Scope.init (/Users/vishnugnair/Guru/debug/node_modules/@babel/traverse/lib/scope/index.js:661:12)
+    at NodePath.setScope (/Users/vishnugnair/Guru/debug/node_modules/@babel/traverse/lib/path/context.js:139:55)
+    at NodePath.setContext (/Users/vishnugnair/Guru/debug/node_modules/@babel/traverse/lib/path/context.js:151:12)
+    at new File (/Users/vishnugnair/Guru/debug/node_modules/@babel/core/lib/transformation/file/file.js:80:8)
+    at normalizeFile (/Users/vishnugnair/Guru/debug/node_modules/@babel/core/lib/transformation/normalize-file.js:96:10)
+    at normalizeFile.next (<anonymous>)
+    at run (/Users/vishnugnair/Guru/debug/node_modules/@babel/core/lib/transformation/index.js:22:50)
+    at run.next (<anonymous>)
+    at transform (/Users/vishnugnair/Guru/debug/node_modules/@babel/core/lib/transform.js:22:33)
+    at transform.next (<anonymous>)
+    at evaluateSync (/Users/vishnugnair/Guru/debug/node_modules/gensync/index.js:251:28)
+    at sync (/Users/vishnugnair/Guru/debug/node_modules/gensync/index.js:89:14)
+    at stopHiding - secret - don't use this - v1 (/Users/vishnugnair/Guru/debug/node_modules/@babel/core/lib/errors/rewrite-stack-trace.js:47:12)
+    at Object.transformSync (/Users/vishnugnair/Guru/debug/node_modules/@babel/core/lib/transform.js:40:76)
+    at parseWithBabel (/Users/vishnugnair/Guru/debug/node_modules/expo/node_modules/@expo/metro-config/build/transformSync.js:75:18)
+    at transformSync (/Users/vishnugnair/Guru/debug/node_modules/expo/node_modules/@expo/metro-config/build/transformSync.js:54:16)
+    at Object.transform (/Users/vishnugnair/Guru/debug/node_modules/expo/node_modules/@expo/metro-config/build/babel-transformer.js:127:58)
+    at transformJSWithBabel (/Users/vishnugnair/Guru/debug/node_modules/expo/node_modules/@expo/metro-config/build/transform-worker/metro-transform-worker.js:468:47)
+    at Object.transform (/Users/vishnugnair/Guru/debug/node_modules/expo/node_modules/@expo/metro-config/build/transform-worker/metro-transform-worker.js:583:12)
+    at transform (/Users/vishnugnair/Guru/debug/node_modules/expo/node_modules/@expo/metro-config/build/transform-worker/transform-worker.js:178:19)
+    at Object.transform (/Users/vishnugnair/Guru/debug/node_modules/react-native-css-interop/dist/metro/transformer.js:15:16)
+    at Object.transform (/Users/vishnugnair/Guru/debug/node_modules/expo/node_modules/@expo/metro-config/build/transform-worker/supervising-transform-worker.js:94:25)
+    at transformFile (/Users/vishnugnair/Guru/debug/node_modules/metro/src/DeltaBundler/Worker.flow.js:67:36)
+    at Object.transform (/Users/vishnugnair/Guru/debug/node_modules/metro/src/DeltaBundler/Worker.flow.js:42:10)
+    at execFunction (/Users/vishnugnair/Guru/debug/node_modules/jest-worker/build/workers/processChild.js:149:17)
+    at execHelper (/Users/vishnugnair/Guru/debug/node_modules/jest-worker/build/workers/processChild.js:137:5)
+    at execMethod (/Users/vishnugnair/Guru/debug/node_modules/jest-worker/build/workers/processChild.js:140:5)
+    at process.messageListener (/Users/vishnugnair/Guru/debug/node_modules/jest-worker/build/workers/processChild.js:44:7)
+    at process.emit (node:events:524:28)
+    at emit (node:internal/child_process:950:14)
+ ERROR  [Error: TransformError src/services/ai/v2/providers/openaiCompatible.ts: Duplicate declaration "mapFinishReason"
+  209 | }
+  210 |
+> 211 | function mapFinishReason(r: string | undefined): FinishReason {
+      |          ^^^^^^^^^^^^^^^
+  212 |   switch (r) {
+  213 |     case 'stop':
+  214 |       return 'stop';]
+ ERROR  TypeError: Duplicate declaration "mapFinishReason"
+  209 | }
+  210 |
+> 211 | function mapFinishReason(r: string | undefined): FinishReason {
+      |          ^^^^^^^^^^^^^^^
+  212 |   switch (r) {
+  213 |     case 'stop':
+  214 |       return 'stop';
+    at File.buildCodeFrameError (/Users/vishnugnair/Guru/debug/node_modules/@babel/core/lib/transformation/file/file.js:189:12)
+    at Scope.checkBlockScopedCollisions (/Users/vishnugnair/Guru/debug/node_modules/@babel/traverse/lib/scope/index.js:433:27)
+    at Scope.registerBinding (/Users/vishnugnair/Guru/debug/node_modules/@babel/traverse/lib/scope/index.js:530:16)
+    at Scope.registerDeclaration (/Users/vishnugnair/Guru/debug/node_modules/@babel/traverse/lib/scope/index.js:475:12)
+    at Object.BlockScoped (/Users/vishnugnair/Guru/debug/node_modules/@babel/traverse/lib/scope/index.js:276:12)
+    at Object.newFn (/Users/vishnugnair/Guru/debug/node_modules/@babel/traverse/lib/visitors.js:203:17)
+    at NodePath._call (/Users/vishnugnair/Guru/debug/node_modules/@babel/traverse/lib/path/context.js:50:20)
+    at NodePath.call (/Users/vishnugnair/Guru/debug/node_modules/@babel/traverse/lib/path/context.js:40:18)
+    at NodePath.visit (/Users/vishnugnair/Guru/debug/node_modules/@babel/traverse/lib/path/context.js:87:31)
+    at TraversalContext.visitQueue (/Users/vishnugnair/Guru/debug/node_modules/@babel/traverse/lib/context.js:96:16)
+    at TraversalContext.visitMultiple (/Users/vishnugnair/Guru/debug/node_modules/@babel/traverse/lib/context.js:68:17)
+    at TraversalContext.visit (/Users/vishnugnair/Guru/debug/node_modules/@babel/traverse/lib/context.js:117:19)
+    at traverseNode (/Users/vishnugnair/Guru/debug/node_modules/@babel/traverse/lib/traverse-node.js:130:17)
+    at traverse (/Users/vishnugnair/Guru/debug/node_modules/@babel/traverse/lib/index.js:53:34)
+    at NodePath.traverse (/Users/vishnugnair/Guru/debug/node_modules/@babel/traverse/lib/path/index.js:120:24)
+    at Scope.crawl (/Users/vishnugnair/Guru/debug/node_modules/@babel/traverse/lib/scope/index.js:695:10)
+    at Scope.init (/Users/vishnugnair/Guru/debug/node_modules/@babel/traverse/lib/scope/index.js:661:12)
+    at NodePath.setScope (/Users/vishnugnair/Guru/debug/node_modules/@babel/traverse/lib/path/context.js:139:55)
+    at NodePath.setContext (/Users/vishnugnair/Guru/debug/node_modules/@babel/traverse/lib/path/context.js:151:12)
+    at new File (/Users/vishnugnair/Guru/debug/node_modules/@babel/core/lib/transformation/file/file.js:80:8)
+    at normalizeFile (/Users/vishnugnair/Guru/debug/node_modules/@babel/core/lib/transformation/normalize-file.js:96:10)
+    at normalizeFile.next (<anonymous>)
+    at run (/Users/vishnugnair/Guru/debug/node_modules/@babel/core/lib/transformation/index.js:22:50)
+    at run.next (<anonymous>)
+    at transform (/Users/vishnugnair/Guru/debug/node_modules/@babel/core/lib/transform.js:22:33)
+    at transform.next (<anonymous>)
+    at evaluateSync (/Users/vishnugnair/Guru/debug/node_modules/gensync/index.js:251:28)
+    at sync (/Users/vishnugnair/Guru/debug/node_modules/gensync/index.js:89:14)
+    at stopHiding - secret - don't use this - v1 (/Users/vishnugnair/Guru/debug/node_modules/@babel/core/lib/errors/rewrite-stack-trace.js:47:12)
+    at Object.transformSync (/Users/vishnugnair/Guru/debug/node_modules/@babel/core/lib/transform.js:40:76)
+    at parseWithBabel (/Users/vishnugnair/Guru/debug/node_modules/expo/node_modules/@expo/metro-config/build/transformSync.js:75:18)
+    at transformSync (/Users/vishnugnair/Guru/debug/node_modules/expo/node_modules/@expo/metro-config/build/transformSync.js:54:16)
+    at Object.transform (/Users/vishnugnair/Guru/debug/node_modules/expo/node_modules/@expo/metro-config/build/babel-transformer.js:127:58)
+    at transformJSWithBabel (/Users/vishnugnair/Guru/debug/node_modules/expo/node_modules/@expo/metro-config/build/transform-worker/metro-transform-worker.js:468:47)
+    at Object.transform (/Users/vishnugnair/Guru/debug/node_modules/expo/node_modules/@expo/metro-config/build/transform-worker/metro-transform-worker.js:583:12)
+    at transform (/Users/vishnugnair/Guru/debug/node_modules/expo/node_modules/@expo/metro-config/build/transform-worker/transform-worker.js:178:19)
+    at Object.transform (/Users/vishnugnair/Guru/debug/node_modules/react-native-css-interop/dist/metro/transformer.js:15:16)
+    at Object.transform (/Users/vishnugnair/Guru/debug/node_modules/expo/node_modules/@expo/metro-config/build/transform-worker/supervising-transform-worker.js:94:25)
+    at transformFile (/Users/vishnugnair/Guru/debug/node_modules/metro/src/DeltaBundler/Worker.flow.js:67:36)
+    at Object.transform (/Users/vishnugnair/Guru/debug/node_modules/metro/src/DeltaBundler/Worker.flow.js:42:10)
+    at execFunction (/Users/vishnugnair/Guru/debug/node_modules/jest-worker/build/workers/processChild.js:149:17)
+    at execHelper (/Users/vishnugnair/Guru/debug/node_modules/jest-worker/build/workers/processChild.js:137:5)
+    at execMethod (/Users/vishnugnair/Guru/debug/node_modules/jest-worker/build/workers/processChild.js:140:5)
+    at process.messageListener (/Users/vishnugnair/Guru/debug/node_modules/jest-worker/build/workers/processChild.js:44:7)
+    at process.emit (node:events:524:28)
+    at emit (node:internal/child_process:950:14)
+ ERROR  [Error: TransformError src/services/ai/v2/providers/openaiCompatible.ts: Duplicate declaration "mapFinishReason"
+  209 | }
+  210 |
+> 211 | function mapFinishReason(r: string | undefined): FinishReason {
+      |          ^^^^^^^^^^^^^^^
+  212 |   switch (r) {
+  213 |     case 'stop':
+  214 |       return 'stop';]
+Android ./index.ts ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Android Bundled 94ms index.ts (1 module)
+ WARN  [expo-av]: Expo AV has been deprecated and will be removed in SDK 54. Use the `expo-audio` and `expo-video` packages to replace the required functionality.
+ WARN  Require cycle: src/services/ai/v2/index.ts -> src/services/ai/v2/vercelCompat.ts -> src/services/ai/v2/index.ts
 
-===== 2026-04-11T17:10:21.096Z metro start =====
+Require cycles are allowed, but can result in uninitialized values. Consider refactoring to remove the need for a cycle.
+ LOG  [Sentry] Initialized successfully.
+ LOG  GURU_HEALTH:launching
+ LOG  GURU_HEALTH:bootstrap_started
+Android Bundled 29ms src/services/gdriveBackupService.ts (1 module)
+Android Bundled 33ms src/db/database.ts (1 module)
+Android Bundled 24ms src/services/deviceMemory.ts (1 module)
+ LOG  GURU_HEALTH:bootstrap_succeeded
+ LOG  GURU_HEALTH:db_ready
+ INFO  [BOOTSTRAP_TRACE] {"event": "bootstrap_check", "hasLocalModel": false, "hasLocalWhisper": true, "llmAllowed": true, "needsLlm": true, "needsWhisper": false}
+ INFO  [BOOTSTRAP_TRACE] {"event": "download_prepare", "modelName": "gemma-4-E4B-it.litertlm", "type": "llm"}
+ LOG  [DB] Pre-seeding 20 topic embeddings...
+ INFO  [BOOTSTRAP_TRACE] {"event": "download_interrupted_partial_detected", "modelName": "gemma-4-E4B-it.litertlm", "partialUri": "file:///data/user/0/com.anonymous.gurustudy.dev/files/gemma-4-E4B-it.litertlm.partial", "size": 1140975376, "type": "llm"}
+ LOG  GURU_HEALTH:route_ready:Tabs
+ LOG  GURU_HEALTH:ui_ready:Tabs
+ WARN  [Embedding] Jina failed: 401
+ WARN  [Embedding] Jina failed: 401
+Android Bundled 103ms index.ts (1 module)
+ WARN  [expo-av]: Expo AV has been deprecated and will be removed in SDK 54. Use the `expo-audio` and `expo-video` packages to replace the required functionality.
+ WARN  Require cycle: src/services/ai/v2/index.ts -> src/services/ai/v2/vercelCompat.ts -> src/services/ai/v2/index.ts
 
-===== 2026-04-11T17:19:45.420Z metro start =====
+Require cycles are allowed, but can result in uninitialized values. Consider refactoring to remove the need for a cycle.
+ LOG  [Sentry] Initialized successfully.
+ LOG  GURU_HEALTH:launching
+ LOG  GURU_HEALTH:bootstrap_started
+Android Bundled 32ms src/services/gdriveBackupService.ts (1 module)
+Android Bundled 45ms src/db/database.ts (1 module)
+Android Bundled 24ms src/services/deviceMemory.ts (1 module)
+ LOG  GURU_HEALTH:bootstrap_succeeded
+ LOG  GURU_HEALTH:db_ready
+ INFO  [BOOTSTRAP_TRACE] {"event": "bootstrap_check", "hasLocalModel": false, "hasLocalWhisper": true, "llmAllowed": true, "needsLlm": true, "needsWhisper": false}
+ INFO  [BOOTSTRAP_TRACE] {"event": "download_prepare", "modelName": "gemma-4-E4B-it.litertlm", "type": "llm"}
+ LOG  [DB] Pre-seeding 20 topic embeddings...
+ LOG  GURU_HEALTH:route_ready:Tabs
+ INFO  [BOOTSTRAP_TRACE] {"event": "download_interrupted_partial_detected", "modelName": "gemma-4-E4B-it.litertlm", "partialUri": "file:///data/user/0/com.anonymous.gurustudy.dev/files/gemma-4-E4B-it.litertlm.partial", "size": 1180112542, "type": "llm"}
+ LOG  GURU_HEALTH:ui_ready:Tabs
+ WARN  [Embedding] Jina failed: 401
+Android Bundled 107ms index.ts (1 module)
+ WARN  [expo-av]: Expo AV has been deprecated and will be removed in SDK 54. Use the `expo-audio` and `expo-video` packages to replace the required functionality.
+ WARN  Require cycle: src/services/ai/v2/index.ts -> src/services/ai/v2/vercelCompat.ts -> src/services/ai/v2/index.ts
 
-===== 2026-04-12T07:12:53.706Z metro start =====
+Require cycles are allowed, but can result in uninitialized values. Consider refactoring to remove the need for a cycle.
+ LOG  [Sentry] Initialized successfully.
+ LOG  GURU_HEALTH:launching
+ LOG  GURU_HEALTH:bootstrap_started
+Android Bundled 63ms src/services/gdriveBackupService.ts (1 module)
+Android Bundled 117ms index.ts (1 module)
+ WARN  [expo-av]: Expo AV has been deprecated and will be removed in SDK 54. Use the `expo-audio` and `expo-video` packages to replace the required functionality.
+ WARN  Require cycle: src/services/ai/v2/index.ts -> src/services/ai/v2/vercelCompat.ts -> src/services/ai/v2/index.ts
 
-===== 2026-04-12T07:27:18.170Z metro start =====
+Require cycles are allowed, but can result in uninitialized values. Consider refactoring to remove the need for a cycle.
+ LOG  [Sentry] Initialized successfully.
+ LOG  GURU_HEALTH:launching
+ LOG  GURU_HEALTH:bootstrap_started
+Android Bundled 54ms src/services/gdriveBackupService.ts (1 module)
+Android Bundled 118ms index.ts (1 module)
+ WARN  [expo-av]: Expo AV has been deprecated and will be removed in SDK 54. Use the `expo-audio` and `expo-video` packages to replace the required functionality.
+ WARN  Require cycle: src/services/ai/v2/index.ts -> src/services/ai/v2/vercelCompat.ts -> src/services/ai/v2/index.ts
 
-===== 2026-04-12T07:40:31.479Z metro start =====
+Require cycles are allowed, but can result in uninitialized values. Consider refactoring to remove the need for a cycle.
+ LOG  [Sentry] Initialized successfully.
+ LOG  GURU_HEALTH:launching
+ LOG  GURU_HEALTH:bootstrap_started
+Android Bundled 26ms src/services/gdriveBackupService.ts (1 module)
+Android Bundled 32ms src/db/database.ts (1 module)
+Android Bundled 24ms src/services/deviceMemory.ts (1 module)
+ LOG  GURU_HEALTH:bootstrap_succeeded
+ LOG  GURU_HEALTH:db_ready
+ INFO  [BOOTSTRAP_TRACE] {"event": "bootstrap_check", "hasLocalModel": false, "hasLocalWhisper": true, "llmAllowed": true, "needsLlm": true, "needsWhisper": false}
+ INFO  [BOOTSTRAP_TRACE] {"event": "download_prepare", "modelName": "gemma-4-E4B-it.litertlm", "type": "llm"}
+ LOG  [DB] Pre-seeding 20 topic embeddings...
+ LOG  GURU_HEALTH:route_ready:Tabs
+ INFO  [BOOTSTRAP_TRACE] {"event": "download_interrupted_partial_detected", "modelName": "gemma-4-E4B-it.litertlm", "partialUri": "file:///data/user/0/com.anonymous.gurustudy.dev/files/gemma-4-E4B-it.litertlm.partial", "size": 1247498240, "type": "llm"}
+ LOG  GURU_HEALTH:ui_ready:Tabs
+ WARN  [Embedding] Jina failed: 401
+ WARN  [Embedding] Jina failed: 401
+ WARN  [Embedding] Jina failed: 401
+ WARN  [Embedding] Jina failed: 401
+Android Bundled 47ms src/services/aiService.ts (1 module)
+ WARN  [Embedding] Jina failed: 401
+ WARN  [Embedding] Jina failed: 401
+ LOG  [AI_BOOT] provider validation: chatgpt=skip github_copilot=skip gitlab_duo=skip poe=skip groq=n/a qwen=skip github=n/a kilo=ok deepseek=n/a agentrouter=n/a gemini=n/a gemini_fallback=n/a openrouter=n/a cloudflare=n/a
+ LOG  [AI_BOOT] kilo: ok (200) 2839ms
+ WARN  [Embedding] Jina failed: 401
+ WARN  [Embedding] Jina failed: 401
+ WARN  [Embedding] Jina failed: 401
+ WARN  [Embedding] Jina failed: 401
+ WARN  [Embedding] Jina failed: 401
+ WARN  [Embedding] Jina failed: 401
+ WARN  [Embedding] Jina failed: 401
+ WARN  [Embedding] Jina failed: 401
+ WARN  [Embedding] Jina failed: 401
+ WARN  [Embedding] Jina failed: 401
+ WARN  [Embedding] Jina failed: 401
+ WARN  [Embedding] Jina failed: 401
+ WARN  [Embedding] Jina failed: 401
+ WARN  [Embedding] Jina failed: 401
+Android ./index.ts ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Android Bundled 88ms index.ts (1 module)
+Unable to resolve "expo-background-task" from "src/services/backgroundTasks.ts"
+[0m[31m[1m>[22m[39m[90m 1 |[39m [36mimport[39m [33m*[39m [36mas[39m [33mBackgroundTask[39m [36mfrom[39m [32m'expo-background-task'[39m[33m;[39m
+ [90m   |[39m                                  [31m[1m^[22m[39m
+ [90m 2 |[39m [36mimport[39m [33m*[39m [36mas[39m [33mTaskManager[39m [36mfrom[39m [32m'expo-task-manager'[39m[33m;[39m
+ [90m 3 |[39m [36mimport[39m { getAllTopicsWithProgress } [36mfrom[39m [32m'../db/queries/topics'[39m[33m;[39m
+ [90m 4 |[39m [36mimport[39m { profileRepository } [36mfrom[39m [32m'../db/repositories'[39m[33m;[39m[0m
 
-===== 2026-04-12T08:09:00.058Z metro start =====
+Import stack:
 
-===== 2026-04-12T08:41:52.496Z metro start =====
+ src/services/backgroundTasks.ts
+ | import "expo-background-task"
 
-===== 2026-04-12T08:42:15.392Z metro start =====
+ 
+ | import "./src/services/backgroundTasks"
 
-===== 2026-04-12T09:15:48.970Z metro start =====
+ WARN  [expo-av]: Expo AV has been deprecated and will be removed in SDK 54. Use the `expo-audio` and `expo-video` packages to replace the required functionality.
+ WARN  Require cycle: src/services/ai/v2/index.ts -> src/services/ai/v2/vercelCompat.ts -> src/services/ai/v2/index.ts
 
-===== 2026-04-12T09:16:13.181Z metro start =====
+Require cycles are allowed, but can result in uninitialized values. Consider refactoring to remove the need for a cycle.
+ LOG  [Sentry] Initialized successfully.
+ LOG  GURU_HEALTH:launching
+ LOG  GURU_HEALTH:bootstrap_started
+Android Bundled 40ms src/services/gdriveBackupService.ts (1 module)
+Unable to resolve "expo-background-task" from "src/services/backgroundTasks.ts"
+[0m[31m[1m>[22m[39m[90m 1 |[39m [36mimport[39m [33m*[39m [36mas[39m [33mBackgroundTask[39m [36mfrom[39m [32m'expo-background-task'[39m[33m;[39m
+ [90m   |[39m                                  [31m[1m^[22m[39m
+ [90m 2 |[39m [36mimport[39m [33m*[39m [36mas[39m [33mTaskManager[39m [36mfrom[39m [32m'expo-task-manager'[39m[33m;[39m
+ [90m 3 |[39m [36mimport[39m { getAllTopicsWithProgress } [36mfrom[39m [32m'../db/queries/topics'[39m[33m;[39m
+ [90m 4 |[39m [36mimport[39m { profileRepository } [36mfrom[39m [32m'../db/repositories'[39m[33m;[39m[0m
 
-===== 2026-04-12T10:27:21.961Z metro start =====
+Import stack:
 
-===== 2026-04-12T10:33:25.887Z metro start =====
+ src/services/backgroundTasks.ts
+ | import "expo-background-task"
 
-===== 2026-04-12T10:37:31.563Z metro start =====
+ 
+ | import "./src/services/backgroundTasks"
 
-===== 2026-04-12T10:39:57.000Z metro start =====
+ ERROR  [Error: UnableToResolveError Unable to resolve module expo-background-task from /Users/vishnugnair/Guru/debug/src/services/backgroundTasks.ts: expo-background-task could not be found within the project or in these directories:
+  node_modules
+[0m[31m[1m>[22m[39m[90m 1 |[39m [36mimport[39m [33m*[39m [36mas[39m [33mBackgroundTask[39m [36mfrom[39m [32m'expo-background-task'[39m[33m;[39m
+ [90m   |[39m                                  [31m[1m^[22m[39m
+ [90m 2 |[39m [36mimport[39m [33m*[39m [36mas[39m [33mTaskManager[39m [36mfrom[39m [32m'expo-task-manager'[39m[33m;[39m
+ [90m 3 |[39m [36mimport[39m { getAllTopicsWithProgress } [36mfrom[39m [32m'../db/queries/topics'[39m[33m;[39m
+ [90m 4 |[39m [36mimport[39m { profileRepository } [36mfrom[39m [32m'../db/repositories'[39m[33m;[39m[0m]
+Unable to resolve "expo-background-task" from "src/services/backgroundTasks.ts"
+[0m[31m[1m>[22m[39m[90m 1 |[39m [36mimport[39m [33m*[39m [36mas[39m [33mBackgroundTask[39m [36mfrom[39m [32m'expo-background-task'[39m[33m;[39m
+ [90m   |[39m                                  [31m[1m^[22m[39m
+ [90m 2 |[39m [36mimport[39m [33m*[39m [36mas[39m [33mTaskManager[39m [36mfrom[39m [32m'expo-task-manager'[39m[33m;[39m
+ [90m 3 |[39m [36mimport[39m { getAllTopicsWithProgress } [36mfrom[39m [32m'../db/queries/topics'[39m[33m;[39m
+ [90m 4 |[39m [36mimport[39m { profileRepository } [36mfrom[39m [32m'../db/repositories'[39m[33m;[39m[0m
 
-===== 2026-04-12T10:42:09.274Z metro start =====
+Import stack:
 
-===== 2026-04-12T10:43:38.681Z metro start =====
+ src/services/backgroundTasks.ts
+ | import "expo-background-task"
 
-===== 2026-04-12T10:44:47.248Z metro start =====
+ 
+ | import "./src/services/backgroundTasks"
 
-===== 2026-04-12T10:51:23.334Z metro start =====
+ ERROR  [Error: UnableToResolveError Unable to resolve module expo-background-task from /Users/vishnugnair/Guru/debug/src/services/backgroundTasks.ts: expo-background-task could not be found within the project or in these directories:
+  node_modules
+[0m[31m[1m>[22m[39m[90m 1 |[39m [36mimport[39m [33m*[39m [36mas[39m [33mBackgroundTask[39m [36mfrom[39m [32m'expo-background-task'[39m[33m;[39m
+ [90m   |[39m                                  [31m[1m^[22m[39m
+ [90m 2 |[39m [36mimport[39m [33m*[39m [36mas[39m [33mTaskManager[39m [36mfrom[39m [32m'expo-task-manager'[39m[33m;[39m
+ [90m 3 |[39m [36mimport[39m { getAllTopicsWithProgress } [36mfrom[39m [32m'../db/queries/topics'[39m[33m;[39m
+ [90m 4 |[39m [36mimport[39m { profileRepository } [36mfrom[39m [32m'../db/repositories'[39m[33m;[39m[0m]
+Unable to resolve "expo-background-task" from "src/services/backgroundTasks.ts"
+[0m[31m[1m>[22m[39m[90m 1 |[39m [36mimport[39m [33m*[39m [36mas[39m [33mBackgroundTask[39m [36mfrom[39m [32m'expo-background-task'[39m[33m;[39m
+ [90m   |[39m                                  [31m[1m^[22m[39m
+ [90m 2 |[39m [36mimport[39m [33m*[39m [36mas[39m [33mTaskManager[39m [36mfrom[39m [32m'expo-task-manager'[39m[33m;[39m
+ [90m 3 |[39m [36mimport[39m { getAllTopicsWithProgress } [36mfrom[39m [32m'../db/queries/topics'[39m[33m;[39m
+ [90m 4 |[39m [36mimport[39m { profileRepository } [36mfrom[39m [32m'../db/repositories'[39m[33m;[39m[0m
 
-===== 2026-04-12T10:58:22.471Z metro start =====
+Import stack:
 
-===== 2026-04-12T11:07:24.495Z metro start =====
+ src/services/backgroundTasks.ts
+ | import "expo-background-task"
 
-===== 2026-04-12T11:07:41.697Z metro start =====
+ 
+ | import "./src/services/backgroundTasks"
 
-===== 2026-04-12T11:13:51.822Z metro start =====
+ ERROR  [Error: UnableToResolveError Unable to resolve module expo-background-task from /Users/vishnugnair/Guru/debug/src/services/backgroundTasks.ts: expo-background-task could not be found within the project or in these directories:
+  node_modules
+[0m[31m[1m>[22m[39m[90m 1 |[39m [36mimport[39m [33m*[39m [36mas[39m [33mBackgroundTask[39m [36mfrom[39m [32m'expo-background-task'[39m[33m;[39m
+ [90m   |[39m                                  [31m[1m^[22m[39m
+ [90m 2 |[39m [36mimport[39m [33m*[39m [36mas[39m [33mTaskManager[39m [36mfrom[39m [32m'expo-task-manager'[39m[33m;[39m
+ [90m 3 |[39m [36mimport[39m { getAllTopicsWithProgress } [36mfrom[39m [32m'../db/queries/topics'[39m[33m;[39m
+ [90m 4 |[39m [36mimport[39m { profileRepository } [36mfrom[39m [32m'../db/repositories'[39m[33m;[39m[0m]
+Unable to resolve "expo-background-task" from "src/services/backgroundTasks.ts"
+[0m[31m[1m>[22m[39m[90m 1 |[39m [36mimport[39m [33m*[39m [36mas[39m [33mBackgroundTask[39m [36mfrom[39m [32m'expo-background-task'[39m[33m;[39m
+ [90m   |[39m                                  [31m[1m^[22m[39m
+ [90m 2 |[39m [36mimport[39m [33m*[39m [36mas[39m [33mTaskManager[39m [36mfrom[39m [32m'expo-task-manager'[39m[33m;[39m
+ [90m 3 |[39m [36mimport[39m { getAllTopicsWithProgress } [36mfrom[39m [32m'../db/queries/topics'[39m[33m;[39m
+ [90m 4 |[39m [36mimport[39m { profileRepository } [36mfrom[39m [32m'../db/repositories'[39m[33m;[39m[0m
 
-===== 2026-04-12T11:16:55.238Z metro start =====
+Import stack:
 
-===== 2026-04-12T11:17:30.719Z metro start =====
+ src/services/backgroundTasks.ts
+ | import "expo-background-task"
+
+ 
+ | import "./src/services/backgroundTasks"
+
+ ERROR  [Error: UnableToResolveError Unable to resolve module expo-background-task from /Users/vishnugnair/Guru/debug/src/services/backgroundTasks.ts: expo-background-task could not be found within the project or in these directories:
+  node_modules
+[0m[31m[1m>[22m[39m[90m 1 |[39m [36mimport[39m [33m*[39m [36mas[39m [33mBackgroundTask[39m [36mfrom[39m [32m'expo-background-task'[39m[33m;[39m
+ [90m   |[39m                                  [31m[1m^[22m[39m
+ [90m 2 |[39m [36mimport[39m [33m*[39m [36mas[39m [33mTaskManager[39m [36mfrom[39m [32m'expo-task-manager'[39m[33m;[39m
+ [90m 3 |[39m [36mimport[39m { getAllTopicsWithProgress } [36mfrom[39m [32m'../db/queries/topics'[39m[33m;[39m
+ [90m 4 |[39m [36mimport[39m { profileRepository } [36mfrom[39m [32m'../db/repositories'[39m[33m;[39m[0m]
+Android Bundled 38ms src/db/database.ts (1 module)
+Android Bundled 24ms src/services/deviceMemory.ts (1 module)
+ LOG  GURU_HEALTH:bootstrap_succeeded
+ LOG  GURU_HEALTH:db_ready
+ INFO  [BOOTSTRAP_TRACE] {"event": "bootstrap_check", "hasLocalModel": false, "hasLocalWhisper": true, "llmAllowed": true, "needsLlm": true, "needsWhisper": false}
+ INFO  [BOOTSTRAP_TRACE] {"event": "download_prepare", "modelName": "gemma-4-E4B-it.litertlm", "type": "llm"}
+ LOG  [DB] Pre-seeding 20 topic embeddings...
+ LOG  GURU_HEALTH:route_ready:Tabs
+ INFO  [BOOTSTRAP_TRACE] {"event": "download_interrupted_partial_detected", "modelName": "gemma-4-E4B-it.litertlm", "partialUri": "file:///data/user/0/com.anonymous.gurustudy.dev/files/gemma-4-E4B-it.litertlm.partial", "size": 1351649600, "type": "llm"}
+ LOG  GURU_HEALTH:ui_ready:Tabs
+ WARN  [Embedding] Jina failed: 401
+Unable to resolve "expo-background-task" from "src/services/backgroundTasks.ts"
+[0m[31m[1m>[22m[39m[90m 1 |[39m [36mimport[39m [33m*[39m [36mas[39m [33mBackgroundTask[39m [36mfrom[39m [32m'expo-background-task'[39m[33m;[39m
+ [90m   |[39m                                  [31m[1m^[22m[39m
+ [90m 2 |[39m [36mimport[39m [33m*[39m [36mas[39m [33mTaskManager[39m [36mfrom[39m [32m'expo-task-manager'[39m[33m;[39m
+ [90m 3 |[39m [36mimport[39m { getAllTopicsWithProgress } [36mfrom[39m [32m'../db/queries/topics'[39m[33m;[39m
+ [90m 4 |[39m [36mimport[39m { profileRepository } [36mfrom[39m [32m'../db/repositories'[39m[33m;[39m[0m
+
+Import stack:
+
+ src/services/backgroundTasks.ts
+ | import "expo-background-task"
+
+ 
+ | import "./src/services/backgroundTasks"
+
+ ERROR  [Error: UnableToResolveError Unable to resolve module expo-background-task from /Users/vishnugnair/Guru/debug/src/services/backgroundTasks.ts: expo-background-task could not be found within the project or in these directories:
+  node_modules
+[0m[31m[1m>[22m[39m[90m 1 |[39m [36mimport[39m [33m*[39m [36mas[39m [33mBackgroundTask[39m [36mfrom[39m [32m'expo-background-task'[39m[33m;[39m
+ [90m   |[39m                                  [31m[1m^[22m[39m
+ [90m 2 |[39m [36mimport[39m [33m*[39m [36mas[39m [33mTaskManager[39m [36mfrom[39m [32m'expo-task-manager'[39m[33m;[39m
+ [90m 3 |[39m [36mimport[39m { getAllTopicsWithProgress } [36mfrom[39m [32m'../db/queries/topics'[39m[33m;[39m
+ [90m 4 |[39m [36mimport[39m { profileRepository } [36mfrom[39m [32m'../db/repositories'[39m[33m;[39m[0m]
+ WARN  [Embedding] Jina failed: 401
+Unable to resolve "expo-background-task" from "src/services/backgroundTasks.ts"
+[0m[31m[1m>[22m[39m[90m 1 |[39m [36mimport[39m [33m*[39m [36mas[39m [33mBackgroundTask[39m [36mfrom[39m [32m'expo-background-task'[39m[33m;[39m
+ [90m   |[39m                                  [31m[1m^[22m[39m
+ [90m 2 |[39m [36mimport[39m [33m*[39m [36mas[39m [33mTaskManager[39m [36mfrom[39m [32m'expo-task-manager'[39m[33m;[39m
+ [90m 3 |[39m [36mimport[39m { getAllTopicsWithProgress } [36mfrom[39m [32m'../db/queries/topics'[39m[33m;[39m
+ [90m 4 |[39m [36mimport[39m { profileRepository } [36mfrom[39m [32m'../db/repositories'[39m[33m;[39m[0m
+
+Import stack:
+
+ src/services/backgroundTasks.ts
+ | import "expo-background-task"
+
+ 
+ | import "./src/services/backgroundTasks"
+
+ ERROR  [Error: UnableToResolveError Unable to resolve module expo-background-task from /Users/vishnugnair/Guru/debug/src/services/backgroundTasks.ts: expo-background-task could not be found within the project or in these directories:
+  node_modules
+[0m[31m[1m>[22m[39m[90m 1 |[39m [36mimport[39m [33m*[39m [36mas[39m [33mBackgroundTask[39m [36mfrom[39m [32m'expo-background-task'[39m[33m;[39m
+ [90m   |[39m                                  [31m[1m^[22m[39m
+ [90m 2 |[39m [36mimport[39m [33m*[39m [36mas[39m [33mTaskManager[39m [36mfrom[39m [32m'expo-task-manager'[39m[33m;[39m
+ [90m 3 |[39m [36mimport[39m { getAllTopicsWithProgress } [36mfrom[39m [32m'../db/queries/topics'[39m[33m;[39m
+ [90m 4 |[39m [36mimport[39m { profileRepository } [36mfrom[39m [32m'../db/repositories'[39m[33m;[39m[0m]
+ WARN  [Embedding] Jina failed: 401
+Android Bundled 50ms src/services/aiService.ts (1 module)
+ WARN  [Embedding] Jina failed: 401
+Unable to resolve "expo-background-task" from "src/services/backgroundTasks.ts"
+[0m[31m[1m>[22m[39m[90m 1 |[39m [36mimport[39m [33m*[39m [36mas[39m [33mBackgroundTask[39m [36mfrom[39m [32m'expo-background-task'[39m[33m;[39m
+ [90m   |[39m                                  [31m[1m^[22m[39m
+ [90m 2 |[39m [36mimport[39m [33m*[39m [36mas[39m [33mTaskManager[39m [36mfrom[39m [32m'expo-task-manager'[39m[33m;[39m
+ [90m 3 |[39m [36mimport[39m { getAllTopicsWithProgress } [36mfrom[39m [32m'../db/queries/topics'[39m[33m;[39m
+ [90m 4 |[39m [36mimport[39m { profileRepository } [36mfrom[39m [32m'../db/repositories'[39m[33m;[39m[0m
+
+Import stack:
+
+ src/services/backgroundTasks.ts
+ | import "expo-background-task"
+
+ 
+ | import "./src/services/backgroundTasks"
+
+ ERROR  [Error: UnableToResolveError Unable to resolve module expo-background-task from /Users/vishnugnair/Guru/debug/src/services/backgroundTasks.ts: expo-background-task could not be found within the project or in these directories:
+  node_modules
+[0m[31m[1m>[22m[39m[90m 1 |[39m [36mimport[39m [33m*[39m [36mas[39m [33mBackgroundTask[39m [36mfrom[39m [32m'expo-background-task'[39m[33m;[39m
+ [90m   |[39m                                  [31m[1m^[22m[39m
+ [90m 2 |[39m [36mimport[39m [33m*[39m [36mas[39m [33mTaskManager[39m [36mfrom[39m [32m'expo-task-manager'[39m[33m;[39m
+ [90m 3 |[39m [36mimport[39m { getAllTopicsWithProgress } [36mfrom[39m [32m'../db/queries/topics'[39m[33m;[39m
+ [90m 4 |[39m [36mimport[39m { profileRepository } [36mfrom[39m [32m'../db/repositories'[39m[33m;[39m[0m]
+ WARN  [Embedding] Jina failed: 401
+Unable to resolve "expo-background-task" from "src/services/backgroundTasks.ts"
+[0m[31m[1m>[22m[39m[90m 1 |[39m [36mimport[39m [33m*[39m [36mas[39m [33mBackgroundTask[39m [36mfrom[39m [32m'expo-background-task'[39m[33m;[39m
+ [90m   |[39m                                  [31m[1m^[22m[39m
+ [90m 2 |[39m [36mimport[39m [33m*[39m [36mas[39m [33mTaskManager[39m [36mfrom[39m [32m'expo-task-manager'[39m[33m;[39m
+ [90m 3 |[39m [36mimport[39m { getAllTopicsWithProgress } [36mfrom[39m [32m'../db/queries/topics'[39m[33m;[39m
+ [90m 4 |[39m [36mimport[39m { profileRepository } [36mfrom[39m [32m'../db/repositories'[39m[33m;[39m[0m
+
+Import stack:
+
+ src/services/backgroundTasks.ts
+ | import "expo-background-task"
+
+ 
+ | import "./src/services/backgroundTasks"
+
+ ERROR  [Error: UnableToResolveError Unable to resolve module expo-background-task from /Users/vishnugnair/Guru/debug/src/services/backgroundTasks.ts: expo-background-task could not be found within the project or in these directories:
+  node_modules
+[0m[31m[1m>[22m[39m[90m 1 |[39m [36mimport[39m [33m*[39m [36mas[39m [33mBackgroundTask[39m [36mfrom[39m [32m'expo-background-task'[39m[33m;[39m
+ [90m   |[39m                                  [31m[1m^[22m[39m
+ [90m 2 |[39m [36mimport[39m [33m*[39m [36mas[39m [33mTaskManager[39m [36mfrom[39m [32m'expo-task-manager'[39m[33m;[39m
+ [90m 3 |[39m [36mimport[39m { getAllTopicsWithProgress } [36mfrom[39m [32m'../db/queries/topics'[39m[33m;[39m
+ [90m 4 |[39m [36mimport[39m { profileRepository } [36mfrom[39m [32m'../db/repositories'[39m[33m;[39m[0m]
+ WARN  [Embedding] Jina failed: 401
+ LOG  [AI_BOOT] provider validation: chatgpt=skip github_copilot=skip gitlab_duo=skip poe=skip groq=n/a qwen=skip github=n/a kilo=ok deepseek=n/a agentrouter=n/a gemini=n/a gemini_fallback=n/a openrouter=n/a cloudflare=n/a
+ LOG  [AI_BOOT] kilo: ok (200) 2766ms
+ WARN  [Embedding] Jina failed: 401
+Unable to resolve "expo-background-task" from "src/services/backgroundTasks.ts"
+[0m[31m[1m>[22m[39m[90m 1 |[39m [36mimport[39m [33m*[39m [36mas[39m [33mBackgroundTask[39m [36mfrom[39m [32m'expo-background-task'[39m[33m;[39m
+ [90m   |[39m                                  [31m[1m^[22m[39m
+ [90m 2 |[39m [36mimport[39m [33m*[39m [36mas[39m [33mTaskManager[39m [36mfrom[39m [32m'expo-task-manager'[39m[33m;[39m
+ [90m 3 |[39m [36mimport[39m { getAllTopicsWithProgress } [36mfrom[39m [32m'../db/queries/topics'[39m[33m;[39m
+ [90m 4 |[39m [36mimport[39m { profileRepository } [36mfrom[39m [32m'../db/repositories'[39m[33m;[39m[0m
+
+Import stack:
+
+ src/services/backgroundTasks.ts
+ | import "expo-background-task"
+
+ 
+ | import "./src/services/backgroundTasks"
+
+ ERROR  [Error: UnableToResolveError Unable to resolve module expo-background-task from /Users/vishnugnair/Guru/debug/src/services/backgroundTasks.ts: expo-background-task could not be found within the project or in these directories:
+  node_modules
+[0m[31m[1m>[22m[39m[90m 1 |[39m [36mimport[39m [33m*[39m [36mas[39m [33mBackgroundTask[39m [36mfrom[39m [32m'expo-background-task'[39m[33m;[39m
+ [90m   |[39m                                  [31m[1m^[22m[39m
+ [90m 2 |[39m [36mimport[39m [33m*[39m [36mas[39m [33mTaskManager[39m [36mfrom[39m [32m'expo-task-manager'[39m[33m;[39m
+ [90m 3 |[39m [36mimport[39m { getAllTopicsWithProgress } [36mfrom[39m [32m'../db/queries/topics'[39m[33m;[39m
+ [90m 4 |[39m [36mimport[39m { profileRepository } [36mfrom[39m [32m'../db/repositories'[39m[33m;[39m[0m]
+Android Bundling failed 12ms index.ts (1 module)
+Unable to resolve "expo-background-task" from "src/services/backgroundTasks.ts"
+[0m[31m[1m>[22m[39m[90m 1 |[39m [36mimport[39m [33m*[39m [36mas[39m [33mBackgroundTask[39m [36mfrom[39m [32m'expo-background-task'[39m[33m;[39m
+ [90m   |[39m                                  [31m[1m^[22m[39m
+ [90m 2 |[39m [36mimport[39m [33m*[39m [36mas[39m [33mTaskManager[39m [36mfrom[39m [32m'expo-task-manager'[39m[33m;[39m
+ [90m 3 |[39m [36mimport[39m { getAllTopicsWithProgress } [36mfrom[39m [32m'../db/queries/topics'[39m[33m;[39m
+ [90m 4 |[39m [36mimport[39m { profileRepository } [36mfrom[39m [32m'../db/repositories'[39m[33m;[39m[0m
+
+Import stack:
+
+ src/services/backgroundTasks.ts
+ | import "expo-background-task"
+
+ 
+ | import "./src/services/backgroundTasks"
+
+[dotenv@17.3.1] injecting env (0) from .env -- tip: ⚙️  specify custom .env file path with { path: '/custom/path/.env' }
+[dotenv@17.3.1] injecting env (0) from .env -- tip: ⚙️  suppress all logs with { quiet: true }
+Android Bundled 1573ms index.ts (1 module)
+Android ./index.ts ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Android Bundled 194ms index.ts (1 module)
+[dotenv@17.3.1] injecting env (0) from .env -- tip: ⚙️  enable debug logging with { debug: true }
+[dotenv@17.3.1] injecting env (0) from .env -- tip: ⚙️  write to custom object with { processEnv: myObject }
+Android Bundled 124ms index.ts (1 module)
+Android src/services/gdriveBackupService.ts ░░░░░░░░░░░░░░░░  0.0% (0/1)
+ WARN  [expo-av]: Expo AV has been deprecated and will be removed in SDK 54. Use the `expo-audio` and `expo-video` packages to replace the required functionality.
+ LOG  [Sentry] Initialized successfully.
+ LOG  GURU_HEALTH:launching
+ LOG  GURU_HEALTH:bootstrap_started
+Android src/services/gdriveBackupService.ts ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Android Bundled 5771ms src/services/gdriveBackupService.ts (1 module)
+Android src/services/gdriveBackupService.ts ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Android src/db/database.ts ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Android src/services/deviceMemory.ts ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Android Bundled 1002ms src/db/database.ts (1 module)
+Android Bundled 1047ms src/services/deviceMemory.ts (1 module)
+ LOG  GURU_HEALTH:bootstrap_succeeded
+ LOG  GURU_HEALTH:db_ready
+ INFO  [BOOTSTRAP_TRACE] {"event": "bootstrap_check", "hasLocalModel": false, "hasLocalWhisper": true, "llmAllowed": true, "needsLlm": true, "needsWhisper": false}
+ INFO  [BOOTSTRAP_TRACE] {"event": "download_prepare", "modelName": "gemma-4-E4B-it.litertlm", "type": "llm"}
+ LOG  [DB] Pre-seeding 20 topic embeddings...
+ LOG  GURU_HEALTH:route_ready:Tabs
+ INFO  [BOOTSTRAP_TRACE] {"event": "download_interrupted_partial_detected", "modelName": "gemma-4-E4B-it.litertlm", "partialUri": "file:///data/user/0/com.anonymous.gurustudy.dev/files/gemma-4-E4B-it.litertlm.partial", "size": 2416139450, "type": "llm"}
+ LOG  GURU_HEALTH:ui_ready:Tabs
+ LOG  [Embedding] Jina embeddings unavailable (auth/quota). Semantic search falls back to text matching until a valid key or another provider is configured.
+Android src/services/aiService.ts ░░░░░░░░░░░░░░░░  0.0% (0/1)
+ LOG  [AI_BOOT] provider validation: chatgpt=skip github_copilot=skip gitlab_duo=skip poe=skip groq=n/a qwen=skip github=n/a kilo=probe deepseek=n/a agentrouter=n/a gemini=n/a gemini_fallback=n/a openrouter=n/a cloudflare=n/a
+Android src/services/aiService.ts ░░░░░░░░░░░░░░░░  0.0% (0/1)
+ LOG  [AI_BOOT] kilo: ok (200) 2561ms — endpoint reachable; add Kilo API key in Settings to enable chat routing
+Android src/services/aiService.ts ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Android Bundled 19256ms src/services/aiService.ts (1 module)
+Android src/services/aiService.ts ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Android ./index.ts ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Android Bundled 156ms index.ts (1 module)
+Android Bundled 43ms src/services/gdriveBackupService.ts (1 module)
+ WARN  [expo-av]: Expo AV has been deprecated and will be removed in SDK 54. Use the `expo-audio` and `expo-video` packages to replace the required functionality.
+ LOG  [Sentry] Initialized successfully.
+ LOG  GURU_HEALTH:launching
+ LOG  GURU_HEALTH:bootstrap_started
+Android Bundled 39ms src/db/database.ts (1 module)
+Android Bundled 33ms src/services/deviceMemory.ts (1 module)
+ LOG  GURU_HEALTH:bootstrap_succeeded
+ LOG  GURU_HEALTH:db_ready
+ INFO  [BOOTSTRAP_TRACE] {"event": "bootstrap_check", "hasLocalModel": false, "hasLocalWhisper": true, "llmAllowed": true, "needsLlm": true, "needsWhisper": false}
+ INFO  [BOOTSTRAP_TRACE] {"event": "download_prepare", "modelName": "gemma-4-E4B-it.litertlm", "type": "llm"}
+ LOG  [DB] Pre-seeding 20 topic embeddings...
+ LOG  GURU_HEALTH:route_ready:Tabs
+ LOG  GURU_HEALTH:ui_ready:Tabs
+ INFO  [BOOTSTRAP_TRACE] {"event": "download_interrupted_partial_detected", "modelName": "gemma-4-E4B-it.litertlm", "partialUri": "file:///data/user/0/com.anonymous.gurustudy.dev/files/gemma-4-E4B-it.litertlm.partial", "size": 2416139450, "type": "llm"}
+ LOG  [Embedding] Jina embeddings unavailable (auth/quota). Semantic search falls back to text matching until a valid key or another provider is configured.
+Android Bundled 60ms src/services/aiService.ts (1 module)
+ LOG  [AI_BOOT] provider validation: chatgpt=skip github_copilot=skip gitlab_duo=skip poe=skip groq=n/a qwen=skip github=n/a kilo=probe deepseek=n/a agentrouter=n/a gemini=n/a gemini_fallback=n/a openrouter=n/a cloudflare=n/a
+ LOG  [AI_BOOT] kilo: ok (200) 2819ms — endpoint reachable; add Kilo API key in Settings to enable chat routing
+Android ./index.ts ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Android Bundled 137ms index.ts (1 module)
+ WARN  [expo-av]: Expo AV has been deprecated and will be removed in SDK 54. Use the `expo-audio` and `expo-video` packages to replace the required functionality.
+ LOG  [Sentry] Initialized successfully.
+ LOG  GURU_HEALTH:launching
+ LOG  GURU_HEALTH:bootstrap_started
+Android Bundled 67ms src/services/gdriveBackupService.ts (1 module)
+Android Bundled 74ms index.ts (1 module)
+ WARN  [expo-av]: Expo AV has been deprecated and will be removed in SDK 54. Use the `expo-audio` and `expo-video` packages to replace the required functionality.
+ LOG  [Sentry] Initialized successfully.
+ LOG  GURU_HEALTH:launching
+ LOG  GURU_HEALTH:bootstrap_started
+Android Bundled 28ms src/services/gdriveBackupService.ts (1 module)
+Android Bundled 51ms src/db/database.ts (1 module)
+Android src/db/database.ts ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Android Bundled 24ms src/services/deviceMemory.ts (1 module)
+ LOG  GURU_HEALTH:bootstrap_succeeded
+ LOG  GURU_HEALTH:db_ready
+ INFO  [BOOTSTRAP_TRACE] {"event": "bootstrap_check", "hasLocalModel": false, "hasLocalWhisper": true, "llmAllowed": true, "needsLlm": true, "needsWhisper": false}
+ INFO  [BOOTSTRAP_TRACE] {"event": "download_prepare", "modelName": "gemma-4-E4B-it.litertlm", "type": "llm"}
+ LOG  [DB] Pre-seeding 20 topic embeddings...
+ LOG  GURU_HEALTH:route_ready:Tabs
+ INFO  [BOOTSTRAP_TRACE] {"event": "download_interrupted_partial_detected", "modelName": "gemma-4-E4B-it.litertlm", "partialUri": "file:///data/user/0/com.anonymous.gurustudy.dev/files/gemma-4-E4B-it.litertlm.partial", "size": 2416139450, "type": "llm"}
+ LOG  GURU_HEALTH:ui_ready:Tabs
+ LOG  [Embedding] Jina embeddings unavailable (auth/quota). Semantic search falls back to text matching until a valid key or another provider is configured.
+Android src/services/aiService.ts ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Android Bundled 56ms src/services/aiService.ts (1 module)
+ LOG  [AI_BOOT] provider validation: chatgpt=skip github_copilot=skip gitlab_duo=skip poe=skip groq=n/a qwen=skip github=n/a kilo=probe deepseek=n/a agentrouter=n/a gemini=n/a gemini_fallback=n/a openrouter=n/a cloudflare=n/a
+ LOG  [AI_BOOT] kilo: ok (200) 3831ms — endpoint reachable; add Kilo API key in Settings to enable chat routing
+Android ./index.ts ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Android Bundled 91ms index.ts (1 module)
+ WARN  [expo-av]: Expo AV has been deprecated and will be removed in SDK 54. Use the `expo-audio` and `expo-video` packages to replace the required functionality.
+ LOG  [Sentry] Initialized successfully.
+ LOG  GURU_HEALTH:launching
+ LOG  GURU_HEALTH:bootstrap_started
+Android Bundled 46ms src/services/gdriveBackupService.ts (1 module)
+Android Bundled 47ms src/db/database.ts (1 module)
+Android Bundled 24ms src/services/deviceMemory.ts (1 module)
+ LOG  GURU_HEALTH:bootstrap_succeeded
+ LOG  GURU_HEALTH:db_ready
+ INFO  [BOOTSTRAP_TRACE] {"event": "bootstrap_check", "hasLocalModel": false, "hasLocalWhisper": true, "llmAllowed": true, "needsLlm": true, "needsWhisper": false}
+ INFO  [BOOTSTRAP_TRACE] {"event": "download_prepare", "modelName": "gemma-4-E4B-it.litertlm", "type": "llm"}
+ LOG  [DB] Pre-seeding 20 topic embeddings...
+ LOG  GURU_HEALTH:route_ready:Tabs
+ LOG  GURU_HEALTH:ui_ready:Tabs
+ INFO  [BOOTSTRAP_TRACE] {"event": "download_interrupted_partial_detected", "modelName": "gemma-4-E4B-it.litertlm", "partialUri": "file:///data/user/0/com.anonymous.gurustudy.dev/files/gemma-4-E4B-it.litertlm.partial", "size": 2416139450, "type": "llm"}
+ LOG  [Embedding] Jina embeddings unavailable (auth/quota). Semantic search falls back to text matching until a valid key or another provider is configured.
+Android Bundled 48ms src/services/aiService.ts (1 module)
+ LOG  [AI_BOOT] provider validation: chatgpt=skip github_copilot=skip gitlab_duo=skip poe=skip groq=n/a qwen=skip github=n/a kilo=probe deepseek=n/a agentrouter=n/a gemini=n/a gemini_fallback=n/a openrouter=n/a cloudflare=n/a
+ LOG  [AI_BOOT] kilo: ok (200) 4246ms — endpoint reachable; add Kilo API key in Settings to enable chat routing
+[dotenv@17.3.1] injecting env (0) from .env -- tip: 🛡️ auth for agents: https://vestauth.com
+[dotenv@17.3.1] injecting env (0) from .env -- tip: ⚡️ secrets for agents: https://dotenvx.com/as2
+Android Bundled 94ms index.ts (1 module)
+ WARN  [expo-av]: Expo AV has been deprecated and will be removed in SDK 54. Use the `expo-audio` and `expo-video` packages to replace the required functionality.
+ LOG  [Sentry] Initialized successfully.
+ LOG  GURU_HEALTH:launching
+ LOG  GURU_HEALTH:bootstrap_started
+Android Bundled 24ms src/services/gdriveBackupService.ts (1 module)
+Android Bundled 45ms src/db/database.ts (1 module)
+Android Bundled 24ms src/services/deviceMemory.ts (1 module)
+ LOG  GURU_HEALTH:bootstrap_succeeded
+ LOG  GURU_HEALTH:db_ready
+ INFO  [BOOTSTRAP_TRACE] {"event": "bootstrap_check", "hasLocalModel": false, "hasLocalWhisper": true, "llmAllowed": true, "needsLlm": true, "needsWhisper": false}
+ INFO  [BOOTSTRAP_TRACE] {"event": "download_prepare", "modelName": "gemma-4-E4B-it.litertlm", "type": "llm"}
+ LOG  [DB] Pre-seeding 20 topic embeddings...
+ LOG  GURU_HEALTH:route_ready:Tabs
+ LOG  GURU_HEALTH:ui_ready:Tabs
+ INFO  [BOOTSTRAP_TRACE] {"event": "download_interrupted_partial_detected", "modelName": "gemma-4-E4B-it.litertlm", "partialUri": "file:///data/user/0/com.anonymous.gurustudy.dev/files/gemma-4-E4B-it.litertlm.partial", "size": 2416139450, "type": "llm"}
+ LOG  [Embedding] Jina embeddings unavailable (auth/quota). Semantic search falls back to text matching until a valid key or another provider is configured.
+Android Bundled 49ms src/services/aiService.ts (1 module)
+ LOG  [AI_BOOT] provider validation: chatgpt=skip github_copilot=skip gitlab_duo=skip poe=skip groq=n/a qwen=skip github=n/a kilo=probe deepseek=n/a agentrouter=n/a gemini=n/a gemini_fallback=n/a openrouter=n/a cloudflare=n/a
+ LOG  [AI_BOOT] kilo: ok (200) 4665ms — endpoint reachable; add Kilo API key in Settings to enable chat routing
+ ERROR  [ReferenceError: Property 'GuruBottomTabBar' doesn't exist]
+ LOG  GURU_HEALTH:ui_ready:Tabs
+[dotenv@17.3.1] injecting env (0) from .env -- tip: 🔐 prevent building .env in docker: https://dotenvx.com/prebuild
+ LOG  [AI_BOOT] provider validation: chatgpt=skip github_copilot=skip gitlab_duo=skip poe=skip groq=n/a qwen=skip github=n/a kilo=probe deepseek=n/a agentrouter=n/a gemini=n/a gemini_fallback=n/a openrouter=n/a cloudflare=n/a
+ LOG  [AI_BOOT] kilo: ok (200) 3060ms — endpoint reachable; add Kilo API key in Settings to enable chat routing
+ ERROR  ErrorBoundary caught error: [ReferenceError: Property 'GuruBottomTabBar' doesn't exist] 
+
+Code: TabNavigator.tsx
+[0m [90m 200 |[39m
+ [90m 201 |[39m [36mexport[39m [36mdefault[39m [36mfunction[39m [33mTabNavigator[39m() {
+[31m[1m>[22m[39m[90m 202 |[39m   [36mconst[39m navigation [33m=[39m useNavigation[33m<[39m[33many[39m[33m>[39m()[33m;[39m
+ [90m     |[39m                                   [31m[1m^[22m[39m
+ [90m 203 |[39m   [36mconst[39m insets [33m=[39m useSafeAreaInsets()[33m;[39m
+ [90m 204 |[39m   [36mconst[39m { data[33m:[39m profile } [33m=[39m useProfileQuery()[33m;[39m
+ [90m 205 |[39m   [36mconst[39m refreshProfile [33m=[39m useRefreshProfile()[33m;[39m[0m
+Call Stack
+  TabNavigator (src/navigation/TabNavigator.tsx:202:35)
+  usePersistentScreenBanner (src/components/PersistentScreenBanner.tsx:88:17)
+  RootNavigator (src/navigation/RootNavigator.tsx:22:53)
+  AppContent (App.tsx:90:15)
+  render (src/components/ErrorBoundary.tsx:69:31)
+  AppShell (App.tsx:132:15)
+  App (App.tsx:228:55)
+[dotenv@17.3.1] injecting env (0) from .env -- tip: ⚙️  load multiple .env files with { path: ['.env.local', '.env'] }
+[dotenv@17.3.1] injecting env (0) from .env -- tip: ⚙️  write to custom object with { processEnv: myObject }
+Android Bundled 149ms index.ts (1 module)
+ WARN  [expo-av]: Expo AV has been deprecated and will be removed in SDK 54. Use the `expo-audio` and `expo-video` packages to replace the required functionality.
+ LOG  [Sentry] Initialized successfully.
+ LOG  GURU_HEALTH:launching
+ LOG  GURU_HEALTH:bootstrap_started
+Android Bundled 53ms src/services/gdriveBackupService.ts (1 module)
+Android Bundled 58ms src/db/database.ts (1 module)
+Android Bundled 43ms src/services/deviceMemory.ts (1 module)
+ LOG  GURU_HEALTH:bootstrap_succeeded
+ LOG  GURU_HEALTH:db_ready
+ INFO  [BOOTSTRAP_TRACE] {"event": "bootstrap_check", "hasLocalModel": false, "hasLocalWhisper": true, "llmAllowed": true, "needsLlm": true, "needsWhisper": false}
+ INFO  [BOOTSTRAP_TRACE] {"event": "download_prepare", "modelName": "gemma-4-E4B-it.litertlm", "type": "llm"}
+ LOG  [DB] Pre-seeding 20 topic embeddings...
+ LOG  GURU_HEALTH:route_ready:Tabs
+ LOG  GURU_HEALTH:ui_ready:Tabs
+ INFO  [BOOTSTRAP_TRACE] {"event": "download_interrupted_partial_detected", "modelName": "gemma-4-E4B-it.litertlm", "partialUri": "file:///data/user/0/com.anonymous.gurustudy.dev/files/gemma-4-E4B-it.litertlm.partial", "size": 2416139450, "type": "llm"}
+ LOG  [Embedding] Jina embeddings unavailable (auth/quota). Semantic search falls back to text matching until a valid key or another provider is configured.
+Android src/services/aiService.ts ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Android Bundled 86ms src/services/aiService.ts (1 module)
+ LOG  [AI_BOOT] provider validation: chatgpt=skip github_copilot=skip gitlab_duo=skip poe=skip groq=n/a qwen=skip github=n/a kilo=probe deepseek=n/a agentrouter=n/a gemini=n/a gemini_fallback=n/a openrouter=n/a cloudflare=n/a
+ LOG  [AI_BOOT] kilo: ok (200) 2875ms — endpoint reachable; add Kilo API key in Settings to enable chat routing
+Unable to resolve "./ActionHubTabButton" from "src/navigation/TabNavigator.tsx"
+[0m [90m 87 |[39m   [33mTAB_NAVIGATOR_SCREEN_OPTIONS[39m[33m,[39m
+ [90m 88 |[39m } [36mfrom[39m [32m'./tabNavigatorOptions'[39m[33m;[39m
+[31m[1m>[22m[39m[90m 89 |[39m [36mimport[39m { [33mActionHubTabButton[39m } [36mfrom[39m [32m'./ActionHubTabButton'[39m[33m;[39m
+ [90m    |[39m                                     [31m[1m^[22m[39m
+ [90m 90 |[39m
+ [90m 91 |[39m [36mconst[39m [33mTab[39m [33m=[39m createBottomTabNavigator[33m<[39m[33mTabParamList[39m[33m>[39m()[33m;[39m
+ [90m 92 |[39m [36mconst[39m [33mHomeStack[39m [33m=[39m createNativeStackNavigator[33m<[39m[33mHomeStackParamList[39m[33m>[39m()[33m;[39m[0m
+
+Import stack:
+
+ src/navigation/TabNavigator.tsx
+ | import "./ActionHubTabButton"
+
+ 
+ | import "./src/navigation/TabNavigator"
+
+ ERROR  [Error: UnableToResolveError Unable to resolve module ./ActionHubTabButton from /Users/vishnugnair/Guru/debug/src/navigation/TabNavigator.tsx: 
+
+None of these files exist:
+  * src/navigation/ActionHubTabButton(.android.ts|.native.ts|.ts|.android.tsx|.native.tsx|.tsx|.android.mjs|.native.mjs|.mjs|.android.js|.native.js|.js|.android.jsx|.native.jsx|.jsx|.android.json|.native.json|.json|.android.cjs|.native.cjs|.cjs|.android.scss|.native.scss|.scss|.android.sass|.native.sass|.sass|.android.css|.native.css|.css|.android.css|.native.css|.css)
+  * src/navigation/ActionHubTabButton
+[0m [90m 87 |[39m   [33mTAB_NAVIGATOR_SCREEN_OPTIONS[39m[33m,[39m
+ [90m 88 |[39m } [36mfrom[39m [32m'./tabNavigatorOptions'[39m[33m;[39m
+[31m[1m>[22m[39m[90m 89 |[39m [36mimport[39m { [33mActionHubTabButton[39m } [36mfrom[39m [32m'./ActionHubTabButton'[39m[33m;[39m
+ [90m    |[39m                                     [31m[1m^[22m[39m
+ [90m 90 |[39m
+ [90m 91 |[39m [36mconst[39m [33mTab[39m [33m=[39m createBottomTabNavigator[33m<[39m[33mTabParamList[39m[33m>[39m()[33m;[39m
+ [90m 92 |[39m [36mconst[39m [33mHomeStack[39m [33m=[39m createNativeStackNavigator[33m<[39m[33mHomeStackParamList[39m[33m>[39m()[33m;[39m[0m]
+› Detected a change in babel.config.js. Restart the server to see the new results. You may need to clear the bundler cache with the --clear flag for your changes to take effect.
+› Detected a change in metro.config.js. Restart the server to see the new results.
+Unable to resolve "../components/notificationService" from "src/hooks/useAsyncAction.ts"
+[0m [90m 1 |[39m [36mimport[39m { useCallback[33m,[39m useEffect[33m,[39m useRef[33m,[39m useState } [36mfrom[39m [32m'react'[39m[33m;[39m
+[31m[1m>[22m[39m[90m 2 |[39m [36mimport[39m { showError } [36mfrom[39m [32m'../components/notificationService'[39m[33m;[39m
+ [90m   |[39m                            [31m[1m^[22m[39m
+ [90m 3 |[39m [36mimport[39m { showToast } [36mfrom[39m [32m'../components/Toast'[39m[33m;[39m
+ [90m 4 |[39m
+ [90m 5 |[39m type [33mFeedbackMode[39m [33m=[39m [32m'dialog'[39m [33m|[39m [32m'toast'[39m [33m|[39m [32m'silent'[39m[33m;[39m[0m
+
+Import stack:
+
+ src/hooks/useAsyncAction.ts
+ | import "../components/notificationService"
+
+ src/screens/FlaggedContentScreen.tsx
+ | import "../hooks/useAsyncAction"
+
+ src/navigation/tabStacks.tsx
+ | import "../screens/FlaggedContentScreen"
+
+ src/navigation/TabNavigator.tsx
+ | import "./tabStacks"
+
+ 
+ | import "./src/navigation/TabNavigator"
+
+Android Bundling failed 417ms index.ts (1 module)
+Unable to resolve "../components/notificationService" from "src/hooks/useAsyncAction.ts"
+[0m [90m 1 |[39m [36mimport[39m { useCallback[33m,[39m useEffect[33m,[39m useRef[33m,[39m useState } [36mfrom[39m [32m'react'[39m[33m;[39m
+[31m[1m>[22m[39m[90m 2 |[39m [36mimport[39m { showError } [36mfrom[39m [32m'../components/notificationService'[39m[33m;[39m
+ [90m   |[39m                            [31m[1m^[22m[39m
+ [90m 3 |[39m [36mimport[39m { showToast } [36mfrom[39m [32m'../components/Toast'[39m[33m;[39m
+ [90m 4 |[39m
+ [90m 5 |[39m type [33mFeedbackMode[39m [33m=[39m [32m'dialog'[39m [33m|[39m [32m'toast'[39m [33m|[39m [32m'silent'[39m[33m;[39m[0m
+
+Import stack:
+
+ src/hooks/useAsyncAction.ts
+ | import "../components/notificationService"
+
+ src/screens/FlaggedContentScreen.tsx
+ | import "../hooks/useAsyncAction"
+
+ src/navigation/tabStacks.tsx
+ | import "../screens/FlaggedContentScreen"
+
+ src/navigation/TabNavigator.tsx
+ | import "./tabStacks"
+
+ 
+ | import "./src/navigation/TabNavigator"
+
+Unable to resolve "../components/notificationService" from "src/hooks/useAsyncAction.ts"
+[0m [90m 1 |[39m [36mimport[39m { useCallback[33m,[39m useEffect[33m,[39m useRef[33m,[39m useState } [36mfrom[39m [32m'react'[39m[33m;[39m
+[31m[1m>[22m[39m[90m 2 |[39m [36mimport[39m { showError } [36mfrom[39m [32m'../components/notificationService'[39m[33m;[39m
+ [90m   |[39m                            [31m[1m^[22m[39m
+ [90m 3 |[39m [36mimport[39m { showToast } [36mfrom[39m [32m'../components/Toast'[39m[33m;[39m
+ [90m 4 |[39m
+ [90m 5 |[39m type [33mFeedbackMode[39m [33m=[39m [32m'dialog'[39m [33m|[39m [32m'toast'[39m [33m|[39m [32m'silent'[39m[33m;[39m[0m
+
+Import stack:
+
+ src/hooks/useAsyncAction.ts
+ | import "../components/notificationService"
+
+ src/screens/FlaggedContentScreen.tsx
+ | import "../hooks/useAsyncAction"
+
+ src/navigation/tabStacks.tsx
+ | import "../screens/FlaggedContentScreen"
+
+ src/navigation/TabNavigator.tsx
+ | import "./tabStacks"
+
+ 
+ | import "./src/navigation/TabNavigator"
+

@@ -1,8 +1,14 @@
 import { analyzeTranscript } from './analysis';
-import { generateJSONWithRouting } from '../aiService';
+import { generateObject } from '../ai/v2/generateObject';
 
-jest.mock('../aiService', () => ({
-  generateJSONWithRouting: jest.fn(),
+jest.mock('../ai/v2/generateObject', () => ({
+  generateObject: jest.fn(),
+}));
+jest.mock('../ai/v2/providers/guruFallback', () => ({
+  createGuruFallbackModel: jest.fn(() => ({ provider: 'mock', modelId: 'mock', specificationVersion: 'v2', doGenerate: jest.fn(), doStream: jest.fn() })),
+}));
+jest.mock('../../db/repositories/profileRepository', () => ({
+  profileRepository: { getProfile: jest.fn().mockResolvedValue({ providerOrder: [], disabledProviders: [] }) },
 }));
 
 const okParsed = {
@@ -20,7 +26,7 @@ describe('analyzeTranscript', () => {
   });
 
   it('returns fallback when every segment analysis fails', async () => {
-    (generateJSONWithRouting as jest.Mock).mockRejectedValue(new Error('network'));
+    (generateObject as jest.Mock).mockRejectedValue(new Error('network'));
     const r = await analyzeTranscript('some transcript text');
     expect(r.subject).toBe('Unknown');
     expect(r.topics).toEqual([]);
@@ -29,8 +35,8 @@ describe('analyzeTranscript', () => {
   });
 
   it('maps a successful single-segment analysis', async () => {
-    (generateJSONWithRouting as jest.Mock).mockResolvedValue({
-      parsed: okParsed,
+    (generateObject as jest.Mock).mockResolvedValue({
+      object: okParsed,
       modelUsed: 'test-model',
     });
     const r = await analyzeTranscript('short segment');
@@ -44,8 +50,8 @@ describe('analyzeTranscript', () => {
   });
 
   it('replaces generic placeholder summaries with a topic-based fallback title', async () => {
-    (generateJSONWithRouting as jest.Mock).mockResolvedValue({
-      parsed: {
+    (generateObject as jest.Mock).mockResolvedValue({
+      object: {
         ...okParsed,
         lecture_summary: 'Lecture content recorded.',
         topics: ['Acute coronary syndrome', 'ECG changes'],
@@ -58,8 +64,8 @@ describe('analyzeTranscript', () => {
   });
 
   it('falls back to a subject-based title when no meaningful summary or topics exist', async () => {
-    (generateJSONWithRouting as jest.Mock).mockResolvedValue({
-      parsed: {
+    (generateObject as jest.Mock).mockResolvedValue({
+      object: {
         ...okParsed,
         subject: 'Medicine',
         topics: [],
@@ -75,14 +81,14 @@ describe('analyzeTranscript', () => {
 
   it('splits long transcripts into multiple segments and meta-summarizes', async () => {
     const longText = 'x'.repeat(13000);
-    (generateJSONWithRouting as jest.Mock)
-      .mockResolvedValueOnce({ parsed: { ...okParsed, subject: 'A' }, modelUsed: 'm1' })
+    (generateObject as jest.Mock)
+      .mockResolvedValueOnce({ object: { ...okParsed, subject: 'A' }, modelUsed: 'm1' })
       .mockResolvedValueOnce({
-        parsed: { ...okParsed, subject: 'B', topics: ['T2'] },
+        object: { ...okParsed, subject: 'B', topics: ['T2'] },
         modelUsed: 'm2',
       })
       .mockResolvedValueOnce({
-        parsed: {
+        object: {
           ...okParsed,
           subject: 'Merged',
           topics: ['Merged topic'],
@@ -95,20 +101,20 @@ describe('analyzeTranscript', () => {
       });
 
     const r = await analyzeTranscript(longText);
-    expect(generateJSONWithRouting).toHaveBeenCalledTimes(3);
+    expect(generateObject).toHaveBeenCalledTimes(3);
     expect(r.subject).toBe('Merged');
     expect(r.topics).toEqual(['Merged topic']);
   });
 
   it('uses aggregation fallback when meta-summarization throws', async () => {
     const longText = 'y'.repeat(13000);
-    (generateJSONWithRouting as jest.Mock)
+    (generateObject as jest.Mock)
       .mockResolvedValueOnce({
-        parsed: { ...okParsed, subject: 'S1', topics: ['a'], key_concepts: ['c1'] },
+        object: { ...okParsed, subject: 'S1', topics: ['a'], key_concepts: ['c1'] },
         modelUsed: 'm1',
       })
       .mockResolvedValueOnce({
-        parsed: {
+        object: {
           ...okParsed,
           subject: 'S2',
           topics: ['b'],

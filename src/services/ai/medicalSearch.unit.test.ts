@@ -1,5 +1,14 @@
-jest.mock('./generate', () => ({
-  generateTextWithRouting: jest.fn(),
+jest.mock('./v2/generateText', () => ({
+  generateText: jest.fn(),
+}));
+
+jest.mock('./v2/providers/guruFallback', () => ({
+  createGuruFallbackModel: jest.fn().mockReturnValue({
+    provider: 'groq',
+    modelId: 'test-model',
+    doGenerate: jest.fn(),
+    doStream: jest.fn(),
+  }),
 }));
 
 import {

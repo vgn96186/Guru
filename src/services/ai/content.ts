@@ -6,29 +6,15 @@ import type {
   SaveQuestionInput,
   FlashcardsContent,
 } from '../../types';
-import {
-  SYSTEM_PROMPT,
-  CONTENT_PROMPT_MAP,
-  buildEscalatingQuizPrompt,
-} from '../../constants/prompts';
+import { SYSTEM_PROMPT, CONTENT_PROMPT_MAP, buildEscalatingQuizPrompt } from '../../constants/prompts';
 import { getCachedContent, setCachedContent } from '../../db/queries/aiCache';
 import { saveBulkQuestions } from '../../db/queries/questionBank';
-import type { Message } from './types';
-import { AIContentSchema } from './schemas';
-import { scheduleBackgroundFactCheck } from './medicalFactCheck';
-import { profileRepository } from '../../db/repositories/profileRepository';
-import { createGuruFallbackModel } from './v2/providers/guruFallback';
+import { AIContentSchema, QuizSchema } from './schemas';
 import { generateObject } from './v2/generateObject';
+import { createGuruFallbackModel } from './v2/providers/guruFallback';
+import { profileRepository } from '../../db/repositories/profileRepository';
 import type { ModelMessage } from './v2/spec';
-import { DEFAULT_PROVIDER_ORDER } from '../../types';
-import type { ProviderId } from '../../types';
-import {
-  searchMedicalImages,
-  generateVisualSearchQueries,
-  searchLatestMedicalSources,
-  renderSourcesForPrompt,
-} from './medicalSearch';
-import type { MedicalGroundingSource } from './types';
+import { searchMedicalImages } from './medicalSearch';
 
 const inFlightContentRequests = new Map<string, Promise<AIContent>>();
 
@@ -234,72 +220,22 @@ export async function fetchContent(
 
   const request = (async () => {
     const promptFn = CONTENT_PROMPT_MAP[contentType];
-
-    // Best-effort grounding for fact-sensitive content types
-    let groundingBlock = '';
-    if (contentType === 'quiz' || contentType === 'keypoints' || contentType === 'must_know') {
-      try {
-        const sources = await searchLatestMedicalSources(`${topic.name} ${topic.subjectName}`, 4);
-        if (sources.length > 0) {
-          groundingBlock =
-            `\n\nSUPPLEMENTARY REFERENCES (use only to verify clinical accuracy — do not copy verbatim):\n` +
-            renderSourcesForPrompt(sources);
-        }
-      } catch {
-        // Non-blocking — proceed without grounding if search fails
-      }
-    }
-
-    const userPrompt = `${promptFn(
-      topic.name,
-      topic.subjectName,
-    )}${buildMasteryAdaptivePromptContext(topic)}${groundingBlock}`;
-    const messages: Message[] = [
+    const userPrompt = `${promptFn(topic.name, topic.subjectName)}${buildMasteryAdaptivePromptContext(topic)}`;
+    const messages: ModelMessage[] = [
       { role: 'system', content: SYSTEM_PROMPT },
       { role: 'user', content: userPrompt },
     ];
+    const profile = await profileRepository.getProfile();
+    const model = createGuruFallbackModel({ profile });
     let modelUsed = '';
     let contentWithMeta: AIContent | null = null;
-
-    const profile = await profileRepository.getProfile();
-    const forceOrder = forceProvider
-      ? ([
-          forceProvider,
-          ...DEFAULT_PROVIDER_ORDER.filter((p) => p !== forceProvider),
-        ] as ProviderId[])
-      : undefined;
-    const model = createGuruFallbackModel({
-      profile,
-      forceOrder,
-      onProviderSuccess: (provider, modelId) => {
-        modelUsed = `${provider}/${modelId}`;
-      },
-    });
-    const modelMessages: ModelMessage[] = messages.map((m) => ({
-      role: m.role as 'system' | 'user' | 'assistant',
-      content: m.content,
-    }));
 
     const maxAttempts = 3;
     let lastContent: AIContent | null = null;
     for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
-      const generated = await generateObject({
-        model,
-        messages: modelMessages,
-        schema: AIContentSchema,
-      });
+      const generated = await generateObject({ model, messages, schema: AIContentSchema });
+      modelUsed = `${model.provider}/${model.modelId}`;
       contentWithMeta = { ...generated.object, modelUsed } as AIContent;
-
-      if (contentWithMeta.type !== contentType) {
-        if (__DEV__) {
-          console.warn(
-            `[AIContent] Hallucinated wrong content type. Expected ${contentType}, got ${contentWithMeta.type}. Retrying.`,
-          );
-        }
-        contentWithMeta = null;
-        continue;
-      }
-
       if (contentWithMeta.type === 'quiz') {
         contentWithMeta = (await resolveQuizImages(
           contentWithMeta as QuizContent & { modelUsed?: string },
@@ -346,9 +282,6 @@ export async function fetchContent(
 
     await setCachedContent(topic.id, contentType, contentWithMeta, modelUsed);
 
-    // Trigger background fact-check (non-blocking — user doesn't wait)
-    scheduleBackgroundFactCheck(topic.id, contentType, contentWithMeta, topic.subjectName);
-
     if (contentWithMeta.type === 'quiz') {
       const quiz = contentWithMeta as QuizContent;
       const inputs: SaveQuestionInput[] = quiz.questions.map((q) => ({
@@ -378,67 +311,17 @@ export async function fetchContent(
   }
 }
 
-const IMAGE_VISUAL_TYPES =
-  'image|imaging study|photograph|micrograph|radiograph|X-ray|CT scan|MRI|ECG|histology|slide|smear|specimen|scan|film';
-
 function stripImageFramingFromStem(text: string): string {
-  return (
-    text
-      // "Based on / Referring to / Looking at / In the <type> (shown|provided|above|…)"
-      .replace(
-        new RegExp(
-          `\\b(Based on|Referring to|Looking at|In|From|Examining) the (${IMAGE_VISUAL_TYPES}) (shown|displayed|provided|above|below|here|given)[.,]?\\s*`,
-          'gi',
-        ),
-        '',
-      )
-      // "Based on the provided / given <type>"
-      .replace(
-        new RegExp(
-          `\\b(Based on|Referring to|Looking at|In) the (provided|given|following) (${IMAGE_VISUAL_TYPES})[.,]?\\s*`,
-          'gi',
-        ),
-        '',
-      )
-      // "The following <type> demonstrates / shows / reveals"
-      .replace(
-        new RegExp(
-          `The following (${IMAGE_VISUAL_TYPES}) (demonstrates|shows|reveals|depicts|illustrates)[.:]?\\s*`,
-          'gi',
-        ),
-        '',
-      )
-      // "As shown in / As seen in / As depicted in the <type>"
-      .replace(
-        new RegExp(
-          `As (shown|seen|depicted|demonstrated|illustrated) in the (${IMAGE_VISUAL_TYPES})[.,]?\\s*`,
-          'gi',
-        ),
-        '',
-      )
-      // "The image / The X-ray / The ECG shows / reveals"
-      .replace(
-        new RegExp(
-          `The (${IMAGE_VISUAL_TYPES}) (shows|reveals|demonstrates|depicts|illustrates)[.:]?\\s*`,
-          'gi',
-        ),
-        '',
-      )
-      // "Consider the following <type>"
-      .replace(new RegExp(`Consider the following (${IMAGE_VISUAL_TYPES})[.:]?\\s*`, 'gi'), '')
-      // "A <type> of this patient shows / reveals"
-      .replace(
-        new RegExp(
-          `A (${IMAGE_VISUAL_TYPES}) (of this patient|of the patient)? ?(shows|reveals|demonstrates|depicts)[.:]?\\s*`,
-          'gi',
-        ),
-        '',
-      )
-      // Trim any leading punctuation/whitespace left after stripping
-      .replace(/^\s*[,.:;]\s*/, '')
-      // Capitalize first letter if stripping lowercased the question start
-      .replace(/^([a-z])/, (c) => c.toUpperCase())
-  );
+  return text
+    .replace(
+      /\b(Based on|Referring to|Looking at|In) the (image|imaging study|photograph|micrograph|radiograph|X-ray|CT scan|MRI|ECG|histology|slide) (shown|displayed|provided|above|below)[.,]?\s*/gi,
+      '',
+    )
+    .replace(
+      /The following (imaging study|image|photograph|radiograph|micrograph) (demonstrates|shows|reveals)[.:]\s*/gi,
+      '',
+    )
+    .replace(/^\s*[.,]\s*/, '');
 }
 
 /**
@@ -498,26 +381,6 @@ async function resolveQuizImages<T extends QuizContent>(quiz: T): Promise<T> {
     }
   });
 
-  // For questions without imageSearchQuery, try smart visual queries
-  for (let qi = 0; qi < updatedQuestions.length; qi++) {
-    const q = updatedQuestions[qi];
-    if (isRenderableQuizImageUrl(q.imageUrl ?? null)) continue; // already has image
-
-    const visualQueries = await generateVisualSearchQueries(q.question);
-    const smartResults = await Promise.allSettled(
-      visualQueries.map((vq) => searchMedicalImages(vq, 1)),
-    );
-    const smartUrl = smartResults
-      .filter(
-        (r): r is PromiseFulfilledResult<MedicalGroundingSource[]> => r.status === 'fulfilled',
-      )
-      .flatMap((r) => r.value)
-      .find((r) => isRenderableQuizImageUrl(r.imageUrl))?.imageUrl;
-    if (smartUrl) {
-      updatedQuestions[qi] = { ...q, imageUrl: smartUrl };
-    }
-  }
-
   return { ...sanitized, questions: updatedQuestions };
 }
 
@@ -566,66 +429,25 @@ async function resolveFlashcardImages<T extends Extract<AIContent, { type: 'flas
     };
   });
 
-  // For cards without imageSearchQuery, try smart visual queries
-  for (let ci = 0; ci < updatedCards.length; ci++) {
-    const card = updatedCards[ci];
-    if (isRenderableQuizImageUrl(card.imageUrl ?? null)) continue;
-
-    const visualQueries = await generateVisualSearchQueries(card.front);
-    const smartResults = await Promise.allSettled(
-      visualQueries.map((vq) => searchMedicalImages(vq, 1)),
-    );
-    const smartUrl = smartResults
-      .filter(
-        (r): r is PromiseFulfilledResult<MedicalGroundingSource[]> => r.status === 'fulfilled',
-      )
-      .flatMap((r) => r.value)
-      .find((r) => isRenderableQuizImageUrl(r.imageUrl))?.imageUrl;
-    if (smartUrl) {
-      updatedCards[ci] = { ...card, imageUrl: smartUrl };
-    }
-  }
-
   return { ...sanitized, cards: updatedCards };
 }
 
-/**
- * Generate a harder set of quiz questions on the same topic.
- * round=0 → first escalation (harder), round=1 → harder still, etc.
- * previouslyWrong: question strings the student got wrong to reinforce.
- */
 export async function generateEscalatingQuiz(
   topicName: string,
   subjectName: string,
   round: number,
-  previouslyWrong: string[] = [],
+  previouslyWrong: string[],
 ): Promise<QuizContent> {
   const userPrompt = buildEscalatingQuizPrompt(topicName, subjectName, round, previouslyWrong);
-  const messages: Message[] = [
+  const messages: ModelMessage[] = [
     { role: 'system', content: SYSTEM_PROMPT },
     { role: 'user', content: userPrompt },
   ];
   const profile = await profileRepository.getProfile();
-  let modelUsed = '';
-  const model = createGuruFallbackModel({
-    profile,
-    onProviderSuccess: (provider, modelId) => {
-      modelUsed = `${provider}/${modelId}`;
-    },
-  });
-  const modelMessages: ModelMessage[] = messages.map((m) => ({
-    role: m.role as 'system' | 'user' | 'assistant',
-    content: m.content,
-  }));
-  const generated = await generateObject({
-    model,
-    messages: modelMessages,
-    schema: AIContentSchema,
-  });
-  const parsed = { ...generated.object, modelUsed } as AIContent;
-  if (parsed.type !== 'quiz') throw new Error('AI returned wrong content type for escalating quiz');
-  const withImages = await resolveQuizImages(parsed as QuizContent & { modelUsed?: string });
-  return withImages as QuizContent;
+  const model = createGuruFallbackModel({ profile });
+  const generated = await generateObject({ model, messages, schema: QuizSchema });
+  const modelUsed = `${model.provider}/${model.modelId}`;
+  return { ...generated.object, modelUsed } as QuizContent;
 }
 
 export async function prefetchTopicContent(
@@ -633,8 +455,5 @@ export async function prefetchTopicContent(
   contentTypes: ContentType[],
   forceProvider?: 'groq' | 'gemini',
 ): Promise<void> {
-  // Startup/background prefetch must never trigger on-device LiteRT initialization.
-  // Force a cloud provider here so warmup cannot fall through to local routing.
-  const safeProvider = forceProvider ?? 'groq';
-  await Promise.allSettled(contentTypes.map((ct) => fetchContent(topic, ct, safeProvider)));
+  await Promise.allSettled(contentTypes.map((ct) => fetchContent(topic, ct, forceProvider)));
 }

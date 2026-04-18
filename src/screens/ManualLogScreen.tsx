@@ -16,7 +16,7 @@ import { createSession, endSession } from '../db/queries/sessions';
 import { linearTheme as n } from '../theme/linearTheme';
 import { STREAK_MIN_MINUTES } from '../constants/gamification';
 import { profileRepository } from '../db/repositories';
-import { useAppStore } from '../store/useAppStore';
+import { useRefreshProfile } from '../hooks/queries/useProfile';
 import { EXTERNAL_APPS } from '../constants/externalApps';
 import type { Subject, TopicWithProgress } from '../types';
 import { ResponsiveContainer } from '../hooks/useResponsive';
@@ -48,7 +48,7 @@ type ManualLogFormValues = z.infer<typeof ManualLogFormSchema>;
 export default function ManualLogScreen() {
   const navigation = useNavigation<Nav>();
   const route = useRoute<Route>();
-  const refreshProfile = useAppStore((s) => s.refreshProfile);
+  const refreshProfile = useRefreshProfile();
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [selectedAppId, setSelectedAppId] = useState<string | null>(route.params?.appId ?? null);
   const [selectedSubjectId, setSelectedSubjectId] = useState<number | null>(null);

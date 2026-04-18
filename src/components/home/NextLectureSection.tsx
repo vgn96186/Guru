@@ -13,7 +13,9 @@ import {
 import { getBatchById, type LectureBatchId } from '../../constants/lectureSchedule';
 import { SUBJECTS_SEED } from '../../constants/syllabus';
 import { launchMedicalApp, type SupportedMedicalApp } from '../../services/appLauncher';
-import { useAppStore } from '../../store/useAppStore';
+import { PROFILE_QUERY_KEY } from '../../hooks/queries/useProfile';
+import type { UserProfile } from '../../types';
+import { queryClient } from '../../services/queryClient';
 import * as Haptics from 'expo-haptics';
 import HomeSectionHeader from './HomeSectionHeader';
 import { HOME_SECTION_GAP, HOME_TILE_HEIGHT } from './homeLayout';
@@ -79,15 +81,15 @@ export default function NextLectureSection({ onLectureCompleted }: NextLectureSe
   );
 
   const handleCardPress = useCallback((info: NextLectureInfo) => {
-    const profile = useAppStore.getState().profile;
-    const faceTracking = profile?.faceTrackingEnabled ?? false;
+    const profileSnapshot = queryClient.getQueryData<UserProfile>(PROFILE_QUERY_KEY);
+    const faceTracking = profileSnapshot?.faceTrackingEnabled ?? false;
 
     void launchMedicalApp(info.appId as SupportedMedicalApp, faceTracking, {
-      groqKey: profile?.groqApiKey,
-      deepgramKey: profile?.deepgramApiKey,
-      huggingFaceToken: profile?.huggingFaceToken,
-      huggingFaceModel: profile?.huggingFaceTranscriptionModel,
-      localWhisperPath: profile?.localWhisperPath ?? undefined,
+      groqKey: profileSnapshot?.groqApiKey,
+      deepgramKey: profileSnapshot?.deepgramApiKey,
+      huggingFaceToken: profileSnapshot?.huggingFaceToken,
+      huggingFaceModel: profileSnapshot?.huggingFaceTranscriptionModel,
+      localWhisperPath: profileSnapshot?.localWhisperPath ?? undefined,
     });
   }, []);
 

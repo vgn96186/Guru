@@ -37,9 +37,12 @@ object LocalModelRuntime {
 
     fun acquireSharedEngine(
         context: Context,
-        modelPath: String,
+        modelPath: String?,
         preferCpu: Boolean = false,
     ): LocalEngineLease {
+        if (modelPath.isNullOrBlank()) {
+            throw IllegalArgumentException("acquireSharedEngine called with null/empty modelPath. Ensure profile.localModelPath is set before calling.")
+        }
         val shouldUseCpu = LocalBackendHealth.shouldForceCpu(preferCpu)
         if (shouldUseCpu) {
             val engine = EngineHolder.getOrCreate(modelPath, context.cacheDir.path, Backend.CPU())
@@ -254,12 +257,38 @@ object LocalModelRuntime {
                 Contents.of(mutableListOf(Content.Text(prompt))),
                 object : MessageCallback {
                     override fun onMessage(message: Message) {
-                        val currentText = message.toString()
+                        // Diagnostic: log what the Message object actually contains
+                        if (lastEmittedLength == 0) {
+                            Log.d(TAG, "onMessage first call — message.toString()=${message.toString().take(200)}")
+                            Log.d(TAG, "onMessage first call — message.javaClass=${message.javaClass.name}")
+                            Log.d(TAG, "onMessage first call — message.contents=${message.contents}")
+                            Log.d(TAG, "onMessage first call — message.contents?.javaClass=${message.contents?.javaClass?.name}")
+                            Log.d(TAG, "onMessage first call — message.contents?.toString()=${message.contents?.toString()?.take(200)}")
+                            // Try to iterate contents if it's iterable
+                            try {
+                                val c = message.contents
+                                if (c is Iterable<*>) {
+                                    for ((idx, part) in c.withIndex()) {
+                                        Log.d(TAG, "onMessage contents[$idx] class=${part?.javaClass?.name} toString=${part?.toString()?.take(200)}")
+                                    }
+                                }
+                            } catch (e: Exception) {
+                                Log.w(TAG, "onMessage contents iteration failed: ${e.message}")
+                            }
+                        }
+
+                        // Try multiple text extraction approaches
+                        val currentText = message.contents?.toString() ?: message.toString()
                         if (currentText.length > lastEmittedLength) {
                             val delta = currentText.substring(lastEmittedLength)
                             lastEmittedLength = currentText.length
                             fullResponse.append(delta)
-                            onToken(delta)
+                            try {
+                                onToken(delta)
+                                Log.d(TAG, "Successfully emitted onToken with delta length: ${delta.length}")
+                            } catch (e: Exception) {
+                                Log.e(TAG, "Failed to emit onToken", e)
+                            }
                         }
                     }
 

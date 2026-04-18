@@ -504,12 +504,7 @@ export default function TopicDetailScreen() {
     <SafeAreaView style={styles.safe}>
       <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
       <ResponsiveContainer>
-        <ScreenHeader
-          title={subjectName}
-          titleNumberOfLines={1}
-          containerStyle={styles.screenHeader}
-          titleStyle={styles.screenHeaderTitle}
-        >
+        <ScreenHeader title={subjectName} titleNumberOfLines={1} showSettings>
           <View style={styles.headerCenter}>
             <View style={styles.progressRow}>
               <LinearText variant="caption" tone="secondary" style={styles.subtitle}>
@@ -914,8 +909,8 @@ export default function TopicDetailScreen() {
                                 {isGenerating
                                   ? 'Generating...'
                                   : style === 'illustration'
-                                  ? 'Illustration'
-                                  : 'Chart'}
+                                    ? 'Illustration'
+                                    : 'Chart'}
                               </LinearText>
                             </TouchableOpacity>
                           );

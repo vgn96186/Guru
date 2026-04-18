@@ -69,7 +69,7 @@ export default function ManualNoteCreationScreen(
       setSelectedSubjectName(
         resolution.requiresSelection
           ? null
-          : resolution.matchedSubject?.name ?? resolution.normalizedSubjectName,
+          : (resolution.matchedSubject?.name ?? resolution.normalizedSubjectName),
       );
     } catch (e: unknown) {
       showError(e);
@@ -192,13 +192,7 @@ export default function ManualNoteCreationScreen(
   return (
     <SafeAreaView style={styles.safe}>
       <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
-      <View style={styles.screenHeaderWrap}>
-        <ScreenHeader
-          title="Paste Transcript"
-          onBackPress={() => navigation.goBack()}
-          showSettings
-        />
-      </View>
+      <ScreenHeader title="Paste Transcript" onBackPress={() => navigation.goBack()} showSettings />
       <ScrollView contentContainerStyle={styles.content}>
         <LinearText style={styles.label}>Paste your lecture transcript below:</LinearText>
         <LinearText style={styles.formatHint}>
@@ -251,7 +245,6 @@ const styles = StyleSheet.create({
   backText: { color: n.colors.accent, fontSize: 16 },
   title: { color: n.colors.textPrimary, fontSize: 18, fontWeight: '700' },
   content: { padding: 16, paddingBottom: 120, gap: 4 },
-  screenHeaderWrap: { paddingHorizontal: 16, paddingTop: 8 },
   label: { color: n.colors.textPrimary, fontSize: 15, marginBottom: 6 },
   formatHint: {
     color: n.colors.textMuted,

@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, DevSettings, Text, TextInput } from 'react-native';
+import React, { useState, useEffect, useLayoutEffect } from 'react';
+import { View, StyleSheet, DevSettings, Text, TextInput, LogBox } from 'react-native';
+import { QueryClientProvider } from '@tanstack/react-query';
 import { NavigationContainer, DarkTheme } from '@react-navigation/native';
 import * as Notifications from 'expo-notifications';
 import {
@@ -32,6 +33,7 @@ import { useAppBootstrap } from './src/hooks/useAppBootstrap';
 import linking from './src/navigation/linking';
 import { theme } from './src/constants/theme';
 import { reportStartupHealth } from './src/services/startupHealth';
+import { queryClient } from './src/services/queryClient';
 
 // Install console interceptors early so all logs are captured
 installDevConsoleInterceptors();
@@ -133,16 +135,16 @@ function AppShell({
 
   const isCompletelyReady = isReady && fontsLoaded;
 
-  useEffect(() => {
-    if (isCompletelyReady && initialRoute !== null) {
-      // If the initial route is CheckIn, HomeScreen won't mount to advance the
-      // boot phase from 'calming' → 'settling'. Go straight to 'settling' so
-      // the BootTransition overlay doesn't stay on screen forever.
-      if (initialRoute === 'CheckIn') {
-        setBootPhase('settling');
-      } else {
-        setBootPhase('calming');
-      }
+  // Run before paint: BootTransition sits above the navigator with zIndex 9999.
+  // While bootPhase is 'booting' | 'calming', its full-screen background steals touches,
+  // so CheckIn mood buttons feel dead until phase advances. Home advances calming→settling;
+  // CheckIn never mounts Home, so skip the overlay entirely for CheckIn.
+  useLayoutEffect(() => {
+    if (!isCompletelyReady || initialRoute === null) return;
+    if (initialRoute === 'CheckIn') {
+      setBootPhase('done');
+    } else {
+      setBootPhase('calming');
     }
   }, [isCompletelyReady, initialRoute, setBootPhase]);
 
@@ -239,40 +241,44 @@ export default function App() {
   if (runtimeError) {
     reportStartupHealth('runtime_error', runtimeError);
     return (
-      <GestureHandlerRootView style={styles.root}>
-        <SafeAreaProvider>
-          <KeyboardProvider>
-            <BottomSheetModalProvider>
-              <AppRecoveryScreen
-                title="Something went wrong"
-                message="Guru hit a startup task failure outside the render tree, so the usual crash boundary could not show first."
-                detail={runtimeError}
-                statusLabel="App recovery"
-                primaryLabel="Reload App"
-                primaryAccessibilityLabel="Reload app"
-                onPrimary={reloadApp}
-                secondaryLabel="Try App Again"
-                secondaryAccessibilityLabel="Retry app"
-                onSecondary={retryApp}
-                tips={[
-                  'Reload the app for a clean restart, or remount the app once without leaving this screen.',
-                  'This path now surfaces async startup failures instead of letting them disappear as silent crashes.',
-                ]}
-              />
-            </BottomSheetModalProvider>
-          </KeyboardProvider>
-        </SafeAreaProvider>
-      </GestureHandlerRootView>
+      <QueryClientProvider client={queryClient}>
+        <GestureHandlerRootView style={styles.root}>
+          <SafeAreaProvider>
+            <KeyboardProvider>
+              <BottomSheetModalProvider>
+                <AppRecoveryScreen
+                  title="Something went wrong"
+                  message="Guru hit a startup task failure outside the render tree, so the usual crash boundary could not show first."
+                  detail={runtimeError}
+                  statusLabel="App recovery"
+                  primaryLabel="Reload App"
+                  primaryAccessibilityLabel="Reload app"
+                  onPrimary={reloadApp}
+                  secondaryLabel="Try App Again"
+                  secondaryAccessibilityLabel="Retry app"
+                  onSecondary={retryApp}
+                  tips={[
+                    'Reload the app for a clean restart, or remount the app once without leaving this screen.',
+                    'This path now surfaces async startup failures instead of letting them disappear as silent crashes.',
+                  ]}
+                />
+              </BottomSheetModalProvider>
+            </KeyboardProvider>
+          </SafeAreaProvider>
+        </GestureHandlerRootView>
+      </QueryClientProvider>
     );
   }
 
   return (
-    <AppShell
-      key={appInstanceKey}
-      onFatalError={setRuntimeError}
-      onRetry={retryApp}
-      onReload={reloadApp}
-    />
+    <QueryClientProvider client={queryClient}>
+      <AppShell
+        key={appInstanceKey}
+        onFatalError={setRuntimeError}
+        onRetry={retryApp}
+        onReload={reloadApp}
+      />
+    </QueryClientProvider>
   );
 }
 

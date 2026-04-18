@@ -39,7 +39,7 @@ import { createSession, endSession, updateSessionProgress } from '../db/queries/
 import { profileRepository } from '../db/repositories';
 import { linearTheme as n } from '../theme/linearTheme';
 import { errorAlpha } from '../theme/colorUtils';
-import { useAppStore } from '../store/useAppStore';
+import { useProfileQuery, useRefreshProfile } from '../hooks/queries/useProfile';
 import { sendImmediateNag } from '../services/notificationService';
 import { connectToRoom, sendSyncMessage } from '../services/deviceSyncService';
 import BreakScreen from './BreakScreen';
@@ -68,8 +68,8 @@ export default function LectureModeScreen() {
 
   const navigation = useNavigation<Nav>();
   const route = useRoute<Route>();
-  const refreshProfile = useAppStore((s) => s.refreshProfile);
-  const profile = useAppStore((s) => s.profile);
+  const refreshProfile = useRefreshProfile();
+  const { data: profile } = useProfileQuery();
 
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [selectedSubjectId, setSelectedSubjectId] = useState<number | null>(

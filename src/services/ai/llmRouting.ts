@@ -25,7 +25,11 @@ import { callGitHubModels, streamGitHubModelsChat } from './providers/githubMode
 import { callGitHubCopilot, streamGitHubCopilotChat } from './providers/githubCopilot';
 import { callKilo, streamKiloChat, getKiloPreferredModels } from './providers/kilo';
 import { callAgentRouter, streamAgentRouterChat } from './providers/agentrouter';
-import { emitPseudoStreamFallback, ensureJsonModeHint, clampMessagesToCharBudget } from './providers/utils';
+import {
+  emitPseudoStreamFallback,
+  ensureJsonModeHint,
+  clampMessagesToCharBudget,
+} from './providers/utils';
 import { geminiGenerateContentSdk, geminiGenerateContentStreamSdk } from './google/geminiChat';
 import { callChatGpt, streamChatGpt } from './chatgpt/chatgptApi';
 import { getValidAccessToken as getGitHubCopilotToken } from './github/githubTokenStore';
@@ -66,20 +70,24 @@ function isContextInUse(): boolean {
 }
 
 async function ensureLocalLlmLoaded(modelPath: string): Promise<void> {
-  if (localLlmLoaded && currentLlamaPath === modelPath) return;
+  if (!modelPath?.trim()) {
+    throw new Error('[LLM] ensureLocalLlmLoaded called with empty modelPath — skipping');
+  }
+  const cleanPath = modelPath.replace(/^file:\/\//, '');
+  if (localLlmLoaded && currentLlamaPath === cleanPath) return;
   // Mutex: if another caller is already initializing, await the same promise
   if (llamaContextPromise) {
     await llamaContextPromise;
-    if (localLlmLoaded && currentLlamaPath === modelPath) return;
+    if (localLlmLoaded && currentLlamaPath === cleanPath) return;
   }
   llamaContextPromise = (async () => {
     if (localLlmLoaded) {
       await LocalLlm.release();
       localLlmLoaded = false;
     }
-    await LocalLlm.initialize({ modelPath, maxNumTokens: 3072 });
+    await LocalLlm.initialize({ modelPath: cleanPath, maxNumTokens: 3072 });
     localLlmLoaded = true;
-    currentLlamaPath = modelPath;
+    currentLlamaPath = cleanPath;
   })();
   try {
     await llamaContextPromise;
@@ -125,17 +133,24 @@ async function callLocalLLM(
   await ensureLocalLlmLoaded(modelPath);
   const release = await acquireContextLock();
   try {
-    const chatMessages: LocalLlm.ChatMessage[] = messages.map((m) => ({
-      role: m.role,
-      content: m.content,
-    }));
-    const result = await LocalLlm.chat(chatMessages, { temperature: 0.7, topP: 0.9 });
+    const systemMsg = messages.find((m) => m.role === 'system');
+    const chatMessages: LocalLlm.ChatMessage[] = messages
+      .filter((m) => m.role !== 'system')
+      .map((m) => ({
+        role: m.role,
+        content: m.content,
+      }));
+    const result = await LocalLlm.chat(chatMessages, {
+      modelPath,
+      systemInstruction: systemMsg?.content,
+      temperature: 0.7,
+      topP: 0.9,
+    });
     return result.text;
   } finally {
     release();
   }
 }
-
 
 /**
  * Single ceiling for {@link generateJSONWithRouting} before any cloud/local structured call.
@@ -150,7 +165,6 @@ export function clampMessagesForStructuredJsonRouting(messages: Message[]): Mess
     'Structured JSON routing',
   );
 }
-
 
 // ── GitLab Duo (OpenCode gateway only) ─────────────────────────────────
 // All models route through: OAuth `read_user api` → `POST .../api/v4/ai/third_party_agents/direct_access`
@@ -291,7 +305,6 @@ export async function streamPoeChat(
   if (!text.trim()) throw new Error(`Empty response from Poe model ${model}`);
   return text;
 }
-
 
 /** Keys bag shared by the provider loop helpers. */
 interface ProviderKeys {
@@ -1006,13 +1019,14 @@ export async function attemptLocalLLM(
 ): Promise<{ text: string; modelUsed: string }> {
   const isQwen = localModelPath.toLowerCase().includes('qwen');
   const isMedGemma = localModelPath.toLowerCase().includes('medgemma');
+  const cleanPath = localModelPath.replace(/^file:\/\//, '');
   const modelUsed = isMedGemma
     ? 'local-medgemma-4b'
     : isQwen
       ? 'local-qwen-2.5-3b'
       : 'local-llama-3.2-1b';
   try {
-    const text = await callLocalLLM(messages, localModelPath, textMode);
+    const text = await callLocalLLM(messages, cleanPath, textMode);
     if (!text || !text.trim()) {
       throw new Error('Local model returned an empty response');
     }
@@ -1055,13 +1069,18 @@ export async function attemptLocalLLMStream(
   _textMode: boolean,
   onDelta: (delta: string) => void,
 ): Promise<void> {
-  await ensureLocalLlmLoaded(localModelPath);
+  const cleanPath = localModelPath.replace(/^file:\/\//, '');
+  await ensureLocalLlmLoaded(cleanPath);
   const release = await acquireContextLock();
   return new Promise<void>((resolve, reject) => {
-    const chatMessages: LocalLlm.ChatMessage[] = messages.map((m) => ({
-      role: m.role,
-      content: m.content,
-    }));
+    const systemMsg = messages.find((m) => m.role === 'system');
+    const chatMessages: LocalLlm.ChatMessage[] = messages
+      .filter((m) => m.role !== 'system')
+      .map((m) => ({
+        role: m.role,
+        content: m.content,
+      }));
+
     const tokenSub = LocalLlm.addLlmTokenListener(({ token }) => {
       onDelta(token);
     });
@@ -1079,7 +1098,13 @@ export async function attemptLocalLLMStream(
       release();
       reject(new Error(error));
     });
-    LocalLlm.chatStream(chatMessages, { temperature: 0.7, topP: 0.9 }).catch((err: unknown) => {
+
+    LocalLlm.chatStream(chatMessages, {
+      modelPath: cleanPath,
+      systemInstruction: systemMsg?.content,
+      temperature: 0.7,
+      topP: 0.9,
+    }).catch((err: unknown) => {
       tokenSub.remove();
       completeSub.remove();
       errorSub.remove();

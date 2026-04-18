@@ -9,6 +9,7 @@ import type { RootStackParamList } from '../navigation/types';
 import { linearTheme as n } from '../theme/linearTheme';
 import LinearSurface from '../components/primitives/LinearSurface';
 import { dailyLogRepository } from '../db/repositories';
+import { useRefreshProfile } from '../hooks/queries/useProfile';
 import { useAppStore } from '../store/useAppStore';
 import { ResponsiveContainer } from '../hooks/useResponsive';
 
@@ -24,7 +25,7 @@ const PHASE_LABELS: Record<WakeUpPhase, { label: string; step: number; total: nu
 
 export default function WakeUpScreen() {
   const navigation = useNavigation<Nav>();
-  const refreshProfile = useAppStore((s) => s.refreshProfile);
+  const refreshProfile = useRefreshProfile();
   const setDailyAvailability = useAppStore((s) => s.setDailyAvailability);
   const [phase, setPhase] = useState<WakeUpPhase>('breathe');
 

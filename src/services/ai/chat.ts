@@ -19,6 +19,7 @@ import {
 } from './medicalSearch';
 import { logGroundingEvent, previewText } from './runtimeDebug';
 import { parseGuruTutorState, type GuruTutorIntent } from '../guruChatSessionSummary';
+import { clampMessagesToCharBudget } from './providers/utils';
 
 const MAX_CONTINUATION_ATTEMPTS = 4;
 
@@ -26,9 +27,11 @@ function toModelMessages(msgs: Message[]): ModelMessage[] {
   return msgs.map((m) => ({ role: m.role as 'system' | 'user' | 'assistant', content: m.content }));
 }
 
-async function buildChatModel(): Promise<ReturnType<typeof createGuruFallbackModel>> {
+async function buildChatModel(
+  textMode = true,
+): Promise<ReturnType<typeof createGuruFallbackModel>> {
   const profile = await profileRepository.getProfile();
-  return createGuruFallbackModel({ profile });
+  return createGuruFallbackModel({ profile, textMode });
 }
 
 const GURU_ADHD_FORMATTING_RULES = `Formatting rules:
@@ -107,7 +110,35 @@ function isLowInformationImagePrompt(text: string): boolean {
   if (!normalized) return true;
   const tokens = normalized.split(/\s+/).filter(Boolean);
   if (normalized.length <= 3) return true;
-  // Filter out directional-only or yes/no questions
+  // Filter out short conversational/meta requests
+  if (
+    tokens.length <= 3 &&
+    tokens.some((token) =>
+      [
+        'explain',
+        'what',
+        'why',
+        'how',
+        'tell',
+        'me',
+        'more',
+        'yes',
+        'no',
+        'true',
+        'false',
+        'ok',
+        'okay',
+        'thanks',
+        'thank',
+        'hi',
+        'hello',
+        'help',
+      ].includes(token),
+    )
+  ) {
+    return true;
+  }
+  // Filter out directional-only
   if (
     tokens.length <= 2 &&
     tokens.every((token) =>
@@ -124,17 +155,9 @@ function isLowInformationImagePrompt(text: string): boolean {
         'distal',
         'superior',
         'inferior',
-        'yes',
-        'no',
-        'true',
-        'false',
       ].includes(token),
     )
   ) {
-    return true;
-  }
-  // Only filter out very short single-word acknowledgments
-  if (tokens.length === 1 && ['ok', 'okay', 'thanks', 'thank'].includes(normalized)) {
     return true;
   }
   return false;
@@ -200,13 +223,14 @@ function buildImageSearchSeed(
     };
   }
 
-  // Fallback: use the question itself if it's substantive
-  if (trimmedQuestion.length >= 6) {
+  // Fallback: use the question itself if it's substantive AND medical-looking
+  if (trimmedQuestion.length >= 12 && /[a-z]{4}/i.test(trimmedQuestion)) {
     return {
       topic: trimmedQuestion.slice(0, 120),
     };
   }
 
+  // Short/generic queries without topic context → skip image search entirely.
   return null;
 }
 
@@ -738,12 +762,16 @@ export async function chatWithGuru(
     studentIntent,
     studentQuestion: question,
   };
-  const msgs: Message[] = [
-    { role: 'system', content: systemPrompt },
-    { role: 'system', content: contextPrompt },
-    ...buildHistoryMessages(history, 4),
-    { role: 'user', content: question },
-  ];
+  const msgs: Message[] = clampMessagesToCharBudget(
+    [
+      { role: 'system', content: systemPrompt },
+      { role: 'system', content: contextPrompt },
+      ...buildHistoryMessages(history, 4),
+      { role: 'user', content: question },
+    ],
+    24000,
+    'chatWithGuru',
+  );
   const model = await buildChatModel();
   const { text } = await generateText({ model, messages: toModelMessages(msgs) });
   let finalReply = finalizeGuruReply(text, finalizeOpts);
@@ -815,6 +843,7 @@ If the student may not know prerequisites, explain prerequisite basics first and
     const profile = await profileRepository.getProfile();
     const model = createGuruFallbackModel({
       profile,
+      textMode: true,
       onProviderSuccess: (provider, modelId) => {
         modelUsed = `${provider}/${modelId}`;
       },
@@ -1026,11 +1055,31 @@ ${imagesBlock ? `\n${imagesBlock}` : ''}
 Respond using your medical knowledge. Reference the sources only if they are directly relevant.
 If the student may not know prerequisites, explain prerequisite basics first and define jargon briefly.`;
 
-  const msgs: Message[] = [
-    { role: 'system', content: systemPrompt },
-    ...buildHistoryMessages(history, 6),
-    { role: 'user', content: userPrompt },
-  ];
+  // Local models have a much smaller context window (~2048-4096 tokens for Gemma 4 E4B).
+  // If local model is the primary, aggressively clamp the prompt to avoid exhausting
+  // the context and leaving no room for generation.
+  const profile = await profileRepository.getProfile();
+  const isLocalPrimary = !!(profile.useLocalModel && profile.localModelPath?.trim());
+  const charBudget = isLocalPrimary ? 3000 : 24000;
+
+  // For local models, use a simpler system prompt + stripped user prompt
+  const finalSystemPrompt = isLocalPrimary
+    ? 'You are Guru, a medical tutor for NEET-PG/INICET. Be concise, warm, and Socratic. Ask one question per turn. Keep replies short.'
+    : systemPrompt;
+
+  const finalUserPrompt = isLocalPrimary
+    ? `${topicContextLine ? `${topicContextLine}\n` : ''}${trimmedQuestion}`
+    : userPrompt;
+
+  const msgs: Message[] = clampMessagesToCharBudget(
+    [
+      { role: 'system', content: finalSystemPrompt },
+      ...buildHistoryMessages(history, isLocalPrimary ? 2 : 6),
+      { role: 'user', content: finalUserPrompt },
+    ],
+    charBudget,
+    'chatWithGuruGroundedStreaming',
+  );
 
   try {
     let emittedReply = '';
@@ -1044,9 +1093,9 @@ If the student may not know prerequisites, explain prerequisite basics first and
     };
 
     let modelUsed: string | undefined;
-    const profile = await profileRepository.getProfile();
     const model = createGuruFallbackModel({
       profile,
+      textMode: true,
       onProviderSuccess: (provider, modelId) => {
         modelUsed = `${provider}/${modelId}`;
       },
@@ -1069,6 +1118,24 @@ If the student may not know prerequisites, explain prerequisite basics first and
         onReplyDelta(remaining);
         emittedReply = finalReply;
       }
+    }
+
+    if (!finalReply.trim()) {
+      // If the model produced absolutely nothing on first attempt, continuation is futile.
+      if (__DEV__) {
+        console.warn('[GuruGrounded] Model produced empty response.', {
+          modelUsed: modelUsed ?? 'unknown',
+          msgCount: msgs.length,
+          totalChars: msgs.reduce((s, m) => s + m.content.length, 0),
+        });
+      }
+      return {
+        reply: finalReply,
+        sources,
+        referenceImages,
+        modelUsed: modelUsed ?? '',
+        searchQuery,
+      };
     }
     for (let attempt = 1; attempt <= MAX_CONTINUATION_ATTEMPTS; attempt += 1) {
       if (!looksTruncatedReply(finalReply)) break;

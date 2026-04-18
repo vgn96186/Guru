@@ -10,7 +10,7 @@ import { getAllCachedQuestions, type MockQuestion } from '../db/queries/aiCache'
 import { getAllSubjects, getTopicsBySubject } from '../db/queries/topics';
 import { fetchContent } from '../services/aiService';
 import { profileRepository } from '../db/repositories';
-import { useAppStore } from '../store/useAppStore';
+import { useRefreshProfile } from '../hooks/queries/useProfile';
 import { MarkdownRender } from '../components/MarkdownRender';
 import { linearTheme as n } from '../theme/linearTheme';
 import { ResponsiveContainer } from '../hooks/useResponsive';
@@ -27,7 +27,7 @@ type Phase = 'select' | 'loading' | 'battle' | 'answer_feedback' | 'victory' | '
 
 export default function BossBattleScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<HomeStackParamList>>();
-  const refreshProfile = useAppStore((s) => s.refreshProfile);
+  const refreshProfile = useRefreshProfile();
   const [phase, setPhase] = useState<Phase>('select');
   const [selectedSubject, setSelectedSubject] = useState<string | null>(null);
   const [questions, setQuestions] = useState<MockQuestion[]>([]);

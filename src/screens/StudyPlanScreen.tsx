@@ -19,7 +19,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { MenuStackParamList, TabParamList, HomeStackParamList } from '../navigation/types';
 import { navigationRef } from '../navigation/navigationRef';
 import { showToast } from '../components/Toast';
-import { useAppStore } from '../store/useAppStore';
+import { useProfileQuery, useProfileActions } from '../hooks/queries/useProfile';
 import { ResponsiveContainer } from '../hooks/useResponsive';
 import { linearTheme as n } from '../theme/linearTheme';
 import { warningAlpha } from '../theme/colorUtils';
@@ -607,8 +607,8 @@ export default function StudyPlanScreen() {
   const [loadError, setLoadError] = useState<string | null>(null);
   /** Override daily capacity for just this screen session (not persisted). */
   const [capacityOverrideMinutes, setCapacityOverrideMinutes] = useState<number | null>(null);
-  const profile = useAppStore((s) => s.profile);
-  const setStudyResourceMode = useAppStore((s) => s.setStudyResourceMode);
+  const { data: profile } = useProfileQuery();
+  const { setStudyResourceMode } = useProfileActions();
   const resourceMode = profile?.studyResourceMode ?? 'hybrid';
 
   useFocusEffect(

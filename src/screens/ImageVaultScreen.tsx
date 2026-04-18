@@ -219,8 +219,6 @@ export default function ImageVaultScreen() {
               <>
                 <ScreenHeader
                   title="Image Vault"
-                  containerStyle={styles.headerCompact}
-                  titleStyle={styles.headerTitleCompact}
                   searchElement={
                     <BannerSearchBar
                       value={searchQuery}

@@ -11,7 +11,7 @@ import { getTopicById } from '../db/queries/topics';
 import type { QuizContent, TopicWithProgress } from '../types';
 import GuruChatOverlay from '../components/GuruChatOverlay';
 import VisualTimer from '../components/VisualTimer';
-import { useAppStore } from '../store/useAppStore';
+import { useProfileQuery } from '../hooks/queries/useProfile';
 import { linearTheme as n } from '../theme/linearTheme';
 import { ResponsiveContainer } from '../hooks/useResponsive';
 import { confirmDestructive } from '../components/dialogService';
@@ -32,7 +32,7 @@ export default function BreakScreen({
   onDone,
   onEndSession,
 }: Props) {
-  const profile = useAppStore((s) => s.profile);
+  const { data: profile } = useProfileQuery();
   const [topic, setTopic] = useState<TopicWithProgress | null>(null);
   const [quizQuestion, setQuizQuestion] = useState<{
     question: string;

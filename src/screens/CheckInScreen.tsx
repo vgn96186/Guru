@@ -7,6 +7,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import type { RootStackParamList } from '../navigation/types';
 import { profileRepository, dailyLogRepository } from '../db/repositories';
+import { useProfileQuery, useRefreshProfile } from '../hooks/queries/useProfile';
 import { useAppStore } from '../store/useAppStore';
 import type { Mood } from '../types';
 import { MOOD_LABELS } from '../constants/gamification';
@@ -57,9 +58,9 @@ function getMotivationalMessage(): string {
 
 export default function CheckInScreen() {
   const navigation = useNavigation<Nav>();
-  const refreshProfile = useAppStore((s) => s.refreshProfile);
+  const refreshProfile = useRefreshProfile();
   const setDailyAvailability = useAppStore((s) => s.setDailyAvailability);
-  const profile = useAppStore((s) => s.profile);
+  const { data: profile } = useProfileQuery();
 
   const [step, setStep] = useState<'mood' | 'time'>('mood');
   const [selectedMood, setSelectedMood] = useState<Mood | null>(null);

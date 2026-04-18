@@ -18,7 +18,7 @@ import type {
   LanguageModelV2StreamResult,
   ModelMessage,
 } from '../spec';
-import { attemptLocalLLM, attemptLocalLLMStream } from '../../llmRouting';
+import { attemptLocalLLM } from '../../llmRouting';
 import type { Message as LegacyMessage } from '../../types';
 
 export interface LocalLlmConfig {
@@ -50,7 +50,12 @@ export function createLocalLlmModel(config: LocalLlmConfig): LanguageModelV2 {
       const modelPath = config.modelPath;
       const textMode = config.textMode ?? false;
 
-      // Bridge event-stream → async iterator.
+      // Use the synchronous (non-streaming) local LLM call which is proven reliable.
+      // The async event-based streaming (`sendMessageAsync` + `sendEvent`) has a race
+      // condition: the native LiteRT thread fires onLlmToken before the JS EventEmitter
+      // bridge subscription is fully connected, causing 0 tokens to arrive in JS.
+      // This approach uses `sendMessage` (blocking) which reliably returns the full text,
+      // then chunks it into text-deltas to satisfy the streaming contract.
       const queue: LanguageModelV2StreamPart[] = [];
       let resolveNext: ((v: IteratorResult<LanguageModelV2StreamPart>) => void) | null = null;
       let done = false;
@@ -74,35 +79,41 @@ export function createLocalLlmModel(config: LocalLlmConfig): LanguageModelV2 {
       };
 
       const textId = 'text-0';
-      let textStarted = false;
 
-      // Kick off streaming in the background.
-      void attemptLocalLLMStream(
-        legacy,
-        modelPath,
-        textMode,
-        (delta) => {
-          if (!textStarted) {
-            textStarted = true;
-            push({ type: 'text-start', id: textId });
+      // Run synchronous generation in the background, then emit as chunked deltas.
+      void (async () => {
+        try {
+          const { text } = await attemptLocalLLM(legacy, modelPath, textMode);
+          if (text && text.trim()) {
+            // Emit in small chunks to simulate streaming for the UI
+            const CHUNK_SIZE = 12;
+            for (let i = 0; i < text.length; i += CHUNK_SIZE) {
+              const delta = text.slice(i, i + CHUNK_SIZE);
+              push({ type: 'text-delta', id: textId, delta });
+            }
+            push({ type: 'finish', finishReason: 'stop', usage: {} });
+          } else {
+            if (__DEV__) {
+              console.warn('[v2/localLlm] Synchronous call returned empty text.');
+            }
+            push({ type: 'finish', finishReason: 'error', usage: {} });
           }
-          push({ type: 'text-delta', id: textId, delta });
-        },
-      )
-        .then(() => {
-          if (textStarted) push({ type: 'text-end', id: textId });
-          push({ type: 'finish', finishReason: 'stop', usage: {} });
           end();
-        })
-        .catch((err) => {
+        } catch (err) {
+          if (__DEV__) {
+            console.warn(
+              '[v2/localLlm] Synchronous call error:',
+              err instanceof Error ? err.message : err,
+            );
+          }
           push({ type: 'error', error: err });
           push({ type: 'finish', finishReason: 'error', usage: {} });
           end();
-        });
+        }
+      })();
 
       // Respect abort.
       options.abortSignal?.addEventListener('abort', () => {
-        // Native cancel. Not awaited — fire and forget.
         void (async () => {
           try {
             const { cancel } = await import('local-llm');
@@ -164,7 +175,6 @@ function toLegacyMessages(messages: ModelMessage[]): LegacyMessage[] {
 
 function warnIfTools(tools: unknown): void {
   if (Array.isArray(tools) && tools.length) {
-    // eslint-disable-next-line no-console
     console.warn('[v2/localLlm] tools not supported on local LiteRT — dropping');
   }
 }

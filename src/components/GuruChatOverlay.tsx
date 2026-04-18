@@ -18,7 +18,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { chatWithGuru, fetchChatRelevantImage } from '../services/aiService';
 import { markTopicDiscussedInChat } from '../db/queries/topics';
-import { useAppStore } from '../store/useAppStore';
+import { useProfileQuery } from '../hooks/queries/useProfile';
 import { buildBoundedGuruChatStudyContext } from '../services/guruChatStudyContext';
 import { linearTheme as n } from '../theme/linearTheme';
 import { MarkdownRender } from './MarkdownRender';
@@ -44,7 +44,7 @@ export default function GuruChatOverlay({
   contextText,
   onClose,
 }: Props) {
-  const profile = useAppStore((s) => s.profile);
+  const { data: profile } = useProfileQuery();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
@@ -162,7 +162,7 @@ export default function GuruChatOverlay({
     scrollToEnd();
 
     try {
-      const dbStudy = await buildBoundedGuruChatStudyContext(profile, syllabusTopicId);
+      const dbStudy = await buildBoundedGuruChatStudyContext(profile ?? null, syllabusTopicId);
       const topicMeta =
         syllabusTopicId != null ? `Syllabus topic id: ${syllabusTopicId}` : undefined;
       const clippedContext = contextText ? contextText.slice(0, 4000) : undefined;

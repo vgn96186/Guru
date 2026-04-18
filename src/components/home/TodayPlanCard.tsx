@@ -7,6 +7,7 @@ import type { HomeStackParamList, TabParamList } from '../../navigation/types';
 import { linearTheme as n } from '../../theme/linearTheme';
 import LinearSurface from '../primitives/LinearSurface';
 import LinearText from '../primitives/LinearText';
+import { useProfileQuery } from '../../hooks/queries/useProfile';
 import { useAppStore } from '../../store/useAppStore';
 import { getTodaysAgendaWithTimes, type TodayTask } from '../../services/studyPlanner';
 import { dailyAgendaRepository } from '../../db/repositories';
@@ -31,8 +32,8 @@ function tasksToAgenda(tasks: TodayTask[]): DailyAgenda {
         task.type === 'review'
           ? 'due for review'
           : task.type === 'deep_dive'
-          ? 'weak, needs deep dive'
-          : 'new topic to cover'
+            ? 'weak, needs deep dive'
+            : 'new topic to cover'
       }`,
     })),
     guruNote:
@@ -44,7 +45,7 @@ function tasksToAgenda(tasks: TodayTask[]): DailyAgenda {
 
 export default function TodayPlanCard() {
   const navigation = useNavigation<NativeStackNavigationProp<HomeStackParamList>>();
-  const profile = useAppStore((s) => s.profile);
+  const { data: profile } = useProfileQuery();
   const todayPlan = useAppStore((s) => s.todayPlan);
   const setTodayPlan = useAppStore((s) => s.setTodayPlan);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -116,8 +117,8 @@ export default function TodayPlanCard() {
     nextTask?.type === 'review'
       ? n.colors.warning
       : nextTask?.type === 'test'
-      ? '#E05252'
-      : n.colors.accent;
+        ? '#E05252'
+        : n.colors.accent;
 
   return (
     <LinearSurface
@@ -171,8 +172,8 @@ export default function TodayPlanCard() {
                 nextTask.type === 'review'
                   ? 'review'
                   : nextTask.type === 'test'
-                  ? 'deep_dive'
-                  : 'study',
+                    ? 'deep_dive'
+                    : 'study',
               forcedMinutes: nextTask.durationMinutes,
             })
           }

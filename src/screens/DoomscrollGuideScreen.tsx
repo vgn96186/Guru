@@ -13,7 +13,7 @@ import {
 } from '../services/notificationService';
 import { showWarning, showInfo } from '../components/dialogService';
 import { profileRepository } from '../db/repositories';
-import { useAppStore } from '../store/useAppStore';
+import { useProfileQuery, useRefreshProfile } from '../hooks/queries/useProfile';
 import { ResponsiveContainer } from '../hooks/useResponsive';
 import { linearTheme as n } from '../theme/linearTheme';
 import type { HarassmentTone } from '../types';
@@ -27,8 +27,8 @@ const TONE_OPTIONS: { tone: HarassmentTone; icon: string; label: string }[] = [
 
 export default function DoomscrollGuideScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-  const profile = useAppStore((s) => s.profile);
-  const refreshProfile = useAppStore((s) => s.refreshProfile);
+  const { data: profile } = useProfileQuery();
+  const refreshProfile = useRefreshProfile();
   const [harassmentActive, setHarassmentActive] = useState(false);
   const [selectedTone, setSelectedTone] = useState<HarassmentTone>(
     profile?.harassmentTone ?? 'shame',

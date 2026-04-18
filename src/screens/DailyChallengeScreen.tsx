@@ -5,7 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { HomeStackParamList } from '../navigation/types';
-import { useAppStore } from '../store/useAppStore';
+import { useRefreshProfile } from '../hooks/queries/useProfile';
 import { getTopicsDueForReview, getWeakestTopics, updateTopicProgress } from '../db/queries/topics';
 import { createSession, endSession } from '../db/queries/sessions';
 import { profileRepository } from '../db/repositories';
@@ -38,7 +38,7 @@ const XP_PER_CORRECT = 60;
 
 export default function DailyChallengeScreen() {
   const navigation = useNavigation<Nav>();
-  const refreshProfile = useAppStore((s) => s.refreshProfile);
+  const refreshProfile = useRefreshProfile();
   const [questions, setQuestions] = useState<ChallengeQuestion[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingMsg, setLoadingMsg] = useState('Picking your weakest topics...');

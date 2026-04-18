@@ -624,8 +624,8 @@ export default function NotesVaultScreen() {
                   item.confidence === 3
                     ? styles.confidenceBadgeStrong
                     : item.confidence === 2
-                    ? styles.confidenceBadgeMid
-                    : styles.confidenceBadgeLight,
+                      ? styles.confidenceBadgeMid
+                      : styles.confidenceBadgeLight,
                 ]}
               >
                 {CONFIDENCE_LABELS[item.confidence as 1 | 2 | 3]}
@@ -680,8 +680,6 @@ export default function NotesVaultScreen() {
         <ResponsiveContainer style={styles.flex}>
           <ScreenHeader
             title="Notes Vault"
-            containerStyle={styles.headerCompact}
-            titleStyle={styles.headerTitleCompact}
             searchElement={
               <BannerSearchBar
                 value={searchValue}

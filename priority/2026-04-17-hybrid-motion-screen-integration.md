@@ -43,17 +43,17 @@
 
 ### Modified
 
-| File | Purpose |
-|---|---|
-| `src/screens/HomeScreen.tsx` | Wrap body in `ScreenMotion`, manage `entryComplete`, stagger header/hero/stats/first card, pass `entryComplete` into `HeroCard`. |
-| `src/screens/SyllabusScreen.tsx` | Wrap body in `ScreenMotion`, stagger header/search/hero/sort/first subject cards only — never the full FlatList. |
-| `src/screens/GuruChatScreen.tsx` | Wrap shell in `ScreenMotion`, stagger header/body container/composer; defer ambient motion until `entryComplete`. |
-| `src/components/home/HeroCard.tsx` | (Verify only — already wired; may need tiny prop-default tightening.) |
-| `src/components/home/NextLectureSection.tsx` | Optional `StaggeredEntrance` wrap when above-the-fold only. |
-| `src/components/home/QuickStatsCard.tsx` | Standardize press feedback against `cardPressTiming` if a press target; no new loops. |
-| `src/components/home/AgendaItem.tsx` | Standardize tap feedback against `cardPressTiming`; remove bespoke timings. |
-| `src/components/SubjectCard.tsx` | (Verify only — already using `cardPressTiming`.) |
-| `src/navigation/tabNavigatorOptions.unit.test.ts` | Add/keep assertions that tab performance config is unchanged. |
+| File                                              | Purpose                                                                                                                          |
+| ------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| `src/screens/HomeScreen.tsx`                      | Wrap body in `ScreenMotion`, manage `entryComplete`, stagger header/hero/stats/first card, pass `entryComplete` into `HeroCard`. |
+| `src/screens/SyllabusScreen.tsx`                  | Wrap body in `ScreenMotion`, stagger header/search/hero/sort/first subject cards only — never the full FlatList.                 |
+| `src/screens/GuruChatScreen.tsx`                  | Wrap shell in `ScreenMotion`, stagger header/body container/composer; defer ambient motion until `entryComplete`.                |
+| `src/components/home/HeroCard.tsx`                | (Verify only — already wired; may need tiny prop-default tightening.)                                                            |
+| `src/components/home/NextLectureSection.tsx`      | Optional `StaggeredEntrance` wrap when above-the-fold only.                                                                      |
+| `src/components/home/QuickStatsCard.tsx`          | Standardize press feedback against `cardPressTiming` if a press target; no new loops.                                            |
+| `src/components/home/AgendaItem.tsx`              | Standardize tap feedback against `cardPressTiming`; remove bespoke timings.                                                      |
+| `src/components/SubjectCard.tsx`                  | (Verify only — already using `cardPressTiming`.)                                                                                 |
+| `src/navigation/tabNavigatorOptions.unit.test.ts` | Add/keep assertions that tab performance config is unchanged.                                                                    |
 
 ### Tests to run (focused)
 
@@ -68,7 +68,9 @@
 
 ---
 
-## Task 3 — Integrate Hybrid Motion into Home
+## Task 3 — Integrate Hybrid Motion into Home **[DONE]**
+
+> **Landed in commit `3b40489` (2026-04-17):** `ScreenMotion` wraps `ScrollView` in `src/screens/HomeScreen.tsx`; `StaggeredEntrance` on headerRow (0), StartButton heroSection (1), statsBar LinearSurface (2), gridLandscape two-column (3). `entryComplete` state + `useIsFocused` gating (`bootPhase === 'done' && navFocused`). Decorative loops gated: `flameScale`, `ExamCountdownChips.pulseAnim`, `AiStatusIndicator.pulseAnim`. `AgendaItem.tsx` already uses `cardPressTiming`. `QuickStatsCard.tsx` has no bespoke press scale — left as-is per plan. `HeroCard` no longer rendered in HomeScreen. Typecheck clean for motion. Steps 1/2/6 Jest suites blocked by pre-existing `_ReactNativeCSSInterop` ReferenceError from `nativewind/babel` preset — deferred.
 
 **Why first:** Home is first-render path after cold start and after bootstrap wakeups. It also has the most decorative motion (exam-pulse, streak flame). Validating the `entryComplete` hand-off here de-risks Tasks 4 and 5.
 
@@ -164,7 +166,9 @@ git commit -m "feat: wire hybrid motion into home screen"
 
 ---
 
-## Task 4 — Integrate Hybrid Motion into Syllabus
+## Task 4 — Integrate Hybrid Motion into Syllabus **[DONE]**
+
+> **Landed in commit `3b40489`:** `src/screens/SyllabusScreen.tsx` wraps `ResponsiveContainer` in `ScreenMotion` (trigger `SYLLABUS_SCREEN_MOTION_TRIGGER = 'first-mount'`, `isEntryComplete` → `setEntryComplete(true)`). `StaggeredEntrance` indices 0/1/2 on `ScreenHeader`, `heroSurface` LinearSurface, sort-chips `controls` row. `FlatList` NOT wrapped; `renderItem` uses `StaggeredEntrance index={index + 3}` guarded by `entryCompleteRef.current`. `heroProgressFillMain` keeps existing `useSharedValue` + `withTiming` 1200ms — untouched. `SubjectCard` verified (already `cardPressTiming`).
 
 **Why:** Syllabus is the heaviest list screen. The risk here is staggering inside the FlatList — which must NOT happen. Only the chrome above the list gets motion; the list renders normally.
 
@@ -179,7 +183,10 @@ git commit -m "feat: wire hybrid motion into home screen"
 - [ ] Ensure `src/navigation/tabNavigatorOptions.unit.test.ts` contains (add if missing):
 
 ```ts
-import { TAB_NAVIGATOR_SCREEN_OPTIONS, TAB_NAVIGATOR_PERFORMANCE_PROPS } from './tabNavigatorOptions';
+import {
+  TAB_NAVIGATOR_SCREEN_OPTIONS,
+  TAB_NAVIGATOR_PERFORMANCE_PROPS,
+} from './tabNavigatorOptions';
 
 it('keeps tab animation disabled', () => {
   expect(TAB_NAVIGATOR_SCREEN_OPTIONS.animation).toBe('none');
@@ -238,7 +245,9 @@ git commit -m "feat: wire hybrid motion into syllabus"
 
 ---
 
-## Task 5 — Integrate Hybrid Motion into Guru Chat
+## Task 5 — Integrate Hybrid Motion into Guru Chat **[DONE]**
+
+> **Landed in commit `3b40489`:** `src/screens/GuruChatScreen.tsx` wraps inner `<View style={styles.flex}>` in `ScreenMotion` (`GURU_CHAT_SCREEN_MOTION_TRIGGER = 'first-mount'`, `isEntryComplete` → `setEntryComplete(true)`). Layout: `SafeAreaView > View > ScreenMotion > ResponsiveContainer > RevealSection(0/80/140ms)`. `RevealSection` gates header, chat body container, composer + tools row; body wraps the container, not the FlatList. `TypingDots active={entryComplete}` gates typing animation on entrance completion. Thread hydration, keyboard avoidance, streaming all untouched.
 
 **Why:** Chat is delicate — streaming messages, typing dots, composer focus states. The rule: the entrance plays once per mount; all live motion (typing dots, streaming text) starts/continues unaffected. The FlatList of messages never gets item-level stagger.
 
@@ -298,7 +307,9 @@ git commit -m "feat: wire hybrid motion into guru chat"
 
 ---
 
-## Task 6 — Final Verification and Cleanup
+## Task 6 — Final Verification and Cleanup **[PARTIAL]**
+
+> **Status (2026-04-17):** Step 1 typecheck run — 48 pre-existing errors (Zustand `profile`/`refreshProfile` moved to TanStack Query per Phase-4 comment in `useAppStore.ts`; unrelated to motion). Zero motion-related errors. Step 2/3 Jest/CI blocked by pre-existing `_ReactNativeCSSInterop` ReferenceError from `nativewind/babel` preset during `babel-jest` transform — tripping `jest.mock()` out-of-scope guard inside `jest.setup.js`. Fix path: add `env.test` override in `babel.config.js` to drop nativewind preset from test transform. Step 4 manual device walkthrough + Step 5 cleanup sweep pending.
 
 **Why:** Catch type regressions, run the focused suite, walk the manual device checklist, and confirm nothing else regressed.
 
@@ -346,7 +357,7 @@ Walk and confirm:
 - [ ] `Home → Syllabus → Home` → second Home visit plays focus-settle, not full entrance.
 - [ ] `Home → Guru Chat → Home` → same.
 - [ ] `Syllabus → Guru Chat → Syllabus` → Syllabus FlatList scrolls at full speed; no per-item entrance replays.
-- [ ] HeroCard pulse only starts *after* entry completes (use a 60 or 90 day exam date to trigger `isAnyUrgent`).
+- [ ] HeroCard pulse only starts _after_ entry completes (use a 60 or 90 day exam date to trigger `isAnyUrgent`).
 - [ ] Chat: typing dots run while AI responds; entrance does not block send.
 - [ ] Turn on "Reduce Motion" in Android developer / accessibility settings — confirm:
   - first-mount is a short opacity/translate only; no scale.

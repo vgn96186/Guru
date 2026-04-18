@@ -7,7 +7,7 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigation/types';
 import * as Haptics from 'expo-haptics';
-import { useAppStore } from '../store/useAppStore';
+import { useProfileQuery } from '../hooks/queries/useProfile';
 import { dailyLogRepository } from '../db/repositories';
 import { linearTheme as n } from '../theme/linearTheme';
 import { ResponsiveContainer } from '../hooks/useResponsive';
@@ -20,7 +20,7 @@ const GUILT_CHECK_INTERVAL = 60 * 1000; // Check every minute
 
 export default function PunishmentMode() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-  const profile = useAppStore((s) => s.profile);
+  const { data: profile } = useProfileQuery();
   const [isActive, setIsActive] = useState(true);
   const [minutesIdle, setMinutesIdle] = useState(0);
   const [urgencyLevel, setUrgencyLevel] = useState(0);

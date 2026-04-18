@@ -43,8 +43,7 @@ export function useUpdateProfileMutation() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (updates: Partial<UserProfile>) =>
-      profileRepositoryDrizzle.updateProfile(updates),
+    mutationFn: (updates: Partial<UserProfile>) => profileRepositoryDrizzle.updateProfile(updates),
 
     // Optimistic update
     onMutate: async (updates) => {
@@ -77,13 +76,15 @@ export function useUpdateProfileMutation() {
 
 /**
  * Returns a stable callback that invalidates the profile query,
- * triggering a background re-fetch.  Drop-in replacement for refreshProfile().
+ * triggering a re-fetch. Drop-in replacement for refreshProfile() — awaitable
+ * so callers that read the cache immediately afterward see fresh data.
  */
-export function useRefreshProfile(): () => void {
+export function useRefreshProfile(): () => Promise<void> {
   const queryClient = useQueryClient();
-  return useCallback(() => {
-    queryClient.invalidateQueries({ queryKey: PROFILE_QUERY_KEY });
-  }, [queryClient]);
+  return useCallback(
+    () => queryClient.invalidateQueries({ queryKey: PROFILE_QUERY_KEY }),
+    [queryClient],
+  );
 }
 
 // ─── Convenience mutations (replaces useAppStore toggle actions) ───────────────

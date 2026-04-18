@@ -6,7 +6,8 @@ import { linearTheme as n } from '../../theme/linearTheme';
 import LinearSurface from '../primitives/LinearSurface';
 import LinearText from '../primitives/LinearText';
 import { profileRepository } from '../../db/repositories';
-import { useAppStore } from '../../store/useAppStore';
+import { PROFILE_QUERY_KEY } from '../../hooks/queries/useProfile';
+import { queryClient } from '../../services/queryClient';
 
 const GOAL_PRESETS = [30, 60, 90, 120, 180, 240];
 
@@ -41,7 +42,7 @@ export default React.memo(function QuickStatsCard({
 
   const handleGoalChange = useCallback(async (minutes: number) => {
     await profileRepository.updateProfile({ dailyGoalMinutes: minutes });
-    useAppStore.getState().refreshProfile?.();
+    await queryClient.invalidateQueries({ queryKey: PROFILE_QUERY_KEY });
     setShowGoalPicker(false);
   }, []);
 

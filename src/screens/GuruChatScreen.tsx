@@ -44,7 +44,7 @@ import {
   addLlmStateListener,
 } from '../services/aiService';
 import { showInfo, showError, confirm, confirmDestructive } from '../components/dialogService';
-import { useAppStore } from '../store/useAppStore';
+import { useProfileQuery } from '../hooks/queries/useProfile';
 import {
   createGuruChatThread,
   deleteGuruChatThread,
@@ -591,7 +591,7 @@ function GuruChatScreenContent() {
   const requestedThreadId = route.params?.threadId;
   const groundingTitle = route.params?.groundingTitle;
   const groundingContext = route.params?.groundingContext;
-  const profile = useAppStore((s) => s.profile);
+  const { data: profile } = useProfileQuery();
 
   const [isInitializing, setIsInitializing] = useState(false);
 
@@ -771,7 +771,7 @@ function GuruChatScreenContent() {
     poe: poeModelIds,
     kilo: kiloModelIds,
     agentrouter: arModelIds,
-  } = useLiveGuruChatModels(profile);
+  } = useLiveGuruChatModels(profile ?? null);
 
   const profileRef = useRef(profile);
   profileRef.current = profile;
@@ -1216,7 +1216,10 @@ function GuruChatScreenContent() {
       let sawFirstToken = false;
 
       try {
-        const studyContextLine = await buildBoundedGuruChatStudyContext(profile, syllabusTopicId);
+        const studyContextLine = await buildBoundedGuruChatStudyContext(
+          profile ?? null,
+          syllabusTopicId,
+        );
         const selectedModelAtSend = chosenModelRef.current;
         const modelForApi = selectedModelAtSend === 'auto' ? undefined : selectedModelAtSend;
         // #region agent log
@@ -1876,26 +1879,24 @@ function GuruChatScreenContent() {
         >
           <ResponsiveContainer style={styles.flex}>
             <RevealSection active={entryComplete} delayMs={0}>
-              <View style={styles.headerWrap}>
-                <ScreenHeader
-                  title="Guru Chat"
-                  onBackPress={navigation.canGoBack() ? () => navigation.goBack() : undefined}
-                  rightElement={
-                    <View style={styles.headerActions}>
-                      <BannerIconButton
-                        onPress={() => setShowHistoryDrawer(true)}
-                        accessibilityLabel="Open chat history"
-                      >
-                        <Ionicons name="reorder-three-outline" size={18} color={n.colors.accent} />
-                      </BannerIconButton>
-                      <BannerIconButton onPress={startNewChat} accessibilityLabel="New chat">
-                        <Ionicons name="create-outline" size={18} color={n.colors.accent} />
-                      </BannerIconButton>
-                    </View>
-                  }
-                  showSettings
-                />
-              </View>
+              <ScreenHeader
+                title="Guru Chat"
+                onBackPress={navigation.canGoBack() ? () => navigation.goBack() : undefined}
+                rightElement={
+                  <View style={styles.headerActions}>
+                    <BannerIconButton
+                      onPress={() => setShowHistoryDrawer(true)}
+                      accessibilityLabel="Open chat history"
+                    >
+                      <Ionicons name="reorder-three-outline" size={18} color={n.colors.accent} />
+                    </BannerIconButton>
+                    <BannerIconButton onPress={startNewChat} accessibilityLabel="New chat">
+                      <Ionicons name="create-outline" size={18} color={n.colors.accent} />
+                    </BannerIconButton>
+                  </View>
+                }
+                showSettings
+              />
             </RevealSection>
 
             {showHistoryDrawer ? (
@@ -2236,11 +2237,6 @@ const styles = StyleSheet.create({
   pressed: {
     opacity: n.alpha.pressed,
     transform: [{ scale: 0.98 }],
-  },
-  headerWrap: {
-    paddingHorizontal: n.spacing.md,
-    paddingTop: n.spacing.sm,
-    paddingBottom: n.spacing.xs,
   },
   header: {
     flexDirection: 'row',

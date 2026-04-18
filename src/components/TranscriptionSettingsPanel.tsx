@@ -14,7 +14,7 @@ import LinearIconButton from './primitives/LinearIconButton';
 import { DEFAULT_HF_TRANSCRIPTION_MODEL } from '../config/appConfig';
 import { profileRepository } from '../db/repositories';
 import { updateUserProfile } from '../db/queries/progress';
-import { useAppStore } from '../store/useAppStore';
+import { useRefreshProfile } from '../hooks/queries/useProfile';
 import type { UserProfile } from '../types';
 import {
   testGroqConnection,
@@ -32,7 +32,7 @@ interface TranscriptionSettingsPanelProps {
 export default function TranscriptionSettingsPanel({
   embedded = false,
 }: TranscriptionSettingsPanelProps) {
-  const refreshProfile = useAppStore((s) => s.refreshProfile);
+  const refreshProfile = useRefreshProfile();
   const [expanded, setExpanded] = useState(embedded);
   const heightAnim = useRef(new Animated.Value(0)).current;
 
@@ -290,16 +290,16 @@ function TestButton({
             result === 'ok'
               ? 'checkmark-circle'
               : result === 'fail'
-              ? 'close-circle'
-              : 'flash-outline'
+                ? 'close-circle'
+                : 'flash-outline'
           }
           size={18}
           color={
             result === 'ok'
               ? n.colors.success
               : result === 'fail'
-              ? n.colors.error
-              : n.colors.accent
+                ? n.colors.error
+                : n.colors.accent
           }
         />
       ) : null}

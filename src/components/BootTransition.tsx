@@ -445,7 +445,7 @@ export default function BootTransition() {
   if (bootPhase === 'done') return null;
 
   return (
-    <View style={styles.overlay} pointerEvents={bootPhase === 'settling' ? 'none' : 'box-none'}>
+    <View style={styles.overlay} pointerEvents="none">
       <Animated.View style={[styles.background, styleBg]} />
 
       <Animated.View style={styleOrb}>

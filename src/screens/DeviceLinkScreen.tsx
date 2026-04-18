@@ -12,7 +12,7 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { MenuStackParamList } from '../navigation/types';
 import { linearTheme as n } from '../theme/linearTheme';
-import { useAppStore } from '../store/useAppStore';
+import { useProfileQuery, useRefreshProfile } from '../hooks/queries/useProfile';
 import { profileRepository } from '../db/repositories';
 import { ResponsiveContainer } from '../hooks/useResponsive';
 import { normalizeSyncCode } from '../services/deviceSyncService';
@@ -25,8 +25,8 @@ import { Ionicons } from '@expo/vector-icons';
 
 export default function DeviceLinkScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<MenuStackParamList>>();
-  const profile = useAppStore((s) => s.profile);
-  const refreshProfile = useAppStore((s) => s.refreshProfile);
+  const { data: profile } = useProfileQuery();
+  const refreshProfile = useRefreshProfile();
   const [code, setCode] = useState(profile?.syncCode || '');
 
   async function handleSave() {

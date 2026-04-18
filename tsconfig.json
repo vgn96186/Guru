@@ -5,6 +5,8 @@
     "isolatedModules": true,
     "incremental": true,
     "skipLibCheck": true,
+    "ignoreDeprecations": "6.0",
+    "types": ["jest", "react", "react-native"],
     "baseUrl": ".",
     // "@/*" maps to repo root only for TypeScript; Metro/Jest do not resolve it. Prefer relative imports in app code (see AGENTS.md).
     "paths": {

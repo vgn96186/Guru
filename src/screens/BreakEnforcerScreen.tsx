@@ -9,14 +9,14 @@ import { linearTheme as n } from '../theme/linearTheme';
 import * as Haptics from 'expo-haptics';
 import { connectToRoom } from '../services/deviceSyncService';
 import { scheduleBreakEndAlarms, cancelAllNotifications } from '../services/notificationService';
-import { useAppStore } from '../store/useAppStore';
+import { useProfileQuery } from '../hooks/queries/useProfile';
 import { ResponsiveContainer } from '../hooks/useResponsive';
 
 export default function BreakEnforcerScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const route = useRoute<RouteProp<RootStackParamList, 'BreakEnforcer'>>();
   const [timeLeft, setTimeLeft] = useState(route.params.durationSeconds ?? 300);
-  const profile = useAppStore((s) => s.profile);
+  const { data: profile } = useProfileQuery();
   const [isOver, setIsOver] = useState(false);
   const vibIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 

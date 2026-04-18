@@ -22,7 +22,7 @@ import {
   calculateCurrentStreak,
 } from '../db/queries/sessions';
 import { getTotalExternalStudyMinutes } from '../db/queries/externalLogs';
-import { useAppStore } from '../store/useAppStore';
+import { useProfileQuery } from '../hooks/queries/useProfile';
 import LoadingOrb from '../components/LoadingOrb';
 import { ResponsiveContainer } from '../hooks/useResponsive';
 import ReviewCalendar from '../components/ReviewCalendar';
@@ -52,7 +52,7 @@ export default function StatsScreen() {
 
 function StatsScreenContent() {
   const navigation = useNavigation<NavigationProp<MenuStackParamList>>();
-  const profile = useAppStore((s) => s.profile);
+  const { data: profile } = useProfileQuery();
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [stats, setStats] = useState({
@@ -347,8 +347,8 @@ function StatsScreenContent() {
                 {stats.currentStreak >= 30
                   ? 'Legendary dedication!'
                   : stats.currentStreak >= 14
-                  ? 'Two weeks strong!'
-                  : 'One week down!'}
+                    ? 'Two weeks strong!'
+                    : 'One week down!'}
               </LinearText>
             )}
           </LinearSurface>
@@ -373,8 +373,8 @@ function StatsScreenContent() {
                     stats.lastWeek.minutes > 0
                       ? Math.round((diff / stats.lastWeek.minutes) * 100)
                       : stats.thisWeek.minutes > 0
-                      ? 100
-                      : 0;
+                        ? 100
+                        : 0;
                   const isUp = diff >= 0;
                   if (pct === 0) return null;
                   return (

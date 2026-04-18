@@ -1,4 +1,13 @@
 export * from './ai';
+import { subscribeToAiRuntime } from './ai/runtimeActivity';
+
+export function addLlmStateListener(
+  listener: (state: 'idle' | 'initializing') => void,
+): () => void {
+  return subscribeToAiRuntime((snapshot) => {
+    listener(snapshot.activeCount > 0 ? 'initializing' : 'idle');
+  });
+}
 
 // Compat alias — tests still reference generateTextWithRouting
 export { generateTextV2 as generateTextWithRouting } from './ai/v2/compat';

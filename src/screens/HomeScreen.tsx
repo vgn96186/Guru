@@ -35,6 +35,7 @@ import { getTodaysAgendaWithTimes, type TodayTask } from '../services/studyPlann
 import type { DailyAgenda } from '../services/ai';
 import { ResponsiveContainer } from '../hooks/useResponsive';
 import { useHomeDashboardData } from '../hooks/useHomeDashboardData';
+import { useLevelInfo, useProfileQuery } from '../hooks/queries/useProfile';
 import { linearTheme as n } from '../theme/linearTheme';
 import { DEFAULT_INICET_DATE, DEFAULT_NEET_DATE } from '../config/appConfig';
 import type { Mood, UserProfile, TopicWithProgress } from '../types';
@@ -265,8 +266,8 @@ function HomeScreenContent() {
   const stackHomeGrid = width < HOME_GRID_STACK_BREAKPOINT;
   const navigation = useNavigation<Nav>();
   const tabsNavigation = navigation.getParent<NavigationProp<TabParamList>>();
-  const profile = useAppStore((s) => s.profile);
-  const levelInfo = useAppStore((s) => s.levelInfo);
+  const { data: profile, isPending: isProfilePending } = useProfileQuery();
+  const levelInfo = useLevelInfo();
   const todayPlan = useAppStore((s) => s.todayPlan);
   const setTodayPlan = useAppStore((s) => s.setTodayPlan);
 
@@ -461,7 +462,7 @@ function HomeScreenContent() {
     }
   }, [isLoading, bootPhase, setBootPhase, setStartButtonLayout]);
 
-  if (isLoading || !profile || !levelInfo) {
+  if (isLoading || isProfilePending || !profile || !levelInfo) {
     return <SafeAreaView style={styles.safe} />;
   }
 

@@ -44,6 +44,10 @@ export interface GuruFallbackOptions {
   modelIds?: Partial<Record<ProviderId | 'local', string>>;
   /** Force a specific provider chain (ignores profile order). */
   forceOrder?: ProviderId[];
+  /** True for plain-text output (chat); false (default) for JSON-mode prompting. Only affects local models. */
+  textMode?: boolean;
+  /** If true, explicitly bypasses the local model even if enabled in the profile (useful for background meta-tasks). */
+  disableLocal?: boolean;
   onProviderError?: (provider: string, modelId: string, error: unknown) => void;
   onProviderSuccess?: (provider: string, modelId: string) => void;
 }
@@ -76,9 +80,15 @@ export function createGuruFallbackModel(opts: GuruFallbackOptions): LanguageMode
 
   const models: LanguageModelV2[] = [];
 
-  // Local model goes first if enabled.
-  if (profile.useLocalModel && profile.localModelPath) {
-    models.push(createLocalLlmModel({ modelPath: profile.localModelPath, textMode: false }));
+  // Local model goes first if enabled and path is a real, non-empty string.
+  const localPath = profile.localModelPath?.trim();
+  if (profile.useLocalModel && localPath && !opts.disableLocal) {
+    models.push(
+      createLocalLlmModel({
+        modelPath: localPath,
+        textMode: opts.textMode ?? false,
+      }),
+    );
   }
 
   for (const providerId of order) {
@@ -169,9 +179,7 @@ function tryCreateProvider(
         : null;
 
     case 'chatgpt':
-      return profile.chatgptConnected
-        ? createChatGptModel({ modelId: ids.chatgpt })
-        : null;
+      return profile.chatgptConnected ? createChatGptModel({ modelId: ids.chatgpt }) : null;
 
     case 'github_copilot':
       return profile.githubCopilotConnected
@@ -181,9 +189,7 @@ function tryCreateProvider(
         : null;
 
     case 'gitlab_duo':
-      return profile.gitlabDuoConnected
-        ? createGitLabDuoModel({ modelId: ids.gitlab_duo })
-        : null;
+      return profile.gitlabDuoConnected ? createGitLabDuoModel({ modelId: ids.gitlab_duo }) : null;
 
     case 'poe':
       return profile.poeConnected ? createPoeModel({ modelId: ids.poe }) : null;

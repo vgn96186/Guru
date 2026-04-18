@@ -35,7 +35,8 @@ import {
   showError,
   confirmDestructive,
 } from '../components/dialogService';
-import { useAppStore } from '../store/useAppStore';
+import { useProfileQuery, useRefreshProfile, PROFILE_QUERY_KEY } from '../hooks/queries/useProfile';
+import { queryClient } from '../services/queryClient';
 import {
   updateUserProfile,
   getUserProfile,
@@ -381,8 +382,8 @@ export default function SettingsScreen() {
       >
     >();
   const isFocused = useIsFocused();
-  const profile = useAppStore((state) => state.profile);
-  const refreshProfile = useAppStore((state) => state.refreshProfile);
+  const { data: profile } = useProfileQuery();
+  const refreshProfile = useRefreshProfile();
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set());
 
   const toggleExpandedSection = useCallback((id: string) => {
@@ -990,7 +991,7 @@ export default function SettingsScreen() {
       const handled = await tryCompleteGitLabDuoOAuth(raw);
       if (handled) {
         await refreshProfile();
-        const p = useAppStore.getState().profile;
+        const p = queryClient.getQueryData<UserProfile>(PROFILE_QUERY_KEY);
         setGitlabDuoConnected(!!p?.gitlabDuoConnected);
         if (p?.gitlabDuoConnected) {
           setGitlabPasteModalVisible(false);

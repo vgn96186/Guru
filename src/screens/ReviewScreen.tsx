@@ -22,7 +22,7 @@ import type { HomeStackParamList } from '../navigation/types';
 import { getTopicsDueForReview, updateTopicProgress } from '../db/queries/topics';
 import { profileRepository } from '../db/repositories';
 import { fetchContent } from '../services/aiService';
-import { useAppStore } from '../store/useAppStore';
+import { useRefreshProfile } from '../hooks/queries/useProfile';
 import type { TopicWithProgress, AIContent, ContentType } from '../types';
 import LoadingOrb from '../components/LoadingOrb';
 import { MarkdownRender } from '../components/MarkdownRender';
@@ -53,7 +53,7 @@ function getAutoContentType(confidence: number): ContentType {
 
 export default function ReviewScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<HomeStackParamList>>();
-  const refreshProfile = useAppStore((s) => s.refreshProfile);
+  const refreshProfile = useRefreshProfile();
   const [queue, setQueue] = useState<TopicWithProgress[]>([]);
   const [currentIdx, setCurrentIdx] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);

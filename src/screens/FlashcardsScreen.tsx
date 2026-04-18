@@ -26,7 +26,7 @@ import {
 } from '../db/queries/topics';
 import { profileRepository } from '../db/repositories';
 import { fetchContent } from '../services/aiService';
-import { useAppStore } from '../store/useAppStore';
+import { useRefreshProfile } from '../hooks/queries/useProfile';
 import type { TopicWithProgress, FlashcardsContent } from '../types';
 import LoadingOrb from '../components/LoadingOrb';
 import { linearTheme as n } from '../theme/linearTheme';
@@ -63,7 +63,7 @@ const RATINGS = [
 export default function FlashcardsScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<MenuStackParamList>>();
   const route = useRoute<RouteProp<MenuStackParamList, 'Flashcards'>>();
-  const refreshProfile = useAppStore((s) => s.refreshProfile);
+  const refreshProfile = useRefreshProfile();
   const [queue, setQueue] = useState<TopicWithProgress[]>([]);
   const [currentIdx, setCurrentIdx] = useState(0);
   const [cards, setCards] = useState<FlashcardsContent['cards']>([]);

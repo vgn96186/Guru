@@ -25,7 +25,7 @@ import LectureReturnSheet from '../components/LectureReturnSheet';
 import { EXTERNAL_APPS } from '../constants/externalApps';
 import { linearTheme as n } from '../theme/linearTheme';
 import { launchMedicalApp, type SupportedMedicalApp } from '../services/appLauncher';
-import { useAppStore } from '../store/useAppStore';
+import { useProfileQuery, useRefreshProfile } from '../hooks/queries/useProfile';
 import { BUNDLED_GROQ_KEY, BUNDLED_HF_TOKEN } from '../config/appConfig';
 import { generateADHDNote, type LectureAnalysis } from '../services/transcriptionService';
 import { showInfo, showSuccess, showError } from '../components/dialogService';
@@ -60,8 +60,8 @@ export default function TabNavigator() {
   const navigation = useNavigation<any>();
   const insets = useSafeAreaInsets();
   const { width: windowWidth, height: windowHeight } = useWindowDimensions();
-  const profile = useAppStore((state) => state.profile);
-  const refreshProfile = useAppStore((state) => state.refreshProfile);
+  const { data: profile } = useProfileQuery();
+  const refreshProfile = useRefreshProfile();
   const faceTrackingEnabled = profile?.faceTrackingEnabled ?? false;
   const groqKey = (profile?.groqApiKey || BUNDLED_GROQ_KEY || '').trim();
   const deepgramKey = (profile?.deepgramApiKey || '').trim();
@@ -79,12 +79,10 @@ export default function TabNavigator() {
   const [returnSheet, setReturnSheet] = useState<LectureReturnSheetData | null>(null);
   const actionHubNarrow = windowWidth < HOME_GRID_STACK_BREAKPOINT;
   /** Phone-class devices (portrait or landscape): 3 icons per row → 2 rows for 6 apps. */
-  const externalAppsTwoRowLayout =
-    Math.min(windowWidth, windowHeight) < HOME_GRID_STACK_BREAKPOINT;
+  const externalAppsTwoRowLayout = Math.min(windowWidth, windowHeight) < HOME_GRID_STACK_BREAKPOINT;
   const externalChipLayout = useMemo(() => {
     const gridGap = 12;
-    const sheetPadX =
-      (windowWidth < HOME_GRID_STACK_BREAKPOINT ? n.spacing.xl : n.spacing.lg) * 2;
+    const sheetPadX = (windowWidth < HOME_GRID_STACK_BREAKPOINT ? n.spacing.xl : n.spacing.lg) * 2;
     const sheetOuterW = Math.min(windowWidth * 0.94, 680);
     const innerW = Math.max(0, sheetOuterW - sheetPadX);
     if (externalAppsTwoRowLayout) {
@@ -569,7 +567,9 @@ export default function TabNavigator() {
                 </View>
               </View>
             ) : (
-              <View style={styles.externalGrid}>{actionHubExternalApps.map(renderActionHubExternalChip)}</View>
+              <View style={styles.externalGrid}>
+                {actionHubExternalApps.map(renderActionHubExternalChip)}
+              </View>
             )}
           </View>
         </Animated.View>

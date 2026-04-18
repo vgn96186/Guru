@@ -2,12 +2,13 @@ import React, { useEffect, useRef, useState } from 'react';
 import { TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Audio } from 'expo-av';
-import { useAppStore } from '../store/useAppStore';
+import { useProfileQuery, useProfileActions } from '../hooks/queries/useProfile';
 import { linearTheme as n } from '../theme/linearTheme';
 
 export default function FocusAudioPlayer() {
-  const isAudioEnabled = useAppStore((s) => s.profile?.focusAudioEnabled);
-  const toggleAudio = useAppStore((s) => s.toggleFocusAudio);
+  const { data: profile } = useProfileQuery();
+  const { toggleFocusAudio } = useProfileActions();
+  const isAudioEnabled = profile?.focusAudioEnabled;
   const [sound, setSound] = useState<Audio.Sound | null>(null);
   const soundRef = useRef<Audio.Sound | null>(null);
   const isMountedRef = useRef(true);
@@ -66,7 +67,7 @@ export default function FocusAudioPlayer() {
   }, [isAudioEnabled, sound]);
 
   return (
-    <TouchableOpacity onPress={toggleAudio} style={styles.button}>
+    <TouchableOpacity onPress={toggleFocusAudio} style={styles.button}>
       <Ionicons
         name={isAudioEnabled ? 'headset' : 'headset-outline'}
         size={24}

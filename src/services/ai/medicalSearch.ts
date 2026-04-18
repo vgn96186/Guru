@@ -1100,7 +1100,11 @@ export async function generateImageSearchQuery(
   ];
   try {
     const profile = await profileRepository.getProfile();
-    const model = createGuruFallbackModel({ profile, forceOrder: DEFAULT_PROVIDER_ORDER });
+    const model = createGuruFallbackModel({
+      profile,
+      forceOrder: DEFAULT_PROVIDER_ORDER,
+      disableLocal: true,
+    });
     const { text } = await generateText({ model, messages: msgs as any });
     const candidate = text
       .replace(/^["']|["']$/g, '')
@@ -1133,7 +1137,11 @@ export async function generateVisualSearchQueries(topicName: string): Promise<st
   ];
   try {
     const profile = await profileRepository.getProfile();
-    const model = createGuruFallbackModel({ profile, forceOrder: DEFAULT_PROVIDER_ORDER });
+    const model = createGuruFallbackModel({
+      profile,
+      forceOrder: DEFAULT_PROVIDER_ORDER,
+      disableLocal: true,
+    });
     const { text } = await generateText({ model, messages: msgs as any });
     // Try to parse as JSON array
     const cleaned = text.trim().replace(/^```json\n?|\n?```$/g, '');

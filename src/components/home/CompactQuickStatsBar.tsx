@@ -7,7 +7,8 @@ import LinearText from '../primitives/LinearText';
 import { linearTheme as n } from '../../theme/linearTheme';
 import { useReducedMotion } from '../../motion';
 import { profileRepository } from '../../db/repositories';
-import { useAppStore } from '../../store/useAppStore';
+import { PROFILE_QUERY_KEY } from '../../hooks/queries/useProfile';
+import { queryClient } from '../../services/queryClient';
 
 type CompactQuickStatsBarProps = {
   progressPercent: number;
@@ -68,7 +69,7 @@ export default function CompactQuickStatsBar({
 
   const handleGoalChange = useCallback(async (minutes: number) => {
     await profileRepository.updateProfile({ dailyGoalMinutes: minutes });
-    useAppStore.getState().refreshProfile?.();
+    await queryClient.invalidateQueries({ queryKey: PROFILE_QUERY_KEY });
     setShowGoalPicker(false);
   }, []);
 

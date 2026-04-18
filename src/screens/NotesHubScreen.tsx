@@ -92,7 +92,10 @@ import { getSubjectByName } from '../db/queries/topics';
 import { saveLectureTranscript } from '../db/queries/aiCache';
 import { getFailedOrPendingTranscriptions, type ExternalAppLog } from '../db/queries/externalLogs';
 import * as DocumentPicker from 'expo-document-picker';
+import { useRefreshProfile, PROFILE_QUERY_KEY } from '../hooks/queries/useProfile';
+import { queryClient } from '../services/queryClient';
 import { useAppStore } from '../store/useAppStore';
+import type { UserProfile } from '../types';
 import { dbEvents, DB_EVENT_KEYS } from '../services/databaseEvents';
 import { runFullTranscriptionPipeline } from '../services/lecture/lectureSessionMonitor';
 import { Audio } from 'expo-av';
@@ -102,7 +105,7 @@ export default function NotesHubScreen() {
   const navigation = useNavigation<Nav>();
   const tabsNavigation = navigation.getParent<NavigationProp<TabParamList>>();
   const { onScroll, onContentSizeChange } = useScrollRestoration('notes-hub');
-  const refreshProfile = useAppStore((s) => s.refreshProfile);
+  const refreshProfile = useRefreshProfile();
   const isRecoveringBackground = useAppStore((s) => s.isRecoveringBackground);
   const [isTranscribingUpload, setIsTranscribingUpload] = useState(false);
   const [uploadResult, setUploadResult] = useState<LectureAnalysis | null>(null);
@@ -155,13 +158,13 @@ export default function NotesHubScreen() {
     if (!session.id || !session.recordingPath) return;
     setIsRetrying(session.id);
     try {
-      const { profile } = useAppStore.getState();
+      const profileSnapshot = queryClient.getQueryData<UserProfile>(PROFILE_QUERY_KEY);
       await runFullTranscriptionPipeline({
         recordingPath: session.recordingPath,
         appName: session.appName,
         durationMinutes: session.durationMinutes || 0,
         logId: session.id,
-        groqKey: profile?.groqApiKey || undefined,
+        groqKey: profileSnapshot?.groqApiKey || undefined,
       });
       await loadData();
     } catch (e: unknown) {
@@ -193,7 +196,7 @@ export default function NotesHubScreen() {
       setSelectedUploadSubjectName(
         resolution.requiresSelection
           ? null
-          : resolution.matchedSubject?.name ?? resolution.normalizedSubjectName,
+          : (resolution.matchedSubject?.name ?? resolution.normalizedSubjectName),
       );
     } catch (e: unknown) {
       showError(e);

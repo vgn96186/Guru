@@ -611,7 +611,6 @@ function SyllabusScreenContent() {
           <StaggeredEntrance index={0} disabled={!entryComplete}>
             <ScreenHeader
               title="Syllabus"
-              titleStyle={styles.headerTitle}
               searchElement={
                 <BannerSearchBar
                   value={searchInput}

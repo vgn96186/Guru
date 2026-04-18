@@ -48,6 +48,7 @@ LogBox.ignoreLogs([
   'SafeAreaView has been deprecated',
   'Clipboard has been extracted',
   'PushNotificationIOS has been extracted',
+  '[expo-av]: Expo AV has been deprecated',
 ]);
 
 registerRootComponent(App);

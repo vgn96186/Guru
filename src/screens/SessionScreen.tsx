@@ -27,6 +27,7 @@ import {
   getCurrentAgendaItem,
   getCurrentContentType,
 } from '../store/useSessionStore';
+import { useProfileQuery, useRefreshProfile } from '../hooks/queries/useProfile';
 import { useAppStore } from '../store/useAppStore';
 import { invalidatePlanCache } from '../services/studyPlanner';
 import { buildSession } from '../services/sessionPlanner';
@@ -209,9 +210,9 @@ export default function SessionScreen() {
   const downgradeSession = useSessionStore((s) => s.downgradeSession);
 
   // ── App Store ──
-  const profile = useAppStore((s) => s.profile);
+  const { data: profile } = useProfileQuery();
   const dailyAvailability = useAppStore((s) => s.dailyAvailability);
-  const refreshProfile = useAppStore((s) => s.refreshProfile);
+  const refreshProfile = useRefreshProfile();
 
   // UI State
   const [, setElapsedSeconds] = useState(0);
@@ -372,23 +373,23 @@ export default function SessionScreen() {
     const sessionLength = forcedMinutes
       ? forcedMinutes
       : isWarmup
-      ? 5
-      : forcedMode === 'sprint'
-      ? 10
-      : dailyAvailability && dailyAvailability > 0
-      ? dailyAvailability
-      : profile?.preferredSessionLength ?? 45;
+        ? 5
+        : forcedMode === 'sprint'
+          ? 10
+          : dailyAvailability && dailyAvailability > 0
+            ? dailyAvailability
+            : (profile?.preferredSessionLength ?? 45);
 
     for (let attempt = 0; attempt <= PLANNING_AUTO_RETRY_DELAYS_MS.length; attempt += 1) {
       try {
-        const agendaResult = await buildSession(
+        const agendaResult = await buildSession({
           mood,
-          sessionLength,
-          profile?.openrouterApiKey ?? '',
-          profile?.openrouterKey,
-          profile?.groqApiKey,
-          { focusTopicId, focusTopicIds, preferredActionType, mode: forcedMode },
-        );
+          preferredMinutes: sessionLength,
+          apiKey: profile?.openrouterApiKey ?? '',
+          orKey: profile?.openrouterKey,
+          groqKey: profile?.groqApiKey,
+          options: { focusTopicId, focusTopicIds, preferredActionType, mode: forcedMode },
+        });
 
         const sessId = await createSession(
           agendaResult.items.map((i) => i.topic.id),
@@ -932,18 +933,18 @@ export default function SessionScreen() {
             fg: n.colors.error,
           }
         : agenda.mode === 'sprint'
-        ? {
-            label: 'SPRINT',
-            bg: `${n.colors.warning}22`,
-            border: `${n.colors.warning}55`,
-            fg: n.colors.warning,
-          }
-        : {
-            label: 'STUDY',
-            bg: `${n.colors.success}22`,
-            border: `${n.colors.success}55`,
-            fg: n.colors.success,
-          };
+          ? {
+              label: 'SPRINT',
+              bg: `${n.colors.warning}22`,
+              border: `${n.colors.warning}55`,
+              fg: n.colors.warning,
+            }
+          : {
+              label: 'STUDY',
+              bg: `${n.colors.success}22`,
+              border: `${n.colors.success}55`,
+              fg: n.colors.success,
+            };
 
     return (
       <SafeAreaView style={styles.safe}>
@@ -1166,8 +1167,8 @@ export default function SessionScreen() {
     (forcedMinutes
       ? forcedMinutes
       : forcedMode === 'sprint'
-      ? 10
-      : profile?.preferredSessionLength ?? 45) * 60;
+        ? 10
+        : (profile?.preferredSessionLength ?? 45)) * 60;
   const timeProgressPercent = Math.min(
     100,
     Math.round((activeElapsedSeconds / totalSessionSeconds) * 100),
@@ -1190,19 +1191,19 @@ export default function SessionScreen() {
                   isPaused
                     ? 'Paused'
                     : isOnBreak
-                    ? 'Break'
-                    : sessionState === 'studying'
-                    ? 'Studying'
-                    : 'Done'
+                      ? 'Break'
+                      : sessionState === 'studying'
+                        ? 'Studying'
+                        : 'Done'
                 }
                 variant={
                   isPaused
                     ? 'warning'
                     : isOnBreak
-                    ? 'accent'
-                    : sessionState === 'studying'
-                    ? 'default'
-                    : 'success'
+                      ? 'accent'
+                      : sessionState === 'studying'
+                        ? 'default'
+                        : 'success'
                 }
                 style={styles.phaseBadge}
               />
@@ -1695,8 +1696,8 @@ function SessionDoneScreen({
                   const barColor = good
                     ? n.colors.success
                     : r.pct >= 50
-                    ? n.colors.warning
-                    : n.colors.error;
+                      ? n.colors.warning
+                      : n.colors.error;
                   return (
                     <View
                       key={r.topicId}

@@ -4,7 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as FileSystem from 'expo-file-system/legacy';
 import * as DocumentPicker from 'expo-document-picker';
-import { useAppStore } from '../store/useAppStore';
+import { useProfileQuery, useProfileActions } from '../hooks/queries/useProfile';
 import ScreenHeader from '../components/ScreenHeader';
 import { ResponsiveContainer } from '../hooks/useResponsive';
 import { getLocalLlmRamWarning, isLocalLlmAllowedOnThisDevice } from '../services/deviceMemory';
@@ -118,11 +118,9 @@ function formatInstallBytes(bytes?: number): string | null {
 }
 
 export default function LocalModelScreen() {
-  const profile = useAppStore((s) => s.profile);
-  const setUseLocalModel = useAppStore((s) => s.setUseLocalModel);
-  const setLocalModelPath = useAppStore((s) => s.setLocalModelPath);
-  const setUseLocalWhisper = useAppStore((s) => s.setUseLocalWhisper);
-  const setLocalWhisperPath = useAppStore((s) => s.setLocalWhisperPath);
+  const { data: profile } = useProfileQuery();
+  const { setUseLocalModel, setLocalModelPath, setUseLocalWhisper, setLocalWhisperPath } =
+    useProfileActions();
   const localLlmWarning = getLocalLlmRamWarning();
   const localLlmBlocked = !isLocalLlmAllowedOnThisDevice();
 
@@ -561,11 +559,7 @@ export default function LocalModelScreen() {
       <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
       <ScrollView contentContainerStyle={styles.content}>
         <ResponsiveContainer>
-          <ScreenHeader
-            title="On-Device AI Setup"
-            containerStyle={styles.screenHeader}
-            titleStyle={styles.screenHeaderTitle}
-          />
+          <ScreenHeader title="On-Device AI Setup" showSettings />
           <LinearText variant="title" style={styles.sectionHeader}>
             Study AI (Text Model)
           </LinearText>

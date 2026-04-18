@@ -24,9 +24,14 @@ class LocalLlmModule : Module() {
             scope.launch {
                 try {
                     val context = appContext.reactContext ?: throw Exception("React context not available")
+                    val modelPath = options.modelPath
+                    if (modelPath.isNullOrBlank()) {
+                        promise.reject("ERR_LOCAL_LLM_INIT", "modelPath is required but was null or empty", null)
+                        return@launch
+                    }
                     val preferCpu = options.preferredBackend?.equals("cpu", ignoreCase = true) ?: false
                     // Pre-warm the engine
-                    val lease = LocalModelRuntime.acquireSharedEngine(context, options.modelPath, preferCpu)
+                    val lease = LocalModelRuntime.acquireSharedEngine(context, modelPath, preferCpu)
                     promise.resolve(mapOf("backend" to lease.backendLabel))
                 } catch (t: Throwable) {
                     promise.reject("ERR_LOCAL_LLM_INIT", t.message, t)
@@ -109,15 +114,15 @@ class LocalLlmModule : Module() {
 }
 
 data class InitializeOptions(
-    val modelPath: String,
-    val maxNumTokens: Int?,
-    val preferredBackend: String?
+    @expo.modules.kotlin.records.Field val modelPath: String?,
+    @expo.modules.kotlin.records.Field val maxNumTokens: Int?,
+    @expo.modules.kotlin.records.Field val preferredBackend: String?
 ) : expo.modules.kotlin.records.Record
 
 data class GenerateOptions(
-    val modelPath: String?, // Make it accept modelPath if provided, but default to null for now and we will update JS.
-    val systemInstruction: String?,
-    val temperature: Float?,
-    val topK: Int?,
-    val topP: Float?
+    @expo.modules.kotlin.records.Field val modelPath: String?,
+    @expo.modules.kotlin.records.Field val systemInstruction: String?,
+    @expo.modules.kotlin.records.Field val temperature: Float?,
+    @expo.modules.kotlin.records.Field val topK: Int?,
+    @expo.modules.kotlin.records.Field val topP: Float?
 ) : expo.modules.kotlin.records.Record

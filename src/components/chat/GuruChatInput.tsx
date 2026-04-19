@@ -16,7 +16,7 @@ const QUICK_REPLY_OPTIONS = [
 interface GuruChatInputProps {
   input: string;
   onChangeText: (text: string) => void;
-  onSend: () => void;
+  onSend: (text?: string) => void;
   onModelPress: () => void;
   currentModelLabel: string;
   isLoading: boolean;
@@ -33,9 +33,7 @@ export const GuruChatInput = memo(function GuruChatInput({
   autoFocus,
 }: GuruChatInputProps) {
   const handleQuickReply = (prompt: string) => {
-    onChangeText(prompt);
-    // Send after a brief delay to allow state update
-    setTimeout(() => onSend(), 0);
+    onSend(prompt);
   };
 
   return (
@@ -62,22 +60,26 @@ export const GuruChatInput = memo(function GuruChatInput({
       <View style={styles.composerWrap}>
         <View style={styles.inputRow}>
           <Pressable
-            style={({ pressed }) => [styles.modelIconBtn, pressed && styles.pressed]}
+            style={({ pressed }) => [styles.modelPillInline, pressed && styles.pressed]}
             onPress={onModelPress}
             accessibilityRole="button"
             accessibilityLabel={`Current model: ${currentModelLabel}. Tap to change.`}
           >
             <View style={styles.modelDot} />
-            <Ionicons name="chevron-down" size={8} color={n.colors.textMuted} />
+            <LinearText style={styles.modelPillText} numberOfLines={1}>
+              {currentModelLabel}
+            </LinearText>
+            <Ionicons name="chevron-down" size={11} color={n.colors.textMuted} />
           </Pressable>
+
           <TextInput
             style={styles.input}
-            placeholder="Ask Guru anything..."
+            placeholder="Message Guru..."
             placeholderTextColor={n.colors.textMuted}
             value={input}
             autoFocus={autoFocus}
             onChangeText={onChangeText}
-            onSubmitEditing={onSend}
+            onSubmitEditing={() => onSend()}
             returnKeyType="send"
             multiline={false}
             blurOnSubmit={false}
@@ -91,7 +93,7 @@ export const GuruChatInput = memo(function GuruChatInput({
               pressed && input.trim() && !isLoading && styles.pressed,
             ]}
             android_ripple={{ color: '#ffffff18', radius: 22 }}
-            onPress={onSend}
+            onPress={() => onSend()}
             disabled={!input.trim() || isLoading}
             accessibilityRole="button"
             accessibilityLabel="Send message"
@@ -110,66 +112,71 @@ export const GuruChatInput = memo(function GuruChatInput({
 
 const styles = StyleSheet.create({
   composerToolsWrap: {
-    gap: 4,
+    gap: 8,
   },
   quickActionsCenterWrap: {
-    alignItems: 'center',
-    paddingVertical: 4,
+    alignItems: 'flex-start',
     paddingHorizontal: 4,
   },
   quickActionsCenter: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    justifyContent: 'center',
+    justifyContent: 'flex-start',
     gap: 6,
-    maxWidth: '96%',
+    maxWidth: '100%',
   },
   quickActionChip: {
     alignItems: 'center',
     borderRadius: 999,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: whiteAlpha['10'],
-    backgroundColor: whiteAlpha['3'],
-    paddingHorizontal: 12,
-    paddingVertical: 7,
+    borderColor: whiteAlpha['8'],
+    backgroundColor: 'transparent',
+    paddingHorizontal: 11,
+    paddingVertical: 6,
   },
   quickActionChipDisabled: {
     opacity: 0.4,
   },
   quickActionText: {
-    color: n.colors.textSecondary,
-    fontSize: 12,
+    color: n.colors.textMuted,
+    fontSize: 11,
     fontWeight: '600',
     letterSpacing: 0.2,
   },
   composerWrap: {
     paddingHorizontal: 8,
     paddingVertical: 8,
-    borderRadius: n.radius.lg,
-    backgroundColor: whiteAlpha['2.5'],
+    borderRadius: 22,
+    backgroundColor: whiteAlpha['2'],
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: n.colors.border,
+    borderColor: whiteAlpha['8'],
     marginHorizontal: 4,
     marginBottom: 4,
+  },
+  modelPillInline: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    maxWidth: 132,
+    borderRadius: 999,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: whiteAlpha['8'],
+    backgroundColor: whiteAlpha['2.5'],
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    flexShrink: 1,
+  },
+  modelPillText: {
+    color: n.colors.textSecondary,
+    fontSize: 11,
+    fontWeight: '600',
+    flexShrink: 1,
   },
   inputRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    paddingHorizontal: 4,
-  },
-  modelIconBtn: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    backgroundColor: whiteAlpha['4'],
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: whiteAlpha['10'],
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexDirection: 'row',
-    gap: 2,
-    flexShrink: 0,
+    paddingHorizontal: 2,
   },
   modelDot: {
     width: 7,
@@ -183,18 +190,18 @@ const styles = StyleSheet.create({
   },
   input: {
     flex: 1,
-    minHeight: 42,
+    minHeight: 40,
     color: n.colors.textPrimary,
-    fontSize: 15,
-    lineHeight: 20,
+    fontSize: 14,
+    lineHeight: 18,
     paddingHorizontal: 4,
     paddingVertical: 8,
     textAlignVertical: 'center',
   },
   sendBtn: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     backgroundColor: n.colors.accent,
     alignItems: 'center',
     justifyContent: 'center',

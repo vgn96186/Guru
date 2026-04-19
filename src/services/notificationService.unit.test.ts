@@ -7,7 +7,7 @@ import {
   refreshAccountabilityNotifications,
   cancelAllNotifications,
 } from './notificationService';
-import { generateAccountabilityMessages, generateBreakEndMessages } from './aiService';
+import { generateAccountabilityMessages, generateBreakEndMessages } from './ai';
 import { profileRepository, dailyLogRepository } from '../db/repositories';
 import {
   getWeakestTopics,
@@ -34,7 +34,7 @@ jest.mock('expo-notifications', () => ({
   },
 }));
 
-jest.mock('./aiService', () => ({
+jest.mock('./ai', () => ({
   generateAccountabilityMessages: jest.fn(),
   generateBreakEndMessages: jest.fn(),
 }));

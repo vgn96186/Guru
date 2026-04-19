@@ -6,7 +6,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Animated, View, StyleSheet, TouchableOpacity, BackHandler, StatusBar } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { fetchContent } from '../services/aiService';
+import { fetchContent } from '../services/ai';
 import { getTopicById } from '../db/queries/topics';
 import type { QuizContent, TopicWithProgress } from '../types';
 import GuruChatOverlay from '../components/GuruChatOverlay';

@@ -272,9 +272,42 @@ export async function runAppBootstrap(): Promise<BootstrapOutcome> {
       void bootstrapLocalModels().catch((e: unknown) =>
         console.warn('[AppBootstrap] Local model bootstrap skipped:', e),
       );
+      // Warm up Gemini Nano (AICore) on supported devices — no model file needed
+      void (async () => {
+        try {
+          const { ensureNanoReady } = await import('./ai/llmRouting');
+          const result = await ensureNanoReady();
+          if (result.status === 'AVAILABLE') {
+            console.log('[AppBootstrap] Gemini Nano warmed up');
+          } else if (__DEV__) {
+            console.log(`[AppBootstrap] Gemini Nano status: ${result.status}`);
+          }
+        } catch {
+          // Not available on this device — fine
+        }
+      })();
       void cleanupStaleCheckpointDirs().catch((e: unknown) =>
         console.warn('[AppBootstrap] Checkpoint cleanup failed:', e),
       );
+
+      // Lecture maintenance tasks based on user settings
+      void (async () => {
+        try {
+          const profile = await profileRepository.getProfile();
+          if (profile.autoRepairLegacyNotesEnabled) {
+            console.log('[AppBootstrap] Running auto-repair legacy notes...');
+            const repaired = await autoRepairLegacyNotes();
+            console.log(`[AppBootstrap] Auto-repaired ${repaired} legacy notes`);
+          }
+          if (profile.scanOrphanedTranscriptsEnabled) {
+            console.log('[AppBootstrap] Scanning for orphaned transcripts...');
+            const recovered = await scanAndRecoverOrphanedTranscripts();
+            console.log(`[AppBootstrap] Recovered ${recovered} orphaned transcripts`);
+          }
+        } catch (e) {
+          console.warn('[AppBootstrap] Lecture maintenance failed:', e);
+        }
+      })();
     } else if (__DEV__) {
       console.log('[AppBootstrap] Skipping heavy background tasks — low RAM device.');
     }

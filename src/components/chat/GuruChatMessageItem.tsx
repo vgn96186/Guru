@@ -68,31 +68,18 @@ export const GuruChatMessageItem = memo(function GuruChatMessageItem({
   const hasGuruImages = guruGeneratedImages.length > 0 || guruReferenceImages.length > 0;
 
   return (
-    <View style={[styles.msgRow, message.role === 'user' ? styles.msgRowUser : styles.msgRowGuru]}>
-      {message.role === 'guru' ? (
-        <View style={styles.guruAvatarTiny}>
+    <View style={[styles.msgRow, styles.msgRowGuru]}>
+      <View style={styles.guruAvatarTiny}>
+        {message.role === 'guru' ? (
           <Ionicons name="sparkles" size={11} color={n.colors.accent} />
-        </View>
-      ) : null}
+        ) : (
+          <LinearText style={styles.userAvatarInitials}>V</LinearText>
+        )}
+      </View>
 
-      <View
-        style={[
-          styles.msgContent,
-          message.role === 'user' ? styles.msgContentUser : styles.msgContentGuru,
-        ]}
-      >
-        <View
-          style={[
-            styles.messageStack,
-            message.role === 'user' ? styles.messageStackUser : styles.messageStackGuru,
-          ]}
-        >
-          <View
-            style={[
-              styles.msgMetaRow,
-              message.role === 'user' ? styles.msgMetaRowUser : styles.msgMetaRowGuru,
-            ]}
-          >
+      <View style={[styles.msgContent, styles.msgContentGuru]}>
+        <View style={[styles.messageStack, styles.messageStackGuru]}>
+          <View style={[styles.msgMetaRow, styles.msgMetaRowGuru]}>
             <LinearText variant="meta" style={styles.msgAuthor}>
               {message.role === 'user' ? 'You' : 'Guru'}
             </LinearText>
@@ -149,43 +136,18 @@ export const GuruChatMessageItem = memo(function GuruChatMessageItem({
               </ScrollView>
             </View>
           ) : (
-            <Pressable
-              style={[
-                styles.bubbleWrap,
-                message.role === 'user' ? styles.bubbleWrapUser : styles.bubbleWrapGuru,
-              ]}
-              onLongPress={() => onCopyMessage(message.text)}
-              delayLongPress={400}
-            >
-              <View
-                style={[
-                  styles.bubble,
-                  message.role === 'user' ? styles.userBubble : styles.guruBubble,
-                ]}
-              >
+            <View style={[styles.bubbleWrap, styles.bubbleWrapGuru]}>
+              <View style={[styles.bubble, styles.guruBubble]}>
                 {message.role === 'guru' ? (
                   <FormattedGuruMessage text={message.text} />
                 ) : (
-                  <LinearText
-                    variant="body"
-                    style={[styles.bubbleText, styles.userBubbleText]}
-                    textBreakStrategy="simple"
-                  >
+                  <LinearText variant="body" style={styles.bubbleText} textBreakStrategy="simple">
                     {message.text}
                   </LinearText>
                 )}
               </View>
-            </Pressable>
+            </View>
           )}
-
-          <LinearText
-            variant="caption"
-            tone="muted"
-            style={[styles.timestamp, message.role === 'user' && styles.timestampRight]}
-          >
-            {formatTime(message.timestamp)}
-            {message.role === 'guru' && message.modelUsed ? `  ·  ${getShortModelLabel(message.modelUsed)}` : ''}
-          </LinearText>
 
           {message.role === 'guru' && hasGuruImages && !hasGuruImages ? (
             <View style={styles.generatedImagesWrap}>
@@ -298,7 +260,9 @@ export const GuruChatMessageItem = memo(function GuruChatMessageItem({
                 <View style={styles.responseStatusRow}>
                   <ActivityIndicator size="small" color={n.colors.accent} />
                   <LinearText style={styles.responseStatusText}>
-                    {imageJobKey.endsWith(':chart') ? 'Generating chart...' : 'Generating illustration...'}
+                    {imageJobKey.endsWith(':chart')
+                      ? 'Generating chart...'
+                      : 'Generating illustration...'}
                   </LinearText>
                 </View>
               ) : null}
@@ -313,30 +277,30 @@ export const GuruChatMessageItem = memo(function GuruChatMessageItem({
 const styles = StyleSheet.create({
   msgRow: {
     flexDirection: 'row',
-    alignItems: 'flex-end',
-    gap: 10,
+    alignItems: 'flex-start',
+    gap: 16,
     width: '100%',
   },
-  msgRowUser: {
-    flexDirection: 'row-reverse',
-  },
+  msgRowUser: {},
   msgRowGuru: {},
   guruAvatarTiny: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: accentAlpha['10'],
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: 'transparent',
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: accentAlpha['25'],
+    borderColor: whiteAlpha['8'],
     alignItems: 'center',
     justifyContent: 'center',
     flexShrink: 0,
-    marginBottom: 4,
-    shadowColor: '#5E6AD2',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.2,
-    shadowRadius: 6,
-    elevation: 2,
+    marginTop: 2,
+    overflow: 'hidden',
+  },
+  userAvatarInitials: {
+    color: n.colors.textMuted,
+    fontSize: 12,
+    fontWeight: '700',
+    lineHeight: 14,
   },
   msgContent: {
     flex: 1,
@@ -351,14 +315,10 @@ const styles = StyleSheet.create({
   messageStack: {
     flexShrink: 1,
   },
-  messageStackUser: {
-    maxWidth: '60%',
-    alignSelf: 'flex-end',
-    alignItems: 'flex-end',
-  },
+  messageStackUser: {},
   messageStackGuru: {
-    width: '88%',
-    maxWidth: '88%',
+    width: '100%',
+    maxWidth: '100%',
     alignSelf: 'flex-start',
     alignItems: 'flex-start',
   },
@@ -366,32 +326,29 @@ const styles = StyleSheet.create({
     maxWidth: '100%',
     minWidth: 0,
     flexShrink: 1,
+    paddingRight: 16,
   },
-  bubbleWrapUser: {
-    maxWidth: '60%',
-    alignSelf: 'flex-end',
-  },
+  bubbleWrapUser: {},
   bubbleWrapGuru: {
-    maxWidth: '88%',
+    maxWidth: '100%',
     minWidth: 0,
     alignSelf: 'flex-start',
   },
   msgMetaRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: 8,
     marginBottom: 4,
-    paddingHorizontal: 4,
   },
-  msgMetaRowUser: {
-    justifyContent: 'flex-end',
-  },
+  msgMetaRowUser: {},
   msgMetaRowGuru: {
     justifyContent: 'flex-start',
   },
   msgAuthor: {
-    ...n.typography.caption,
-    color: n.colors.textPrimary,
+    ...n.typography.label,
+    color: n.colors.textSecondary,
+    fontWeight: '700',
+    fontSize: 14,
   },
   msgMetaDivider: {
     color: '#66718C',
@@ -399,45 +356,32 @@ const styles = StyleSheet.create({
   },
   msgMetaText: {
     ...n.typography.meta,
-    color: n.colors.textSecondary,
+    color: n.colors.textMuted,
   },
   msgModelPill: {
-    paddingHorizontal: 8,
-    paddingVertical: 3,
+    paddingHorizontal: 7,
+    paddingVertical: 2,
     borderRadius: 999,
-    backgroundColor: accentAlpha['8'],
+    backgroundColor: whiteAlpha['2'],
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: accentAlpha['18'],
+    borderColor: whiteAlpha['8'],
   },
   msgModelPillText: {
-    color: n.colors.accent,
+    color: n.colors.textMuted,
     fontSize: 10,
     fontWeight: '700',
   },
   bubble: {
     alignSelf: 'flex-start',
     minWidth: 0,
-    borderRadius: 18,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderWidth: StyleSheet.hairlineWidth,
   },
-  userBubble: {
-    backgroundColor: accentAlpha['14'],
-    borderColor: accentAlpha['35'],
-    borderBottomRightRadius: 6,
-    shadowColor: '#5E6AD2',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.12,
-    shadowRadius: 8,
-    elevation: 3,
-  },
+  userBubble: {},
   guruBubble: {
-    backgroundColor: whiteAlpha['3'],
-    borderColor: whiteAlpha['8'],
-    borderBottomLeftRadius: 6,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: whiteAlpha['12'],
+    backgroundColor: 'transparent',
+    borderColor: 'transparent',
+    borderBottomLeftRadius: 20,
+    paddingHorizontal: 0,
+    paddingVertical: 0,
   },
   bubbleText: {
     ...n.typography.body,
@@ -448,17 +392,6 @@ const styles = StyleSheet.create({
     includeFontPadding: false,
     flexShrink: 1,
     paddingRight: 4,
-  },
-  userBubbleText: {
-    color: n.colors.textPrimary,
-    fontWeight: '600',
-    paddingRight: 4,
-  },
-  timestamp: {
-    display: 'none',
-  },
-  timestampRight: {
-    display: 'none',
   },
   generatedImagesWrap: {
     gap: 8,
@@ -479,9 +412,9 @@ const styles = StyleSheet.create({
     elevation: 6,
   },
   generatedImageInline: {
-    width: 160,
-    height: 160,
-    borderRadius: 16,
+    width: 176,
+    height: 176,
+    borderRadius: 18,
     backgroundColor: n.colors.surface,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: n.colors.border,
@@ -490,8 +423,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'flex-start',
     alignSelf: 'flex-start',
-    gap: 2,
-    marginTop: 4,
+    gap: 6,
+    marginTop: 10,
+    opacity: 0.6,
   },
   responseStatusRow: {
     flexDirection: 'row',
@@ -509,16 +443,16 @@ const styles = StyleSheet.create({
   responseActionBtn: {
     alignItems: 'center',
     justifyContent: 'center',
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    backgroundColor: n.colors.surface,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: whiteAlpha['2'],
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: n.colors.borderHighlight,
+    borderColor: whiteAlpha['8'],
   },
   responseActionBtnActive: {
-    backgroundColor: `${n.colors.accent}16`,
-    borderColor: `${n.colors.accent}52`,
+    backgroundColor: accentAlpha['10'],
+    borderColor: accentAlpha['20'],
   },
   pressed: {
     opacity: n.alpha.pressed,

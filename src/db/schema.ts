@@ -173,6 +173,7 @@ CREATE TABLE IF NOT EXISTS user_profile (
   local_model_path TEXT
   , use_local_whisper INTEGER NOT NULL DEFAULT 1
   , local_whisper_path TEXT
+  , use_nano INTEGER NOT NULL DEFAULT 1
   , quick_start_streak INTEGER NOT NULL DEFAULT 0
   , groq_api_key TEXT NOT NULL DEFAULT ''
   , gemini_key TEXT NOT NULL DEFAULT ''
@@ -222,6 +223,8 @@ CREATE TABLE IF NOT EXISTS user_profile (
   , home_novelty_cooldown_hours INTEGER NOT NULL DEFAULT 6
   , disabled_providers TEXT NOT NULL DEFAULT '[]'
   , jina_api_key TEXT NOT NULL DEFAULT ''
+  , auto_repair_legacy_notes_enabled INTEGER NOT NULL DEFAULT 0
+  , scan_orphaned_transcripts_enabled INTEGER NOT NULL DEFAULT 0
 )`;
 
 export const CREATE_GURU_CHAT_SESSION_MEMORY = `

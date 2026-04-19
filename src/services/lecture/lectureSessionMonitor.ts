@@ -741,10 +741,14 @@ export async function scanAndRecoverOrphanedRecordings(): Promise<number> {
 
 /**
  * Automatically repairs legacy or incomplete notes by re-analyzing their transcripts.
+ * Only runs if autoRepairLegacyNotesEnabled profile flag is set.
  */
-/** DISABLED — was burning API credits on boot. */
 export async function autoRepairLegacyNotes(): Promise<number> {
-  return 0;
+  const profile = await profileRepository.getProfile();
+  if (!profile.autoRepairLegacyNotesEnabled) {
+    return 0;
+  }
+  return _autoRepairLegacyNotes_DISABLED();
 }
 async function _autoRepairLegacyNotes_DISABLED(): Promise<number> {
   const legacy = await getLegacyLectureNotes(3); // Small batch
@@ -789,13 +793,14 @@ async function _autoRepairLegacyNotes_DISABLED(): Promise<number> {
 /**
  * Scans the transcripts directory (and public backup directory) for any files
  * NOT referenced in the database and creates lecture notes for them.
- */
-/**
- * Orphan transcript scanner — DISABLED.
- * Was auto-creating duplicate lecture notes on every boot.
+ * Only runs if scanOrphanedTranscriptsEnabled profile flag is set.
  */
 export async function scanAndRecoverOrphanedTranscripts(): Promise<number> {
-  return 0;
+  const profile = await profileRepository.getProfile();
+  if (!profile.scanOrphanedTranscriptsEnabled) {
+    return 0;
+  }
+  return _scanAndRecoverOrphanedTranscripts_DISABLED();
 }
 
 async function _scanAndRecoverOrphanedTranscripts_DISABLED(): Promise<number> {

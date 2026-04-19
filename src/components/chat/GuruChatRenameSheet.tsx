@@ -30,7 +30,8 @@ export const GuruChatRenameSheet = memo(function GuruChatRenameSheet({
         borderColor={n.colors.borderHighlight}
         style={styles.renameSheet}
       >
-        <LinearText style={styles.renameTitle}>Rename Chat</LinearText>
+        <LinearText style={styles.renameEyebrow}>Chat</LinearText>
+        <LinearText style={styles.renameTitle}>Rename conversation</LinearText>
         <TextInput
           style={styles.renameInput}
           value={currentTitle}
@@ -41,11 +42,18 @@ export const GuruChatRenameSheet = memo(function GuruChatRenameSheet({
           maxLength={80}
         />
         <View style={styles.renameActions}>
-          <Pressable style={({ pressed }) => [styles.renameBtn, pressed && styles.pressed]} onPress={onClose}>
+          <Pressable
+            style={({ pressed }) => [styles.renameBtn, pressed && styles.pressed]}
+            onPress={onClose}
+          >
             <LinearText style={styles.renameBtnText}>Cancel</LinearText>
           </Pressable>
           <Pressable
-            style={({ pressed }) => [styles.renameBtn, styles.renameBtnPrimary, pressed && styles.pressed]}
+            style={({ pressed }) => [
+              styles.renameBtn,
+              styles.renameBtnPrimary,
+              pressed && styles.pressed,
+            ]}
             onPress={onSave}
           >
             <LinearText style={styles.renameBtnTextPrimary}>Save</LinearText>
@@ -67,8 +75,8 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.56)',
   },
   renameSheet: {
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
     padding: 24,
     gap: 16,
     shadowColor: n.colors.background,
@@ -77,20 +85,29 @@ const styles = StyleSheet.create({
     shadowRadius: 24,
     elevation: 20,
   },
+  renameEyebrow: {
+    color: n.colors.textMuted,
+    fontSize: 12,
+    fontWeight: '700',
+    letterSpacing: 0.3,
+    textAlign: 'center',
+    marginBottom: -6,
+  },
   renameTitle: {
-    ...n.typography.sectionTitle,
+    ...n.typography.title,
     color: n.colors.textPrimary,
     textAlign: 'center',
+    fontSize: 22,
   },
   renameInput: {
-    backgroundColor: whiteAlpha['4'],
-    borderRadius: n.radius.md,
+    backgroundColor: whiteAlpha['2'],
+    borderRadius: 18,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: whiteAlpha['10'],
+    borderColor: whiteAlpha['8'],
     color: n.colors.textPrimary,
     fontSize: 15,
     paddingHorizontal: 14,
-    paddingVertical: 12,
+    paddingVertical: 13,
   },
   renameActions: {
     flexDirection: 'row',
@@ -98,12 +115,12 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   renameBtn: {
-    borderRadius: n.radius.sm,
+    borderRadius: 16,
     paddingHorizontal: 18,
     paddingVertical: 12,
-    backgroundColor: whiteAlpha['4'],
+    backgroundColor: whiteAlpha['2'],
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: n.colors.border,
+    borderColor: whiteAlpha['8'],
   },
   renameBtnPrimary: {
     backgroundColor: n.colors.accent,

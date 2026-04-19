@@ -14,7 +14,7 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { HomeStackParamList } from '../navigation/types';
 import * as Haptics from 'expo-haptics';
-import { fetchContent } from '../services/aiService';
+import { fetchContent } from '../services/ai';
 import { fetchWikipediaImage } from '../services/imageService';
 import { getAllTopicsWithProgress } from '../db/queries/topics';
 import LoadingOrb from '../components/LoadingOrb';

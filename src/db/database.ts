@@ -355,9 +355,7 @@ export async function seedTopics(_db: SQLite.SQLiteDatabase): Promise<void> {
     // Bulk-insert progress rows for any topic that doesn't already have one.
     // Equivalent to the previous per-row `INSERT OR IGNORE` inside pass 1,
     // but in a single statement. (Same pattern `syncVaultSeedTopics` uses.)
-    await db.execAsync(
-      `INSERT OR IGNORE INTO topic_progress (topic_id) SELECT id FROM topics`,
-    );
+    await db.execAsync(`INSERT OR IGNORE INTO topic_progress (topic_id) SELECT id FROM topics`);
 
     // Pass 2: Optimized parent linking (bulk repair).
     // A temp table maps (subject_id, name) → parent_name so the final UPDATE
@@ -479,6 +477,7 @@ async function ensureCriticalColumns(db: SQLite.SQLiteDatabase): Promise<void> {
       ['local_model_path', 'TEXT'],
       ['use_local_whisper', 'INTEGER NOT NULL DEFAULT 1'],
       ['local_whisper_path', 'TEXT'],
+      ['use_nano', 'INTEGER NOT NULL DEFAULT 1'],
       ['quick_start_streak', 'INTEGER NOT NULL DEFAULT 0'],
       ['groq_api_key', "TEXT NOT NULL DEFAULT ''"],
       ['study_resource_mode', "TEXT NOT NULL DEFAULT 'hybrid'"],

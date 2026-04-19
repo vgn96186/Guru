@@ -12,9 +12,9 @@ import type {
   LanguageModelStreamResult,
   LanguageModelMessage as ModelMessage,
 } from '@ai-sdk/provider';
-import { callPoe, streamPoeChat } from '../../llmRouting';
-import { getValidAccessToken } from '../../poe/poeTokenStore';
-import type { Message as LegacyMessage } from '../../types';
+import { callPoe, streamPoeChat } from '../llmRouting';
+import { getValidAccessToken } from '../poe/poeTokenStore';
+import type { Message as LegacyMessage } from '../types';
 
 export interface PoeConfig {
   modelId: string;

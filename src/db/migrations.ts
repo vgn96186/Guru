@@ -1094,7 +1094,22 @@ DROP TABLE ai_cache_old;`,
     sql: `ALTER TABLE user_profile ADD COLUMN jina_api_key TEXT NOT NULL DEFAULT ''`,
     description: 'Add Jina AI API key for embedding fallback',
   },
+  {
+    version: 165,
+    sql: `ALTER TABLE user_profile ADD COLUMN auto_repair_legacy_notes_enabled INTEGER NOT NULL DEFAULT 0`,
+    description: 'Add toggle for auto-repair legacy notes feature',
+  },
+  {
+    version: 166,
+    sql: `ALTER TABLE user_profile ADD COLUMN scan_orphaned_transcripts_enabled INTEGER NOT NULL DEFAULT 0`,
+    description: 'Add toggle for scan orphaned transcripts feature',
+  },
+  {
+    version: 167,
+    sql: `ALTER TABLE user_profile ADD COLUMN use_nano INTEGER NOT NULL DEFAULT 1`,
+    description: 'Add toggle for Gemini Nano (AICore) in local AI fallback chain',
+  },
 ];
 
 /** Latest schema version. Bump when adding new migrations. */
-export const LATEST_VERSION = 164;
+export const LATEST_VERSION = 167;

@@ -12,7 +12,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigation/types';
 import { ResponsiveContainer } from '../hooks/useResponsive';
 import { linearTheme as n } from '../theme/linearTheme';
-import { generateWakeUpMessage } from '../services/aiService';
+import { generateWakeUpMessage } from '../services/ai';
 
 type Nav = NativeStackNavigationProp<RootStackParamList, 'SleepMode'>;
 

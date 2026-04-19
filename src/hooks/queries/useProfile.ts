@@ -152,6 +152,13 @@ export function useProfileActions() {
       );
     },
 
+    setUseNano: (use: boolean) => {
+      updateProfile(
+        { useNano: use },
+        { onError: () => showToast('Failed to update Nano setting', 'error') },
+      );
+    },
+
     setStudyResourceMode: (mode: StudyResourceMode) => {
       updateProfile(
         { studyResourceMode: mode },

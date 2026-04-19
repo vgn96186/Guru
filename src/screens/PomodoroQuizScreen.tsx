@@ -7,7 +7,7 @@ import { useNavigation, useRoute, type RouteProp } from '@react-navigation/nativ
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/types';
 import { getTopicsDueForReview, getWeakestTopics } from '../db/queries/topics';
-import { fetchContent } from '../services/aiService';
+import { fetchContent } from '../services/ai';
 import type { QuizContent, TopicWithProgress } from '../types';
 import { MarkdownRender } from '../components/MarkdownRender';
 import { linearTheme as n } from '../theme/linearTheme';

@@ -7,8 +7,8 @@
  * succeeds. This is the one integration point the rest of the app talks to.
  */
 
-import { DEFAULT_PROVIDER_ORDER, type ProviderId, type UserProfile } from '../../../../types';
-import { BUNDLED_GEMINI_FALLBACK_KEY } from '../../../../config/appConfig';
+import { DEFAULT_PROVIDER_ORDER, type ProviderId, type UserProfile } from '../../../types';
+import { BUNDLED_GEMINI_FALLBACK_KEY } from '../../../config/appConfig';
 import type { LanguageModel } from '@ai-sdk/provider';
 import { createFallbackModel } from './fallback';
 import {
@@ -78,7 +78,7 @@ export function createGuruFallbackModel(opts: GuruFallbackOptions): LanguageMode
       models.push(
         createGeminiNanoModel({
           temperature: opts.textMode ? 0.2 : 0.1,
-        })
+        }),
       );
     }
 
@@ -213,4 +213,3 @@ function tryCreateProvider(
       return null;
   }
 }
-

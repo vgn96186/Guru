@@ -13,9 +13,9 @@ import type {
   LanguageModelStreamResult,
   LanguageModelMessage as ModelMessage,
 } from '@ai-sdk/provider';
-import { callGitLabDuo, streamGitLabDuoChat } from '../../llmRouting';
-import { getValidAccessToken } from '../../gitlab/gitlabTokenStore';
-import type { Message as LegacyMessage } from '../../types';
+import { callGitLabDuo, streamGitLabDuoChat } from '../llmRouting';
+import { getValidAccessToken } from '../gitlab/gitlabTokenStore';
+import type { Message as LegacyMessage } from '../types';
 
 export interface GitLabDuoConfig {
   modelId: string;

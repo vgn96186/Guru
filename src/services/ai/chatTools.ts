@@ -7,7 +7,7 @@ import { z } from 'zod';
 import { searchLatestMedicalSources, searchMedicalImages } from './medicalSearch';
 import { generateStudyImage, buildChatImageContextKey } from '../studyImageService';
 import type { GeneratedStudyImageStyle } from '../../db/queries/generatedStudyImages';
-import type { ToolSet } from 'ai';
+import type { ToolSet } from './v2/tool';
 
 // Search medical schema
 const searchMedicalSchema = z.object({
@@ -24,9 +24,9 @@ const searchReferenceImagesSchema = z.object({
 // Generate image schema
 const generateImageSchema = z.object({
   prompt: z.string().describe('Detailed description of the image to generate'),
-  style: z.enum(['illustration', 'chart']).describe(
-    'Image style: illustration for anatomical diagrams, chart for flowcharts'
-  ),
+  style: z
+    .enum(['illustration', 'chart'])
+    .describe('Image style: illustration for anatomical diagrams, chart for flowcharts'),
 });
 
 // Tool implementations
@@ -75,48 +75,55 @@ const searchReferenceImagesImpl = async (args: z.infer<typeof searchReferenceIma
   }
 };
 
-const createGenerateImageImpl = (topicName: string) => async (
-  args: z.infer<typeof generateImageSchema>
-) => {
-  try {
-    const timestamp = Date.now();
-    const image = await generateStudyImage({
-      contextType: 'chat',
-      contextKey: buildChatImageContextKey(topicName, timestamp),
-      topicName,
-      sourceText: args.prompt,
-      style: args.style as GeneratedStudyImageStyle,
-    });
-    return {
-      image: {
-        id: image.id,
-        localUri: image.localUri,
-        prompt: image.prompt,
-        style: image.style,
-      },
-    };
-  } catch (error) {
-    return {
-      error: error instanceof Error ? error.message : 'Image generation failed',
-    };
-  }
-};
+const createGenerateImageImpl =
+  (topicName: string, getAssistantTimestamp?: () => number) =>
+  async (args: z.infer<typeof generateImageSchema>) => {
+    try {
+      const timestamp = getAssistantTimestamp?.() ?? Date.now();
+      const image = await generateStudyImage({
+        contextType: 'chat',
+        contextKey: buildChatImageContextKey(topicName, timestamp),
+        topicName,
+        sourceText: args.prompt,
+        style: args.style as GeneratedStudyImageStyle,
+      });
+      return {
+        image: {
+          id: image.id,
+          localUri: image.localUri,
+          prompt: image.prompt,
+          style: image.style,
+        },
+      };
+    } catch (error) {
+      return {
+        error: error instanceof Error ? error.message : 'Image generation failed',
+      };
+    }
+  };
 
-// Tool set for useChat - cast to ToolSet for SDK compatibility
-export const createGuruChatTools = (topicName: string): ToolSet => ({
+// Tool set for useChat
+export const createGuruChatTools = (
+  topicName: string,
+  getAssistantTimestamp?: () => number,
+): ToolSet => ({
   search_medical: {
-    description: 'Search medical knowledge base (Wikipedia, Europe PMC, PubMed) for accurate medical information',
+    name: 'search_medical',
+    description:
+      'Search medical knowledge base (Wikipedia, Europe PMC, PubMed) for accurate medical information',
     inputSchema: searchMedicalSchema,
     execute: searchMedicalImpl,
   },
   search_reference_images: {
+    name: 'search_reference_images',
     description: 'Search for medical reference images (anatomy diagrams, charts, illustrations)',
     inputSchema: searchReferenceImagesSchema,
     execute: searchReferenceImagesImpl,
   },
   generate_image: {
+    name: 'generate_image',
     description: 'Generate a custom study image based on the conversation context',
     inputSchema: generateImageSchema,
-    execute: createGenerateImageImpl(topicName),
+    execute: createGenerateImageImpl(topicName, getAssistantTimestamp),
   },
-} as unknown as ToolSet);
+});

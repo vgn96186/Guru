@@ -106,6 +106,84 @@ class LocalLlmModule : Module() {
             LocalModelRuntime.resetSharedEngine()
         }
 
+        // ── Gemini Nano (AICore) ──────────────────────────────────────────
+        AsyncFunction("nanoCheckStatus") { promise: Promise ->
+            scope.launch {
+                try {
+                    val result = GeminiNanoRuntime.checkStatus()
+                    promise.resolve(mapOf(
+                        "status" to result.status.name,
+                        "errorMessage" to result.errorMessage,
+                    ))
+                } catch (t: Throwable) {
+                    promise.reject("ERR_NANO_STATUS", t.message, t)
+                }
+            }
+        }
+
+        AsyncFunction("nanoDownloadIfNeeded") { promise: Promise ->
+            scope.launch {
+                try {
+                    val result = GeminiNanoRuntime.downloadIfNeeded()
+                    promise.resolve(mapOf(
+                        "status" to result.status.name,
+                        "errorMessage" to result.errorMessage,
+                    ))
+                } catch (t: Throwable) {
+                    promise.reject("ERR_NANO_DOWNLOAD", t.message, t)
+                }
+            }
+        }
+
+        AsyncFunction("nanoWarmup") { promise: Promise ->
+            scope.launch {
+                try {
+                    GeminiNanoRuntime.warmup()
+                    promise.resolve(true)
+                } catch (t: Throwable) {
+                    promise.reject("ERR_NANO_WARMUP", t.message, t)
+                }
+            }
+        }
+
+        AsyncFunction("nanoGenerate") { options: NanoGenerateOptions, promise: Promise ->
+            scope.launch {
+                try {
+                    val result = GeminiNanoRuntime.generate(
+                        prompt = options.prompt,
+                        systemInstruction = options.systemInstruction,
+                        temperature = options.temperature ?: 0.3f,
+                        topK = options.topK ?: 40,
+                        maxOutputTokens = options.maxOutputTokens ?: 256,
+                    )
+                    promise.resolve(mapOf(
+                        "text" to result.text,
+                        "backend" to result.backend,
+                    ))
+                } catch (t: Throwable) {
+                    promise.reject("ERR_NANO_GENERATE", t.message, t)
+                }
+            }
+        }
+
+        AsyncFunction("nanoGradeAnswer") { options: NanoGradeOptions, promise: Promise ->
+            scope.launch {
+                try {
+                    val result = GeminiNanoRuntime.gradeAnswer(
+                        question = options.question,
+                        userAnswer = options.userAnswer,
+                        correctAnswer = options.correctAnswer,
+                    )
+                    promise.resolve(mapOf(
+                        "text" to result.text,
+                        "backend" to result.backend,
+                    ))
+                } catch (t: Throwable) {
+                    promise.reject("ERR_NANO_GRADE", t.message, t)
+                }
+            }
+        }
+
         OnDestroy {
             scope.cancel()
             LocalModelRuntime.resetSharedEngine()
@@ -125,4 +203,18 @@ data class GenerateOptions(
     @expo.modules.kotlin.records.Field val temperature: Float?,
     @expo.modules.kotlin.records.Field val topK: Int?,
     @expo.modules.kotlin.records.Field val topP: Float?
+) : expo.modules.kotlin.records.Record
+
+data class NanoGenerateOptions(
+    @expo.modules.kotlin.records.Field val prompt: String,
+    @expo.modules.kotlin.records.Field val systemInstruction: String?,
+    @expo.modules.kotlin.records.Field val temperature: Float?,
+    @expo.modules.kotlin.records.Field val topK: Int?,
+    @expo.modules.kotlin.records.Field val maxOutputTokens: Int?
+) : expo.modules.kotlin.records.Record
+
+data class NanoGradeOptions(
+    @expo.modules.kotlin.records.Field val question: String,
+    @expo.modules.kotlin.records.Field val userAnswer: String,
+    @expo.modules.kotlin.records.Field val correctAnswer: String?
 ) : expo.modules.kotlin.records.Record

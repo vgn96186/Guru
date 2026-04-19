@@ -187,6 +187,8 @@ export async function getUserProfile(): Promise<UserProfile> {
     home_novelty_cooldown_hours?: number | null;
     disabled_providers?: string;
     jina_api_key?: string;
+    auto_repair_legacy_notes_enabled?: number;
+    scan_orphaned_transcripts_enabled?: number;
   }>('SELECT * FROM user_profile WHERE id = 1');
 
   if (!r) {
@@ -230,6 +232,7 @@ export async function getUserProfile(): Promise<UserProfile> {
       localModelPath: null,
       useLocalWhisper: false,
       localWhisperPath: null,
+      useNano: true,
       quickStartStreak: 0,
       studyResourceMode: 'hybrid',
       harassmentTone: 'shame',
@@ -268,6 +271,8 @@ export async function getUserProfile(): Promise<UserProfile> {
       dbmciClassStartDate: null,
       btrStartDate: null,
       homeNoveltyCooldownHours: 6,
+      autoRepairLegacyNotesEnabled: false,
+      scanOrphanedTranscriptsEnabled: false,
     };
   }
 
@@ -361,6 +366,7 @@ export async function getUserProfile(): Promise<UserProfile> {
     localModelPath: r.local_model_path ?? null,
     useLocalWhisper: (r.use_local_whisper ?? 0) === 1,
     localWhisperPath: r.local_whisper_path ?? null,
+    useNano: (r.use_nano ?? 1) === 1,
     quickStartStreak: r.quick_start_streak ?? 0,
     studyResourceMode: r.study_resource_mode ?? 'hybrid',
     harassmentTone: (r.harassment_tone as HarassmentTone | null) ?? 'shame',
@@ -434,6 +440,8 @@ export async function getUserProfile(): Promise<UserProfile> {
         return [];
       }
     })(),
+    autoRepairLegacyNotesEnabled: (r.auto_repair_legacy_notes_enabled ?? 0) === 1,
+    scanOrphanedTranscriptsEnabled: (r.scan_orphaned_transcripts_enabled ?? 0) === 1,
   };
 }
 
@@ -472,6 +480,7 @@ export async function updateUserProfile(updates: Partial<UserProfile>): Promise<
     localModelPath: 'local_model_path',
     useLocalWhisper: 'use_local_whisper',
     localWhisperPath: 'local_whisper_path',
+    useNano: 'use_nano',
     quickStartStreak: 'quick_start_streak',
     groqApiKey: 'groq_api_key',
     geminiKey: 'gemini_key',
@@ -516,6 +525,8 @@ export async function updateUserProfile(updates: Partial<UserProfile>): Promise<
     dbmciClassStartDate: 'dbmci_class_start_date',
     btrStartDate: 'btr_start_date',
     homeNoveltyCooldownHours: 'home_novelty_cooldown_hours',
+    autoRepairLegacyNotesEnabled: 'auto_repair_legacy_notes_enabled',
+    scanOrphanedTranscriptsEnabled: 'scan_orphaned_transcripts_enabled',
   };
 
   const setClauses: string[] = [];

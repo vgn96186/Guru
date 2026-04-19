@@ -52,6 +52,10 @@ interface StudySectionsProps {
   requestPomodoroOverlay: () => void;
   pomodoroInterval: string;
   setPomodoroInterval: (value: string) => void;
+  autoRepairLegacyNotes: boolean;
+  setAutoRepairLegacyNotes: (value: boolean) => void;
+  scanOrphanedTranscripts: boolean;
+  setScanOrphanedTranscripts: (value: boolean) => void;
 }
 
 export default function StudySections(props: StudySectionsProps) {
@@ -97,6 +101,10 @@ export default function StudySections(props: StudySectionsProps) {
     requestPomodoroOverlay,
     pomodoroInterval,
     setPomodoroInterval,
+    autoRepairLegacyNotes,
+    setAutoRepairLegacyNotes,
+    scanOrphanedTranscripts,
+    setScanOrphanedTranscripts,
   } = props;
 
   return (
@@ -365,8 +373,8 @@ export default function StudySections(props: StudySectionsProps) {
               color: pomodoroLectureQuizReady
                 ? linearTheme.colors.success
                 : pomodoroEnabled
-                ? linearTheme.colors.error
-                : linearTheme.colors.textMuted,
+                  ? linearTheme.colors.error
+                  : linearTheme.colors.textMuted,
             },
           ]}
           variant="body"
@@ -375,8 +383,8 @@ export default function StudySections(props: StudySectionsProps) {
           {pomodoroLectureQuizReady
             ? 'Lecture-aware break quizzes are ready.'
             : pomodoroEnabled
-            ? 'Currently this will only suggest a break until overlay permission, Groq, and Deepgram are configured.'
-            : 'Pomodoro break suggestions are off.'}
+              ? 'Currently this will only suggest a break until overlay permission, Groq, and Deepgram are configured.'
+              : 'Pomodoro break suggestions are off.'}
         </LinearText>
         {!hasPomodoroOverlayPermission ? (
           <TouchableOpacity
@@ -456,6 +464,36 @@ export default function StudySections(props: StudySectionsProps) {
           Suggested: 20-30 minutes. The overlay can suggest a break without quiz data, but
           lecture-aware quiz breaks need both Groq and Deepgram.
         </LinearText>
+      </SectionToggle>
+
+      <SectionToggle
+        id="lecture_maintenance"
+        title="Lecture Maintenance"
+        icon="build-outline"
+        tint="#9C27B0"
+      >
+        <LinearText style={styles.hint} variant="body" tone="muted">
+          Automated lecture note repair and orphan transcript recovery. These features run on app
+          boot.
+        </LinearText>
+        <SettingsToggleRow
+          label="Auto-repair legacy notes"
+          hint="Re-analyze old lecture notes to improve topic detection and confidence. Burns API credits."
+          value={autoRepairLegacyNotes}
+          onValueChange={setAutoRepairLegacyNotes}
+          activeTrackColor={linearTheme.colors.error}
+          style={{ marginTop: 16 }}
+          labelIcon={<Ionicons name="hammer-outline" size={16} color={linearTheme.colors.error} />}
+        />
+        <SettingsToggleRow
+          label="Scan orphaned transcripts"
+          hint="Recover unprocessed audio recordings. May create duplicate notes if recordings were already processed."
+          value={scanOrphanedTranscripts}
+          onValueChange={setScanOrphanedTranscripts}
+          activeTrackColor={linearTheme.colors.error}
+          style={{ marginTop: 16 }}
+          labelIcon={<Ionicons name="search-outline" size={16} color={linearTheme.colors.error} />}
+        />
       </SectionToggle>
     </>
   );

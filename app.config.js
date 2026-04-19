@@ -11,8 +11,16 @@ if (missing.length > 0 && isDev) {
 const appJson = require('./app.json');
 const DEFAULT_GOOGLE_WEB_CLIENT_ID =
   '132201315043-443j8hva0nhoapt6j4brcdb9n57kb1rv.apps.googleusercontent.com';
+
+// Use .dev package suffix for development builds
+const androidPackage = 'com.anonymous.gurustudy.dev';
+
 module.exports = {
   ...appJson.expo,
+  android: {
+    ...appJson.expo.android,
+    package: androidPackage,
+  },
   plugins: [
     ...appJson.expo.plugins,
     [

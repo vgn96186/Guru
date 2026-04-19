@@ -9,7 +9,7 @@
 
 import type { LanguageModel } from '@ai-sdk/provider';
 import { createOpenAICompatibleModel } from './openaiCompatible';
-import { getQwenAccessToken, resolveQwenBaseUrl } from '../../qwen/qwenAuth';
+import { getQwenAccessToken, resolveQwenBaseUrl } from '../qwen/qwenAuth';
 
 export interface QwenConfig {
   modelId: string;

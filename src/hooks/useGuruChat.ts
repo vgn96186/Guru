@@ -3,14 +3,17 @@
  * Wraps useChat with Guru-specific context, persistence, and tools
  */
 
-import { useCallback, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { useChat, type UIMessage, type ChatStatus } from '../services/ai/useChat';
-import type { LanguageModelV2 as LanguageModel } from '@ai-sdk/provider';
-import { saveChatMessage } from '../db/queries/aiCache';
+import type { LanguageModelV2 as LanguageModel } from '../services/ai/v2/spec';
 import { ChatMessage } from '../types/chat';
 import { MedicalGroundingSource } from '../services/ai/types';
 import { GeneratedStudyImageRecord } from '../db/queries/generatedStudyImages';
 import { createGuruChatTools } from '../services/ai/chatTools';
+import { saveChatMessage } from '../db/queries/aiCache';
+import { markTopicDiscussedInChat } from '../db/queries/topics';
+import { getSessionMemoryRow } from '../db/queries/guruChatMemory';
+import { maybeSummarizeGuruSession } from '../services/guruChatSessionSummary';
 
 export interface GuruChatContext {
   sessionSummary?: string;
@@ -26,8 +29,14 @@ export interface UseGuruChatOptions {
   model: LanguageModel | null;
   threadId: number | null;
   topicName: string;
+  syllabusTopicId?: number;
   initialMessages?: ChatMessage[];
   context?: GuruChatContext;
+  onRefreshThreads?: () => Promise<void> | void;
+  onSessionMemoryUpdated?: (payload: { summaryText: string; stateJson: string }) => void;
+  finalizeAssistantMessage?: (
+    message: ChatMessage,
+  ) => Promise<Partial<ChatMessage> | void> | Partial<ChatMessage> | void;
   onError?: (error: unknown) => void;
 }
 
@@ -35,10 +44,49 @@ export interface UseGuruChatReturn {
   messages: ChatMessage[];
   status: ChatStatus;
   error: unknown;
-  sendMessage: (text: string) => Promise<void>;
+  sendMessage: (
+    text: string,
+    contextOverride?: Partial<GuruChatContext>,
+  ) => Promise<ChatMessage | null>;
   stop: () => void;
-  regenerate: () => Promise<void>;
+  regenerate: () => Promise<ChatMessage | null>;
   setMessages: React.Dispatch<React.SetStateAction<ChatMessage[]>>;
+}
+
+function buildSystemPrompt(context?: GuruChatContext): string {
+  const parts: string[] = [
+    'You are Guru, a medical education AI assistant helping a student prepare for NEET-PG and INICET exams.',
+  ];
+
+  if (context?.profileNotes) {
+    parts.push(`Student notes: ${context.profileNotes}`);
+  }
+
+  if (context?.sessionSummary) {
+    parts.push(`Session summary: ${context.sessionSummary}`);
+  }
+
+  if (context?.sessionStateJson) {
+    parts.push(`Tutor state JSON: ${context.sessionStateJson}`);
+  }
+
+  if (context?.studyContext) {
+    parts.push(`Study context: ${context.studyContext}`);
+  }
+
+  if (context?.syllabusTopicId != null) {
+    parts.push(`Syllabus topic id: ${context.syllabusTopicId}`);
+  }
+
+  if (context?.groundingTitle && context?.groundingContext) {
+    parts.push(`Grounding topic: ${context.groundingTitle}\n${context.groundingContext}`);
+  }
+
+  parts.push(
+    'Provide accurate medical information with citations when possible. Use the search_medical tool for factual queries.',
+  );
+
+  return parts.join('\n\n');
 }
 
 function mapUIMessageToChatMessage(uiMsg: UIMessage): ChatMessage {
@@ -70,36 +118,27 @@ function mapChatMessageToUIMessage(chatMsg: ChatMessage): UIMessage {
 }
 
 export function useGuruChat(options: UseGuruChatOptions): UseGuruChatReturn {
-  const { model, threadId, topicName, initialMessages, context, onError } = options;
+  const {
+    model,
+    threadId,
+    topicName = '',
+    syllabusTopicId,
+    initialMessages,
+    context,
+    onRefreshThreads,
+    onSessionMemoryUpdated,
+    finalizeAssistantMessage,
+    onError,
+  } = options ?? ({} as UseGuruChatOptions);
+  const assistantTimestampRef = useRef<number>(Date.now());
+  const hasPersistedTopicProgressRef = useRef(false);
+
+  useEffect(() => {
+    hasPersistedTopicProgressRef.current = false;
+  }, [threadId, syllabusTopicId, topicName]);
 
   // Build system prompt with Guru context
-  const systemPrompt = useMemo(() => {
-    const parts: string[] = [
-      'You are Guru, a medical education AI assistant helping a student prepare for NEET-PG and INICET exams.',
-    ];
-
-    if (context?.profileNotes) {
-      parts.push(`Student notes: ${context.profileNotes}`);
-    }
-
-    if (context?.sessionSummary) {
-      parts.push(`Session summary: ${context.sessionSummary}`);
-    }
-
-    if (context?.studyContext) {
-      parts.push(`Study context: ${context.studyContext}`);
-    }
-
-    if (context?.groundingTitle && context?.groundingContext) {
-      parts.push(`Grounding topic: ${context.groundingTitle}\n${context.groundingContext}`);
-    }
-
-    parts.push(
-      'Provide accurate medical information with citations when possible. Use the search_medical tool for factual queries.',
-    );
-
-    return parts.join('\n\n');
-  }, [context]);
+  const systemPrompt = useMemo(() => buildSystemPrompt(context), [context]);
 
   // Convert initial messages to UIMessage format
   const uiInitialMessages = useMemo(() => {
@@ -107,7 +146,10 @@ export function useGuruChat(options: UseGuruChatOptions): UseGuruChatReturn {
   }, [initialMessages]);
 
   // Create tools with topic context
-  const tools = useMemo(() => createGuruChatTools(topicName), [topicName]);
+  const tools = useMemo(
+    () => createGuruChatTools(topicName, () => assistantTimestampRef.current),
+    [topicName],
+  );
 
   // Use Vercel AI SDK's useChat (only when model is provided)
   const chatResult = useChat(
@@ -118,29 +160,6 @@ export function useGuruChat(options: UseGuruChatOptions): UseGuruChatReturn {
           tools,
           initialMessages: uiInitialMessages,
           onError,
-          onFinish: useCallback(
-            async (finalMsg: UIMessage) => {
-              // Persist to database
-              if (threadId) {
-                try {
-                  await saveChatMessage(
-                    threadId,
-                    topicName,
-                    finalMsg.role === 'user' ? 'user' : 'guru',
-                    finalMsg.text,
-                    finalMsg.createdAt,
-                    finalMsg.sources && finalMsg.sources.length > 0
-                      ? JSON.stringify(finalMsg.sources)
-                      : undefined,
-                    finalMsg.modelUsed ?? undefined,
-                  );
-                } catch {
-                  // Persistence is non-blocking
-                }
-              }
-            },
-            [threadId, topicName],
-          ),
         }
       : {
           // Dummy config when model is null (disabled state)
@@ -155,9 +174,9 @@ export function useGuruChat(options: UseGuruChatOptions): UseGuruChatReturn {
     messages: uiMessages = [],
     status = 'idle',
     error = null,
-    sendMessage: sendUIMessage = async () => {},
+    sendMessage: sendUIMessage = async () => null,
     stop = () => {},
-    regenerate = async () => {},
+    regenerate = async () => null,
     setMessages: setUIMessages = () => {},
   } = chatResult;
 
@@ -168,10 +187,98 @@ export function useGuruChat(options: UseGuruChatOptions): UseGuruChatReturn {
 
   // Wrap sendMessage to match our interface
   const sendMessage = useCallback(
-    async (text: string) => {
-      await sendUIMessage(text);
+    async (text: string, contextOverride?: Partial<GuruChatContext>) => {
+      const mergedContext = contextOverride ? { ...context, ...contextOverride } : context;
+      const trimmedText = text.trim();
+      if (!trimmedText) return null;
+
+      if (threadId != null) {
+        try {
+          await saveChatMessage(threadId, topicName, 'user', trimmedText, Date.now());
+          await onRefreshThreads?.();
+        } catch {
+          // Persistence should not block the main conversation flow.
+        }
+      }
+
+      assistantTimestampRef.current = Date.now();
+      const assistantMessage = await sendUIMessage(trimmedText, {
+        contextOverride: mergedContext as Record<string, unknown> | undefined,
+        systemOverride: buildSystemPrompt(mergedContext),
+        assistantCreatedAt: assistantTimestampRef.current,
+      });
+      const mappedAssistantMessage = assistantMessage
+        ? mapUIMessageToChatMessage(assistantMessage)
+        : null;
+      if (!mappedAssistantMessage) return null;
+
+      const finalizedPatch = finalizeAssistantMessage
+        ? await finalizeAssistantMessage(mappedAssistantMessage)
+        : undefined;
+      const finalMessage = finalizedPatch
+        ? { ...mappedAssistantMessage, ...finalizedPatch }
+        : mappedAssistantMessage;
+
+      if (finalizedPatch && Object.keys(finalizedPatch).length > 0) {
+        setUIMessages((prev) =>
+          prev.map((entry) =>
+            entry.id === finalMessage.id ? mapChatMessageToUIMessage(finalMessage) : entry,
+          ),
+        );
+      }
+
+      if (threadId != null) {
+        try {
+          await saveChatMessage(
+            threadId,
+            topicName,
+            'guru',
+            finalMessage.text,
+            finalMessage.timestamp,
+            finalMessage.sources && finalMessage.sources.length > 0
+              ? JSON.stringify(finalMessage.sources)
+              : undefined,
+            finalMessage.modelUsed,
+          );
+          await onRefreshThreads?.();
+        } catch {
+          // Ignore persistence issues here too.
+        }
+
+        if (syllabusTopicId != null && !hasPersistedTopicProgressRef.current) {
+          try {
+            await markTopicDiscussedInChat(syllabusTopicId);
+            hasPersistedTopicProgressRef.current = true;
+          } catch {
+            // Progress persistence should not block the conversation flow.
+          }
+        }
+
+        try {
+          await maybeSummarizeGuruSession(threadId, topicName);
+          const row = await getSessionMemoryRow(threadId);
+          onSessionMemoryUpdated?.({
+            summaryText: row?.summaryText ?? '',
+            stateJson: row?.stateJson ?? '{}',
+          });
+        } catch {
+          /* session summary is optional */
+        }
+      }
+
+      return finalMessage;
     },
-    [sendUIMessage],
+    [
+      context,
+      finalizeAssistantMessage,
+      onRefreshThreads,
+      onSessionMemoryUpdated,
+      sendUIMessage,
+      setUIMessages,
+      syllabusTopicId,
+      threadId,
+      topicName,
+    ],
   );
 
   // Wrap setMessages
@@ -196,7 +303,10 @@ export function useGuruChat(options: UseGuruChatOptions): UseGuruChatReturn {
     error,
     sendMessage,
     stop,
-    regenerate,
+    regenerate: async () => {
+      const finalMessage = await regenerate();
+      return finalMessage ? mapUIMessageToChatMessage(finalMessage) : null;
+    },
     setMessages,
   };
 }

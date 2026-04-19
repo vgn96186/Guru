@@ -70,7 +70,8 @@ export const GuruChatModelSelector = memo(function GuruChatModelSelector({
     <View style={styles.sheetOverlay} pointerEvents="box-none">
       <Pressable style={styles.sheetBackdrop} onPress={onClose} />
       <View style={styles.sheetContent}>
-        <LinearText style={styles.sheetTitle}>Choose Brain</LinearText>
+        <LinearText style={styles.sheetEyebrow}>Model</LinearText>
+        <LinearText style={styles.sheetTitle}>Choose a model</LinearText>
         {localLlmWarning ? (
           <LinearText style={styles.warningText}>{localLlmWarning}</LinearText>
         ) : null}
@@ -128,30 +129,37 @@ const styles = StyleSheet.create({
   },
   sheetContent: {
     backgroundColor: n.colors.surface,
-    borderRadius: 20,
-    paddingTop: 16,
-    paddingHorizontal: 16,
-    paddingBottom: 16,
+    borderRadius: 24,
+    paddingTop: 18,
+    paddingHorizontal: 18,
+    paddingBottom: 18,
     maxHeight: '74%',
     width: '94%',
     maxWidth: 560,
     alignSelf: 'center',
     marginBottom: 12,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: whiteAlpha['10'],
+    borderColor: whiteAlpha['8'],
     shadowColor: n.colors.background,
     shadowOffset: { width: 0, height: -8 },
     shadowOpacity: 0.5,
     shadowRadius: 24,
     elevation: 20,
   },
+  sheetEyebrow: {
+    color: n.colors.textMuted,
+    fontSize: 12,
+    fontWeight: '700',
+    letterSpacing: 0.3,
+    marginBottom: 6,
+    textAlign: 'center',
+  },
   sheetTitle: {
-    ...n.typography.label,
+    ...n.typography.title,
     color: n.colors.textPrimary,
     marginBottom: 14,
     textAlign: 'center',
-    letterSpacing: 0.4,
-    fontSize: 14,
+    fontSize: 22,
   },
   warningText: {
     ...n.typography.caption,
@@ -165,16 +173,16 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   tabStripContent: {
-    gap: 4,
+    gap: 6,
     paddingHorizontal: 2,
   },
   tabChip: {
     paddingHorizontal: 12,
-    paddingVertical: 7,
+    paddingVertical: 8,
     borderRadius: 999,
-    backgroundColor: 'transparent',
+    backgroundColor: whiteAlpha['2'],
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: 'transparent',
+    borderColor: whiteAlpha['8'],
   },
   tabChipActive: {
     backgroundColor: accentAlpha['10'],
@@ -182,7 +190,7 @@ const styles = StyleSheet.create({
   },
   tabChipText: {
     color: n.colors.textMuted,
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '700',
   },
   tabChipTextActive: {
@@ -195,32 +203,34 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    borderRadius: n.radius.sm,
-    marginBottom: 2,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    borderRadius: 16,
+    marginBottom: 6,
+    backgroundColor: whiteAlpha['2'],
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: whiteAlpha['8'],
   },
   modelItemActive: {
-    backgroundColor: accentAlpha['8'],
-    borderWidth: StyleSheet.hairlineWidth,
+    backgroundColor: accentAlpha['10'],
     borderColor: accentAlpha['20'],
   },
   modelItemText: {
     color: n.colors.textSecondary,
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '600',
   },
   modelItemTextActive: {
     color: n.colors.textPrimary,
   },
   closeBtn: {
-    marginTop: 10,
+    marginTop: 12,
     paddingVertical: 12,
     alignItems: 'center',
-    borderRadius: n.radius.sm,
-    backgroundColor: whiteAlpha['3'],
+    borderRadius: 16,
+    backgroundColor: whiteAlpha['2'],
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: n.colors.border,
+    borderColor: whiteAlpha['8'],
   },
   closeBtnText: {
     color: n.colors.textMuted,

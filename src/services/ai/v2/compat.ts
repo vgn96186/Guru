@@ -33,6 +33,7 @@ export async function generateTextV2(
   const profile = await profileRepository.getProfile();
   const model = createGuruFallbackModel({
     profile,
+    chosenModel: options?.chosenModel,
     forceOrder: options?.providerOrderOverride,
   });
   const result = await generateText({
@@ -57,6 +58,7 @@ export async function generateTextStreamV2(
   const profile = await profileRepository.getProfile();
   const model = createGuruFallbackModel({
     profile,
+    chosenModel: options?.chosenModel,
     forceOrder: options?.providerOrderOverride,
   });
   const result = streamText({
@@ -84,6 +86,7 @@ export async function generateJSONV2<T>(
   const profile = await profileRepository.getProfile();
   const model = createGuruFallbackModel({
     profile,
+    chosenModel: options?.chosenModel,
     forceOrder: options?.providerOrderOverride,
   });
   const result = await generateObject({
@@ -103,11 +106,17 @@ export async function chatWithGuruV2(
   options?: {
     systemPrompt?: string;
     studyContext?: string;
+    chosenModel?: string;
+    providerOrderOverride?: ProviderId[];
     tools?: ToolSet;
   },
 ): Promise<{ reply: string; modelUsed: string }> {
   const profile = await profileRepository.getProfile();
-  const model = createGuruFallbackModel({ profile });
+  const model = createGuruFallbackModel({
+    profile,
+    chosenModel: options?.chosenModel,
+    forceOrder: options?.providerOrderOverride,
+  });
 
   const messages: ModelMessage[] = [];
   if (options?.systemPrompt) {
@@ -139,13 +148,19 @@ export async function chatWithGuruStreamV2(
   options?: {
     systemPrompt?: string;
     studyContext?: string;
+    chosenModel?: string;
+    providerOrderOverride?: ProviderId[];
     tools?: ToolSet;
     onToolCall?: (call: { toolName: string; input: unknown }) => void;
     onToolResult?: (result: { toolName: string; output: unknown }) => void;
   },
 ): Promise<{ reply: string; modelUsed: string }> {
   const profile = await profileRepository.getProfile();
-  const model = createGuruFallbackModel({ profile });
+  const model = createGuruFallbackModel({
+    profile,
+    chosenModel: options?.chosenModel,
+    forceOrder: options?.providerOrderOverride,
+  });
 
   const messages: ModelMessage[] = [];
   if (options?.systemPrompt) {

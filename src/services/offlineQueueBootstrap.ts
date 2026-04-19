@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import type { Message } from './aiService';
+import type { Message } from './ai';
 import { registerProcessor, markCompleted } from './offlineQueue';
 import { runFullTranscriptionPipeline } from './lecture/lectureSessionMonitor';
 import { profileRepository } from '../db/repositories';

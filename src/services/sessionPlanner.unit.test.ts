@@ -2,7 +2,7 @@ import { buildSession } from './sessionPlanner';
 import { getAllTopicsWithProgress } from '../db/queries/topics';
 import { getRecentlyStudiedTopicNames } from '../db/queries/sessions';
 import { profileRepository } from '../db/repositories';
-import { planSessionWithAI } from './aiService';
+import { planSessionWithAI } from './ai';
 import { getMoodContentTypes } from '../constants/prompts';
 import type { TopicWithProgress, Mood, ContentType } from '../types';
 
@@ -20,7 +20,7 @@ jest.mock('../db/repositories', () => ({
   },
 }));
 
-jest.mock('./aiService', () => ({
+jest.mock('./ai', () => ({
   planSessionWithAI: jest.fn(),
 }));
 
@@ -120,7 +120,9 @@ describe('sessionPlanner', () => {
 
   it('should throw error if no topics available', async () => {
     (getAllTopicsWithProgress as jest.Mock).mockResolvedValue([]);
-    await expect(buildSession({ mood: 'okay', preferredMinutes: 30, apiKey: 'key' })).rejects.toThrow(/No topics available/i);
+    await expect(
+      buildSession({ mood: 'okay', preferredMinutes: 30, apiKey: 'key' }),
+    ).rejects.toThrow(/No topics available/i);
   });
 
   it('should build a session using AI if key is provided', async () => {
@@ -359,7 +361,13 @@ describe('sessionPlanner', () => {
   // --- Edge Case Tests ---
 
   it('should handle empty strings for all API keys', async () => {
-    const agenda = await buildSession({ mood: 'okay', preferredMinutes: 30, apiKey: '  ', orKey: ' ', groqKey: '' });
+    const agenda = await buildSession({
+      mood: 'okay',
+      preferredMinutes: 30,
+      apiKey: '  ',
+      orKey: ' ',
+      groqKey: '',
+    });
     expect(planSessionWithAI).not.toHaveBeenCalled();
     expect(agenda.items.length).toBeGreaterThan(0);
   });

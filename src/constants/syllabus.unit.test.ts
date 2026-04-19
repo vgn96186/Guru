@@ -49,7 +49,6 @@ describe('syllabus seed characterization', () => {
   it('matches the committed snapshot', () => {
     if (process.env.UPDATE_SYLLABUS_SNAPSHOT === '1') {
       writeFileSync(FIXTURE_PATH, JSON.stringify(fingerprint, null, 2) + '\n');
-      // eslint-disable-next-line no-console
       console.warn(`[syllabus.snapshot] wrote ${FIXTURE_PATH}`);
       return;
     }
@@ -95,7 +94,7 @@ describe('syllabus seed characterization', () => {
       expect(typeof t[1]).toBe('string');
       expect(typeof t[2]).toBe('number');
       expect(typeof t[3]).toBe('number');
-      if (t[4] !== undefined) expect(typeof t[4]).toBe('string');
+      expect(t[4] === undefined || typeof t[4] === 'string').toBe(true);
       expect(t.length === 4 || t.length === 5).toBe(true);
     }
   });

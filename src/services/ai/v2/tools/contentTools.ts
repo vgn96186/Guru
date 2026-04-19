@@ -114,16 +114,40 @@ export const fetchContentTool = tool({
       return { error: `Topic not found matching "${topicName}"` };
     }
 
-    // In a real app, this might fetch from a 'notes' or 'content' table.
-    // For now, we return the description or a placeholder.
-    const content =
-      topicRow.description ||
-      `Detailed study material for ${topicRow.name} is currently being updated. Focus on key mechanisms and clinical presentations.`;
+    // Try to fetch from ai_cache for keypoints (mapped to key_points)
+    let content = topicRow.description || '';
+    if (contentType === 'key_points') {
+      const cachedContent = await db.getFirstAsync<{ content_json: string }>(
+        `SELECT content_json FROM guru_aicache.ai_cache WHERE topic_id = ? AND content_type = 'keypoints'`,
+        [topicRow.id],
+      );
+      if (cachedContent) {
+        try {
+          const parsed = JSON.parse(cachedContent.content_json);
+          if (parsed.points && Array.isArray(parsed.points)) {
+            content = parsed.points.join('\n• ');
+            if (parsed.memoryHook) {
+              content += `\n\nMemory Hook: ${parsed.memoryHook}`;
+            }
+          }
+        } catch {
+          // If parsing fails, fall back to description
+        }
+      }
+    }
+
+    // If no content found, return description or placeholder
+    if (!content) {
+      content = `Detailed study material for ${topicRow.name} is currently being updated. Focus on key mechanisms and clinical presentations.`;
+    }
 
     return {
       topic: topicRow.name,
       contentType,
-      content: contentType === 'summary' ? content.substring(0, 200) + '...' : content,
+      content:
+        contentType === 'summary'
+          ? content.substring(0, 200) + (content.length > 200 ? '...' : '')
+          : content,
     };
   },
 });
@@ -179,7 +203,10 @@ export const generateKeypointsTool = tool({
         id: topicRow.id,
         name: topicRow.name,
         subjectName: topicRow.subjectName,
-        progress: { status: (topicRow.status as any) ?? 'unseen', confidence: topicRow.confidence ?? 0 },
+        progress: {
+          status: (topicRow.status as any) ?? 'unseen',
+          confidence: topicRow.confidence ?? 0,
+        },
       } as any,
       'keypoints',
     );
@@ -236,7 +263,10 @@ export const generateMustKnowTool = tool({
         id: topicRow.id,
         name: topicRow.name,
         subjectName: topicRow.subjectName,
-        progress: { status: (topicRow.status as any) ?? 'unseen', confidence: topicRow.confidence ?? 0 },
+        progress: {
+          status: (topicRow.status as any) ?? 'unseen',
+          confidence: topicRow.confidence ?? 0,
+        },
       } as any,
       'must_know',
     );
@@ -294,7 +324,10 @@ export const generateStoryTool = tool({
         id: topicRow.id,
         name: topicRow.name,
         subjectName: topicRow.subjectName,
-        progress: { status: (topicRow.status as any) ?? 'unseen', confidence: topicRow.confidence ?? 0 },
+        progress: {
+          status: (topicRow.status as any) ?? 'unseen',
+          confidence: topicRow.confidence ?? 0,
+        },
       } as any,
       'story',
     );
@@ -351,7 +384,10 @@ export const generateMnemonicTool = tool({
         id: topicRow.id,
         name: topicRow.name,
         subjectName: topicRow.subjectName,
-        progress: { status: (topicRow.status as any) ?? 'unseen', confidence: topicRow.confidence ?? 0 },
+        progress: {
+          status: (topicRow.status as any) ?? 'unseen',
+          confidence: topicRow.confidence ?? 0,
+        },
       } as any,
       'mnemonic',
     );
@@ -409,7 +445,10 @@ export const generateTeachBackTool = tool({
         id: topicRow.id,
         name: topicRow.name,
         subjectName: topicRow.subjectName,
-        progress: { status: (topicRow.status as any) ?? 'unseen', confidence: topicRow.confidence ?? 0 },
+        progress: {
+          status: (topicRow.status as any) ?? 'unseen',
+          confidence: topicRow.confidence ?? 0,
+        },
       } as any,
       'teach_back',
     );
@@ -467,7 +506,10 @@ export const generateErrorHuntTool = tool({
         id: topicRow.id,
         name: topicRow.name,
         subjectName: topicRow.subjectName,
-        progress: { status: (topicRow.status as any) ?? 'unseen', confidence: topicRow.confidence ?? 0 },
+        progress: {
+          status: (topicRow.status as any) ?? 'unseen',
+          confidence: topicRow.confidence ?? 0,
+        },
       } as any,
       'error_hunt',
     );
@@ -524,7 +566,10 @@ export const generateDetectiveTool = tool({
         id: topicRow.id,
         name: topicRow.name,
         subjectName: topicRow.subjectName,
-        progress: { status: (topicRow.status as any) ?? 'unseen', confidence: topicRow.confidence ?? 0 },
+        progress: {
+          status: (topicRow.status as any) ?? 'unseen',
+          confidence: topicRow.confidence ?? 0,
+        },
       } as any,
       'detective',
     );
@@ -582,7 +627,10 @@ export const generateSocraticTool = tool({
         id: topicRow.id,
         name: topicRow.name,
         subjectName: topicRow.subjectName,
-        progress: { status: (topicRow.status as any) ?? 'unseen', confidence: topicRow.confidence ?? 0 },
+        progress: {
+          status: (topicRow.status as any) ?? 'unseen',
+          confidence: topicRow.confidence ?? 0,
+        },
       } as any,
       'socratic',
     );

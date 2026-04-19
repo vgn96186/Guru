@@ -40,7 +40,7 @@ import {
   explainTopicDeeper,
   generateEscalatingQuiz,
   explainQuizConcept,
-} from '../services/aiService';
+} from '../services/ai';
 import { fetchWikipediaImage } from '../services/imageService';
 import { isContentFlagged, setContentFlagged } from '../db/queries/aiCache';
 import GuruChatOverlay from '../components/GuruChatOverlay';

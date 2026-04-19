@@ -9,7 +9,6 @@ import {
   ScrollView,
   StatusBar,
   StyleSheet,
-  TextInput,
   useWindowDimensions,
   View,
   type ImageStyle,
@@ -37,12 +36,8 @@ import ScreenMotion from '../motion/ScreenMotion';
 import { RevealSection } from './GuruChatRevealSection';
 import { shouldShowGuruChatSkeleton } from './guruChatLoadingState';
 import { useReducedMotion } from '../motion/useReducedMotion';
-import {
-  chatWithGuruGroundedStreaming,
-  type MedicalGroundingSource,
-  getApiKeys,
-  addLlmStateListener,
-} from '../services/aiService';
+import { addLlmStateListener } from '../services/aiService';
+import { getApiKeys, type MedicalGroundingSource } from '../services/ai';
 import { showInfo, showError, confirm, confirmDestructive } from '../components/dialogService';
 import { useProfileQuery } from '../hooks/queries/useProfile';
 
@@ -57,34 +52,17 @@ import { GuruChatHistoryDrawer } from '../components/chat/GuruChatHistoryDrawer'
 import { GuruChatRenameSheet } from '../components/chat/GuruChatRenameSheet';
 import { GuruChatModelSelector } from '../components/chat/GuruChatModelSelector';
 import { GuruChatStarters } from '../components/chat/GuruChatStarters';
-import { GuruChatMessageList } from '../components/chat/GuruChatMessageList';
 import { GuruChatInput } from '../components/chat/GuruChatInput';
 // ========================================
+
 import {
-  createGuruChatThread,
-  deleteGuruChatThread,
   getChatHistory,
-  getGuruChatThreadById,
-  getLatestGuruChatThread,
   getOrCreateLatestGuruChatThread,
-  listGuruChatThreads,
-  renameGuruChatThread,
-  saveChatMessage,
   type GuruChatThread,
 } from '../db/queries/aiCache';
 import { getSessionMemoryRow } from '../db/queries/guruChatMemory';
 import { getDb } from '../db/database';
-import { markTopicDiscussedInChat } from '../db/queries/topics';
-import { getLocalLlmRamWarning, isLocalLlmAllowedOnThisDevice } from '../services/deviceMemory';
-import {
-  coerceGuruChatDefaultModel,
-  guruChatPickerNameForCfModel,
-  guruChatPickerNameForGeminiModel,
-  guruChatPickerNameForGithubModel,
-  guruChatPickerNameForGroqModel,
-  guruChatPickerNameForOpenRouterSlug,
-} from '../services/ai/guruChatModelPreference';
-import { useLiveGuruChatModels } from '../hooks/useLiveGuruChatModels';
+import { getLocalLlmRamWarning } from '../services/deviceMemory';
 import { linearTheme as n } from '../theme/linearTheme';
 import { whiteAlpha, accentAlpha, blackAlpha } from '../theme/colorUtils';
 import {
@@ -93,7 +71,6 @@ import {
   type GeneratedStudyImageStyle,
 } from '../db/queries/generatedStudyImages';
 import { buildChatImageContextKey, generateStudyImage } from '../services/studyImageService';
-import { maybeSummarizeGuruSession } from '../services/guruChatSessionSummary';
 import { buildBoundedGuruChatStudyContext } from '../services/guruChatStudyContext';
 
 type Nav = NativeStackNavigationProp<ChatStackParamList, 'GuruChat'>;
@@ -111,47 +88,12 @@ type ChatMessage = {
   timestamp: number;
 };
 
-type ModelOption = {
-  id: string;
-  name: string;
-  group:
-    | 'Local'
-    | 'ChatGPT Codex'
-    | 'Groq'
-    | 'OpenRouter'
-    | 'Gemini'
-    | 'Cloudflare'
-    | 'GitHub Models'
-    | 'GitHub Copilot'
-    | 'GitLab Duo'
-    | 'Poe'
-    | 'Kilo'
-    | 'AgentRouter'
-    | 'Qwen (Free)';
-};
-
 type ChatItem =
   | { id: string; type: 'message'; message: ChatMessage }
   | { id: string; type: 'typing' };
 
 const CHAT_HISTORY_LIMIT = 100;
 const GURU_CHAT_SCREEN_MOTION_TRIGGER = 'first-mount' as const;
-
-const MODEL_GROUP_ORDER: ModelOption['group'][] = [
-  'Local',
-  'ChatGPT Codex',
-  'Qwen (Free)',
-  'Groq',
-  'OpenRouter',
-  'Gemini',
-  'Cloudflare',
-  'GitHub Models',
-  'GitHub Copilot',
-  'GitLab Duo',
-  'Poe',
-  'Kilo',
-  'AgentRouter',
-];
 
 function getShortModelLabel(modelName?: string | null) {
   return modelName?.split('/').pop() ?? null;
@@ -172,34 +114,6 @@ const FALLBACK_STARTERS = [
   { icon: 'alert-circle-outline', text: 'Quiz me on pharmacology' },
   { icon: 'medkit-outline', text: 'Common exam topic' },
 ];
-
-const QUICK_REPLY_OPTIONS = [
-  {
-    key: 'explain',
-    label: 'Explain',
-    prompt: 'Explain',
-  },
-  {
-    key: 'dont-know',
-    label: "Don't know",
-    prompt: "Don't know",
-  },
-  {
-    key: 'change-topic',
-    label: 'Change topic',
-    prompt: 'Change topic',
-  },
-  {
-    key: 'quiz-me',
-    label: 'Quiz me',
-    prompt: 'Quiz me',
-  },
-  {
-    key: 'continue',
-    label: 'Continue',
-    prompt: 'Continue',
-  },
-] as const;
 
 function isExplicitImageRequest(text: string): boolean {
   const normalized = text.trim().toLowerCase();
@@ -626,10 +540,17 @@ function GuruChatScreenContent() {
   });
 
   const guruModels = useGuruChatModels({ profile });
+  const {
+    chosenModel,
+    pickerTab,
+    setPickerTab,
+    applyChosenModel: applyGuruModelChoice,
+    currentModelLabel,
+    currentModelGroup,
+  } = guruModels;
   // ==========================================================
 
   const isGeneralChat = !route.params?.topicName || topicName === 'General Medicine';
-  const apiTopicName = isGeneralChat ? undefined : topicName;
   const [starters, setStarters] = useState(
     isGeneralChat ? FALLBACK_STARTERS : getStartersForTopic(topicName),
   );
@@ -653,13 +574,9 @@ function GuruChatScreenContent() {
   // refreshThreads               → guruSession.refreshThreads
   // =============================================
 
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState(route.params?.initialQuestion ?? '');
-  const [loading, setLoading] = useState(false);
   const [bannerVisible, setBannerVisible] = useState(true);
-  const [chosenModel, setChosenModel] = useState<string>('auto');
   const [showModelPicker, setShowModelPicker] = useState(false);
-  const [pickerTab, setPickerTab] = useState<ModelOption['group']>('Local');
   const [showHistoryDrawer, setShowHistoryDrawer] = useState(false);
   const [imageJobKey, setImageJobKey] = useState<string | null>(null);
   const [lightboxUri, setLightboxUri] = useState<string | null>(null);
@@ -673,13 +590,6 @@ function GuruChatScreenContent() {
   const [entryComplete, setEntryComplete] = useState(false);
   const [isHydratingThread, setIsHydratingThread] = useState(true);
   const [isHydratingHistory, setIsHydratingHistory] = useState(true);
-
-  // === REFACTOR: Phase 3 - Vercel AI SDK Integration ===
-  // Feature flag: Enable new streaming + tool calling
-  // NOTE: This is a parallel implementation for testing. To enable:
-  // setEnableVercelAI(true) in the component state
-  const [enableVercelAI, setEnableVercelAI] = useState(false);
-  // ===================================================
 
   // === REFACTOR: Sync new hooks with legacy state (Phase 1) ===
   // These effects keep old and new state in sync during migration
@@ -713,34 +623,38 @@ function GuruChatScreenContent() {
     }
   }, [guruSession.isHydratingHistory]);
 
-  useEffect(() => {
-    if (guruModels.chosenModel) {
-      setChosenModel(guruModels.chosenModel);
-    }
-  }, [guruModels.chosenModel]);
   // =========================================================
   const localLlmWarning = getLocalLlmRamWarning();
-  /** Tracks Settings `guruChatDefaultModel` so we only reset picker when that changes — not on every live model list refresh. */
-  const prevGuruChatDefaultRef = useRef<string | undefined>(undefined);
-  const chosenModelRef = useRef<string>('auto');
-  const hasPersistedTopicProgressRef = useRef(false);
   const currentThreadId = currentThread?.id ?? null;
+  const refreshThreads = guruSession.refreshThreads;
 
-  // === REFACTOR: Phase 3 - Vercel AI SDK Hook (moved after currentThreadId) ===
-  // Model for Vercel AI SDK (will be created when enabled)
   const modelForVercel = useMemo(() => {
-    if (!enableVercelAI) return null;
-    // TODO: Create LanguageModelV2 instance based on chosenModel
-    // For now, return null to use default model routing
-    return null;
-  }, [enableVercelAI]);
+    if (!profile) return null;
+    try {
+      const { createGuruFallbackModel } = require('../services/ai/v2');
+      return createGuruFallbackModel({
+        profile,
+        chosenModel: chosenModel === 'auto' ? undefined : chosenModel,
+        textMode: true,
+        onProviderError: (provider: string, model: string, error: unknown) => {
+          console.warn(`[GuruChat] Provider error: ${provider}/${model}`, error);
+        },
+        onProviderSuccess: (provider: string, model: string) => {
+          console.log(`[GuruChat] Provider success: ${provider}/${model}`);
+        },
+      });
+    } catch (error) {
+      console.error('[GuruChat] Failed to create v2 model:', error);
+      return null;
+    }
+  }, [profile, chosenModel]);
 
-  // Vercel AI SDK chat hook (conditionally enabled)
   const guruChat = useGuruChat({
-    model: null, // Will be set when model instance is available
+    model: modelForVercel,
     threadId: currentThreadId,
     topicName,
-    initialMessages: messages,
+    syllabusTopicId,
+    initialMessages: [],
     context: {
       sessionSummary,
       sessionStateJson,
@@ -750,59 +664,67 @@ function GuruChatScreenContent() {
       groundingTitle,
       groundingContext,
     },
+    onRefreshThreads: refreshThreads,
+    onSessionMemoryUpdated: ({ summaryText, stateJson }) => {
+      setSessionSummary(summaryText);
+      setSessionStateJson(stateJson);
+    },
+    finalizeAssistantMessage: async (assistantMessage) => {
+      let finalText = assistantMessage.text;
+      let finalImages = assistantMessage.images;
+      const wantsImage = isExplicitImageRequest(questionInFlightRef.current ?? '');
+      const requestedImageStyle = inferRequestedImageStyle(questionInFlightRef.current ?? '');
+      const canGenerateImage = canAutoGenerateStudyImage(profile);
+
+      if (wantsImage && canGenerateImage && !imageJobKey) {
+        try {
+          setImageJobKey(`${assistantMessage.id}:${requestedImageStyle}`);
+          const image = await generateStudyImage({
+            contextType: 'chat',
+            contextKey: buildChatImageContextKey(
+              currentThread?.topicName ?? topicName,
+              assistantMessage.timestamp,
+            ),
+            topicName: currentThread?.topicName ?? topicName,
+            sourceText: assistantMessage.text,
+            style: requestedImageStyle,
+          });
+          finalImages = [image, ...(assistantMessage.images ?? [])];
+          scrollToLatest(0);
+        } catch (imageError) {
+          const imageFailureMessage =
+            imageError instanceof Error ? imageError.message : 'Image generation failed.';
+          finalText = `${finalText}\n\nNote: I couldn't generate a study image automatically. ${imageFailureMessage}`;
+        } finally {
+          setImageJobKey(null);
+        }
+      } else if (
+        wantsImage &&
+        !canGenerateImage &&
+        (!assistantMessage.referenceImages || assistantMessage.referenceImages.length === 0)
+      ) {
+        finalText = `${finalText}\n\nNote: No image backend is configured right now. Add a fal, Gemini, Cloudflare, or OpenRouter image key in Settings to let Guru generate diagrams automatically.`;
+      }
+
+      return {
+        text: finalText,
+        images: finalImages,
+      };
+    },
     onError: (err) => {
       console.error('GuruChat error:', err);
-      setEnableVercelAI(false);
     },
   });
-  // ==========================================================================
+  const messages = guruChat.messages;
+  const setMessages = guruChat.setMessages;
+  const loading = guruChat.status === 'submitted' || guruChat.status === 'streaming';
 
-  const applyChosenModel = useCallback((modelId: string) => {
-    chosenModelRef.current = modelId;
-    setChosenModel(modelId);
-  }, []);
-
-  useEffect(() => {
-    chosenModelRef.current = chosenModel;
-  }, [chosenModel]);
-
-  const refreshThreads = useCallback(async () => {
-    try {
-      setThreads(await listGuruChatThreads(60));
-    } catch {
-      setThreads([]);
-    }
-  }, []);
-
-  useEffect(() => {
-    let cancelled = false;
-    const hydrateThread = async () => {
-      setIsHydratingThread(true);
-      try {
-        const thread =
-          (requestedThreadId != null
-            ? await getGuruChatThreadById(requestedThreadId)
-            : await getLatestGuruChatThread(topicName, syllabusTopicId)) ??
-          (await getOrCreateLatestGuruChatThread(topicName, syllabusTopicId));
-        if (!cancelled) {
-          setCurrentThread(thread);
-        }
-      } catch {
-        if (!cancelled) {
-          setCurrentThread(null);
-        }
-      } finally {
-        if (!cancelled) {
-          setIsHydratingThread(false);
-          void refreshThreads();
-        }
-      }
-    };
-    void hydrateThread();
-    return () => {
-      cancelled = true;
-    };
-  }, [refreshThreads, requestedThreadId, syllabusTopicId, topicName]);
+  const applyChosenModel = useCallback(
+    (modelId: string) => {
+      applyGuruModelChoice(modelId);
+    },
+    [applyGuruModelChoice],
+  );
 
   useEffect(() => {
     if (!currentThreadId) {
@@ -817,10 +739,6 @@ function GuruChatScreenContent() {
       setSessionStateJson(r?.stateJson ?? '{}');
     });
   }, [currentThreadId]);
-
-  useEffect(() => {
-    hasPersistedTopicProgressRef.current = false;
-  }, [currentThreadId, syllabusTopicId, topicName]);
 
   useEffect(() => {
     if (!currentThread) {
@@ -875,267 +793,8 @@ function GuruChatScreenContent() {
       });
   }, [currentThread]);
 
-  const {
-    chatgpt: chatgptModelIds,
-    groq: groqModelIds,
-    openrouter: orModelIds,
-    gemini: geminiModelIds,
-    cloudflare: cfModelIds,
-    github: githubModelIds,
-    githubCopilot: githubCopilotModelIds,
-    gitlabDuo: gitlabDuoModelIds,
-    poe: poeModelIds,
-    kilo: kiloModelIds,
-    agentrouter: arModelIds,
-  } = useLiveGuruChatModels(profile ?? null);
-
-  const profileRef = useRef(profile);
-  profileRef.current = profile;
-
-  const modelListProfileKey = useMemo(() => {
-    if (!profile) return '';
-    const k = getApiKeys(profile);
-    return [
-      profile.useLocalModel ? '1' : '0',
-      profile.localModelPath ? '1' : '0',
-      profile.qwenConnected ? '1' : '0',
-      k.chatgptConnected ? '1' : '0',
-      k.groqKey ? '1' : '0',
-      k.orKey ? '1' : '0',
-      k.geminiKey ? '1' : '0',
-      k.cfAccountId && k.cfApiToken ? '1' : '0',
-      k.githubModelsPat ? '1' : '0',
-      k.githubCopilotConnected ? '1' : '0',
-      k.gitlabDuoConnected ? '1' : '0',
-      k.poeConnected ? '1' : '0',
-      k.kiloApiKey ? '1' : '0',
-      k.agentRouterKey ? '1' : '0',
-    ].join('');
-  }, [profile]);
-
-  const availableModels = useMemo(() => {
-    const p = profileRef.current;
-    const {
-      orKey,
-      groqKey,
-      geminiKey,
-      cfAccountId,
-      cfApiToken,
-      githubModelsPat,
-      kiloApiKey,
-      agentRouterKey,
-      chatgptConnected,
-      githubCopilotConnected,
-      gitlabDuoConnected,
-      poeConnected,
-      qwenConnected,
-    } = getApiKeys(p ?? undefined);
-    const list: ModelOption[] = [{ id: 'auto', name: 'Auto Route (Smart)', group: 'Local' }];
-
-    if (p?.useLocalModel && p?.localModelPath && isLocalLlmAllowedOnThisDevice()) {
-      list.push({ id: 'local', name: 'On-Device LLM', group: 'Local' });
-    }
-
-    if (chatgptConnected) {
-      chatgptModelIds.forEach((model) => {
-        list.push({
-          id: `chatgpt/${model}`,
-          name: model,
-          group: 'ChatGPT Codex',
-        });
-      });
-    }
-
-    if (qwenConnected || p?.qwenConnected) {
-      [{ id: 'qwen3-coder-plus', name: 'Qwen Coder Plus' }].forEach((m) => {
-        list.push({
-          id: `qwen/${m.id}`,
-          name: m.name,
-          group: 'Qwen (Free)',
-        });
-      });
-    }
-
-    if (groqKey) {
-      groqModelIds.forEach((model) => {
-        list.push({
-          id: `groq/${model}`,
-          name: guruChatPickerNameForGroqModel(model),
-          group: 'Groq',
-        });
-      });
-    }
-
-    if (orKey) {
-      orModelIds.forEach((model) => {
-        list.push({
-          id: model,
-          name: guruChatPickerNameForOpenRouterSlug(model),
-          group: 'OpenRouter',
-        });
-      });
-    }
-
-    if (geminiKey) {
-      geminiModelIds.forEach((model) => {
-        list.push({
-          id: `gemini/${model}`,
-          name: guruChatPickerNameForGeminiModel(model),
-          group: 'Gemini',
-        });
-      });
-    }
-
-    if (cfAccountId && cfApiToken) {
-      cfModelIds.forEach((model) => {
-        list.push({
-          id: `cf/${model}`,
-          name: guruChatPickerNameForCfModel(model),
-          group: 'Cloudflare',
-        });
-      });
-    }
-
-    if (githubModelsPat) {
-      githubModelIds.forEach((model) => {
-        list.push({
-          id: `github/${model}`,
-          name: guruChatPickerNameForGithubModel(model),
-          group: 'GitHub Models',
-        });
-      });
-    }
-
-    if (githubCopilotConnected) {
-      githubCopilotModelIds.forEach((model) => {
-        list.push({
-          id: `github_copilot/${model}`,
-          name: model.toUpperCase(),
-          group: 'GitHub Copilot',
-        });
-      });
-    }
-
-    if (gitlabDuoConnected) {
-      gitlabDuoModelIds.forEach((model) => {
-        list.push({
-          id: `gitlab_duo/${model}`,
-          name: model.toUpperCase(),
-          group: 'GitLab Duo',
-        });
-      });
-    }
-
-    if (poeConnected) {
-      poeModelIds.forEach((model) => {
-        list.push({
-          id: `poe/${model}`,
-          name: model.toUpperCase(),
-          group: 'Poe',
-        });
-      });
-    }
-
-    if (kiloApiKey) {
-      kiloModelIds.forEach((model) => {
-        list.push({
-          id: `kilo/${model}`,
-          name: guruChatPickerNameForGithubModel(model),
-          group: 'Kilo',
-        });
-      });
-    }
-
-    if (agentRouterKey) {
-      arModelIds.forEach((model) => {
-        list.push({
-          id: `ar/${model}`,
-          name: model,
-          group: 'AgentRouter',
-        });
-      });
-    }
-
-    return list;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [
-    modelListProfileKey,
-    chatgptModelIds,
-    groqModelIds,
-    orModelIds,
-    geminiModelIds,
-    cfModelIds,
-    githubModelIds,
-    githubCopilotModelIds,
-    gitlabDuoModelIds,
-    poeModelIds,
-    kiloModelIds,
-    arModelIds,
-  ]);
-
-  /** Stable profile key — avoids re-running effects when profile ref changes but data is identical. */
-  const profileKey = profile
-    ? `${profile.guruChatDefaultModel ?? ''}|${profile.useLocalModel ?? false}|${profile.localModelPath ?? ''}|${profile.openrouterKey?.length ?? 0}|${profile.groqApiKey?.length ?? 0}|${profile.geminiKey?.length ?? 0}`
-    : '';
-  const prevProfileKeyRef = useRef(profileKey);
-  if (prevProfileKeyRef.current !== profileKey) {
-    prevProfileKeyRef.current = profileKey;
-  }
-
-  const availableModelsKey = useMemo(
-    () => JSON.stringify(availableModels.map((m) => m.id)),
-    [availableModels],
-  );
-
-  const modelSyncRunRef = useRef(0);
-
-  useEffect(() => {
-    if (!profile) return;
-    if (modelSyncRunRef.current > 50) return;
-    modelSyncRunRef.current += 1;
-
-    const ids = availableModels.map((m) => m.id);
-    const coerced = coerceGuruChatDefaultModel(profile.guruChatDefaultModel, ids);
-    const key = profile.guruChatDefaultModel ?? '';
-    const isFirstSync = prevGuruChatDefaultRef.current === undefined;
-    const settingsDefaultChanged = !isFirstSync && prevGuruChatDefaultRef.current !== key;
-    prevGuruChatDefaultRef.current = key;
-
-    setChosenModel((prev) => {
-      if (isFirstSync) return coerced;
-      if (!ids.includes(prev)) return coerced;
-      if (settingsDefaultChanged) return coerced;
-      return prev;
-    });
-    // Intentionally using stable keys (profileKey, availableModelsKey) instead of
-    // profile/availableModels to avoid re-runs when Zustand refreshes the profile object.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [profileKey, availableModelsKey]);
-
-  const currentModelLabel = useMemo(() => {
-    if (chosenModel === 'auto') return 'Auto';
-    const found = availableModels.find((model) => model.id === chosenModel);
-    if (!found) return 'Auto';
-    // Show just the model name, truncated
-    const name = found.name;
-    return name.length > 24 ? name.slice(0, 22) + '...' : name;
-  }, [availableModels, chosenModel]);
-
-  const currentModelGroup = useMemo(() => {
-    const found = availableModels.find((m) => m.id === chosenModel);
-    return found?.group ?? 'Local';
-  }, [availableModels, chosenModel]);
-
-  const visibleModelGroups = useMemo(() => {
-    const presentGroups = new Set(availableModels.map((model) => model.group));
-    return MODEL_GROUP_ORDER.filter((group) => presentGroups.has(group));
-  }, [availableModels]);
-
-  const modelHistory = useMemo(
-    () => messages.map((message) => ({ role: message.role, text: message.text })),
-    [messages],
-  );
   const lastUserPrompt = useMemo(() => getLastUserPrompt(messages), [messages]);
+  const questionInFlightRef = useRef<string | null>(null);
   const latestGuruMessageId = useMemo(() => {
     for (let index = messages.length - 1; index >= 0; index -= 1) {
       const message = messages[index];
@@ -1166,6 +825,11 @@ function GuruChatScreenContent() {
     }, delay);
   }, []);
 
+  useEffect(() => {
+    if (messages.length === 0 && !loading) return;
+    scrollToLatest(0);
+  }, [loading, messages, scrollToLatest]);
+
   const openSource = useCallback(async (url: string) => {
     try {
       if (await Linking.canOpenURL(url)) {
@@ -1181,7 +845,7 @@ function GuruChatScreenContent() {
     void showInfo('Copied', 'Message copied to clipboard.');
   }, []);
 
-  const openThread = useCallback(
+  const handleOpenThread = useCallback(
     async (thread: GuruChatThread) => {
       if (
         thread.topicName !== topicName ||
@@ -1194,62 +858,28 @@ function GuruChatScreenContent() {
         });
         return;
       }
-      setCurrentThread(thread);
+
+      await guruSession.openThread(thread);
       setShowHistoryDrawer(false);
       setExpandedSourcesMessageId(null);
       setBannerVisible(true);
       setSessionSummary('');
+      setSessionStateJson('{}');
+      setMessages([]);
     },
-    [navigation, syllabusTopicId, topicName],
+    [guruSession, navigation, setMessages, syllabusTopicId, topicName],
   );
 
   const createAndSwitchToNewThread = useCallback(async () => {
-    const thread = await createGuruChatThread(topicName, syllabusTopicId);
-    setCurrentThread(thread);
+    const thread = await guruSession.createNewThread();
+    if (!thread) return;
     setMessages([]);
     setBannerVisible(true);
     setExpandedSourcesMessageId(null);
     setSessionSummary('');
+    setSessionStateJson('{}');
     setShowHistoryDrawer(false);
-    await refreshThreads();
-  }, [refreshThreads, syllabusTopicId, topicName]);
-
-  const handleRenameThread = useCallback(async () => {
-    if (!renameThreadId) return;
-    const normalized = renameDraft.trim();
-    if (!normalized) {
-      setRenameThreadId(null);
-      setRenameDraft('');
-      return;
-    }
-    await renameGuruChatThread(renameThreadId, normalized);
-    if (currentThreadId === renameThreadId && currentThread) {
-      setCurrentThread({ ...currentThread, title: normalized });
-    }
-    setRenameThreadId(null);
-    setRenameDraft('');
-    await refreshThreads();
-  }, [currentThread, currentThreadId, refreshThreads, renameDraft, renameThreadId]);
-
-  const handleDeleteThread = useCallback(
-    async (thread: GuruChatThread) => {
-      const ok = await confirmDestructive('Delete chat', 'Delete this conversation from history?');
-      if (!ok) return;
-      await deleteGuruChatThread(thread.id);
-      if (thread.id === currentThreadId) {
-        const fallback =
-          (await getLatestGuruChatThread(topicName, syllabusTopicId)) ??
-          (await createGuruChatThread(topicName, syllabusTopicId));
-        setCurrentThread(fallback);
-        setMessages([]);
-        setBannerVisible(true);
-        setExpandedSourcesMessageId(null);
-        setSessionSummary('');
-      }
-      await refreshThreads();
-    },
-    [currentThreadId, refreshThreads, syllabusTopicId, topicName],
-  );
+  }, [guruSession, setMessages]);
 
   const handleGenerateMessageImage = useCallback(
     async (message: ChatMessage, style: GeneratedStudyImageStyle) => {
@@ -1302,216 +932,29 @@ function GuruChatScreenContent() {
         }
       }
 
-      const wantsImage = isExplicitImageRequest(question);
-      const requestedImageStyle = inferRequestedImageStyle(question);
-      const canGenerateImage = canAutoGenerateStudyImage(profile);
-
-      const userMessage: ChatMessage = {
-        id: `u-${Date.now()}`,
-        role: 'user',
-        text: question,
-        timestamp: Date.now(),
-      };
-
-      const nextHistory = [...modelHistory, { role: 'user' as const, text: question }];
-      setMessages((current) => [...current, userMessage]);
       setInput('');
       setBannerVisible(false);
-      setLoading(true);
+      questionInFlightRef.current = question;
       scrollToLatest();
-
-      try {
-        await saveChatMessage(resolvedThreadId, topicName, 'user', question, Date.now());
-        await refreshThreads();
-      } catch {
-        // Persistence should not block the main conversation flow.
-      }
-
-      const guruTs = Date.now();
-      const guruId = `g-${guruTs}`;
-      let sawFirstToken = false;
 
       try {
         const studyContextLine = await buildBoundedGuruChatStudyContext(
           profile ?? null,
           syllabusTopicId,
         );
-        const selectedModelAtSend = chosenModelRef.current;
-        const modelForApi = selectedModelAtSend === 'auto' ? undefined : selectedModelAtSend;
-        // #region agent log
-        fetch('http://127.0.0.1:7507/ingest/f6a0734c-b45d-4770-9e51-aa07e5c2da6e', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': 'ca9385' },
-          body: JSON.stringify({
-            sessionId: 'ca9385',
-            hypothesisId: 'H1',
-            location: 'GuruChatScreen.handleSend',
-            message: 'guru_chat_model_passed',
-            data: {
-              chosenModelState: chosenModel,
-              chosenModelRef: selectedModelAtSend,
-              modelForApi: modelForApi ?? 'undefined(auto)',
-            },
-            timestamp: Date.now(),
-          }),
-        }).catch(() => {});
-        // #endregion
-        const grounded = await chatWithGuruGroundedStreaming(
-          question,
-          apiTopicName,
-          nextHistory,
-          modelForApi,
-          (delta) => {
-            if (!sawFirstToken) {
-              sawFirstToken = true;
-              setLoading(false);
-            }
-            setMessages((current) => {
-              const idx = current.findIndex((m) => m.id === guruId);
-              if (idx === -1) {
-                return [
-                  ...current,
-                  {
-                    id: guruId,
-                    role: 'guru' as const,
-                    text: delta,
-                    timestamp: guruTs,
-                  },
-                ];
-              }
-              const next = [...current];
-              const prev = next[idx];
-              next[idx] = { ...prev, text: prev.text + delta };
-              return next;
-            });
-            scrollToLatest(0);
-          },
-          {
-            sessionSummary: sessionSummary.trim() || undefined,
-            stateJson: sessionStateJson.trim() || undefined,
-            profileNotes: profile?.guruMemoryNotes?.trim() || undefined,
-            studyContext: studyContextLine,
-            syllabusTopicId,
-            groundingTitle,
-            groundingContext,
-          },
-        );
-        let finalGuruText = grounded.reply;
-        setMessages((current) => {
-          const idx = current.findIndex((m) => m.id === guruId);
-          if (idx === -1) {
-            return [
-              ...current,
-              {
-                id: guruId,
-                role: 'guru',
-                text: grounded.reply,
-                sources: grounded.sources,
-                referenceImages: grounded.referenceImages,
-                modelUsed: grounded.modelUsed,
-                searchQuery: grounded.searchQuery,
-                timestamp: guruTs,
-              },
-            ];
-          }
-          const next = [...current];
-          const prev = next[idx];
-          next[idx] = {
-            ...prev,
-            text: grounded.reply,
-            sources: grounded.sources,
-            referenceImages: grounded.referenceImages,
-            modelUsed: grounded.modelUsed,
-            searchQuery: grounded.searchQuery,
-          };
-          return next;
+        const assistantMessage = await guruChat.sendMessage(question, {
+          sessionSummary: sessionSummary.trim() || undefined,
+          sessionStateJson: sessionStateJson.trim() || undefined,
+          profileNotes: profile?.guruMemoryNotes?.trim() || undefined,
+          studyContext: studyContextLine ?? undefined,
+          syllabusTopicId,
+          groundingTitle,
+          groundingContext,
         });
-
-        if (wantsImage && canGenerateImage && !imageJobKey) {
-          try {
-            setImageJobKey(`${guruId}:${requestedImageStyle}`);
-            const image = await generateStudyImage({
-              contextType: 'chat',
-              contextKey: buildChatImageContextKey(currentThread?.topicName ?? topicName, guruTs),
-              topicName: currentThread?.topicName ?? topicName,
-              sourceText: grounded.reply,
-              style: requestedImageStyle,
-            });
-            setMessages((current) =>
-              current.map((entry) =>
-                entry.id === guruId
-                  ? { ...entry, images: [image, ...(entry.images ?? [])] }
-                  : entry,
-              ),
-            );
-            scrollToLatest(0);
-          } catch (imageError) {
-            const imageFailureMessage =
-              imageError instanceof Error ? imageError.message : 'Image generation failed.';
-            finalGuruText = `${finalGuruText}\n\nNote: I couldn't generate a study image automatically. ${imageFailureMessage}`;
-            setMessages((current) =>
-              current.map((entry) =>
-                entry.id === guruId
-                  ? {
-                      ...entry,
-                      text: finalGuruText,
-                    }
-                  : entry,
-              ),
-            );
-          } finally {
-            setImageJobKey(null);
-          }
-        } else if (
-          wantsImage &&
-          !canGenerateImage &&
-          (!grounded.referenceImages || grounded.referenceImages.length === 0)
-        ) {
-          finalGuruText = `${finalGuruText}\n\nNote: No image backend is configured right now. Add a fal, Gemini, Cloudflare, or OpenRouter image key in Settings to let Guru generate diagrams automatically.`;
-          setMessages((current) =>
-            current.map((entry) =>
-              entry.id === guruId
-                ? {
-                    ...entry,
-                    text: finalGuruText,
-                  }
-                : entry,
-            ),
-          );
+        if (!assistantMessage) {
+          throw new Error('Guru did not return a response.');
         }
-
-        try {
-          await saveChatMessage(
-            resolvedThreadId,
-            topicName,
-            'guru',
-            finalGuruText,
-            guruTs,
-            grounded.sources && grounded.sources.length > 0
-              ? JSON.stringify(grounded.sources)
-              : undefined,
-            grounded.modelUsed,
-          );
-          await refreshThreads();
-        } catch {
-          // Ignore persistence issues here too.
-        }
-        if (syllabusTopicId != null && !hasPersistedTopicProgressRef.current) {
-          try {
-            await markTopicDiscussedInChat(syllabusTopicId);
-            hasPersistedTopicProgressRef.current = true;
-          } catch {
-            // Progress persistence should not block the conversation flow.
-          }
-        }
-        try {
-          await maybeSummarizeGuruSession(resolvedThreadId, topicName);
-          const row = await getSessionMemoryRow(resolvedThreadId);
-          setSessionSummary(row?.summaryText ?? '');
-          setSessionStateJson(row?.stateJson ?? '{}');
-        } catch {
-          /* session summary is optional */
-        }
+        scrollToLatest(0);
       } catch (error) {
         const message = error instanceof Error ? error.message : 'Unknown error';
         setMessages((current) => [
@@ -1523,24 +966,19 @@ function GuruChatScreenContent() {
             timestamp: Date.now(),
           },
         ]);
-      } finally {
-        setLoading(false);
         scrollToLatest(120);
+      } finally {
+        questionInFlightRef.current = null;
       }
     },
     [
-      apiTopicName,
-      chosenModel,
-      currentThread,
-      currentThreadId,
       groundingContext,
       groundingTitle,
+      guruChat,
       imageJobKey,
       input,
       loading,
-      modelHistory,
       profile,
-      refreshThreads,
       scrollToLatest,
       sessionStateJson,
       sessionSummary,
@@ -1882,99 +1320,6 @@ function GuruChatScreenContent() {
     ],
   );
 
-  const renderHistoryItem = useCallback(
-    ({ item }: { item: GuruChatThread }) => {
-      const isActive = item.id === currentThreadId;
-      return (
-        <Pressable
-          style={({ pressed }) => [
-            styles.historyItem,
-            isActive && styles.historyItemActive,
-            pressed && styles.pressed,
-          ]}
-          onPress={() => {
-            void openThread(item);
-          }}
-        >
-          <View style={styles.historyItemMain}>
-            <LinearText style={styles.historyItemTitle} numberOfLines={2}>
-              {item.title}
-            </LinearText>
-            <LinearText style={styles.historyItemTopic} numberOfLines={2}>
-              {item.topicName}
-            </LinearText>
-            <LinearText style={styles.historyItemPreview} numberOfLines={3}>
-              {item.lastMessagePreview || 'No messages yet'}
-            </LinearText>
-          </View>
-          <View style={styles.historyItemSide}>
-            <LinearText style={styles.historyItemTime}>{formatTime(item.lastMessageAt)}</LinearText>
-            <View style={styles.historyItemActions}>
-              <Pressable
-                style={({ pressed }) => [styles.historyActionBtn, pressed && styles.pressed]}
-                onPress={() => {
-                  setRenameThreadId(item.id);
-                  setRenameDraft(item.title);
-                  setShowHistoryDrawer(false);
-                }}
-                hitSlop={6}
-              >
-                <Ionicons name="pencil-outline" size={14} color={n.colors.accent} />
-              </Pressable>
-              <Pressable
-                style={({ pressed }) => [styles.historyActionBtn, pressed && styles.pressed]}
-                onPress={() => {
-                  void handleDeleteThread(item);
-                }}
-                hitSlop={6}
-              >
-                <Ionicons name="trash-outline" size={14} color={n.colors.textMuted} />
-              </Pressable>
-            </View>
-          </View>
-        </Pressable>
-      );
-    },
-    [currentThreadId, openThread, handleDeleteThread],
-  );
-
-  const renderModelPickerItem = useCallback(
-    ({ item: model }: ListRenderItemInfo<ModelOption>) => (
-      <Pressable
-        style={({ pressed }) => [
-          styles.modelItem,
-          chosenModel === model.id && styles.modelItemActive,
-          pressed && styles.pressed,
-        ]}
-        android_ripple={{ color: `${n.colors.accent}22` }}
-        onPress={async () => {
-          if (messages.length > 0 && model.id !== chosenModel) {
-            const ok = await confirm(
-              'Switch model?',
-              "Switching models mid-conversation may lose context. The new model won't remember earlier messages.",
-            );
-            if (!ok) return;
-            applyChosenModel(model.id);
-            setShowModelPicker(false);
-          } else {
-            applyChosenModel(model.id);
-            setShowModelPicker(false);
-          }
-        }}
-      >
-        <LinearText
-          style={[styles.modelItemText, chosenModel === model.id && styles.modelItemTextActive]}
-        >
-          {model.name}
-        </LinearText>
-        {chosenModel === model.id ? (
-          <Ionicons name="checkmark-circle" size={18} color={n.colors.accent} />
-        ) : null}
-      </Pressable>
-    ),
-    [chosenModel, messages.length, applyChosenModel],
-  );
-
   if (shouldShowGuruChatSkeleton({ isHydratingThread, isHydratingHistory })) {
     return (
       <SafeAreaView style={styles.safe} testID="guru-chat-screen">
@@ -1996,18 +1341,27 @@ function GuruChatScreenContent() {
           <ResponsiveContainer style={styles.flex}>
             <RevealSection active={entryComplete} delayMs={0}>
               <ScreenHeader
-                title="Guru Chat"
+                title=""
                 onBackPress={navigation.canGoBack() ? () => navigation.goBack() : undefined}
                 rightElement={
-                  <View style={styles.headerActions}>
+                  <View style={styles.minimalHeaderRight}>
                     <BannerIconButton
                       onPress={() => setShowHistoryDrawer(true)}
                       accessibilityLabel="Open chat history"
+                      style={styles.minimalHeaderIcon}
                     >
-                      <Ionicons name="reorder-three-outline" size={18} color={n.colors.accent} />
+                      <Ionicons
+                        name="reorder-three-outline"
+                        size={18}
+                        color={n.colors.textSecondary}
+                      />
                     </BannerIconButton>
-                    <BannerIconButton onPress={startNewChat} accessibilityLabel="New chat">
-                      <Ionicons name="create-outline" size={18} color={n.colors.accent} />
+                    <BannerIconButton
+                      onPress={startNewChat}
+                      accessibilityLabel="New chat"
+                      style={styles.minimalHeaderIcon}
+                    >
+                      <Ionicons name="create-outline" size={18} color={n.colors.textSecondary} />
                     </BannerIconButton>
                   </View>
                 }
@@ -2023,8 +1377,7 @@ function GuruChatScreenContent() {
               onClose={() => setShowHistoryDrawer(false)}
               onNewChat={createAndSwitchToNewThread}
               onOpenThread={(thread: GuruChatThread) => {
-                setShowHistoryDrawer(false);
-                void guruSession.openThread(thread);
+                void handleOpenThread(thread);
               }}
               onRenameThread={(thread: GuruChatThread) => {
                 setRenameThreadId(thread.id);
@@ -2140,75 +1493,18 @@ function GuruChatScreenContent() {
 
             <RevealSection active={entryComplete} delayMs={140}>
               <KeyboardStickyView offset={{ opened: -Math.max(insets.bottom - 8, 0) }}>
-                <View style={styles.composerToolsWrap}>
-                  <View style={styles.quickActionsCenterWrap}>
-                    <View style={styles.quickActionsCenter}>
-                      {QUICK_REPLY_OPTIONS.map((option) => (
-                        <Pressable
-                          key={option.key}
-                          style={({ pressed }) => [
-                            styles.quickActionChip,
-                            loading && styles.quickActionChipDisabled,
-                            pressed && !loading && styles.pressed,
-                          ]}
-                          onPress={() => handleSend(option.prompt)}
-                          disabled={loading}
-                        >
-                          <LinearText style={styles.quickActionText}>{option.label}</LinearText>
-                        </Pressable>
-                      ))}
-                    </View>
-                  </View>
-
-                  <View style={styles.composerWrap}>
-                    <View style={styles.inputRow}>
-                      <Pressable
-                        style={({ pressed }) => [styles.modelIconBtn, pressed && styles.pressed]}
-                        onPress={() => {
-                          setPickerTab(currentModelGroup);
-                          setShowModelPicker(true);
-                        }}
-                        accessibilityRole="button"
-                        accessibilityLabel={`Current model: ${currentModelLabel}. Tap to change.`}
-                      >
-                        <View style={styles.modelDot} />
-                        <Ionicons name="chevron-down" size={8} color={n.colors.textMuted} />
-                      </Pressable>
-                      <TextInput
-                        style={styles.input}
-                        placeholder="Ask Guru anything..."
-                        placeholderTextColor={n.colors.textMuted}
-                        value={input}
-                        autoFocus={!!route.params?.autoFocusComposer}
-                        onChangeText={setInput}
-                        onSubmitEditing={() => handleSend()}
-                        returnKeyType="send"
-                        multiline={false}
-                        blurOnSubmit={false}
-                        maxLength={1000}
-                        selectionColor={n.colors.accent}
-                      />
-                      <Pressable
-                        style={({ pressed }) => [
-                          styles.sendBtn,
-                          (!input.trim() || loading) && styles.sendBtnDisabled,
-                          pressed && input.trim() && !loading && styles.pressed,
-                        ]}
-                        android_ripple={{ color: '#ffffff18', radius: 22 }}
-                        onPress={() => handleSend()}
-                        disabled={!input.trim() || loading}
-                        accessibilityRole="button"
-                        accessibilityLabel="Send message"
-                      >
-                        <Ionicons
-                          name={loading ? 'ellipse-outline' : 'send'}
-                          size={18}
-                          color={n.colors.textPrimary}
-                        />
-                      </Pressable>
-                    </View>
-                  </View>
-                </View>
+                <GuruChatInput
+                  input={input}
+                  onChangeText={setInput}
+                  onSend={handleSend}
+                  onModelPress={() => {
+                    setPickerTab(currentModelGroup);
+                    setShowModelPicker(true);
+                  }}
+                  currentModelLabel={currentModelLabel}
+                  isLoading={loading}
+                  autoFocus={!!route.params?.autoFocusComposer}
+                />
               </KeyboardStickyView>
             </RevealSection>
           </ResponsiveContainer>
@@ -2234,6 +1530,15 @@ const styles = StyleSheet.create({
   pressed: {
     opacity: n.alpha.pressed,
     transform: [{ scale: 0.98 }],
+  },
+  minimalHeaderRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  minimalHeaderIcon: {
+    backgroundColor: 'transparent',
+    borderWidth: 0,
   },
   header: {
     flexDirection: 'row',
@@ -2584,8 +1889,8 @@ const styles = StyleSheet.create({
   },
   contentWrap: {
     flex: 1,
-    paddingHorizontal: n.spacing.sm,
-    paddingBottom: n.spacing.sm,
+    paddingHorizontal: 10,
+    paddingBottom: 8,
     gap: 0,
   },
   infoBanner: {
@@ -2593,13 +1898,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 8,
     paddingHorizontal: 14,
-    paddingVertical: 10,
+    paddingVertical: 9,
     marginHorizontal: 4,
     marginTop: 4,
-    borderRadius: n.radius.md,
-    backgroundColor: accentAlpha['6'],
+    borderRadius: 16,
+    backgroundColor: whiteAlpha['2'],
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: accentAlpha['15'],
+    borderColor: whiteAlpha['8'],
   },
   bannerIcon: {
     marginTop: 0,
@@ -2611,10 +1916,10 @@ const styles = StyleSheet.create({
   },
   chatSurface: {
     flex: 1,
-    borderRadius: n.radius.lg,
+    borderRadius: 24,
     backgroundColor: whiteAlpha['1.5'],
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: n.colors.border,
+    borderColor: whiteAlpha['6'],
     marginTop: 6,
     overflow: 'hidden',
   },
@@ -2622,9 +1927,9 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   messagesContent: {
-    paddingHorizontal: n.spacing.xs,
-    paddingTop: n.spacing.sm,
-    paddingBottom: n.spacing.md,
+    paddingHorizontal: 14,
+    paddingTop: 18,
+    paddingBottom: 18,
     gap: n.spacing.sm,
     flexGrow: 1,
     justifyContent: 'flex-end',

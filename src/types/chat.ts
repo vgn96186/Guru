@@ -1,4 +1,4 @@
-import { MedicalGroundingSource } from '../services/aiService';
+import type { MedicalGroundingSource } from '../services/ai';
 import { GeneratedStudyImageRecord } from '../db/queries/generatedStudyImages';
 
 export type ChatMessage = {

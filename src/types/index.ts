@@ -156,6 +156,7 @@ export interface UserProfile {
   localModelPath?: string | null;
   useLocalWhisper?: boolean;
   localWhisperPath?: string | null;
+  useNano?: boolean;
   quickStartStreak?: number;
   studyResourceMode?: StudyResourceMode;
   customSubjectLoadMultipliers?: Record<string, number>;
@@ -244,6 +245,10 @@ export interface UserProfile {
   homeNoveltyCooldownHours?: number;
   /** Providers the user has explicitly disabled (skipped during routing even if keys exist). */
   disabledProviders?: ProviderId[];
+  /** Toggle for auto-repair legacy notes feature (burns API credits). */
+  autoRepairLegacyNotesEnabled?: boolean;
+  /** Toggle for scan orphaned transcripts feature (may create duplicates). */
+  scanOrphanedTranscriptsEnabled?: boolean;
 }
 
 export type ProviderId =

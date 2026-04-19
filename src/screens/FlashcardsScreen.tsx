@@ -25,7 +25,7 @@ import {
   getAllTopicsWithProgress,
 } from '../db/queries/topics';
 import { profileRepository } from '../db/repositories';
-import { fetchContent } from '../services/aiService';
+import { fetchContent } from '../services/ai';
 import { useRefreshProfile } from '../hooks/queries/useProfile';
 import type { TopicWithProgress, FlashcardsContent } from '../types';
 import LoadingOrb from '../components/LoadingOrb';

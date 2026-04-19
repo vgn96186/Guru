@@ -31,7 +31,7 @@ import { useProfileQuery, useRefreshProfile } from '../hooks/queries/useProfile'
 import { useAppStore } from '../store/useAppStore';
 import { invalidatePlanCache } from '../services/studyPlanner';
 import { buildSession } from '../services/sessionPlanner';
-import { fetchContent, prefetchTopicContent } from '../services/aiService';
+import { fetchContent, prefetchTopicContent } from '../services/ai';
 import { sendImmediateNag } from '../services/notificationService';
 import { createSession, endSession, isSessionAlreadyFinalized } from '../db/queries/sessions';
 import {
@@ -1482,8 +1482,7 @@ function WarmUpMomentumScreen({
 }) {
   const { fade, slide } = useEntranceAnimation();
   const pct = answeredTotal > 0 ? Math.round((correctTotal / answeredTotal) * 100) : 0;
-  const scoreColor =
-    pct >= 70 ? n.colors.success : pct >= 40 ? n.colors.warning : n.colors.error;
+  const scoreColor = pct >= 70 ? n.colors.success : pct >= 40 ? n.colors.warning : n.colors.error;
   useEffect(() => {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
   }, []);

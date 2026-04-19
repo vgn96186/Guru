@@ -31,15 +31,13 @@ export const GuruChatStarters = memo(function GuruChatStarters({
     <View style={styles.emptyWrap}>
       <View style={styles.emptyPanel}>
         <View style={styles.heroRow}>
-          <View style={styles.guruAvatarLarge}>
-            <Ionicons name="sparkles" size={20} color={n.colors.accent} />
-          </View>
           <View style={styles.heroCopy}>
+            <LinearText style={styles.eyebrow}>Guru</LinearText>
             <LinearText style={styles.emptyTitle}>
-              {isGeneralChat ? 'Ask anything medical' : `Let's work on ${topicName}`}
+              {isGeneralChat ? 'How can I help you today?' : `How can I help with ${topicName}?`}
             </LinearText>
             <LinearText style={styles.emptyHint}>
-              Ask a question or start with one of these prompts.
+              Start with a prompt below or ask anything about your prep.
             </LinearText>
           </View>
         </View>
@@ -83,57 +81,45 @@ const styles = StyleSheet.create({
   emptyWrap: {
     flex: 1,
     justifyContent: 'center',
-    padding: 16,
+    paddingHorizontal: 18,
+    paddingVertical: 24,
   },
   emptyPanel: {
-    borderRadius: n.radius.lg,
-    padding: 20,
-    backgroundColor: whiteAlpha['2'],
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: n.colors.border,
-    gap: 20,
+    gap: 18,
   },
   heroRow: {
     flexDirection: 'row',
-    alignItems: 'center',
-    gap: 14,
+    alignItems: 'flex-start',
   },
   heroCopy: {
     flex: 1,
   },
-  guruAvatarLarge: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: `${n.colors.accent}16`,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: `${n.colors.accent}52`,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#5E6AD2',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.25,
-    shadowRadius: 12,
-    elevation: 4,
+  eyebrow: {
+    color: n.colors.textMuted,
+    fontSize: 12,
+    fontWeight: '700',
+    letterSpacing: 0.3,
+    marginBottom: 6,
   },
   emptyTitle: {
     ...n.typography.title,
     color: n.colors.textPrimary,
-    fontSize: 22,
+    fontSize: 28,
+    lineHeight: 34,
   },
   emptyHint: {
     ...n.typography.bodySmall,
     color: n.colors.textMuted,
-    lineHeight: 20,
-    marginTop: 4,
+    lineHeight: 21,
+    marginTop: 8,
   },
   sessionSummaryInline: {
     paddingHorizontal: 14,
     paddingVertical: 12,
-    borderRadius: n.radius.md,
-    backgroundColor: whiteAlpha['2'],
+    borderRadius: 18,
+    backgroundColor: whiteAlpha['1.5'],
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: n.colors.border,
+    borderColor: whiteAlpha['8'],
   },
   sessionSummaryInlineText: {
     ...n.typography.caption,
@@ -147,33 +133,33 @@ const styles = StyleSheet.create({
   },
   starterChip: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     gap: 10,
-    borderRadius: n.radius.md,
+    borderRadius: 18,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: n.colors.border,
-    backgroundColor: whiteAlpha['2'],
+    borderColor: whiteAlpha['8'],
+    backgroundColor: whiteAlpha['1.5'],
     paddingHorizontal: 14,
-    paddingVertical: 12,
+    paddingVertical: 14,
     flexBasis: '47%',
     flexGrow: 1,
   },
   starterIconWrap: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: accentAlpha['10'],
+    backgroundColor: 'transparent',
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: accentAlpha['20'],
+    borderColor: whiteAlpha['8'],
   },
   starterChipText: {
-    color: n.colors.textSecondary,
-    fontSize: 12,
+    color: n.colors.textPrimary,
+    fontSize: 13,
     flex: 1,
-    lineHeight: 17,
-    fontWeight: '500',
+    lineHeight: 19,
+    fontWeight: '600',
   },
   pressed: {
     opacity: n.alpha.pressed,

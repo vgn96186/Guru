@@ -9,7 +9,7 @@ import { useRefreshProfile } from '../hooks/queries/useProfile';
 import { getTopicsDueForReview, getWeakestTopics, updateTopicProgress } from '../db/queries/topics';
 import { createSession, endSession } from '../db/queries/sessions';
 import { profileRepository } from '../db/repositories';
-import { fetchContent } from '../services/aiService';
+import { fetchContent } from '../services/ai';
 import type { QuizContent, TopicWithProgress } from '../types';
 import { MarkdownRender } from '../components/MarkdownRender';
 import { linearTheme as n } from '../theme/linearTheme';

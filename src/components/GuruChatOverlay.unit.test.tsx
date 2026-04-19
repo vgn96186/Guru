@@ -1,9 +1,9 @@
 import React from 'react';
 import { render, fireEvent, waitFor } from '@testing-library/react-native';
 import GuruChatOverlay from './GuruChatOverlay';
-import { chatWithGuru } from '../services/aiService';
+import { chatWithGuru } from '../services/ai';
 
-jest.mock('../services/aiService', () => ({
+jest.mock('../services/ai', () => ({
   chatWithGuru: jest.fn(),
 }));
 

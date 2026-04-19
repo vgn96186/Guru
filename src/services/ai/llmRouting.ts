@@ -1012,6 +1012,70 @@ export async function attemptCloudLLMStream(
   throw new Error('No AI backend available. Download a local model or add an API key in Settings.');
 }
 
+/** Check whether Gemini Nano (AICore) is available on this device. */
+export async function isNanoAvailable(): Promise<boolean> {
+  try {
+    const { status } = await LocalLlm.nanoCheckStatus();
+    return status === 'AVAILABLE';
+  } catch {
+    return false;
+  }
+}
+
+/** Download Gemini Nano if needed, then warm it up. Returns final status. */
+export async function ensureNanoReady(): Promise<LocalLlm.NanoStatusResult> {
+  try {
+    const downloadResult = await LocalLlm.nanoDownloadIfNeeded();
+    if (downloadResult.status === 'AVAILABLE') {
+      await LocalLlm.nanoWarmup();
+    }
+    return downloadResult;
+  } catch (err) {
+    return { status: 'ERROR', errorMessage: (err as Error)?.message };
+  }
+}
+
+/**
+ * Attempt generation via Gemini Nano (AICore).
+ * No model file or API key needed — runs on-device via system service.
+ * Best for short tasks: quiz grading, confidence checks, quick summaries.
+ * Max output ~256 tokens, max input ~4000 tokens.
+ */
+export async function attemptNanoLLM(
+  messages: Message[],
+  options?: { temperature?: number; maxOutputTokens?: number },
+): Promise<{ text: string; modelUsed: string }> {
+  const systemMsg = messages.find((m) => m.role === 'system');
+  const userMsgs = messages.filter((m) => m.role !== 'system');
+  const prompt = userMsgs.map((m) => m.content).join('\n');
+
+  const result = await LocalLlm.nanoGenerate({
+    prompt,
+    systemInstruction: systemMsg?.content,
+    temperature: options?.temperature ?? 0.3,
+    topK: 40,
+    maxOutputTokens: options?.maxOutputTokens ?? 256,
+  });
+
+  if (!result.text?.trim()) {
+    throw new Error('Gemini Nano returned empty response');
+  }
+  return { text: result.text, modelUsed: 'nano/gemini-nano' };
+}
+
+/** Quick MCQ/short-answer grading via Gemini Nano. */
+export async function attemptNanoGrade(
+  question: string,
+  userAnswer: string,
+  correctAnswer?: string,
+): Promise<{ text: string; modelUsed: string }> {
+  const result = await LocalLlm.nanoGradeAnswer({ question, userAnswer, correctAnswer });
+  if (!result.text?.trim()) {
+    throw new Error('Gemini Nano grading returned empty response');
+  }
+  return { text: result.text, modelUsed: 'nano/gemini-nano' };
+}
+
 export async function attemptLocalLLM(
   messages: Message[],
   localModelPath: string,

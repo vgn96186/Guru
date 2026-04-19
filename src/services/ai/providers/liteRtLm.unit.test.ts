@@ -37,12 +37,19 @@ jest.mock('local-llm', () => ({
 }));
 
 import { createLiteRtModel } from './liteRtLm';
-import type { LanguageModelStreamPart } from '@ai-sdk/provider';
+import type { LanguageModelV2StreamPart } from '../v2/spec';
 
-async function collectStreamParts(parts: AsyncIterable<LanguageModelStreamPart>) {
-  const seen: LanguageModelStreamPart[] = [];
-  for await (const part of parts) {
-    seen.push(part);
+async function collectStreamParts(parts: ReadableStream<LanguageModelV2StreamPart>) {
+  const seen: LanguageModelV2StreamPart[] = [];
+  const reader = parts.getReader();
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      if (value) seen.push(value);
+    }
+  } finally {
+    reader.releaseLock();
   }
   return seen;
 }
@@ -78,18 +85,15 @@ describe('createLiteRtModel', () => {
 
     const model = createLiteRtModel({ modelPath: '/models/gemma-4-e4b.litertlm' });
     const result = await model.doStream({
-      prompt: [{ role: 'user', content: 'Explain neuroanatomy' }],
+      prompt: [{ role: 'user', content: [{ type: 'text', text: 'Explain neuroanatomy' }] }],
     });
-    const parts = await collectStreamParts(result.stream);
+    const parts = await collectStreamParts(result.stream as any);
 
     expect(parts).toEqual([
       { type: 'text-delta', delta: 'Recovered from completion' },
       { type: 'finish', finishReason: 'stop', usage: {} },
     ]);
-    expect(logSpy).toHaveBeenCalledWith(
-      '[LiteRT_JS] stream_start',
-      expect.any(Object)
-    );
+    expect(logSpy).toHaveBeenCalledWith('[LiteRT_JS] stream_start', expect.any(Object));
   });
 
   it('surfaces an error when native streaming completes with no text at all', async () => {
@@ -100,9 +104,9 @@ describe('createLiteRtModel', () => {
 
     const model = createLiteRtModel({ modelPath: '/models/gemma-4-e4b.litertlm' });
     const result = await model.doStream({
-      prompt: [{ role: 'user', content: 'Explain neuroanatomy' }],
+      prompt: [{ role: 'user', content: [{ type: 'text', text: 'Explain neuroanatomy' }] }],
     });
-    const parts = await collectStreamParts(result.stream);
+    const parts = await collectStreamParts(result.stream as any);
 
     expect(parts).toHaveLength(2);
     expect(parts[0]?.type).toBe('error');
@@ -119,9 +123,9 @@ describe('createLiteRtModel', () => {
 
     const model = createLiteRtModel({ modelPath: '/models/gemma-4-e4b.litertlm' });
     const result = await model.doStream({
-      prompt: [{ role: 'user', content: 'Explain neuroanatomy' }],
+      prompt: [{ role: 'user', content: [{ type: 'text', text: 'Explain neuroanatomy' }] }],
     });
-    await collectStreamParts(result.stream);
+    await collectStreamParts(result.stream as any);
 
     expect(logSpy).toHaveBeenCalledWith(
       '[LiteRT_JS] stream_start',

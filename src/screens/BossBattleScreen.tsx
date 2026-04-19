@@ -8,7 +8,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { HomeStackParamList } from '../navigation/types';
 import { getAllCachedQuestions, type MockQuestion } from '../db/queries/aiCache';
 import { getAllSubjects, getTopicsBySubject } from '../db/queries/topics';
-import { fetchContent } from '../services/aiService';
+import { fetchContent } from '../services/ai';
 import { profileRepository } from '../db/repositories';
 import { useRefreshProfile } from '../hooks/queries/useProfile';
 import { MarkdownRender } from '../components/MarkdownRender';

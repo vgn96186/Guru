@@ -4,6 +4,8 @@ import android.content.Context
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -42,6 +44,7 @@ class ActionHubView(context: Context, appContext: AppContext) : ExpoView(context
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun ActionHubContent(onAction: ((String, Map<String, Any?>?) -> Unit)?) {
     val theme = object {
@@ -241,9 +244,6 @@ fun ExternalAppChip(app: AppInfo, theme: Any, onClick: () -> Unit) {
 }
 
 data class AppInfo(val name: String, val color: Color, val icon: String)
-
-import androidx.compose.foundation.layout.FlowRow
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable

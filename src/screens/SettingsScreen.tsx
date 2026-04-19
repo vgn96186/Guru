@@ -445,6 +445,8 @@ export default function SettingsScreen() {
   const [autoBackupFrequency, setAutoBackupFrequency] = useState<AutoBackupFrequency>('off');
   const [maintenanceBusy, setMaintenanceBusy] = useState<string | null>(null);
   const [bodyDoubling, setBodyDoubling] = useState(true);
+  const [autoRepairLegacyNotes, setAutoRepairLegacyNotes] = useState(false);
+  const [scanOrphanedTranscripts, setScanOrphanedTranscripts] = useState(false);
   const [blockedTypes, setBlockedTypes] = useState<ContentType[]>([]);
   const [idleTimeout, setIdleTimeout] = useState('2');
   const [breakDuration, setBreakDuration] = useState('5');
@@ -1483,6 +1485,8 @@ export default function SettingsScreen() {
       setGuruFrequency(profile.guruFrequency ?? 'normal');
       setFocusSubjectIds(profile.focusSubjectIds ?? []);
       setAutoBackupFrequency(profile.autoBackupFrequency ?? 'off');
+      setAutoRepairLegacyNotes(profile.autoRepairLegacyNotesEnabled ?? false);
+      setScanOrphanedTranscripts(profile.scanOrphanedTranscriptsEnabled ?? false);
       profileHydrationSignatureRef.current = nextSignature;
       profileLoaded.current = true;
     }
@@ -1550,6 +1554,8 @@ export default function SettingsScreen() {
         guruFrequency,
         focusSubjectIds,
         autoBackupFrequency,
+        autoRepairLegacyNotesEnabled: autoRepairLegacyNotes,
+        scanOrphanedTranscriptsEnabled: scanOrphanedTranscripts,
       });
       if (notifs) {
         try {
@@ -1614,6 +1620,8 @@ export default function SettingsScreen() {
     guruFrequency,
     focusSubjectIds,
     autoBackupFrequency,
+    autoRepairLegacyNotes,
+    scanOrphanedTranscripts,
   ]);
 
   // Fire auto-save 600ms after any setting changes (skip initial profile load)
@@ -1784,7 +1792,9 @@ export default function SettingsScreen() {
   const localLlmReady = Boolean(localLlmPath);
   const localWhisperPath = profile?.localWhisperPath ?? '';
   const localWhisperReady = Boolean(localWhisperPath);
-  const localAiEnabled = Boolean(profile?.useLocalModel || profile?.useLocalWhisper);
+  const localAiEnabled = Boolean(
+    profile?.useLocalModel || profile?.useLocalWhisper || profile?.useNano,
+  );
   const localLlmAllowed = isLocalLlmAllowedOnThisDevice();
   const localLlmWarning = getLocalLlmRamWarning();
   const localLlmFileName = localLlmPath
@@ -1822,7 +1832,7 @@ export default function SettingsScreen() {
     hasValue(falApiKey),
     hasValue(braveSearchApiKey),
     hasValue(cfAccountId) && hasValue(cfApiToken),
-    localAiEnabled && (localLlmReady || localWhisperReady),
+    localAiEnabled && (localLlmReady || localWhisperReady || (profile?.useNano ?? true)),
   ].filter(Boolean).length;
   const settingsSummaryCards = [
     { label: 'Providers ready', value: providerReadyCount, tone: 'accent' as const },
@@ -2022,6 +2032,7 @@ export default function SettingsScreen() {
             localWhisperFileName={localWhisperFileName}
             localLlmAllowed={localLlmAllowed}
             localLlmWarning={localLlmWarning}
+            useNano={profile?.useNano ?? true}
           />
           <AccountSections
             styles={styles}
@@ -2087,6 +2098,10 @@ export default function SettingsScreen() {
             requestPomodoroOverlay={requestPomodoroOverlay}
             pomodoroInterval={pomodoroInterval}
             setPomodoroInterval={setPomodoroInterval}
+            autoRepairLegacyNotes={autoRepairLegacyNotes}
+            setAutoRepairLegacyNotes={setAutoRepairLegacyNotes}
+            scanOrphanedTranscripts={scanOrphanedTranscripts}
+            setScanOrphanedTranscripts={setScanOrphanedTranscripts}
           />
 
           <StorageSections
@@ -2490,6 +2505,56 @@ const styles = StyleSheet.create({
     backgroundColor: n.colors.success,
     marginLeft: 12,
     flexShrink: 0,
+  },
+  localAiCard: {
+    marginTop: 10,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: n.colors.border,
+    borderRadius: 12,
+    backgroundColor: n.colors.background,
+  },
+  localAiCardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 4,
+  },
+  localAiCardLabelRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    flex: 1,
+  },
+  localAiCardIcon: {
+    width: 28,
+    height: 28,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  localAiBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 6,
+    backgroundColor: n.colors.success + '22',
+  },
+  localAiBadgeText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: n.colors.success,
+  },
+  localAiBadgeWarning: {
+    backgroundColor: n.colors.warning + '22',
+  },
+  localAiBadgeWarningText: {
+    color: n.colors.warning,
+  },
+  localAiBadgeMuted: {
+    backgroundColor: n.colors.textMuted + '22',
+  },
+  localAiBadgeMutedText: {
+    color: n.colors.textMuted,
   },
   autoFetchBtn: {
     marginTop: 10,

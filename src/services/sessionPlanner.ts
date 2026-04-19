@@ -9,7 +9,7 @@ import type {
 import { getAllTopicsWithProgress } from '../db/queries/topics';
 import { getRecentlyStudiedTopicNames } from '../db/queries/sessions';
 import { profileRepository } from '../db/repositories';
-import { planSessionWithAI } from './aiService';
+import { planSessionWithAI } from './ai';
 import { MS_PER_DAY } from '../constants/time';
 import { getMoodContentTypes } from '../constants/prompts';
 
@@ -179,8 +179,8 @@ export async function buildSession(config: BuildSessionConfig): Promise<Agenda> 
   const explicitTopicIds = options?.focusTopicIds?.length
     ? options.focusTopicIds
     : options?.focusTopicId
-    ? [options.focusTopicId]
-    : [];
+      ? [options.focusTopicId]
+      : [];
 
   if (explicitTopicIds.length > 0) {
     const explicitTopics = explicitTopicIds

@@ -202,12 +202,12 @@ const ToastItem = React.memo(
                   payload.type === 'success'
                     ? 'success'
                     : payload.type === 'error'
-                    ? 'error'
-                    : payload.type === 'warning'
-                    ? 'warning'
-                    : payload.type === 'focus'
-                    ? 'accent'
-                    : 'secondary'
+                      ? 'error'
+                      : payload.type === 'warning'
+                        ? 'warning'
+                        : payload.type === 'focus'
+                          ? 'accent'
+                          : 'secondary'
                 }
                 style={styles.badgeText}
               >
@@ -275,8 +275,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   toast: {
-    width: '100%',
-    alignSelf: 'stretch',
+    alignSelf: 'center',
+    maxWidth: '80%',
     borderRadius: n.radius.lg,
     marginTop: 8,
     borderWidth: 1,

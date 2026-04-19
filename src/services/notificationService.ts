@@ -1,7 +1,7 @@
 import * as Notifications from 'expo-notifications';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { showToast } from '../components/Toast';
-import { generateAccountabilityMessages, generateBreakEndMessages } from './aiService';
+import { generateAccountabilityMessages, generateBreakEndMessages } from './ai';
 import { profileRepository, dailyLogRepository } from '../db/repositories';
 import {
   getWeakestTopics,
@@ -361,10 +361,10 @@ export async function refreshAccountabilityNotifications(): Promise<void> {
     daysSince === null
       ? 'never'
       : daysSince === 0
-      ? 'today'
-      : daysSince === 1
-      ? 'yesterday'
-      : `${daysSince} days ago`;
+        ? 'today'
+        : daysSince === 1
+          ? 'yesterday'
+          : `${daysSince} days ago`;
 
   const daysToInicet = profileRepository.getDaysToExam(profile.inicetDate);
   const daysToNeetPg = profileRepository.getDaysToExam(profile.neetDate);

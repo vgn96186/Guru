@@ -2,6 +2,7 @@ package expo.modules.omnicanvas
 
 import android.content.Context
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.*
@@ -16,6 +17,7 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.text.*
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import expo.modules.kotlin.AppContext
@@ -215,8 +217,8 @@ fun MindMapCanvas(
                         val canvasY = (change.position.y - currentOffset.y) / currentScale
                         
                         val node = nodes.find { n ->
-                            canvasX >= n.x - 80 && canvasX <= n.x + 80 &&
-                            canvasY >= n.y - 30 && canvasY <= n.y + 30
+                            canvasX.compareTo(n.x - 80f) >= 0 && canvasX.compareTo(n.x + 80f) <= 0 &&
+                            canvasY.compareTo(n.y - 30f) >= 0 && canvasY.compareTo(n.y + 30f) <= 0
                         }
                         node?.let { onNodeDrag(it.id, Offset(canvasX, canvasY)) }
                     }
@@ -225,8 +227,8 @@ fun MindMapCanvas(
                     val canvasX = (tapOffset.x - currentOffset.x) / currentScale
                     val canvasY = (tapOffset.y - currentOffset.y) / currentScale
                     nodes.find { n ->
-                        canvasX >= n.x - 80 && canvasX <= n.x + 80 &&
-                        canvasY >= n.y - 30 && canvasY <= n.y + 30
+                        canvasX.compareTo(n.x - 80f) >= 0 && canvasX.compareTo(n.x + 80f) <= 0 &&
+                        canvasY.compareTo(n.y - 30f) >= 0 && canvasY.compareTo(n.y + 30f) <= 0
                     }?.let { onNodeClick(it.id) }
                 }
             }

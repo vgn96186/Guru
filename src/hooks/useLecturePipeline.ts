@@ -11,7 +11,7 @@ import {
   type LecturePipelineProgress,
   type LecturePipelineStage,
 } from '../services/lecture/lectureSessionMonitor';
-import { catalyzeTranscript } from '../services/aiService';
+import { catalyzeTranscript } from '../services/ai';
 import { BUNDLED_HF_TOKEN } from '../config/appConfig';
 import { profileRepository } from '../db/repositories';
 import {
@@ -201,7 +201,7 @@ Summary: ${result.lectureSummary}`;
       setSelectedSubjectName(
         resolution.requiresSelection
           ? null
-          : resolution.matchedSubject?.name ?? resolution.normalizedSubjectName,
+          : (resolution.matchedSubject?.name ?? resolution.normalizedSubjectName),
       );
     }
 
@@ -349,7 +349,7 @@ Summary: ${result.lectureSummary}`;
 
       const message = isMetroDisconnect
         ? 'Connection to dev server lost. Audio preserved — retry when reconnected.'
-        : e?.message ?? 'Transcription failed';
+        : (e?.message ?? 'Transcription failed');
 
       setActiveStage(null);
       setStageMessage('');

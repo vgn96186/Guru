@@ -77,8 +77,11 @@ export const stepCountIs =
 
 export const hasToolCall =
   (toolName: string): StopCondition =>
-  (_state) => {
-    // Caller must wire this; placeholder — most users just use stepCountIs.
+  ({ lastFinishReason }) => {
+    // This is a simplified implementation - a full implementation would need
+    // to track tool calls across steps. For now, this returns false to maintain
+    // the existing behavior where stepCountIs is the primary stop condition.
+    // A proper implementation would require passing tool call history to the state.
     return false;
   };
 

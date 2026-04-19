@@ -3,7 +3,7 @@ import { useGuruPresence } from './useGuruPresence';
 
 const mockGenerateGuruPresenceMessages = jest.fn();
 
-jest.mock('../services/aiService', () => ({
+jest.mock('../services/ai', () => ({
   generateGuruPresenceMessages: (...args: unknown[]) => mockGenerateGuruPresenceMessages(...args),
 }));
 

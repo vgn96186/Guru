@@ -31,7 +31,7 @@ import {
 } from './presets';
 import { createOpenAICompatibleModel } from './openaiCompatible';
 import { createGeminiModel } from './gemini';
-import { createLocalLlmModel } from './localLlm';
+import { createLocalLlmModel, createNanoModel } from './localLlm';
 import { createChatGptModel } from './chatgpt';
 import { createGitHubCopilotModel } from './githubCopilot';
 import { createGitLabDuoModel } from './gitlabDuo';
@@ -42,6 +42,8 @@ export interface GuruFallbackOptions {
   profile: UserProfile;
   /** Override model ids per provider. Defaults chosen to match existing routing. */
   modelIds?: Partial<Record<ProviderId | 'local', string>>;
+  /** Explicit UI-selected model id, e.g. `groq/...`, `gemini/...`, raw OpenRouter id, or `local`. */
+  chosenModel?: string;
   /** Force a specific provider chain (ignores profile order). */
   forceOrder?: ProviderId[];
   /** True for plain-text output (chat); false (default) for JSON-mode prompting. Only affects local models. */
@@ -70,25 +72,111 @@ const DEFAULT_MODEL_IDS: Record<ProviderId | 'local', string> = {
   local: '',
 };
 
+type ChosenModelSelection = {
+  forceOrder?: ProviderId[];
+  modelIds?: Partial<Record<ProviderId | 'local', string>>;
+  localOnly?: boolean;
+};
+
+function resolveChosenModelSelection(chosenModel: string | undefined): ChosenModelSelection {
+  if (!chosenModel || chosenModel === 'auto') return {};
+  if (chosenModel === 'local') {
+    return {
+      localOnly: true,
+      modelIds: { local: '' },
+    };
+  }
+
+  const prefixedProviders: Array<{
+    prefix: string;
+    provider: ProviderId;
+  }> = [
+    { prefix: 'groq/', provider: 'groq' },
+    { prefix: 'gemini/', provider: 'gemini' },
+    { prefix: 'cf/', provider: 'cloudflare' },
+    { prefix: 'deepseek/', provider: 'deepseek' },
+    { prefix: 'github/', provider: 'github' },
+    { prefix: 'kilo/', provider: 'kilo' },
+    { prefix: 'ar/', provider: 'agentrouter' },
+    { prefix: 'chatgpt/', provider: 'chatgpt' },
+    { prefix: 'github_copilot/', provider: 'github_copilot' },
+    { prefix: 'gitlab_duo/', provider: 'gitlab_duo' },
+    { prefix: 'poe/', provider: 'poe' },
+    { prefix: 'qwen/', provider: 'qwen' },
+  ];
+
+  for (const { prefix, provider } of prefixedProviders) {
+    if (chosenModel.startsWith(prefix)) {
+      return {
+        forceOrder: [provider],
+        modelIds: {
+          [provider]: chosenModel.slice(prefix.length),
+        },
+      };
+    }
+  }
+
+  // Unprefixed explicit ids are treated as OpenRouter selections to match the current picker.
+  return {
+    forceOrder: ['openrouter'],
+    modelIds: {
+      openrouter: chosenModel,
+    },
+  };
+}
+
 export function createGuruFallbackModel(opts: GuruFallbackOptions): LanguageModelV2 {
   const { profile } = opts;
   const disabled = new Set<ProviderId>(profile.disabledProviders ?? []);
+  const chosenSelection = resolveChosenModelSelection(opts.chosenModel);
   const order: ProviderId[] =
+    chosenSelection.forceOrder ??
     opts.forceOrder ??
     (profile.providerOrder?.length ? profile.providerOrder : DEFAULT_PROVIDER_ORDER);
-  const ids = { ...DEFAULT_MODEL_IDS, ...(opts.modelIds ?? {}) };
+  const ids = {
+    ...DEFAULT_MODEL_IDS,
+    ...(opts.modelIds ?? {}),
+    ...(chosenSelection.modelIds ?? {}),
+  };
 
   const models: LanguageModelV2[] = [];
+  const localOnly = chosenSelection.localOnly === true;
+  const explicitCloudOnly = Boolean(chosenSelection.forceOrder?.length) && !localOnly;
 
-  // Local model goes first if enabled and path is a real, non-empty string.
+  // Local LiteRT model goes first if enabled and path is a real, non-empty string.
   const localPath = profile.localModelPath?.trim();
-  if (profile.useLocalModel && localPath && !opts.disableLocal) {
+  if (profile.useLocalModel && localPath && !opts.disableLocal && !explicitCloudOnly) {
     models.push(
       createLocalLlmModel({
-        modelPath: localPath,
+        modelPath: ids.local || localPath,
         textMode: opts.textMode ?? false,
       }),
     );
+  }
+
+  if (localOnly) {
+    if (!models.length) {
+      throw new Error(
+        'createGuruFallbackModel: local model selected but no local model is configured.',
+      );
+    }
+    return createFallbackModel({
+      models,
+      onProviderError: opts.onProviderError,
+      onProviderSuccess: opts.onProviderSuccess,
+    });
+  }
+
+  // Gemini Nano (AICore) — available on supported devices, no API key needed.
+  // Placed after LiteRT (which has higher quality + longer context) but before
+  // cloud providers. Best for quick grading, confidence checks, short summaries.
+  // Respects the useNano toggle from profile settings.
+  if (profile.useNano !== false && !opts.disableLocal && !explicitCloudOnly) {
+    try {
+      models.push(createNanoModel());
+    } catch {
+      // Nano not available on this device — skip silently
+    }
   }
 
   for (const providerId of order) {
@@ -99,7 +187,7 @@ export function createGuruFallbackModel(opts: GuruFallbackOptions): LanguageMode
 
   if (!models.length) {
     throw new Error(
-      'createGuruFallbackModel: no providers available. Save an API key or connect OAuth in Settings. (Kilo: startup probe can succeed without a key; routed chat/embeddings still need a stored Kilo API key.)',
+      'createGuruFallbackModel: no providers available. Save an API key or connect OAuth in Settings. (Kilo: startup probe can succeed without a key; routed chat/embeddings still need a stored Kilo API key. Gemini Nano may be available on supported Pixel/Samsung devices via AICore.)',
     );
   }
 

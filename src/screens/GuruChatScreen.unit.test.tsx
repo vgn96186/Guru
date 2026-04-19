@@ -3,6 +3,18 @@ import { fireEvent, render, waitFor } from '@testing-library/react-native';
 import { Platform } from 'react-native';
 import GuruChatScreen from './GuruChatScreen';
 
+const mockGuruChatSendMessage = jest.fn(async () => ({
+  id: 'g-1',
+  role: 'guru',
+  text: 'Hello',
+  timestamp: Date.now(),
+  sources: [],
+  referenceImages: [],
+  images: [],
+  modelUsed: 'local',
+  searchQuery: null,
+}));
+
 jest.mock('@react-native-clipboard/clipboard', () => ({
   __esModule: true,
   default: {
@@ -119,16 +131,10 @@ jest.mock('../motion/useReducedMotion', () => ({
 }));
 
 jest.mock('../services/aiService', () => ({
-  chatWithGuruGroundedStreaming: jest.fn(async (_question, _topic, _history, _model, onDelta) => {
-    onDelta?.('Hello');
-    return {
-      reply: 'Hello',
-      sources: [],
-      referenceImages: [],
-      modelUsed: 'local',
-      searchQuery: null,
-    };
-  }),
+  addLlmStateListener: jest.fn(() => () => {}),
+}));
+
+jest.mock('../services/ai', () => ({
   getApiKeys: () => ({
     chatgptConnected: false,
     geminiKey: '',
@@ -147,13 +153,15 @@ jest.mock('../services/aiService', () => ({
   }),
 }));
 
-jest.mock('../services/ai/llmRouting', () => ({
-  getApiKeys: () => ({
-    geminiKey: '',
-    cfAccountId: '',
-    cfApiToken: '',
-    falKey: '',
-    orKey: '',
+jest.mock('../hooks/useGuruChat', () => ({
+  useGuruChat: () => ({
+    messages: [],
+    status: 'idle',
+    error: null,
+    sendMessage: mockGuruChatSendMessage,
+    stop: jest.fn(),
+    regenerate: jest.fn(async () => null),
+    setMessages: jest.fn(),
   }),
 }));
 
@@ -274,6 +282,7 @@ describe('GuruChatScreen', () => {
       setTimeout(() => cb(Date.now()), 0)) as unknown as typeof requestAnimationFrame;
     global.cancelAnimationFrame = ((id: number) => clearTimeout(id)) as typeof cancelAnimationFrame;
     guruChatMemory.getSessionMemoryRow.mockResolvedValue(null);
+    mockGuruChatSendMessage.mockClear();
     console.error = jest.fn((...args: unknown[]) => {
       const firstArg = args[0];
       if (
@@ -302,7 +311,6 @@ describe('GuruChatScreen', () => {
 
   it('recovers by creating a thread on send when initial thread hydration fails', async () => {
     const aiCache = require('../db/queries/aiCache');
-    const aiService = require('../services/aiService');
 
     aiCache.getLatestGuruChatThread.mockRejectedValueOnce(new Error('hydrate failed'));
     aiCache.getOrCreateLatestGuruChatThread.mockResolvedValueOnce({
@@ -323,7 +331,12 @@ describe('GuruChatScreen', () => {
     fireEvent.press(getByLabelText('Send message'));
 
     await waitFor(() => {
-      expect(aiService.chatWithGuruGroundedStreaming).toHaveBeenCalled();
+      expect(mockGuruChatSendMessage).toHaveBeenCalledWith(
+        'Explain shock',
+        expect.objectContaining({
+          syllabusTopicId: undefined,
+        }),
+      );
     });
 
     expect(aiCache.getOrCreateLatestGuruChatThread).toHaveBeenCalled();

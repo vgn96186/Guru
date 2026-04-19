@@ -21,7 +21,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { HomeStackParamList } from '../navigation/types';
 import { getTopicsDueForReview, updateTopicProgress } from '../db/queries/topics';
 import { profileRepository } from '../db/repositories';
-import { fetchContent } from '../services/aiService';
+import { fetchContent } from '../services/ai';
 import { useRefreshProfile } from '../hooks/queries/useProfile';
 import type { TopicWithProgress, AIContent, ContentType } from '../types';
 import LoadingOrb from '../components/LoadingOrb';

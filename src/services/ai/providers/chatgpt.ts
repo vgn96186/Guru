@@ -13,8 +13,8 @@
 
 import type { LanguageModel } from '@ai-sdk/provider';
 import { createResponsesApiModel } from './responsesApi';
-import { getValidAccessToken, getAccountId } from '../../chatgpt/chatgptTokenStore';
-import type { ChatGptAccountSlot } from '../../../../types';
+import { getValidAccessToken, getAccountId } from '../chatgpt/chatgptTokenStore';
+import type { ChatGptAccountSlot } from '../../../types';
 
 const RESPONSES_URL = 'https://chatgpt.com/backend-api/codex/responses';
 const OPENAI_BETA_HEADER = 'responses=experimental';

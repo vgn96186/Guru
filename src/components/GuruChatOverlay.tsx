@@ -16,7 +16,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
-import { chatWithGuru, fetchChatRelevantImage } from '../services/aiService';
+import { chatWithGuru, fetchChatRelevantImage } from '../services/ai';
 import { markTopicDiscussedInChat } from '../db/queries/topics';
 import { useProfileQuery } from '../hooks/queries/useProfile';
 import { buildBoundedGuruChatStudyContext } from '../services/guruChatStudyContext';

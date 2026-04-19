@@ -10,13 +10,11 @@ class OmniCanvasModule : Module() {
 
         OnCreate {
             // Background pre-warm if a model path is available
-            // In a real app, we'd fetch the saved path from SharedPreferences
-            // but for now we expose the hook for future use.
-            Log.i("OmniCanvas", "Module created, pre-warming local AI...")
-            LocalLlmModule.prewarm()
+            Log.i("OmniCanvas", "Module created")
         }
 
-        View("MindMapCanvas", MindMapCanvasView::class) {
+        View(MindMapCanvasView::class) {
+            Name("MindMapCanvas")
             Prop("nodes") { view: MindMapCanvasView, nodes: List<NodeData> ->
                 view.setNodes(nodes)
             }
@@ -32,11 +30,11 @@ class OmniCanvasModule : Module() {
             Prop("offsetY") { view: MindMapCanvasView, y: Float ->
                 view.setOffsetY(y)
             }
-            
             Events("onNodePress", "onCanvasPan", "onZoomChange")
         }
 
-        View("GuruChatList", GuruChatListView::class) {
+        View(GuruChatListView::class) {
+            Name("GuruChatList")
             Prop("messages") { view: GuruChatListView, messages: List<ChatMessageData> ->
                 view.setMessages(messages)
             }
@@ -45,7 +43,8 @@ class OmniCanvasModule : Module() {
             }
         }
 
-        View("Flashcard", FlashcardView::class) {
+        View(FlashcardView::class) {
+            Name("Flashcard")
             Prop("card") { view: FlashcardView, card: FlashcardData ->
                 view.setCard(card)
             }
@@ -55,7 +54,8 @@ class OmniCanvasModule : Module() {
             Events("onFlip")
         }
 
-        View("LoadingOrb", LoadingOrbView::class) {
+        View(LoadingOrbView::class) {
+            Name("LoadingOrb")
             Prop("size") { view: LoadingOrbView, size: Float ->
                 view.setSize(size)
             }
@@ -64,13 +64,15 @@ class OmniCanvasModule : Module() {
             }
         }
 
-        View("ProgressDashboard", ProgressDashboardView::class) {
+        View(ProgressDashboardView::class) {
+            Name("ProgressDashboard")
             Prop("data") { view: ProgressDashboardView, data: ProgressData ->
                 view.setData(data)
             }
         }
 
-        View("StartButton", StartButtonView::class) {
+        View(StartButtonView::class) {
+            Name("StartButton")
             Prop("label") { view: StartButtonView, label: String ->
                 view.setLabel(label)
             }
@@ -86,32 +88,37 @@ class OmniCanvasModule : Module() {
             Events("onPress")
         }
 
-        View("OmniOrb", OmniOrbView::class) {
+        View(OmniOrbView::class) {
+            Name("OmniOrb")
             Prop("state") { view: OmniOrbView, state: OrbState ->
                 view.setState(state)
             }
             Events("onPress")
         }
 
-        View("QuickStatsBar", QuickStatsBarView::class) {
+        View(QuickStatsBarView::class) {
+            Name("QuickStatsBar")
             Prop("data") { view: QuickStatsBarView, data: QuickStatsData ->
                 view.setData(data)
             }
             Events("onGoalPress")
         }
 
-        View("LectureReturnSheet", LectureReturnSheetView::class) {
+        View(LectureReturnSheetView::class) {
+            Name("LectureReturnSheet")
             Prop("data") { view: LectureReturnSheetView, data: LectureReturnData ->
                 view.data = data
             }
             Events("onAction")
         }
 
-        View("ActionHub", ActionHubView::class) {
+        View(ActionHubView::class) {
+            Name("ActionHub")
             Events("onAction")
         }
 
-        View("NextLecture", NextLectureView::class) {
+        View(NextLectureView::class) {
+            Name("NextLecture")
             Prop("data") { view: NextLectureView, data: NextLectureData ->
                 view.data = data
             }

@@ -464,6 +464,23 @@ function HomeScreenContent() {
     }
   }, [isLoading, bootPhase, setBootPhase, setStartButtonLayout]);
 
+  const handleRefreshExamDates = useCallback(async () => {
+    try {
+      const result = await fetchExamDatesViaBrave();
+      const updates: { inicetDate?: string; neetDate?: string } = {};
+      if (result.inicetDate && result.inicetDate !== profile?.inicetDate)
+        updates.inicetDate = result.inicetDate;
+      if (result.neetDate && result.neetDate !== profile?.neetDate)
+        updates.neetDate = result.neetDate;
+      if (Object.keys(updates).length > 0) {
+        await profileRepository.updateProfile(updates);
+        await refreshProfile();
+      }
+    } catch {
+      // silent — user can try again
+    }
+  }, [profile?.inicetDate, profile?.neetDate, refreshProfile]);
+
   if (isLoading || isProfilePending || !profile || !levelInfo) {
     return <SafeAreaView style={styles.safe} />;
   }
@@ -510,21 +527,6 @@ function HomeScreenContent() {
   const daysToInicet = profileRepository.getDaysToExam(profile.inicetDate || DEFAULT_INICET_DATE);
   const daysToNeetPg = profileRepository.getDaysToExam(profile.neetDate || DEFAULT_NEET_DATE);
 
-  const handleRefreshExamDates = useCallback(async () => {
-    try {
-      const result = await fetchExamDatesViaBrave();
-      const updates: { inicetDate?: string; neetDate?: string } = {};
-      if (result.inicetDate && result.inicetDate !== profile?.inicetDate) updates.inicetDate = result.inicetDate;
-      if (result.neetDate && result.neetDate !== profile?.neetDate) updates.neetDate = result.neetDate;
-      if (Object.keys(updates).length > 0) {
-        await profileRepository.updateProfile(updates);
-        await refreshProfile();
-      }
-    } catch {
-      // silent — user can try again
-    }
-  }, [profile?.inicetDate, profile?.neetDate, refreshProfile]);
-
   return (
     <SafeAreaView style={styles.safe}>
       <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
@@ -545,7 +547,11 @@ function HomeScreenContent() {
                       {firstName}
                     </LinearText>
                   </LinearText>
-                  <ExamCountdownChips daysToInicet={daysToInicet} daysToNeetPg={daysToNeetPg} onRefreshExamDates={handleRefreshExamDates} />
+                  <ExamCountdownChips
+                    daysToInicet={daysToInicet}
+                    daysToNeetPg={daysToNeetPg}
+                    onRefreshExamDates={handleRefreshExamDates}
+                  />
                 </View>
                 <View style={styles.headerRight}>
                   <AiStatusIndicator profile={profile} />

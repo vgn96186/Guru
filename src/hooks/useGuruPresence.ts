@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Animated } from 'react-native';
-import { generateGuruPresenceMessages } from '../services/aiService';
-import type { GuruEventType, GuruPresenceMessage } from '../services/aiService';
+import { generateGuruPresenceMessages } from '../services/ai';
+import type { GuruEventType, GuruPresenceMessage } from '../services/ai';
 
 interface GuruPresenceOptions {
   currentTopicIdentity?: string | null;

@@ -1,0 +1,26 @@
+modules/omni-canvas/index.tsx(209,11): error TS2304: Cannot find name 'ViewStyle'.
+modules/omni-canvas/index.tsx(214,11): error TS2304: Cannot find name 'ViewStyle'.
+modules/omni-canvas/index.tsx(234,11): error TS2304: Cannot find name 'ViewStyle'.
+src/components/MindMapComposeCanvas.tsx(11,19): error TS2694: Namespace '"/Users/vishnugnair/Guru/debug/node_modules/react-native-reanimated/lib/typescript/Animated"' has no exported member 'SharedValue'.
+src/components/MindMapComposeCanvas.tsx(12,24): error TS2694: Namespace '"/Users/vishnugnair/Guru/debug/node_modules/react-native-reanimated/lib/typescript/Animated"' has no exported member 'SharedValue'.
+src/components/MindMapComposeCanvas.tsx(13,24): error TS2694: Namespace '"/Users/vishnugnair/Guru/debug/node_modules/react-native-reanimated/lib/typescript/Animated"' has no exported member 'SharedValue'.
+src/components/MindMapComposeCanvas.tsx(57,6): error TS2739: Type '{ style: { flex: number; }; nodes: { id: any; label: any; x: any; y: any; isCenter: boolean; }[]; edges: { sourceId: any; targetId: any; }[]; animatedProps: Partial<{ zoom: any; offsetX: any; offsetY: any; }>; onNodePress: (e: { ...; }) => void; }' is missing the following properties from type 'RestProps<MindMapCanvasProps>': offsetX, offsetY, zoom
+src/db/queries/progress.ts(369,17): error TS2339: Property 'use_nano' does not exist on type '{ display_name: string; total_xp: number; current_level: number; streak_current: number; streak_best: number; daily_goal_minutes: number; inicet_date: string; neet_date: string; preferred_session_length: number; ... 74 more ...; scan_orphaned_transcripts_enabled?: number | undefined; }'.
+src/screens/GuruChatScreen.unit.test.tsx(161,66): error TS2556: A spread argument must either have a tuple type or be passed to a rest parameter.
+src/services/ai/grounding/resultComposer.ts(131,49): error TS2345: Argument of type '"LocalNotes"' is not assignable to parameter of type '"EuropePMC" | "PubMed" | "Wikipedia" | "Wikimedia Commons" | "Open i (NIH)" | "MedPix (NIH)" | "DuckDuckGo" | "Brave Search" | "OpenStax" | "Google Custom Search"'.
+src/services/ai/grounding/resultComposer.ts(132,54): error TS2345: Argument of type '"Lecture Transcript"' is not assignable to parameter of type '"EuropePMC" | "PubMed" | "Wikipedia" | "Wikimedia Commons" | "Open i (NIH)" | "MedPix (NIH)" | "DuckDuckGo" | "Brave Search" | "OpenStax" | "Google Custom Search"'.
+src/services/ai/providers/liteRtLm.unit.test.ts(81,16): error TS2322: Type '{ role: "user"; content: string; }' is not assignable to type 'LanguageModelV2Message'.
+  Types of property 'content' are incompatible.
+    Type 'string' is not assignable to type '(LanguageModelV2TextPart | LanguageModelV2FilePart)[]'.
+src/services/ai/providers/liteRtLm.unit.test.ts(83,44): error TS2345: Argument of type 'ReadableStream<LanguageModelV2StreamPart>' is not assignable to parameter of type 'AsyncIterable<LanguageModelV2StreamPart>'.
+  Property '[Symbol.asyncIterator]' is missing in type 'ReadableStream<LanguageModelV2StreamPart>' but required in type 'AsyncIterable<LanguageModelV2StreamPart>'.
+src/services/ai/providers/liteRtLm.unit.test.ts(103,16): error TS2322: Type '{ role: "user"; content: string; }' is not assignable to type 'LanguageModelV2Message'.
+  Types of property 'content' are incompatible.
+    Type 'string' is not assignable to type '(LanguageModelV2TextPart | LanguageModelV2FilePart)[]'.
+src/services/ai/providers/liteRtLm.unit.test.ts(105,44): error TS2345: Argument of type 'ReadableStream<LanguageModelV2StreamPart>' is not assignable to parameter of type 'AsyncIterable<LanguageModelV2StreamPart>'.
+  Property '[Symbol.asyncIterator]' is missing in type 'ReadableStream<LanguageModelV2StreamPart>' but required in type 'AsyncIterable<LanguageModelV2StreamPart>'.
+src/services/ai/providers/liteRtLm.unit.test.ts(122,16): error TS2322: Type '{ role: "user"; content: string; }' is not assignable to type 'LanguageModelV2Message'.
+  Types of property 'content' are incompatible.
+    Type 'string' is not assignable to type '(LanguageModelV2TextPart | LanguageModelV2FilePart)[]'.
+src/services/ai/providers/liteRtLm.unit.test.ts(124,30): error TS2345: Argument of type 'ReadableStream<LanguageModelV2StreamPart>' is not assignable to parameter of type 'AsyncIterable<LanguageModelV2StreamPart>'.
+  Property '[Symbol.asyncIterator]' is missing in type 'ReadableStream<LanguageModelV2StreamPart>' but required in type 'AsyncIterable<LanguageModelV2StreamPart>'.

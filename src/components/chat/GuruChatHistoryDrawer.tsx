@@ -82,7 +82,10 @@ export const GuruChatHistoryDrawer = memo(function GuruChatHistoryDrawer({
       <Pressable style={styles.historyBackdrop} onPress={onClose} />
       <LinearSurface padded={false} style={styles.historyDrawer}>
         <View style={styles.historyHeader}>
-          <LinearText style={styles.historyTitle}>Chat History</LinearText>
+          <View>
+            <LinearText style={styles.historyEyebrow}>Chats</LinearText>
+            <LinearText style={styles.historyTitle}>History</LinearText>
+          </View>
           <Pressable
             style={({ pressed }) => [styles.historyCloseBtn, pressed && styles.pressed]}
             onPress={onClose}
@@ -133,9 +136,9 @@ const styles = StyleSheet.create({
     width: '82%',
     maxWidth: 340,
     borderRightWidth: StyleSheet.hairlineWidth,
-    borderRightColor: whiteAlpha['8'],
+    borderRightColor: whiteAlpha['6'],
     paddingTop: 58,
-    paddingHorizontal: 16,
+    paddingHorizontal: 18,
     paddingBottom: 18,
     backgroundColor: n.colors.background,
   },
@@ -145,9 +148,17 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginBottom: 16,
   },
+  historyEyebrow: {
+    color: n.colors.textMuted,
+    fontSize: 12,
+    fontWeight: '700',
+    letterSpacing: 0.3,
+    marginBottom: 4,
+  },
   historyTitle: {
-    ...n.typography.sectionTitle,
+    ...n.typography.title,
     color: n.colors.textPrimary,
+    fontSize: 24,
   },
   historyCloseBtn: {
     width: 34,
@@ -155,25 +166,25 @@ const styles = StyleSheet.create({
     borderRadius: 17,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: whiteAlpha['4'],
+    backgroundColor: whiteAlpha['2'],
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: n.colors.border,
+    borderColor: whiteAlpha['8'],
   },
   historyNewBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    borderRadius: n.radius.md,
+    borderRadius: 18,
     paddingVertical: 13,
     marginBottom: 14,
-    backgroundColor: accentAlpha['8'],
+    backgroundColor: whiteAlpha['2'],
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: accentAlpha['20'],
+    borderColor: whiteAlpha['8'],
   },
   historyNewBtnText: {
     ...n.typography.label,
-    color: n.colors.accent,
+    color: n.colors.textPrimary,
   },
   historyList: {
     flex: 1,
@@ -186,16 +197,17 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'flex-start',
     gap: 10,
-    borderRadius: n.radius.sm,
-    paddingVertical: 10,
-    paddingHorizontal: 10,
-    backgroundColor: 'transparent',
-    marginBottom: 2,
+    borderRadius: 18,
+    paddingVertical: 12,
+    paddingHorizontal: 12,
+    backgroundColor: whiteAlpha['1.5'],
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: 'transparent',
+    marginBottom: 8,
   },
   historyItemActive: {
     backgroundColor: accentAlpha['8'],
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: accentAlpha['18'],
+    borderColor: accentAlpha['20'],
   },
   historyItemMain: {
     flex: 1,
@@ -208,7 +220,7 @@ const styles = StyleSheet.create({
   },
   historyItemTopic: {
     ...n.typography.caption,
-    color: n.colors.textSecondary,
+    color: n.colors.textMuted,
     lineHeight: 18,
     marginTop: 2,
   },
@@ -233,12 +245,12 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   historyActionBtn: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
+    width: 30,
+    height: 30,
+    borderRadius: 15,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: whiteAlpha['3'],
+    backgroundColor: whiteAlpha['2'],
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: whiteAlpha['8'],
   },

@@ -178,3 +178,131 @@ function warnIfTools(tools: unknown): void {
     console.warn('[v2/localLlm] tools not supported on local LiteRT — dropping');
   }
 }
+
+// ── Gemini Nano (AICore) ────────────────────────────────────────────────
+
+/**
+ * Gemini Nano adapter — wraps ML Kit GenAI Prompt API (AICore) into a
+ * LanguageModelV2. No model file or API key needed — runs on-device via
+ * Android system service.
+ *
+ * Limitations: max ~256 output tokens, ~4000 input tokens, per-app quota.
+ * Best for quick tasks: quiz grading, confidence checks, short summaries.
+ */
+export function createNanoModel(): LanguageModelV2 {
+  return {
+    specificationVersion: 'v2',
+    provider: 'nano',
+    modelId: 'gemini-nano',
+
+    async doGenerate(options): Promise<LanguageModelV2GenerateResult> {
+      warnIfTools(options.tools);
+      const legacy = toLegacyMessages(options.prompt);
+      const systemMsg = legacy.find((m) => m.role === 'system');
+      const prompt = legacy
+        .filter((m) => m.role !== 'system')
+        .map((m) => m.content)
+        .join('\n');
+
+      const { nanoGenerate } = await import('../../../../../modules/local-llm');
+      const result = await nanoGenerate({
+        prompt,
+        systemInstruction: systemMsg?.content,
+        temperature: 0.3,
+        topK: 40,
+        maxOutputTokens: 256,
+      });
+
+      return {
+        content: result.text ? [{ type: 'text', text: result.text }] : [],
+        finishReason: 'stop',
+        usage: {},
+      };
+    },
+
+    async doStream(options): Promise<LanguageModelV2StreamResult> {
+      warnIfTools(options.tools);
+      const legacy = toLegacyMessages(options.prompt);
+      const systemMsg = legacy.find((m) => m.role === 'system');
+      const prompt = legacy
+        .filter((m) => m.role !== 'system')
+        .map((m) => m.content)
+        .join('\n');
+
+      const { nanoGenerate } = await import('../../../../../modules/local-llm');
+
+      // Nano doesn't support streaming — generate then chunk
+      const queue: LanguageModelV2StreamPart[] = [];
+      let resolveNext: ((v: IteratorResult<LanguageModelV2StreamPart>) => void) | null = null;
+      let done = false;
+      const push = (part: LanguageModelV2StreamPart) => {
+        if (resolveNext) {
+          resolveNext({ value: part, done: false });
+          resolveNext = null;
+        } else {
+          queue.push(part);
+        }
+      };
+      const end = () => {
+        done = true;
+        if (resolveNext) {
+          resolveNext({
+            value: undefined as unknown as LanguageModelV2StreamPart,
+            done: true,
+          });
+          resolveNext = null;
+        }
+      };
+
+      const textId = 'text-0';
+
+      void (async () => {
+        try {
+          const result = await nanoGenerate({
+            prompt,
+            systemInstruction: systemMsg?.content,
+            temperature: 0.3,
+            topK: 40,
+            maxOutputTokens: 256,
+          });
+          if (result.text?.trim()) {
+            const CHUNK_SIZE = 12;
+            for (let i = 0; i < result.text.length; i += CHUNK_SIZE) {
+              const delta = result.text.slice(i, i + CHUNK_SIZE);
+              push({ type: 'text-delta', id: textId, delta });
+            }
+            push({ type: 'finish', finishReason: 'stop', usage: {} });
+          } else {
+            push({ type: 'finish', finishReason: 'error', usage: {} });
+          }
+          end();
+        } catch (err) {
+          push({ type: 'error', error: err });
+          push({ type: 'finish', finishReason: 'error', usage: {} });
+          end();
+        }
+      })();
+
+      const stream: AsyncIterable<LanguageModelV2StreamPart> = {
+        [Symbol.asyncIterator]() {
+          return {
+            next(): Promise<IteratorResult<LanguageModelV2StreamPart>> {
+              if (queue.length) {
+                return Promise.resolve({ value: queue.shift()!, done: false });
+              }
+              if (done) {
+                return Promise.resolve({
+                  value: undefined as unknown as LanguageModelV2StreamPart,
+                  done: true,
+                });
+              }
+              return new Promise((r) => (resolveNext = r));
+            },
+          };
+        },
+      };
+
+      return { stream };
+    },
+  };
+}

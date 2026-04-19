@@ -31,6 +31,28 @@ export const linearTheme = {
     errorSurface: 'rgba(241, 76, 76, 0.1)',
     borderLight: 'rgba(255, 255, 255, 0.15)',
     primaryTintSoft: 'rgba(22, 29, 54, 0.9)',
+
+    // --- Semantic role palette (patch 02) ---
+    // Roles, not colors. If a component wants a named color, it should pick a
+    // role from this list. The hex values below are the ONLY accents allowed
+    // in new code; anything else must earn its way in.
+    //
+    //   brand   — primary CTA, focus ring, selected tab
+    //   capture — audio / transcript / recording surfaces (replaces TRANSCRIPT_BLUE)
+    //   success — streak hit, mastered, completed
+    //   warning — countdown < 60d, mild error, soft lockout
+    //   danger  — destructive, revoke, hard error
+    //   neutral — everything else (greys)
+    roles: {
+      brand:   '#5E6AD2',
+      brandHi: 'oklch(62% 0.14 272)',
+      brandLo: 'oklch(46% 0.12 272)',
+      capture: '#6D99FF',
+      success: '#3FB950',
+      warning: '#D97706',
+      danger:  '#F14C4C',
+      neutral: '#A0A0A5',
+    },
   },
 
   spacing: {
@@ -54,18 +76,19 @@ export const linearTheme = {
   },
 
   typography: {
-    display: { fontSize: 28, lineHeight: 34, fontFamily: 'Inter_900Black' },
-    title: { fontSize: 24, lineHeight: 30, fontFamily: 'Inter_800ExtraBold' },
-    sectionTitle: { fontSize: 18, lineHeight: 24, fontFamily: 'Inter_700Bold' },
-    body: { fontSize: 15, lineHeight: 22, fontFamily: 'Inter_400Regular' },
-    bodySmall: { fontSize: 14, lineHeight: 20, fontFamily: 'Inter_400Regular' },
-    label: { fontSize: 13, lineHeight: 18, fontFamily: 'Inter_600SemiBold' },
-    caption: { fontSize: 12, lineHeight: 18, fontFamily: 'Inter_500Medium' },
-    chip: { fontSize: 12, lineHeight: 18, fontFamily: 'Inter_700Bold' },
-    badge: { fontSize: 12, lineHeight: 18, fontFamily: 'Inter_700Bold' },
-    meta: { fontSize: 12, lineHeight: 16, fontFamily: 'Inter_500Medium' },
-    button: { fontSize: 14, lineHeight: 18, fontFamily: 'Inter_700Bold' },
+    display:      { fontSize: 32, lineHeight: 36, fontFamily: 'Inter_700Bold',       letterSpacing: -0.6 },
+    title:        { fontSize: 22, lineHeight: 28, fontFamily: 'Inter_600SemiBold',   letterSpacing: -0.3 },
+    sectionTitle: { fontSize: 16, lineHeight: 22, fontFamily: 'Inter_600SemiBold',   letterSpacing: -0.1 },
+    body:         { fontSize: 15, lineHeight: 22, fontFamily: 'Inter_400Regular' },
+    bodySmall:    { fontSize: 13, lineHeight: 20, fontFamily: 'Inter_400Regular' },
+    label:        { fontSize: 12, lineHeight: 18, fontFamily: 'Inter_500Medium',     letterSpacing: 0.4 },
+    caption:      { fontSize: 12, lineHeight: 18, fontFamily: 'Inter_400Regular' },
+    chip:         { fontSize: 12, lineHeight: 16, fontFamily: 'Inter_600SemiBold',   letterSpacing: 0.2 },
+    badge:        { fontSize: 11, lineHeight: 14, fontFamily: 'Inter_600SemiBold',   letterSpacing: 0.3 },
+    meta:         { fontSize: 12, lineHeight: 16, fontFamily: 'Inter_500Medium' },
+    button:       { fontSize: 14, lineHeight: 18, fontFamily: 'Inter_600SemiBold',   letterSpacing: 0.1 },
   },
 } as const;
 
+export type LinearRole = keyof (typeof linearTheme.colors.roles);
 export type LinearTheme = typeof linearTheme;

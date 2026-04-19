@@ -190,7 +190,7 @@ export default function CheckInScreen() {
               >
                 <LinearButton
                   label="Quick Start"
-                  variant="glassTinted"
+                  variant="secondary"
                   style={styles.quickStartButton}
                   textStyle={styles.quickTitle}
                   onPress={handleQuickStart}

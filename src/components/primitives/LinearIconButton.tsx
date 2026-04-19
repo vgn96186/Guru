@@ -12,9 +12,7 @@ import { linearTheme } from '../../theme/linearTheme';
 
 export type LinearIconButtonVariant =
   | 'ghost'
-  | 'outline'
-  | 'glass'
-  | 'glassTinted'
+  | 'secondary'
   | 'accent'
   | 'danger';
 export type LinearIconButtonSize = 'sm' | 'md' | 'lg';
@@ -33,7 +31,7 @@ interface LinearIconButtonProps extends Omit<PressableProps, 'style'> {
 
 export default function LinearIconButton({
   children,
-  variant = 'outline',
+  variant = 'secondary',
   size = 'md',
   shape = 'rounded',
   loading = false,
@@ -117,17 +115,9 @@ const variantStyles = StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.02)',
     borderColor: 'transparent',
   },
-  outline: {
-    backgroundColor: 'rgba(255,255,255,0.05)',
-    borderColor: linearTheme.colors.border,
-  },
-  glass: {
+  secondary: {
     backgroundColor: linearTheme.colors.card,
     borderColor: linearTheme.colors.border,
-  },
-  glassTinted: {
-    backgroundColor: linearTheme.colors.primaryTintSoft,
-    borderColor: `${linearTheme.colors.accent}70`,
   },
   accent: {
     backgroundColor: linearTheme.colors.accent,

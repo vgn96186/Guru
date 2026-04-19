@@ -250,7 +250,7 @@ export default function BreakScreen({
         {/* Emergency continue */}
         {countdown > 0 && (
           <LinearButton
-            variant="glass"
+            variant="secondary"
             style={styles.forceBtn}
             onPress={onDone}
             accessibilityRole="button"
@@ -260,7 +260,7 @@ export default function BreakScreen({
         )}
 
         <LinearButton
-          variant="glassTinted"
+          variant="secondary"
           style={styles.askGuruBtn}
           onPress={() => setChatOpen(true)}
           accessibilityRole="button"

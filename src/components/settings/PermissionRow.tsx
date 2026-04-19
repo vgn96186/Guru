@@ -31,7 +31,7 @@ function PermissionRow({ label, status, onFix }: PermissionRowProps) {
         <LinearButton
           label="Fix"
           size="sm"
-          variant="outline"
+          variant="secondary"
           textTone="accent"
           style={styles.fixBtn}
           textStyle={styles.fixBtnText}

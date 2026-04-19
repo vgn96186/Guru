@@ -6,6 +6,8 @@
   "scripts": {
     "postinstall": "npx patch-package",
     "generate:bundled-env": "node ./scripts/generate-bundled-env.js",
+    "syllabus:split": "ts-node --transpile-only --compiler-options '{\"module\":\"commonjs\",\"rootDir\":\".\"}' scripts/syllabus/split-topics.ts",
+    "syllabus:snapshot": "UPDATE_SYLLABUS_SNAPSHOT=1 jest --runInBand --config jest.unit.config.js src/constants/syllabus.unit.test.ts",
     "start": "npm run generate:bundled-env && cross-env NODE_ENV=development NODE_OPTIONS=\"--loader ./scripts/fix-esm-windows.mjs --no-warnings\" expo start",
     "start:fresh": "npm run generate:bundled-env && cross-env NODE_ENV=development NODE_OPTIONS=\"--loader ./scripts/fix-esm-windows.mjs --no-warnings\" expo start --clear",
     "android:metro": "npm run generate:bundled-env && cross-env NODE_ENV=development NODE_OPTIONS=\"--loader ./scripts/fix-esm-windows.mjs --no-warnings\" expo start --dev-client --localhost --port 8081",
@@ -170,7 +172,7 @@
     "react-test-renderer": "^19.1.0",
     "ts-jest": "^29.4.6",
     "ts-node": "^10.9.2",
-    "typescript": "~6.0.0",
+    "typescript": "~5.9.0",
     "typescript-eslint": "^8.57.0"
   },
   "lint-staged": {

@@ -1,0 +1,224 @@
+
+> neet_study@1.0.0 android:metro:fresh
+> npm run generate:bundled-env && cross-env NODE_ENV=development NODE_OPTIONS="--loader ./scripts/fix-esm-windows.mjs --no-warnings" expo start --dev-client --localhost --port 8081 -c
+
+
+> neet_study@1.0.0 generate:bundled-env
+> node ./scripts/generate-bundled-env.js
+
+[generate-bundled-env] Wrote empty bundled keys (missing .env values).
+env: load .env
+env: export EXPO_PUBLIC_SENTRY_DSN
+Starting project at /Users/vishnugnair/Guru/debug
+[dotenv@17.3.1] injecting env (10) from .env -- tip: ⚡️ secrets for agents: https://dotenvx.com/as2
+[app.config] Missing environment variables: EXPO_PUBLIC_BUNDLED_GROQ_KEY
+[dotenv@17.3.1] injecting env (0) from .env -- tip: 🛠️  run anywhere with `dotenvx run -- yourcommand`
+[app.config] Missing environment variables: EXPO_PUBLIC_BUNDLED_GROQ_KEY
+[dotenv@17.3.1] injecting env (0) from .env -- tip: 🔐 prevent committing .env to code: https://dotenvx.com/precommit
+[app.config] Missing environment variables: EXPO_PUBLIC_BUNDLED_GROQ_KEY
+Starting Metro Bundler
+[app.config] Missing environment variables: EXPO_PUBLIC_BUNDLED_GROQ_KEY
+[app.config] Missing environment variables: EXPO_PUBLIC_BUNDLED_GROQ_KEY
+warning: Bundler cache is empty, rebuilding (this may take a minute)
+[dotenv@17.3.1] injecting env (0) from .env -- tip: ⚙️  specify custom .env file path with { path: '/custom/path/.env' }
+[dotenv@17.3.1] injecting env (0) from .env -- tip: ⚙️  load multiple .env files with { path: ['.env.local', '.env'] }
+[dotenv@17.3.1] injecting env (0) from .env -- tip: 🔐 prevent committing .env to code: https://dotenvx.com/precommit
+[app.config] Missing environment variables: EXPO_PUBLIC_BUNDLED_GROQ_KEY
+[app.config] Missing environment variables: EXPO_PUBLIC_BUNDLED_GROQ_KEY
+[dotenv@17.3.1] injecting env (0) from .env -- tip: ⚙️  override existing env vars with { override: true }
+Waiting on http://localhost:8081
+Logs for your project will appear below.
+[dotenv@17.3.1] injecting env (0) from .env -- tip: ⚙️  write to custom object with { processEnv: myObject }
+[app.config] Missing environment variables: EXPO_PUBLIC_BUNDLED_GROQ_KEY
+[dotenv@17.3.1] injecting env (0) from .env -- tip: ⚙️  suppress all logs with { quiet: true }
+[app.config] Missing environment variables: EXPO_PUBLIC_BUNDLED_GROQ_KEY
+Android ./index.ts ▓▓▓▓░░░░░░░░░░░░ 27.7% (398/756)
+Android ./index.ts ▓▓▓▓▓▓▓▓▓░░░░░░░ 62.2% (1245/1597)
+Android ./index.ts ▓▓▓▓▓▓▓▓▓▓▓░░░░░ 71.5% (1744/2063)
+Android ./index.ts ▓▓▓▓▓▓▓▓▓▓▓▓▓▓░░ 89.1% (2431/2576)
+Android Bundled 14821ms index.ts (2771 modules)
+Android src/services/gdriveBackupService.ts ░░░░░░░░░░░░░░░░  0.0% (0/1)
+ WARN  [expo-av]: Expo AV has been deprecated and will be removed in SDK 54. Use the `expo-audio` and `expo-video` packages to replace the required functionality.
+ LOG  GURU_HEALTH:launching
+ LOG  GURU_HEALTH:bootstrap_started
+Android Bundled 279ms src/services/gdriveBackupService.ts (611 modules)
+ WARN  Ignoring DevTools app debug target for 'com.anonymous.gurustudy.dev' with title 'com.anonymous.gurustudy.dev (SM-X820)' and 'nativePageReloads' capability set to 'false'. 
+ INFO  Launching DevTools...
+› Detected a change in babel.config.js. Restart the server to see the new results. You may need to clear the bundler cache with the --clear flag for your changes to take effect.
+ LOG  [DB] Recovered missing column: user_profile.harassment_tone
+Android Bundled 834ms src/services/deviceMemory.ts (696 modules)
+Android Bundled 858ms src/db/database.ts (711 modules)
+ LOG  GURU_HEALTH:bootstrap_succeeded
+ LOG  GURU_HEALTH:db_ready
+ INFO  [BOOTSTRAP_TRACE] {"event": "bootstrap_check", "hasLocalModel": false, "hasLocalWhisper": false, "llmAllowed": true, "needsLlm": true, "needsWhisper": true}
+ INFO  [BOOTSTRAP_TRACE] {"event": "download_prepare", "modelName": "ggml-large-v3-turbo.bin", "type": "whisper"}
+ LOG  [DB] Pre-seeding 20 topic embeddings...
+ LOG  GURU_HEALTH:route_ready:CheckIn
+ LOG  GURU_HEALTH:ui_ready:CheckIn
+ INFO  [BOOTSTRAP_TRACE] {"event": "download_start", "modelName": "ggml-large-v3-turbo.bin", "type": "whisper", "url": "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-large-v3-turbo.bin"}
+ LOG  [DB_EVENT] Notifying: PROFILE_UPDATED
+ LOG  [Embedding] Jina embeddings unavailable (auth/quota). Semantic search falls back to text matching until a valid key or another provider is configured.
+ WARN  [Notifications] AI generation failed, using smart fallbacks: [Error: createGuruFallbackModel: no providers available. Save an API key or connect OAuth in Settings. (Kilo: startup probe can succeed without a key; routed chat/embeddings still need a stored Kilo API key.)]
+Android src/services/aiService.ts ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Android Bundled 542ms src/services/aiService.ts (947 modules)
+ LOG  [AutoBackup] Running scheduled auto-backup...
+ ERROR  [AutoBackup] Auto-backup failed: [Error: Call to function 'NativeDatabase.execAsync' has been rejected.
+→ Caused by: database table is locked]
+ LOG  [AI_BOOT] provider validation: chatgpt=skip github_copilot=skip gitlab_duo=skip poe=skip groq=n/a qwen=skip github=n/a kilo=probe deepseek=n/a agentrouter=n/a gemini=n/a gemini_fallback=n/a openrouter=n/a cloudflare=n/a
+ LOG  [AI_BOOT] kilo: ok (200) 2054ms — endpoint reachable; add Kilo API key in Settings to enable chat routing
+ LOG  [DB_EVENT] Notifying: PROGRESS_UPDATED
+ LOG  [DB_EVENT] Notifying: PROFILE_UPDATED
+ LOG  [DB_EVENT] Notifying: PROFILE_UPDATED
+ LOG  [DB_EVENT] Notifying: PROFILE_UPDATED
+Android ./index.ts ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Android Bundled 185ms index.ts (1 module)
+Android Bundled 46ms src/services/gdriveBackupService.ts (1 module)
+ WARN  [expo-av]: Expo AV has been deprecated and will be removed in SDK 54. Use the `expo-audio` and `expo-video` packages to replace the required functionality.
+ LOG  GURU_HEALTH:launching
+ LOG  GURU_HEALTH:bootstrap_started
+ LOG  [BOOTSTRAP_TRACE] splash_prevent_start
+ LOG  [BOOTSTRAP_TRACE] splash_prevent_done
+ LOG  [BOOTSTRAP_TRACE] gsi_import_start
+ LOG  [BOOTSTRAP_TRACE] gsi_done
+ LOG  [BOOTSTRAP_TRACE] init_db_start
+ LOG  [BOOTSTRAP_TRACE] init_db_done
+ LOG  [BOOTSTRAP_TRACE] restore_backup_start
+ LOG  [BOOTSTRAP_TRACE] restore_backup_done
+ LOG  [BOOTSTRAP_TRACE] ram_guard_start
+ LOG  [BOOTSTRAP_TRACE] ram_guard_done
+ LOG  [BOOTSTRAP_TRACE] offline_queue_register
+ LOG  [BOOTSTRAP_TRACE] process_queue_start
+ LOG  [BOOTSTRAP_TRACE] process_queue_done
+ LOG  [BOOTSTRAP_TRACE] bg_fetch_start
+ LOG  [BOOTSTRAP_TRACE] bg_fetch_done
+ LOG  [BOOTSTRAP_TRACE] confidence_decay_start
+ LOG  [BOOTSTRAP_TRACE] confidence_decay_done
+Android Bundled 47ms src/db/database.ts (1 module)
+Android Bundled 29ms src/services/deviceMemory.ts (1 module)
+ LOG  GURU_HEALTH:bootstrap_succeeded
+ LOG  GURU_HEALTH:db_ready
+ INFO  [BOOTSTRAP_TRACE] {"event": "bootstrap_check", "hasLocalModel": false, "hasLocalWhisper": false, "llmAllowed": true, "needsLlm": true, "needsWhisper": true}
+ INFO  [BOOTSTRAP_TRACE] {"event": "download_prepare", "modelName": "ggml-large-v3-turbo.bin", "type": "whisper"}
+ LOG  [DB] Pre-seeding 20 topic embeddings...
+ LOG  GURU_HEALTH:route_ready:Tabs
+ LOG  GURU_HEALTH:ui_ready:Tabs
+ INFO  [BOOTSTRAP_TRACE] {"event": "download_interrupted_partial_detected", "modelName": "ggml-large-v3-turbo.bin", "partialUri": "file:///data/user/0/com.anonymous.gurustudy.dev/files/ggml-large-v3-turbo.bin.partial", "size": 82385797, "type": "whisper"}
+ INFO  [BOOTSTRAP_TRACE] {"event": "download_prepare", "modelName": "gemma-4-E4B-it.litertlm", "type": "llm"}
+Android Bundled 130ms index.ts (1 module)
+ WARN  [expo-av]: Expo AV has been deprecated and will be removed in SDK 54. Use the `expo-audio` and `expo-video` packages to replace the required functionality.
+ LOG  GURU_HEALTH:launching
+ LOG  GURU_HEALTH:bootstrap_started
+ LOG  [BOOTSTRAP_TRACE] splash_prevent_start
+ LOG  [BOOTSTRAP_TRACE] splash_prevent_done
+ LOG  [BOOTSTRAP_TRACE] gsi_import_start
+Android Bundled 53ms src/services/gdriveBackupService.ts (1 module)
+ LOG  [BOOTSTRAP_TRACE] gsi_done
+ LOG  [BOOTSTRAP_TRACE] init_db_start
+ LOG  [BOOTSTRAP_TRACE] init_db_done
+ LOG  [BOOTSTRAP_TRACE] restore_backup_start
+ LOG  [BOOTSTRAP_TRACE] restore_backup_done
+ LOG  [BOOTSTRAP_TRACE] ram_guard_start
+ LOG  [BOOTSTRAP_TRACE] ram_guard_done
+ LOG  [BOOTSTRAP_TRACE] offline_queue_register
+ LOG  [BOOTSTRAP_TRACE] process_queue_start
+ LOG  [BOOTSTRAP_TRACE] process_queue_done
+ LOG  [BOOTSTRAP_TRACE] bg_fetch_start
+ LOG  [BOOTSTRAP_TRACE] bg_fetch_done
+ LOG  [BOOTSTRAP_TRACE] confidence_decay_start
+ LOG  [BOOTSTRAP_TRACE] confidence_decay_done
+ LOG  [BOOTSTRAP_TRACE] device_memory_import_start
+Android Bundled 37ms src/db/database.ts (1 module)
+Android Bundled 20ms src/services/deviceMemory.ts (1 module)
+ LOG  [BOOTSTRAP_TRACE] device_memory_import_done
+ LOG  GURU_HEALTH:bootstrap_succeeded
+ LOG  GURU_HEALTH:db_ready
+ INFO  [BOOTSTRAP_TRACE] {"event": "bootstrap_check", "hasLocalModel": false, "hasLocalWhisper": false, "llmAllowed": true, "needsLlm": true, "needsWhisper": true}
+ INFO  [BOOTSTRAP_TRACE] {"event": "download_prepare", "modelName": "ggml-large-v3-turbo.bin", "type": "whisper"}
+ LOG  [DB] Pre-seeding 20 topic embeddings...
+ LOG  GURU_HEALTH:route_ready:Tabs
+ LOG  GURU_HEALTH:ui_ready:Tabs
+ INFO  [BOOTSTRAP_TRACE] {"event": "download_interrupted_partial_detected", "modelName": "ggml-large-v3-turbo.bin", "partialUri": "file:///data/user/0/com.anonymous.gurustudy.dev/files/ggml-large-v3-turbo.bin.partial", "size": 91114369, "type": "whisper"}
+ INFO  [BOOTSTRAP_TRACE] {"event": "download_prepare", "modelName": "gemma-4-E4B-it.litertlm", "type": "llm"}
+ INFO  [BOOTSTRAP_TRACE] {"event": "download_start", "modelName": "gemma-4-E4B-it.litertlm", "type": "llm", "url": "https://huggingface.co/litert-community/gemma-4-E4B-it-litert-lm/resolve/main/gemma-4-E4B-it.litertlm"}
+ LOG  [Embedding] Jina embeddings unavailable (auth/quota). Semantic search falls back to text matching until a valid key or another provider is configured.
+Android src/services/aiService.ts ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Android Bundled 76ms src/services/aiService.ts (1 module)
+ LOG  [AutoBackup] Running scheduled auto-backup...
+ LOG  [DB_EVENT] Notifying: PROFILE_UPDATED
+ LOG  [AutoBackup] Auto-backup completed successfully.
+Android Bundled 81ms index.ts (1 module)
+Android Bundled 37ms src/services/gdriveBackupService.ts (1 module)
+ WARN  [expo-av]: Expo AV has been deprecated and will be removed in SDK 54. Use the `expo-audio` and `expo-video` packages to replace the required functionality.
+ LOG  GURU_HEALTH:launching
+ LOG  GURU_HEALTH:bootstrap_started
+ LOG  [BOOTSTRAP_TRACE] splash_prevent_start
+ LOG  [BOOTSTRAP_TRACE] splash_prevent_done
+ LOG  [BOOTSTRAP_TRACE] gsi_import_start
+ LOG  [BOOTSTRAP_TRACE] gsi_done
+ LOG  [BOOTSTRAP_TRACE] init_db_start
+ LOG  [BOOTSTRAP_TRACE] init_db_done
+ LOG  [BOOTSTRAP_TRACE] restore_backup_start
+ LOG  [BOOTSTRAP_TRACE] restore_backup_done
+ LOG  [BOOTSTRAP_TRACE] ram_guard_start
+ LOG  [BOOTSTRAP_TRACE] ram_guard_done
+ LOG  [BOOTSTRAP_TRACE] offline_queue_register
+ LOG  [BOOTSTRAP_TRACE] process_queue_start
+ LOG  [BOOTSTRAP_TRACE] process_queue_done
+ LOG  [BOOTSTRAP_TRACE] bg_fetch_start
+ LOG  [BOOTSTRAP_TRACE] bg_fetch_done
+ LOG  [BOOTSTRAP_TRACE] confidence_decay_start
+ LOG  [BOOTSTRAP_TRACE] confidence_decay_done
+ LOG  [BOOTSTRAP_TRACE] device_memory_import_start
+Android Bundled 43ms src/db/database.ts (1 module)
+Android Bundled 22ms src/services/deviceMemory.ts (1 module)
+ LOG  [BOOTSTRAP_TRACE] device_memory_import_done
+ LOG  GURU_HEALTH:bootstrap_succeeded
+ LOG  GURU_HEALTH:db_ready
+ LOG  [DB] Pre-seeding 20 topic embeddings...
+ INFO  [BOOTSTRAP_TRACE] {"event": "bootstrap_check", "hasLocalModel": false, "hasLocalWhisper": false, "llmAllowed": true, "needsLlm": true, "needsWhisper": true}
+ INFO  [BOOTSTRAP_TRACE] {"event": "download_prepare", "modelName": "ggml-large-v3-turbo.bin", "type": "whisper"}
+ LOG  GURU_HEALTH:route_ready:Tabs
+ LOG  GURU_HEALTH:ui_ready:Tabs
+ INFO  [BOOTSTRAP_TRACE] {"event": "download_interrupted_partial_detected", "modelName": "ggml-large-v3-turbo.bin", "partialUri": "file:///data/user/0/com.anonymous.gurustudy.dev/files/ggml-large-v3-turbo.bin.partial", "size": 100297829, "type": "whisper"}
+ INFO  [BOOTSTRAP_TRACE] {"event": "download_prepare", "modelName": "gemma-4-E4B-it.litertlm", "type": "llm"}
+ INFO  [BOOTSTRAP_TRACE] {"event": "download_interrupted_partial_detected", "modelName": "gemma-4-E4B-it.litertlm", "partialUri": "file:///data/user/0/com.anonymous.gurustudy.dev/files/gemma-4-E4B-it.litertlm.partial", "size": 10056418, "type": "llm"}
+Android Bundled 161ms index.ts (1 module)
+Android Bundled 58ms src/services/gdriveBackupService.ts (1 module)
+ WARN  [expo-av]: Expo AV has been deprecated and will be removed in SDK 54. Use the `expo-audio` and `expo-video` packages to replace the required functionality.
+ LOG  GURU_HEALTH:launching
+ LOG  GURU_HEALTH:bootstrap_started
+ LOG  [BOOTSTRAP_TRACE] splash_prevent_start
+ LOG  [BOOTSTRAP_TRACE] splash_prevent_done
+ LOG  [BOOTSTRAP_TRACE] gsi_import_start
+ LOG  [BOOTSTRAP_TRACE] gsi_done
+ LOG  [BOOTSTRAP_TRACE] init_db_start
+ LOG  [BOOTSTRAP_TRACE] init_db_done
+ LOG  [BOOTSTRAP_TRACE] restore_backup_start
+ LOG  [BOOTSTRAP_TRACE] restore_backup_done
+ LOG  [BOOTSTRAP_TRACE] ram_guard_start
+ LOG  [BOOTSTRAP_TRACE] ram_guard_done
+ LOG  [BOOTSTRAP_TRACE] offline_queue_register
+ LOG  [BOOTSTRAP_TRACE] process_queue_start
+ LOG  [BOOTSTRAP_TRACE] process_queue_done
+ LOG  [BOOTSTRAP_TRACE] bg_fetch_start
+ LOG  [BOOTSTRAP_TRACE] bg_fetch_done
+ LOG  [BOOTSTRAP_TRACE] confidence_decay_start
+ LOG  [BOOTSTRAP_TRACE] confidence_decay_done
+ LOG  [BOOTSTRAP_TRACE] device_memory_import_start
+Android Bundled 31ms src/db/database.ts (1 module)
+Android Bundled 23ms src/services/deviceMemory.ts (1 module)
+ LOG  [BOOTSTRAP_TRACE] device_memory_import_done
+ LOG  GURU_HEALTH:bootstrap_succeeded
+ LOG  GURU_HEALTH:db_ready
+ LOG  [DB] Pre-seeding 20 topic embeddings...
+ INFO  [BOOTSTRAP_TRACE] {"event": "bootstrap_check", "hasLocalModel": false, "hasLocalWhisper": false, "llmAllowed": true, "needsLlm": true, "needsWhisper": true}
+ INFO  [BOOTSTRAP_TRACE] {"event": "download_prepare", "modelName": "ggml-large-v3-turbo.bin", "type": "whisper"}
+ LOG  GURU_HEALTH:route_ready:Tabs
+ INFO  [BOOTSTRAP_TRACE] {"event": "download_interrupted_partial_detected", "modelName": "ggml-large-v3-turbo.bin", "partialUri": "file:///data/user/0/com.anonymous.gurustudy.dev/files/ggml-large-v3-turbo.bin.partial", "size": 103724243, "type": "whisper"}
+ INFO  [BOOTSTRAP_TRACE] {"event": "download_prepare", "modelName": "gemma-4-E4B-it.litertlm", "type": "llm"}
+ LOG  GURU_HEALTH:ui_ready:Tabs
+ INFO  [BOOTSTRAP_TRACE] {"event": "download_interrupted_partial_detected", "modelName": "gemma-4-E4B-it.litertlm", "partialUri": "file:///data/user/0/com.anonymous.gurustudy.dev/files/gemma-4-E4B-it.litertlm.partial", "size": 15659746, "type": "llm"}
+ LOG  [Embedding] Jina embeddings unavailable (auth/quota). Semantic search falls back to text matching until a valid key or another provider is configured.
+Android Bundled 58ms src/services/aiService.ts (1 module)
+ LOG  [AI_BOOT] provider validation: chatgpt=skip github_copilot=skip gitlab_duo=skip poe=skip groq=n/a qwen=skip github=n/a kilo=probe deepseek=n/a agentrouter=n/a gemini=n/a gemini_fallback=n/a openrouter=n/a cloudflare=n/a
+ LOG  [AI_BOOT] kilo: ok (200) 1278ms — endpoint reachable; add Kilo API key in Settings to enable chat routing

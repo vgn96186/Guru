@@ -1,0 +1,7 @@
+{
+  "name": "omni-canvas",
+  "version": "1.0.0",
+  "description": "High-performance canvas components for OmniNote",
+  "main": "index.ts",
+  "types": "index.d.ts"
+}

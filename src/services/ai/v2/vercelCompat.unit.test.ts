@@ -164,6 +164,8 @@ describe('Vercel AI SDK Compatibility', () => {
       disabledProviders: [],
       useLocalModel: false,
       localModelPath: null,
+      groqApiKey: 'test-groq-key',
+      openrouterKey: 'test-openrouter-key',
     } as any;
 
     it('creates a model with profile', () => {

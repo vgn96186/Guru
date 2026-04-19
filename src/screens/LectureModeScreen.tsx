@@ -40,6 +40,7 @@ import { profileRepository } from '../db/repositories';
 import { linearTheme as n } from '../theme/linearTheme';
 import { errorAlpha } from '../theme/colorUtils';
 import { useProfileQuery, useRefreshProfile } from '../hooks/queries/useProfile';
+import { motion, useReducedMotion } from '../motion';
 import { sendImmediateNag } from '../services/notificationService';
 import { connectToRoom, sendSyncMessage } from '../services/deviceSyncService';
 import BreakScreen from './BreakScreen';
@@ -97,6 +98,7 @@ export default function LectureModeScreen() {
   const [isRecordingEnabled, setIsRecordingEnabled] = useState(false);
   const [isTranscribing, setIsTranscribing] = useState(false);
   const [recordingRetryCount, setRecordingRetryCount] = useState(0);
+  const reducedMotion = useReducedMotion();
   const shouldContinueAutoScribeRef = useRef(false);
   const previousRecordingEnabledRef = useRef(false);
 
@@ -412,22 +414,14 @@ export default function LectureModeScreen() {
   // Animations for proof of life warning
   useEffect(() => {
     if (proofOfLifeActive) {
-      // Pulsing glow effect
-      const glowLoop = Animated.loop(
-        Animated.sequence([
-          Animated.timing(proofGlowAnim, { toValue: 1, duration: 1000, useNativeDriver: true }),
-          Animated.timing(proofGlowAnim, { toValue: 0.6, duration: 1000, useNativeDriver: true }),
-        ]),
-      );
+      const glowLoop = motion.pulseValue(proofGlowAnim, {
+        from: 1, to: 0.6, duration: 1000, reducedMotion,
+      });
       glowLoop.start();
 
-      // Pulse the entire warning
-      const pulseLoop = Animated.loop(
-        Animated.sequence([
-          Animated.timing(proofPulseAnim, { toValue: 1.02, duration: 800, useNativeDriver: true }),
-          Animated.timing(proofPulseAnim, { toValue: 1, duration: 800, useNativeDriver: true }),
-        ]),
-      );
+      const pulseLoop = motion.pulseScale(proofPulseAnim, {
+        to: 1.02, duration: 800, reducedMotion,
+      });
       pulseLoop.start();
 
       return () => {
@@ -435,7 +429,7 @@ export default function LectureModeScreen() {
         pulseLoop.stop();
       };
     }
-  }, [proofOfLifeActive, proofGlowAnim, proofPulseAnim]);
+  }, [proofOfLifeActive, proofGlowAnim, proofPulseAnim, reducedMotion]);
 
   const stopLecture = useCallback(async () => {
     if (timerRef.current) {

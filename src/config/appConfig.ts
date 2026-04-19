@@ -355,3 +355,6 @@ export const MOCK_EXTERNAL_LECTURE_AUDIO_URL =
     process.env.EXPO_PUBLIC_MOCK_EXTERNAL_LECTURE_AUDIO_URL ??
     'https://www.learningcontainer.com/wp-content/uploads/2020/02/Kalimba.mp3'
   ).trim() || 'https://www.learningcontainer.com/wp-content/uploads/2020/02/Kalimba.mp3';
+
+/** Enable quiet dot-dither texture on empty states + e0 backgrounds. */
+export const FEATURE_TEXTURE = false;

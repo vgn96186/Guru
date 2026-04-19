@@ -10,6 +10,7 @@ import * as Haptics from 'expo-haptics';
 import { useProfileQuery } from '../hooks/queries/useProfile';
 import { dailyLogRepository } from '../db/repositories';
 import { linearTheme as n } from '../theme/linearTheme';
+import { motion, useReducedMotion } from '../motion';
 import { ResponsiveContainer } from '../hooks/useResponsive';
 import LinearButton from '../components/primitives/LinearButton';
 import LinearSurface from '../components/primitives/LinearSurface';
@@ -28,6 +29,7 @@ export default function PunishmentMode() {
   const [showGuiltScreen, setShowGuiltScreen] = useState(true);
   const [reducedIntensity, setReducedIntensity] = useState(false);
   const [hasVibrated, setHasVibrated] = useState(false);
+  const reducedMotion = useReducedMotion();
 
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const shakeAnim = useRef(new Animated.Value(0)).current;
@@ -130,25 +132,12 @@ export default function PunishmentMode() {
   // Animations
   useEffect(() => {
     if (showGuiltScreen) {
-      // Pulsing animation
-      const pulseLoop = Animated.loop(
-        Animated.sequence([
-          Animated.timing(pulseAnim, { toValue: 1.1, duration: 500, useNativeDriver: true }),
-          Animated.timing(pulseAnim, { toValue: 1, duration: 500, useNativeDriver: true }),
-        ]),
-      );
+      const pulseLoop = motion.pulseScale(pulseAnim, { to: 1.1, duration: 500, reducedMotion });
       pulseLoop.start();
 
       let shakeLoop: Animated.CompositeAnimation | undefined;
-      // Shake for high urgency levels
       if (urgencyLevel >= 2) {
-        shakeLoop = Animated.loop(
-          Animated.sequence([
-            Animated.timing(shakeAnim, { toValue: 5, duration: 100, useNativeDriver: true }),
-            Animated.timing(shakeAnim, { toValue: -5, duration: 100, useNativeDriver: true }),
-            Animated.timing(shakeAnim, { toValue: 0, duration: 100, useNativeDriver: true }),
-          ]),
-        );
+        shakeLoop = motion.shake(shakeAnim, { amplitude: 5, reducedMotion });
         shakeLoop.start();
       }
 
@@ -157,7 +146,7 @@ export default function PunishmentMode() {
         shakeLoop?.stop();
       };
     }
-  }, [showGuiltScreen, urgencyLevel, pulseAnim, shakeAnim]);
+  }, [showGuiltScreen, urgencyLevel, pulseAnim, shakeAnim, reducedMotion]);
 
   const accountabilityMessages = [
     null, // Level 0 - no nudge
@@ -283,7 +272,7 @@ export default function PunishmentMode() {
           </View>
 
           <LinearButton
-            variant="glassTinted"
+            variant="secondary"
             style={styles.studyBtn}
             onPress={handleStartStudying}
             label="START STUDYING NOW"
@@ -292,7 +281,7 @@ export default function PunishmentMode() {
           />
 
           <LinearButton
-            variant="glass"
+            variant="secondary"
             style={styles.quickWinBtn}
             onPress={handleQuickWin}
             label="Just One Card (Easy)"

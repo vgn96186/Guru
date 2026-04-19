@@ -66,7 +66,8 @@ describe('Note Generation Service', () => {
 
       await generateADHDNote(longAnalysis);
 
-      const messages = (generateTextWithRouting as jest.Mock).mock.calls[0][0];
+      const callArg = (generateTextWithRouting as jest.Mock).mock.calls[0][0];
+      const messages = callArg.messages;
       expect(messages[1].content).toContain('INTRO_MARKER');
       expect(messages[1].content).toContain('TAIL_MARKER');
     });

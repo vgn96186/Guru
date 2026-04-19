@@ -572,7 +572,7 @@ export default function LocalModelScreen() {
                 ? 'Replace with Another .litertlm File'
                 : 'Import Existing .litertlm File'
             }
-            variant="glass"
+            variant="secondary"
             style={styles.importBtn}
             onPress={() => handleImportModel('llm')}
             leftIcon={
@@ -607,7 +607,7 @@ export default function LocalModelScreen() {
                         ? 'Local Text AI Enabled'
                         : 'Enable Local Text AI'
                   }
-                  variant={useLocalModel && !localLlmBlocked ? 'primary' : 'glass'}
+                  variant={useLocalModel && !localLlmBlocked ? 'primary' : 'secondary'}
                   style={[styles.toggleBtn, localLlmBlocked && styles.toggleBtnDisabled]}
                   textStyle={[localLlmBlocked && styles.toggleBtnTextDisabled]}
                   onPress={async () => {
@@ -630,7 +630,7 @@ export default function LocalModelScreen() {
                 />
                 <LinearButton
                   label="Replace LLM File"
-                  variant="glass"
+                  variant="secondary"
                   style={styles.importBtn}
                   onPress={() => handleImportModel('llm')}
                   leftIcon={
@@ -706,7 +706,7 @@ export default function LocalModelScreen() {
                 {existingLlmFiles.has(model.id) ? (
                   <LinearButton
                     label="On Device - Use This"
-                    variant="glassTinted"
+                    variant="secondary"
                     style={styles.downloadBtn}
                     onPress={() => handleDownload(model, 'llm')}
                     leftIcon={
@@ -739,7 +739,7 @@ export default function LocalModelScreen() {
           {!isWhisperDownloaded ? (
             <LinearButton
               label="Import Existing Whisper .bin File"
-              variant="glass"
+              variant="secondary"
               style={styles.importBtn}
               onPress={() => handleImportModel('whisper')}
               leftIcon={
@@ -761,7 +761,7 @@ export default function LocalModelScreen() {
                   label={
                     useLocalWhisper ? 'Local Transcription Enabled' : 'Enable Local Transcription'
                   }
-                  variant={useLocalWhisper ? 'primary' : 'glass'}
+                  variant={useLocalWhisper ? 'primary' : 'secondary'}
                   style={styles.toggleBtn}
                   onPress={() => setUseLocalWhisper(!useLocalWhisper)}
                 />
@@ -837,7 +837,7 @@ export default function LocalModelScreen() {
                 {existingWhisperFiles.has(model.id) ? (
                   <LinearButton
                     label="On Device - Use This"
-                    variant="glassTinted"
+                    variant="secondary"
                     style={styles.downloadBtn}
                     onPress={() => handleDownload(model, 'whisper')}
                     leftIcon={

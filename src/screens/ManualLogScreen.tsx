@@ -301,7 +301,7 @@ export default function ManualLogScreen() {
           ) : null}
 
           <LinearButton
-            variant="glassTinted"
+            variant="secondary"
             style={[styles.submitBtn, isSubmitting && { opacity: 0.6 }]}
             onPress={handleSubmit(handleValidSubmit)}
             disabled={isSubmitting}

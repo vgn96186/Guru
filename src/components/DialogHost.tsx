@@ -1,40 +1,40 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { linearTheme as n } from '../theme/linearTheme';
+import { accentAlpha, successAlpha, errorAlpha, warningAlpha } from '../theme/colorUtils';
 import { Modal, Pressable, StyleSheet, TouchableOpacity, View } from 'react-native';
 import LinearText from './primitives/LinearText';
-import { theme } from '../constants/theme';
 import { type DialogAction, type DialogRequest, registerDialogListener } from './dialogService';
 
 const VARIANT_STYLES = {
   default: {
-    pillBg: theme.colors.primaryTintSoft,
-    pillText: theme.colors.primaryLight,
-    border: theme.colors.borderLight,
+    pillBg: accentAlpha['8'],
+    pillText: n.colors.accent,
+    border: n.colors.borderLight,
   },
   success: {
-    pillBg: theme.colors.successTintSoft,
-    pillText: theme.colors.success,
-    border: theme.colors.success,
+    pillBg: successAlpha['10'],
+    pillText: n.colors.success,
+    border: n.colors.success,
   },
   warning: {
-    pillBg: theme.colors.warningTintSoft,
-    pillText: theme.colors.warning,
-    border: theme.colors.warning,
+    pillBg: warningAlpha['10'],
+    pillText: n.colors.warning,
+    border: n.colors.warning,
   },
   error: {
-    pillBg: theme.colors.errorTintSoft,
-    pillText: theme.colors.error,
-    border: theme.colors.error,
+    pillBg: errorAlpha['10'],
+    pillText: n.colors.error,
+    border: n.colors.error,
   },
   focus: {
-    pillBg: theme.colors.primaryTintMedium,
-    pillText: theme.colors.primaryLight,
-    border: theme.colors.primary,
+    pillBg: accentAlpha['20'],
+    pillText: n.colors.accent,
+    border: n.colors.accent,
   },
   destructive: {
-    pillBg: theme.colors.errorTintSoft,
-    pillText: theme.colors.error,
-    border: theme.colors.error,
+    pillBg: errorAlpha['10'],
+    pillText: n.colors.error,
+    border: n.colors.error,
   },
 } as const;
 
@@ -166,18 +166,18 @@ export function DialogHost() {
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: theme.colors.overlay,
+    backgroundColor: 'rgba(6, 8, 14, 0.72)',
     justifyContent: 'center',
-    padding: theme.spacing.xl,
+    padding: n.spacing.xl,
   },
   backdrop: {
     ...StyleSheet.absoluteFillObject,
   },
   dialog: {
-    backgroundColor: theme.colors.panel,
-    borderRadius: theme.borderRadius.xl,
+    backgroundColor: n.colors.surface,
+    borderRadius: 20,
     borderWidth: 1,
-    padding: theme.spacing.xl,
+    padding: n.spacing.xl,
     shadowColor: n.colors.background,
     shadowOffset: { width: 0, height: 16 },
     shadowOpacity: 0.28,
@@ -186,61 +186,61 @@ const styles = StyleSheet.create({
   },
   badge: {
     alignSelf: 'flex-start',
-    paddingHorizontal: theme.spacing.sm,
+    paddingHorizontal: n.spacing.sm,
     paddingVertical: 4,
-    borderRadius: theme.borderRadius.full,
-    marginBottom: theme.spacing.md,
+    borderRadius: n.radius.full,
+    marginBottom: n.spacing.md,
   },
   badgeText: {
-    ...theme.typography.captionSmall,
+    ...n.typography.caption,
     letterSpacing: 0.6,
   },
   title: {
-    ...theme.typography.h3,
-    color: theme.colors.textPrimary,
-    marginBottom: theme.spacing.sm,
+    ...n.typography.title,
+    color: n.colors.textPrimary,
+    marginBottom: n.spacing.sm,
   },
   message: {
-    ...theme.typography.body,
-    color: theme.colors.textSecondary,
+    ...n.typography.body,
+    color: n.colors.textSecondary,
     lineHeight: 22,
   },
   actions: {
-    gap: theme.spacing.sm,
-    marginTop: theme.spacing.xl,
+    gap: n.spacing.sm,
+    marginTop: n.spacing.xl,
   },
   actionButton: {
-    borderRadius: theme.borderRadius.lg,
-    paddingVertical: theme.spacing.md,
-    paddingHorizontal: theme.spacing.lg,
+    borderRadius: n.radius.lg,
+    paddingVertical: n.spacing.md,
+    paddingHorizontal: n.spacing.lg,
     borderWidth: 1,
     alignItems: 'center',
   },
   actionButtonPrimary: {
-    backgroundColor: theme.colors.primary,
-    borderColor: theme.colors.primary,
+    backgroundColor: n.colors.accent,
+    borderColor: n.colors.accent,
   },
   actionButtonSecondary: {
     backgroundColor: 'transparent',
-    borderColor: theme.colors.borderLight,
+    borderColor: n.colors.borderLight,
   },
   actionButtonDestructive: {
-    backgroundColor: theme.colors.errorTintSoft,
-    borderColor: theme.colors.error,
+    backgroundColor: errorAlpha['10'],
+    borderColor: n.colors.error,
   },
   actionButtonDisabled: {
     opacity: 0.65,
   },
   actionText: {
-    ...theme.typography.button,
+    ...n.typography.button,
   },
   actionTextPrimary: {
-    color: theme.colors.textInverse,
+    color: n.colors.textInverse,
   },
   actionTextSecondary: {
-    color: theme.colors.textPrimary,
+    color: n.colors.textPrimary,
   },
   actionTextDestructive: {
-    color: theme.colors.error,
+    color: n.colors.error,
   },
 });

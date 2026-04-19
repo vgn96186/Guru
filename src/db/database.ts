@@ -2,7 +2,7 @@ import * as SQLite from 'expo-sqlite';
 import * as FileSystem from 'expo-file-system/legacy';
 import { ALL_SCHEMAS, DB_INDEXES } from './schema';
 import { LATEST_VERSION, MIGRATIONS } from './migrations';
-import { SUBJECTS_SEED, TOPICS_SEED } from '../constants/syllabus';
+import { SUBJECTS_SEED } from '../constants/syllabus';
 import { VAULT_TOPICS_SEED } from '../constants/vaultTopics';
 import { MS_PER_DAY } from '../constants/time';
 import { DEFAULT_INICET_DATE, DEFAULT_NEET_DATE } from '../config/appConfig';
@@ -312,7 +312,8 @@ export async function syncVaultSeedTopics(): Promise<void> {
   await db.execAsync('INSERT OR IGNORE INTO topic_progress (topic_id) SELECT id FROM topics');
 }
 
-async function seedSubjects(db: SQLite.SQLiteDatabase): Promise<void> {
+/** Exported for `src/db/seedTopics.db.test.ts`. Not part of the app API. */
+export async function seedSubjects(db: SQLite.SQLiteDatabase): Promise<void> {
   for (const s of SUBJECTS_SEED) {
     await db.runAsync(
       `INSERT OR IGNORE INTO subjects (id, name, short_code, color_hex, inicet_weight, neet_weight, display_order)
@@ -322,33 +323,65 @@ async function seedSubjects(db: SQLite.SQLiteDatabase): Promise<void> {
   }
 }
 
-async function seedTopics(_db: SQLite.SQLiteDatabase): Promise<void> {
+/**
+ * Batch size for multi-VALUES INSERTs. SQLite's default SQLITE_MAX_VARIABLE_NUMBER
+ * is 999; a topic row binds 4 params, so the upper bound is 249. We use 200
+ * for headroom and to keep SQL text size modest.
+ */
+const SEED_INSERT_CHUNK = 200;
+
+/** Exported for `src/db/seedTopics.db.test.ts`. Not part of the app API. */
+export async function seedTopics(_db: SQLite.SQLiteDatabase): Promise<void> {
+  // Lazy import: TOPICS_SEED (~14,780 rows, loaded from 19 JSON assets) is
+  // only needed here. On normal cold starts (topicCount > 0) this module
+  // never loads, keeping the JS heap smaller.
+  const { TOPICS_SEED } = await import('../constants/syllabus/topics');
   await runInTransaction(async (db) => {
-    // Pass 1: Insert all topics without parent links (ensures parents exist)
-    for (const [subjectId, name, priority, minutes] of TOPICS_SEED) {
-      const result = await db.runAsync(
-        `INSERT OR IGNORE INTO topics (subject_id, name, inicet_priority, estimated_minutes) VALUES (?, ?, ?, ?)`,
-        [subjectId, name, priority, minutes],
-      );
-      if (result.lastInsertRowId > 0) {
-        await db.runAsync(`INSERT OR IGNORE INTO topic_progress (topic_id) VALUES (?)`, [
-          result.lastInsertRowId,
-        ]);
+    // Pass 1: Insert all topics without parent links (ensures parents exist).
+    // Batched multi-VALUES INSERTs to minimize JS↔native bridge crossings.
+    for (let i = 0; i < TOPICS_SEED.length; i += SEED_INSERT_CHUNK) {
+      const chunk = TOPICS_SEED.slice(i, i + SEED_INSERT_CHUNK);
+      const placeholders = chunk.map(() => '(?, ?, ?, ?)').join(', ');
+      const params: (string | number)[] = [];
+      for (const [subjectId, name, priority, minutes] of chunk) {
+        params.push(subjectId, name, priority, minutes);
       }
+      await db.runAsync(
+        `INSERT OR IGNORE INTO topics (subject_id, name, inicet_priority, estimated_minutes) VALUES ${placeholders}`,
+        params,
+      );
     }
 
-    // Pass 2: Optimized parent linking (Bulk repair)
-    // We use a temporary table to map names to IDs to avoid tens of thousands of individual queries.
+    // Bulk-insert progress rows for any topic that doesn't already have one.
+    // Equivalent to the previous per-row `INSERT OR IGNORE` inside pass 1,
+    // but in a single statement. (Same pattern `syncVaultSeedTopics` uses.)
+    await db.execAsync(
+      `INSERT OR IGNORE INTO topic_progress (topic_id) SELECT id FROM topics`,
+    );
+
+    // Pass 2: Optimized parent linking (bulk repair).
+    // A temp table maps (subject_id, name) → parent_name so the final UPDATE
+    // can resolve every parent_topic_id in one query.
     await db.execAsync(
       'CREATE TEMP TABLE IF NOT EXISTS tmp_parent_mapping (subject_id INTEGER, name TEXT, parent_name TEXT)',
     );
     await db.execAsync('DELETE FROM tmp_parent_mapping');
 
-    // Efficiently batch the parent-child relationships from the seed
-    for (const [sid, name, , , pName] of TOPICS_SEED) {
-      if (pName) {
-        await db.runAsync('INSERT INTO tmp_parent_mapping VALUES (?, ?, ?)', [sid, name, pName]);
+    // Batched multi-VALUES INSERTs for the parent mapping.
+    const withParent = TOPICS_SEED.filter((t) => t[4] !== undefined) as Array<
+      [number, string, number, number, string]
+    >;
+    for (let i = 0; i < withParent.length; i += SEED_INSERT_CHUNK) {
+      const chunk = withParent.slice(i, i + SEED_INSERT_CHUNK);
+      const placeholders = chunk.map(() => '(?, ?, ?)').join(', ');
+      const params: (string | number)[] = [];
+      for (const [sid, name, , , pName] of chunk) {
+        params.push(sid, name, pName);
       }
+      await db.runAsync(
+        `INSERT INTO tmp_parent_mapping (subject_id, name, parent_name) VALUES ${placeholders}`,
+        params,
+      );
     }
 
     // Single-query bulk update: sets parent_topic_id for all unlinked children in one shot

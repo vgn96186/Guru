@@ -9,7 +9,7 @@ interface BannerIconButtonProps extends Omit<PressableProps, 'style'> {
 
 export default function BannerIconButton({ children, style, ...props }: BannerIconButtonProps) {
   return (
-    <LinearIconButton {...props} variant="outline" shape="round" style={style}>
+    <LinearIconButton {...props} variant="secondary" shape="round" style={style}>
       {children}
     </LinearIconButton>
   );

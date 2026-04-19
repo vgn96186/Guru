@@ -1,64 +1,46 @@
 import React from 'react';
 import { render } from '@testing-library/react-native';
-import { Animated, Easing, StyleSheet } from 'react-native';
 import HeroCard from './HeroCard';
-import { linearTheme as n } from '../../theme/linearTheme';
-
-jest.mock('../../motion', () => ({
-  decorativeIdleDelayMs: 320,
-  useReducedMotion: () => false,
-}));
 
 describe('HeroCard', () => {
-  const defaultProps = {
-    daysToInicet: 45,
-    daysToNeetPg: 120,
-  };
-
-  beforeAll(() => {
-    (Easing as any).inOut = (fn: any) => fn;
-  });
-
-  beforeEach(() => {
-    (Animated.timing as jest.Mock).mockReturnValue({
-      start: jest.fn((cb) => cb && cb({ finished: true })),
-      stop: jest.fn(),
-    });
-    (Animated.sequence as jest.Mock).mockReturnValue({
-      start: jest.fn((cb) => cb && cb({ finished: true })),
-      stop: jest.fn(),
-    });
-    (Animated.loop as jest.Mock).mockReturnValue({
-      start: jest.fn(),
-      stop: jest.fn(),
-    });
-  });
-
-  it('renders exam countdown labels', () => {
-    const { getByText } = render(<HeroCard {...defaultProps} />);
-
-    expect(getByText('EXAM COUNTDOWN')).toBeTruthy();
-    expect(getByText('INICET')).toBeTruthy();
-    expect(getByText('NEET-PG')).toBeTruthy();
-    expect(getByText('45')).toBeTruthy();
-    expect(getByText('120')).toBeTruthy();
-  });
-
-  it('keeps urgency styling scoped to the urgent exam only', () => {
+  it('shows the nearer exam as the hero with its day count', () => {
     const { getByText } = render(
-      <HeroCard {...defaultProps} daysToInicet={20} daysToNeetPg={120} entryComplete={false} />,
+      <HeroCard daysToInicet={45} daysToNeetPg={120} />,
     );
-
-    const inicetStyle = StyleSheet.flatten(getByText('20').props.style);
-    const neetStyle = StyleSheet.flatten(getByText('120').props.style);
-
-    expect(inicetStyle.color).toBe(n.colors.warning);
-    expect(neetStyle.color).toBe(n.colors.textPrimary);
+    expect(getByText('Next · INICET')).toBeTruthy();
+    expect(getByText('45')).toBeTruthy();
+    expect(getByText('NEET-PG in 120 days')).toBeTruthy();
   });
 
-  it('starts a single pulse loop when entry completes and any exam is urgent', () => {
-    render(<HeroCard {...defaultProps} daysToInicet={20} daysToNeetPg={120} entryComplete />);
+  it('picks NEET-PG as hero when it is nearer', () => {
+    const { getByText } = render(
+      <HeroCard daysToInicet={200} daysToNeetPg={60} />,
+    );
+    expect(getByText('Next · NEET-PG')).toBeTruthy();
+    expect(getByText('60')).toBeTruthy();
+    expect(getByText('INICET in 200 days')).toBeTruthy();
+  });
 
-    expect(Animated.loop).toHaveBeenCalledTimes(1);
+  it('shows urgency warning when hero exam is within 90 days', () => {
+    const { getByText } = render(
+      <HeroCard daysToInicet={30} daysToNeetPg={200} />,
+    );
+    expect(getByText('within 90 days')).toBeTruthy();
+  });
+
+  it('does not show urgency warning when hero exam is beyond 90 days', () => {
+    const { queryByText } = render(
+      <HeroCard daysToInicet={150} daysToNeetPg={200} />,
+    );
+    expect(queryByText('within 90 days')).toBeNull();
+  });
+
+  it('renders correct accessibility label regardless of hero choice', () => {
+    const { getByLabelText } = render(
+      <HeroCard daysToInicet={45} daysToNeetPg={120} />,
+    );
+    expect(
+      getByLabelText('Exam countdown: INICET in 45 days, NEET-PG in 120 days.'),
+    ).toBeTruthy();
   });
 });

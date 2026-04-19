@@ -12,18 +12,18 @@ import {
 import { linearTheme } from '../../theme/linearTheme';
 import LinearText, { type LinearTextTone } from './LinearText';
 
-export type LinearButtonVariant =
-  | 'primary'
-  | 'ghost'
-  | 'outline'
-  | 'glass'
-  | 'glassTinted'
-  | 'danger';
+export type LinearButtonVariant = 'primary' | 'secondary' | 'ghost';
+export type LinearButtonTone = 'neutral' | 'danger';
 export type LinearButtonSize = 'sm' | 'md' | 'lg';
+
+function resolveLegacyVariant(v: LinearButtonVariant): { variant: LinearButtonVariant; tone: LinearButtonTone } {
+  return { variant: v, tone: 'neutral' };
+}
 
 interface LinearButtonProps extends Omit<PressableProps, 'style'> {
   label: string;
   variant?: LinearButtonVariant;
+  tone?: LinearButtonTone;
   size?: LinearButtonSize;
   loading?: boolean;
   loadingLabel?: string;
@@ -37,6 +37,7 @@ interface LinearButtonProps extends Omit<PressableProps, 'style'> {
 export default function LinearButton({
   label,
   variant = 'primary',
+  tone: toneProp,
   size = 'md',
   loading = false,
   loadingLabel,
@@ -49,12 +50,14 @@ export default function LinearButton({
   accessibilityState,
   ...props
 }: LinearButtonProps) {
-  const tone = textTone ?? getDefaultTextTone(variant);
-  const isGlass = variant === 'glass' || variant === 'glassTinted';
+  const { variant: v, tone: resolvedTone } = resolveLegacyVariant(variant);
+  const finalTone: LinearButtonTone = toneProp ?? resolvedTone;
+  const textTn = textTone ?? getDefaultTextTone(v, finalTone);
+  const isDanger = finalTone === 'danger';
   const resolvedDisabled = disabled || loading;
   const resolvedLabel = loading ? loadingLabel ?? null : label;
   const leadingDecoration = loading ? (
-    <ActivityIndicator size="small" color={getSpinnerColor(tone)} />
+    <ActivityIndicator size="small" color={getSpinnerColor(textTn)} />
   ) : (
     leftIcon
   );
@@ -80,12 +83,9 @@ export default function LinearButton({
       style={({ pressed }) => [
         styles.base,
         sizeStyles[size],
-        variant === 'primary' && styles.primary,
-        variant === 'ghost' && styles.ghost,
-        variant === 'outline' && styles.outline,
-        variant === 'glass' && styles.glass,
-        variant === 'glassTinted' && styles.glassTinted,
-        variant === 'danger' && styles.danger,
+        v === 'primary' && (isDanger ? styles.primaryDanger : styles.primary),
+        v === 'secondary' && (isDanger ? styles.secondaryDanger : styles.secondary),
+        v === 'ghost' && styles.ghost,
         pressed && styles.pressed,
         resolvedDisabled && styles.disabled,
         style,
@@ -99,8 +99,8 @@ export default function LinearButton({
             <View style={styles.labelWrap}>
               <LinearText
                 variant="button"
-                tone={tone}
-                style={[styles.labelBase, isGlass && styles.glassLabel, textStyle]}
+                tone={textTn}
+                style={[styles.labelBase, textStyle]}
               >
                 {resolvedLabel}
               </LinearText>
@@ -110,8 +110,8 @@ export default function LinearButton({
         ) : resolvedLabel != null ? (
           <LinearText
             variant="button"
-            tone={tone}
-            style={[styles.labelBase, isGlass && styles.glassLabel, textStyle]}
+            tone={textTn}
+            style={[styles.labelBase, textStyle]}
           >
             {resolvedLabel}
           </LinearText>
@@ -134,28 +134,23 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: `${linearTheme.colors.accent}AA`,
   },
-  ghost: {
-    backgroundColor: 'rgba(255,255,255,0.02)',
-  },
-  outline: {
-    borderWidth: 1,
-    borderColor: linearTheme.colors.border,
-    backgroundColor: linearTheme.colors.surface,
-  },
-  glass: {
-    borderWidth: 1,
-    borderColor: linearTheme.colors.borderHighlight,
-    backgroundColor: linearTheme.colors.card,
-  },
-  glassTinted: {
-    borderWidth: 1,
-    borderColor: `${linearTheme.colors.accent}70`,
-    backgroundColor: linearTheme.colors.primaryTintSoft,
-  },
-  danger: {
+  primaryDanger: {
     backgroundColor: linearTheme.colors.error,
     borderWidth: 1,
     borderColor: `${linearTheme.colors.error}AA`,
+  },
+  secondary: {
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.10)',
+    backgroundColor: 'rgba(255,255,255,0.02)',
+  },
+  secondaryDanger: {
+    borderWidth: 1,
+    borderColor: `${linearTheme.colors.error}55`,
+    backgroundColor: 'rgba(241,76,76,0.06)',
+  },
+  ghost: {
+    backgroundColor: 'transparent',
   },
   pressed: {
     opacity: linearTheme.alpha.pressed,
@@ -187,11 +182,6 @@ const styles = StyleSheet.create({
     flexShrink: 1,
     minWidth: 0,
   },
-  glassLabel: {
-    fontSize: 15,
-    fontWeight: '800',
-    letterSpacing: 0.3,
-  },
 });
 
 const sizeStyles = StyleSheet.create({
@@ -212,15 +202,13 @@ const sizeStyles = StyleSheet.create({
   },
 });
 
-function getDefaultTextTone(variant: LinearButtonVariant): LinearTextTone {
-  switch (variant) {
-    case 'primary':
-      return 'inverse';
-    case 'danger':
-      return 'primary';
-    default:
-      return 'primary';
-  }
+function getDefaultTextTone(
+  variant: LinearButtonVariant,
+  tone: LinearButtonTone,
+): LinearTextTone {
+  if (variant === 'primary') return tone === 'danger' ? 'primary' : 'inverse';
+  if (tone === 'danger') return 'error';
+  return 'primary';
 }
 
 function getSpinnerColor(tone: LinearTextTone): string {

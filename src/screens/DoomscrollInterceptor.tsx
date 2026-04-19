@@ -18,6 +18,7 @@ import * as Haptics from 'expo-haptics';
 import { ResponsiveContainer } from '../hooks/useResponsive';
 import { useAppStateTransition } from '../hooks/useAppStateTransition';
 import { linearTheme as n } from '../theme/linearTheme';
+import { motion, useReducedMotion } from '../motion';
 import { accentAlpha, errorAlpha, whiteAlpha } from '../theme/colorUtils';
 import { confirmDestructive } from '../components/dialogService';
 import { Ionicons } from '@expo/vector-icons';
@@ -35,6 +36,7 @@ export default function DoomscrollInterceptor() {
   const [delayRemaining, setDelayRemaining] = useState(0);
   const [shameLevel, setShameLevel] = useState(0);
   const [sessionCount, setSessionCount] = useState(0);
+  const reducedMotion = useReducedMotion();
 
   // Animation values
   const pulseAnim = useRef(new Animated.Value(1)).current;
@@ -100,30 +102,12 @@ export default function DoomscrollInterceptor() {
   // Animations
   useEffect(() => {
     if (isBlocking) {
-      // Fade in
-      Animated.timing(fadeAnim, {
-        toValue: 1,
-        duration: 300,
-        useNativeDriver: true,
-      }).start();
+      motion.enter(fadeAnim, 1).start();
 
-      // Pulsing lock animation
-      const pulseLoop = Animated.loop(
-        Animated.sequence([
-          Animated.timing(pulseAnim, { toValue: 1.1, duration: 800, useNativeDriver: true }),
-          Animated.timing(pulseAnim, { toValue: 1, duration: 800, useNativeDriver: true }),
-        ]),
-      );
+      const pulseLoop = motion.pulseScale(pulseAnim, { to: 1.1, duration: 800, reducedMotion });
       pulseLoop.start();
 
-      // Shake animation for shame
-      const shakeLoop = Animated.loop(
-        Animated.sequence([
-          Animated.timing(shakeAnim, { toValue: 8, duration: 100, useNativeDriver: true }),
-          Animated.timing(shakeAnim, { toValue: -8, duration: 100, useNativeDriver: true }),
-          Animated.timing(shakeAnim, { toValue: 0, duration: 100, useNativeDriver: true }),
-        ]),
-      );
+      const shakeLoop = motion.shake(shakeAnim, { amplitude: 8, reducedMotion });
       shakeLoop.start();
 
       return () => {
@@ -131,14 +115,13 @@ export default function DoomscrollInterceptor() {
         shakeLoop.stop();
       };
     } else {
-      // Fade out
       Animated.timing(fadeAnim, {
         toValue: 0,
         duration: 200,
         useNativeDriver: true,
       }).start();
     }
-  }, [isBlocking, fadeAnim, pulseAnim, shakeAnim]);
+  }, [isBlocking, fadeAnim, pulseAnim, shakeAnim, reducedMotion]);
 
   // Progress bar animation
   useEffect(() => {

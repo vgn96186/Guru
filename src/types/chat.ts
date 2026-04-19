@@ -16,3 +16,22 @@ export type ChatMessage = {
 export type ChatItem =
   | { id: string; type: 'message'; message: ChatMessage }
   | { id: string; type: 'typing' };
+
+export type ModelOption = {
+  id: string;
+  name: string;
+  group:
+    | 'Local'
+    | 'ChatGPT Codex'
+    | 'Groq'
+    | 'OpenRouter'
+    | 'Gemini'
+    | 'Cloudflare'
+    | 'GitHub Models'
+    | 'GitHub Copilot'
+    | 'GitLab Duo'
+    | 'Poe'
+    | 'Kilo'
+    | 'AgentRouter'
+    | 'Qwen (Free)';
+};

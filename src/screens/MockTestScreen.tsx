@@ -234,7 +234,7 @@ export default function MockTestScreen() {
               Guru generates quiz questions during your study sessions. Complete a few sessions to
               build up your question bank!
             </LinearText>
-            <LinearButton label="Back" variant="glassTinted" onPress={() => navigation.goBack()} />
+            <LinearButton label="Back" variant="secondary" onPress={() => navigation.goBack()} />
           </ResponsiveContainer>
         </SafeAreaView>
       );
@@ -487,7 +487,7 @@ export default function MockTestScreen() {
                   : 'See Results'
                 : 'Skip Question'
             }
-            variant={selected !== null ? 'primary' : 'glass'}
+            variant={selected !== null ? 'primary' : 'secondary'}
             onPress={handleNext}
             rightIcon={selected !== null ? null : undefined}
             style={styles.confirmBtn}

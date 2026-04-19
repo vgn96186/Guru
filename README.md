@@ -6,7 +6,7 @@ React Native (Expo) study app for medical students preparing for NEET‑PG and I
 
 - **Lecture Pipeline** – Record lectures from external medical apps, transcribe automatically, and map detected topics to the NEET‑PG syllabus.
 - **Spaced Repetition** – FSRS‑based scheduling with confidence‑driven reviews; topics progress from `unseen` → `seen` → `reviewed` → `mastered`.
-- **AI‑Driven Content** – On‑demand generation of quizzes, key‑points, mnemonics, stories, and teach‑back exercises via a multi‑provider routing system (local Gemma 4, ChatGPT, Gemini, Groq, OpenRouter, etc.).
+- **AI‑Driven Content** – On‑demand generation of quizzes, key‑points, mnemonics, stories, and teach‑back exercises via a multi‑provider routing system (local Gemma 4, ChatGPT, Gemini, Groq, OpenRouter, etc.). Guru Chat uses the **Vercel AI SDK** with tool calling for medical search, image generation, and grounded responses.
 - **Adaptive Planning** – Exam‑date‑backed daily agenda that redistributes backlog, prioritizes overdue reviews, and syncs with live lecture batches (DBMCI One, BTR).
 - **ADHD‑Focused UX** – Proof‑of‑life checks, doom‑scroll detection, inertia screens, punishment/bed‑lock modes, body‑doubling via device sync, and a calming boot‑transition that morphs the loading orb into the start button.
 - **Cross‑Device Sync** – Pair two devices (phone + tablet) to keep study sessions in sync; one device can act as a “body‑double” while the other records lectures.
@@ -51,9 +51,15 @@ Both devices run Android 14+ and provide a consistent 12 GB memory environment
 src/
 ├── screens/          # Full‑screen views (Home, Syllabus, LectureMode, Chat, Settings…)
 ├── components/       # Reusable UI (BootTransition, LoadingOrb, StartButton, Toast…)
+│   └── chat/         # Guru Chat components (GuruChatHistoryDrawer, GuruChatMessageList…)
 ├── services/         # Business logic (AI, transcription, planning, sync, backup…)
+│   └── ai/           # AI services including chatTools.ts (Vercel AI SDK tools)
 ├── db/               # Database schema, migrations, queries, repositories
 ├── hooks/            # Custom hooks (bootstrap, app‑state, lecture recovery…)
+│   ├── useGuruChat.ts           # Vercel AI SDK wrapper
+│   ├── useGuruChatSession.ts    # Thread management
+│   ├── useGuruChatModels.ts     # Model picker state
+│   └── useGuruChatImageGeneration.ts  # Image generation state
 ├── navigation/       # Root navigator, tab navigator, linking config
 ├── store/            # Zustand store (profile, bootPhase, levelInfo…)
 ├── schemas/          # Zod schemas (single source of truth for types)
@@ -82,6 +88,8 @@ src/
 ## Documentation
 
 - **`CLAUDE.md`** – Comprehensive architecture, database schema, AI routing, lecture flows, and project rules (canonical context for AI contributors).
+- **`AGENTS.md`** – AI context file with architectural rules, naming conventions, and Guru Chat system details.
+- **`GURU_CHAT_REFACTOR_GUIDE.md`** – Migration guide for the Vercel AI SDK refactor (hooks, components, tools).
 - **`REPO_MAP.md`** – Generated file listing all source files; run `npm run repo‑map` to update.
 - **`docs/TODO.md`** – Current high‑priority tasks (FSRS mastered definition, inline‑alert migration, etc.).
 - **`docs/archive/`** – Stale audits, plans, and historical analyses (kept for reference only).

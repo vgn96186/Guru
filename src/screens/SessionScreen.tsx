@@ -62,7 +62,6 @@ import { useIdleTimer } from '../hooks/useIdleTimer';
 import { useGuruPresence } from '../hooks/useGuruPresence';
 import { useAppStateTransition } from '../hooks/useAppStateTransition';
 import { ResponsiveContainer } from '../hooks/useResponsive';
-import { theme } from '../constants/theme';
 import { linearTheme as n } from '../theme/linearTheme';
 import { blackAlpha } from '../theme/colorUtils';
 
@@ -857,7 +856,7 @@ export default function SessionScreen() {
       <SafeAreaView style={styles.safe}>
         <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
         <ResponsiveContainer style={styles.errorContainer}>
-          <IconCircle name="alert-circle" color={theme.colors.error} size={56} />
+          <IconCircle name="alert-circle" color={n.colors.error} size={56} />
           <LinearText variant="title" centered style={styles.errorTitle}>
             AI Unavailable
           </LinearText>
@@ -885,7 +884,7 @@ export default function SessionScreen() {
           />
           <LinearButton
             label={agenda ? 'Continue Without AI' : 'Start Manual Review'}
-            variant="glass"
+            variant="secondary"
             style={styles.manualBtn}
             textStyle={styles.manualBtnText}
             onPress={handleContinueWithoutAi}
@@ -893,7 +892,7 @@ export default function SessionScreen() {
           />
           <TouchableOpacity style={styles.leaveBtn} onPress={() => navigation.goBack()}>
             <View style={styles.btnRow}>
-              <Ionicons name="arrow-back" size={14} color={theme.colors.textMuted} />
+              <Ionicons name="arrow-back" size={14} color={n.colors.textMuted} />
               <LinearText variant="bodySmall" tone="muted" style={styles.leaveBtnText}>
                 Leave Session
               </LinearText>
@@ -1441,7 +1440,7 @@ export default function SessionScreen() {
                 />
                 <LinearButton
                   label="End Session"
-                  variant="glassTinted"
+                  variant="secondary"
                   style={[styles.resumeOverlayBtn, styles.endBtn]}
                   textStyle={styles.resumeOverlayBtnText}
                   onPress={async () => {
@@ -1484,7 +1483,7 @@ function WarmUpMomentumScreen({
   const { fade, slide } = useEntranceAnimation();
   const pct = answeredTotal > 0 ? Math.round((correctTotal / answeredTotal) * 100) : 0;
   const scoreColor =
-    pct >= 70 ? theme.colors.success : pct >= 40 ? theme.colors.warning : theme.colors.error;
+    pct >= 70 ? n.colors.success : pct >= 40 ? n.colors.warning : n.colors.error;
   useEffect(() => {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
   }, []);
@@ -1494,7 +1493,7 @@ function WarmUpMomentumScreen({
       <Animated.View
         style={[styles.doneContainer, { opacity: fade, transform: [{ translateY: slide }] }]}
       >
-        <IconCircle name="flash" color={theme.colors.accentAlt} size={64} />
+        <IconCircle name="flash" color={n.colors.warning} size={64} />
         <LinearText variant="title" centered style={styles.doneTitle}>
           Nice work, Doctor.
         </LinearText>
@@ -1538,7 +1537,7 @@ function WarmUpMomentumScreen({
         />
         <LinearButton
           label="50 MCQ Block"
-          variant="glass"
+          variant="secondary"
           style={styles.doneSecondaryBtn}
           textStyle={styles.doneSecondaryBtnText}
           onPress={onMCQBlock}
@@ -1546,7 +1545,7 @@ function WarmUpMomentumScreen({
         />
         <LinearButton
           label="Continue studying"
-          variant="glass"
+          variant="secondary"
           style={styles.doneSecondaryBtn}
           textStyle={styles.doneSecondaryBtnText}
           onPress={onContinue}
@@ -1554,7 +1553,7 @@ function WarmUpMomentumScreen({
         />
         <TouchableOpacity style={styles.leaveBtn} onPress={onDone}>
           <View style={styles.btnRow}>
-            <Ionicons name="hand-left-outline" size={14} color={theme.colors.textMuted} />
+            <Ionicons name="hand-left-outline" size={14} color={n.colors.textMuted} />
             <LinearText variant="bodySmall" tone="muted" style={styles.leaveBtnText}>
               That&apos;s enough for now
             </LinearText>
@@ -1621,7 +1620,7 @@ function SessionDoneScreen({
           style={[styles.doneContainer, { opacity: fade, transform: [{ translateY: slide }] }]}
           testID="session-done"
         >
-          <IconCircle name="trophy" color={theme.colors.accentAlt} size={64} />
+          <IconCircle name="trophy" color={n.colors.warning} size={64} />
           <LinearText variant="title" centered style={styles.doneTitle}>
             Session Complete!
           </LinearText>
@@ -1633,7 +1632,7 @@ function SessionDoneScreen({
                 <Ionicons
                   name="book-outline"
                   size={18}
-                  color={theme.colors.textMuted}
+                  color={n.colors.textMuted}
                   style={{ marginBottom: 4 }}
                 />
                 <LinearText variant="display" centered style={styles.summaryValue}>
@@ -1648,7 +1647,7 @@ function SessionDoneScreen({
                 <Ionicons
                   name="time-outline"
                   size={18}
-                  color={theme.colors.textMuted}
+                  color={n.colors.textMuted}
                   style={{ marginBottom: 4 }}
                 />
                 <LinearText variant="display" centered style={styles.summaryValue}>
@@ -1663,13 +1662,13 @@ function SessionDoneScreen({
                 <Ionicons
                   name="star-outline"
                   size={18}
-                  color={theme.colors.accentAlt}
+                  color={n.colors.warning}
                   style={{ marginBottom: 4 }}
                 />
                 <LinearText
                   variant="display"
                   centered
-                  style={[styles.summaryValue, { color: theme.colors.accentAlt }]}
+                  style={[styles.summaryValue, { color: n.colors.warning }]}
                 >
                   +{xpTotal}
                 </LinearText>
@@ -1811,7 +1810,7 @@ function SessionDoneScreen({
               </LinearSurface>
               <LinearButton
                 label={`Review ${gapTopics.length} Gap${gapTopics.length > 1 ? 's' : ''} Now`}
-                variant="glassTinted"
+                variant="secondary"
                 style={[
                   styles.doneSecondaryBtn,
                   { borderColor: `${n.colors.error}44`, marginBottom: 0, marginTop: 0 },
@@ -2132,7 +2131,7 @@ const styles = StyleSheet.create({
     paddingVertical: n.spacing.lg,
   },
   doneBtnText: {
-    color: theme.colors.textPrimary,
+    color: n.colors.textPrimary,
     fontWeight: '800',
     fontSize: 18,
     lineHeight: 24,

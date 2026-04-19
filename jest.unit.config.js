@@ -48,7 +48,7 @@ module.exports = {
           module: 'commonjs',
           jsx: 'react',
           rootDir: '.',
-          ignoreDeprecations: '6.0',
+          ignoreDeprecations: '5.0',
         },
       },
     ],

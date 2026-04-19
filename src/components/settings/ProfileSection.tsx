@@ -26,7 +26,7 @@ function ProfileSection({
       )}
       <LinearButton
         label="Link Another Device (Sync)"
-        variant="outline"
+        variant="secondary"
         textTone={isSyncAvailable ? 'accent' : 'secondary'}
         style={[styles.linkBtn, !isSyncAvailable && styles.disabledBtn]}
         onPress={onLinkDevice}

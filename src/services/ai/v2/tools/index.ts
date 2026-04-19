@@ -4,8 +4,24 @@
 
 import { planSessionTool, dailyAgendaTool } from './planningTools';
 import { analyzeLectureTool } from './lectureTools';
-import { createQuizTool, fetchContentTool } from './contentTools';
-import { guruMedicalTools } from './medicalTools';
+import {
+  createQuizTool,
+  fetchContentTool,
+  generateKeypointsTool,
+  generateMustKnowTool,
+  generateStoryTool,
+  generateMnemonicTool,
+  generateTeachBackTool,
+  generateErrorHuntTool,
+  generateDetectiveTool,
+  generateSocraticTool,
+} from './contentTools';
+import {
+  guruMedicalTools,
+  generateMindmapTool,
+  generateFlashcardsTool,
+  fetchExamDatesTool,
+} from './medicalTools';
 
 export const guruPlanningTools = {
   plan_session: planSessionTool,
@@ -19,6 +35,14 @@ export const guruLectureTools = {
 export const guruContentTools = {
   create_quiz: createQuizTool,
   fetch_content: fetchContentTool,
+  generate_keypoints: generateKeypointsTool,
+  generate_must_know: generateMustKnowTool,
+  generate_story: generateStoryTool,
+  generate_mnemonic: generateMnemonicTool,
+  generate_teach_back: generateTeachBackTool,
+  generate_error_hunt: generateErrorHuntTool,
+  generate_detective: generateDetectiveTool,
+  generate_socratic: generateSocraticTool,
 };
 
 /**
@@ -32,4 +56,21 @@ export const guruCoreTools = {
 };
 
 // Re-export individual tools for direct usage if needed
-export { planSessionTool, dailyAgendaTool, analyzeLectureTool, createQuizTool, fetchContentTool };
+export {
+  planSessionTool,
+  dailyAgendaTool,
+  analyzeLectureTool,
+  createQuizTool,
+  fetchContentTool,
+  generateMindmapTool,
+  generateFlashcardsTool,
+  fetchExamDatesTool,
+  generateKeypointsTool,
+  generateMustKnowTool,
+  generateStoryTool,
+  generateMnemonicTool,
+  generateTeachBackTool,
+  generateErrorHuntTool,
+  generateDetectiveTool,
+  generateSocraticTool,
+};

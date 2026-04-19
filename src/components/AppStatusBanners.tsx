@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
 import * as Updates from 'expo-updates';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { theme } from '../constants/theme';
+import { linearTheme as n } from '../theme/linearTheme';
 import { useAppStateTransition } from '../hooks/useAppStateTransition';
 import { useNetworkStatus } from '../hooks/useNetworkStatus';
 import LinearText from './primitives/LinearText';
@@ -24,19 +24,19 @@ function StatusBanner({
 }) {
   const palette = {
     warning: {
-      borderColor: theme.colors.warning,
+      borderColor: n.colors.warning,
       backgroundColor: 'rgba(255, 152, 0, 0.16)',
-      actionColor: theme.colors.warning,
+      actionColor: n.colors.warning,
     },
     success: {
-      borderColor: theme.colors.success,
+      borderColor: n.colors.success,
       backgroundColor: 'rgba(76, 175, 80, 0.16)',
-      actionColor: theme.colors.success,
+      actionColor: n.colors.success,
     },
     accent: {
-      borderColor: theme.colors.primary,
+      borderColor: n.colors.accent,
       backgroundColor: 'rgba(108, 99, 255, 0.18)',
-      actionColor: theme.colors.primaryLight,
+      actionColor: n.colors.accent,
     },
   }[tone];
 
@@ -215,12 +215,12 @@ const styles = StyleSheet.create({
     gap: 2,
   },
   bannerTitle: {
-    color: theme.colors.textPrimary,
+    color: n.colors.textPrimary,
     fontSize: 13,
     fontWeight: '800',
   },
   bannerMessage: {
-    color: theme.colors.textSecondary,
+    color: n.colors.textSecondary,
     fontSize: 12,
     lineHeight: 17,
   },

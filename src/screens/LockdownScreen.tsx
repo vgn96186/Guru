@@ -72,7 +72,7 @@ export default function LockdownScreen() {
         )}
 
         <LinearButton
-          variant="glassTinted"
+          variant="secondary"
           style={styles.studyBtn}
           onPress={() =>
             navigation.navigate('Tabs', {

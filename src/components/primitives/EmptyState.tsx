@@ -11,7 +11,7 @@ type EmptyStateVariant = 'fullscreen' | 'card';
 export interface EmptyStateAction {
   label: string;
   onPress: () => void;
-  /** LinearButton variant. Defaults to `ghost` for the first action, `outline` for the rest. */
+  /** LinearButton variant. Defaults to `ghost` for the first action, `secondary` for the rest. */
   buttonVariant?: LinearButtonVariant;
   /** Tints the label + icon with the error color (use for Delete / destructive). */
   destructive?: boolean;
@@ -67,7 +67,7 @@ export default function EmptyState({
       {resolvedActions.length > 0 ? (
         <View style={[styles.actionsRow, resolvedActions.length === 1 && styles.actionsRowSingle]}>
           {resolvedActions.map((a, idx) => {
-            const buttonVariant = a.buttonVariant ?? (idx === 0 ? 'ghost' : 'outline');
+            const buttonVariant = a.buttonVariant ?? (idx === 0 ? 'ghost' : 'secondary');
             const labelColor = a.destructive ? n.colors.error : undefined;
             return (
               <LinearButton

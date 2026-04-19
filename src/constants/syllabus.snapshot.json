@@ -1,0 +1,41 @@
+{
+  "subjectsCount": 19,
+  "subjectsHash": "0903eff68a61fa5b25a052ffb12b232925a225895bde1aa192d3d430797db3ac",
+  "topicsCount": 14780,
+  "topicsHash": "4615c1abb659b3bf32a0f4e4746d81ab17e35d9f77a419eca090a28f65639c97",
+  "topicsWithParent": 14684,
+  "perSubjectCounts": {
+    "1": 1882,
+    "2": 1500,
+    "3": 703,
+    "4": 804,
+    "5": 796,
+    "6": 1301,
+    "7": 312,
+    "8": 1515,
+    "9": 646,
+    "10": 575,
+    "11": 661,
+    "12": 438,
+    "13": 489,
+    "14": 492,
+    "15": 471,
+    "16": 492,
+    "17": 258,
+    "18": 298,
+    "19": 1147
+  },
+  "firstTuple": [
+    1,
+    "General Anatomy",
+    7,
+    30
+  ],
+  "lastTuple": [
+    19,
+    "Common Source vs Propagated Epidemics — Incubation Period - National Health Programs Integration",
+    8,
+    5,
+    "Common Source vs Propagated Epidemics — Incubation Period"
+  ]
+}

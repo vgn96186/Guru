@@ -1,3 +1,4 @@
+export { default as Icon } from './Icon';
 export { default as LinearText } from './LinearText';
 export { default as LinearSurface } from './LinearSurface';
 export { default as LinearButton } from './LinearButton';

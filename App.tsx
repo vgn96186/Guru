@@ -31,7 +31,7 @@ import { useAppInitialization } from './src/hooks/useAppInitialization';
 import { useAppStore } from './src/store/useAppStore';
 import { useAppBootstrap } from './src/hooks/useAppBootstrap';
 import linking from './src/navigation/linking';
-import { theme } from './src/constants/theme';
+import { linearTheme as n } from './src/theme/linearTheme';
 import { reportStartupHealth } from './src/services/startupHealth';
 import { queryClient } from './src/services/queryClient';
 
@@ -288,6 +288,6 @@ const styles = StyleSheet.create({
   },
   loadingContainer: {
     flex: 1,
-    backgroundColor: theme.colors.background,
+    backgroundColor: n.colors.background,
   },
 });

@@ -113,6 +113,7 @@ jest.mock('react-native-svg', () => {
     G: el('G'),
     Defs: el('Defs'),
     LinearGradient: el('LinearGradient'),
+    Pattern: el('Pattern'),
     Rect: el('Rect'),
     Stop: el('Stop'),
   };
@@ -292,6 +293,54 @@ jest.mock('expo-file-system/legacy', () => ({
     UTF8: 'utf8',
   },
 }));
+
+jest.mock('expo-notifications', () => ({
+  __esModule: true,
+  getPermissionsAsync: jest.fn(async () => ({ status: 'granted' })),
+  requestPermissionsAsync: jest.fn(async () => ({ status: 'granted' })),
+  getExpoPushTokenAsync: jest.fn(async () => ({ data: 'ExponentPushToken[test]' })),
+  scheduleNotificationAsync: jest.fn(async () => 'notification-id'),
+  cancelScheduledNotificationAsync: jest.fn(async () => {}),
+  cancelAllScheduledNotificationsAsync: jest.fn(async () => {}),
+  getAllScheduledNotificationsAsync: jest.fn(async () => []),
+  setNotificationHandler: jest.fn(),
+  addNotificationReceivedListener: jest.fn(() => ({ remove: jest.fn() })),
+  addNotificationResponseReceivedListener: jest.fn(() => ({ remove: jest.fn() })),
+  removeNotificationSubscription: jest.fn(),
+  AndroidImportance: { MAX: 5, HIGH: 4, DEFAULT: 3, LOW: 2, MIN: 1 },
+  SchedulableTriggerInputTypes: { TIME_INTERVAL: 'timeInterval', DAILY: 'daily' },
+}));
+
+jest.mock('@tanstack/react-query', () => {
+  const actual = jest.requireActual('@tanstack/react-query');
+  const { QueryClient, QueryClientProvider } = actual;
+  const React = require('react');
+  const defaultClient = new QueryClient({
+    defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+  });
+  return {
+    ...actual,
+    useQuery: jest.fn((options) => ({
+      data: options?.initialData ?? undefined,
+      isLoading: false,
+      isFetching: false,
+      isError: false,
+      error: null,
+      refetch: jest.fn(),
+    })),
+    useMutation: jest.fn(() => ({
+      mutate: jest.fn(),
+      mutateAsync: jest.fn(async () => {}),
+      isPending: false,
+      isError: false,
+      error: null,
+      reset: jest.fn(),
+    })),
+    useQueryClient: jest.fn(() => defaultClient),
+    QueryClient,
+    QueryClientProvider: ({ children }) => children,
+  };
+});
 
 jest.mock('@react-navigation/native', () => ({
   useNavigation: () => ({

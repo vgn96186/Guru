@@ -1247,17 +1247,10 @@ export default function SettingsScreen() {
   }
 
   async function handleAutoFetchDates() {
-    const gk = groqKey.trim() || profile?.groqApiKey || '';
-    const or = orKey.trim() || profile?.openrouterKey || '';
-    if (!gk && !or) {
-      setFetchDatesMsg('Add a Groq or OpenRouter key first to auto-fetch dates.');
-      return;
-    }
-    const key = gk; // fetchExamDates uses first arg as primary key
     setFetchingDates(true);
     setFetchDatesMsg('');
     try {
-      const dates = await fetchExamDates(key, or || undefined);
+      const dates = await fetchExamDates('', undefined);
       setInicetDate(dates.inicetDate);
       setNeetDate(dates.neetDate);
       setFetchDatesMsg(

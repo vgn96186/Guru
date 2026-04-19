@@ -18,6 +18,7 @@ import type { RootStackParamList } from '../navigation/types';
 import * as Haptics from 'expo-haptics';
 import { linearTheme as n } from '../theme/linearTheme';
 import { ResponsiveContainer } from '../hooks/useResponsive';
+import { motion, useReducedMotion } from '../motion';
 import { confirmDestructive } from '../components/dialogService';
 
 const POSITION_CHECK_INTERVAL = 1000; // Check every second
@@ -32,6 +33,7 @@ export default function BedLockScreen() {
   const [positionZ, setPositionZ] = useState(0);
   const [progress, setProgress] = useState(0);
   const [shameCount, setShameCount] = useState(0);
+  const reducedMotion = useReducedMotion();
 
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const shakeAnim = useRef(new Animated.Value(0)).current;
@@ -97,12 +99,7 @@ export default function BedLockScreen() {
     let shameInterval: NodeJS.Timeout | null = null;
 
     if (phase === 'lying') {
-      anim = Animated.loop(
-        Animated.sequence([
-          Animated.timing(pulseAnim, { toValue: 1.2, duration: 1000, useNativeDriver: true }),
-          Animated.timing(pulseAnim, { toValue: 1, duration: 1000, useNativeDriver: true }),
-        ]),
-      );
+      anim = motion.pulseScale(pulseAnim, { to: 1.2, duration: 1000, reducedMotion });
       anim.start();
 
       // Vibration pattern for shame
@@ -116,27 +113,21 @@ export default function BedLockScreen() {
       if (anim) anim.stop();
       if (shameInterval) clearInterval(shameInterval);
     };
-  }, [phase, pulseAnim]);
+  }, [phase, pulseAnim, reducedMotion]);
 
   // Shake animation for encouragement
   useEffect(() => {
     let anim: Animated.CompositeAnimation | null = null;
 
     if (phase === 'situp' || phase === 'stand') {
-      anim = Animated.loop(
-        Animated.sequence([
-          Animated.timing(shakeAnim, { toValue: 5, duration: 100, useNativeDriver: true }),
-          Animated.timing(shakeAnim, { toValue: -5, duration: 100, useNativeDriver: true }),
-          Animated.timing(shakeAnim, { toValue: 0, duration: 100, useNativeDriver: true }),
-        ]),
-      );
+      anim = motion.shake(shakeAnim, { amplitude: 5, reducedMotion });
       anim.start();
     }
 
     return () => {
       if (anim) anim.stop();
     };
-  }, [phase, shakeAnim]);
+  }, [phase, shakeAnim, reducedMotion]);
 
   async function handleForceUnlock() {
     const ok = await confirmDestructive(

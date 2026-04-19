@@ -45,7 +45,7 @@ function AdvancedToolsSection({
           />
           <LinearButton
             label="Import .db"
-            variant="outline"
+            variant="secondary"
             style={styles.button}
             textTone="accent"
             textStyle={styles.buttonText}
@@ -71,7 +71,7 @@ function AdvancedToolsSection({
           />
           <LinearButton
             label="Import JSON"
-            variant="outline"
+            variant="secondary"
             style={styles.button}
             textTone="accent"
             textStyle={styles.buttonText}
@@ -90,7 +90,7 @@ function AdvancedToolsSection({
         <View style={styles.dangerActions}>
           <LinearButton
             label="Clear AI Content Cache"
-            variant="outline"
+            variant="secondary"
             textTone="error"
             style={styles.dangerButton}
             textStyle={styles.dangerButtonText}
@@ -98,7 +98,7 @@ function AdvancedToolsSection({
           />
           <LinearButton
             label="Reset All Study Progress"
-            variant="outline"
+            variant="secondary"
             textTone="error"
             style={styles.dangerButton}
             textStyle={styles.dangerButtonText}

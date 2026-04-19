@@ -64,3 +64,12 @@ export function getLastUserPrompt(messages: ChatMessage[]): string | null {
   }
   return null;
 }
+
+export function formatTime(ts: number): string {
+  const d = new Date(ts);
+  return d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
+}
+
+export function getShortModelLabel(modelName?: string | null): string | null {
+  return modelName?.split('/').pop() ?? null;
+}

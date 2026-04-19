@@ -236,7 +236,7 @@ export default function ReviewScreen() {
           <LinearText variant="body" tone="secondary" centered style={styles.sub}>
             No topics due for review right now.
           </LinearText>
-          <LinearButton label="Back" variant="glassTinted" onPress={() => navigation.goBack()} />
+          <LinearButton label="Back" variant="secondary" onPress={() => navigation.goBack()} />
         </ResponsiveContainer>
       </SafeAreaView>
     );
@@ -440,7 +440,7 @@ export default function ReviewScreen() {
                   accessibilityRole="button"
                   accessibilityLabel={`Rate ${r.label}, next review in ${r.days} days`}
                   label={`${r.label}`}
-                  variant="glass"
+                  variant="secondary"
                   textStyle={[styles.rateLabel, { color: r.color }]}
                   rightIcon={
                     <LinearText variant="caption" tone="muted" style={styles.rateDays}>

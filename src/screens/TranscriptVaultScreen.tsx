@@ -884,14 +884,14 @@ export default function TranscriptVaultScreen() {
 
             <View style={styles.topActions}>
               <LinearButton
-                variant="glass"
+                variant="secondary"
                 style={styles.topActionBtn}
                 onPress={() => navigation.navigate('ManualNoteCreation' as never)}
                 leftIcon={<Ionicons name="clipboard-outline" size={18} color={n.colors.error} />}
                 label="Paste Transcript"
               />
               <LinearButton
-                variant="glass"
+                variant="secondary"
                 style={[styles.topActionBtn, isImportingText && styles.topActionBtnDisabled]}
                 onPress={() => void handleUploadText()}
                 disabled={isImportingText}

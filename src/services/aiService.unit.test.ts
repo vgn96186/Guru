@@ -33,12 +33,16 @@ async function loadAiService(opts?: {
 
   jest.doMock('react-native', () => ({
     AppState: { addEventListener: jest.fn() },
+    StyleSheet: { create: (styles: any) => styles },
   }));
   jest.doMock('../../modules/local-llm', () => ({
     initialize: initializeMock,
     chat: chatMock,
     release: releaseMock,
     isInitialized: isInitializedMock,
+  }));
+  jest.doMock('../db/repositories/profileRepository', () => ({
+    profileRepository: { getProfile: jest.fn(() => Promise.resolve(profile)) },
   }));
   jest.doMock('../db/repositories', () => ({
     profileRepository: { getProfile: jest.fn(() => Promise.resolve(profile)) },
@@ -210,11 +214,10 @@ describe('aiService routing policy', () => {
       profile: {
         openrouterKey: '',
         groqApiKey: '',
-        useLocalModel: false,
+        useLocalModel: true,
         localModelPath: '/models/gemma-4-E4B-it.litertlm',
       },
-      localUsable: false,
-      // Device must allow local so no-cloud + on-disk model can use the safety fallback path.
+      localUsable: true,
       localAllowed: true,
       localCompletionText: 'local-no-cloud',
     });

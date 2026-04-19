@@ -277,7 +277,7 @@ function TestButton({
 }) {
   return (
     <LinearIconButton
-      variant="glass"
+      variant="secondary"
       loading={testing}
       spinnerColor={n.colors.accent}
       style={[s.testBtn, result === 'ok' && s.testBtnOk, result === 'fail' && s.testBtnFail]}

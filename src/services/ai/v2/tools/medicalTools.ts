@@ -294,6 +294,203 @@ export const factCheckTool = tool({
   },
 });
 
+/**
+ * fetch_exam_dates — look up INICET and NEET-PG exam dates via Brave Search
+ * (or fall back to web scraping). Returns ISO dates and sources.
+ */
+export const fetchExamDatesTool = tool({
+  name: 'fetch_exam_dates',
+  description:
+    'Fetch the latest official exam dates for INICET and NEET-PG from the web. Uses Brave Search when available, falls back to scraping educational sites. Returns ISO date strings and source URLs.',
+  inputSchema: z.object({
+    exams: z
+      .array(z.enum(['inicet', 'neetpg']))
+      .optional()
+      .describe('Which exams to look up. Defaults to both.'),
+  }),
+  execute: async ({ exams }) => {
+    const { fetchExamDatesViaBrave } = await import('../../../examDateSyncService');
+    const result = await fetchExamDatesViaBrave();
+    const requested = exams ?? ['inicet', 'neetpg'];
+    return {
+      method: result.method,
+      inicetDate: requested.includes('inicet') ? result.inicetDate : undefined,
+      neetDate: requested.includes('neetpg') ? result.neetDate : undefined,
+      inicetSources: result.inicetSources,
+      neetSources: result.neetSources,
+    };
+  },
+});
+
+/**
+ * generate_mindmap — create a visual mind map for a medical topic.
+ * Organizes concepts hierarchically with center topic and branches.
+ */
+export const generateMindmapTool = tool({
+  name: 'generate_mindmap',
+  description:
+    'Generate a visual mind map for a medical topic. Creates hierarchical structure with center topic and branches covering etiology, pathophysiology, clinical features, investigations, management, etc. Saves to database for later viewing.',
+  inputSchema: z.object({
+    topic: z.string().describe('The medical topic to create a mind map for, e.g. "Diabetes Mellitus"'),
+    subject: z.string().optional().describe('Optional subject context, e.g. "Medicine"'),
+    depth: z
+      .enum(['compact', 'rich'])
+      .optional()
+      .describe('Detail level: compact for quick review, rich for comprehensive study'),
+  }),
+  execute: async ({ topic, subject, depth = 'rich' }) => {
+    const { generateMindMap } = await import('../../../mindMapAI');
+    const { createMindMap, bulkInsertNodesAndEdges } = await import('../../../../db/queries/mindMaps');
+
+    try {
+      // Generate the mind map layout
+      const layout = await generateMindMap(topic, subject, depth);
+
+      // Create the mind map in the database
+      const mapId = await createMindMap(topic);
+
+      // Insert nodes and edges
+      const layoutNodes = layout.nodes.map((ln) => ({
+        label: ln.label,
+        x: ln.x,
+        y: ln.y,
+        isCenter: ln.isCenter,
+      }));
+      await bulkInsertNodesAndEdges(mapId, layoutNodes, layout.edges);
+
+      return {
+        success: true,
+        mapId,
+        topic,
+        nodeCount: layout.nodes.length,
+        edgeCount: layout.edges.length,
+        message: `Mind map created with ${layout.nodes.length} nodes. Open MindMap screen to view.`,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to generate mind map',
+      };
+    }
+  },
+});
+
+/**
+ * generate_flashcards — create spaced repetition flashcards for a topic.
+ * Generates question/answer pairs optimized for medical exam retention.
+ */
+export const generateFlashcardsTool = tool({
+  name: 'generate_flashcards',
+  description:
+    'Generate spaced repetition flashcards for a medical topic. Creates question/answer pairs with high-yield facts, buzzwords, and exam-focused content. Saves to database for review.',
+  inputSchema: z.object({
+    topicName: z.string().describe('The medical topic to generate flashcards for'),
+    cardCount: z
+      .number()
+      .min(3)
+      .max(20)
+      .optional()
+      .describe('Number of flashcards to generate (default: 8)'),
+    focus: z
+      .enum(['high_yield', 'comprehensive', 'clinical_only', 'basic_only'])
+      .optional()
+      .describe('Content focus: high_yield for exam facts, comprehensive for full coverage'),
+  }),
+  execute: async ({ topicName, cardCount = 8, focus = 'high_yield' }) => {
+    const { getDb } = await import('../../../../db/database');
+    const db = await getDb();
+
+    try {
+      // Find the topic
+      const topicRow = await db.getFirstAsync<{
+        id: number;
+        name: string;
+        subject_id: number;
+      }>(
+        `SELECT t.id, t.name, t.subject_id FROM topics t
+         WHERE lower(t.name) LIKE lower(?)
+         ORDER BY LENGTH(t.name) ASC LIMIT 1`,
+        [`%${topicName}%`],
+      );
+
+      if (!topicRow) {
+        return { error: `Topic not found matching "${topicName}"` };
+      }
+
+      // Generate flashcards via content generation
+      const { generateObject } = await import('ai');
+      const { createGuruFallbackModel } = await import('../../providers/guruFallback');
+      const { profileRepository } = await import('../../../../db/repositories/profileRepository');
+      const { AIContentSchema } = await import('../../schemas');
+
+      const profile = await profileRepository.getProfile();
+      const model = createGuruFallbackModel({ profile });
+
+      const focusPrompt =
+        focus === 'high_yield'
+          ? 'Focus on high-yield exam facts, buzzwords, triads, gold-standard tests, and first-line treatments.'
+          : focus === 'clinical_only'
+            ? 'Focus only on clinical presentation, diagnosis, and management.'
+            : focus === 'basic_only'
+              ? 'Focus on basic sciences: anatomy, physiology, pathology mechanisms.'
+              : 'Cover the topic comprehensively across all dimensions.';
+
+      const userPrompt = `Generate ${cardCount} flashcards for "${topicRow.name}".
+${focusPrompt}
+
+Each flashcard should have:
+- Front: A clear question (can include "What is...", "Why does...", "Name the...", "Identify...")
+- Back: A concise answer with the key fact
+- Optional imageSearchQuery: If a visual would help (anatomy, pathology, imaging)
+
+Return valid JSON matching the flashcards schema.`;
+
+      const result = await generateObject({
+        model,
+        messages: [
+          {
+            role: 'system',
+            content:
+              'You are Guru, a NEET-PG/INICET medical tutor. Generate high-quality flashcards optimized for spaced repetition.',
+          },
+          { role: 'user', content: userPrompt },
+        ],
+        schema: AIContentSchema,
+      });
+
+      if (result.object.type !== 'flashcards') {
+        return { error: 'Failed to generate flashcards - wrong content type returned' };
+      }
+
+      // Save flashcards to database
+      const { setCachedContent } = await import('../../../../db/queries/aiCache');
+      await setCachedContent(
+        topicRow.id,
+        'flashcards',
+        result.object,
+        `${model.provider}/${model.modelId}`,
+      );
+
+      return {
+        success: true,
+        topicId: topicRow.id,
+        topicName: topicRow.name,
+        cardCount: result.object.cards.length,
+        cards: result.object.cards.map((c) => ({
+          front: c.front || (c as unknown as { question: string }).question,
+          back: c.back || (c as unknown as { answer: string }).answer,
+        })),
+        message: `Generated ${result.object.cards.length} flashcards for ${topicRow.name}. View in topic details.`,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to generate flashcards',
+      };
+    }
+  },
+});
+
 /** Standard tool set Guru Chat should expose. */
 export const guruMedicalTools = {
   search_medical: searchMedicalTool,
@@ -303,4 +500,7 @@ export const guruMedicalTools = {
   save_to_notes: saveToNotesTool,
   mark_topic_reviewed: markTopicReviewedTool,
   fact_check: factCheckTool,
+  fetch_exam_dates: fetchExamDatesTool,
+  generate_mindmap: generateMindmapTool,
+  generate_flashcards: generateFlashcardsTool,
 };

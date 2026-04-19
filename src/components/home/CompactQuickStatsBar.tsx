@@ -5,7 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import LinearSurface from '../primitives/LinearSurface';
 import LinearText from '../primitives/LinearText';
 import { linearTheme as n } from '../../theme/linearTheme';
-import { useReducedMotion } from '../../motion';
+import { useReducedMotion, motion } from '../../motion';
 import { profileRepository } from '../../db/repositories';
 import { PROFILE_QUERY_KEY } from '../../hooks/queries/useProfile';
 import { queryClient } from '../../services/queryClient';
@@ -82,59 +82,27 @@ export default function CompactQuickStatsBar({
   }, []);
 
   useEffect(() => {
-    if (reducedMotion) {
-      flameScale.setValue(1);
-      flameLift.setValue(0);
-      emberScale.setValue(0.96);
-      emberLift.setValue(1);
-      emberOpacity.setValue(0.38);
-      glowOpacity.setValue(0.78);
-      glowScale.setValue(1);
-      return undefined;
-    }
-
-    const animation = Animated.loop(
-      Animated.sequence([
-        Animated.parallel([
-          Animated.timing(flameScale, { toValue: 1.08, duration: 240, useNativeDriver: true }),
-          Animated.timing(flameLift, { toValue: -1.2, duration: 240, useNativeDriver: true }),
-          Animated.timing(emberScale, { toValue: 1.02, duration: 240, useNativeDriver: true }),
-          Animated.timing(emberLift, { toValue: 0.2, duration: 240, useNativeDriver: true }),
-          Animated.timing(emberOpacity, { toValue: 0.5, duration: 240, useNativeDriver: true }),
-          Animated.timing(glowOpacity, { toValue: 0.94, duration: 240, useNativeDriver: true }),
-          Animated.timing(glowScale, { toValue: 1.08, duration: 240, useNativeDriver: true }),
-        ]),
-        Animated.parallel([
-          Animated.timing(flameScale, { toValue: 0.97, duration: 200, useNativeDriver: true }),
-          Animated.timing(flameLift, { toValue: 0.4, duration: 200, useNativeDriver: true }),
-          Animated.timing(emberScale, { toValue: 0.88, duration: 200, useNativeDriver: true }),
-          Animated.timing(emberLift, { toValue: 1.8, duration: 200, useNativeDriver: true }),
-          Animated.timing(emberOpacity, { toValue: 0.22, duration: 200, useNativeDriver: true }),
-          Animated.timing(glowOpacity, { toValue: 0.62, duration: 200, useNativeDriver: true }),
-          Animated.timing(glowScale, { toValue: 0.94, duration: 200, useNativeDriver: true }),
-        ]),
-        Animated.parallel([
-          Animated.timing(flameScale, { toValue: 1.03, duration: 260, useNativeDriver: true }),
-          Animated.timing(flameLift, { toValue: -0.4, duration: 260, useNativeDriver: true }),
-          Animated.timing(emberScale, { toValue: 0.98, duration: 260, useNativeDriver: true }),
-          Animated.timing(emberLift, { toValue: 0.8, duration: 260, useNativeDriver: true }),
-          Animated.timing(emberOpacity, { toValue: 0.42, duration: 260, useNativeDriver: true }),
-          Animated.timing(glowOpacity, { toValue: 0.8, duration: 260, useNativeDriver: true }),
-          Animated.timing(glowScale, { toValue: 1.02, duration: 260, useNativeDriver: true }),
-        ]),
-        Animated.parallel([
-          Animated.timing(flameScale, { toValue: 1, duration: 820, useNativeDriver: true }),
-          Animated.timing(flameLift, { toValue: 0, duration: 820, useNativeDriver: true }),
-          Animated.timing(emberScale, { toValue: 0.92, duration: 820, useNativeDriver: true }),
-          Animated.timing(emberLift, { toValue: 1.4, duration: 820, useNativeDriver: true }),
-          Animated.timing(emberOpacity, { toValue: 0.34, duration: 820, useNativeDriver: true }),
-          Animated.timing(glowOpacity, { toValue: 0.72, duration: 820, useNativeDriver: true }),
-          Animated.timing(glowScale, { toValue: 1, duration: 820, useNativeDriver: true }),
-        ]),
-      ]),
+    // Four-phase flame breath: IGNITE → DIP → RECOVER → SETTLE.
+    // Tracks sourced from the original choreography 1:1; see git history
+    // before 2025-XX-XX for the inline-timing version this replaced.
+    const anim = motion.keyframes(
+      {
+        flameScale:  { value: flameScale,  rest: 1,    frames: [1.08, 0.97, 1.03, 1]    },
+        flameLift:   { value: flameLift,   rest: 0,    frames: [-1.2, 0.4, -0.4, 0]     },
+        emberScale:  { value: emberScale,  rest: 0.96, frames: [1.02, 0.88, 0.98, 0.92] },
+        emberLift:   { value: emberLift,   rest: 1,    frames: [0.2,  1.8,  0.8,  1.4]  },
+        emberOpacity:{ value: emberOpacity,rest: 0.38, frames: [0.5,  0.22, 0.42, 0.34] },
+        glowOpacity: { value: glowOpacity, rest: 0.78, frames: [0.94, 0.62, 0.80, 0.72] },
+        glowScale:   { value: glowScale,   rest: 1,    frames: [1.08, 0.94, 1.02, 1]    },
+      },
+      {
+        durations: [240, 200, 260, 820],
+        loop: true,
+        reducedMotion,
+      },
     );
-    animation.start();
-    return () => animation.stop();
+    anim.start();
+    return () => anim.stop();
   }, [
     emberLift,
     emberOpacity,

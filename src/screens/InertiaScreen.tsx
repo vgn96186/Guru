@@ -269,7 +269,7 @@ export default function InertiaScreen() {
               </LinearText>
               <LinearButton
                 label="Play from Bed (Lazy Mode)"
-                variant="glass"
+                variant="secondary"
                 style={styles.bedBtn}
                 onPress={() => setPhase('micro_win_bed')}
                 leftIcon={<Ionicons name="bed-outline" size={18} color={n.colors.textSecondary} />}

@@ -115,22 +115,6 @@ async function clearLegacyAsyncStorage(name: string): Promise<void> {
   }
 }
 
-function agentLog(location: string, message: string, data: Record<string, unknown>): void {
-  // #region agent log
-  fetch('http://127.0.0.1:7908/ingest/636b981e-8434-4bc5-8b5f-487a61d99dc1', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': '21c118' },
-    body: JSON.stringify({
-      sessionId: '21c118',
-      location,
-      message,
-      data: { ...data, timestamp: Date.now() },
-      timestamp: Date.now(),
-    }),
-  }).catch(() => {});
-  // #endregion
-}
-
 /**
  * Zustand persist storage: large plain JSON lives in app documentDirectory (atomic file writes).
  * sessionId is stored in SecureStore. Legacy AsyncStorage chunks are migrated on read and cleared on write.
@@ -153,13 +137,6 @@ export const splitSessionStorage = {
         try {
           await writeAtomic(uri, fullValue);
           await clearLegacyAsyncStorage(name);
-          // #region agent log
-          agentLog('splitSessionStorage.ts:getItem', 'migrated legacy AsyncStorage to file', {
-            hypothesisId: 'H3',
-            name,
-            byteLen: fullValue.length,
-          });
-          // #endregion
         } catch (e) {
           if (__DEV__) console.warn('[splitSessionStorage] File migration write failed:', e);
         }
@@ -194,15 +171,6 @@ export const splitSessionStorage = {
 
       const plainValue = JSON.stringify(stateObj);
       const uri = persistFileUri(name);
-
-      // #region agent log
-      agentLog('splitSessionStorage.ts:setItem', 'persist write begin', {
-        hypothesisId: 'H1',
-        plainLen: plainValue.length,
-        storageTarget: uri ? 'file' : 'async_fallback',
-        name,
-      });
-      // #endregion
 
       if (uri) {
         await writeAtomic(uri, plainValue);
@@ -240,21 +208,7 @@ export const splitSessionStorage = {
         await SecureStore.deleteItemAsync(SECURE_SESSION_ID_KEY);
       }
 
-      // #region agent log
-      agentLog('splitSessionStorage.ts:setItem', 'persist write ok', {
-        hypothesisId: 'H3',
-        plainLen: plainValue.length,
-        storageTarget: uri ? 'file' : 'async_fallback',
-      });
-      // #endregion
     } catch (e) {
-      // #region agent log
-      agentLog('splitSessionStorage.ts:setItem', 'persist write error', {
-        hypothesisId: 'H2',
-        err: e instanceof Error ? e.message : String(e),
-        errName: e instanceof Error ? e.name : typeof e,
-      });
-      // #endregion
       console.error('[splitSessionStorage] Failed to set item:', e);
     }
   },

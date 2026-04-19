@@ -1,6 +1,5 @@
-import React, { useEffect, useRef } from 'react';
-import { View, StyleSheet, Animated, Easing } from 'react-native';
-import { decorativeIdleDelayMs, useReducedMotion } from '../../motion';
+import React from 'react';
+import { View, StyleSheet } from 'react-native';
 import { linearTheme as n } from '../../theme/linearTheme';
 import LinearText from '../primitives/LinearText';
 
@@ -13,54 +12,15 @@ interface HeroCardProps {
 export default React.memo(function HeroCard({
   daysToInicet,
   daysToNeetPg,
-  entryComplete = false,
+  entryComplete: _ec = false,
 }: HeroCardProps) {
-  const pulseAnim = useRef(new Animated.Value(0)).current;
-  const reducedMotion = useReducedMotion();
-  const isInicetUrgent = daysToInicet <= 60;
-  const isNeetUrgent = daysToNeetPg <= 60;
-  const isAnyUrgent = isInicetUrgent || isNeetUrgent;
-
-  useEffect(() => {
-    if (!entryComplete || !isAnyUrgent || reducedMotion) {
-      pulseAnim.stopAnimation();
-      pulseAnim.setValue(0);
-      return undefined;
-    }
-
-    const animation = Animated.loop(
-      Animated.sequence([
-        Animated.timing(pulseAnim, {
-          toValue: 1,
-          duration: 2200,
-          easing: Easing.inOut(Easing.ease),
-          useNativeDriver: false,
-        }),
-        Animated.timing(pulseAnim, {
-          toValue: 0,
-          duration: 2200,
-          easing: Easing.inOut(Easing.ease),
-          useNativeDriver: false,
-        }),
-      ]),
-    );
-    const timer = setTimeout(() => animation.start(), decorativeIdleDelayMs);
-    return () => {
-      clearTimeout(timer);
-      animation.stop();
-    };
-  }, [entryComplete, isAnyUrgent, pulseAnim, reducedMotion]);
-
-  const urgentColor = pulseAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [n.colors.textPrimary, n.colors.warning],
-  });
-  const getUrgentDayStyle = (isUrgent: boolean) =>
-    isUrgent
-      ? entryComplete && !reducedMotion
-        ? { color: urgentColor }
-        : { color: n.colors.warning }
-      : undefined;
+  // Pick the nearest exam as the hero number; the other becomes a stat line.
+  const nearestInicet = daysToInicet <= daysToNeetPg;
+  const heroName = nearestInicet ? 'INICET' : 'NEET-PG';
+  const heroDays = nearestInicet ? daysToInicet : daysToNeetPg;
+  const otherName = nearestInicet ? 'NEET-PG' : 'INICET';
+  const otherDays = nearestInicet ? daysToNeetPg : daysToInicet;
+  const isUrgent = heroDays <= 90;
 
   return (
     <View
@@ -68,33 +28,27 @@ export default React.memo(function HeroCard({
       accessibilityRole="summary"
       accessibilityLabel={`Exam countdown: INICET in ${daysToInicet} days, NEET-PG in ${daysToNeetPg} days.`}
     >
-      <LinearText variant="chip" tone="muted" style={styles.label}>
-        EXAM COUNTDOWN
+      <LinearText variant="label" tone="muted" style={styles.kicker}>
+        Next · {heroName}
       </LinearText>
-      <View style={styles.row}>
-        <View style={styles.examBlock}>
-          <LinearText variant="caption" tone="muted" style={styles.examLabel}>
-            INICET
-          </LinearText>
-          <Animated.Text style={[styles.examDays, getUrgentDayStyle(isInicetUrgent)]}>
-            {daysToInicet}
-          </Animated.Text>
-          <LinearText variant="caption" tone="muted" style={styles.examUnit}>
-            days
-          </LinearText>
-        </View>
-        <View style={styles.divider} />
-        <View style={styles.examBlock}>
-          <LinearText variant="caption" tone="muted" style={styles.examLabel}>
-            NEET-PG
-          </LinearText>
-          <Animated.Text style={[styles.examDays, getUrgentDayStyle(isNeetUrgent)]}>
-            {daysToNeetPg}
-          </Animated.Text>
-          <LinearText variant="caption" tone="muted" style={styles.examUnit}>
-            days
-          </LinearText>
-        </View>
+      <View style={styles.heroRow}>
+        <LinearText style={styles.heroNumber}>{heroDays}</LinearText>
+        <LinearText variant="body" tone="secondary" style={styles.heroUnit}>
+          days
+        </LinearText>
+      </View>
+      <View style={styles.footer}>
+        <LinearText variant="bodySmall" tone="muted">
+          {otherName} in {otherDays} days
+        </LinearText>
+        {isUrgent ? (
+          <View style={styles.warnRow}>
+            <View style={styles.warnDot} />
+            <LinearText variant="bodySmall" tone="warning">
+              within 90 days
+            </LinearText>
+          </View>
+        ) : null}
       </View>
     </View>
   );
@@ -102,50 +56,32 @@ export default React.memo(function HeroCard({
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: n.colors.surface,
+    backgroundColor: '#0A0A0B',
     borderRadius: n.radius.lg,
     borderWidth: 1,
-    borderColor: n.colors.border,
+    borderColor: 'rgba(255,255,255,0.06)',
     padding: n.spacing.lg,
     marginBottom: n.spacing.lg,
   },
-  label: {
-    color: n.colors.textMuted,
-    fontSize: 11,
-    fontWeight: '800',
-    letterSpacing: 1.5,
-    marginBottom: n.spacing.md,
-  },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  examBlock: {
-    flex: 1,
-    alignItems: 'center',
-  },
-  examLabel: {
-    color: n.colors.textMuted,
-    fontSize: 10,
-    fontWeight: '700',
-    letterSpacing: 1,
-    marginBottom: 4,
-  },
-  examDays: {
+  kicker: { marginBottom: n.spacing.sm },
+  heroRow: { flexDirection: 'row', alignItems: 'baseline', gap: 10 },
+  heroNumber: {
+    fontFamily: 'Inter_700Bold',
+    fontSize: 72,
+    lineHeight: 72,
+    letterSpacing: -2.8,
     color: n.colors.textPrimary,
-    fontSize: 32,
-    fontWeight: '900',
-    letterSpacing: -1,
   },
-  examUnit: {
-    color: n.colors.textMuted,
-    fontSize: 11,
-    fontWeight: '600',
-    marginTop: 2,
+  heroUnit: { marginLeft: 2 },
+  footer: {
+    marginTop: n.spacing.md,
+    paddingTop: n.spacing.md,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255,255,255,0.06)',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
-  divider: {
-    width: 1,
-    height: 48,
-    backgroundColor: n.colors.border,
-  },
+  warnRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  warnDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: n.colors.warning },
 });

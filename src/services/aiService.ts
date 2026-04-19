@@ -1,5 +1,7 @@
 export * from './ai';
 import { subscribeToAiRuntime } from './ai/runtimeActivity';
+import { profileRepository } from '../db/repositories';
+import { DEFAULT_INICET_DATE, DEFAULT_NEET_DATE } from '../config/appConfig';
 
 export function addLlmStateListener(
   listener: (state: 'idle' | 'initializing') => void,
@@ -16,5 +18,11 @@ export async function fetchExamDates(
   _geminiKey: string,
   _orKey?: string,
 ): Promise<{ inicetDate: string; neetDate: string }> {
-  return { inicetDate: '2026-05-17', neetDate: '2026-08-30' };
+  const { fetchExamDatesViaBrave } = require('./examDateSyncService');
+  const result = await fetchExamDatesViaBrave();
+  const profile = await profileRepository.getProfile().catch(() => null);
+  return {
+    inicetDate: result.inicetDate ?? profile?.inicetDate ?? DEFAULT_INICET_DATE,
+    neetDate: result.neetDate ?? profile?.neetDate ?? DEFAULT_NEET_DATE,
+  };
 }

@@ -177,7 +177,7 @@ export default function ManualNoteCreationScreen(
 
         <View style={styles.footer}>
           <LinearButton
-            variant="glassTinted"
+            variant="secondary"
             style={[styles.saveBtn, isSaving && { opacity: 0.6 }]}
             onPress={handleSave}
             disabled={isSaving || (subjectSelectionRequired && !selectedSubjectName)}
@@ -209,7 +209,7 @@ export default function ManualNoteCreationScreen(
           editable={!isProcessing}
         />
         <LinearButton
-          variant="glassTinted"
+          variant="secondary"
           style={[styles.btn, (!transcript.trim() || isProcessing) && styles.btnDisabled]}
           onPress={handleGenerate}
           disabled={!transcript.trim() || isProcessing}

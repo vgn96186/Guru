@@ -13,6 +13,7 @@ import { showInfo } from '../components/dialogService';
 import ErrorBoundary from '../components/ErrorBoundary';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { fetchExamDatesViaBrave } from '../services/examDateSyncService';
 import { useFocusEffect, useNavigation, type NavigationProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { HomeStackParamList, TabParamList } from '../navigation/types';
@@ -35,7 +36,7 @@ import { getTodaysAgendaWithTimes, type TodayTask } from '../services/studyPlann
 import type { DailyAgenda } from '../services/ai';
 import { ResponsiveContainer } from '../hooks/useResponsive';
 import { useHomeDashboardData } from '../hooks/useHomeDashboardData';
-import { useLevelInfo, useProfileQuery } from '../hooks/queries/useProfile';
+import { useLevelInfo, useProfileQuery, useRefreshProfile } from '../hooks/queries/useProfile';
 import { linearTheme as n } from '../theme/linearTheme';
 import { DEFAULT_INICET_DATE, DEFAULT_NEET_DATE } from '../config/appConfig';
 import type { Mood, UserProfile, TopicWithProgress } from '../types';
@@ -267,6 +268,7 @@ function HomeScreenContent() {
   const navigation = useNavigation<Nav>();
   const tabsNavigation = navigation.getParent<NavigationProp<TabParamList>>();
   const { data: profile, isPending: isProfilePending } = useProfileQuery();
+  const refreshProfile = useRefreshProfile();
   const levelInfo = useLevelInfo();
   const todayPlan = useAppStore((s) => s.todayPlan);
   const setTodayPlan = useAppStore((s) => s.setTodayPlan);
@@ -508,6 +510,21 @@ function HomeScreenContent() {
   const daysToInicet = profileRepository.getDaysToExam(profile.inicetDate || DEFAULT_INICET_DATE);
   const daysToNeetPg = profileRepository.getDaysToExam(profile.neetDate || DEFAULT_NEET_DATE);
 
+  const handleRefreshExamDates = useCallback(async () => {
+    try {
+      const result = await fetchExamDatesViaBrave();
+      const updates: { inicetDate?: string; neetDate?: string } = {};
+      if (result.inicetDate && result.inicetDate !== profile?.inicetDate) updates.inicetDate = result.inicetDate;
+      if (result.neetDate && result.neetDate !== profile?.neetDate) updates.neetDate = result.neetDate;
+      if (Object.keys(updates).length > 0) {
+        await profileRepository.updateProfile(updates);
+        await refreshProfile();
+      }
+    } catch {
+      // silent — user can try again
+    }
+  }, [profile?.inicetDate, profile?.neetDate, refreshProfile]);
+
   return (
     <SafeAreaView style={styles.safe}>
       <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
@@ -528,7 +545,7 @@ function HomeScreenContent() {
                       {firstName}
                     </LinearText>
                   </LinearText>
-                  <ExamCountdownChips daysToInicet={daysToInicet} daysToNeetPg={daysToNeetPg} />
+                  <ExamCountdownChips daysToInicet={daysToInicet} daysToNeetPg={daysToNeetPg} onRefreshExamDates={handleRefreshExamDates} />
                 </View>
                 <View style={styles.headerRight}>
                   <AiStatusIndicator profile={profile} />

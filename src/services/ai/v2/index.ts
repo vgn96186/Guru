@@ -82,6 +82,7 @@ export {
   searchMedicalTool,
   lookupTopicTool,
   getQuizQuestionsTool,
+  fetchExamDatesTool,
   guruMedicalTools,
 } from './tools/medicalTools';
 
@@ -95,6 +96,14 @@ export {
   guruLectureTools,
   guruContentTools,
   guruCoreTools,
+  generateKeypointsTool,
+  generateMustKnowTool,
+  generateStoryTool,
+  generateMnemonicTool,
+  generateTeachBackTool,
+  generateErrorHuntTool,
+  generateDetectiveTool,
+  generateSocraticTool,
 } from './tools';
 
 // React

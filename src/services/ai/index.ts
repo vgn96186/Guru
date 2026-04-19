@@ -1,3 +1,18 @@
+// Re-export Vercel AI SDK core functions
+export {
+  streamText,
+  generateText,
+  generateObject,
+  streamObject,
+  tool,
+} from 'ai';
+
+// Re-export types — use LanguageModelV2 as the canonical LanguageModel for provider code
+export type { LanguageModelV2 as LanguageModel } from '@ai-sdk/provider';
+
+// Legacy type alias for CoreMessage (removed in v6)
+export type { Message as CoreMessage } from './types';
+
 // Config
 export {
   getApiKeys,

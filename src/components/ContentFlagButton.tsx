@@ -94,7 +94,7 @@ export function ContentFlagButton({ topicId, contentType }: ContentFlagButtonPro
             <View style={styles.modalActions}>
               <LinearButton
                 label="Cancel"
-                variant="outline"
+                variant="secondary"
                 textTone="secondary"
                 style={styles.actionButton}
                 textStyle={styles.cancelText}

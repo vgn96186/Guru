@@ -1309,7 +1309,7 @@ async function searchPubMedFallback(
  * DuckDuckGo Instant Answer API — free, no API key.
  * Returns abstract text and related topics for medical terms.
  */
-async function searchDuckDuckGo(query: string, maxResults = 4): Promise<MedicalGroundingSource[]> {
+export async function searchDuckDuckGo(query: string, maxResults = 4): Promise<MedicalGroundingSource[]> {
   const medicalQuery = query.replace(/\(India.*?\)/g, '').trim();
   const url = `https://api.duckduckgo.com/?q=${encodeURIComponent(
     medicalQuery,

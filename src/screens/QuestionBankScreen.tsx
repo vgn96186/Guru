@@ -316,7 +316,7 @@ export default function QuestionBankScreen() {
 
         <View style={styles.actionRow}>
           <LinearButton
-            variant="glass"
+            variant="secondary"
             style={styles.practiceBtn}
             onPress={startPractice}
             leftIcon={

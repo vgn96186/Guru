@@ -244,6 +244,64 @@ HomeTab, SyllabusTab, ChatTab, MenuTab
 
 ---
 
+## Guru Chat System (Refactored April 2026)
+
+The `GuruChatScreen.tsx` was refactored from a 3,194-line "God component" into modular hooks and components using the **Vercel AI SDK** pattern.
+
+### New Hooks (`src/hooks/`)
+
+| Hook | Purpose |
+|------|---------|
+| `useGuruChat.ts` | Vercel AI SDK wrapper with streaming, tools, persistence |
+| `useGuruChatSession.ts` | Thread management (create, open, delete, rename) |
+| `useGuruChatModels.ts` | Model picker state with provider priority |
+| `useGuruChatImageGeneration.ts` | Image generation job state |
+
+### New Components (`src/components/chat/`)
+
+| Component | Purpose |
+|-----------|---------|
+| `GuruChatHistoryDrawer` | Thread list sidebar with CRUD operations |
+| `GuruChatRenameSheet` | Thread title editing modal |
+| `GuruChatModelSelector` | Model picker with provider tabs |
+| `GuruChatStarters` | Empty state with prompt suggestions |
+| `GuruChatMessageList` | Message list with typing indicators |
+| `GuruChatMessageItem` | Individual message rendering |
+| `GuruChatInput` | Composer with send button |
+| `FormattedGuruMessage` | Message content with bold segment parsing |
+
+### Tools (`src/services/ai/chatTools.ts`)
+
+The Vercel AI SDK integration includes 3 medical tools:
+
+```typescript
+search_medical          // Wikipedia, Europe PMC, PubMed search
+search_reference_images // Medical diagrams, charts
+generate_image          // Custom study image generation
+```
+
+### Feature Flag
+
+The new Vercel AI SDK integration is behind a feature flag:
+
+```typescript
+// GuruChatScreen.tsx
+const [enableVercelAI, setEnableVercelAI] = useState(false);
+```
+
+To enable: Change `false` → `true` and implement model provider for `LanguageModelV2` instances.
+
+### Migration Status
+
+- ✅ **Phase 1**: Hooks integrated with sync effects
+- ✅ **Phase 2**: 4 components replacing inline JSX (~186 lines saved)
+- ✅ **Phase 3**: Vercel AI SDK + tools integrated (feature flag)
+- 🔄 **Phase 4**: Tests (pending)
+
+See `GURU_CHAT_REFACTOR_GUIDE.md` for detailed migration steps.
+
+---
+
 ## Zustand Store (`src/store/useAppStore.ts`)
 
 - `profile: UserProfile | null` — full user profile from DB

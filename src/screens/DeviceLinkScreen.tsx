@@ -111,7 +111,7 @@ export default function DeviceLinkScreen() {
           </LinearSurface>
 
           <LinearButton
-            variant="glassTinted"
+            variant="secondary"
             style={styles.saveBtn}
             onPress={handleSave}
             accessibilityRole="button"

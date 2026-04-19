@@ -75,7 +75,7 @@ function NotificationSection({
 
       <LinearButton
         label="Schedule Notifications Now"
-        variant="outline"
+        variant="secondary"
         textTone="accent"
         style={styles.testBtn}
         textStyle={styles.testBtnText}

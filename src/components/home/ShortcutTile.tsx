@@ -3,6 +3,7 @@ import { TouchableOpacity, View, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { linearTheme as n } from '../../theme/linearTheme';
+import { HIT_SIZE } from '../../theme/a11y';
 import AppText from '../AppText';
 
 interface ShortcutTileProps {
@@ -25,6 +26,7 @@ export default React.memo(function ShortcutTile({
   return (
     <TouchableOpacity
       style={styles.tile}
+      hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
       onPress={() => {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         onPress();
@@ -54,16 +56,17 @@ const styles = StyleSheet.create({
   tile: {
     flex: 1,
     minWidth: '45%',
+    minHeight: HIT_SIZE,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
-    paddingVertical: 10,
-    paddingHorizontal: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
     borderRadius: n.radius.sm,
   },
   iconWrap: {
-    width: 34,
-    height: 34,
+    width: 36,
+    height: 36,
     borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',

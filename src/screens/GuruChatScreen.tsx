@@ -45,6 +45,21 @@ import {
 } from '../services/aiService';
 import { showInfo, showError, confirm, confirmDestructive } from '../components/dialogService';
 import { useProfileQuery } from '../hooks/queries/useProfile';
+
+// === REFACTOR: New Hooks (Phase 1 & 3) ===
+import { useGuruChatSession } from '../hooks/useGuruChatSession';
+import { useGuruChatModels } from '../hooks/useGuruChatModels';
+import { useGuruChat } from '../hooks/useGuruChat';
+// =========================================
+
+// === REFACTOR: New Components (Phase 2) ===
+import { GuruChatHistoryDrawer } from '../components/chat/GuruChatHistoryDrawer';
+import { GuruChatRenameSheet } from '../components/chat/GuruChatRenameSheet';
+import { GuruChatModelSelector } from '../components/chat/GuruChatModelSelector';
+import { GuruChatStarters } from '../components/chat/GuruChatStarters';
+import { GuruChatMessageList } from '../components/chat/GuruChatMessageList';
+import { GuruChatInput } from '../components/chat/GuruChatInput';
+// ========================================
 import {
   createGuruChatThread,
   deleteGuruChatThread,
@@ -602,6 +617,17 @@ function GuruChatScreenContent() {
   }, []);
   const flatListRef = useRef<FlashListRef<ChatItem>>(null);
 
+  // === REFACTOR: New Hooks (Phase 1 - incremental adoption) ===
+  // These hooks will gradually replace inline state management
+  const guruSession = useGuruChatSession({
+    topicName,
+    syllabusTopicId,
+    requestedThreadId,
+  });
+
+  const guruModels = useGuruChatModels({ profile });
+  // ==========================================================
+
   const isGeneralChat = !route.params?.topicName || topicName === 'General Medicine';
   const apiTopicName = isGeneralChat ? undefined : topicName;
   const [starters, setStarters] = useState(
@@ -613,6 +639,19 @@ function GuruChatScreenContent() {
       getDynamicStarters().then(setStarters);
     }
   }, [isGeneralChat]);
+
+  // === REFACTOR MAPPING (Phase 1 → Phase 3) ===
+  // Old State                    → New Hook Equivalent
+  // messages, setMessages        → guruSession.messages (via useGuruChat)
+  // loading, setLoading          → chat.status === 'streaming'
+  // chosenModel, setChosenModel  → guruModels.chosenModel, applyChosenModel
+  // threads, setThreads          → guruSession.threads
+  // currentThread, setCurrentThread → guruSession.currentThread
+  // sessionSummary               → guruSession.sessionSummary
+  // isHydratingThread            → guruSession.isHydratingThread
+  // isHydratingHistory           → guruSession.isHydratingHistory
+  // refreshThreads               → guruSession.refreshThreads
+  // =============================================
 
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState(route.params?.initialQuestion ?? '');
@@ -634,12 +673,89 @@ function GuruChatScreenContent() {
   const [entryComplete, setEntryComplete] = useState(false);
   const [isHydratingThread, setIsHydratingThread] = useState(true);
   const [isHydratingHistory, setIsHydratingHistory] = useState(true);
+
+  // === REFACTOR: Phase 3 - Vercel AI SDK Integration ===
+  // Feature flag: Enable new streaming + tool calling
+  // NOTE: This is a parallel implementation for testing. To enable:
+  // setEnableVercelAI(true) in the component state
+  const [enableVercelAI, setEnableVercelAI] = useState(false);
+  // ===================================================
+
+  // === REFACTOR: Sync new hooks with legacy state (Phase 1) ===
+  // These effects keep old and new state in sync during migration
+  useEffect(() => {
+    if (guruSession.currentThread !== undefined) {
+      setCurrentThread(guruSession.currentThread);
+    }
+  }, [guruSession.currentThread]);
+
+  useEffect(() => {
+    if (guruSession.threads) {
+      setThreads(guruSession.threads);
+    }
+  }, [guruSession.threads]);
+
+  useEffect(() => {
+    if (guruSession.sessionSummary !== undefined) {
+      setSessionSummary(guruSession.sessionSummary);
+    }
+  }, [guruSession.sessionSummary]);
+
+  useEffect(() => {
+    if (guruSession.isHydratingThread !== undefined) {
+      setIsHydratingThread(guruSession.isHydratingThread);
+    }
+  }, [guruSession.isHydratingThread]);
+
+  useEffect(() => {
+    if (guruSession.isHydratingHistory !== undefined) {
+      setIsHydratingHistory(guruSession.isHydratingHistory);
+    }
+  }, [guruSession.isHydratingHistory]);
+
+  useEffect(() => {
+    if (guruModels.chosenModel) {
+      setChosenModel(guruModels.chosenModel);
+    }
+  }, [guruModels.chosenModel]);
+  // =========================================================
   const localLlmWarning = getLocalLlmRamWarning();
   /** Tracks Settings `guruChatDefaultModel` so we only reset picker when that changes — not on every live model list refresh. */
   const prevGuruChatDefaultRef = useRef<string | undefined>(undefined);
   const chosenModelRef = useRef<string>('auto');
   const hasPersistedTopicProgressRef = useRef(false);
   const currentThreadId = currentThread?.id ?? null;
+
+  // === REFACTOR: Phase 3 - Vercel AI SDK Hook (moved after currentThreadId) ===
+  // Model for Vercel AI SDK (will be created when enabled)
+  const modelForVercel = useMemo(() => {
+    if (!enableVercelAI) return null;
+    // TODO: Create LanguageModelV2 instance based on chosenModel
+    // For now, return null to use default model routing
+    return null;
+  }, [enableVercelAI]);
+
+  // Vercel AI SDK chat hook (conditionally enabled)
+  const guruChat = useGuruChat({
+    model: null, // Will be set when model instance is available
+    threadId: currentThreadId,
+    topicName,
+    initialMessages: messages,
+    context: {
+      sessionSummary,
+      sessionStateJson,
+      profileNotes: profile?.guruMemoryNotes,
+      studyContext: '',
+      syllabusTopicId,
+      groundingTitle,
+      groundingContext,
+    },
+    onError: (err) => {
+      console.error('GuruChat error:', err);
+      setEnableVercelAI(false);
+    },
+  });
+  // ==========================================================================
 
   const applyChosenModel = useCallback((modelId: string) => {
     chosenModelRef.current = modelId;
@@ -1899,151 +2015,76 @@ function GuruChatScreenContent() {
               />
             </RevealSection>
 
-            {showHistoryDrawer ? (
-              <View style={styles.historyOverlay} pointerEvents="box-none">
-                <Pressable
-                  style={styles.historyBackdrop}
-                  onPress={() => setShowHistoryDrawer(false)}
-                />
-                <LinearSurface padded={false} style={styles.historyDrawer}>
-                  <View style={styles.historyHeader}>
-                    <LinearText style={styles.historyTitle}>Chat History</LinearText>
-                    <Pressable
-                      style={({ pressed }) => [styles.historyCloseBtn, pressed && styles.pressed]}
-                      onPress={() => setShowHistoryDrawer(false)}
-                    >
-                      <Ionicons name="close" size={18} color={n.colors.textMuted} />
-                    </Pressable>
-                  </View>
+            {/* === REFACTOR: Phase 2 - New History Drawer Component === */}
+            <GuruChatHistoryDrawer
+              visible={showHistoryDrawer}
+              threads={threads}
+              currentThreadId={currentThread?.id ?? null}
+              onClose={() => setShowHistoryDrawer(false)}
+              onNewChat={createAndSwitchToNewThread}
+              onOpenThread={(thread: GuruChatThread) => {
+                setShowHistoryDrawer(false);
+                void guruSession.openThread(thread);
+              }}
+              onRenameThread={(thread: GuruChatThread) => {
+                setRenameThreadId(thread.id);
+                setRenameDraft(thread.title);
+              }}
+              onDeleteThread={async (thread: GuruChatThread) => {
+                const ok = await confirmDestructive(
+                  'Delete chat?',
+                  'This will permanently delete the chat history.',
+                );
+                if (ok) {
+                  await guruSession.deleteThread(thread);
+                }
+              }}
+            />
+            {/* ===================================================== */}
 
-                  <Pressable
-                    style={({ pressed }) => [styles.historyNewBtn, pressed && styles.pressed]}
-                    onPress={() => {
-                      void createAndSwitchToNewThread();
-                    }}
-                  >
-                    <Ionicons name="add-outline" size={18} color={n.colors.accent} />
-                    <LinearText style={styles.historyNewBtnText}>New Chat</LinearText>
-                  </Pressable>
+            {/* === REFACTOR: Phase 2 - New Rename Sheet Component === */}
+            <GuruChatRenameSheet
+              visible={renameThreadId !== null}
+              currentTitle={renameDraft}
+              onTitleChange={setRenameDraft}
+              onClose={() => {
+                setRenameThreadId(null);
+                setRenameDraft('');
+              }}
+              onSave={() => {
+                if (renameThreadId) {
+                  void guruSession.renameThread(renameThreadId, renameDraft);
+                }
+                setRenameThreadId(null);
+                setRenameDraft('');
+              }}
+            />
+            {/* ================================================== */}
 
-                  <AppFlashList
-                    data={threads}
-                    keyExtractor={(item) => item.id.toString()}
-                    style={styles.historyList}
-                    contentContainerStyle={styles.historyListContent}
-                    renderItem={renderHistoryItem}
-                    ListEmptyComponent={
-                      <View style={styles.historyEmpty}>
-                        <LinearText style={styles.historyEmptyText}>No chats yet</LinearText>
-                      </View>
-                    }
-                  />
-                </LinearSurface>
-              </View>
-            ) : null}
-
-            {renameThreadId ? (
-              <View style={styles.sheetOverlay} pointerEvents="box-none">
-                <Pressable
-                  style={styles.sheetBackdrop}
-                  onPress={() => {
-                    setRenameThreadId(null);
-                    setRenameDraft('');
-                  }}
-                />
-                <LinearSurface
-                  padded={false}
-                  borderColor={n.colors.borderHighlight}
-                  style={styles.renameSheet}
-                >
-                  <LinearText style={styles.renameTitle}>Rename Chat</LinearText>
-                  <TextInput
-                    style={styles.renameInput}
-                    value={renameDraft}
-                    onChangeText={setRenameDraft}
-                    placeholder="Chat title"
-                    placeholderTextColor={n.colors.textMuted}
-                    autoFocus
-                    maxLength={80}
-                  />
-                  <View style={styles.renameActions}>
-                    <Pressable
-                      style={({ pressed }) => [styles.renameBtn, pressed && styles.pressed]}
-                      onPress={() => {
-                        setRenameThreadId(null);
-                        setRenameDraft('');
-                      }}
-                    >
-                      <LinearText style={styles.renameBtnText}>Cancel</LinearText>
-                    </Pressable>
-                    <Pressable
-                      style={({ pressed }) => [
-                        styles.renameBtn,
-                        styles.renameBtnPrimary,
-                        pressed && styles.pressed,
-                      ]}
-                      onPress={() => {
-                        void handleRenameThread();
-                      }}
-                    >
-                      <LinearText style={styles.renameBtnTextPrimary}>Save</LinearText>
-                    </Pressable>
-                  </View>
-                </LinearSurface>
-              </View>
-            ) : null}
-
-            {showModelPicker ? (
-              <View style={styles.sheetOverlay} pointerEvents="box-none">
-                <Pressable style={styles.sheetBackdrop} onPress={() => setShowModelPicker(false)} />
-                <View style={styles.sheetContent}>
-                  <LinearText style={styles.sheetTitle}>Choose Brain</LinearText>
-                  {localLlmWarning ? (
-                    <LinearText style={styles.warningText}>{localLlmWarning}</LinearText>
-                  ) : null}
-
-                  {/* Provider tabs */}
-                  <ScrollView
-                    horizontal
-                    showsHorizontalScrollIndicator={false}
-                    style={styles.tabStrip}
-                    contentContainerStyle={styles.tabStripContent}
-                  >
-                    {visibleModelGroups.map((group) => (
-                      <Pressable
-                        key={group}
-                        style={[styles.tabChip, pickerTab === group && styles.tabChipActive]}
-                        onPress={() => setPickerTab(group)}
-                      >
-                        <LinearText
-                          style={[
-                            styles.tabChipText,
-                            pickerTab === group && styles.tabChipTextActive,
-                          ]}
-                        >
-                          {group}
-                        </LinearText>
-                      </Pressable>
-                    ))}
-                  </ScrollView>
-
-                  {/* Models for selected tab */}
-                  <AppFlashList
-                    data={availableModels.filter((m) => m.group === pickerTab)}
-                    keyExtractor={(m) => m.id}
-                    style={styles.modelList}
-                    renderItem={renderModelPickerItem}
-                  />
-
-                  <Pressable
-                    style={({ pressed }) => [styles.closeBtn, pressed && styles.pressed]}
-                    onPress={() => setShowModelPicker(false)}
-                  >
-                    <LinearText style={styles.closeBtnText}>Cancel</LinearText>
-                  </Pressable>
-                </View>
-              </View>
-            ) : null}
+            {/* === REFACTOR: Phase 2 - New Model Selector Component === */}
+            <GuruChatModelSelector
+              visible={showModelPicker}
+              availableModels={guruModels.availableModels}
+              visibleModelGroups={guruModels.visibleModelGroups}
+              chosenModel={chosenModel}
+              onSelectModel={async (modelId: string) => {
+                if (messages.length > 0 && modelId !== chosenModel) {
+                  const ok = await confirm(
+                    'Switch model?',
+                    "Switching models mid-conversation may lose context. The new model won't remember earlier messages.",
+                  );
+                  if (!ok) return;
+                }
+                applyChosenModel(modelId);
+                setShowModelPicker(false);
+              }}
+              pickerTab={pickerTab}
+              onSetPickerTab={setPickerTab}
+              onClose={() => setShowModelPicker(false)}
+              localLlmWarning={localLlmWarning}
+              hasMessages={messages.length > 0}
+            />
+            {/* ===================================================== */}
 
             <RevealSection active={entryComplete} delayMs={80} style={styles.flex}>
               <View style={styles.contentWrap}>
@@ -2065,60 +2106,16 @@ function GuruChatScreenContent() {
                 ) : null}
 
                 <View style={styles.chatSurface}>
+                  {/* === REFACTOR: Phase 2 - New Starters Component === */}
                   {messages.length === 0 && !loading ? (
-                    <View style={styles.emptyWrap}>
-                      <View style={styles.emptyPanel}>
-                        <View style={styles.heroRow}>
-                          <View style={styles.guruAvatarLarge}>
-                            <Ionicons name="sparkles" size={20} color={n.colors.accent} />
-                          </View>
-                          <View style={styles.heroCopy}>
-                            <LinearText style={styles.emptyTitle}>
-                              {isGeneralChat
-                                ? 'Ask anything medical'
-                                : `Let's work on ${topicName}`}
-                            </LinearText>
-                            <LinearText style={styles.emptyHint}>
-                              Ask a question or start with one of these prompts.
-                            </LinearText>
-                          </View>
-                        </View>
-
-                        {sessionSummary ? (
-                          <View style={styles.sessionSummaryInline}>
-                            <LinearText style={styles.sessionSummaryInlineText} numberOfLines={3}>
-                              {sessionSummary}
-                            </LinearText>
-                          </View>
-                        ) : null}
-
-                        <View style={styles.starterGrid}>
-                          {starters.map((starter) => (
-                            <Pressable
-                              key={starter.text}
-                              style={({ pressed }) => [
-                                styles.starterChip,
-                                pressed && styles.pressed,
-                              ]}
-                              android_ripple={{ color: `${n.colors.accent}22` }}
-                              onPress={() => handleSend(starter.text)}
-                              disabled={loading}
-                            >
-                              <View style={styles.starterIconWrap}>
-                                <Ionicons
-                                  name={starter.icon as keyof typeof Ionicons.glyphMap}
-                                  size={14}
-                                  color={n.colors.accent}
-                                />
-                              </View>
-                              <LinearText style={styles.starterChipText} numberOfLines={3}>
-                                {starter.text}
-                              </LinearText>
-                            </Pressable>
-                          ))}
-                        </View>
-                      </View>
-                    </View>
+                    <GuruChatStarters
+                      starters={starters}
+                      sessionSummary={sessionSummary}
+                      isGeneralChat={isGeneralChat}
+                      topicName={topicName}
+                      onSelectStarter={(text: string) => handleSend(text)}
+                      isLoading={loading}
+                    />
                   ) : (
                     <AppFlashList
                       key={`chat-list-${viewportWidth}`}

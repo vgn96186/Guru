@@ -578,7 +578,7 @@ export default function RecordingVaultScreen() {
         <LinearSurface compact style={styles.actionPanel}>
           <View style={styles.topActions}>
             <LinearButton
-              variant="glass"
+              variant="secondary"
               style={[styles.topActionBtn, isUploadingAudio && styles.topActionBtnDisabled]}
               onPress={() => void handleUploadAudio()}
               disabled={isUploadingAudio}
@@ -592,7 +592,7 @@ export default function RecordingVaultScreen() {
               label={isUploadingAudio ? 'Uploading…' : 'Upload Audio'}
             />
             <LinearButton
-              variant="glass"
+              variant="secondary"
               style={styles.topActionBtn}
               onPress={handlePickFolder}
               leftIcon={<Ionicons name="folder-open-outline" size={18} color={n.colors.accent} />}

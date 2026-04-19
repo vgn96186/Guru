@@ -1,5 +1,8 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { profileRepository } from '../db/repositories';
+import { getApiKeys } from './ai/config';
+import { DEFAULT_INICET_DATE, DEFAULT_NEET_DATE } from '../config/appConfig';
+import { searchDuckDuckGo } from './ai/medicalSearch';
 
 type ExamCode = 'inicet' | 'neetpg';
 
@@ -324,6 +327,284 @@ export async function getExamDateSyncMeta(): Promise<ExamDateSyncMeta> {
   return readMeta();
 }
 
+// ---------------------------------------------------------------------------
+// Brave Search – fetch exam dates via the Brave Web Search API
+// ---------------------------------------------------------------------------
+
+interface BraveSearchResult {
+  title?: string;
+  url?: string;
+  description?: string;
+  page_age?: string;
+}
+
+interface BraveSearchResponse {
+  web?: { results?: BraveSearchResult[] };
+}
+
+const EXAM_QUERIES: { exam: ExamCode; query: string; keyword: RegExp }[] = [
+  {
+    exam: 'inicet',
+    query: 'INI-CET 2026 exam date official notification',
+    keyword: /ini[\s-]?cet|institute of national importance/i,
+  },
+  {
+    exam: 'neetpg',
+    query: 'NEET-PG 2026 exam date official notification',
+    keyword: /neet[\s-]?pg|national eligibility cum entrance test/i,
+  },
+];
+
+async function braveWebSearch(
+  query: string,
+  count: number,
+  braveKey: string,
+): Promise<BraveSearchResult[]> {
+  const url = `https://api.search.brave.com/res/v1/web/search?q=${encodeURIComponent(query)}&count=${Math.min(count, 10)}&search_lang=en&country=in&freshness=py&spellcheck=1`;
+
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 12000);
+  try {
+    const res = await fetch(url, {
+      method: 'GET',
+      signal: controller.signal,
+      headers: {
+        Accept: 'application/json',
+        'Accept-Encoding': 'gzip',
+        'X-Subscription-Token': braveKey,
+      },
+    });
+    if (!res.ok) throw new Error(`Brave HTTP ${res.status}`);
+    const data = (await res.json()) as BraveSearchResponse;
+    return data?.web?.results ?? [];
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+function extractDateHitsFromBrave(
+  results: BraveSearchResult[],
+  examKeyword: RegExp,
+): DateHit[] {
+  const hits: DateHit[] = [];
+  for (const item of results) {
+    const sourceUrl = item.url || '';
+    const text = `${item.title || ''} ${item.description || ''}`;
+    if (!text) continue;
+
+    const localRegex = new RegExp(DATE_REGEX.source, 'gi');
+    let match: RegExpExecArray | null;
+    while ((match = localRegex.exec(text)) !== null) {
+      const raw = match[0];
+      const iso = parseAnyDate(raw);
+      if (!iso) continue;
+
+      const context = text.toLowerCase();
+      const score = scoreHit(context, examKeyword, sourceUrl);
+      if (score < 2) continue;
+      hits.push({ date: iso, sourceUrl, score });
+    }
+  }
+  return hits;
+}
+
+/**
+ * Extract date hits from DuckDuckGo search results.
+ */
+function extractDateHitsFromDuckDuckGo(
+  results: { title: string; snippet: string; url: string }[],
+  examKeyword: RegExp,
+): DateHit[] {
+  const hits: DateHit[] = [];
+  for (const item of results) {
+    const sourceUrl = item.url || '';
+    const text = `${item.title || ''} ${item.snippet || ''}`;
+    if (!text) continue;
+
+    const localRegex = new RegExp(DATE_REGEX.source, 'gi');
+    let match: RegExpExecArray | null;
+    while ((match = localRegex.exec(text)) !== null) {
+      const raw = match[0];
+      const iso = parseAnyDate(raw);
+      if (!iso) continue;
+
+      const context = text.toLowerCase();
+      const score = scoreHit(context, examKeyword, sourceUrl);
+      if (score < 2) continue;
+      hits.push({ date: iso, sourceUrl, score });
+    }
+  }
+  return hits;
+}
+
+/**
+ * Fetch exam dates via search APIs (Brave preferred, DuckDuckGo fallback).
+ * Falls back to web scraping if no APIs available.
+ */
+export async function fetchExamDatesViaBrave(): Promise<{
+  inicetDate?: string;
+  neetDate?: string;
+  inicetSources?: string[];
+  neetSources?: string[];
+  method: 'brave' | 'ddg' | 'scrape' | 'brave+ddg' | 'brave+scrape' | 'ddg+scrape' | 'none';
+}> {
+  const profile = await profileRepository.getProfile().catch(() => null);
+  const { braveSearchKey } = getApiKeys(profile);
+  const braveKey = braveSearchKey?.trim();
+
+  // Try Brave Search first if key available
+  if (braveKey) {
+    const [inicetHits, neetHits] = await Promise.all(
+      EXAM_QUERIES.map(async (eq) => {
+        try {
+          const results = await braveWebSearch(eq.query, 8, braveKey);
+          return extractDateHitsFromBrave(results, eq.keyword);
+        } catch {
+          return [] as DateHit[];
+        }
+      }),
+    );
+
+    const inicetBest = resolveBestDate(inicetHits);
+    const neetBest = resolveBestDate(neetHits);
+
+    // If Brave verified both dates, return them
+    if (inicetBest && neetBest) {
+      return {
+        inicetDate: inicetBest.date,
+        neetDate: neetBest.date,
+        inicetSources: inicetBest.sources,
+        neetSources: neetBest.sources,
+        method: 'brave',
+      };
+    }
+
+    // Try DuckDuckGo to supplement missing dates
+    const [ddgInicet, ddgNeet] = await Promise.all(
+      EXAM_QUERIES.map(async (eq) => {
+        try {
+          const results = await searchDuckDuckGo(eq.query, 4);
+          return extractDateHitsFromDuckDuckGo(
+            results.map((r) => ({ title: r.title, snippet: r.snippet || '', url: r.url || '' })),
+            eq.keyword,
+          );
+        } catch {
+          return [] as DateHit[];
+        }
+      }),
+    );
+
+    const ddgInicetBest = resolveBestDate(ddgInicet);
+    const ddgNeetBest = resolveBestDate(ddgNeet);
+
+    const finalInicet = inicetBest ?? ddgInicetBest;
+    const finalNeet = neetBest ?? ddgNeetBest;
+
+    // If we got any dates from Brave+DDG combination
+    if (finalInicet || finalNeet) {
+      // Try scraping as final supplement if still missing dates
+      if (!finalInicet || !finalNeet) {
+        try {
+          const scrapeResult = await syncExamDatesFromInternet();
+          return {
+            inicetDate: finalInicet?.date ?? scrapeResult.inicetDate,
+            neetDate: finalNeet?.date ?? scrapeResult.neetDate,
+            inicetSources: finalInicet?.sources ?? ddgInicetBest?.sources,
+            neetSources: finalNeet?.sources ?? ddgNeetBest?.sources,
+            method: (inicetBest || neetBest) && (ddgInicetBest || ddgNeetBest) ? 'brave+ddg' : 'ddg+scrape',
+          };
+        } catch {
+          // Return what we have from Brave+DDG
+        }
+      }
+
+      return {
+        inicetDate: finalInicet?.date,
+        neetDate: finalNeet?.date,
+        inicetSources: finalInicet?.sources,
+        neetSources: finalNeet?.sources,
+        method: (inicetBest || neetBest) && (ddgInicetBest || ddgNeetBest) ? 'brave+ddg' : 'ddg',
+      };
+    }
+
+    // Brave failed completely, try scraping
+    try {
+      const scrapeResult = await syncExamDatesFromInternet();
+      return {
+        inicetDate: scrapeResult.inicetDate,
+        neetDate: scrapeResult.neetDate,
+        method: 'brave+scrape',
+      };
+    } catch {
+      return { method: 'none' };
+    }
+  }
+
+  // No Brave key → try DuckDuckGo (free, no API key needed)
+  const [ddgInicet, ddgNeet] = await Promise.all(
+    EXAM_QUERIES.map(async (eq) => {
+      try {
+        const results = await searchDuckDuckGo(eq.query, 4);
+        return extractDateHitsFromDuckDuckGo(
+          results.map((r) => ({ title: r.title, snippet: r.snippet || '', url: r.url || '' })),
+          eq.keyword,
+        );
+      } catch {
+        return [] as DateHit[];
+      }
+    }),
+  );
+
+  const ddgInicetBest = resolveBestDate(ddgInicet);
+  const ddgNeetBest = resolveBestDate(ddgNeet);
+
+  // If DuckDuckGo verified both dates, return them
+  if (ddgInicetBest && ddgNeetBest) {
+    return {
+      inicetDate: ddgInicetBest.date,
+      neetDate: ddgNeetBest.date,
+      inicetSources: ddgInicetBest.sources,
+      neetSources: ddgNeetBest.sources,
+      method: 'ddg',
+    };
+  }
+
+  // If DDG got some dates, try scraping for the rest
+  if (ddgInicetBest || ddgNeetBest) {
+    try {
+      const scrapeResult = await syncExamDatesFromInternet();
+      return {
+        inicetDate: ddgInicetBest?.date ?? scrapeResult.inicetDate,
+        neetDate: ddgNeetBest?.date ?? scrapeResult.neetDate,
+        inicetSources: ddgInicetBest?.sources,
+        neetSources: ddgNeetBest?.sources,
+        method: 'ddg+scrape',
+      };
+    } catch {
+      // Return what we have from DDG
+      return {
+        inicetDate: ddgInicetBest?.date,
+        neetDate: ddgNeetBest?.date,
+        inicetSources: ddgInicetBest?.sources,
+        neetSources: ddgNeetBest?.sources,
+        method: 'ddg',
+      };
+    }
+  }
+
+  // DDG failed completely → fall back to scraping
+  try {
+    const result = await syncExamDatesFromInternet();
+    return {
+      inicetDate: result.inicetDate,
+      neetDate: result.neetDate,
+      method: 'scrape',
+    };
+  } catch {
+    return { method: 'none' };
+  }
+}
+
 export async function syncExamDatesIfStale(maxAgeHours = 24): Promise<ExamDateSyncResult | null> {
   const meta = await readMeta();
   const lastChecked = meta.lastCheckedAt ? Date.parse(meta.lastCheckedAt) : NaN;
@@ -350,8 +631,8 @@ export async function syncExamDatesFromInternet(): Promise<ExamDateSyncResult> {
   // Only auto-sync dates that are still at their hardcoded defaults.
   // If the user (or a previous sync) has set a custom date, don't overwrite it —
   // the user can always update manually in Settings.
-  const HARDCODED_INICET_DEFAULTS = ['2026-05-01', '2026-05-17'];
-  const HARDCODED_NEET_DEFAULTS = ['2026-08-01', '2026-08-30'];
+  const HARDCODED_INICET_DEFAULTS = [DEFAULT_INICET_DATE];
+  const HARDCODED_NEET_DEFAULTS = [DEFAULT_NEET_DATE];
 
   if (
     inicetSync.date &&

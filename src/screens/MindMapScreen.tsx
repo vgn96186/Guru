@@ -965,7 +965,7 @@ function CanvasView({
             emptyActions.push({
               label: 'Delete Map',
               onPress: onDelete,
-              buttonVariant: 'outline',
+              buttonVariant: 'secondary',
               icon: 'trash-outline',
               destructive: true,
             });

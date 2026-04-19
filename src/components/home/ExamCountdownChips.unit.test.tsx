@@ -42,4 +42,21 @@ describe('ExamCountdownChips', () => {
     expect(daysStyle.color).toBe(n.colors.warning);
     expect(labelStyle.color).toBe(n.colors.textMuted);
   });
+
+  it('shows refresh button when onRefreshExamDates is provided', () => {
+    const onRefresh = jest.fn().mockResolvedValue(undefined);
+    const { getByLabelText, queryByLabelText } = render(
+      <ExamCountdownChips daysToInicet={25} daysToNeetPg={140} onRefreshExamDates={onRefresh} />,
+    );
+
+    expect(getByLabelText('Refresh exam dates from web')).toBeTruthy();
+  });
+
+  it('hides refresh button when onRefreshExamDates is not provided', () => {
+    const { queryByLabelText } = render(
+      <ExamCountdownChips daysToInicet={25} daysToNeetPg={140} />,
+    );
+
+    expect(queryByLabelText('Refresh exam dates from web')).toBeNull();
+  });
 });

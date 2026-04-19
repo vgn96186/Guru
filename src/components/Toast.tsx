@@ -15,7 +15,8 @@ import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { Animated, TouchableOpacity, StyleSheet, View } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { theme } from '../constants/theme';
+import { linearTheme as n } from '../theme/linearTheme';
+import { accentAlpha, successAlpha, errorAlpha, warningAlpha } from '../theme/colorUtils';
 import LinearText from './primitives/LinearText';
 
 export type ToastType = 'info' | 'success' | 'error' | 'warning' | 'focus';
@@ -98,44 +99,44 @@ const TOAST_STYLES: Record<
   }
 > = {
   info: {
-    borderColor: theme.colors.info,
-    backgroundColor: theme.colors.panel,
-    textColor: theme.colors.textPrimary,
-    hintColor: theme.colors.textSecondary,
-    pillColor: theme.colors.primaryTintSoft,
-    pillTextColor: theme.colors.info,
+    borderColor: n.colors.accent,
+    backgroundColor: n.colors.surface,
+    textColor: n.colors.textPrimary,
+    hintColor: n.colors.textSecondary,
+    pillColor: accentAlpha['8'],
+    pillTextColor: n.colors.accent,
   },
   success: {
-    borderColor: theme.colors.success,
-    backgroundColor: theme.colors.panel,
-    textColor: theme.colors.textPrimary,
-    hintColor: theme.colors.textSecondary,
-    pillColor: theme.colors.successTintSoft,
-    pillTextColor: theme.colors.success,
+    borderColor: n.colors.success,
+    backgroundColor: n.colors.surface,
+    textColor: n.colors.textPrimary,
+    hintColor: n.colors.textSecondary,
+    pillColor: successAlpha['10'],
+    pillTextColor: n.colors.success,
   },
   error: {
-    borderColor: theme.colors.error,
-    backgroundColor: theme.colors.panel,
-    textColor: theme.colors.textPrimary,
-    hintColor: theme.colors.textSecondary,
-    pillColor: theme.colors.errorTintSoft,
-    pillTextColor: theme.colors.error,
+    borderColor: n.colors.error,
+    backgroundColor: n.colors.surface,
+    textColor: n.colors.textPrimary,
+    hintColor: n.colors.textSecondary,
+    pillColor: errorAlpha['10'],
+    pillTextColor: n.colors.error,
   },
   warning: {
-    borderColor: theme.colors.warning,
-    backgroundColor: theme.colors.panel,
-    textColor: theme.colors.textPrimary,
-    hintColor: theme.colors.textSecondary,
-    pillColor: theme.colors.warningTintSoft,
-    pillTextColor: theme.colors.warning,
+    borderColor: n.colors.warning,
+    backgroundColor: n.colors.surface,
+    textColor: n.colors.textPrimary,
+    hintColor: n.colors.textSecondary,
+    pillColor: warningAlpha['10'],
+    pillTextColor: n.colors.warning,
   },
   focus: {
-    borderColor: theme.colors.primary,
-    backgroundColor: theme.colors.panel,
-    textColor: theme.colors.textPrimary,
-    hintColor: theme.colors.textSecondary,
-    pillColor: theme.colors.primaryTintSoft,
-    pillTextColor: theme.colors.primaryLight,
+    borderColor: n.colors.accent,
+    backgroundColor: n.colors.surface,
+    textColor: n.colors.textPrimary,
+    hintColor: n.colors.textSecondary,
+    pillColor: accentAlpha['8'],
+    pillTextColor: n.colors.accent,
   },
 };
 
@@ -276,42 +277,42 @@ const styles = StyleSheet.create({
   toast: {
     width: '100%',
     alignSelf: 'stretch',
-    borderRadius: theme.borderRadius.lg,
+    borderRadius: n.radius.lg,
     marginTop: 8,
     borderWidth: 1,
     overflow: 'hidden',
-    shadowColor: theme.colors.backdropStrong,
+    shadowColor: 'rgba(0, 0, 0, 0.82)',
     shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 0.22,
     shadowRadius: 18,
     elevation: 8,
   },
   inner: {
-    padding: theme.spacing.lg,
+    padding: n.spacing.lg,
   },
   content: {
-    gap: theme.spacing.sm,
+    gap: n.spacing.sm,
   },
   badge: {
     alignSelf: 'flex-start',
-    paddingHorizontal: theme.spacing.sm,
+    paddingHorizontal: n.spacing.sm,
     paddingVertical: 4,
-    borderRadius: theme.borderRadius.full,
+    borderRadius: n.radius.full,
     marginBottom: 2,
   },
   badgeText: {
-    ...theme.typography.captionSmall,
+    ...n.typography.caption,
     letterSpacing: 0.6,
   },
   title: {
-    ...theme.typography.h4,
+    ...n.typography.title,
   },
   text: {
-    ...theme.typography.bodySmall,
+    ...n.typography.bodySmall,
     lineHeight: 20,
   },
   tapHint: {
-    ...theme.typography.caption,
-    marginTop: theme.spacing.sm,
+    ...n.typography.caption,
+    marginTop: n.spacing.sm,
   },
 });

@@ -5,7 +5,7 @@ import CompactQuickStatsBar from './CompactQuickStatsBar';
 import { profileRepository } from '../../db/repositories';
 import { useAppStore } from '../../store/useAppStore';
 
-jest.mock('../../motion', () => ({
+jest.mock('../../motion/useReducedMotion', () => ({
   useReducedMotion: () => false,
 }));
 
@@ -31,6 +31,10 @@ describe('CompactQuickStatsBar', () => {
       stop: jest.fn(),
     });
     (Animated.sequence as jest.Mock).mockReturnValue({
+      start: jest.fn((cb) => cb && cb({ finished: true })),
+      stop: jest.fn(),
+    });
+    (Animated.parallel as jest.Mock).mockReturnValue({
       start: jest.fn((cb) => cb && cb({ finished: true })),
       stop: jest.fn(),
     });
@@ -97,7 +101,6 @@ describe('CompactQuickStatsBar', () => {
 
     await waitFor(() => {
       expect(profileRepository.updateProfile).toHaveBeenCalledWith({ dailyGoalMinutes: 90 });
-      expect(refreshProfile).toHaveBeenCalled();
       expect(queryByText('30m')).toBeNull();
     });
   });

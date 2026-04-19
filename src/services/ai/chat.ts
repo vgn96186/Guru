@@ -8,7 +8,6 @@ import { generateText } from './v2/generateText';
 import { streamText } from './v2/streamText';
 import type { ModelMessage } from './v2/spec';
 import {
-  searchLatestMedicalSources,
   searchMedicalImages,
   generateImageSearchQuery,
   generateVisualSearchQueries,
@@ -20,6 +19,7 @@ import {
 import { logGroundingEvent, previewText } from './runtimeDebug';
 import { parseGuruTutorState, type GuruTutorIntent } from '../guruChatSessionSummary';
 import { clampMessagesToCharBudget } from './providers/utils';
+import { prepareGroundedTurn, streamGroundedTurn } from './grounding';
 
 const MAX_CONTINUATION_ATTEMPTS = 4;
 
@@ -807,77 +807,26 @@ export async function chatWithGuruGrounded(
 ): Promise<import('./types').GroundedGuruResponse> {
   const trimmedQuestion = question.replace(/\s+/g, ' ').trim();
   const searchQuery = buildMedicalSearchQuery(trimmedQuestion, topicName);
-  const sources = await searchLatestMedicalSources(searchQuery, 6);
   const recentGuruQuestions = extractRecentGuruQuestions(history);
 
-  const sourcesBlock =
-    sources.length > 0
-      ? renderSourcesForPrompt(sources)
-      : 'No live web sources were retrieved for this query.';
+  // Use the modular grounding system with tools
+  // The LLM decides when to search via the search_medical tool
+  const result = await streamGroundedTurn({
+    caller: 'chatWithGuruGrounded',
+    question: trimmedQuestion,
+    topicName,
+    history,
+    chosenModel,
+    allowImages: false, // Non-streaming version doesn't support images
+    finalizeReply: (text) => finalizeGuruReply(text, recentGuruQuestions),
+  });
 
-  const systemPrompt = buildGuruSystemPrompt({ grounded: true });
-
-  const topicContextLine = buildTopicContextLine(topicName);
-  const userPrompt = `${
-    topicContextLine ? `${topicContextLine}\n` : ''
-  }Student question: ${trimmedQuestion}
-${
-  recentGuruQuestions.length > 0
-    ? `\nRecent Guru questions already asked - do not repeat or paraphrase them:\n${recentGuruQuestions
-        .map((q, i) => `${i + 1}. ${q}`)
-        .join('\n')}\n`
-    : ''
-}
-${sources.length > 0 ? `\nSUPPLEMENTARY REFERENCES (use only if relevant):\n${sourcesBlock}` : ''}
-Respond using your medical knowledge. Reference the sources only if they are directly relevant.
-If the student may not know prerequisites, explain prerequisite basics first and define jargon briefly.`;
-
-  const msgs: Message[] = [
-    { role: 'system', content: systemPrompt },
-    ...buildHistoryMessages(history, 6),
-    { role: 'user', content: userPrompt },
-  ];
-
-  try {
-    let modelUsed: string | undefined;
-    const profile = await profileRepository.getProfile();
-    const model = createGuruFallbackModel({
-      profile,
-      textMode: true,
-      onProviderSuccess: (provider, modelId) => {
-        modelUsed = `${provider}/${modelId}`;
-      },
-    });
-    const response = await generateText({ model, messages: toModelMessages(msgs) });
-    let finalReply = finalizeGuruReply(response.text, recentGuruQuestions);
-    for (let attempt = 1; attempt <= MAX_CONTINUATION_ATTEMPTS; attempt += 1) {
-      if (!looksTruncatedReply(finalReply)) break;
-      if (__DEV__) {
-        console.warn('[GuruGrounded] Reply appears truncated, requesting continuation.', {
-          attempt,
-          maxAttempts: MAX_CONTINUATION_ATTEMPTS,
-          chars: finalReply.length,
-        });
-      }
-      const continuation = await generateText({
-        model,
-        messages: toModelMessages(buildContinuationMessages(msgs, finalReply)),
-      });
-      const continuationText = finalizeGuruReply(continuation.text, recentGuruQuestions);
-      if (!hasUsefulContinuation(finalReply, continuationText)) break;
-      const appended = appendContinuation(finalReply, continuationText);
-      if (appended.length <= finalReply.length) break;
-      finalReply = appended;
-    }
-    return {
-      reply: finalReply,
-      sources,
-      modelUsed: modelUsed ?? '',
-      searchQuery,
-    };
-  } catch (error: unknown) {
-    throw mapGroundedChatError(error);
-  }
+  return {
+    reply: result.text,
+    sources: result.sources,
+    modelUsed: result.modelUsed,
+    searchQuery,
+  };
 }
 
 export type GuruChatMemoryContext = {
@@ -896,7 +845,9 @@ export type GuruChatMemoryContext = {
   groundingTitle?: string;
 };
 
-/** Grounded Guru chat with SSE-style token deltas for cloud routes (local emits once at end). */
+/** Grounded Guru chat with SSE-style token deltas for cloud routes (local emits once at end).
+ * Uses modular grounding system with tools - LLM decides when to search.
+ */
 export async function chatWithGuruGroundedStreaming(
   question: string,
   topicName: string | undefined,
@@ -910,272 +861,67 @@ export async function chatWithGuruGroundedStreaming(
   const imageSeed = buildImageSearchSeed(trimmedQuestion, topicName, history);
   const recentGuruQuestions = extractRecentGuruQuestions(history);
   const studentIntent = detectStudentIntent(trimmedQuestion);
-  const { stateBlock, blockedConcepts } = renderTutorStateForPrompt(
-    memoryContext?.stateJson,
-    topicName,
-  );
-  const recentConcepts = recentGuruQuestions
-    .map((questionText) => buildConceptKey(questionText))
-    .filter(Boolean);
-  const allBlockedConcepts = dedupeConcepts([...blockedConcepts, ...recentConcepts]);
 
-  // Parallel text + image search (fault-tolerant).
-  // Image search helps future visual features, but should not pollute the citation/source panel.
-  const [textResult, imageQueryResult] = await Promise.allSettled([
-    searchLatestMedicalSources(searchQuery, 5),
-    imageSeed
-      ? generateImageSearchQuery(imageSeed.topic, imageSeed.context)
-      : Promise.resolve(null),
-  ]);
-  const imageQuery =
-    imageQueryResult.status === 'fulfilled' ? imageQueryResult.value?.trim() || null : null;
-  const imageResult = imageQuery
-    ? await Promise.allSettled([searchMedicalImages(imageQuery, 3)]).then(([result]) => result)
-    : ({ status: 'fulfilled', value: [] } as PromiseFulfilledResult<MedicalGroundingSource[]>);
-
-  // If single query returned no results, try smart visual queries
-  const initialImages = imageResult.status === 'fulfilled' ? imageResult.value : [];
-  let finalImageResult = imageResult;
-  if (initialImages.length === 0 && imageSeed) {
-    const visualQueries = await generateVisualSearchQueries(imageSeed.topic);
-    const smartResults = await Promise.allSettled(
-      visualQueries.map((vq) => searchMedicalImages(vq, 2)),
-    );
-    const smartImages = dedupeGroundingSources(
-      smartResults
-        .filter(
-          (r): r is PromiseFulfilledResult<MedicalGroundingSource[]> => r.status === 'fulfilled',
-        )
-        .flatMap((r) => r.value),
-    );
-    if (smartImages.length > 0) {
-      finalImageResult = { status: 'fulfilled', value: smartImages };
+  // Image search for reference images (kept outside tool system for now)
+  let referenceImages: MedicalGroundingSource[] = [];
+  if (imageSeed) {
+    const imageQuery = await generateImageSearchQuery(imageSeed.topic, imageSeed.context);
+    if (imageQuery) {
+      const imageResult = await Promise.allSettled([searchMedicalImages(imageQuery, 3)]);
+      const initialImages =
+        imageResult[0]?.status === 'fulfilled' ? imageResult[0].value : [];
+      if (initialImages.length === 0) {
+        const visualQueries = await generateVisualSearchQueries(imageSeed.topic);
+        const smartResults = await Promise.allSettled(
+          visualQueries.map((vq) => searchMedicalImages(vq, 2)),
+        );
+        const smartImages = dedupeGroundingSources(
+          smartResults
+            .filter((r): r is PromiseFulfilledResult<MedicalGroundingSource[]> =>
+              r.status === 'fulfilled',
+            )
+            .flatMap((r) => r.value),
+        );
+        referenceImages = smartImages
+          .filter((image) => isRenderableReferenceImageUrl(image.imageUrl))
+          .slice(0, 3);
+      } else {
+        referenceImages = initialImages
+          .filter((image) => isRenderableReferenceImageUrl(image.imageUrl))
+          .slice(0, 3);
+      }
     }
   }
 
-  const sources =
-    textResult.status === 'fulfilled' ? dedupeGroundingSources(textResult.value).slice(0, 8) : [];
-  const referenceImages =
-    finalImageResult.status === 'fulfilled'
-      ? dedupeGroundingSources(finalImageResult.value)
-          .filter((image) => isRenderableReferenceImageUrl(image.imageUrl))
-          .slice(0, 3)
-      : [];
+  // Use modular grounding system - LLM decides when to search via tools
+  const finalizeOpts = {
+    recentQuestions: recentGuruQuestions,
+    studentIntent,
+    blockedConcepts: [] as string[],
+    studentQuestion: trimmedQuestion,
+  };
 
-  logGroundingEvent('chat_reference_images', {
-    question: previewText(trimmedQuestion, 120),
-    topicName: topicName ?? '',
-    imageQuery: imageQuery ? previewText(imageQuery, 140) : '',
-    imageSearchStatus: imageResult.status,
-    imageSearchSkipped: !imageSeed,
-    imageSeedTopic: imageSeed?.topic ?? '',
-    imageSeedContext: imageSeed?.context ? previewText(imageSeed.context, 180) : '',
-    imageQueryGenerationStatus: imageQueryResult.status,
-    imageCandidates: imageResult.status === 'fulfilled' ? imageResult.value.length : 0,
-    usableReferenceImages: referenceImages.length,
-    sampleReferenceTitles: referenceImages.slice(0, 3).map((image) => previewText(image.title, 80)),
-    sampleReferenceUrls: referenceImages
-      .slice(0, 3)
-      .map((image) => previewText(image.imageUrl ?? image.url, 120)),
-    imageSearchError:
-      imageResult.status === 'rejected'
-        ? imageResult.reason instanceof Error
-          ? imageResult.reason.message
-          : String(imageResult.reason)
-        : undefined,
+  const result = await streamGroundedTurn({
+    caller: 'chatWithGuruGroundedStreaming',
+    question: trimmedQuestion,
+    topicName,
+    subjectName: memoryContext?.groundingTitle,
+    syllabusTopicId: memoryContext?.syllabusTopicId,
+    history,
+    chosenModel,
+    allowImages: true,
+    memoryContext,
+    onReplyDelta,
+    finalizeReply: (text) => finalizeGuruReply(text, finalizeOpts),
   });
 
-  // Image search status is already logged via logGroundingEvent above.
-
-  const sourcesBlock =
-    sources.length > 0
-      ? renderSourcesForPrompt(sources)
-      : 'No live web sources were retrieved for this query.';
-
-  // Add reference images to the LLM prompt so it knows images are available
-  const imagesBlock =
-    referenceImages.length > 0
-      ? `Reference images found (these are available to the student):\n${referenceImages
-          .slice(0, 3)
-          .map(
-            (img, i) =>
-              `[Image ${i + 1}] ${img.title}\nURL: ${img.imageUrl}\nSource: ${img.source}${
-                img.snippet ? `\nContext: ${img.snippet}` : ''
-              }`,
-          )
-          .join(
-            '\n\n',
-          )}\nYou can reference these images in your reply (e.g., "see image 1 above"). Do NOT say you cannot show images — the system displays them inline below your reply.`
-      : '';
-
-  const profileBlock =
-    memoryContext?.profileNotes?.trim() &&
-    `What you already know about this student (they saved this in Settings):\n${memoryContext.profileNotes.trim()}\n`;
-
-  const sessionBlock =
-    memoryContext?.sessionSummary?.trim() &&
-    `Earlier thread summary (compressed — may omit details):\n${memoryContext.sessionSummary.trim()}\n`;
-
-  const tutorStateBlock = stateBlock;
-
-  const studyBlock =
-    memoryContext?.studyContext?.trim() &&
-    `Study snapshot from their progress DB (samples only):\n${memoryContext.studyContext.trim()}\n`;
-
-  const localGroundingBlock =
-    memoryContext?.groundingContext?.trim() &&
-    `Student's saved notes context${
-      memoryContext.groundingTitle ? ` (${memoryContext.groundingTitle})` : ''
-    }:\n${clipText(memoryContext.groundingContext.trim(), 5000)}\n`;
-
-  const systemPrompt = buildGuruSystemPrompt({ grounded: true });
-
-  const topicContextLine = buildTopicContextLine(topicName, memoryContext?.syllabusTopicId);
-  const userPrompt = `${topicContextLine ? `${topicContextLine}\n` : ''}${profileBlock ?? ''}${
-    sessionBlock ?? ''
-  }${tutorStateBlock ?? ''}${studyBlock ?? ''}${localGroundingBlock ?? ''}
-${buildIntentInstruction(studentIntent)}
-Student question: ${trimmedQuestion}
-${
-  recentGuruQuestions.length > 0
-    ? `\nRecent Guru questions already asked - do not repeat or paraphrase them:\n${recentGuruQuestions
-        .map((q, i) => `${i + 1}. ${q}`)
-        .join('\n')}\n`
-    : ''
-}
-${
-  allBlockedConcepts.length > 0
-    ? `\nConcepts blocked from immediate re-questioning:\n${allBlockedConcepts
-        .map((concept, i) => `${i + 1}. ${concept}`)
-        .join('\n')}\n`
-    : ''
-}
-${sources.length > 0 ? `\nSUPPLEMENTARY REFERENCES (use only if relevant):\n${sourcesBlock}` : ''}
-${imagesBlock ? `\n${imagesBlock}` : ''}
-Respond using your medical knowledge. Reference the sources only if they are directly relevant.
-If the student may not know prerequisites, explain prerequisite basics first and define jargon briefly.`;
-
-  // Local models have a much smaller context window (~2048-4096 tokens for Gemma 4 E4B).
-  // If local model is the primary, aggressively clamp the prompt to avoid exhausting
-  // the context and leaving no room for generation.
-  const profile = await profileRepository.getProfile();
-  const isLocalPrimary = !!(profile.useLocalModel && profile.localModelPath?.trim());
-  const charBudget = isLocalPrimary ? 3000 : 24000;
-
-  // For local models, use a simpler system prompt + stripped user prompt
-  const finalSystemPrompt = isLocalPrimary
-    ? 'You are Guru, a medical tutor for NEET-PG/INICET. Be concise, warm, and Socratic. Ask one question per turn. Keep replies short.'
-    : systemPrompt;
-
-  const finalUserPrompt = isLocalPrimary
-    ? `${topicContextLine ? `${topicContextLine}\n` : ''}${trimmedQuestion}`
-    : userPrompt;
-
-  const msgs: Message[] = clampMessagesToCharBudget(
-    [
-      { role: 'system', content: finalSystemPrompt },
-      ...buildHistoryMessages(history, isLocalPrimary ? 2 : 6),
-      { role: 'user', content: finalUserPrompt },
-    ],
-    charBudget,
-    'chatWithGuruGroundedStreaming',
-  );
-
-  try {
-    let emittedReply = '';
-    const safeEmitDelta = (delta: string) => {
-      if (!delta) return;
-      const nextSanitized = sanitizeSingleGuruTurn(`${emittedReply}${delta}`);
-      if (nextSanitized.length <= emittedReply.length) return;
-      const cleanDelta = nextSanitized.slice(emittedReply.length);
-      emittedReply = nextSanitized;
-      if (cleanDelta) onReplyDelta(cleanDelta);
-    };
-
-    let modelUsed: string | undefined;
-    const model = createGuruFallbackModel({
-      profile,
-      textMode: true,
-      onProviderSuccess: (provider, modelId) => {
-        modelUsed = `${provider}/${modelId}`;
-      },
-    });
-    const finalizeOpts = {
-      recentQuestions: recentGuruQuestions,
-      studentIntent,
-      blockedConcepts: allBlockedConcepts,
-      studentQuestion: trimmedQuestion,
-    };
-    const streamResult = streamText({ model, messages: toModelMessages(msgs) });
-    for await (const delta of streamResult.textStream) {
-      safeEmitDelta(delta);
-    }
-    const rawText = await streamResult.text;
-    let finalReply = finalizeGuruReply(rawText, finalizeOpts);
-    if (finalReply.length > emittedReply.length) {
-      const remaining = finalReply.slice(emittedReply.length);
-      if (remaining) {
-        onReplyDelta(remaining);
-        emittedReply = finalReply;
-      }
-    }
-
-    if (!finalReply.trim()) {
-      // If the model produced absolutely nothing on first attempt, continuation is futile.
-      if (__DEV__) {
-        console.warn('[GuruGrounded] Model produced empty response.', {
-          modelUsed: modelUsed ?? 'unknown',
-          msgCount: msgs.length,
-          totalChars: msgs.reduce((s, m) => s + m.content.length, 0),
-        });
-      }
-      return {
-        reply: finalReply,
-        sources,
-        referenceImages,
-        modelUsed: modelUsed ?? '',
-        searchQuery,
-      };
-    }
-    for (let attempt = 1; attempt <= MAX_CONTINUATION_ATTEMPTS; attempt += 1) {
-      if (!looksTruncatedReply(finalReply)) break;
-      if (__DEV__) {
-        console.warn('[GuruGrounded] Stream reply appears truncated, requesting continuation.', {
-          attempt,
-          maxAttempts: MAX_CONTINUATION_ATTEMPTS,
-          chars: finalReply.length,
-        });
-      }
-      const contStream = streamText({
-        model,
-        messages: toModelMessages(buildContinuationMessages(msgs, finalReply)),
-      });
-      for await (const delta of contStream.textStream) {
-        safeEmitDelta(delta);
-      }
-      const continuationText = finalizeGuruReply(await contStream.text, finalizeOpts);
-      if (!hasUsefulContinuation(finalReply, continuationText)) break;
-      const appended = appendContinuation(finalReply, continuationText);
-      if (appended.length <= finalReply.length) break;
-      finalReply = appended;
-      if (finalReply.length > emittedReply.length) {
-        const remaining = finalReply.slice(emittedReply.length);
-        if (remaining) {
-          onReplyDelta(remaining);
-          emittedReply = finalReply;
-        }
-      }
-    }
-    return {
-      reply: finalReply,
-      sources,
-      referenceImages,
-      modelUsed: modelUsed ?? '',
-      searchQuery,
-    };
-  } catch (error: unknown) {
-    throw mapGroundedChatError(error);
-  }
+  return {
+    reply: result.text,
+    sources: result.sources,
+    referenceImages,
+    modelUsed: result.modelUsed,
+    searchQuery,
+  };
 }
 
 export async function askGuru(question: string, context: string): Promise<string> {

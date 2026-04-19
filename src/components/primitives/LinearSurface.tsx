@@ -1,17 +1,7 @@
 import React from 'react';
-import { View, StyleSheet, type ViewProps, type ViewStyle, type StyleProp } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
+import { View, type ViewProps, type ViewStyle, type StyleProp } from 'react-native';
 import { linearTheme } from '../../theme/linearTheme';
-
-// Hoisted constants — created once, shared across all instances
-const GRADIENT_COLORS = [
-  linearTheme.colors.surfaceGradientStart,
-  linearTheme.colors.surfaceGradientMid,
-  linearTheme.colors.surfaceGradientEnd,
-] as const;
-const GRADIENT_LOCATIONS = [0, 0.4, 1] as const;
-const GRADIENT_START = { x: 0, y: 0 } as const;
-const GRADIENT_END = { x: 0, y: 1 } as const;
+import { elevation, type ElevationLevel } from '../../theme/elevation';
 
 interface LinearSurfaceProps extends ViewProps {
   children: React.ReactNode;
@@ -19,83 +9,55 @@ interface LinearSurfaceProps extends ViewProps {
   borderColor?: string;
   padded?: boolean;
   compact?: boolean;
+  /** e1 is the default card surface. Use e2 for sheets/menus. */
+  level?: ElevationLevel;
+  /** Adds a 1px top highlight to signal interactivity. */
+  interactive?: boolean;
 }
 
 export default function LinearSurface({
   children,
   style,
-  borderColor = linearTheme.colors.border,
+  borderColor,
   padded = true,
   compact = false,
+  level = 'e1',
+  interactive = false,
   ...rest
 }: LinearSurfaceProps) {
-  const baseStyle = compact ? styles.baseCompact : styles.base;
-
-  let contentStyle: object;
-  if (!padded) {
-    contentStyle = styles.content;
-  } else if (compact) {
-    contentStyle = styles.paddedCompactContent;
-  } else {
-    contentStyle = styles.paddedContent;
-  }
+  const tokens = elevation[level];
+  const radius = compact ? linearTheme.radius.md : linearTheme.radius.lg;
+  const padding = !padded ? 0 : compact ? 12 : linearTheme.spacing.md;
 
   return (
-    <View style={[baseStyle, { borderColor }, style]} {...rest}>
-      <LinearGradient
-        pointerEvents="none"
-        colors={GRADIENT_COLORS}
-        locations={GRADIENT_LOCATIONS}
-        start={GRADIENT_START}
-        end={GRADIENT_END}
-        style={StyleSheet.absoluteFill}
-      />
-      <View pointerEvents="none" style={styles.frostLayer} />
-      <View pointerEvents="none" style={styles.tintLayer} />
-      <View pointerEvents="none" style={styles.topEdge} />
-      <View style={contentStyle}>{children}</View>
+    <View
+      style={[
+        {
+          borderRadius: radius,
+          borderWidth: 1,
+          overflow: 'hidden',
+          backgroundColor: tokens.bg,
+          borderColor: borderColor ?? tokens.border,
+          padding,
+        },
+        style,
+      ]}
+      {...rest}
+    >
+      {interactive ? (
+        <View
+          pointerEvents="none"
+          style={{
+            position: 'absolute',
+            left: 0,
+            right: 0,
+            top: 0,
+            height: 1,
+            backgroundColor: elevation.topEdgeInteractive,
+          }}
+        />
+      ) : null}
+      {children}
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  base: {
-    borderRadius: linearTheme.radius.lg,
-    borderWidth: 1,
-    overflow: 'hidden',
-    backgroundColor: linearTheme.colors.surface,
-  },
-  baseCompact: {
-    borderRadius: linearTheme.radius.md,
-    borderWidth: 1,
-    overflow: 'hidden',
-    backgroundColor: linearTheme.colors.surface,
-  },
-  topEdge: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    top: 0,
-    height: 1,
-    backgroundColor: linearTheme.colors.borderHighlight,
-  },
-  frostLayer: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: linearTheme.colors.surfaceInset,
-  },
-  tintLayer: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: linearTheme.colors.surfaceTint,
-    opacity: 0.24,
-  },
-  content: {
-    padding: 0,
-  },
-  paddedContent: {
-    padding: linearTheme.spacing.lg,
-  },
-  paddedCompactContent: {
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-  },
-});

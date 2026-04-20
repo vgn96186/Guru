@@ -8,11 +8,17 @@ import android.content.SharedPreferences
  */
 object LocalBackendPrefs {
     private const val PREFS_NAME = "LocalLlmBackendPrefs"
+    
+    @Volatile
     private var prefs: SharedPreferences? = null
 
     fun init(context: Context) {
         if (prefs == null) {
-            prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            synchronized(this) {
+                if (prefs == null) {
+                    prefs = context.applicationContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+                }
+            }
         }
     }
 

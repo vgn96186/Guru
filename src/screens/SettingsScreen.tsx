@@ -24,7 +24,7 @@ import {
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { MenuStackParamList, RootStackParamList } from '../navigation/types';
 import * as FileSystem from 'expo-file-system/legacy';
-import * as DocumentPicker from 'expo-document-picker';
+import { pickDocumentOnce } from '../services/documentPicker';
 import * as Notifications from 'expo-notifications';
 import { Audio } from 'expo-av';
 import { canDrawOverlays, requestOverlayPermission } from '../../modules/app-launcher';
@@ -264,7 +264,7 @@ function getErrorMessage(error: unknown): string {
 }
 
 async function _importBackup(): Promise<{ ok: boolean; message: string }> {
-  const result = await DocumentPicker.getDocumentAsync({
+  const result = await pickDocumentOnce({
     type: 'application/json',
     copyToCacheDirectory: true,
   });

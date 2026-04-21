@@ -1,5 +1,5 @@
 import * as FileSystem from 'expo-file-system/legacy';
-import * as DocumentPicker from 'expo-document-picker';
+import { pickDocumentOnce } from './documentPicker';
 import { Alert } from 'react-native';
 import { shareBackupFileOrAlert } from './backupShare';
 import { DB_DIR, DB_PATH } from '../db/database';
@@ -58,7 +58,7 @@ export async function exportDatabase() {
 
 export async function importDatabase() {
   try {
-    const result = await DocumentPicker.getDocumentAsync({
+    const result = await pickDocumentOnce({
       copyToCacheDirectory: true,
       type: '*/*',
     });

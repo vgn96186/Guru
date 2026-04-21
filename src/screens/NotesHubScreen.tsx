@@ -91,7 +91,8 @@ import {
 import { getSubjectByName } from '../db/queries/topics';
 import { saveLectureTranscript } from '../db/queries/aiCache';
 import { getFailedOrPendingTranscriptions, type ExternalAppLog } from '../db/queries/externalLogs';
-import * as DocumentPicker from 'expo-document-picker';
+import type * as DocumentPicker from 'expo-document-picker';
+import { pickDocumentOnce } from '../services/documentPicker';
 import { useRefreshProfile, PROFILE_QUERY_KEY } from '../hooks/queries/useProfile';
 import { queryClient } from '../services/queryClient';
 import { useAppStore } from '../store/useAppStore';
@@ -177,7 +178,7 @@ export default function NotesHubScreen() {
   const handleAudioUpload = async () => {
     let res: DocumentPicker.DocumentPickerResult;
     try {
-      res = await DocumentPicker.getDocumentAsync({ type: ['audio/*'] });
+      res = await pickDocumentOnce({ type: ['audio/*'] });
     } catch (error: unknown) {
       showError(error);
       return;

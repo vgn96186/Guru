@@ -23,7 +23,7 @@ import * as Haptics from 'expo-haptics';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import * as DocumentPicker from 'expo-document-picker';
+import { pickDocumentOnce } from '../services/documentPicker';
 import {
   findAllRecordings,
   pickFolderAndScan,
@@ -74,7 +74,7 @@ function entriesToRecordingFiles(
     const folder =
       guruIdx >= 0 && guruIdx < parts.length - 2
         ? parts.slice(guruIdx + 1, -1).join('/')
-        : parts.slice(-2, -1)[0] ?? 'Unknown';
+        : (parts.slice(-2, -1)[0] ?? 'Unknown');
     return {
       name: e.name,
       path: e.path,
@@ -347,10 +347,10 @@ export default function RecordingVaultScreen() {
               isSelected
                 ? n.colors.accent
                 : isError
-                ? n.colors.error
-                : isDone
-                ? n.colors.success
-                : n.colors.border
+                  ? n.colors.error
+                  : isDone
+                    ? n.colors.success
+                    : n.colors.border
             }
             style={[
               styles.card,
@@ -490,7 +490,7 @@ export default function RecordingVaultScreen() {
 
   const handleUploadAudio = useCallback(async () => {
     try {
-      const result = await DocumentPicker.getDocumentAsync({
+      const result = await pickDocumentOnce({
         copyToCacheDirectory: true,
         type: ['audio/*'],
       });

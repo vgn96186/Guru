@@ -3,7 +3,7 @@ import { View, StyleSheet, StatusBar, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as FileSystem from 'expo-file-system/legacy';
-import * as DocumentPicker from 'expo-document-picker';
+import { pickDocumentOnce } from '../services/documentPicker';
 import { useProfileQuery, useProfileActions } from '../hooks/queries/useProfile';
 import ScreenHeader from '../components/ScreenHeader';
 import { ResponsiveContainer } from '../hooks/useResponsive';
@@ -450,7 +450,7 @@ export default function LocalModelScreen() {
       await cancelBootstrapDownload();
       clearLocalModelDownload();
 
-      const picker = await DocumentPicker.getDocumentAsync({
+      const picker = await pickDocumentOnce({
         type: '*/*',
         copyToCacheDirectory: true,
       });

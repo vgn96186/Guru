@@ -1,5 +1,5 @@
 import * as FileSystem from 'expo-file-system/legacy';
-import * as DocumentPicker from 'expo-document-picker';
+import { pickDocumentOnce } from './documentPicker';
 import { Alert, Platform } from 'react-native';
 import { zip, unzip } from 'react-native-zip-archive';
 import {
@@ -390,7 +390,7 @@ export async function importUnifiedBackupFromPath(
 export async function importUnifiedBackup(
   options?: Partial<RestoreOptions>,
 ): Promise<{ ok: boolean; message: string }> {
-  const result = await DocumentPicker.getDocumentAsync({
+  const result = await pickDocumentOnce({
     type: '*/*',
     copyToCacheDirectory: true,
   });

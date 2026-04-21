@@ -17,7 +17,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { useKeepAwake } from 'expo-keep-awake';
 import * as Haptics from 'expo-haptics';
-import * as DocumentPicker from 'expo-document-picker';
+import { pickDocumentOnce } from '../services/documentPicker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { Audio } from 'expo-av';
@@ -415,12 +415,17 @@ export default function LectureModeScreen() {
   useEffect(() => {
     if (proofOfLifeActive) {
       const glowLoop = motion.pulseValue(proofGlowAnim, {
-        from: 1, to: 0.6, duration: 1000, reducedMotion,
+        from: 1,
+        to: 0.6,
+        duration: 1000,
+        reducedMotion,
       });
       glowLoop.start();
 
       const pulseLoop = motion.pulseScale(proofPulseAnim, {
-        to: 1.02, duration: 800, reducedMotion,
+        to: 1.02,
+        duration: 800,
+        reducedMotion,
       });
       pulseLoop.start();
 
@@ -761,7 +766,7 @@ export default function LectureModeScreen() {
 
   async function importAndTranscribeAudio() {
     try {
-      const picked = await DocumentPicker.getDocumentAsync({
+      const picked = await pickDocumentOnce({
         type: ['audio/*'],
         copyToCacheDirectory: true,
       });

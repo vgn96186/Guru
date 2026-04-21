@@ -29,7 +29,7 @@ import { useNavigation } from '@react-navigation/native';
 import * as Haptics from 'expo-haptics';
 import * as FileSystem from 'expo-file-system/legacy';
 import Clipboard from '@react-native-clipboard/clipboard';
-import * as DocumentPicker from 'expo-document-picker';
+import { pickDocumentOnce } from '../services/documentPicker';
 import {
   listPublicBackups,
   getPublicBackupDir,
@@ -464,7 +464,7 @@ export default function TranscriptVaultScreen() {
 
   const handleUploadText = useCallback(async () => {
     try {
-      const result = await DocumentPicker.getDocumentAsync({
+      const result = await pickDocumentOnce({
         copyToCacheDirectory: true,
         type: ['text/plain', 'text/*'],
       });

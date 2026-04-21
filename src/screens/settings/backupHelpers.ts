@@ -1,8 +1,8 @@
 import { Alert } from 'react-native';
-import * as DocumentPicker from 'expo-document-picker';
 import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
 import { getDb, runInTransaction } from '../../db/database';
+import { pickDocumentOnce } from '../../services/documentPicker';
 import type { AppBackup, BackupRow } from './types';
 import { BACKUP_VERSION } from './types';
 import { asNullableString, asNumber, asString, yieldToUi } from './utils';
@@ -55,7 +55,7 @@ export async function exportBackup(): Promise<boolean> {
 }
 
 export async function importBackup(): Promise<{ ok: boolean; message: string }> {
-  const result = await DocumentPicker.getDocumentAsync({
+  const result = await pickDocumentOnce({
     type: 'application/json',
     copyToCacheDirectory: true,
   });

@@ -45,18 +45,55 @@ function stripHtml(raw: string): string {
     .slice(0, 200);
 }
 
-async function postDirectAccess(url: string, userAccessToken: string): Promise<Response> {
-  return fetch(url, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Accept: 'application/json',
-      Authorization: `Bearer ${userAccessToken}`,
-    },
-    body: JSON.stringify({
+function looksLikeMissingDefaultNamespace(raw: string): boolean {
+  return /missing default gitlab duo namespace user preference/i.test(raw);
+}
+
+function buildDirectAccessBodies(): Array<Record<string, unknown>> {
+  return [
+    { feature_flags: { DuoAgentPlatformNext: true } },
+    {
       feature_flags: { DuoAgentPlatformNext: true },
-    }),
-  });
+      namespace_path: 'gitlab-org',
+    },
+  ];
+}
+
+async function postDirectAccess(
+  url: string,
+  userAccessToken: string,
+): Promise<{ response: Response; usedNamespaceFallback: boolean }> {
+  let namespaceFallbackTried = false;
+  for (const body of buildDirectAccessBodies()) {
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+        Authorization: `Bearer ${userAccessToken}`,
+      },
+      body: JSON.stringify(body),
+    });
+    if (res.ok || res.status === 429) {
+      return { response: res, usedNamespaceFallback: namespaceFallbackTried };
+    }
+    const errText = await res.text().catch(() => res.statusText);
+    if (!looksLikeMissingDefaultNamespace(errText) || namespaceFallbackTried) {
+      return {
+        response: new Response(errText, {
+          status: res.status,
+          statusText: res.statusText,
+          headers: res.headers,
+        }),
+        usedNamespaceFallback: namespaceFallbackTried,
+      };
+    }
+    namespaceFallbackTried = true;
+    if (__DEV__) {
+      console.info('[AI] GitLab direct_access retrying with namespace_path=gitlab-org fallback');
+    }
+  }
+  throw new Error('GitLab direct_access namespace fallback exhausted');
 }
 
 export async function fetchGitLabDirectAccessCredentials(
@@ -74,7 +111,11 @@ export async function fetchGitLabDirectAccessCredentials(
 
   return withRetry(
     async () => {
-      const res = await postDirectAccess(url, userAccessToken);
+      const { response: res, usedNamespaceFallback } = await postDirectAccess(url, userAccessToken);
+
+      if (__DEV__ && usedNamespaceFallback) {
+        console.info('[AI] GitLab direct_access recovered via namespace_path fallback');
+      }
 
       if (res.status === 429) {
         throw new RateLimitError('GitLab Duo direct_access rate limited');

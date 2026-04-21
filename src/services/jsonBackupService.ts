@@ -1,8 +1,8 @@
 import * as FileSystem from 'expo-file-system/legacy';
-import * as DocumentPicker from 'expo-document-picker';
 import type { SQLiteDatabase } from 'expo-sqlite';
 import { getDb } from '../db/database';
 import { getAiCacheDb } from '../db/aiCacheDatabase';
+import { pickDocumentOnce } from './documentPicker';
 import { shareBackupFileOrAlert } from './backupShare';
 
 const BACKUP_VERSION = 4;
@@ -225,7 +225,7 @@ export async function exportJsonBackup(): Promise<boolean> {
 }
 
 export async function importJsonBackup(): Promise<{ ok: boolean; message: string }> {
-  const result = await DocumentPicker.getDocumentAsync({
+  const result = await pickDocumentOnce({
     type: 'application/json',
     copyToCacheDirectory: true,
   });

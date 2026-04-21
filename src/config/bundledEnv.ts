@@ -1,7 +1,11 @@
 /**
  * Auto-generated from .env by scripts/generate-bundled-env.js
  * This module allows "bundled defaults" to work in non-Expo (bare RN) builds.
+ *
+ * IMPORTANT: Do NOT put real secrets in this file.
+ * All values should be empty strings by default.
  */
+
 export const BUNDLED_GROQ_KEY = '';
 export const BUNDLED_HF_TOKEN = '';
 export const BUNDLED_OPENROUTER_KEY = '';

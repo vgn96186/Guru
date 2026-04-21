@@ -39,12 +39,7 @@ import {
   type LectureHistoryItem,
 } from '../db/queries/aiCache';
 import { linearTheme as n } from '../theme/linearTheme';
-import {
-  blackAlpha,
-  whiteAlpha,
-  transcriptBlueAlpha,
-  transcriptBlueBorderAlpha,
-} from '../theme/colorUtils';
+import { blackAlpha, whiteAlpha, captureFillAlpha, captureBorderAlpha } from '../theme/colorUtils';
 import LoadingOrb from '../components/LoadingOrb';
 import { CONFIDENCE_LABELS } from '../constants/gamification';
 import { loadTranscriptFromFile } from '../services/transcriptStorage';
@@ -440,10 +435,13 @@ export default function TranscriptHistoryScreen() {
     });
   }, []);
 
-  const handleLongPressItem = useCallback((id: number) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    toggleSelection(id);
-  }, [toggleSelection]);
+  const handleLongPressItem = useCallback(
+    (id: number) => {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      toggleSelection(id);
+    },
+    [toggleSelection],
+  );
 
   const cancelSelection = () => {
     setSelectedIds([]);
@@ -663,8 +661,8 @@ export default function TranscriptHistoryScreen() {
                         item.confidence === 3
                           ? n.colors.success
                           : item.confidence === 2
-                          ? n.colors.warning
-                          : n.colors.error,
+                            ? n.colors.warning
+                            : n.colors.error,
                     },
                   ]}
                 >
@@ -978,8 +976,8 @@ export default function TranscriptHistoryScreen() {
                           (selectedNote?.confidence ?? 2) === 3
                             ? n.colors.success
                             : (selectedNote?.confidence ?? 2) === 2
-                            ? n.colors.warning
-                            : n.colors.error,
+                              ? n.colors.warning
+                              : n.colors.error,
                         alignSelf: 'flex-start',
                         marginTop: 8,
                       },
@@ -1045,8 +1043,8 @@ export default function TranscriptHistoryScreen() {
                       {selectedHasRecordingOnly
                         ? 'Transcribe Audio'
                         : selectedNeedsAiNote
-                        ? 'Generate AI Note'
-                        : 'Regenerate AI Note'}
+                          ? 'Generate AI Note'
+                          : 'Regenerate AI Note'}
                     </LinearText>
                   </TouchableOpacity>
                   <TouchableOpacity
@@ -1525,9 +1523,9 @@ const styles = StyleSheet.create({
   renameCancelBtn: { paddingHorizontal: 12, paddingVertical: 8 },
   renameCancelText: { color: n.colors.textMuted, fontSize: 13, fontWeight: '600' },
   renameSaveBtn: {
-    backgroundColor: transcriptBlueAlpha['14'],
+    backgroundColor: captureFillAlpha['14'],
     borderWidth: 1,
-    borderColor: transcriptBlueBorderAlpha['24'],
+    borderColor: captureBorderAlpha['24'],
     borderRadius: 8,
     paddingHorizontal: 12,
     paddingVertical: 8,

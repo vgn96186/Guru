@@ -12,7 +12,7 @@
     "start:fresh": "npm run generate:bundled-env && cross-env NODE_ENV=development NODE_OPTIONS=\"--loader ./scripts/fix-esm-windows.mjs --no-warnings\" expo start --clear",
     "android:metro": "npm run generate:bundled-env && cross-env NODE_ENV=development NODE_OPTIONS=\"--loader ./scripts/fix-esm-windows.mjs --no-warnings\" expo start --dev-client --localhost --port 8081",
     "android:metro:fresh": "npm run generate:bundled-env && cross-env NODE_ENV=development NODE_OPTIONS=\"--loader ./scripts/fix-esm-windows.mjs --no-warnings\" expo start --dev-client --localhost --port 8081 -c",
-    "android:open": "node ./scripts/open-android-dev-client.js",
+    "android:open": "node ./scripts/open-android-dev-client.js --deeplink",
     "android:adb-install": "node ./scripts/adb-install-dev-apk.js",
     "android:screenshot": "node ./scripts/adb-screenshot.js",
     "start:tee": "npm run generate:bundled-env && cross-env NODE_ENV=development expo start --clear 2>&1 | tee metro.log",

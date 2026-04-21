@@ -67,7 +67,11 @@ async function getAudioDurationMinutes(path: string): Promise<number | null> {
   } catch {
     return null;
   } finally {
-    sound?.unloadAsync().catch(() => {});
+    sound?.unloadAsync().catch((err) => {
+      if (__DEV__) {
+        console.warn('[useLectureReturnRecovery] Failed to unload sound:', err);
+      }
+    });
   }
 }
 

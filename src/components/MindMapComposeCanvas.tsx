@@ -1,6 +1,6 @@
 import React from 'react';
 import { Platform } from 'react-native';
-import Animated, { useAnimatedProps } from 'react-native-reanimated';
+import Animated, { useAnimatedProps, type SharedValue } from 'react-native-reanimated';
 import MindMapCanvas, { NodeData, EdgeData } from '../../modules/omni-canvas';
 
 const AnimatedNativeCanvas = Animated.createAnimatedComponent(MindMapCanvas);
@@ -8,9 +8,9 @@ const AnimatedNativeCanvas = Animated.createAnimatedComponent(MindMapCanvas);
 type Props = {
   nodes: any[];
   edges: any[];
-  scale: Animated.SharedValue<number>;
-  translateX: Animated.SharedValue<number>;
-  translateY: Animated.SharedValue<number>;
+  scale: SharedValue<number>;
+  translateX: SharedValue<number>;
+  translateY: SharedValue<number>;
   onNodePress: (nodeId: number) => void;
 };
 
@@ -28,7 +28,7 @@ export default function MindMapComposeCanvas({
     offsetY: translateY.value,
   }));
 
-  const mappedNodes = React.useMemo(
+  const mappedNodes = React.useMemo<NodeData[]>(
     () =>
       nodes.map((n) => ({
         id: n.id,
@@ -40,7 +40,7 @@ export default function MindMapComposeCanvas({
     [nodes],
   );
 
-  const mappedEdges = React.useMemo(
+  const mappedEdges = React.useMemo<EdgeData[]>(
     () =>
       edges.map((e) => ({
         sourceId: e.sourceNodeId,
@@ -58,6 +58,9 @@ export default function MindMapComposeCanvas({
       style={{ flex: 1 }}
       nodes={mappedNodes}
       edges={mappedEdges}
+      zoom={scale.value}
+      offsetX={translateX.value}
+      offsetY={translateY.value}
       animatedProps={animatedProps}
       onNodePress={(e) => onNodePress(e.nativeEvent.nodeId)}
     />

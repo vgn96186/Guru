@@ -102,6 +102,51 @@ class AppLauncherModule : Module() {
         return results
     }
 
+    private fun findLocalModelFiles(dir: File, maxDepth: Int = 6, depth: Int = 0): List<Map<String, Any>> {
+        if (!dir.exists() || !dir.isDirectory || depth > maxDepth) return emptyList()
+        val files = try {
+            dir.listFiles() ?: return emptyList()
+        } catch (e: Exception) {
+            return emptyList()
+        }
+
+        val results = mutableListOf<Map<String, Any>>()
+        for (f in files) {
+            if (f.isDirectory) {
+                results.addAll(findLocalModelFiles(f, maxDepth, depth + 1))
+            } else if (f.name.endsWith(".litertlm", ignoreCase = true) && f.length() > 100) {
+                results.add(
+                    mapOf(
+                        "name" to f.name,
+                        "path" to f.absolutePath,
+                        "size" to f.length(),
+                        "modifiedAt" to f.lastModified(),
+                    ),
+                )
+            }
+        }
+        return results
+    }
+
+    private fun getCandidateModelSearchRoots(): List<File> {
+        val roots = mutableListOf<File>()
+        val context = appContext.reactContext
+        val primary = Environment.getExternalStorageDirectory()
+        roots.add(primary)
+        roots.add(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS))
+        roots.add(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS))
+        roots.add(getPublicGuruRoot())
+
+        context?.getExternalFilesDirs(null)?.forEach { dir ->
+            if (dir != null) {
+                roots.add(dir)
+                dir.parentFile?.parentFile?.parentFile?.let { roots.add(it) }
+            }
+        }
+
+        return roots.distinctBy { it.absolutePath }
+    }
+
     /**
      * Walks a SAF document tree URI and collects all .m4a files.
      * Returns list of maps with { name, path (content URI string), size }.
@@ -284,6 +329,25 @@ class AppLauncherModule : Module() {
                 findAllM4aFiles(getPublicGuruRoot())
             } catch (e: Exception) {
                 Log.e(TAG, "findAllRecordings failed", e)
+                emptyList<Map<String, Any>>()
+            }
+        }
+
+        AsyncFunction("findLocalModelFiles") { ->
+            return@AsyncFunction try {
+                val deduped = linkedMapOf<String, Map<String, Any>>()
+                for (root in getCandidateModelSearchRoots()) {
+                    for (entry in findLocalModelFiles(root)) {
+                        val path = entry["path"] as? String ?: continue
+                        val existing = deduped[path]
+                        if (existing == null) {
+                            deduped[path] = entry
+                        }
+                    }
+                }
+                deduped.values.toList()
+            } catch (e: Exception) {
+                Log.e(TAG, "findLocalModelFiles failed", e)
                 emptyList<Map<String, Any>>()
             }
         }

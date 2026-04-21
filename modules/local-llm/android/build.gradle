@@ -60,6 +60,7 @@ dependencies {
     // ML Kit GenAI Prompt API — Gemini Nano via AICore (no model file needed)
     implementation("com.google.mlkit:genai-prompt:1.0.0-beta2")
 
+    implementation "com.google.code.gson:gson:2.11.0"
     implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1"
 }
 

@@ -118,13 +118,11 @@ describe('useGuruChat full cutover', () => {
       'Explain shock',
       expect.any(Number),
     );
-    expect(mockSendUIMessage).toHaveBeenCalledWith(
-      'Explain shock',
-      expect.objectContaining({
-        assistantCreatedAt: expect.any(Number),
-        systemOverride: expect.stringContaining('Session summary: old summary'),
-      }),
-    );
+    const sendCall = mockSendUIMessage.mock.calls[0];
+    expect(sendCall[0]).toBe('Explain shock');
+    expect(sendCall[1]).toMatchObject({ assistantCreatedAt: expect.any(Number) });
+    expect(sendCall[1].systemOverride).toContain('Session summary: old summary');
+    expect(sendCall[1].systemOverride).toContain('==double equals==');
     expect(mockSaveChatMessage).toHaveBeenNthCalledWith(
       2,
       42,
@@ -132,7 +130,15 @@ describe('useGuruChat full cutover', () => {
       'guru',
       'Tutor reply',
       123456,
-      JSON.stringify([{ id: 's1', title: 'Source', source: 'PubMed', url: 'https://x.test' }]),
+      JSON.stringify([
+        {
+          id: 's1',
+          title: 'Source',
+          source: 'PubMed',
+          url: 'https://x.test',
+          snippet: 'Shock summary',
+        },
+      ]),
       'groq/llama',
     );
     expect(onRefreshThreads).toHaveBeenCalledTimes(2);
@@ -175,7 +181,15 @@ describe('useGuruChat full cutover', () => {
       'guru',
       'Tutor reply with image',
       123456,
-      JSON.stringify([{ id: 's1', title: 'Source', source: 'PubMed', url: 'https://x.test' }]),
+      JSON.stringify([
+        {
+          id: 's1',
+          title: 'Source',
+          source: 'PubMed',
+          url: 'https://x.test',
+          snippet: 'Shock summary',
+        },
+      ]),
       'groq/llama',
     );
   });
@@ -198,5 +212,31 @@ describe('useGuruChat full cutover', () => {
     expect(mockMarkTopicDiscussedInChat).not.toHaveBeenCalled();
     expect(mockMaybeSummarizeGuruSession).not.toHaveBeenCalled();
     expect(mockGetSessionMemoryRow).not.toHaveBeenCalled();
+  });
+
+  it('persists using persistThreadId when hook threadId is still null', async () => {
+    const { result } = renderHook(() =>
+      useGuruChat({
+        model: { provider: 'fallback', modelId: 'test', specificationVersion: 'v2' } as any,
+        threadId: null,
+        topicName: 'Shock',
+        syllabusTopicId: 9,
+      }),
+    );
+
+    await act(async () => {
+      await result.current.sendMessage('Explain shock', undefined, { persistThreadId: 77 });
+    });
+
+    expect(mockSaveChatMessage).toHaveBeenNthCalledWith(
+      1,
+      77,
+      'Shock',
+      'user',
+      'Explain shock',
+      expect.any(Number),
+    );
+    expect(mockMaybeSummarizeGuruSession).toHaveBeenCalledWith(77, 'Shock');
+    expect(mockGetSessionMemoryRow).toHaveBeenCalledWith(77);
   });
 });

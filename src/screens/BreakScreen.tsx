@@ -13,6 +13,7 @@ import GuruChatOverlay from '../components/GuruChatOverlay';
 import VisualTimer from '../components/VisualTimer';
 import { useProfileQuery } from '../hooks/queries/useProfile';
 import { linearTheme as n } from '../theme/linearTheme';
+import { motion } from '../motion/presets';
 import { ResponsiveContainer } from '../hooks/useResponsive';
 import { confirmDestructive } from '../components/dialogService';
 import { Ionicons } from '@expo/vector-icons';
@@ -58,24 +59,30 @@ export default function BreakScreen({
     setSelected(idx);
     const isCorrect = idx === quizQuestion.correct;
     const selectedAnim = getOptionAnim(idx);
-    Animated.timing(selectedAnim.bg, { toValue: 1, duration: 250, useNativeDriver: false }).start();
-    Animated.timing(selectedAnim.border, {
-      toValue: 1,
-      duration: 250,
-      useNativeDriver: false,
-    }).start();
+    motion.to(selectedAnim.bg, { toValue: 1, duration: 250, useNativeDriver: false }).start();
+    motion
+      .to(selectedAnim.border, {
+        toValue: 1,
+        duration: 250,
+        useNativeDriver: false,
+      })
+      .start();
     if (!isCorrect) {
       const correctAnim = getOptionAnim(quizQuestion.correct);
-      Animated.timing(correctAnim.bg, {
-        toValue: 1,
-        duration: 250,
-        useNativeDriver: false,
-      }).start();
-      Animated.timing(correctAnim.border, {
-        toValue: 1,
-        duration: 250,
-        useNativeDriver: false,
-      }).start();
+      motion
+        .to(correctAnim.bg, {
+          toValue: 1,
+          duration: 250,
+          useNativeDriver: false,
+        })
+        .start();
+      motion
+        .to(correctAnim.border, {
+          toValue: 1,
+          duration: 250,
+          useNativeDriver: false,
+        })
+        .start();
     }
     setTimeout(() => {
       if (isCorrect) {
@@ -289,6 +296,7 @@ export default function BreakScreen({
       <GuruChatOverlay
         visible={chatOpen}
         topicName={topicName}
+        syllabusTopicId={topicId}
         onClose={() => setChatOpen(false)}
       />
     </SafeAreaView>

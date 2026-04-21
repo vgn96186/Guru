@@ -2,13 +2,10 @@
  * Local LLM adapter — wraps Guru's custom `local-llm` Expo module (Kotlin
  * LiteRT runtime adapted from Edge Gallery / PokéClaw) into a LanguageModelV2.
  *
- * Uses `attemptLocalLLMStream()` from llmRouting.ts for real token-by-token
- * streaming (LocalLlm.chatStream + onLlmToken event listeners). `doGenerate`
- * uses the non-streaming `attemptLocalLLM()`.
- *
- * Tool calling is NOT supported by LiteRT today. If tools are provided we
- * drop them with a warning. Follow-up: prompt-level tool-call protocol
- * (model emits `<tool_call>{...}</tool_call>` JSON, we parse + invoke).
+ * Uses blocking native `chat` (mutex via `chatWithLocalNative` in
+ * llmRouting), then chunks output into stream parts. LiteRT-LM OpenAPI tools
+ * are registered natively (`automaticToolCalling = false`); tool execution
+ * stays in JS (`streamText` loop).
  */
 
 import type {
@@ -17,8 +14,11 @@ import type {
   LanguageModelV2StreamPart,
   LanguageModelV2StreamResult,
   ModelMessage,
+  ToolCallPart,
+  ToolDescription,
 } from '../spec';
-import { attemptLocalLLM } from '../../llmRouting';
+import { chatWithLocalNative } from '../../llmRouting';
+import type { ChatMessage } from 'local-llm';
 import type { Message as LegacyMessage } from '../../types';
 
 export interface LocalLlmConfig {
@@ -34,28 +34,36 @@ export function createLocalLlmModel(config: LocalLlmConfig): LanguageModelV2 {
     modelId: deriveModelId(config.modelPath),
 
     async doGenerate(options): Promise<LanguageModelV2GenerateResult> {
-      warnIfTools(options.tools);
-      const legacy = toLegacyMessages(options.prompt);
-      const { text } = await attemptLocalLLM(legacy, config.modelPath, config.textMode ?? false);
+      const toolsJson = toolsToJsonString(options.tools);
+      const chatMessages = modelMessagesToChatMaps(options.prompt);
+      const systemText = extractSystemText(options.prompt);
+      const native = await chatWithLocalNative({
+        chatMessages,
+        modelPath: config.modelPath,
+        systemInstruction: systemText || undefined,
+        toolsJson,
+      });
+      const content = buildGenerateContent(native.text, native.toolCallsJson);
+      const finishReason =
+        parseLiteRtToolCallsJson(native.toolCallsJson).length > 0
+          ? ('tool-calls' as const)
+          : native.text?.trim()
+            ? ('stop' as const)
+            : ('error' as const);
       return {
-        content: text ? [{ type: 'text', text }] : [],
-        finishReason: 'stop',
+        content,
+        finishReason,
         usage: {},
+        rawResponse: native,
       };
     },
 
     async doStream(options): Promise<LanguageModelV2StreamResult> {
-      warnIfTools(options.tools);
-      const legacy = toLegacyMessages(options.prompt);
+      const toolsJson = toolsToJsonString(options.tools);
+      const chatMessages = modelMessagesToChatMaps(options.prompt);
+      const systemText = extractSystemText(options.prompt);
       const modelPath = config.modelPath;
-      const textMode = config.textMode ?? false;
 
-      // Use the synchronous (non-streaming) local LLM call which is proven reliable.
-      // The async event-based streaming (`sendMessageAsync` + `sendEvent`) has a race
-      // condition: the native LiteRT thread fires onLlmToken before the JS EventEmitter
-      // bridge subscription is fully connected, causing 0 tokens to arrive in JS.
-      // This approach uses `sendMessage` (blocking) which reliably returns the full text,
-      // then chunks it into text-deltas to satisfy the streaming contract.
       const queue: LanguageModelV2StreamPart[] = [];
       let resolveNext: ((v: IteratorResult<LanguageModelV2StreamPart>) => void) | null = null;
       let done = false;
@@ -80,24 +88,41 @@ export function createLocalLlmModel(config: LocalLlmConfig): LanguageModelV2 {
 
       const textId = 'text-0';
 
-      // Run synchronous generation in the background, then emit as chunked deltas.
       void (async () => {
         try {
-          const { text } = await attemptLocalLLM(legacy, modelPath, textMode);
-          if (text && text.trim()) {
-            // Emit in small chunks to simulate streaming for the UI
+          const native = await chatWithLocalNative({
+            chatMessages,
+            modelPath,
+            systemInstruction: systemText || undefined,
+            toolsJson,
+          });
+          const toolCalls = parseLiteRtToolCallsJson(native.toolCallsJson);
+          for (const tc of toolCalls) {
+            push({
+              type: 'tool-call',
+              toolCallId: tc.toolCallId,
+              toolName: tc.toolName,
+              input: tc.input,
+            });
+          }
+          const text = native.text ?? '';
+          if (text.trim()) {
             const CHUNK_SIZE = 12;
             for (let i = 0; i < text.length; i += CHUNK_SIZE) {
               const delta = text.slice(i, i + CHUNK_SIZE);
               push({ type: 'text-delta', id: textId, delta });
             }
-            push({ type: 'finish', finishReason: 'stop', usage: {} });
-          } else {
-            if (__DEV__) {
-              console.warn('[v2/localLlm] Synchronous call returned empty text.');
-            }
-            push({ type: 'finish', finishReason: 'error', usage: {} });
           }
+          const finishReason =
+            toolCalls.length > 0
+              ? ('tool-calls' as const)
+              : text.trim()
+                ? ('stop' as const)
+                : ('error' as const);
+          if (finishReason === 'error' && __DEV__) {
+            console.warn('[v2/localLlm] Native call returned empty text and no tool calls.');
+          }
+          push({ type: 'finish', finishReason, usage: {} });
           end();
         } catch (err) {
           if (__DEV__) {
@@ -173,9 +198,88 @@ function toLegacyMessages(messages: ModelMessage[]): LegacyMessage[] {
   return out;
 }
 
-function warnIfTools(tools: unknown): void {
+function toolsToJsonString(tools: ToolDescription[] | undefined): string | undefined {
+  if (!tools?.length) return undefined;
+  return JSON.stringify(
+    tools.map((t) => ({
+      name: t.name,
+      description: t.description,
+      parameters: t.inputSchema,
+    })),
+  );
+}
+
+function extractSystemText(messages: ModelMessage[]): string {
+  const sys = messages.find((m) => m.role === 'system');
+  if (!sys) return '';
+  return typeof sys.content === 'string' ? sys.content : '';
+}
+
+/** Maps v2 messages to native chat rows (`role: tool` carries JSON tool results). */
+function modelMessagesToChatMaps(messages: ModelMessage[]): ChatMessage[] {
+  const out: ChatMessage[] = [];
+  for (const msg of messages) {
+    if (msg.role === 'system') continue;
+    if (msg.role === 'user') {
+      const c =
+        typeof msg.content === 'string'
+          ? msg.content
+          : msg.content
+              .filter((p): p is { type: 'text'; text: string } => p.type === 'text')
+              .map((p) => p.text)
+              .join('\n');
+      out.push({ role: 'user', content: c });
+    } else if (msg.role === 'assistant') {
+      const c =
+        typeof msg.content === 'string'
+          ? msg.content
+          : msg.content
+              .filter((p): p is { type: 'text'; text: string } => p.type === 'text')
+              .map((p) => p.text)
+              .join('\n');
+      out.push({ role: 'assistant', content: c });
+    } else if (msg.role === 'tool') {
+      out.push({ role: 'tool', content: JSON.stringify(msg.content) });
+    }
+  }
+  return out;
+}
+
+function parseLiteRtToolCallsJson(json: string | null | undefined): ToolCallPart[] {
+  if (!json?.trim()) return [];
+  try {
+    const arr = JSON.parse(json) as Array<{
+      toolCallId: string;
+      toolName: string;
+      arguments?: unknown;
+    }>;
+    if (!Array.isArray(arr)) return [];
+    return arr.map((t) => ({
+      type: 'tool-call' as const,
+      toolCallId: t.toolCallId,
+      toolName: t.toolName,
+      input: t.arguments ?? {},
+    }));
+  } catch {
+    return [];
+  }
+}
+
+function buildGenerateContent(
+  text: string | undefined,
+  toolCallsJson: string | null,
+): LanguageModelV2GenerateResult['content'] {
+  const content: LanguageModelV2GenerateResult['content'] = [];
+  if (text?.trim()) content.push({ type: 'text', text });
+  for (const tc of parseLiteRtToolCallsJson(toolCallsJson)) content.push(tc);
+  return content;
+}
+
+function warnIfNanoTools(tools: unknown): void {
   if (Array.isArray(tools) && tools.length) {
-    console.warn('[v2/localLlm] tools not supported on local LiteRT — dropping');
+    console.warn(
+      '[v2/nano] Tool declarations are not wired to ML Kit GenAI in this adapter — dropping.',
+    );
   }
 }
 
@@ -196,7 +300,7 @@ export function createNanoModel(): LanguageModelV2 {
     modelId: 'gemini-nano',
 
     async doGenerate(options): Promise<LanguageModelV2GenerateResult> {
-      warnIfTools(options.tools);
+      warnIfNanoTools(options.tools);
       const legacy = toLegacyMessages(options.prompt);
       const systemMsg = legacy.find((m) => m.role === 'system');
       const prompt = legacy
@@ -221,7 +325,7 @@ export function createNanoModel(): LanguageModelV2 {
     },
 
     async doStream(options): Promise<LanguageModelV2StreamResult> {
-      warnIfTools(options.tools);
+      warnIfNanoTools(options.tools);
       const legacy = toLegacyMessages(options.prompt);
       const systemMsg = legacy.find((m) => m.role === 'system');
       const prompt = legacy

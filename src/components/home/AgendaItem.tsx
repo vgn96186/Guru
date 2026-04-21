@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import { Animated, Pressable, View, StyleSheet } from 'react-native';
 import { linearTheme as n } from '../../theme/linearTheme';
-import { cardPressTiming } from '../../motion/presets';
+import { cardPressTiming, motion } from '../../motion/presets';
 import LinearText from '../primitives/LinearText';
 
 interface AgendaItemProps {
@@ -45,17 +45,10 @@ export default React.memo(function AgendaItem({
   }, [pressOpacity, pressScale]);
 
   const animatePress = (pressed: boolean) => {
+    const d = pressed ? cardPressTiming.in : cardPressTiming.out;
     Animated.parallel([
-      Animated.timing(pressScale, {
-        toValue: pressed ? 0.99 : 1,
-        duration: pressed ? cardPressTiming.in : cardPressTiming.out,
-        useNativeDriver: true,
-      }),
-      Animated.timing(pressOpacity, {
-        toValue: pressed ? 0.88 : 1,
-        duration: pressed ? cardPressTiming.in : cardPressTiming.out,
-        useNativeDriver: true,
-      }),
+      motion.to(pressScale, { toValue: pressed ? 0.99 : 1, duration: d, useNativeDriver: true }),
+      motion.to(pressOpacity, { toValue: pressed ? 0.88 : 1, duration: d, useNativeDriver: true }),
     ]).start();
   };
 
@@ -103,8 +96,8 @@ export default React.memo(function AgendaItem({
                 accent === n.colors.accent
                   ? 'accent'
                   : accent === n.colors.success
-                  ? 'success'
-                  : 'warning'
+                    ? 'success'
+                    : 'warning'
               }
               style={styles.typeBadge}
             >

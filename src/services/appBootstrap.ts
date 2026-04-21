@@ -18,7 +18,7 @@ import { bootstrapLocalModels } from './localModelBootstrap';
 import { profileRepository, dailyLogRepository } from '../db/repositories';
 import { registerOfflineQueueProcessors } from './offlineQueueBootstrap';
 import { processQueue } from './offlineQueue';
-import { enforceLocalLlmRamGuard } from './deviceMemory';
+import { enforceLocalLlmRamGuard, isBackgroundRecoveryAllowed } from './deviceMemory';
 import { stripFileUri } from './fileUri';
 import { cleanupStaleCheckpointDirs } from './lecture/transcription';
 import {
@@ -26,12 +26,18 @@ import {
   scanAndRecoverOrphanedRecordings,
   scanAndRecoverOrphanedTranscripts,
 } from './lecture/lectureSessionMonitor';
+import {
+  configureGoogleSignIn,
+  downloadLatestFromGDrive,
+  isGDriveConnected,
+} from './gdriveBackupService';
 import { listPublicBackups, copyFileFromPublicBackup } from '../../modules/app-launcher';
 import { showToast } from '../components/Toast';
 import { unzip } from 'react-native-zip-archive';
 import { validateBackupFile } from './unifiedBackupService';
 import { GOOGLE_WEB_CLIENT_ID } from '../config/appConfig';
 import { reportStartupHealth } from './startupHealth';
+import { isSkippableOptionalStartupError } from './appBootstrapErrors';
 
 export interface BootstrapResult {
   success: true;
@@ -81,9 +87,8 @@ const TEMP_RESTORE_DIR = `${FileSystem.cacheDirectory}guru_boot_restore/`;
 async function checkAndRestoreFromPublicBackup(): Promise<boolean> {
   if (!(await isFreshInstall())) return false;
 
-  // Try GDrive first (lazy import — module may not be ready)
+  // Try GDrive first
   try {
-    const { isGDriveConnected, downloadLatestFromGDrive } = await import('./gdriveBackupService');
     if (await isGDriveConnected()) {
       const gdriveBackupPath = await downloadLatestFromGDrive();
       if (gdriveBackupPath) {
@@ -210,6 +215,21 @@ export async function resolveInitialRoute(): Promise<InitialRoute> {
   return 'CheckIn';
 }
 
+async function runOptionalStartupStep(
+  label: string,
+  fn: () => Promise<void> | void,
+): Promise<void> {
+  try {
+    await fn();
+  } catch (e) {
+    if (isSkippableOptionalStartupError(e)) {
+      console.warn(`[AppBootstrap] Skipping ${label}:`, e);
+      return;
+    }
+    throw e;
+  }
+}
+
 /**
  * Runs all cold-start initialization steps. Call once at app launch.
  * Shows splash screen until complete; caller must hide splash on error path.
@@ -221,24 +241,27 @@ export async function runAppBootstrap(): Promise<BootstrapOutcome> {
 
     // Configure Google Sign-In early (non-blocking, no-op if client ID not set)
     if (GOOGLE_WEB_CLIENT_ID) {
-      try {
-        const { configureGoogleSignIn } = await import('./gdriveBackupService');
+      await runOptionalStartupStep('Google Sign-In configuration', () => {
         configureGoogleSignIn(GOOGLE_WEB_CLIENT_ID);
-      } catch (e) {
-        console.warn('[GDrive] Google Sign-In configuration skipped:', e);
-      }
+      });
     }
 
     await initDatabase();
-    await checkAndRestoreFromPublicBackup();
-    await enforceLocalLlmRamGuard();
-    registerOfflineQueueProcessors();
+    await runOptionalStartupStep('backup restore check', async () => {
+      await checkAndRestoreFromPublicBackup();
+    });
+    await runOptionalStartupStep('local LLM RAM guard', async () => {
+      await enforceLocalLlmRamGuard();
+    });
+    await runOptionalStartupStep('offline queue processor registration', async () => {
+      registerOfflineQueueProcessors();
+    });
     // Await queue processing before confidence decay — both use the same DB
     // connection and concurrent transactions cause "cannot start transaction
     // within transaction" crashes.
-    await processQueue().catch((e) =>
-      console.warn('[OfflineQueue] bootstrap processing failed:', e),
-    );
+    await runOptionalStartupStep('offline queue processing', async () => {
+      await processQueue();
+    }).catch((e) => console.warn('[OfflineQueue] bootstrap processing failed:', e));
     await registerBackgroundFetch().catch((e: unknown) => {
       if (__DEV__) console.warn('[AppBootstrap] Background task not registered:', e);
     });
@@ -252,21 +275,17 @@ export async function runAppBootstrap(): Promise<BootstrapOutcome> {
 
     // Dispatch maintenance tasks without awaiting to keep startup snappy.
     void (async () => {
-      try {
-        const { getDb } = await import('../db/database');
+      await runOptionalStartupStep('orphan cleanup', async () => {
         const db = getDb();
         await db.runAsync(
           `UPDATE external_app_logs SET transcription_status = 'dismissed'
            WHERE transcription_status IN ('pending', 'failed', 'recording', 'transcribing')
               OR (transcription_status = 'completed' AND lecture_note_id IS NULL)`,
         );
-      } catch (e) {
-        console.warn('[AppBootstrap] Orphan cleanup failed:', e);
-      }
+      }).catch((e) => console.warn('[AppBootstrap] Orphan cleanup failed:', e));
     })();
 
     // Heavy background tasks: only on devices with >= 3 GB RAM
-    const { isBackgroundRecoveryAllowed } = await import('./deviceMemory');
     if (isBackgroundRecoveryAllowed()) {
       startMissingTopicEmbeddingSeed(); // Non-blocking async queue
       void bootstrapLocalModels().catch((e: unknown) =>

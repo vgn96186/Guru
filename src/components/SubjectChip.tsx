@@ -1,6 +1,6 @@
 import React from 'react';
 import { StyleSheet, View, type StyleProp, type TextStyle, type ViewStyle } from 'react-native';
-import AppText from './AppText';
+import LinearText from './primitives/LinearText';
 import { linearTheme as n } from '../theme/linearTheme';
 
 interface Props {
@@ -34,13 +34,13 @@ export default React.memo(function SubjectChip({
         style,
       ]}
     >
-      <AppText
+      <LinearText
         variant="chip"
         numberOfLines={numberOfLines}
         style={[styles.text, { color }, textStyle]}
       >
         {subject}
-      </AppText>
+      </LinearText>
     </View>
   );
 });

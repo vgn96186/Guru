@@ -7,6 +7,7 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigation/types';
 import { linearTheme as n } from '../theme/linearTheme';
+import { motion } from '../motion/presets';
 import LinearSurface from '../components/primitives/LinearSurface';
 import { dailyLogRepository } from '../db/repositories';
 import { useRefreshProfile } from '../hooks/queries/useProfile';
@@ -53,7 +54,7 @@ export default function WakeUpScreen() {
       }
 
       setBreatheText('Breathe In');
-      Animated.timing(breatheAnim, { toValue: 2, duration: 4000, useNativeDriver: true }).start();
+      motion.to(breatheAnim, { toValue: 2, duration: 4000, useNativeDriver: true }).start();
 
       timers.push(
         setTimeout(() => {
@@ -64,11 +65,13 @@ export default function WakeUpScreen() {
         setTimeout(() => {
           if (cancelled) return;
           setBreatheText('Breathe Out');
-          Animated.timing(breatheAnim, {
-            toValue: 1,
-            duration: 4000,
-            useNativeDriver: true,
-          }).start();
+          motion
+            .to(breatheAnim, {
+              toValue: 1,
+              duration: 4000,
+              useNativeDriver: true,
+            })
+            .start();
         }, 8000),
       );
       timers.push(

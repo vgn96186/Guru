@@ -47,7 +47,7 @@ import {
 } from '../components/dialogService';
 import { ResponsiveContainer } from '../hooks/useResponsive';
 import { linearTheme as n } from '../theme/linearTheme';
-import { whiteAlpha, transcriptBlueBorderAlpha } from '../theme/colorUtils';
+import { whiteAlpha, captureBorderAlpha } from '../theme/colorUtils';
 import { EmptyState } from '../components/primitives';
 import LoadingOrb from '../components/LoadingOrb';
 import ScreenHeader from '../components/ScreenHeader';
@@ -990,9 +990,8 @@ export default function TranscriptVaultScreen() {
                 );
                 if (ok) {
                   try {
-                    const { cleanupFailedArtifacts } = await import(
-                      '../services/lecture/lectureSessionMonitor'
-                    );
+                    const { cleanupFailedArtifacts } =
+                      await import('../services/lecture/lectureSessionMonitor');
                     const cleaned = await cleanupFailedArtifacts();
                     showSuccess(
                       'Done',
@@ -1239,7 +1238,7 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: transcriptBlueBorderAlpha['20'],
+    borderColor: captureBorderAlpha['20'],
     backgroundColor: n.colors.accent + '18',
   },
   sortLabel: { color: n.colors.accent, fontSize: 12, fontWeight: '700' },

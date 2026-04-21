@@ -1,43 +1,34 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  ActivityIndicator,
-  Animated,
-  Easing,
   InteractionManager,
+  Keyboard,
   Linking,
   Pressable,
-  ScrollView,
   StatusBar,
   StyleSheet,
   useWindowDimensions,
   View,
-  type ImageStyle,
-  type StyleProp,
 } from 'react-native';
-import { type FlashListRef, type ListRenderItemInfo } from '@shopify/flash-list';
-import { KeyboardStickyView } from 'react-native-keyboard-controller';
+import { type FlashListRef } from '@shopify/flash-list';
+import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
 import { ImageLightbox } from '../components/ImageLightbox';
-import { ResilientImage } from '../components/ResilientImage';
 import ErrorBoundary from '../components/ErrorBoundary';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RouteProp } from '@react-navigation/native';
 import Clipboard from '@react-native-clipboard/clipboard';
-import LinearSurface from '../components/primitives/LinearSurface';
 import type { ChatStackParamList } from '../navigation/types';
 import LinearText from '../components/primitives/LinearText';
-import { AppFlashList } from '../components/primitives/AppFlashList';
 import { ResponsiveContainer } from '../hooks/useResponsive';
 import BannerIconButton from '../components/BannerIconButton';
 import ScreenHeader from '../components/ScreenHeader';
 import ScreenMotion from '../motion/ScreenMotion';
 import { RevealSection } from './GuruChatRevealSection';
 import { shouldShowGuruChatSkeleton } from './guruChatLoadingState';
-import { useReducedMotion } from '../motion/useReducedMotion';
 import { addLlmStateListener } from '../services/aiService';
-import { getApiKeys, type MedicalGroundingSource } from '../services/ai';
+import { getApiKeys } from '../services/ai';
 import { showInfo, showError, confirm, confirmDestructive } from '../components/dialogService';
 import { useProfileQuery } from '../hooks/queries/useProfile';
 
@@ -51,7 +42,7 @@ import { useGuruChat } from '../hooks/useGuruChat';
 import { GuruChatHistoryDrawer } from '../components/chat/GuruChatHistoryDrawer';
 import { GuruChatRenameSheet } from '../components/chat/GuruChatRenameSheet';
 import { GuruChatModelSelector } from '../components/chat/GuruChatModelSelector';
-import { GuruChatStarters } from '../components/chat/GuruChatStarters';
+import { GuruChatMessageList } from '../components/chat/GuruChatMessageList';
 import { GuruChatInput } from '../components/chat/GuruChatInput';
 // ========================================
 
@@ -72,32 +63,13 @@ import {
 } from '../db/queries/generatedStudyImages';
 import { buildChatImageContextKey, generateStudyImage } from '../services/studyImageService';
 import { buildBoundedGuruChatStudyContext } from '../services/guruChatStudyContext';
+import type { ChatItem, ChatMessage } from '../types/chat';
 
 type Nav = NativeStackNavigationProp<ChatStackParamList, 'GuruChat'>;
 type ScreenRoute = RouteProp<ChatStackParamList, 'GuruChat'>;
 
-type ChatMessage = {
-  id: string;
-  role: 'user' | 'guru';
-  text: string;
-  sources?: MedicalGroundingSource[];
-  referenceImages?: MedicalGroundingSource[];
-  images?: GeneratedStudyImageRecord[];
-  modelUsed?: string;
-  searchQuery?: string;
-  timestamp: number;
-};
-
-type ChatItem =
-  | { id: string; type: 'message'; message: ChatMessage }
-  | { id: string; type: 'typing' };
-
 const CHAT_HISTORY_LIMIT = 100;
 const GURU_CHAT_SCREEN_MOTION_TRIGGER = 'first-mount' as const;
-
-function getShortModelLabel(modelName?: string | null) {
-  return modelName?.split('/').pop() ?? null;
-}
 
 function getStartersForTopic(topicName: string) {
   return [
@@ -209,253 +181,6 @@ async function getDynamicStarters(): Promise<{ icon: string; text: string }[]> {
   }
 }
 
-function formatTime(ts: number) {
-  const d = new Date(ts);
-  return d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
-}
-
-function TypingDots({ active = true }: { active?: boolean }) {
-  const reducedMotion = useReducedMotion();
-  const dotA = useRef(new Animated.Value(0)).current;
-  const dotB = useRef(new Animated.Value(0)).current;
-  const dotC = useRef(new Animated.Value(0)).current;
-  const dots = useMemo(() => [dotA, dotB, dotC], [dotA, dotB, dotC]);
-
-  useEffect(() => {
-    if (!active || reducedMotion) {
-      return undefined;
-    }
-
-    const anims = dots.map((dot, index) =>
-      Animated.loop(
-        Animated.sequence([
-          Animated.delay(index * 150),
-          Animated.timing(dot, {
-            toValue: 1,
-            duration: 300,
-            useNativeDriver: true,
-            easing: Easing.out(Easing.ease),
-          }),
-          Animated.timing(dot, {
-            toValue: 0,
-            duration: 300,
-            useNativeDriver: true,
-            easing: Easing.in(Easing.ease),
-          }),
-          Animated.delay((2 - index) * 150),
-        ]),
-      ),
-    );
-    Animated.parallel(anims).start();
-    return () => anims.forEach((anim) => anim.stop());
-  }, [active, dots, reducedMotion]);
-
-  return (
-    <View style={styles.dotsRow}>
-      {dots.map((dot, index) => (
-        <Animated.View
-          key={index}
-          style={[
-            styles.dot,
-            active && !reducedMotion
-              ? {
-                  transform: [
-                    { translateY: dot.interpolate({ inputRange: [0, 1], outputRange: [0, -5] }) },
-                  ],
-                  opacity: dot.interpolate({ inputRange: [0, 1], outputRange: [0.4, 1] }),
-                }
-              : styles.dotStatic,
-          ]}
-        />
-      ))}
-    </View>
-  );
-}
-
-/** Renders Guru reply text with paragraphs, bold, bullets, and citation styling for readability */
-function normalizeGuruRenderableText(content: string): string {
-  return (content ?? '')
-    .replace(/\u00A0/g, ' ')
-    .replace(/\u200B/g, '')
-    .replace(/\u200C/g, '')
-    .replace(/\u200D/g, '')
-    .replace(/\u2060/g, '')
-    .replace(/\uFEFF/g, '')
-    .replace(/\r\n/g, '\n')
-    .replace(/\r/g, '\n')
-    .trim();
-}
-
-function splitGuruBoldSegments(line: string): Array<{ text: string; bold: boolean }> {
-  if (!line) return [{ text: '', bold: false }];
-
-  const segments: Array<{ text: string; bold: boolean }> = [];
-  const pattern = /\*\*(.+?)\*\*/g;
-  let lastIndex = 0;
-  let match: RegExpExecArray | null;
-
-  while ((match = pattern.exec(line)) !== null) {
-    if (match.index > lastIndex) {
-      segments.push({ text: line.slice(lastIndex, match.index), bold: false });
-    }
-    segments.push({ text: match[1] ?? '', bold: true });
-    lastIndex = match.index + match[0].length;
-  }
-
-  if (lastIndex < line.length) {
-    segments.push({ text: line.slice(lastIndex), bold: false });
-  }
-
-  return segments.length > 0 ? segments : [{ text: line, bold: false }];
-}
-
-function FormattedGuruMessage({ text }: { text: string }) {
-  const normalizedText = normalizeGuruRenderableText(text);
-  const paragraphs = normalizedText.split(/\n{2,}/).filter(Boolean);
-
-  return (
-    <View style={styles.guruFormattedWrap}>
-      {paragraphs.map((paragraph, paragraphIndex) => {
-        const lines = paragraph.split('\n');
-        return (
-          <View key={`paragraph-${paragraphIndex}`} style={styles.guruParagraph}>
-            {lines.map((line, lineIndex) => {
-              const segments = splitGuruBoldSegments(line);
-              return (
-                <LinearText
-                  key={`line-${paragraphIndex}-${lineIndex}`}
-                  style={styles.guruFormattedText}
-                  textBreakStrategy="simple"
-                >
-                  {segments.map((segment, segmentIndex) =>
-                    segment.bold ? (
-                      <LinearText
-                        key={`seg-${paragraphIndex}-${lineIndex}-${segmentIndex}`}
-                        style={styles.guruStrongText}
-                      >
-                        {segment.text}
-                      </LinearText>
-                    ) : (
-                      <React.Fragment key={`seg-${paragraphIndex}-${lineIndex}-${segmentIndex}`}>
-                        {segment.text}
-                      </React.Fragment>
-                    ),
-                  )}
-                </LinearText>
-              );
-            })}
-          </View>
-        );
-      })}
-    </View>
-  );
-}
-
-function ChatImagePreview({
-  uri,
-  style,
-  onPress,
-  onLongPress,
-  accessibilityLabel,
-}: {
-  uri: string;
-  style: StyleProp<ImageStyle>;
-  onPress: () => void;
-  onLongPress?: () => void;
-  accessibilityLabel: string;
-}) {
-  const safeUri = typeof uri === 'string' ? uri.trim() : '';
-  if (!safeUri || !/^https?:\/\//i.test(safeUri)) return null;
-
-  return (
-    <ResilientImage
-      uri={safeUri}
-      style={style}
-      resizeMode="contain"
-      onPress={onPress}
-      onLongPress={onLongPress}
-      accessibilityLabel={accessibilityLabel}
-      showRetry
-    />
-  );
-}
-
-function isDisplayableReferenceImage(source: MedicalGroundingSource): boolean {
-  const uri = source.imageUrl?.trim();
-  if (!uri) return false;
-  if (!/^https?:\/\//i.test(uri)) return false;
-  return !/\.(pdf|svg|djvu?|tiff?)(?:[?#]|$)/i.test(uri);
-}
-
-function MessageSources({
-  sources,
-  messageId,
-  expanded,
-  setLightboxUri,
-  openSource,
-}: {
-  sources: MedicalGroundingSource[];
-  messageId: string;
-  expanded: boolean;
-  setLightboxUri: (uri: string) => void;
-  openSource: (url: string) => void;
-}) {
-  if (!sources || sources.length === 0 || !expanded) return null;
-
-  return (
-    <View style={styles.sourcesWrap}>
-      <View style={styles.sourcesHeader}>
-        <Ionicons name="documents-outline" size={13} color={n.colors.accent} />
-        <LinearText style={styles.sourcesLabel}>Sources ({sources.length})</LinearText>
-      </View>
-      {sources.map((source, index) => (
-        <View key={`${messageId}-${source.id}`} style={styles.sourceCard}>
-          <View style={styles.sourceNumBadge}>
-            <LinearText style={styles.sourceNum}>{index + 1}</LinearText>
-          </View>
-          {source.imageUrl ? (
-            <Pressable
-              onPress={() => setLightboxUri(source.imageUrl!)}
-              hitSlop={6}
-              accessibilityRole="button"
-              accessibilityLabel="Enlarge source thumbnail"
-            >
-              <ResilientImage
-                uri={source.imageUrl}
-                style={styles.sourceImage}
-                resizeMode="cover"
-                showRetry={false}
-              />
-            </Pressable>
-          ) : null}
-          <Pressable
-            style={({ pressed }) => [styles.sourceBodyPress, pressed && styles.pressed]}
-            onPress={() => openSource(source.url)}
-            android_ripple={{ color: `${n.colors.accent}22` }}
-          >
-            <LinearText style={styles.sourceTitle} numberOfLines={2}>
-              {source.title}
-            </LinearText>
-            <LinearText style={styles.sourceMeta}>
-              {source.source}
-              {source.publishedAt ? `  ·  ${source.publishedAt}` : ''}
-            </LinearText>
-          </Pressable>
-          <Pressable
-            style={({ pressed }) => [pressed && styles.pressed]}
-            onPress={() => openSource(source.url)}
-            hitSlop={8}
-            accessibilityRole="button"
-            accessibilityLabel="Open source in browser"
-          >
-            <Ionicons name="open-outline" size={13} color={n.colors.textMuted} />
-          </Pressable>
-        </View>
-      ))}
-    </View>
-  );
-}
-
 function ChatSkeleton() {
   return (
     <View style={chatSkeletonStyles.container}>
@@ -513,7 +238,6 @@ export default function GuruChatScreen() {
 function GuruChatScreenContent() {
   const navigation = useNavigation<Nav>();
   const route = useRoute<ScreenRoute>();
-  const insets = useSafeAreaInsets();
   const { width: viewportWidth } = useWindowDimensions();
   const topicName = route.params?.topicName ?? 'General Medicine';
   const syllabusTopicId = route.params?.topicId;
@@ -591,6 +315,12 @@ function GuruChatScreenContent() {
   const [isHydratingThread, setIsHydratingThread] = useState(true);
   const [isHydratingHistory, setIsHydratingHistory] = useState(true);
 
+  useEffect(() => {
+    if (lightboxUri) {
+      Keyboard?.dismiss?.();
+    }
+  }, [lightboxUri]);
+
   // === REFACTOR: Sync new hooks with legacy state (Phase 1) ===
   // These effects keep old and new state in sync during migration
   useEffect(() => {
@@ -637,14 +367,21 @@ function GuruChatScreenContent() {
         chosenModel: chosenModel === 'auto' ? undefined : chosenModel,
         textMode: true,
         onProviderError: (provider: string, model: string, error: unknown) => {
-          console.warn(`[GuruChat] Provider error: ${provider}/${model}`, error);
+          if (__DEV__) {
+            console.warn(`[GuruChat] Provider error: ${provider}/${model}`, error);
+          }
         },
         onProviderSuccess: (provider: string, model: string) => {
-          console.log(`[GuruChat] Provider success: ${provider}/${model}`);
+          if (__DEV__) {
+            console.log(`[GuruChat] Provider success: ${provider}/${model}`);
+          }
         },
       });
     } catch (error) {
-      console.error('[GuruChat] Failed to create v2 model:', error);
+      console.warn(
+        '[GuruChat] No providers available for v2 model (add an API key in Settings):',
+        (error as Error)?.message,
+      );
       return null;
     }
   }, [profile, chosenModel]);
@@ -791,26 +528,22 @@ function GuruChatScreenContent() {
         setMessages([]);
         setIsHydratingHistory(false);
       });
-  }, [currentThread]);
+  }, [currentThread, setMessages]);
 
   const lastUserPrompt = useMemo(() => getLastUserPrompt(messages), [messages]);
   const questionInFlightRef = useRef<string | null>(null);
-  const latestGuruMessageId = useMemo(() => {
-    for (let index = messages.length - 1; index >= 0; index -= 1) {
-      const message = messages[index];
-      if (message?.role === 'guru') return message.id;
-    }
-    return null;
-  }, [messages]);
-
   const chatItems = useMemo<ChatItem[]>(() => {
     const items: ChatItem[] = messages.map((message) => ({
       id: message.id,
       type: 'message',
       message,
     }));
+    // useChat appends an assistant row immediately; a separate typing row duplicated "Guru".
     if (loading) {
-      items.push({ id: 'typing-indicator', type: 'typing' });
+      const last = messages[messages.length - 1];
+      if (last?.role !== 'guru') {
+        items.push({ id: 'typing-indicator', type: 'typing' });
+      }
     }
     return items;
   }, [loading, messages]);
@@ -913,7 +646,7 @@ function GuruChatScreenContent() {
         setImageJobKey(null);
       }
     },
-    [currentThread, imageJobKey, scrollToLatest, topicName],
+    [currentThread, imageJobKey, scrollToLatest, setMessages, topicName],
   );
 
   const handleSend = useCallback(
@@ -942,15 +675,19 @@ function GuruChatScreenContent() {
           profile ?? null,
           syllabusTopicId,
         );
-        const assistantMessage = await guruChat.sendMessage(question, {
-          sessionSummary: sessionSummary.trim() || undefined,
-          sessionStateJson: sessionStateJson.trim() || undefined,
-          profileNotes: profile?.guruMemoryNotes?.trim() || undefined,
-          studyContext: studyContextLine ?? undefined,
-          syllabusTopicId,
-          groundingTitle,
-          groundingContext,
-        });
+        const assistantMessage = await guruChat.sendMessage(
+          question,
+          {
+            sessionSummary: sessionSummary.trim() || undefined,
+            sessionStateJson: sessionStateJson.trim() || undefined,
+            profileNotes: profile?.guruMemoryNotes?.trim() || undefined,
+            studyContext: studyContextLine ?? undefined,
+            syllabusTopicId,
+            groundingTitle,
+            groundingContext,
+          },
+          { persistThreadId: resolvedThreadId },
+        );
         if (!assistantMessage) {
           throw new Error('Guru did not return a response.');
         }
@@ -974,14 +711,15 @@ function GuruChatScreenContent() {
     [
       groundingContext,
       groundingTitle,
+      currentThreadId,
       guruChat,
-      imageJobKey,
       input,
       loading,
       profile,
       scrollToLatest,
       sessionStateJson,
       sessionSummary,
+      setMessages,
       syllabusTopicId,
       topicName,
     ],
@@ -1009,317 +747,6 @@ function GuruChatScreenContent() {
     }
   }
 
-  const renderMessage = useCallback(
-    ({ item }: ListRenderItemInfo<ChatItem>) => {
-      if (item.type === 'typing') {
-        return (
-          <View style={[styles.msgRow, styles.msgRowGuru]}>
-            <View style={styles.guruAvatarTiny}>
-              <Ionicons name="sparkles" size={11} color={n.colors.accent} />
-            </View>
-            <View style={[styles.msgContent, styles.msgContentGuru]}>
-              <View style={[styles.messageStack, styles.messageStackGuru]}>
-                <View style={styles.msgMetaRow}>
-                  <LinearText variant="meta" style={styles.msgAuthor}>
-                    Guru
-                  </LinearText>
-                  <LinearText variant="meta" tone="muted" style={styles.msgMetaDivider}>
-                    •
-                  </LinearText>
-                  <LinearText variant="meta" tone="muted" style={styles.msgMetaText}>
-                    {isInitializing ? 'Waking up on-device AI...' : 'Thinking...'}
-                  </LinearText>
-                </View>
-                <View style={[styles.bubbleWrap, styles.bubbleWrapGuru]}>
-                  <View style={[styles.bubble, styles.guruBubble, styles.typingBubble]}>
-                    <TypingDots active={entryComplete} />
-                  </View>
-                </View>
-              </View>
-            </View>
-          </View>
-        );
-      }
-
-      const { message } = item;
-      const modelTag = getShortModelLabel(message.modelUsed);
-      const hasSources = !!message.sources?.length;
-      const sourcesExpanded = expandedSourcesMessageId === message.id;
-      const isLatestGuruMessage = message.id === latestGuruMessageId;
-      const guruGeneratedImages = message.role === 'guru' ? (message.images ?? []) : [];
-      const guruReferenceImages =
-        message.role === 'guru'
-          ? (message.referenceImages ?? []).filter(isDisplayableReferenceImage)
-          : [];
-
-      const hasGuruImages = guruGeneratedImages.length > 0 || guruReferenceImages.length > 0;
-      const showInlineGuruImages = hasGuruImages;
-      return (
-        <View
-          style={[styles.msgRow, message.role === 'user' ? styles.msgRowUser : styles.msgRowGuru]}
-        >
-          {message.role === 'guru' ? (
-            <View style={styles.guruAvatarTiny}>
-              <Ionicons name="sparkles" size={11} color={n.colors.accent} />
-            </View>
-          ) : null}
-
-          <View
-            style={[
-              styles.msgContent,
-              message.role === 'user' ? styles.msgContentUser : styles.msgContentGuru,
-            ]}
-          >
-            <View
-              style={[
-                styles.messageStack,
-                message.role === 'user' ? styles.messageStackUser : styles.messageStackGuru,
-              ]}
-            >
-              <View
-                style={[
-                  styles.msgMetaRow,
-                  message.role === 'user' ? styles.msgMetaRowUser : styles.msgMetaRowGuru,
-                ]}
-              >
-                <LinearText variant="meta" style={styles.msgAuthor}>
-                  {message.role === 'user' ? 'You' : 'Guru'}
-                </LinearText>
-                <LinearText variant="meta" tone="muted" style={styles.msgMetaDivider}>
-                  •
-                </LinearText>
-                <LinearText variant="meta" tone="muted" style={styles.msgMetaText}>
-                  {formatTime(message.timestamp)}
-                </LinearText>
-                {message.role === 'guru' && modelTag ? (
-                  <View style={styles.msgModelPill}>
-                    <LinearText variant="badge" style={styles.msgModelPillText}>
-                      {modelTag}
-                    </LinearText>
-                  </View>
-                ) : null}
-              </View>
-              {showInlineGuruImages ? (
-                <View style={{ width: '100%' }}>
-                  <Pressable
-                    style={[styles.bubbleWrap, styles.bubbleWrapGuru]}
-                    onLongPress={() => copyMessage(message.text)}
-                    delayLongPress={400}
-                  >
-                    <View style={[styles.bubble, styles.guruBubble]}>
-                      <FormattedGuruMessage text={message.text} />
-                    </View>
-                  </Pressable>
-                  <ScrollView
-                    horizontal
-                    showsHorizontalScrollIndicator={false}
-                    contentContainerStyle={{ paddingHorizontal: 4, paddingVertical: 6, gap: 8 }}
-                  >
-                    {guruReferenceImages.map((image) => (
-                      <ChatImagePreview
-                        key={`${message.id}-reference-${image.id}`}
-                        uri={image.imageUrl!}
-                        style={[styles.generatedImage, { width: 160, height: 160 }]}
-                        onPress={() => setLightboxUri(image.imageUrl!)}
-                        onLongPress={() => openSource(image.url)}
-                        accessibilityLabel="View reference image"
-                      />
-                    ))}
-                    {guruGeneratedImages.map((image) => (
-                      <ChatImagePreview
-                        key={`${message.id}-image-${image.id}`}
-                        uri={image.localUri}
-                        style={[styles.generatedImage, { width: 160, height: 160 }]}
-                        onPress={() => setLightboxUri(image.localUri)}
-                        accessibilityLabel="View enlarged image"
-                      />
-                    ))}
-                  </ScrollView>
-                </View>
-              ) : (
-                <Pressable
-                  style={[
-                    styles.bubbleWrap,
-                    message.role === 'user' ? styles.bubbleWrapUser : styles.bubbleWrapGuru,
-                  ]}
-                  onLongPress={() => copyMessage(message.text)}
-                  delayLongPress={400}
-                >
-                  <View
-                    style={[
-                      styles.bubble,
-                      message.role === 'user' ? styles.userBubble : styles.guruBubble,
-                    ]}
-                  >
-                    {message.role === 'guru' ? (
-                      <FormattedGuruMessage text={message.text} />
-                    ) : (
-                      <LinearText
-                        variant="body"
-                        style={[styles.bubbleText, styles.userBubbleText]}
-                        textBreakStrategy="simple"
-                      >
-                        {message.text}
-                      </LinearText>
-                    )}
-                  </View>
-                </Pressable>
-              )}
-
-              <LinearText
-                variant="caption"
-                tone="muted"
-                style={[styles.timestamp, message.role === 'user' && styles.timestampRight]}
-              >
-                {formatTime(message.timestamp)}
-                {message.role === 'guru' && message.modelUsed
-                  ? `  ·  ${message.modelUsed.split('/').pop()}`
-                  : ''}
-              </LinearText>
-
-              {message.role === 'guru' && hasGuruImages && !showInlineGuruImages ? (
-                <View style={styles.generatedImagesWrap}>
-                  {guruReferenceImages.map((image) => (
-                    <ChatImagePreview
-                      key={`${message.id}-reference-${image.id}`}
-                      uri={image.imageUrl!}
-                      style={[styles.generatedImage, styles.generatedImagePortrait]}
-                      onPress={() => setLightboxUri(image.imageUrl!)}
-                      onLongPress={() => openSource(image.url)}
-                      accessibilityLabel="View reference image"
-                    />
-                  ))}
-                  {guruGeneratedImages.map((image) => (
-                    <ChatImagePreview
-                      key={`${message.id}-image-${image.id}`}
-                      uri={image.localUri}
-                      style={[styles.generatedImage, styles.generatedImagePortrait]}
-                      onPress={() => setLightboxUri(image.localUri)}
-                      accessibilityLabel="View enlarged image"
-                    />
-                  ))}
-                </View>
-              ) : null}
-
-              {message.role === 'guru' && message.sources && message.sources.length > 0 ? (
-                <MessageSources
-                  sources={message.sources}
-                  messageId={message.id}
-                  expanded={sourcesExpanded}
-                  setLightboxUri={setLightboxUri}
-                  openSource={openSource}
-                />
-              ) : null}
-
-              {message.role === 'guru' ? (
-                <>
-                  <View style={styles.responseActionsRow}>
-                    {isLatestGuruMessage && !loading ? (
-                      <Pressable
-                        style={({ pressed }) => [
-                          styles.responseActionBtn,
-                          styles.responseActionBtnActive,
-                          pressed && styles.pressed,
-                        ]}
-                        onPress={() => handleRegenerateReply()}
-                        accessibilityRole="button"
-                        accessibilityLabel="Regenerate response"
-                      >
-                        <Ionicons name="refresh-outline" size={15} color={n.colors.textPrimary} />
-                      </Pressable>
-                    ) : null}
-                    <Pressable
-                      style={({ pressed }) => [styles.responseActionBtn, pressed && styles.pressed]}
-                      onPress={() => copyMessage(message.text)}
-                      accessibilityRole="button"
-                      accessibilityLabel="Copy response"
-                    >
-                      <Ionicons name="copy-outline" size={15} color={n.colors.accent} />
-                    </Pressable>
-                    {hasSources ? (
-                      <Pressable
-                        style={({ pressed }) => [
-                          styles.responseActionBtn,
-                          sourcesExpanded && styles.responseActionBtnActive,
-                          pressed && styles.pressed,
-                        ]}
-                        onPress={() =>
-                          setExpandedSourcesMessageId((current) =>
-                            current === message.id ? null : message.id,
-                          )
-                        }
-                        accessibilityRole="button"
-                        accessibilityLabel={sourcesExpanded ? 'Hide sources' : 'Show sources'}
-                      >
-                        <Ionicons
-                          name="link-outline"
-                          size={15}
-                          color={sourcesExpanded ? n.colors.textPrimary : n.colors.accent}
-                        />
-                      </Pressable>
-                    ) : null}
-                    {(['illustration', 'chart'] as GeneratedStudyImageStyle[]).map((style) => {
-                      const isGenerating = imageJobKey === `${message.id}:${style}`;
-                      return (
-                        <Pressable
-                          key={`${message.id}-${style}`}
-                          style={({ pressed }) => [
-                            styles.responseActionBtn,
-                            isGenerating && styles.responseActionBtnActive,
-                            pressed && styles.pressed,
-                          ]}
-                          onPress={() => handleGenerateMessageImage(message, style)}
-                          disabled={!!imageJobKey}
-                          accessibilityRole="button"
-                          accessibilityLabel={
-                            style === 'illustration' ? 'Generate illustration' : 'Generate chart'
-                          }
-                        >
-                          {isGenerating ? (
-                            <ActivityIndicator size="small" color={n.colors.textPrimary} />
-                          ) : (
-                            <Ionicons
-                              name={
-                                style === 'illustration' ? 'image-outline' : 'git-network-outline'
-                              }
-                              size={15}
-                              color={n.colors.accent}
-                            />
-                          )}
-                        </Pressable>
-                      );
-                    })}
-                  </View>
-                  {imageJobKey?.startsWith(`${message.id}:`) ? (
-                    <View style={styles.responseStatusRow}>
-                      <ActivityIndicator size="small" color={n.colors.accent} />
-                      <LinearText style={styles.responseStatusText}>
-                        {imageJobKey.endsWith(':chart')
-                          ? 'Generating chart...'
-                          : 'Generating illustration...'}
-                      </LinearText>
-                    </View>
-                  ) : null}
-                </>
-              ) : null}
-            </View>
-          </View>
-        </View>
-      );
-    },
-    [
-      copyMessage,
-      expandedSourcesMessageId,
-      entryComplete,
-      handleGenerateMessageImage,
-      imageJobKey,
-      latestGuruMessageId,
-      loading,
-      handleRegenerateReply,
-      openSource,
-    ],
-  );
-
   if (shouldShowGuruChatSkeleton({ isHydratingThread, isHydratingHistory })) {
     return (
       <SafeAreaView style={styles.safe} testID="guru-chat-screen">
@@ -1338,176 +765,182 @@ function GuruChatScreenContent() {
           trigger={GURU_CHAT_SCREEN_MOTION_TRIGGER}
           isEntryComplete={() => setEntryComplete(true)}
         >
-          <ResponsiveContainer style={styles.flex}>
-            <RevealSection active={entryComplete} delayMs={0}>
-              <ScreenHeader
-                title=""
-                onBackPress={navigation.canGoBack() ? () => navigation.goBack() : undefined}
-                rightElement={
-                  <View style={styles.minimalHeaderRight}>
-                    <BannerIconButton
-                      onPress={() => setShowHistoryDrawer(true)}
-                      accessibilityLabel="Open chat history"
-                      style={styles.minimalHeaderIcon}
-                    >
-                      <Ionicons
-                        name="reorder-three-outline"
-                        size={18}
-                        color={n.colors.textSecondary}
-                      />
-                    </BannerIconButton>
-                    <BannerIconButton
-                      onPress={startNewChat}
-                      accessibilityLabel="New chat"
-                      style={styles.minimalHeaderIcon}
-                    >
-                      <Ionicons name="create-outline" size={18} color={n.colors.textSecondary} />
-                    </BannerIconButton>
-                  </View>
-                }
-                showSettings
-              />
-            </RevealSection>
-
-            {/* === REFACTOR: Phase 2 - New History Drawer Component === */}
-            <GuruChatHistoryDrawer
-              visible={showHistoryDrawer}
-              threads={threads}
-              currentThreadId={currentThread?.id ?? null}
-              onClose={() => setShowHistoryDrawer(false)}
-              onNewChat={createAndSwitchToNewThread}
-              onOpenThread={(thread: GuruChatThread) => {
-                void handleOpenThread(thread);
-              }}
-              onRenameThread={(thread: GuruChatThread) => {
-                setRenameThreadId(thread.id);
-                setRenameDraft(thread.title);
-              }}
-              onDeleteThread={async (thread: GuruChatThread) => {
-                const ok = await confirmDestructive(
-                  'Delete chat?',
-                  'This will permanently delete the chat history.',
-                );
-                if (ok) {
-                  await guruSession.deleteThread(thread);
-                }
-              }}
-            />
-            {/* ===================================================== */}
-
-            {/* === REFACTOR: Phase 2 - New Rename Sheet Component === */}
-            <GuruChatRenameSheet
-              visible={renameThreadId !== null}
-              currentTitle={renameDraft}
-              onTitleChange={setRenameDraft}
-              onClose={() => {
-                setRenameThreadId(null);
-                setRenameDraft('');
-              }}
-              onSave={() => {
-                if (renameThreadId) {
-                  void guruSession.renameThread(renameThreadId, renameDraft);
-                }
-                setRenameThreadId(null);
-                setRenameDraft('');
-              }}
-            />
-            {/* ================================================== */}
-
-            {/* === REFACTOR: Phase 2 - New Model Selector Component === */}
-            <GuruChatModelSelector
-              visible={showModelPicker}
-              availableModels={guruModels.availableModels}
-              visibleModelGroups={guruModels.visibleModelGroups}
-              chosenModel={chosenModel}
-              onSelectModel={async (modelId: string) => {
-                if (messages.length > 0 && modelId !== chosenModel) {
-                  const ok = await confirm(
-                    'Switch model?',
-                    "Switching models mid-conversation may lose context. The new model won't remember earlier messages.",
-                  );
-                  if (!ok) return;
-                }
-                applyChosenModel(modelId);
-                setShowModelPicker(false);
-              }}
-              pickerTab={pickerTab}
-              onSetPickerTab={setPickerTab}
-              onClose={() => setShowModelPicker(false)}
-              localLlmWarning={localLlmWarning}
-              hasMessages={messages.length > 0}
-            />
-            {/* ===================================================== */}
-
-            <RevealSection active={entryComplete} delayMs={80} style={styles.flex}>
-              <View style={styles.contentWrap}>
-                {bannerVisible ? (
-                  <View style={styles.infoBanner}>
-                    <Ionicons
-                      name="library-outline"
-                      size={14}
-                      color={n.colors.accent}
-                      style={styles.bannerIcon}
-                    />
-                    <LinearText style={styles.infoText}>
-                      Grounded with Wikipedia, Europe PMC and PubMed. Sources are linked inline.
-                    </LinearText>
-                    <Pressable onPress={() => setBannerVisible(false)} hitSlop={8}>
-                      <Ionicons name="close" size={14} color={n.colors.textMuted} />
-                    </Pressable>
-                  </View>
-                ) : null}
-
-                <View style={styles.chatSurface}>
-                  {/* === REFACTOR: Phase 2 - New Starters Component === */}
-                  {messages.length === 0 && !loading ? (
-                    <GuruChatStarters
-                      starters={starters}
-                      sessionSummary={sessionSummary}
-                      isGeneralChat={isGeneralChat}
-                      topicName={topicName}
-                      onSelectStarter={(text: string) => handleSend(text)}
-                      isLoading={loading}
-                    />
-                  ) : (
-                    <AppFlashList
-                      key={`chat-list-${viewportWidth}`}
-                      ref={flatListRef}
-                      data={chatItems}
-                      renderItem={renderMessage}
-                      keyExtractor={(item) => item.id}
-                      style={styles.messages}
-                      contentContainerStyle={styles.messagesContent}
-                      showsVerticalScrollIndicator={false}
-                      keyboardShouldPersistTaps="handled"
-                      keyboardDismissMode="on-drag"
-                      maintainVisibleContentPosition={{
-                        autoscrollToBottomThreshold: 0.2,
-                        startRenderingFromBottom: true,
-                      }}
-                    />
-                  )}
-                </View>
-              </View>
-            </RevealSection>
-
-            <RevealSection active={entryComplete} delayMs={140}>
-              <KeyboardStickyView offset={{ opened: -Math.max(insets.bottom - 8, 0) }}>
-                <GuruChatInput
-                  input={input}
-                  onChangeText={setInput}
-                  onSend={handleSend}
-                  onModelPress={() => {
-                    setPickerTab(currentModelGroup);
-                    setShowModelPicker(true);
-                  }}
-                  currentModelLabel={currentModelLabel}
-                  isLoading={loading}
-                  autoFocus={!!route.params?.autoFocusComposer}
+          <KeyboardAvoidingView
+            style={styles.flex}
+            behavior="translate-with-padding"
+            enabled={!lightboxUri}
+          >
+            <ResponsiveContainer style={styles.flex}>
+              <RevealSection active={entryComplete} delayMs={0}>
+                <ScreenHeader
+                  title=""
+                  onBackPress={navigation.canGoBack() ? () => navigation.goBack() : undefined}
+                  rightElement={
+                    <View style={styles.minimalHeaderRight}>
+                      <BannerIconButton
+                        onPress={() => setShowHistoryDrawer(true)}
+                        accessibilityLabel="Open chat history"
+                        style={styles.minimalHeaderIcon}
+                      >
+                        <Ionicons
+                          name="reorder-three-outline"
+                          size={18}
+                          color={n.colors.textSecondary}
+                        />
+                      </BannerIconButton>
+                      <BannerIconButton
+                        onPress={startNewChat}
+                        accessibilityLabel="New chat"
+                        style={styles.minimalHeaderIcon}
+                      >
+                        <Ionicons name="create-outline" size={18} color={n.colors.textSecondary} />
+                      </BannerIconButton>
+                    </View>
+                  }
+                  showSettings
                 />
-              </KeyboardStickyView>
-            </RevealSection>
-          </ResponsiveContainer>
+              </RevealSection>
+
+              {/* === REFACTOR: Phase 2 - New History Drawer Component === */}
+              <GuruChatHistoryDrawer
+                visible={showHistoryDrawer}
+                threads={threads}
+                currentThreadId={currentThread?.id ?? null}
+                onClose={() => setShowHistoryDrawer(false)}
+                onNewChat={createAndSwitchToNewThread}
+                onOpenThread={(thread: GuruChatThread) => {
+                  void handleOpenThread(thread);
+                }}
+                onRenameThread={(thread: GuruChatThread) => {
+                  setRenameThreadId(thread.id);
+                  setRenameDraft(thread.title);
+                }}
+                onDeleteThread={async (thread: GuruChatThread) => {
+                  const ok = await confirmDestructive(
+                    'Delete chat?',
+                    'This will permanently delete the chat history.',
+                  );
+                  if (ok) {
+                    await guruSession.deleteThread(thread);
+                  }
+                }}
+              />
+              {/* ===================================================== */}
+
+              {/* === REFACTOR: Phase 2 - New Rename Sheet Component === */}
+              <GuruChatRenameSheet
+                visible={renameThreadId !== null}
+                currentTitle={renameDraft}
+                onTitleChange={setRenameDraft}
+                onClose={() => {
+                  setRenameThreadId(null);
+                  setRenameDraft('');
+                }}
+                onSave={() => {
+                  if (renameThreadId) {
+                    void guruSession.renameThread(renameThreadId, renameDraft);
+                  }
+                  setRenameThreadId(null);
+                  setRenameDraft('');
+                }}
+              />
+              {/* ================================================== */}
+
+              {/* === REFACTOR: Phase 2 - New Model Selector Component === */}
+              <GuruChatModelSelector
+                visible={showModelPicker}
+                availableModels={guruModels.availableModels}
+                visibleModelGroups={guruModels.visibleModelGroups}
+                chosenModel={chosenModel}
+                onSelectModel={async (modelId: string) => {
+                  if (messages.length > 0 && modelId !== chosenModel) {
+                    const ok = await confirm(
+                      'Switch model?',
+                      "Switching models mid-conversation may lose context. The new model won't remember earlier messages.",
+                    );
+                    if (!ok) return;
+                  }
+                  applyChosenModel(modelId);
+                  setShowModelPicker(false);
+                }}
+                pickerTab={pickerTab}
+                onSetPickerTab={setPickerTab}
+                onClose={() => setShowModelPicker(false)}
+                localLlmWarning={localLlmWarning}
+                hasMessages={messages.length > 0}
+              />
+              {/* ===================================================== */}
+
+              <RevealSection active={entryComplete} delayMs={80} style={styles.flex}>
+                <View style={styles.contentWrap}>
+                  {bannerVisible ? (
+                    <View style={styles.infoBanner}>
+                      <Ionicons
+                        name="library-outline"
+                        size={14}
+                        color={n.colors.accent}
+                        style={styles.bannerIcon}
+                      />
+                      <LinearText style={styles.infoText}>
+                        Grounded with Wikipedia, Europe PMC and PubMed. Sources are linked inline.
+                      </LinearText>
+                      <Pressable onPress={() => setBannerVisible(false)} hitSlop={8}>
+                        <Ionicons name="close" size={14} color={n.colors.textMuted} />
+                      </Pressable>
+                    </View>
+                  ) : null}
+
+                  <GuruChatMessageList
+                    messages={messages}
+                    chatItems={chatItems}
+                    isLoading={loading}
+                    isInitializing={isInitializing}
+                    isHydrating={isHydratingThread || isHydratingHistory}
+                    entryComplete={entryComplete}
+                    showEmptyState={messages.length === 0 && !loading}
+                    starters={starters}
+                    sessionSummary={sessionSummary}
+                    isGeneralChat={isGeneralChat}
+                    topicName={topicName}
+                    bannerVisible={bannerVisible}
+                    imageJobKey={imageJobKey}
+                    expandedSourcesMessageId={expandedSourcesMessageId}
+                    flatListRef={flatListRef}
+                    viewportWidth={viewportWidth}
+                    onToggleSources={(messageId: string) =>
+                      setExpandedSourcesMessageId((current) =>
+                        current === messageId ? null : messageId,
+                      )
+                    }
+                    onCopyMessage={copyMessage}
+                    onRegenerate={handleRegenerateReply}
+                    onGenerateImage={handleGenerateMessageImage}
+                    onOpenSource={openSource}
+                    onSetLightboxUri={setLightboxUri}
+                    onSelectStarter={(text: string) => handleSend(text)}
+                    onBannerDismiss={() => setBannerVisible(false)}
+                  />
+                </View>
+              </RevealSection>
+
+              {!lightboxUri && entryComplete ? (
+                <View style={styles.keyboardComposerBar}>
+                  <GuruChatInput
+                    input={input}
+                    onChangeText={setInput}
+                    onSend={handleSend}
+                    onModelPress={() => {
+                      setPickerTab(currentModelGroup);
+                      setShowModelPicker(true);
+                    }}
+                    currentModelLabel={currentModelLabel}
+                    isLoading={loading}
+                    autoFocus={!!route.params?.autoFocusComposer}
+                  />
+                </View>
+              ) : null}
+            </ResponsiveContainer>
+          </KeyboardAvoidingView>
         </ScreenMotion>
       </View>
       <ImageLightbox
@@ -1526,6 +959,11 @@ const styles = StyleSheet.create({
   },
   flex: {
     flex: 1,
+  },
+  /** Opaque strip so the message list does not show through when the keyboard lifts the composer. */
+  keyboardComposerBar: {
+    width: '100%',
+    backgroundColor: n.colors.background,
   },
   pressed: {
     opacity: n.alpha.pressed,

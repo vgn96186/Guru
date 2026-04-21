@@ -29,7 +29,6 @@ const DRIZZLE_TABLE_MAP: Record<string, string> = {
   subjects: 'subjects',
   topics: 'topics',
   topicProgress: 'topic_progress',
-  topicNotes: 'topic_notes',
   sessions: 'sessions',
   dailyLog: 'daily_log',
   dailyAgenda: 'daily_agenda',
@@ -52,8 +51,6 @@ const DRIZZLE_TABLE_MAP: Record<string, string> = {
   mindMaps: 'mind_maps',
   mindMapNodes: 'mind_map_nodes',
   mindMapEdges: 'mind_map_edges',
-  mindMapNodeLinks: 'mind_map_node_links',
-  semanticLinks: 'semantic_links',
   migrationHistory: 'migration_history',
   userProfile: 'user_profile',
 };
@@ -64,7 +61,11 @@ function createFreshDb(): Database.Database {
   db.pragma('foreign_keys = ON');
   for (const sql of ALL_SCHEMAS) db.exec(sql);
   for (const sql of DB_INDEXES) {
-    try { db.exec(sql); } catch { /* index may already exist */ }
+    try {
+      db.exec(sql);
+    } catch {
+      /* index may already exist */
+    }
   }
   // migration_history is created by migration v59, not in ALL_SCHEMAS
   db.exec(`
@@ -114,7 +115,9 @@ describe('Drizzle schema parity', () => {
 
   test('every Drizzle table export maps to a real DB table', () => {
     const tables = db
-      .prepare("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' ORDER BY name")
+      .prepare(
+        "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' ORDER BY name",
+      )
       .all() as { name: string }[];
     const tableNames = new Set(tables.map((t) => t.name));
 
@@ -125,7 +128,9 @@ describe('Drizzle schema parity', () => {
 
   test('every DB table has a Drizzle definition', () => {
     const tables = db
-      .prepare("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' ORDER BY name")
+      .prepare(
+        "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' ORDER BY name",
+      )
       .all() as { name: string }[];
     const drizzleDbNames = new Set(Object.values(DRIZZLE_TABLE_MAP));
 
@@ -153,13 +158,19 @@ describe('Drizzle schema parity', () => {
   });
 
   test('no extra DB columns missing from Drizzle schema', () => {
+    const missingColumns: string[] = [];
     for (const [exportName, dbTableName] of Object.entries(DRIZZLE_TABLE_MAP)) {
       const columns = db.prepare(`PRAGMA table_info("${dbTableName}")`).all() as ColumnInfo[];
       const drizzleColNames = getDrizzleColumnNames(exportName);
 
       for (const col of columns) {
-        expect(drizzleColNames.has(col.name)).toBe(true);
+        if (!drizzleColNames.has(col.name)) {
+          missingColumns.push(`${dbTableName}.${col.name} (missing in Drizzle ${exportName})`);
+        }
       }
+    }
+    if (missingColumns.length > 0) {
+      throw new Error(`DB columns missing from Drizzle schema:\n${missingColumns.join('\n')}`);
     }
   });
 });

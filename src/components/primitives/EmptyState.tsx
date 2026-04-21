@@ -5,6 +5,8 @@ import { linearTheme as n } from '../../theme/linearTheme';
 import LinearText from './LinearText';
 import LinearButton, { type LinearButtonVariant } from './LinearButton';
 import LinearSurface from './LinearSurface';
+import Texture from './Texture';
+import Icon from './Icon';
 
 type EmptyStateVariant = 'fullscreen' | 'card';
 
@@ -50,11 +52,14 @@ export default function EmptyState({
     actions && actions.length > 0
       ? actions
       : action
-      ? [{ label: action.label, onPress: action.onPress }]
-      : [];
+        ? [{ label: action.label, onPress: action.onPress }]
+        : [];
 
   const inner = (
     <>
+      <View style={styles.textureSlot} pointerEvents="none">
+        <Texture />
+      </View>
       <Ionicons name={icon} size={iconSize} color={iconColor ?? n.colors.textMuted} />
       <LinearText variant="sectionTitle" tone="primary" style={styles.title}>
         {title}
@@ -77,7 +82,7 @@ export default function EmptyState({
                 onPress={a.onPress}
                 leftIcon={
                   a.icon ? (
-                    <Ionicons name={a.icon} size={16} color={labelColor ?? n.colors.textPrimary} />
+                    <Icon name={a.icon} size="sm" color={labelColor ?? n.colors.textPrimary} />
                   ) : undefined
                 }
                 textStyle={labelColor ? { color: labelColor } : undefined}
@@ -102,16 +107,23 @@ export default function EmptyState({
 }
 
 const styles = StyleSheet.create({
+  textureSlot: {
+    ...StyleSheet.absoluteFillObject,
+  },
   container: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
     padding: n.spacing.xl,
+    overflow: 'hidden',
+    position: 'relative',
   },
   card: {
     alignItems: 'center',
     justifyContent: 'center',
     padding: n.spacing.xl,
+    position: 'relative',
+    overflow: 'hidden',
   },
   title: {
     marginTop: n.spacing.md,

@@ -14,6 +14,7 @@
  */
 
 import * as FileSystem from 'expo-file-system/legacy';
+import { findLocalModelFiles, type NativeModelFileEntry } from '../../modules/app-launcher';
 import { profileRepository } from '../db/repositories';
 import { queryClient } from './queryClient';
 import { PROFILE_QUERY_KEY } from '../hooks/queries/useProfile';
@@ -166,9 +167,29 @@ export async function bootstrapLocalModels(): Promise<void> {
   bootstrapInFlight = (async () => {
     try {
       const profile = await profileRepository.getProfile();
+      let registeredLlmPath = profile.localModelPath;
+      if (!registeredLlmPath) {
+        const discoveredLlm = await discoverBestExistingLlm().catch((e) => {
+          console.warn('[Bootstrap] Local model discovery failed:', e);
+          return null;
+        });
+        if (discoveredLlm) {
+          registeredLlmPath = discoveredLlm.path;
+          await profileRepository.updateProfile({
+            localModelPath: discoveredLlm.path,
+            useLocalModel: isLocalLlmAllowedOnThisDevice(),
+          });
+          refreshProfileSafely();
+          logBootstrapEvent('discovered_existing_local_model', {
+            path: discoveredLlm.path,
+            size: discoveredLlm.size,
+            modifiedAt: discoveredLlm.modifiedAt,
+          });
+        }
+      }
 
       const llmAllowed = isLocalLlmAllowedOnThisDevice();
-      const needsLlm = !profile.localModelPath;
+      const needsLlm = !registeredLlmPath;
       const needsWhisper = !profile.localWhisperPath;
 
       if (!needsLlm && !needsWhisper) return;
@@ -177,11 +198,11 @@ export async function bootstrapLocalModels(): Promise<void> {
         needsLlm,
         needsWhisper,
         llmAllowed,
-        hasLocalModel: !!profile.localModelPath,
+        hasLocalModel: !!registeredLlmPath,
         hasLocalWhisper: !!profile.localWhisperPath,
       });
 
-      if (!llmAllowed && !profile.localModelPath) {
+      if (!llmAllowed && !registeredLlmPath) {
         const warning = getLocalLlmRamWarning();
         if (warning) {
           showToast(warning, 'warning');
@@ -207,6 +228,34 @@ const MIN_MODEL_SIZES: Record<string, number> = {
   llm: 3_400_000_000, // ~3.6GB for Gemma 4 E4B
   whisper: 750_000_000, // ~809MB for ggml-large-v3-turbo.bin
 };
+
+async function discoverBestExistingLlm(): Promise<NativeModelFileEntry | null> {
+  const candidates = await findLocalModelFiles();
+  if (!Array.isArray(candidates) || candidates.length === 0) return null;
+
+  const fileNameFor = (candidate: NativeModelFileEntry) =>
+    candidate.name || candidate.path.split('/').pop() || '';
+
+  const ranked = [...candidates].sort((a, b) => {
+    const aPreferred = fileNameFor(a).toLowerCase().includes(LLM_MODEL.name.toLowerCase()) ? 1 : 0;
+    const bPreferred = fileNameFor(b).toLowerCase().includes(LLM_MODEL.name.toLowerCase()) ? 1 : 0;
+    if (aPreferred !== bPreferred) return bPreferred - aPreferred;
+    if (a.size !== b.size) return b.size - a.size;
+    return (b.modifiedAt ?? 0) - (a.modifiedAt ?? 0);
+  });
+
+  for (const candidate of ranked) {
+    const validation = await validateLocalModelFile({
+      path: candidate.path,
+      minBytes: MIN_MODEL_SIZES.llm,
+    });
+    if (validation.exists && validation.isValid) {
+      return candidate;
+    }
+  }
+
+  return null;
+}
 
 async function handleDownloadComplete(type: 'llm' | 'whisper'): Promise<void> {
   const model = type === 'llm' ? LLM_MODEL : WHISPER_MODEL;

@@ -15,7 +15,7 @@ import { HomeStackParamList } from '../navigation/types';
 import { getDb } from '../db/database';
 import { linearTheme as n } from '../theme/linearTheme';
 import { ResponsiveContainer } from '../hooks/useResponsive';
-import AppText from '../components/AppText';
+import LinearText from '../components/primitives/LinearText';
 import BannerSearchBar from '../components/BannerSearchBar';
 import { AppFlashList } from '../components/primitives/AppFlashList';
 import ScreenHeader from '../components/ScreenHeader';
@@ -121,12 +121,12 @@ export default function GlobalTopicSearchScreen() {
                 <LinearSurface padded={false} compact style={styles.resultCard}>
                   <View style={[styles.dot, { backgroundColor: item.color_hex }]} />
                   <View style={styles.resultTextContainer}>
-                    <AppText style={styles.resultName} numberOfLines={3} variant="body">
+                    <LinearText style={styles.resultName} numberOfLines={3} variant="body">
                       {item.name}
-                    </AppText>
-                    <AppText style={styles.resultSubject} variant="caption" tone="secondary">
+                    </LinearText>
+                    <LinearText style={styles.resultSubject} variant="caption" tone="secondary">
                       {item.subject_name}
-                    </AppText>
+                    </LinearText>
                   </View>
                   <Ionicons name="play-circle-outline" size={24} color={n.colors.accent} />
                 </LinearSurface>

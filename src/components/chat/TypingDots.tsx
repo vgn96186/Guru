@@ -1,5 +1,6 @@
 import React, { memo, useEffect, useMemo, useRef } from 'react';
 import { Animated, Easing, StyleSheet, View } from 'react-native';
+import { motion } from '../../motion/presets';
 import { useReducedMotion } from '../../motion/useReducedMotion';
 import { linearTheme as n } from '../../theme/linearTheme';
 
@@ -19,13 +20,13 @@ export const TypingDots = memo(({ active = true }: { active?: boolean }) => {
       Animated.loop(
         Animated.sequence([
           Animated.delay(index * 150),
-          Animated.timing(dot, {
+          motion.to(dot, {
             toValue: 1,
             duration: 300,
             useNativeDriver: true,
             easing: Easing.out(Easing.ease),
           }),
-          Animated.timing(dot, {
+          motion.to(dot, {
             toValue: 0,
             duration: 300,
             useNativeDriver: true,

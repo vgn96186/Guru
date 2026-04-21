@@ -13,6 +13,7 @@
 
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { Animated, TouchableOpacity, StyleSheet, View } from 'react-native';
+import { motion } from '../motion/presets';
 import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { linearTheme as n } from '../theme/linearTheme';
@@ -163,8 +164,8 @@ const ToastItem = React.memo(
 
       const timer = setTimeout(() => {
         Animated.parallel([
-          Animated.timing(opacity, { toValue: 0, duration: 250, useNativeDriver: true }),
-          Animated.timing(translateY, { toValue: -20, duration: 250, useNativeDriver: true }),
+          motion.to(opacity, { toValue: 0, duration: 250, useNativeDriver: true }),
+          motion.to(translateY, { toValue: -20, duration: 250, useNativeDriver: true }),
         ]).start(() => onDone());
       }, payload.duration);
 

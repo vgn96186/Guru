@@ -10,6 +10,7 @@ import { navigationRef } from '../navigation/navigationRef';
 import { profileRepository } from '../db/repositories';
 import { BUNDLED_GROQ_KEY, BUNDLED_HF_TOKEN, BUNDLED_OPENROUTER_KEY } from '../config/appConfig';
 import { maybePromptOverlayPermissionOnStartup } from '../services/appLauncher/overlayStartupPrompt';
+import { maybeHandleStorageAccessOnStartup } from '../services/appLauncher/storageStartupPrompt';
 import { useAppStateTransition } from './useAppStateTransition';
 import { requestNotifications } from '../services/appPermissions';
 import { warmAiContentCache } from '../services/backgroundTasks';
@@ -44,6 +45,9 @@ export function useAppBootstrap(onFatalError?: (message: string) => void): void 
   useAppStateTransition({
     onActive: () => {
       refreshProfile();
+      void maybeHandleStorageAccessOnStartup().catch((e) =>
+        console.warn('[Storage] Startup access check failed on foreground:', e),
+      );
       syncExamDatesIfStale(24)
         .then((res) => {
           if (res?.updated) refreshProfile();
@@ -90,6 +94,9 @@ export function useAppBootstrap(onFatalError?: (message: string) => void): void 
 
       await maybePromptOverlayPermissionOnStartup().catch((e) =>
         console.warn('[Overlay] Startup permission prompt failed:', e),
+      );
+      await maybeHandleStorageAccessOnStartup().catch((e) =>
+        console.warn('[Storage] Startup access check failed:', e),
       );
 
       await requestNotifications().catch((e) =>

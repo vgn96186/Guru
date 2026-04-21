@@ -153,6 +153,44 @@ async function callLocalLLM(
 }
 
 /**
+ * LiteRT on-device chat with optional OpenAPI tools (wired to native
+ * `ConversationConfig.tools` + `automaticToolCalling = false`).
+ * Uses the same mutex as {@link callLocalLLM}.
+ */
+export async function chatWithLocalNative(options: {
+  chatMessages: LocalLlm.ChatMessage[];
+  modelPath: string;
+  systemInstruction?: string;
+  toolsJson?: string;
+}): Promise<{
+  text: string;
+  toolCallsJson: string | null;
+  finishReason: string;
+  backend: LocalLlm.LocalLlmBackend;
+}> {
+  const cleanPath = options.modelPath.replace(/^file:\/\//, '');
+  await ensureLocalLlmLoaded(cleanPath);
+  const release = await acquireContextLock();
+  try {
+    const result = await LocalLlm.chat(options.chatMessages, {
+      modelPath: cleanPath,
+      systemInstruction: options.systemInstruction,
+      temperature: 0.7,
+      topP: 0.9,
+      toolsJson: options.toolsJson,
+    });
+    return {
+      text: result.text ?? '',
+      toolCallsJson: result.toolCallsJson ?? null,
+      finishReason: result.finishReason ?? 'stop',
+      backend: result.backend,
+    };
+  } finally {
+    release();
+  }
+}
+
+/**
  * Single ceiling for {@link generateJSONWithRouting} before any cloud/local structured call.
  * Avoids ~hundreds-of-kB prompts that exhaust Groq, Copilot (even after per-provider clamps), and GitLab.
  */
@@ -1168,6 +1206,7 @@ export async function attemptLocalLLMStream(
       systemInstruction: systemMsg?.content,
       temperature: 0.7,
       topP: 0.9,
+      toolsJson: undefined,
     }).catch((err: unknown) => {
       tokenSub.remove();
       completeSub.remove();

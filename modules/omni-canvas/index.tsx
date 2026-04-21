@@ -1,6 +1,6 @@
 import { requireNativeViewManager } from 'expo-modules-core';
 import * as React from 'react';
-import { ViewProps } from 'react-native';
+import { ViewProps, ViewStyle } from 'react-native';
 
 export type NodeData = {
   id: number;
@@ -143,8 +143,7 @@ export type OmniOrbProps = {
   onPress?: () => void;
 } & ViewProps;
 
-const NativeOmniOrbView: React.ComponentType<OmniOrbProps> =
-  requireNativeViewManager('OmniOrb');
+const NativeOmniOrbView: React.ComponentType<OmniOrbProps> = requireNativeViewManager('OmniOrb');
 
 export function OmniOrb(props: OmniOrbProps) {
   return <NativeOmniOrbView {...props} />;
@@ -233,4 +232,3 @@ export const NextLecture: React.ComponentType<{
   onMarkDone?: () => void;
   style?: ViewStyle;
 }> = requireNativeViewManager('NextLecture');
-

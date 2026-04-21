@@ -43,8 +43,22 @@ jest.mock('react-native-safe-area-context', () => ({
 }));
 
 jest.mock('../components/ImageLightbox', () => ({
-  ImageLightbox: () => null,
+  ImageLightbox: ({ visible }: { visible: boolean }) => {
+    const ReactNative = require('react-native');
+    return visible ? <ReactNative.Text>lightbox-open</ReactNative.Text> : null;
+  },
 }));
+
+jest.mock('../components/chat/GuruChatMessageList', () => {
+  const ReactNative = require('react-native');
+  return {
+    GuruChatMessageList: ({ onSetLightboxUri }: { onSetLightboxUri: (uri: string) => void }) => (
+      <ReactNative.Pressable onPress={() => onSetLightboxUri('https://example.com/image.png')}>
+        <ReactNative.Text>open-lightbox</ReactNative.Text>
+      </ReactNative.Pressable>
+    ),
+  };
+});
 
 jest.mock('../components/ResilientImage', () => ({
   ResilientImage: () => null,
@@ -163,6 +177,10 @@ jest.mock('../hooks/useGuruChat', () => ({
     regenerate: jest.fn(async () => null),
     setMessages: jest.fn(),
   }),
+}));
+
+jest.mock('../hooks/queries/useProfile', () => ({
+  useProfileQuery: () => ({ data: null }),
 }));
 
 jest.mock('../components/dialogService', () => ({
@@ -340,5 +358,20 @@ describe('GuruChatScreen', () => {
     });
 
     expect(aiCache.getOrCreateLatestGuruChatThread).toHaveBeenCalled();
+  });
+
+  it('hides the sticky composer while the image lightbox is open', async () => {
+    const { getByText, queryByPlaceholderText, queryByText } = render(<GuruChatScreen />);
+
+    await waitFor(() => {
+      expect(queryByPlaceholderText('Ask Guru anything...')).toBeTruthy();
+    });
+
+    fireEvent.press(getByText('open-lightbox'));
+
+    await waitFor(() => {
+      expect(queryByText('lightbox-open')).toBeTruthy();
+      expect(queryByPlaceholderText('Ask Guru anything...')).toBeNull();
+    });
   });
 });

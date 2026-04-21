@@ -123,8 +123,8 @@ export async function updateSessionTranscriptionStatus(
              WHERE id = ?`,
       [status, error ?? null, lectureNoteId ?? null, logId],
     );
-  } catch (err: any) {
-    const msg = err?.message ?? '';
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
     // Only swallow errors from genuinely missing columns (old schema)
     if (msg.includes('no such column') || msg.includes('no column named')) {
       if (__DEV__) console.warn('[externalLogs] Update failed, old schema:', msg);

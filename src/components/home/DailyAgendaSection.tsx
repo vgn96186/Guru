@@ -2,7 +2,8 @@ import React from 'react';
 import { View, TouchableOpacity, StyleSheet } from 'react-native';
 import type { TodayTask } from '../../services/studyPlanner';
 import { linearTheme as n } from '../../theme/linearTheme';
-import AppText from '../AppText';
+import { density } from '../../theme/density';
+import LinearText from '../primitives/LinearText';
 
 interface Props {
   todayTasks: TodayTask[];
@@ -18,15 +19,15 @@ export default React.memo(function DailyAgendaSection({
   if (todayTasks.length > 0) {
     return (
       <View style={styles.section}>
-        <AppText style={styles.sectionTitle} variant="label" tone="muted">
+        <LinearText style={styles.sectionTitle} variant="label" tone="muted">
           Today's Agenda
-        </AppText>
+        </LinearText>
         {todayTasks.map((task, i) => (
           <View key={i} style={styles.taskRow}>
             <View style={styles.timeBox}>
-              <AppText style={styles.timeText} variant="caption" tone="muted">
+              <LinearText style={styles.timeText} variant="caption" tone="muted">
                 {task.timeLabel.split(' - ')[0]}
-              </AppText>
+              </LinearText>
             </View>
             <View
               style={[
@@ -35,13 +36,13 @@ export default React.memo(function DailyAgendaSection({
                 task.type === 'deep_dive' && styles.taskDeep,
               ]}
             >
-              <AppText style={styles.taskTitle} variant="bodySmall">
+              <LinearText style={styles.taskTitle} variant="bodySmall">
                 {task.topic.name}
-              </AppText>
-              <AppText style={styles.taskSub} variant="caption" tone="muted">
+              </LinearText>
+              <LinearText style={styles.taskSub} variant="caption" tone="muted">
                 {task.type === 'review' ? 'REL' : task.type === 'deep_dive' ? 'DEEP' : 'NEW'} -{' '}
                 {task.topic.subjectName}
-              </AppText>
+              </LinearText>
             </View>
           </View>
         ))}
@@ -51,22 +52,22 @@ export default React.memo(function DailyAgendaSection({
 
   return (
     <View style={styles.emptyStateCard}>
-      <AppText style={styles.emptyEyebrow} variant="label" tone="accent">
+      <LinearText style={styles.emptyEyebrow} variant="label" tone="accent">
         Next Move
-      </AppText>
-      <AppText style={styles.emptyTitle} variant="sectionTitle">
+      </LinearText>
+      <LinearText style={styles.emptyTitle} variant="sectionTitle">
         {hasNewTopics ? 'Ready to learn something new!' : 'All caught up!'}
-      </AppText>
-      <AppText style={styles.emptySub} variant="bodySmall" tone="muted">
+      </LinearText>
+      <LinearText style={styles.emptySub} variant="bodySmall" tone="muted">
         {hasNewTopics
           ? 'You have new topics to explore. Start a session to begin learning!'
           : "Great work! You've covered your due reviews. Keep the momentum going!"}
-      </AppText>
+      </LinearText>
       {hasNewTopics && (
         <TouchableOpacity style={styles.emptyBtn} onPress={onStartSession}>
-          <AppText style={styles.emptyBtnText} variant="bodySmall">
+          <LinearText style={styles.emptyBtnText} variant="bodySmall">
             Start New Topic
-          </AppText>
+          </LinearText>
         </TouchableOpacity>
       )}
     </View>
@@ -74,7 +75,11 @@ export default React.memo(function DailyAgendaSection({
 });
 
 const styles = StyleSheet.create({
-  section: { paddingHorizontal: 16 },
+  section: {
+    paddingHorizontal: density.comfortable.paddingHorizontal,
+    paddingVertical: density.comfortable.paddingVertical,
+    gap: density.comfortable.gap,
+  },
   sectionTitle: {
     marginBottom: 12,
     textTransform: 'uppercase',
@@ -101,8 +106,9 @@ const styles = StyleSheet.create({
   emptyStateCard: {
     backgroundColor: n.colors.surface,
     borderRadius: 16,
-    padding: 24,
-    marginHorizontal: 16,
+    paddingVertical: density.spacious.paddingVertical,
+    paddingHorizontal: density.spacious.paddingHorizontal,
+    marginHorizontal: density.comfortable.paddingHorizontal,
     marginBottom: 16,
     alignItems: 'center',
   },

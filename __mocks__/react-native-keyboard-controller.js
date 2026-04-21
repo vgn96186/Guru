@@ -8,6 +8,7 @@ const wrap = (name) =>
 module.exports = {
   __esModule: true,
   KeyboardProvider: ({ children }) => React.createElement(React.Fragment, null, children),
+  KeyboardAvoidingView: wrap('View'),
   KeyboardStickyView: wrap('KeyboardStickyView'),
   KeyboardAwareScrollView: wrap('KeyboardAwareScrollView'),
   KeyboardToolbar: wrap('KeyboardToolbar'),

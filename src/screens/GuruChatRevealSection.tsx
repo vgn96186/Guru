@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { Animated, Easing, type StyleProp, type ViewStyle } from 'react-native';
+import { motion } from '../motion/presets';
 import { useReducedMotion } from '../motion/useReducedMotion';
 
 export function RevealSection({
@@ -37,7 +38,7 @@ export function RevealSection({
     }
 
     progress.setValue(0);
-    const animation = Animated.timing(progress, {
+    const animation = motion.to(progress, {
       toValue: 1,
       duration: 180,
       delay: delayMs,

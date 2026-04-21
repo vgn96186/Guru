@@ -12,6 +12,7 @@ type NoteContextItem = {
 };
 
 type ToolResultWithErrorFlag = ToolResultPart & { isError?: boolean };
+type ContextSourceLabel = MedicalGroundingSource['source'] | 'LocalNotes' | 'Lecture Transcript';
 
 function normalizeSources(items: unknown): MedicalGroundingSource[] {
   if (!Array.isArray(items)) return [];
@@ -35,14 +36,14 @@ function normalizeSources(items: unknown): MedicalGroundingSource[] {
 
 function convertContextItemsToSources(
   items: NoteContextItem[],
-  sourceLabel: MedicalGroundingSource['source'],
+  sourceLabel: ContextSourceLabel,
 ): MedicalGroundingSource[] {
   return items.map((item, index) => ({
     id: `${sourceLabel.toLowerCase().replace(/\s+/g, '-')}-${index}-${item.title}`,
     title: clipText(item.title, 220),
     url: `local://${encodeURIComponent(item.title)}`,
     snippet: clipText(item.snippet, 420),
-    source: sourceLabel,
+    source: sourceLabel as MedicalGroundingSource['source'],
     author: item.source,
   }));
 }
@@ -71,7 +72,12 @@ export function composeGroundingArtifacts(options: {
   const imageSources: MedicalGroundingSource[] = [];
 
   for (const result of options.toolResults) {
-    if ((result as ToolResultWithErrorFlag).isError === true || !result.output || typeof result.output !== 'object') continue;
+    if (
+      (result as ToolResultWithErrorFlag).isError === true ||
+      !result.output ||
+      typeof result.output !== 'object'
+    )
+      continue;
     const output = result.output as Record<string, unknown>;
 
     if (result.toolName === 'search_medical') {

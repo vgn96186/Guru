@@ -28,7 +28,10 @@ const HEALTH_LOG_TAG = 'GURU_HEALTH:';
 const REQUESTED_DEVICE_SERIAL = process.env.GURU_ANDROID_SERIAL?.trim() || '';
 let activeDeviceSerial = '';
 const RELOAD_ONLY = process.argv.includes('--reload');
-const CONNECT_ONLY = process.argv.includes('--connect-only');
+const FORCE_DEEPLINK =
+  process.argv.includes('--deeplink') || process.env.GURU_OPEN_MODE === 'deeplink';
+// Default to deeplinking the dev client to Metro URL; use --connect-only only when requested.
+const CONNECT_ONLY = process.argv.includes('--connect-only') && !FORCE_DEEPLINK;
 
 function fail(message) {
   console.error(message);
@@ -494,7 +497,11 @@ if (RELOAD_ONLY) {
   }
   logStep('Guru app reload command sent and verified.');
 } else {
-  openDevClient();
+  if (CONNECT_ONLY) {
+    ensureMainActivityLaunch();
+  } else {
+    openDevClient();
+  }
   if (!waitForAppReady()) {
     fail('Guru did not report ui_ready after open.');
   }

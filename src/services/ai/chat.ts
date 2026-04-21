@@ -35,7 +35,11 @@ async function buildChatModel(
 }
 
 const GURU_ADHD_FORMATTING_RULES = `Formatting rules:
-- Keep normal text plain. Use markdown bold only for the 3 or 4 most critical medical terms in a concept.
+- Keep normal text plain.
+- Use markdown headings when they improve structure.
+- For in-app color highlights you MUST use ==double equals== for important topic names and !!double exclamation!! for the most testable high-yield terms (values, drugs, organisms, discriminators). **Bold alone does not get the orange high-yield tint** — use == and !! where they apply in every substantive reply, sparingly but visibly.
+- Use markdown bold only for ordinary emphasis that is not a topic highlight or high-yield marker.
+- Use ==topic== and !!high-yield!! sparingly: only the most important items should be marked.
 - Keep paragraphs short: 1 or 2 sentences maximum per paragraph.
 - Leave a blank line between distinct thoughts or sections.
 - Do not use tables.
@@ -868,8 +872,7 @@ export async function chatWithGuruGroundedStreaming(
     const imageQuery = await generateImageSearchQuery(imageSeed.topic, imageSeed.context);
     if (imageQuery) {
       const imageResult = await Promise.allSettled([searchMedicalImages(imageQuery, 3)]);
-      const initialImages =
-        imageResult[0]?.status === 'fulfilled' ? imageResult[0].value : [];
+      const initialImages = imageResult[0]?.status === 'fulfilled' ? imageResult[0].value : [];
       if (initialImages.length === 0) {
         const visualQueries = await generateVisualSearchQueries(imageSeed.topic);
         const smartResults = await Promise.allSettled(
@@ -877,8 +880,9 @@ export async function chatWithGuruGroundedStreaming(
         );
         const smartImages = dedupeGroundingSources(
           smartResults
-            .filter((r): r is PromiseFulfilledResult<MedicalGroundingSource[]> =>
-              r.status === 'fulfilled',
+            .filter(
+              (r): r is PromiseFulfilledResult<MedicalGroundingSource[]> =>
+                r.status === 'fulfilled',
             )
             .flatMap((r) => r.value),
         );

@@ -12,7 +12,8 @@ export type ScreenMotionTrigger = (typeof SCREEN_MOTION_TRIGGERS)[number];
 
 // --- Motion preset kit (patch 09) ------------------------------------------
 //
-// The ONLY public motion API. Never use Animated.timing directly in screens;
+// Prefer `motion.*` over raw `Animated.timing` in screens. Exceptions: `Animated.ValueXY`
+// (e.g. swipe-off pan) where RN expects `Animated.timing(panXY, { toValue: {x,y} })`.
 // if these three don't cover your case, add a preset here first.
 //
 //   enter(value)      entrance/reveal — 240ms, cubic out
@@ -20,6 +21,37 @@ export type ScreenMotionTrigger = (typeof SCREEN_MOTION_TRIGGERS)[number];
 //   pulseWarn(value)  ambient warning pulse — 1800ms sin loop, respects reducedMotion
 
 export const motion = {
+  /**
+   * Single-shot timing — use instead of raw `Animated.timing` in screens.
+   * Prefer `enter`, `press`, `pulseScale`, `keyframes`, etc. when they fit.
+   */
+  to(
+    value: Animated.Value,
+    opts: {
+      toValue: number;
+      duration: number;
+      useNativeDriver?: boolean;
+      delay?: number;
+      /** Defaults to `Easing.out(Easing.quad)` when omitted. */
+      easing?: (n: number) => number;
+    },
+  ) {
+    const {
+      toValue,
+      duration,
+      useNativeDriver = true,
+      delay = 0,
+      easing = Easing.out(Easing.quad),
+    } = opts;
+    return Animated.timing(value, {
+      toValue,
+      duration,
+      delay,
+      easing,
+      useNativeDriver,
+    });
+  },
+
   enter(value: Animated.Value, to = 1) {
     return Animated.timing(value, {
       toValue: to,
@@ -102,7 +134,7 @@ export const motion = {
 
     const phases = durations.map((duration, phaseIdx) =>
       Animated.parallel(
-        Object.values(tracks).map(t =>
+        Object.values(tracks).map((t) =>
           Animated.timing(t.value, {
             toValue: t.frames[phaseIdx],
             duration,
@@ -133,9 +165,9 @@ export const motion = {
       return noopAnimation;
     }
     const seq = Animated.sequence([
-      Animated.timing(value, { toValue: amplitude,  duration: tickMs, useNativeDriver: true }),
+      Animated.timing(value, { toValue: amplitude, duration: tickMs, useNativeDriver: true }),
       Animated.timing(value, { toValue: -amplitude, duration: tickMs, useNativeDriver: true }),
-      Animated.timing(value, { toValue: 0,          duration: tickMs, useNativeDriver: true }),
+      Animated.timing(value, { toValue: 0, duration: tickMs, useNativeDriver: true }),
     ]);
     return loop ? Animated.loop(seq) : seq;
   },
@@ -163,7 +195,7 @@ export const motion = {
       return noopAnimation;
     }
     const seq = Animated.sequence([
-      Animated.timing(value, { toValue: to,   duration, useNativeDriver }),
+      Animated.timing(value, { toValue: to, duration, useNativeDriver }),
       Animated.timing(value, { toValue: from, duration, useNativeDriver }),
     ]);
     return loop ? Animated.loop(seq) : seq;

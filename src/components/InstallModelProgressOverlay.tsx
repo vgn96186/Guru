@@ -1,9 +1,18 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
-import { Animated, Easing, PanResponder, Pressable, StyleSheet, View } from 'react-native';
+import {
+  Animated,
+  Easing,
+  PanResponder,
+  Pressable,
+  StyleSheet,
+  useWindowDimensions,
+  View,
+} from 'react-native';
 import type { DimensionValue } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { linearTheme as n } from '../theme/linearTheme';
+import { motion } from '../motion/presets';
 import LinearText from './primitives/LinearText';
 import {
   clearLocalModelDownload,
@@ -15,6 +24,9 @@ import {
   type LocalModelDownloadSnapshot,
 } from '../services/localModelDownloadState';
 import { isDownloadPaused, pauseDownload, resumeDownload } from '../services/localModelBootstrap';
+
+/** Inset from the physical right so the pill/card clears the header settings control (~48pt + margin). */
+const HEADER_RIGHT_CHROME_CLEARANCE = 66;
 
 function formatBytes(bytes?: number): string | null {
   if (!bytes || bytes <= 0) return null;
@@ -36,6 +48,7 @@ function getStageLabel(snapshot: LocalModelDownloadSnapshot): string {
 
 export function InstallModelProgressOverlay() {
   const insets = useSafeAreaInsets();
+  const { width: windowWidth } = useWindowDimensions();
   const [snapshot, setSnapshot] = useState<LocalModelDownloadSnapshot | null>(
     getLocalModelDownloadSnapshot(),
   );
@@ -108,13 +121,13 @@ export function InstallModelProgressOverlay() {
   useEffect(() => {
     if (!snapshot && mountedSnapshot) {
       Animated.parallel([
-        Animated.timing(opacity, {
+        motion.to(opacity, {
           toValue: 0,
           duration: 220,
           easing: Easing.out(Easing.quad),
           useNativeDriver: true,
         }),
-        Animated.timing(translateY, {
+        motion.to(translateY, {
           toValue: 18,
           duration: 220,
           easing: Easing.out(Easing.quad),
@@ -154,7 +167,7 @@ export function InstallModelProgressOverlay() {
     }
 
     const loop = Animated.loop(
-      Animated.timing(shimmer, {
+      motion.to(shimmer, {
         toValue: 1,
         duration: 1800,
         easing: Easing.inOut(Easing.quad),
@@ -238,6 +251,8 @@ export function InstallModelProgressOverlay() {
     mountedSnapshot.stage === 'downloading' ||
     mountedSnapshot.stage === 'verifying';
 
+  const miniMaxWidth = Math.max(160, windowWidth - 14 - HEADER_RIGHT_CHROME_CLEARANCE);
+
   if (shouldUseCompactUi && isActive) {
     return (
       <Animated.View
@@ -247,6 +262,8 @@ export function InstallModelProgressOverlay() {
             top: insets.top + 10,
             opacity,
             transform: [{ translateY }],
+            right: HEADER_RIGHT_CHROME_CLEARANCE,
+            maxWidth: miniMaxWidth,
           },
         ]}
       >
@@ -270,8 +287,8 @@ export function InstallModelProgressOverlay() {
             {mountedSnapshot.stage === 'verifying'
               ? 'Verifying'
               : downloadedText && totalText
-              ? `${downloadedText} / ${totalText}`
-              : getStageLabel(mountedSnapshot)}
+                ? `${downloadedText} / ${totalText}`
+                : getStageLabel(mountedSnapshot)}
           </LinearText>
         </Pressable>
       </Animated.View>
@@ -287,6 +304,7 @@ export function InstallModelProgressOverlay() {
           top: insets.top + 12,
           opacity,
           transform: [{ translateY }],
+          right: HEADER_RIGHT_CHROME_CLEARANCE,
         },
       ]}
     >
@@ -385,7 +403,6 @@ const styles = StyleSheet.create({
   container: {
     position: 'absolute',
     left: 14,
-    right: 14,
     zIndex: 9998,
   },
   card: {
@@ -493,13 +510,13 @@ const styles = StyleSheet.create({
   },
   miniContainer: {
     position: 'absolute',
-    right: 14,
     zIndex: 9998,
   },
   miniPill: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
+    flexShrink: 1,
     backgroundColor: 'rgba(18, 20, 30, 0.92)',
     borderRadius: 999,
     borderWidth: 1,

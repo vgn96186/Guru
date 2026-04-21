@@ -27,6 +27,7 @@ import type { TopicWithProgress, AIContent, ContentType } from '../types';
 import LoadingOrb from '../components/LoadingOrb';
 import { MarkdownRender } from '../components/MarkdownRender';
 import { linearTheme as n } from '../theme/linearTheme';
+import { motion } from '../motion/presets';
 import { ResponsiveContainer } from '../hooks/useResponsive';
 import { emphasizeHighYieldMarkdown } from '../utils/highlightMarkdown';
 import { Ionicons } from '@expo/vector-icons';
@@ -94,11 +95,13 @@ export default function ReviewScreen() {
   // Animate progress bar
   useEffect(() => {
     if (queue.length === 0) return;
-    Animated.timing(progressAnim, {
-      toValue: currentIdx / queue.length,
-      duration: 300,
-      useNativeDriver: false,
-    }).start();
+    motion
+      .to(progressAnim, {
+        toValue: currentIdx / queue.length,
+        duration: 300,
+        useNativeDriver: false,
+      })
+      .start();
   }, [currentIdx, progressAnim, queue.length]);
 
   // Reset state on topic change and fetch with auto type

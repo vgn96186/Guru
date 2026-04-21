@@ -40,6 +40,11 @@ export interface UseGuruChatOptions {
   onError?: (error: unknown) => void;
 }
 
+export type GuruChatSendOptions = {
+  /** When set (including after `getOrCreateLatestGuruChatThread`), used for DB persistence for this send only. */
+  persistThreadId?: number | null;
+};
+
 export interface UseGuruChatReturn {
   messages: ChatMessage[];
   status: ChatStatus;
@@ -47,6 +52,7 @@ export interface UseGuruChatReturn {
   sendMessage: (
     text: string,
     contextOverride?: Partial<GuruChatContext>,
+    sendOptions?: GuruChatSendOptions,
   ) => Promise<ChatMessage | null>;
   stop: () => void;
   regenerate: () => Promise<ChatMessage | null>;
@@ -56,6 +62,7 @@ export interface UseGuruChatReturn {
 function buildSystemPrompt(context?: GuruChatContext): string {
   const parts: string[] = [
     'You are Guru, a medical education AI assistant helping a student prepare for NEET-PG and INICET exams.',
+    'Formatting rules: use markdown headings when helpful. For in-app color highlights you MUST use ==double equals== for important topic names and !!double exclamation!! for the most testable high-yield facts (values, drugs, organisms, discriminators). Use **bold** only for ordinary emphasis — **bold alone will not get the orange high-yield tint**. Use == and !! markers in every substantive reply where they apply, sparingly but visibly.',
   ];
 
   if (context?.profileNotes) {
@@ -187,14 +194,23 @@ export function useGuruChat(options: UseGuruChatOptions): UseGuruChatReturn {
 
   // Wrap sendMessage to match our interface
   const sendMessage = useCallback(
-    async (text: string, contextOverride?: Partial<GuruChatContext>) => {
+    async (
+      text: string,
+      contextOverride?: Partial<GuruChatContext>,
+      sendOptions?: GuruChatSendOptions,
+    ) => {
       const mergedContext = contextOverride ? { ...context, ...contextOverride } : context;
       const trimmedText = text.trim();
       if (!trimmedText) return null;
 
-      if (threadId != null) {
+      const persistThreadId =
+        sendOptions?.persistThreadId !== undefined
+          ? (sendOptions.persistThreadId ?? null)
+          : threadId;
+
+      if (persistThreadId != null) {
         try {
-          await saveChatMessage(threadId, topicName, 'user', trimmedText, Date.now());
+          await saveChatMessage(persistThreadId, topicName, 'user', trimmedText, Date.now());
           await onRefreshThreads?.();
         } catch {
           // Persistence should not block the main conversation flow.
@@ -227,10 +243,10 @@ export function useGuruChat(options: UseGuruChatOptions): UseGuruChatReturn {
         );
       }
 
-      if (threadId != null) {
+      if (persistThreadId != null) {
         try {
           await saveChatMessage(
-            threadId,
+            persistThreadId,
             topicName,
             'guru',
             finalMessage.text,
@@ -255,8 +271,8 @@ export function useGuruChat(options: UseGuruChatOptions): UseGuruChatReturn {
         }
 
         try {
-          await maybeSummarizeGuruSession(threadId, topicName);
-          const row = await getSessionMemoryRow(threadId);
+          await maybeSummarizeGuruSession(persistThreadId, topicName);
+          const row = await getSessionMemoryRow(persistThreadId);
           onSessionMemoryUpdated?.({
             summaryText: row?.summaryText ?? '',
             stateJson: row?.stateJson ?? '{}',

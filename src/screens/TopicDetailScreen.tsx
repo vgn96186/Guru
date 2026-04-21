@@ -32,6 +32,7 @@ import LinearText from '../components/primitives/LinearText';
 import LinearTextInput from '../components/primitives/LinearTextInput';
 import { ResponsiveContainer } from '../hooks/useResponsive';
 import { linearTheme as n } from '../theme/linearTheme';
+import { motion } from '../motion/presets';
 import { MS_PER_DAY } from '../constants/time';
 import * as Haptics from 'expo-haptics';
 import {
@@ -457,19 +458,23 @@ export default function TopicDetailScreen() {
     const increased = pct > prevPct.current;
     prevPct.current = pct;
 
-    Animated.timing(progressAnim, {
-      toValue: pct,
-      duration: 600,
-      easing: Easing.out(Easing.cubic),
-      useNativeDriver: false,
-    }).start();
+    motion
+      .to(progressAnim, {
+        toValue: pct,
+        duration: 600,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: false,
+      })
+      .start();
 
-    Animated.timing(countAnim, {
-      toValue: done,
-      duration: 400,
-      easing: Easing.out(Easing.cubic),
-      useNativeDriver: false,
-    }).start();
+    motion
+      .to(countAnim, {
+        toValue: done,
+        duration: 400,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: false,
+      })
+      .start();
 
     const listener = countAnim.addListener(({ value }) => {
       setDisplayCount(Math.round(value));

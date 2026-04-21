@@ -1,9 +1,5 @@
-===== 2026-04-19T10:36:54.902Z metro start =====
+===== 2026-04-20T10:29:57.106Z metro start =====
 [generate-bundled-env] Wrote empty bundled keys (missing .env values).
-[app.config] Missing environment variables: EXPO_PUBLIC_BUNDLED_GROQ_KEY
-[app.config] Missing environment variables: EXPO_PUBLIC_BUNDLED_GROQ_KEY
-[app.config] Missing environment variables: EXPO_PUBLIC_BUNDLED_GROQ_KEY
-[app.config] Missing environment variables: EXPO_PUBLIC_BUNDLED_GROQ_KEY
 [app.config] Missing environment variables: EXPO_PUBLIC_BUNDLED_GROQ_KEY
 [app.config] Missing environment variables: EXPO_PUBLIC_BUNDLED_GROQ_KEY
 [app.config] Missing environment variables: EXPO_PUBLIC_BUNDLED_GROQ_KEY

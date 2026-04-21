@@ -1,17 +1,10 @@
 import React, { memo } from 'react';
-import { Pressable, StyleSheet, TextInput, View } from 'react-native';
+import { Platform, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import LinearText from '../primitives/LinearText';
 import { linearTheme as n } from '../../theme/linearTheme';
-import { whiteAlpha, accentAlpha } from '../../theme/colorUtils';
-
-const QUICK_REPLY_OPTIONS = [
-  { key: 'explain', label: 'Explain', prompt: 'Explain' },
-  { key: 'dont-know', label: "Don't know", prompt: "Don't know" },
-  { key: 'change-topic', label: 'Change topic', prompt: 'Change topic' },
-  { key: 'quiz-me', label: 'Quiz me', prompt: 'Quiz me' },
-  { key: 'continue', label: 'Continue', prompt: 'Continue' },
-] as const;
+import { whiteAlpha } from '../../theme/colorUtils';
+import { QUICK_REPLY_OPTIONS } from '../../utils/chatUtils';
 
 interface GuruChatInputProps {
   input: string;
@@ -21,6 +14,8 @@ interface GuruChatInputProps {
   currentModelLabel: string;
   isLoading: boolean;
   autoFocus?: boolean;
+  /** When false, hides Explain / Don't know / etc. chips above the composer. */
+  showQuickReplies?: boolean;
 }
 
 export const GuruChatInput = memo(function GuruChatInput({
@@ -31,34 +26,41 @@ export const GuruChatInput = memo(function GuruChatInput({
   currentModelLabel,
   isLoading,
   autoFocus,
+  showQuickReplies = true,
 }: GuruChatInputProps) {
-  const handleQuickReply = (prompt: string) => {
-    onSend(prompt);
-  };
-
   return (
-    <View style={styles.composerToolsWrap}>
-      <View style={styles.quickActionsCenterWrap}>
-        <View style={styles.quickActionsCenter}>
+    <View style={styles.composerOuter}>
+      {showQuickReplies ? (
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          contentContainerStyle={styles.quickRepliesContent}
+          style={styles.quickRepliesScroll}
+        >
           {QUICK_REPLY_OPTIONS.map((option) => (
             <Pressable
               key={option.key}
               style={({ pressed }) => [
-                styles.quickActionChip,
-                isLoading && styles.quickActionChipDisabled,
+                styles.quickReplyChip,
                 pressed && !isLoading && styles.pressed,
+                isLoading && styles.quickReplyChipDisabled,
               ]}
-              onPress={() => handleQuickReply(option.prompt)}
+              onPress={() => onSend(option.prompt)}
               disabled={isLoading}
+              accessibilityRole="button"
+              accessibilityLabel={`Send quick reply: ${option.label}`}
             >
-              <LinearText style={styles.quickActionText}>{option.label}</LinearText>
+              <LinearText style={styles.quickReplyChipText} numberOfLines={1}>
+                {option.label}
+              </LinearText>
             </Pressable>
           ))}
-        </View>
-      </View>
+        </ScrollView>
+      ) : null}
 
       <View style={styles.composerWrap}>
-        <View style={styles.inputRow}>
+        <View style={styles.composerRow}>
           <Pressable
             style={({ pressed }) => [styles.modelPillInline, pressed && styles.pressed]}
             onPress={onModelPress}
@@ -74,33 +76,34 @@ export const GuruChatInput = memo(function GuruChatInput({
 
           <TextInput
             style={styles.input}
-            placeholder="Message Guru..."
+            placeholder="Ask Guru anything..."
             placeholderTextColor={n.colors.textMuted}
             value={input}
             autoFocus={autoFocus}
             onChangeText={onChangeText}
-            onSubmitEditing={() => onSend()}
-            returnKeyType="send"
-            multiline={false}
+            multiline
             blurOnSubmit={false}
             maxLength={1000}
             selectionColor={n.colors.accent}
+            textAlignVertical={Platform.OS === 'android' ? 'top' : 'center'}
+            underlineColorAndroid="transparent"
           />
+
           <Pressable
             style={({ pressed }) => [
               styles.sendBtn,
               (!input.trim() || isLoading) && styles.sendBtnDisabled,
               pressed && input.trim() && !isLoading && styles.pressed,
             ]}
-            android_ripple={{ color: '#ffffff18', radius: 22 }}
+            android_ripple={{ color: '#ffffff18', radius: 20 }}
             onPress={() => onSend()}
             disabled={!input.trim() || isLoading}
             accessibilityRole="button"
             accessibilityLabel="Send message"
           >
             <Ionicons
-              name={isLoading ? 'ellipse-outline' : 'send'}
-              size={18}
+              name={isLoading ? 'ellipse-outline' : 'arrow-up'}
+              size={17}
               color={n.colors.textPrimary}
             />
           </Pressable>
@@ -110,73 +113,84 @@ export const GuruChatInput = memo(function GuruChatInput({
   );
 });
 
+/** Solid fill (no alpha) so chat messages never bleed through behind the composer or TextInput. */
+const COMPOSER_SURFACE = '#12151c';
+
 const styles = StyleSheet.create({
-  composerToolsWrap: {
-    gap: 8,
+  composerOuter: {
+    width: '100%',
+    alignSelf: 'stretch',
+    alignItems: 'stretch',
+    paddingHorizontal: 0,
+    paddingTop: 6,
+    paddingBottom: 0,
+    backgroundColor: n.colors.background,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: n.colors.border,
   },
-  quickActionsCenterWrap: {
-    alignItems: 'flex-start',
-    paddingHorizontal: 4,
+  quickRepliesScroll: {
+    alignSelf: 'stretch',
+    maxHeight: 40,
+    marginBottom: 8,
   },
-  quickActionsCenter: {
+  quickRepliesContent: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'flex-start',
-    gap: 6,
-    maxWidth: '100%',
-  },
-  quickActionChip: {
     alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 12,
+    paddingBottom: 2,
+  },
+  quickReplyChip: {
+    flexShrink: 0,
+    paddingVertical: 7,
+    paddingHorizontal: 12,
     borderRadius: 999,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: whiteAlpha['8'],
-    backgroundColor: 'transparent',
-    paddingHorizontal: 11,
-    paddingVertical: 6,
+    borderColor: whiteAlpha['12'],
+    backgroundColor: '#1a1e28',
   },
-  quickActionChipDisabled: {
-    opacity: 0.4,
+  quickReplyChipDisabled: {
+    opacity: 0.45,
   },
-  quickActionText: {
-    color: n.colors.textMuted,
-    fontSize: 11,
+  quickReplyChipText: {
+    color: n.colors.textSecondary,
+    fontSize: 13,
     fontWeight: '600',
-    letterSpacing: 0.2,
   },
   composerWrap: {
-    paddingHorizontal: 8,
-    paddingVertical: 8,
-    borderRadius: 22,
-    backgroundColor: whiteAlpha['2'],
+    alignSelf: 'stretch',
+    width: '100%',
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    borderRadius: 20,
+    backgroundColor: COMPOSER_SURFACE,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: whiteAlpha['8'],
-    marginHorizontal: 4,
-    marginBottom: 4,
+    borderColor: whiteAlpha['10'],
+  },
+  composerRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    gap: 8,
+    minHeight: 34,
   },
   modelPillInline: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: 5,
     maxWidth: 132,
+    height: 34,
     borderRadius: 999,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: whiteAlpha['8'],
-    backgroundColor: whiteAlpha['2.5'],
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    flexShrink: 1,
+    backgroundColor: '#1a1e28',
+    paddingHorizontal: 9,
+    flexShrink: 0,
   },
   modelPillText: {
     color: n.colors.textSecondary,
     fontSize: 11,
     fontWeight: '600',
     flexShrink: 1,
-  },
-  inputRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    paddingHorizontal: 2,
   },
   modelDot: {
     width: 7,
@@ -190,21 +204,25 @@ const styles = StyleSheet.create({
   },
   input: {
     flex: 1,
-    minHeight: 40,
+    minHeight: 34,
+    maxHeight: 96,
     color: n.colors.textPrimary,
-    fontSize: 14,
-    lineHeight: 18,
+    backgroundColor: COMPOSER_SURFACE,
+    fontSize: 15,
+    lineHeight: 20,
     paddingHorizontal: 4,
-    paddingVertical: 8,
-    textAlignVertical: 'center',
+    paddingTop: Platform.OS === 'android' ? 6 : 5,
+    paddingBottom: Platform.OS === 'android' ? 6 : 5,
+    borderRadius: 10,
   },
   sendBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 34,
+    height: 34,
+    borderRadius: 17,
     backgroundColor: n.colors.accent,
     alignItems: 'center',
     justifyContent: 'center',
+    flexShrink: 0,
     shadowColor: '#5E6AD2',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.35,

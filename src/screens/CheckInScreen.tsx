@@ -14,6 +14,7 @@ import { MOOD_LABELS } from '../constants/gamification';
 import { invalidatePlanCache } from '../services/studyPlanner';
 import { requestAllPermissions } from '../services/appPermissions';
 import { linearTheme as n } from '../theme/linearTheme';
+import { motion } from '../motion/presets';
 import { MS_PER_DAY } from '../constants/time';
 import { ResponsiveContainer } from '../hooks/useResponsive';
 import LinearBadge from '../components/primitives/LinearBadge';
@@ -75,7 +76,7 @@ export default function CheckInScreen() {
 
   useEffect(() => {
     let mounted = true;
-    Animated.timing(fadeIn, { toValue: 1, duration: 500, useNativeDriver: true }).start();
+    motion.to(fadeIn, { toValue: 1, duration: 500, useNativeDriver: true }).start();
 
     const yesterday = new Date();
     yesterday.setDate(yesterday.getDate() - 1);
@@ -91,9 +92,9 @@ export default function CheckInScreen() {
   function handleMoodSelect(mood: Mood) {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setSelectedMood(mood);
-    Animated.timing(fadeOut, { toValue: 0, duration: 160, useNativeDriver: true }).start(() => {
+    motion.to(fadeOut, { toValue: 0, duration: 160, useNativeDriver: true }).start(() => {
       setStep('time');
-      Animated.timing(fadeOut, { toValue: 1, duration: 220, useNativeDriver: true }).start();
+      motion.to(fadeOut, { toValue: 1, duration: 220, useNativeDriver: true }).start();
     });
   }
 

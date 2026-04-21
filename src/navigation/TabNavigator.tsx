@@ -11,7 +11,6 @@ import {
 } from 'react-native';
 import { createMaterialTopTabNavigator } from '@react-navigation/material-top-tabs';
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import {
   useNavigation,
   useFocusEffect,
@@ -42,8 +41,10 @@ import SubjectChip from '../components/SubjectChip';
 import SubjectSelectionCard from '../components/SubjectSelectionCard';
 import LinearSurface from '../components/primitives/LinearSurface';
 import LinearText from '../components/primitives/LinearText';
+import Icon from '../components/primitives/Icon';
 import { navigationRef } from './navigationRef';
 import { HOME_GRID_STACK_BREAKPOINT } from '../components/home/homeLayout';
+import { motion } from '../motion/presets';
 
 const Tab = createMaterialTopTabNavigator<TabParamList>();
 
@@ -186,7 +187,7 @@ export default function TabNavigator() {
               friction: 10,
               useNativeDriver: true,
             }),
-            Animated.timing(sheetAnim, {
+            motion.to(sheetAnim, {
               toValue: 0,
               duration: 180,
               useNativeDriver: true,
@@ -304,11 +305,7 @@ export default function TabNavigator() {
           { backgroundColor: `${app.color}1E`, borderColor: `${app.color}4A` },
         ]}
       >
-        <Ionicons
-          name={EXTERNAL_APP_ICON_MAP[app.id] ?? 'apps-outline'}
-          size={22}
-          color={app.color}
-        />
+        <Icon name={EXTERNAL_APP_ICON_MAP[app.id] ?? 'apps-outline'} size="lg" color={app.color} />
       </View>
       <LinearText
         variant="meta"
@@ -412,13 +409,6 @@ export default function TabNavigator() {
             },
           ]}
         >
-          <LinearGradient
-            pointerEvents="none"
-            colors={['rgba(255,255,255,0.05)', 'rgba(255,255,255,0.015)', 'rgba(255,255,255,0.0)']}
-            start={{ x: 0.5, y: 0 }}
-            end={{ x: 0.5, y: 1 }}
-            style={styles.sheetGlassLayer}
-          />
           <View pointerEvents="none" style={styles.sheetFrostLayer} />
           <View style={styles.sheetHandleHitbox}>
             <View style={styles.sheetHandle} />
@@ -439,7 +429,7 @@ export default function TabNavigator() {
                 accessibilityRole="button"
                 accessibilityLabel="Record lecture"
               >
-                <Ionicons name="mic-outline" size={18} color={n.colors.textPrimary} />
+                <Icon name="mic-outline" size="md" color={n.colors.textPrimary} />
                 <LinearText variant="body" style={styles.topActionTitle}>
                   Record Lecture
                 </LinearText>
@@ -453,7 +443,7 @@ export default function TabNavigator() {
                 accessibilityRole="button"
                 accessibilityLabel="Search any topic"
               >
-                <Ionicons name="search-outline" size={18} color={n.colors.textPrimary} />
+                <Icon name="search-outline" size="md" color={n.colors.textPrimary} />
                 <LinearText variant="body" style={styles.topActionTitle}>
                   Search Topics
                 </LinearText>
@@ -467,7 +457,7 @@ export default function TabNavigator() {
                 accessibilityRole="button"
                 accessibilityLabel="Open notes vault"
               >
-                <Ionicons name="library-outline" size={18} color={n.colors.textPrimary} />
+                <Icon name="library-outline" size="md" color={n.colors.textPrimary} />
                 <LinearText variant="body" style={styles.topActionTitle}>
                   Notes Vault
                 </LinearText>
@@ -482,7 +472,7 @@ export default function TabNavigator() {
                 accessibilityRole="button"
                 accessibilityLabel="Open daily challenge"
               >
-                <Ionicons name="flash-outline" size={15} color={n.colors.textSecondary} />
+                <Icon name="flash-outline" size="sm" color={n.colors.textSecondary} />
                 <LinearText variant="bodySmall" style={styles.manualActionText}>
                   Daily Challenge
                 </LinearText>
@@ -495,7 +485,7 @@ export default function TabNavigator() {
                 accessibilityRole="button"
                 accessibilityLabel="Open boss battle"
               >
-                <Ionicons name="shield-half-outline" size={15} color={n.colors.textSecondary} />
+                <Icon name="shield-half-outline" size="sm" color={n.colors.textSecondary} />
                 <LinearText variant="bodySmall" style={styles.manualActionText}>
                   Boss Battle
                 </LinearText>
@@ -508,7 +498,7 @@ export default function TabNavigator() {
                 accessibilityRole="button"
                 accessibilityLabel="Open recording vault"
               >
-                <Ionicons name="mic-outline" size={15} color={n.colors.textSecondary} />
+                <Icon name="mic-outline" size="sm" color={n.colors.textSecondary} />
                 <LinearText variant="bodySmall" style={styles.manualActionText}>
                   Upload Audio
                 </LinearText>
@@ -521,7 +511,7 @@ export default function TabNavigator() {
                 accessibilityRole="button"
                 accessibilityLabel="Open transcript vault"
               >
-                <Ionicons name="clipboard-outline" size={15} color={n.colors.textSecondary} />
+                <Icon name="clipboard-outline" size="sm" color={n.colors.textSecondary} />
                 <LinearText variant="bodySmall" style={styles.manualActionText}>
                   Transcript Tools
                 </LinearText>
@@ -534,7 +524,7 @@ export default function TabNavigator() {
                 accessibilityRole="button"
                 accessibilityLabel="Review parked thoughts"
               >
-                <Ionicons name="bulb-outline" size={15} color={n.colors.textSecondary} />
+                <Icon name="bulb-outline" size="sm" color={n.colors.textSecondary} />
                 <LinearText variant="bodySmall" style={styles.manualActionText}>
                   Parked thoughts
                 </LinearText>
@@ -763,9 +753,6 @@ const styles = StyleSheet.create({
     maxWidth: 680,
     alignSelf: 'center',
     overflow: 'hidden',
-  },
-  sheetGlassLayer: {
-    ...StyleSheet.absoluteFillObject,
   },
   sheetFrostLayer: {
     ...StyleSheet.absoluteFillObject,

@@ -13,6 +13,7 @@ import { fetchContent } from '../services/ai';
 import type { QuizContent, TopicWithProgress } from '../types';
 import { MarkdownRender } from '../components/MarkdownRender';
 import { linearTheme as n } from '../theme/linearTheme';
+import { motion } from '../motion/presets';
 import { ResponsiveContainer } from '../hooks/useResponsive';
 import { emphasizeHighYieldMarkdown } from '../utils/highlightMarkdown';
 import LinearButton from '../components/primitives/LinearButton';
@@ -59,11 +60,13 @@ export default function DailyChallengeScreen() {
 
   useEffect(() => {
     if (questions.length > 0) {
-      Animated.timing(progressAnim, {
-        toValue: (currentIdx / questions.length) * 100,
-        duration: 400,
-        useNativeDriver: false,
-      }).start();
+      motion
+        .to(progressAnim, {
+          toValue: (currentIdx / questions.length) * 100,
+          duration: 400,
+          useNativeDriver: false,
+        })
+        .start();
     }
   }, [currentIdx, questions.length, progressAnim]);
 
@@ -141,20 +144,18 @@ export default function DailyChallengeScreen() {
       setWrongTopics((prev) => [...prev, q.topicId]);
     }
 
-    Animated.timing(feedbackOpacity, { toValue: 1, duration: 200, useNativeDriver: true }).start();
+    motion.to(feedbackOpacity, { toValue: 1, duration: 200, useNativeDriver: true }).start();
   }
 
   function handleNextQuestion() {
-    Animated.timing(feedbackOpacity, { toValue: 0, duration: 200, useNativeDriver: true }).start(
-      () => {
-        if (currentIdx + 1 >= questions.length) {
-          finishChallenge(score, correctTopics, wrongTopics);
-        } else {
-          setCurrentIdx((i) => i + 1);
-          setSelected(null);
-        }
-      },
-    );
+    motion.to(feedbackOpacity, { toValue: 0, duration: 200, useNativeDriver: true }).start(() => {
+      if (currentIdx + 1 >= questions.length) {
+        finishChallenge(score, correctTopics, wrongTopics);
+      } else {
+        setCurrentIdx((i) => i + 1);
+        setSelected(null);
+      }
+    });
   }
 
   async function finishChallenge(finalScore: number, finalCorrect: number[], finalWrong: number[]) {

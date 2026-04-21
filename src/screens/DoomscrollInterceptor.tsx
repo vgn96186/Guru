@@ -115,11 +115,7 @@ export default function DoomscrollInterceptor() {
         shakeLoop.stop();
       };
     } else {
-      Animated.timing(fadeAnim, {
-        toValue: 0,
-        duration: 200,
-        useNativeDriver: true,
-      }).start();
+      motion.to(fadeAnim, { toValue: 0, duration: 200, useNativeDriver: true }).start();
     }
   }, [isBlocking, fadeAnim, pulseAnim, shakeAnim, reducedMotion]);
 

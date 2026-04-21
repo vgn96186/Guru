@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { View, StyleSheet, TouchableOpacity, Animated, Easing, StatusBar } from 'react-native';
+import { motion } from '../motion/presets';
 import LinearText from '../components/primitives/LinearText';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
@@ -55,12 +56,14 @@ export default function SleepModeScreen() {
     setIsTracking(false);
 
     // Fade in screen
-    Animated.timing(fadeAnim, {
-      toValue: 1,
-      duration: 3000,
-      easing: Easing.linear,
-      useNativeDriver: true,
-    }).start();
+    motion
+      .to(fadeAnim, {
+        toValue: 1,
+        duration: 3000,
+        easing: Easing.linear,
+        useNativeDriver: true,
+      })
+      .start();
 
     // Vibrate and maybe play sound
     const interval = setInterval(() => {

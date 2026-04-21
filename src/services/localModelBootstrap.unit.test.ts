@@ -4,6 +4,7 @@ import { useAppStore } from '../store/useAppStore';
 import { getLocalLlmRamWarning, isLocalLlmAllowedOnThisDevice } from './deviceMemory';
 import { showToast } from '../components/Toast';
 import { bootstrapLocalModels } from './localModelBootstrap';
+import { findLocalModelFiles } from '../../modules/app-launcher';
 
 jest.mock('expo-file-system/legacy', () => ({
   documentDirectory: 'file:///mock/',
@@ -19,6 +20,7 @@ jest.mock('expo-file-system/legacy', () => ({
 
 jest.mock('../../modules/app-launcher', () => ({
   concatenateFiles: jest.fn().mockResolvedValue(true),
+  findLocalModelFiles: jest.fn().mockResolvedValue([]),
 }));
 
 jest.mock('../db/repositories', () => ({
@@ -371,6 +373,71 @@ describe('localModelBootstrap', () => {
       { headers: { 'Accept-Encoding': 'identity' } },
       expect.any(Function),
     );
+    expect(profileRepository.updateProfile).toHaveBeenCalledWith(
+      expect.objectContaining({ localModelPath: expect.any(String), useLocalModel: true }),
+    );
+  });
+
+  it('uses the best valid discovered LiteRT model before starting a download', async () => {
+    (profileRepository.getProfile as jest.Mock).mockResolvedValue({
+      localModelPath: '',
+      localWhisperPath: 'path/to/whisper',
+    });
+    (isLocalLlmAllowedOnThisDevice as jest.Mock).mockReturnValue(true);
+    (findLocalModelFiles as jest.Mock).mockResolvedValue([
+      {
+        path: '/storage/emulated/0/Download/older-model.litertlm',
+        size: 3_450_000_000,
+        modifiedAt: 100,
+      },
+      {
+        path: '/storage/emulated/0/Download/gemma-4-E4B-it.litertlm',
+        size: 3_600_000_000,
+        modifiedAt: 200,
+      },
+    ]);
+    (FileSystem.getInfoAsync as jest.Mock).mockResolvedValue({ exists: true, size: 3_600_000_000 });
+
+    await bootstrapLocalModels();
+
+    expect(findLocalModelFiles).toHaveBeenCalled();
+    expect(FileSystem.createDownloadResumable).not.toHaveBeenCalled();
+    expect(profileRepository.updateProfile).toHaveBeenCalledWith(
+      expect.objectContaining({
+        localModelPath: '/storage/emulated/0/Download/gemma-4-E4B-it.litertlm',
+        useLocalModel: true,
+      }),
+    );
+  });
+
+  it('ignores invalid discovered LiteRT files and falls back to download', async () => {
+    (profileRepository.getProfile as jest.Mock).mockResolvedValue({
+      localModelPath: '',
+      localWhisperPath: 'path/to/whisper',
+    });
+    (isLocalLlmAllowedOnThisDevice as jest.Mock).mockReturnValue(true);
+    (findLocalModelFiles as jest.Mock).mockResolvedValue([
+      {
+        path: '/storage/emulated/0/Download/bad-model.litertlm',
+        size: 1024,
+        modifiedAt: 200,
+      },
+    ]);
+
+    const mockDownload = {
+      downloadAsync: jest.fn().mockResolvedValue({ status: 200 }),
+    };
+    (FileSystem.createDownloadResumable as jest.Mock).mockReturnValue(mockDownload);
+    (FileSystem.getInfoAsync as jest.Mock)
+      .mockResolvedValueOnce({ exists: true, size: 1024 })
+      .mockResolvedValueOnce({ exists: false })
+      .mockResolvedValueOnce({ exists: false })
+      .mockResolvedValueOnce({ exists: true, size: 3_600_000_000 });
+
+    await bootstrapLocalModels();
+
+    expect(findLocalModelFiles).toHaveBeenCalled();
+    expect(FileSystem.createDownloadResumable).toHaveBeenCalled();
     expect(profileRepository.updateProfile).toHaveBeenCalledWith(
       expect.objectContaining({ localModelPath: expect.any(String), useLocalModel: true }),
     );

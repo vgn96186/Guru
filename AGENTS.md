@@ -1,7 +1,13 @@
 # Guru — AI Context File
 
-React Native (Expo) NEET-PG/INICET medical study app for Android.
+React Native (Expo) NEET-PG/INICET medical study app.
 Target user: ADHD medical student. Stack: Expo SDK 54, expo-sqlite (async), TypeScript.
+
+### Deployment reality (read before architecture advice)
+
+- **Android-only in practice:** The author ships and runs Guru **only on Android** for **personal use** — not a cross-platform product with iOS parity goals. RN/Expo still allows an iOS build in theory, but **assume no iOS requirement** unless the user says otherwise.
+- **Primary devices:** Samsung **Galaxy Tab S10+** (tablet) and **Galaxy S23 Ultra** (phone). Layout, gestures, and native-module choices should favor this pair (large tablet + tall phone).
+- **Continual learning:** Durable corrections and preferences are also logged under **`.learnings/LEARNINGS.md`** (self-improvement skill format; folder is gitignored). Promote repeat-worthy items into this file’s sections above.
 
 ---
 
@@ -250,34 +256,34 @@ The `GuruChatScreen.tsx` was refactored from a 3,194-line "God component" into m
 
 ### New Hooks (`src/hooks/`)
 
-| Hook | Purpose |
-|------|---------|
-| `useGuruChat.ts` | Vercel AI SDK wrapper with streaming, tools, persistence |
-| `useGuruChatSession.ts` | Thread management (create, open, delete, rename) |
-| `useGuruChatModels.ts` | Model picker state with provider priority |
-| `useGuruChatImageGeneration.ts` | Image generation job state |
+| Hook                            | Purpose                                                  |
+| ------------------------------- | -------------------------------------------------------- |
+| `useGuruChat.ts`                | Vercel AI SDK wrapper with streaming, tools, persistence |
+| `useGuruChatSession.ts`         | Thread management (create, open, delete, rename)         |
+| `useGuruChatModels.ts`          | Model picker state with provider priority                |
+| `useGuruChatImageGeneration.ts` | Image generation job state                               |
 
 ### New Components (`src/components/chat/`)
 
-| Component | Purpose |
-|-----------|---------|
-| `GuruChatHistoryDrawer` | Thread list sidebar with CRUD operations |
-| `GuruChatRenameSheet` | Thread title editing modal |
-| `GuruChatModelSelector` | Model picker with provider tabs |
-| `GuruChatStarters` | Empty state with prompt suggestions |
-| `GuruChatMessageList` | Message list with typing indicators |
-| `GuruChatMessageItem` | Individual message rendering |
-| `GuruChatInput` | Composer with send button |
-| `FormattedGuruMessage` | Message content with bold segment parsing |
+| Component               | Purpose                                   |
+| ----------------------- | ----------------------------------------- |
+| `GuruChatHistoryDrawer` | Thread list sidebar with CRUD operations  |
+| `GuruChatRenameSheet`   | Thread title editing modal                |
+| `GuruChatModelSelector` | Model picker with provider tabs           |
+| `GuruChatStarters`      | Empty state with prompt suggestions       |
+| `GuruChatMessageList`   | Message list with typing indicators       |
+| `GuruChatMessageItem`   | Individual message rendering              |
+| `GuruChatInput`         | Composer with send button                 |
+| `FormattedGuruMessage`  | Message content with bold segment parsing |
 
 ### Tools (`src/services/ai/chatTools.ts`)
 
 The Vercel AI SDK integration includes 3 medical tools:
 
 ```typescript
-search_medical          // Wikipedia, Europe PMC, PubMed search
-search_reference_images // Medical diagrams, charts
-generate_image          // Custom study image generation
+search_medical; // Wikipedia, Europe PMC, PubMed search
+search_reference_images; // Medical diagrams, charts
+generate_image; // Custom study image generation
 ```
 
 ### Feature Flag
@@ -387,17 +393,19 @@ When writing memory:
 - Release builds do not ship bundled cloud API keys; provider access comes from user-entered keys or OAuth connections in Settings.
 - The `scripts/archive/` folder contains deprecated regex-based patch scripts. All their changes are already in source. Do not run them or create new patch scripts.
 
-## vexp <!-- vexp v2.0.11 -->
+## vexp <!-- vexp v2.0.12 -->
 
 **MANDATORY: use `run_pipeline` — do NOT grep or glob the codebase.**
 vexp returns pre-indexed, graph-ranked context in a single call.
 
 ### Workflow
+
 1. `run_pipeline` with your task description — ALWAYS FIRST (replaces all other tools)
 2. Make targeted changes based on the context returned
 3. `run_pipeline` again only if you need more context
 
 ### Available MCP tools
+
 - `run_pipeline` — **PRIMARY TOOL**. Runs capsule + impact + memory in 1 call.
   Auto-detects intent. Includes file content. Example: `run_pipeline({ "task": "fix auth bug" })`
 - `get_skeleton` — compact file structure
@@ -405,13 +413,17 @@ vexp returns pre-indexed, graph-ranked context in a single call.
 - `expand_vexp_ref` — expand V-REF placeholders in v2 output
 
 ### Agentic search
+
 - Do NOT use built-in file search, grep, or codebase indexing — always call `run_pipeline` first
 - If you spawn sub-agents or background tasks, pass them the context from `run_pipeline`
   rather than letting them search the codebase independently
 
 ### Smart Features
+
 Intent auto-detection, hybrid ranking, session memory, auto-expanding budget.
 
 ### Multi-Repo
+
 `run_pipeline` auto-queries all indexed repos. Use `repos: ["alias"]` to scope. Run `index_status` to see aliases.
+
 <!-- /vexp -->

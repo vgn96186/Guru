@@ -115,8 +115,8 @@ import {
   whiteAlpha,
   blackAlpha,
   errorAlpha,
-  transcriptBlueAlpha,
-  transcriptBlueBorderAlpha,
+  captureFillAlpha,
+  captureBorderAlpha,
 } from '../theme/colorUtils';
 import {
   DEFAULT_HF_TRANSCRIPTION_MODEL,
@@ -918,17 +918,23 @@ export default function SettingsScreen() {
 
   async function validateGitHubCopilotConnection() {
     const log = '[SETTINGS_VALIDATE][github_copilot]';
-    console.info(`${log} Starting OAuth + api.githubcopilot.com probeâ€¦`);
+    if (__DEV__) {
+      console.info(`${log} Starting OAuth + api.githubcopilot.com probeâ€¦`);
+    }
     setTestingGitHubCopilotOAuth(true);
     setGithubCopilotOAuthTestResult(null);
     try {
       let token: string;
       try {
         token = await getGitHubCopilotAccessToken();
-        console.info(`${log} Access token OK (chars=${token.length})`);
+        if (__DEV__) {
+          console.info(`${log} Access token OK (chars=${token.length})`);
+        }
       } catch (e) {
         const msg = e instanceof Error ? e.message : String(e);
-        console.warn(`${log} Token failed:`, msg);
+        if (__DEV__) {
+          console.warn(`${log} Token failed:`, msg);
+        }
         setGithubCopilotOAuthTestResult('fail');
         showWarning(
           'GitHub Copilot validate',
@@ -1862,13 +1868,6 @@ export default function SettingsScreen() {
                 <LinearText variant="meta" tone="accent" style={styles.summaryEyebrow}>
                   CONTROL ROOM
                 </LinearText>
-                <LinearText variant="sectionTitle" style={styles.summaryTitle}>
-                  The app-wide behavior layer
-                </LinearText>
-                <LinearText variant="bodySmall" tone="secondary" style={styles.summaryText}>
-                  Exam dates, permissions, provider routing, backups, and study defaults now live in
-                  one calmer shell.
-                </LinearText>
               </View>
               <View style={styles.summaryPill}>
                 <LinearText variant="chip" tone="accent">
@@ -2622,9 +2621,9 @@ const styles = StyleSheet.create({
   providerActionBtnDisabled: { opacity: 0.25 },
   providerActionBtnPressed: { backgroundColor: n.colors.card },
   saveBtn: {
-    backgroundColor: transcriptBlueAlpha['14'],
+    backgroundColor: captureFillAlpha['14'],
     borderWidth: 1,
-    borderColor: transcriptBlueBorderAlpha['24'],
+    borderColor: captureBorderAlpha['24'],
     borderRadius: 16,
     padding: 18,
     alignItems: 'center',

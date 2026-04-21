@@ -43,10 +43,25 @@ export function resetAiCacheDbSingleton(): void {
 /**
  * Flush WAL journal into the main DB file. Call before copying the .db file
  * to ensure all committed writes are in the main file, not stranded in -wal.
+ *
+ * Retries on SQLITE_BUSY / "database is locked" — startup can overlap this
+ * with notification refresh, AI prefetch, and other readers/writers.
  */
 export async function walCheckpoint(): Promise<void> {
   const db = getDb();
-  await db.execAsync('PRAGMA wal_checkpoint(TRUNCATE)');
+  const maxAttempts = 6;
+  const baseDelayMs = 350;
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      await db.execAsync('PRAGMA wal_checkpoint(TRUNCATE)');
+      return;
+    } catch (e) {
+      const msg = (e instanceof Error ? e.message : String(e)).toLowerCase();
+      const retryable = msg.includes('locked') || msg.includes('busy');
+      if (!retryable || attempt === maxAttempts) throw e;
+      await new Promise<void>((resolve) => setTimeout(resolve, baseDelayMs * attempt));
+    }
+  }
 }
 
 /**

@@ -38,6 +38,7 @@ import { ResponsiveContainer } from '../hooks/useResponsive';
 import { useHomeDashboardData } from '../hooks/useHomeDashboardData';
 import { useLevelInfo, useProfileQuery, useRefreshProfile } from '../hooks/queries/useProfile';
 import { linearTheme as n } from '../theme/linearTheme';
+import { motion } from '../motion/presets';
 import { DEFAULT_INICET_DATE, DEFAULT_NEET_DATE } from '../config/appConfig';
 import type { Mood, UserProfile, TopicWithProgress } from '../types';
 import HomeSectionHeader from '../components/home/HomeSectionHeader';
@@ -775,11 +776,13 @@ function HomeScreenContent() {
             style={styles.moreHeader}
             onPress={() => {
               setMoreExpanded(!moreExpanded);
-              Animated.timing(moreAnim, {
-                toValue: moreExpanded ? 0 : 1,
-                duration: 200,
-                useNativeDriver: true,
-              }).start();
+              motion
+                .to(moreAnim, {
+                  toValue: moreExpanded ? 0 : 1,
+                  duration: 200,
+                  useNativeDriver: true,
+                })
+                .start();
             }}
             accessibilityRole="button"
             accessibilityLabel={

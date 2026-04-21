@@ -63,6 +63,7 @@ import { useGuruPresence } from '../hooks/useGuruPresence';
 import { useAppStateTransition } from '../hooks/useAppStateTransition';
 import { ResponsiveContainer } from '../hooks/useResponsive';
 import { linearTheme as n } from '../theme/linearTheme';
+import { motion } from '../motion/presets';
 import { blackAlpha } from '../theme/colorUtils';
 
 type Nav = NativeStackNavigationProp<HomeStackParamList, 'Session'>;
@@ -97,8 +98,8 @@ function useEntranceAnimation(duration = 400) {
     slide.setValue(24);
     InteractionManager.runAfterInteractions(() => {
       Animated.parallel([
-        Animated.timing(fade, { toValue: 1, duration, useNativeDriver: true }),
-        Animated.timing(slide, { toValue: 0, duration, useNativeDriver: true }),
+        motion.to(fade, { toValue: 1, duration, useNativeDriver: true }),
+        motion.to(slide, { toValue: 0, duration, useNativeDriver: true }),
       ]).start();
     });
   }, [duration, fade, slide]);
@@ -739,9 +740,9 @@ export default function SessionScreen() {
         setShowXp(xp);
 
         Animated.sequence([
-          Animated.timing(xpAnim, { toValue: 1, duration: 200, useNativeDriver: true }),
+          motion.to(xpAnim, { toValue: 1, duration: 200, useNativeDriver: true }),
           Animated.delay(800),
-          Animated.timing(xpAnim, { toValue: 0, duration: 300, useNativeDriver: true }),
+          motion.to(xpAnim, { toValue: 0, duration: 300, useNativeDriver: true }),
         ]).start();
 
         if (confidence === 1) triggerEvent('again_rated');

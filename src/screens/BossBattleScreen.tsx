@@ -13,6 +13,7 @@ import { profileRepository } from '../db/repositories';
 import { useRefreshProfile } from '../hooks/queries/useProfile';
 import { MarkdownRender } from '../components/MarkdownRender';
 import { linearTheme as n } from '../theme/linearTheme';
+import { motion } from '../motion/presets';
 import { ResponsiveContainer } from '../hooks/useResponsive';
 import type { Subject } from '../types';
 import { emphasizeHighYieldMarkdown } from '../utils/highlightMarkdown';
@@ -157,10 +158,10 @@ export default function BossBattleScreen() {
 
   function shakeScreen() {
     Animated.sequence([
-      Animated.timing(shakeAnim, { toValue: 10, duration: 50, useNativeDriver: true }),
-      Animated.timing(shakeAnim, { toValue: -10, duration: 50, useNativeDriver: true }),
-      Animated.timing(shakeAnim, { toValue: 10, duration: 50, useNativeDriver: true }),
-      Animated.timing(shakeAnim, { toValue: 0, duration: 50, useNativeDriver: true }),
+      motion.to(shakeAnim, { toValue: 10, duration: 50, useNativeDriver: true }),
+      motion.to(shakeAnim, { toValue: -10, duration: 50, useNativeDriver: true }),
+      motion.to(shakeAnim, { toValue: 10, duration: 50, useNativeDriver: true }),
+      motion.to(shakeAnim, { toValue: 0, duration: 50, useNativeDriver: true }),
     ]).start();
   }
 

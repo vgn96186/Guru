@@ -6,13 +6,14 @@ import ReAnimated, {
   withTiming,
   Easing,
 } from 'react-native-reanimated';
-import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import type { Subject } from '../types';
 import { linearTheme as n } from '../theme/linearTheme';
+import { density } from '../theme/density';
 import { cardPressTiming } from '../motion/presets';
 import { useReducedMotion } from '../motion/useReducedMotion';
-import AppText from './AppText';
+import LinearText from './primitives/LinearText';
+import Icon from './primitives/Icon';
 import LinearSurface from './primitives/LinearSurface';
 
 interface Props {
@@ -106,43 +107,43 @@ export default React.memo(function SubjectCard({
               <View style={[styles.dot, { backgroundColor: subject.colorHex }]} />
               <View style={styles.body}>
                 <View style={styles.mainLine}>
-                  <AppText
+                  <LinearText
                     style={styles.name}
                     numberOfLines={1}
                     ellipsizeMode="tail"
                     variant="body"
                   >
                     {subject.name}
-                  </AppText>
+                  </LinearText>
                 </View>
                 {/* Metric Badges — organized for instant scannability */}
                 <View style={styles.labelRow}>
                   <View style={styles.badgeShortCode}>
-                    <AppText style={styles.labelShortCode}>{subject.shortCode}</AppText>
+                    <LinearText style={styles.labelShortCode}>{subject.shortCode}</LinearText>
                   </View>
                   <View style={styles.coveragePill}>
-                    <AppText style={styles.coverageSeen}>{coverage.seen}</AppText>
-                    <AppText style={styles.coverageSlash}>/</AppText>
-                    <AppText style={styles.coverageTotal}>{coverage.total}</AppText>
+                    <LinearText style={styles.coverageSeen}>{coverage.seen}</LinearText>
+                    <LinearText style={styles.coverageSlash}>/</LinearText>
+                    <LinearText style={styles.coverageTotal}>{coverage.total}</LinearText>
                   </View>
                   {hasDue ? (
                     <View style={styles.badgeDue}>
-                      <AppText style={styles.labelDue}>Due {metrics!.due}</AppText>
+                      <LinearText style={styles.labelDue}>Due {metrics!.due}</LinearText>
                     </View>
                   ) : null}
                   {metrics && metrics.highYield > 0 ? (
                     <View style={styles.badgeHY}>
-                      <AppText style={styles.labelHY}>HY {metrics.highYield}</AppText>
+                      <LinearText style={styles.labelHY}>HY {metrics.highYield}</LinearText>
                     </View>
                   ) : null}
                   {metrics && metrics.unseen > 0 ? (
                     <View style={styles.badgeUnseen}>
-                      <AppText style={styles.labelUnseen}>Unseen {metrics.unseen}</AppText>
+                      <LinearText style={styles.labelUnseen}>Unseen {metrics.unseen}</LinearText>
                     </View>
                   ) : null}
                   {metrics && metrics.withNotes > 0 ? (
                     <View style={styles.badgeNotes}>
-                      <AppText style={styles.labelNotes}>Notes {metrics.withNotes}</AppText>
+                      <LinearText style={styles.labelNotes}>Notes {metrics.withNotes}</LinearText>
                     </View>
                   ) : null}
                 </View>
@@ -153,9 +154,9 @@ export default React.memo(function SubjectCard({
               <View style={styles.trailing}>
                 {matchingTopicsCount !== undefined && matchingTopicsCount > 0 ? (
                   <View style={styles.matchCountContainer}>
-                    <AppText style={styles.matchCount} variant="caption">
+                    <LinearText style={styles.matchCount} variant="caption">
                       {matchingTopicsCount} match
-                    </AppText>
+                    </LinearText>
                   </View>
                 ) : null}
                 <View style={styles.pctRow}>
@@ -168,7 +169,7 @@ export default React.memo(function SubjectCard({
                       ]}
                     />
                   </View>
-                  <AppText
+                  <LinearText
                     style={[
                       styles.pct,
                       {
@@ -176,20 +177,17 @@ export default React.memo(function SubjectCard({
                           pct >= 80
                             ? n.colors.success
                             : pct >= 50
-                            ? n.colors.warning
-                            : n.colors.textPrimary,
+                              ? n.colors.warning
+                              : n.colors.textPrimary,
                       },
                     ]}
                     variant="caption"
                   >
                     {pct}%
-                  </AppText>
-                  <Ionicons
-                    name="chevron-forward"
-                    size={14}
-                    color={n.colors.textMuted}
-                    style={styles.chevron}
-                  />
+                  </LinearText>
+                  <View style={styles.chevron}>
+                    <Icon name="chevron-forward-outline" size="sm" color={n.colors.textMuted} />
+                  </View>
                 </View>
               </View>
             </View>
@@ -209,15 +207,15 @@ const styles = StyleSheet.create({
     width: '50%',
     flexDirection: 'row',
     alignItems: 'center',
-    paddingLeft: 12,
-    paddingVertical: 12,
+    paddingLeft: density.compact.paddingHorizontal,
+    paddingVertical: density.compact.paddingVertical,
   },
   rightHalf: {
     width: '50%',
     flexDirection: 'row',
     alignItems: 'center',
-    paddingRight: 12,
-    paddingVertical: 12,
+    paddingRight: density.compact.paddingHorizontal,
+    paddingVertical: density.compact.paddingVertical,
   },
   dot: { width: 8, height: 8, borderRadius: 4, marginRight: 12, flexShrink: 0 },
   body: { flex: 1, minWidth: 0 },

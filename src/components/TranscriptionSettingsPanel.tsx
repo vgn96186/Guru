@@ -9,6 +9,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Animated } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { linearTheme as n } from '../theme/linearTheme';
+import { motion } from '../motion/presets';
 import LinearChipButton from './primitives/LinearChipButton';
 import LinearIconButton from './primitives/LinearIconButton';
 import { DEFAULT_HF_TRANSCRIPTION_MODEL } from '../config/appConfig';
@@ -78,11 +79,13 @@ export default function TranscriptionSettingsPanel({
   const toggleExpanded = () => {
     const next = !expanded;
     setExpanded(next);
-    Animated.timing(heightAnim, {
-      toValue: next ? 1 : 0,
-      duration: 250,
-      useNativeDriver: false,
-    }).start();
+    motion
+      .to(heightAnim, {
+        toValue: next ? 1 : 0,
+        duration: 250,
+        useNativeDriver: false,
+      })
+      .start();
   };
 
   const handleProviderChange = (p: TranscriptionProvider) => {

@@ -43,7 +43,10 @@ jest.mock('../navigation/navigationRef', () => ({
 
 jest.mock('../db/repositories', () => ({
   dailyLogRepository: { checkinToday: jest.fn().mockResolvedValue(undefined) },
-  profileRepository: { updateProfile: jest.fn().mockResolvedValue(undefined) },
+  profileRepository: {
+    getProfile: jest.fn().mockResolvedValue({}),
+    updateProfile: jest.fn().mockResolvedValue(undefined),
+  },
 }));
 
 jest.mock('../services/studyPlanner', () => ({
@@ -59,6 +62,10 @@ jest.mock('../config/appConfig', () => ({
 
 jest.mock('../services/appLauncher/overlayStartupPrompt', () => ({
   maybePromptOverlayPermissionOnStartup: jest.fn().mockResolvedValue(undefined),
+}));
+
+jest.mock('../services/appLauncher/storageStartupPrompt', () => ({
+  maybeHandleStorageAccessOnStartup: jest.fn().mockResolvedValue(undefined),
 }));
 
 jest.mock('../hooks/useAppStateTransition', () => ({

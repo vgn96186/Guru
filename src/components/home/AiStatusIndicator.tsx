@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Animated, InteractionManager, StyleSheet, View } from 'react-native';
+import { motion } from '../../motion/presets';
 import { BUNDLED_HF_TOKEN } from '../../config/appConfig';
 import { useAiRuntimeStatus } from '../../hooks/useAiRuntimeStatus';
 import { linearTheme as n } from '../../theme/linearTheme';
@@ -25,12 +26,13 @@ export function AiStatusIndicator({ profile }: { profile: NonNullable<UserProfil
           };
     const task = runAfterInteractions(() => {
       if (isActive) {
-        loop = Animated.loop(
-          Animated.sequence([
-            Animated.timing(pulseAnim, { toValue: 1, duration: 800, useNativeDriver: true }),
-            Animated.timing(pulseAnim, { toValue: 0, duration: 800, useNativeDriver: true }),
-          ]),
-        );
+        loop = motion.pulseValue(pulseAnim, {
+          from: 0,
+          to: 1,
+          duration: 800,
+          loop: true,
+          useNativeDriver: true,
+        });
         loop.start();
       } else {
         pulseAnim.setValue(0);

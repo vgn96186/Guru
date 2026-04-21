@@ -45,15 +45,9 @@ import { fetchWikipediaImage } from '../services/imageService';
 import { isContentFlagged, setContentFlagged } from '../db/queries/aiCache';
 import GuruChatOverlay from '../components/GuruChatOverlay';
 import ErrorBoundary from '../components/ErrorBoundary';
-import AppText from '../components/AppText';
 import StudyMarkdown from '../components/StudyMarkdown';
 import { linearTheme as n } from '../theme/linearTheme';
-import {
-  blackAlpha,
-  whiteAlpha,
-  transcriptBlueAlpha,
-  transcriptBlueBorderAlpha,
-} from '../theme/colorUtils';
+import { blackAlpha, whiteAlpha, captureFillAlpha, captureBorderAlpha } from '../theme/colorUtils';
 import { emphasizeHighYieldMarkdown } from '../utils/highlightMarkdown';
 import LinearSurface from '../components/primitives/LinearSurface';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -664,9 +658,9 @@ function KeyPointsCard({
     >
       <LinearText style={s.cardType}>KEY POINTS</LinearText>
       <View style={s.cardHeader}>
-        <AppText style={s.cardTitle} numberOfLines={3} variant="title">
+        <LinearText style={s.cardTitle} numberOfLines={3} variant="title">
           {content.topicName}
-        </AppText>
+        </LinearText>
         {topicId && contentType && (
           <ContentFlagButton topicId={topicId} contentType={contentType} />
         )}
@@ -2437,9 +2431,9 @@ const s = StyleSheet.create({
   },
   hookText: { color: n.colors.textPrimary, fontSize: 14, fontStyle: 'italic' as const },
   doneBtn: {
-    backgroundColor: transcriptBlueAlpha['14'],
+    backgroundColor: captureFillAlpha['14'],
     borderWidth: 1,
-    borderColor: transcriptBlueBorderAlpha['24'],
+    borderColor: captureBorderAlpha['24'],
     borderRadius: 14,
     padding: 16,
     alignItems: 'center',
@@ -2512,7 +2506,7 @@ const s = StyleSheet.create({
     textTransform: 'uppercase' as const,
   },
   explainDeeperBtn: {
-    backgroundColor: transcriptBlueAlpha['10'],
+    backgroundColor: captureFillAlpha['10'],
     borderRadius: 12,
     paddingVertical: 12,
     alignItems: 'center' as const,
@@ -2529,7 +2523,7 @@ const s = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 6,
     borderRadius: 8,
-    backgroundColor: transcriptBlueAlpha['10'],
+    backgroundColor: captureFillAlpha['10'],
     borderWidth: 1,
     borderColor: n.colors.accent,
     gap: 4,

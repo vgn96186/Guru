@@ -1,24 +1,24 @@
 import React, { memo } from 'react';
 import {
+  ActivityIndicator,
   Pressable,
   ScrollView,
   StyleSheet,
   View,
-  ActivityIndicator,
   type ImageStyle,
   type StyleProp,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import LinearText from '../primitives/LinearText';
 import { ChatImagePreview } from './ChatImagePreview';
-import { MessageSources } from './MessageSources';
 import { FormattedGuruMessage } from './FormattedGuruMessage';
+import { MessageSources } from './MessageSources';
 import { TypingDots } from './TypingDots';
 import { linearTheme as n } from '../../theme/linearTheme';
-import { whiteAlpha, accentAlpha } from '../../theme/colorUtils';
+import { accentAlpha, whiteAlpha } from '../../theme/colorUtils';
 import { ChatMessage } from '../../types/chat';
-import { MedicalGroundingSource } from '../../services/ai/types';
 import { GeneratedStudyImageStyle } from '../../db/queries/generatedStudyImages';
+import { MedicalGroundingSource } from '../../services/ai/types';
 import { formatTime, getShortModelLabel } from '../../utils/chatUtils';
 
 interface GuruChatMessageItemProps {
@@ -26,6 +26,10 @@ interface GuruChatMessageItemProps {
   isLatestGuruMessage: boolean;
   isLoading: boolean;
   isInitializing: boolean;
+  /** When true, typing animation in the in-bubble placeholder stays idle (matches list typing row). */
+  isHydrating?: boolean;
+  /** Gate typing-dot animation until screen motion has settled. */
+  entryComplete?: boolean;
   imageJobKey: string | null;
   expandedSourcesMessageId: string | null;
   onToggleSources: (messageId: string) => void;
@@ -38,9 +42,53 @@ interface GuruChatMessageItemProps {
 
 function isDisplayableReferenceImage(source: MedicalGroundingSource): boolean {
   const uri = source.imageUrl?.trim();
-  if (!uri) return false;
-  if (!/^https?:\/\//i.test(uri)) return false;
+  if (!uri) {
+    return false;
+  }
+
+  if (!/^https?:\/\//i.test(uri)) {
+    return false;
+  }
+
   return !/\.(pdf|svg|djvu?|tiff?)(?:[?#]|$)/i.test(uri);
+}
+
+type ActionButtonProps = {
+  accessibilityLabel: string;
+  active?: boolean;
+  disabled?: boolean;
+  icon: React.ComponentProps<typeof Ionicons>['name'];
+  loading?: boolean;
+  onPress: () => void;
+};
+
+function ActionButton({
+  accessibilityLabel,
+  active = false,
+  disabled = false,
+  icon,
+  loading = false,
+  onPress,
+}: ActionButtonProps) {
+  return (
+    <Pressable
+      style={({ pressed }) => [
+        styles.responseActionBtn,
+        active && styles.responseActionBtnActive,
+        (pressed || disabled) && styles.pressed,
+      ]}
+      onPress={onPress}
+      disabled={disabled}
+      accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel}
+    >
+      {loading ? (
+        <ActivityIndicator size="small" color={n.colors.textPrimary} />
+      ) : (
+        <Ionicons name={icon} size={14} color={active ? n.colors.textPrimary : n.colors.accent} />
+      )}
+    </Pressable>
+  );
 }
 
 export const GuruChatMessageItem = memo(function GuruChatMessageItem({
@@ -48,6 +96,8 @@ export const GuruChatMessageItem = memo(function GuruChatMessageItem({
   isLatestGuruMessage,
   isLoading,
   isInitializing,
+  isHydrating = false,
+  entryComplete = true,
   imageJobKey,
   expandedSourcesMessageId,
   onToggleSources,
@@ -57,31 +107,42 @@ export const GuruChatMessageItem = memo(function GuruChatMessageItem({
   onOpenSource,
   onSetLightboxUri,
 }: GuruChatMessageItemProps) {
+  const isUser = message.role === 'user';
   const modelTag = getShortModelLabel(message.modelUsed);
   const hasSources = !!message.sources?.length;
   const sourcesExpanded = expandedSourcesMessageId === message.id;
-  const guruGeneratedImages = message.role === 'guru' ? (message.images ?? []) : [];
-  const guruReferenceImages =
-    message.role === 'guru'
-      ? (message.referenceImages ?? []).filter(isDisplayableReferenceImage)
-      : [];
+  const guruGeneratedImages = isUser ? [] : (message.images ?? []);
+  const guruReferenceImages = isUser
+    ? []
+    : (message.referenceImages ?? []).filter(isDisplayableReferenceImage);
   const hasGuruImages = guruGeneratedImages.length > 0 || guruReferenceImages.length > 0;
+  const isGeneratingImage = !!imageJobKey?.startsWith(`${message.id}:`);
+  const canShowLatestGuruActions = !isUser && isLatestGuruMessage && !isLoading;
+  const showPendingState = !isUser && isLatestGuruMessage && isLoading && isInitializing;
+  const showStreamPlaceholder =
+    !isUser && isLatestGuruMessage && isLoading && !String(message.text ?? '').trim();
+
+  const avatar = (
+    <View style={[styles.avatar, isUser ? styles.avatarUser : styles.avatarGuru]}>
+      {isUser ? (
+        <LinearText style={styles.userAvatarInitials}>V</LinearText>
+      ) : (
+        <Ionicons name="sparkles" size={11} color={n.colors.accent} />
+      )}
+    </View>
+  );
 
   return (
-    <View style={[styles.msgRow, styles.msgRowGuru]}>
-      <View style={styles.guruAvatarTiny}>
-        {message.role === 'guru' ? (
-          <Ionicons name="sparkles" size={11} color={n.colors.accent} />
-        ) : (
-          <LinearText style={styles.userAvatarInitials}>V</LinearText>
-        )}
-      </View>
+    <View style={[styles.msgRow, isUser ? styles.msgRowUser : styles.msgRowGuru]}>
+      {!isUser ? avatar : null}
 
-      <View style={[styles.msgContent, styles.msgContentGuru]}>
-        <View style={[styles.messageStack, styles.messageStackGuru]}>
-          <View style={[styles.msgMetaRow, styles.msgMetaRowGuru]}>
+      <View style={[styles.msgContent, isUser ? styles.msgContentUser : styles.msgContentGuru]}>
+        <View
+          style={[styles.messageStack, isUser ? styles.messageStackUser : styles.messageStackGuru]}
+        >
+          <View style={[styles.msgMetaRow, isUser ? styles.msgMetaRowUser : styles.msgMetaRowGuru]}>
             <LinearText variant="meta" style={styles.msgAuthor}>
-              {message.role === 'user' ? 'You' : 'Guru'}
+              {isUser ? 'You' : 'Guru'}
             </LinearText>
             <LinearText variant="meta" tone="muted" style={styles.msgMetaDivider}>
               •
@@ -89,7 +150,22 @@ export const GuruChatMessageItem = memo(function GuruChatMessageItem({
             <LinearText variant="meta" tone="muted" style={styles.msgMetaText}>
               {formatTime(message.timestamp)}
             </LinearText>
-            {message.role === 'guru' && modelTag ? (
+            {showStreamPlaceholder ? (
+              <>
+                <LinearText variant="meta" tone="muted" style={styles.msgMetaDivider}>
+                  •
+                </LinearText>
+                <LinearText
+                  variant="meta"
+                  tone="muted"
+                  style={styles.msgMetaText}
+                  numberOfLines={1}
+                >
+                  {isInitializing ? 'Waking up on-device AI...' : 'Thinking...'}
+                </LinearText>
+              </>
+            ) : null}
+            {!isUser && modelTag ? (
               <View style={styles.msgModelPill}>
                 <LinearText variant="badge" style={styles.msgModelPillText}>
                   {modelTag}
@@ -98,64 +174,37 @@ export const GuruChatMessageItem = memo(function GuruChatMessageItem({
             ) : null}
           </View>
 
-          {hasGuruImages ? (
-            <View style={{ width: '100%' }}>
-              <Pressable
-                style={[styles.bubbleWrap, styles.bubbleWrapGuru]}
-                onLongPress={() => onCopyMessage(message.text)}
-                delayLongPress={400}
-              >
-                <View style={[styles.bubble, styles.guruBubble]}>
-                  <FormattedGuruMessage text={message.text} />
-                </View>
-              </Pressable>
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={{ paddingHorizontal: 4, paddingVertical: 6, gap: 8 }}
-              >
-                {guruReferenceImages.map((image) => (
-                  <ChatImagePreview
-                    key={`${message.id}-reference-${image.id}`}
-                    uri={image.imageUrl!}
-                    style={styles.generatedImageInline as StyleProp<ImageStyle>}
-                    onPress={() => onSetLightboxUri(image.imageUrl!)}
-                    onLongPress={() => onOpenSource(image.url)}
-                    accessibilityLabel="View reference image"
-                  />
-                ))}
-                {guruGeneratedImages.map((image) => (
-                  <ChatImagePreview
-                    key={`${message.id}-image-${image.id}`}
-                    uri={image.localUri}
-                    style={styles.generatedImageInline as StyleProp<ImageStyle>}
-                    onPress={() => onSetLightboxUri(image.localUri)}
-                    accessibilityLabel="View enlarged image"
-                  />
-                ))}
-              </ScrollView>
+          <View style={[styles.bubbleWrap, isUser ? styles.bubbleWrapUser : styles.bubbleWrapGuru]}>
+            <View
+              style={[
+                styles.bubble,
+                isUser ? styles.userBubble : styles.guruBubble,
+                !isUser && showStreamPlaceholder ? styles.guruTypingBubble : null,
+              ]}
+            >
+              {isUser ? (
+                <LinearText variant="body" style={styles.userBubbleText} textBreakStrategy="simple">
+                  {message.text}
+                </LinearText>
+              ) : showStreamPlaceholder ? (
+                <TypingDots active={entryComplete && !isHydrating} />
+              ) : (
+                <FormattedGuruMessage text={message.text} />
+              )}
             </View>
-          ) : (
-            <View style={[styles.bubbleWrap, styles.bubbleWrapGuru]}>
-              <View style={[styles.bubble, styles.guruBubble]}>
-                {message.role === 'guru' ? (
-                  <FormattedGuruMessage text={message.text} />
-                ) : (
-                  <LinearText variant="body" style={styles.bubbleText} textBreakStrategy="simple">
-                    {message.text}
-                  </LinearText>
-                )}
-              </View>
-            </View>
-          )}
+          </View>
 
-          {message.role === 'guru' && hasGuruImages && !hasGuruImages ? (
-            <View style={styles.generatedImagesWrap}>
+          {!isUser && hasGuruImages ? (
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.inlineImagesContent}
+            >
               {guruReferenceImages.map((image) => (
                 <ChatImagePreview
                   key={`${message.id}-reference-${image.id}`}
                   uri={image.imageUrl!}
-                  style={styles.generatedImage as StyleProp<ImageStyle>}
+                  style={styles.generatedImageInline as StyleProp<ImageStyle>}
                   onPress={() => onSetLightboxUri(image.imageUrl!)}
                   onLongPress={() => onOpenSource(image.url)}
                   accessibilityLabel="View reference image"
@@ -165,111 +214,94 @@ export const GuruChatMessageItem = memo(function GuruChatMessageItem({
                 <ChatImagePreview
                   key={`${message.id}-image-${image.id}`}
                   uri={image.localUri}
-                  style={styles.generatedImage as StyleProp<ImageStyle>}
+                  style={styles.generatedImageInline as StyleProp<ImageStyle>}
                   onPress={() => onSetLightboxUri(image.localUri)}
                   accessibilityLabel="View enlarged image"
                 />
               ))}
-            </View>
+            </ScrollView>
           ) : null}
 
-          {message.role === 'guru' && message.sources && message.sources.length > 0 ? (
-            <MessageSources
-              sources={message.sources}
-              messageId={message.id}
-              expanded={sourcesExpanded}
-              setLightboxUri={onSetLightboxUri}
-              openSource={onOpenSource}
-            />
-          ) : null}
-
-          {message.role === 'guru' ? (
+          {!isUser && !(isLatestGuruMessage && isLoading) ? (
             <>
               <View style={styles.responseActionsRow}>
-                {isLatestGuruMessage && !isLoading ? (
-                  <Pressable
-                    style={({ pressed }) => [
-                      styles.responseActionBtn,
-                      styles.responseActionBtnActive,
-                      pressed && styles.pressed,
-                    ]}
-                    onPress={onRegenerate}
-                    accessibilityRole="button"
-                    accessibilityLabel="Regenerate response"
-                  >
-                    <Ionicons name="refresh-outline" size={15} color={n.colors.textPrimary} />
-                  </Pressable>
-                ) : null}
-                <Pressable
-                  style={({ pressed }) => [styles.responseActionBtn, pressed && styles.pressed]}
-                  onPress={() => onCopyMessage(message.text)}
-                  accessibilityRole="button"
+                <ActionButton
                   accessibilityLabel="Copy response"
-                >
-                  <Ionicons name="copy-outline" size={15} color={n.colors.accent} />
-                </Pressable>
+                  icon="copy-outline"
+                  onPress={() => onCopyMessage(message.text)}
+                />
+
                 {hasSources ? (
-                  <Pressable
-                    style={({ pressed }) => [
-                      styles.responseActionBtn,
-                      sourcesExpanded && styles.responseActionBtnActive,
-                      pressed && styles.pressed,
-                    ]}
-                    onPress={() => onToggleSources(message.id)}
-                    accessibilityRole="button"
+                  <ActionButton
                     accessibilityLabel={sourcesExpanded ? 'Hide sources' : 'Show sources'}
-                  >
-                    <Ionicons
-                      name="link-outline"
-                      size={15}
-                      color={sourcesExpanded ? n.colors.textPrimary : n.colors.accent}
-                    />
-                  </Pressable>
+                    active={sourcesExpanded}
+                    icon="link-outline"
+                    onPress={() => onToggleSources(message.id)}
+                  />
                 ) : null}
-                {(['illustration', 'chart'] as GeneratedStudyImageStyle[]).map((style) => {
-                  const isGenerating = imageJobKey === `${message.id}:${style}`;
-                  return (
-                    <Pressable
-                      key={`${message.id}-${style}`}
-                      style={({ pressed }) => [
-                        styles.responseActionBtn,
-                        isGenerating && styles.responseActionBtnActive,
-                        pressed && styles.pressed,
-                      ]}
-                      onPress={() => onGenerateImage(message, style)}
-                      disabled={!!imageJobKey}
-                      accessibilityRole="button"
-                      accessibilityLabel={
-                        style === 'illustration' ? 'Generate illustration' : 'Generate chart'
-                      }
-                    >
-                      {isGenerating ? (
-                        <ActivityIndicator size="small" color={n.colors.textPrimary} />
-                      ) : (
-                        <Ionicons
-                          name={style === 'illustration' ? 'image-outline' : 'git-network-outline'}
-                          size={15}
-                          color={n.colors.accent}
+
+                {canShowLatestGuruActions ? (
+                  <ActionButton
+                    accessibilityLabel="Regenerate response"
+                    icon="refresh-outline"
+                    onPress={onRegenerate}
+                  />
+                ) : null}
+
+                {canShowLatestGuruActions
+                  ? (['illustration', 'chart'] as GeneratedStudyImageStyle[]).map((style) => {
+                      const isGenerating = imageJobKey === `${message.id}:${style}`;
+
+                      return (
+                        <ActionButton
+                          key={`${message.id}-${style}`}
+                          accessibilityLabel={
+                            style === 'illustration' ? 'Generate illustration' : 'Generate chart'
+                          }
+                          active={isGenerating}
+                          disabled={!!imageJobKey}
+                          icon={style === 'illustration' ? 'image-outline' : 'git-network-outline'}
+                          loading={isGenerating}
+                          onPress={() => onGenerateImage(message, style)}
                         />
-                      )}
-                    </Pressable>
-                  );
-                })}
+                      );
+                    })
+                  : null}
               </View>
-              {imageJobKey?.startsWith(`${message.id}:`) ? (
+
+              {hasSources ? (
+                <MessageSources
+                  sources={message.sources ?? []}
+                  messageId={message.id}
+                  expanded={sourcesExpanded}
+                  setLightboxUri={onSetLightboxUri}
+                  openSource={onOpenSource}
+                />
+              ) : null}
+
+              {isGeneratingImage ? (
                 <View style={styles.responseStatusRow}>
                   <ActivityIndicator size="small" color={n.colors.accent} />
                   <LinearText style={styles.responseStatusText}>
-                    {imageJobKey.endsWith(':chart')
+                    {imageJobKey?.endsWith(':chart')
                       ? 'Generating chart...'
                       : 'Generating illustration...'}
                   </LinearText>
+                </View>
+              ) : null}
+
+              {showPendingState ? (
+                <View style={styles.responseStatusRow}>
+                  <ActivityIndicator size="small" color={n.colors.accent} />
+                  <LinearText style={styles.responseStatusText}>Finishing response...</LinearText>
                 </View>
               ) : null}
             </>
           ) : null}
         </View>
       </View>
+
+      {isUser ? avatar : null}
     </View>
   );
 });
@@ -278,26 +310,36 @@ const styles = StyleSheet.create({
   msgRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    gap: 16,
+    gap: 12,
     width: '100%',
   },
-  msgRowUser: {},
-  msgRowGuru: {},
-  guruAvatarTiny: {
+  msgRowUser: {
+    justifyContent: 'flex-end',
+  },
+  msgRowGuru: {
+    justifyContent: 'flex-start',
+  },
+  avatar: {
     width: 24,
     height: 24,
     borderRadius: 12,
-    backgroundColor: 'transparent',
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: whiteAlpha['8'],
     alignItems: 'center',
     justifyContent: 'center',
     flexShrink: 0,
     marginTop: 2,
     overflow: 'hidden',
   },
+  avatarUser: {
+    borderColor: accentAlpha['20'],
+    backgroundColor: accentAlpha['8'],
+  },
+  avatarGuru: {
+    borderColor: whiteAlpha['8'],
+    backgroundColor: 'transparent',
+  },
   userAvatarInitials: {
-    color: n.colors.textMuted,
+    color: n.colors.textPrimary,
     fontSize: 12,
     fontWeight: '700',
     lineHeight: 14,
@@ -307,48 +349,46 @@ const styles = StyleSheet.create({
     maxWidth: '100%',
   },
   msgContentUser: {
-    alignItems: 'stretch',
+    alignItems: 'flex-end',
   },
   msgContentGuru: {
-    alignItems: 'stretch',
-  },
-  messageStack: {
-    flexShrink: 1,
-  },
-  messageStackUser: {},
-  messageStackGuru: {
-    width: '100%',
-    maxWidth: '100%',
-    alignSelf: 'flex-start',
     alignItems: 'flex-start',
   },
-  bubbleWrap: {
-    maxWidth: '100%',
+  messageStack: {
     minWidth: 0,
     flexShrink: 1,
-    paddingRight: 16,
   },
-  bubbleWrapUser: {},
-  bubbleWrapGuru: {
-    maxWidth: '100%',
-    minWidth: 0,
+  messageStackUser: {
+    width: '76%',
+    maxWidth: '76%',
+    alignItems: 'flex-end',
+    alignSelf: 'flex-end',
+  },
+  messageStackGuru: {
+    width: '94%',
+    maxWidth: '94%',
+    alignItems: 'flex-start',
     alignSelf: 'flex-start',
   },
   msgMetaRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 6,
     marginBottom: 4,
   },
-  msgMetaRowUser: {},
+  msgMetaRowUser: {
+    justifyContent: 'flex-end',
+    paddingRight: 2,
+  },
   msgMetaRowGuru: {
     justifyContent: 'flex-start',
+    paddingLeft: 2,
   },
   msgAuthor: {
     ...n.typography.label,
     color: n.colors.textSecondary,
     fontWeight: '700',
-    fontSize: 14,
+    fontSize: 13,
   },
   msgMetaDivider: {
     color: '#66718C',
@@ -371,45 +411,55 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: '700',
   },
-  bubble: {
-    alignSelf: 'flex-start',
+  bubbleWrap: {
+    maxWidth: '100%',
     minWidth: 0,
+    flexShrink: 1,
   },
-  userBubble: {},
+  bubbleWrapUser: {
+    alignSelf: 'flex-end',
+    maxWidth: '100%',
+  },
+  bubbleWrapGuru: {
+    alignSelf: 'flex-start',
+    maxWidth: '100%',
+  },
+  bubble: {
+    minWidth: 0,
+    borderRadius: 22,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderWidth: StyleSheet.hairlineWidth,
+  },
+  userBubble: {
+    alignSelf: 'flex-end',
+    backgroundColor: accentAlpha['10'],
+    borderColor: accentAlpha['20'],
+    borderBottomRightRadius: 8,
+  },
   guruBubble: {
-    backgroundColor: 'transparent',
-    borderColor: 'transparent',
-    borderBottomLeftRadius: 20,
-    paddingHorizontal: 0,
-    paddingVertical: 0,
+    alignSelf: 'flex-start',
+    width: '100%',
+    backgroundColor: whiteAlpha['3'],
+    borderColor: whiteAlpha['8'],
+    borderBottomLeftRadius: 10,
   },
-  bubbleText: {
+  guruTypingBubble: {
+    paddingVertical: 16,
+    paddingHorizontal: 18,
+  },
+  userBubbleText: {
     ...n.typography.body,
     color: n.colors.textPrimary,
     fontSize: 15,
     lineHeight: 22,
     fontWeight: '400',
     includeFontPadding: false,
-    flexShrink: 1,
-    paddingRight: 4,
   },
-  generatedImagesWrap: {
+  inlineImagesContent: {
+    paddingTop: 8,
+    paddingBottom: 2,
     gap: 8,
-    marginTop: 8,
-    marginBottom: 4,
-  },
-  generatedImage: {
-    width: 248,
-    height: 248,
-    borderRadius: 16,
-    backgroundColor: n.colors.surface,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: n.colors.border,
-    shadowColor: n.colors.background,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 12,
-    elevation: 6,
   },
   generatedImageInline: {
     width: 176,
@@ -421,11 +471,10 @@ const styles = StyleSheet.create({
   },
   responseActionsRow: {
     flexDirection: 'row',
-    justifyContent: 'flex-start',
-    alignSelf: 'flex-start',
+    alignItems: 'center',
+    flexWrap: 'wrap',
     gap: 6,
     marginTop: 10,
-    opacity: 0.6,
   },
   responseStatusRow: {
     flexDirection: 'row',
@@ -443,9 +492,9 @@ const styles = StyleSheet.create({
   responseActionBtn: {
     alignItems: 'center',
     justifyContent: 'center',
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
     backgroundColor: whiteAlpha['2'],
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: whiteAlpha['8'],

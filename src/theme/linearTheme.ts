@@ -1,11 +1,12 @@
 export const linearTheme = {
   colors: {
-    // Structural
-    background: '#000000', // True black for the base
-    surface: 'rgba(5, 7, 12, 0.84)',
-    surfaceHover: 'rgba(8, 10, 16, 0.9)',
-    card: 'rgba(9, 12, 18, 0.9)',
-    cardHover: 'rgba(13, 16, 24, 0.95)',
+    // Structural — opaque on true black. Alpha on #000 bought nothing and
+    // forced composite math; these are the rgb equivalents.
+    background: '#000000',
+    surface: '#05070C',
+    surfaceHover: '#080A10',
+    card: '#090C12',
+    cardHover: '#0D1018',
     border: 'rgba(255, 255, 255, 0.08)',
     borderHighlight: 'rgba(255, 255, 255, 0.18)',
 
@@ -19,7 +20,8 @@ export const linearTheme = {
     // Text
     textPrimary: '#F2F2F2',
     textSecondary: '#A0A0A5',
-    textMuted: '#8A8A8E',
+    /** Slightly lifted vs legacy #8A8A8E for ~4.5:1 on e1 card surfaces. */
+    textMuted: '#939396',
     textInverse: '#000000',
 
     // Accents & States
@@ -44,13 +46,13 @@ export const linearTheme = {
     //   danger  — destructive, revoke, hard error
     //   neutral — everything else (greys)
     roles: {
-      brand:   '#5E6AD2',
+      brand: '#5E6AD2',
       brandHi: 'oklch(62% 0.14 272)',
       brandLo: 'oklch(46% 0.12 272)',
       capture: '#6D99FF',
       success: '#3FB950',
       warning: '#D97706',
-      danger:  '#F14C4C',
+      danger: '#F14C4C',
       neutral: '#A0A0A5',
     },
   },
@@ -76,19 +78,24 @@ export const linearTheme = {
   },
 
   typography: {
-    display:      { fontSize: 32, lineHeight: 36, fontFamily: 'Inter_700Bold',       letterSpacing: -0.6 },
-    title:        { fontSize: 22, lineHeight: 28, fontFamily: 'Inter_600SemiBold',   letterSpacing: -0.3 },
-    sectionTitle: { fontSize: 16, lineHeight: 22, fontFamily: 'Inter_600SemiBold',   letterSpacing: -0.1 },
-    body:         { fontSize: 15, lineHeight: 22, fontFamily: 'Inter_400Regular' },
-    bodySmall:    { fontSize: 13, lineHeight: 20, fontFamily: 'Inter_400Regular' },
-    label:        { fontSize: 12, lineHeight: 18, fontFamily: 'Inter_500Medium',     letterSpacing: 0.4 },
-    caption:      { fontSize: 12, lineHeight: 18, fontFamily: 'Inter_400Regular' },
-    chip:         { fontSize: 12, lineHeight: 16, fontFamily: 'Inter_600SemiBold',   letterSpacing: 0.2 },
-    badge:        { fontSize: 11, lineHeight: 14, fontFamily: 'Inter_600SemiBold',   letterSpacing: 0.3 },
-    meta:         { fontSize: 12, lineHeight: 16, fontFamily: 'Inter_500Medium' },
-    button:       { fontSize: 14, lineHeight: 18, fontFamily: 'Inter_600SemiBold',   letterSpacing: 0.1 },
+    display: { fontSize: 32, lineHeight: 36, fontFamily: 'Inter_700Bold', letterSpacing: -0.6 },
+    title: { fontSize: 22, lineHeight: 28, fontFamily: 'Inter_600SemiBold', letterSpacing: -0.3 },
+    sectionTitle: {
+      fontSize: 16,
+      lineHeight: 22,
+      fontFamily: 'Inter_600SemiBold',
+      letterSpacing: -0.1,
+    },
+    body: { fontSize: 15, lineHeight: 22, fontFamily: 'Inter_400Regular' },
+    bodySmall: { fontSize: 13, lineHeight: 20, fontFamily: 'Inter_400Regular' },
+    label: { fontSize: 12, lineHeight: 18, fontFamily: 'Inter_500Medium', letterSpacing: 0.4 },
+    caption: { fontSize: 12, lineHeight: 18, fontFamily: 'Inter_400Regular' },
+    chip: { fontSize: 12, lineHeight: 16, fontFamily: 'Inter_600SemiBold', letterSpacing: 0.2 },
+    badge: { fontSize: 11, lineHeight: 14, fontFamily: 'Inter_600SemiBold', letterSpacing: 0.3 },
+    meta: { fontSize: 12, lineHeight: 16, fontFamily: 'Inter_500Medium' },
+    button: { fontSize: 14, lineHeight: 18, fontFamily: 'Inter_600SemiBold', letterSpacing: 0.1 },
   },
 } as const;
 
-export type LinearRole = keyof (typeof linearTheme.colors.roles);
+export type LinearRole = keyof typeof linearTheme.colors.roles;
 export type LinearTheme = typeof linearTheme;

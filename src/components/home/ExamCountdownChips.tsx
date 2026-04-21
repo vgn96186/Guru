@@ -1,8 +1,9 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Animated, View, StyleSheet, TouchableOpacity } from 'react-native';
+import { motion } from '../../motion/presets';
 import { linearTheme as n } from '../../theme/linearTheme';
 import LinearText from '../primitives/LinearText';
-import { Ionicons } from '@expo/vector-icons';
+import Icon from '../primitives/Icon';
 
 type ExamCountdownChipsProps = {
   daysToInicet: number;
@@ -19,20 +20,13 @@ export default function ExamCountdownChips({
   const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
-    const animation = Animated.loop(
-      Animated.sequence([
-        Animated.timing(pulseAnim, {
-          toValue: 1,
-          duration: 2000,
-          useNativeDriver: true,
-        }),
-        Animated.timing(pulseAnim, {
-          toValue: 0.4,
-          duration: 2000,
-          useNativeDriver: true,
-        }),
-      ]),
-    );
+    const animation = motion.pulseValue(pulseAnim, {
+      from: 0.4,
+      to: 1,
+      duration: 2000,
+      loop: true,
+      useNativeDriver: true,
+    });
     animation.start();
     return () => animation.stop();
   }, [pulseAnim]);
@@ -78,9 +72,9 @@ export default function ExamCountdownChips({
           hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
           style={styles.refreshBtn}
         >
-          <Ionicons
+          <Icon
             name={refreshing ? 'sync-outline' : 'refresh-outline'}
-            size={14}
+            size="sm"
             color={n.colors.textSecondary}
           />
         </TouchableOpacity>

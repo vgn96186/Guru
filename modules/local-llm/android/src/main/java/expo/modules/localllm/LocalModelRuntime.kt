@@ -7,10 +7,14 @@ import com.google.ai.edge.litertlm.Conversation
 import com.google.ai.edge.litertlm.ConversationConfig
 import com.google.ai.edge.litertlm.Contents
 import com.google.ai.edge.litertlm.Engine
-import com.google.ai.edge.litertlm.SamplerConfig
 import com.google.ai.edge.litertlm.MessageCallback
 import com.google.ai.edge.litertlm.Message
 import com.google.ai.edge.litertlm.Content
+import com.google.ai.edge.litertlm.ToolProvider
+import com.google.ai.edge.litertlm.SamplerConfig
+import com.google.ai.edge.litertlm.tool
+import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
 
 data class LocalEngineLease(
     val engine: Engine,
@@ -26,6 +30,10 @@ data class LocalConversationLease(
 data class LocalSingleShotResult(
     val text: String?,
     val backendLabel: String,
+    /** JSON array of { "toolCallId", "toolName", "arguments" } — arguments is a JSON object. */
+    val toolCallsJson: String? = null,
+    /** "stop" or "tool_calls" for JS agentic loop */
+    val finishReason: String = "stop",
 )
 
 object LocalModelRuntime {
@@ -34,6 +42,8 @@ object LocalModelRuntime {
     private const val DEFAULT_RETRY_COUNT = 5
     private const val DEFAULT_RESET_ATTEMPT = 3
     private const val DEFAULT_RETRY_SLEEP_MS = 1500L
+
+    private val gson = Gson()
 
     fun acquireSharedEngine(
         context: Context,
@@ -147,6 +157,169 @@ object LocalModelRuntime {
         )
     }
 
+    private fun buildOpenApiTools(toolsJson: String?): List<ToolProvider> {
+        if (toolsJson.isNullOrBlank()) return emptyList()
+        return try {
+            val type = object : TypeToken<List<Map<String, @JvmSuppressWildcards Any?>>>() {}.type
+            val specs: List<Map<String, Any?>> = gson.fromJson(toolsJson, type) ?: emptyList()
+            specs.mapNotNull { spec ->
+                val name = spec["name"] as? String ?: return@mapNotNull null
+                val description = (spec["description"] as? String) ?: ""
+                val parameters = spec["parameters"] ?: emptyMap<String, Any?>()
+                try {
+                    tool(object : com.google.ai.edge.litertlm.OpenApiTool {
+                        override fun getToolDescriptionJsonString(): String =
+                            gson.toJson(
+                                mapOf(
+                                    "name" to name,
+                                    "description" to description,
+                                    "parameters" to parameters,
+                                ),
+                            )
+
+                        override fun execute(paramsJsonString: String): String {
+                            // streamText executes tools in JS — LiteRT only proposes calls.
+                            return "{}"
+                        }
+                    })
+                } catch (e: Exception) {
+                    Log.w(TAG, "buildOpenApiTools: skip tool $name", e)
+                    null
+                }
+            }
+        } catch (e: Exception) {
+            Log.w(TAG, "buildOpenApiTools: invalid toolsJson", e)
+            emptyList()
+        }
+    }
+
+    private fun sendMessageSafe(conv: Conversation, text: String): Any? {
+        return try {
+            conv.sendMessage(text, emptyMap())
+        } catch (e: Exception) {
+            val errorMsg = e.message ?: ""
+            if (errorMsg.contains("Failed to parse tool calls", ignoreCase = true) &&
+                errorMsg.contains("tool_call", ignoreCase = true)
+            ) {
+                val rawOutput = errorMsg.substringAfter("from response: ").substringBefore("code block:")
+                    .ifEmpty { errorMsg.substringAfter("from response: ") }
+                rawOutput.trim()
+            } else {
+                throw e
+            }
+        }
+    }
+
+    private fun responseText(raw: Any?): String {
+        return when (raw) {
+            is Message -> raw.contents?.toString()?.trim() ?: ""
+            else -> raw?.toString()?.trim() ?: ""
+        }
+    }
+
+    private fun extractToolCallsFromResponse(raw: Any?): List<Map<String, Any?>> {
+        if (raw !is Message) return emptyList()
+        val tcs = raw.toolCalls ?: return emptyList()
+        val out = mutableListOf<Map<String, Any?>>()
+        tcs.forEachIndexed { idx, tc ->
+            try {
+                val name = tc.name ?: return@forEachIndexed
+                val args = tc.arguments ?: emptyMap<String, Any?>()
+                val id = try {
+                    tc.javaClass.getMethod("getId").invoke(tc) as? String
+                } catch (_: Exception) {
+                    null
+                } ?: "litert_${System.currentTimeMillis()}_${idx}_$name"
+                out.add(
+                    mapOf(
+                        "toolCallId" to id,
+                        "toolName" to name,
+                        "arguments" to args,
+                    ),
+                )
+            } catch (e: Exception) {
+                Log.w(TAG, "extractToolCallsFromResponse: skip entry", e)
+            }
+        }
+        return out
+    }
+
+    /**
+     * Full transcript replay with optional LiteRT OpenAPI tools (automaticToolCalling=false).
+     * Used when tools are enabled or when the prompt contains tool/assistant turns from an agentic loop.
+     */
+    private fun runChatFullReplay(
+        context: Context,
+        modelPath: String,
+        systemPrompt: String,
+        messages: List<Map<String, String>>,
+        temperature: Double,
+        preferCpu: Boolean,
+        toolsJson: String?,
+    ): LocalSingleShotResult {
+        resetSession()
+        currentSessionModelPath = modelPath
+        val nativeTools = buildOpenApiTools(toolsJson)
+        val lease = openConversation(
+            context = context,
+            modelPath = modelPath,
+            conversationConfig = ConversationConfig(
+                systemInstruction = if (systemPrompt.isNotBlank()) Contents.of(systemPrompt) else null,
+                tools = nativeTools,
+                samplerConfig = SamplerConfig(
+                    topK = 64,
+                    topP = 0.95,
+                    temperature = temperature,
+                ),
+                automaticToolCalling = false,
+            ),
+            preferCpu = preferCpu,
+        )
+        activeConversationLease = lease
+
+        var lastRaw: Any? = null
+        for (msg in messages) {
+            val role = msg["role"] ?: "user"
+            val content = msg["content"] ?: ""
+            when (role) {
+                "user" -> {
+                    lastRaw = sendMessageSafe(lease.conversation, content)
+                }
+                "assistant" -> {
+                    // Already reflected in native conversation state.
+                }
+                "tool" -> {
+                    if (content.isBlank()) continue
+                    try {
+                        val type = object : TypeToken<List<Map<String, @JvmSuppressWildcards Any?>>>() {}.type
+                        val results: List<Map<String, Any?>> = gson.fromJson(content, type) ?: emptyList()
+                        for (r in results) {
+                            val toolName = (r["toolName"] as? String) ?: "unknown"
+                            val payload = r["output"]
+                            val line = "[Tool $toolName result]: ${gson.toJson(payload)}".take(12_000)
+                            lastRaw = sendMessageSafe(lease.conversation, line)
+                        }
+                    } catch (e: Exception) {
+                        Log.w(TAG, "runChatFullReplay: tool message parse failed", e)
+                    }
+                }
+            }
+        }
+
+        val textOut = responseText(lastRaw)
+        val toolCalls = extractToolCallsFromResponse(lastRaw)
+        val toolCallsJson = if (toolCalls.isNotEmpty()) gson.toJson(toolCalls) else null
+        val finish = if (toolCalls.isNotEmpty()) "tool_calls" else "stop"
+        processedMessageCount = messages.size + 1
+
+        return LocalSingleShotResult(
+            text = textOut.ifBlank { null },
+            backendLabel = lease.backendLabel,
+            toolCallsJson = toolCallsJson,
+            finishReason = finish,
+        )
+    }
+
     fun runChat(
         context: Context,
         modelPath: String,
@@ -154,12 +327,19 @@ object LocalModelRuntime {
         messages: List<Map<String, String>>,
         temperature: Double = 0.3,
         preferCpu: Boolean = false,
+        toolsJson: String? = null,
     ): LocalSingleShotResult {
-        // Detect reset needed
+        val useTools = !toolsJson.isNullOrBlank()
+        val hasToolTurn = messages.any { (it["role"] ?: "") == "tool" }
+        if (useTools || hasToolTurn) {
+            return runChatFullReplay(context, modelPath, systemPrompt, messages, temperature, preferCpu, toolsJson)
+        }
+
+        // Legacy incremental path (no LiteRT tool declarations)
         if (activeConversationLease == null || currentSessionModelPath != modelPath || processedMessageCount == 0 || messages.size < processedMessageCount) {
             resetSession()
             currentSessionModelPath = modelPath
-            
+
             val lease = openConversation(
                 context = context,
                 modelPath = modelPath,
@@ -169,7 +349,7 @@ object LocalModelRuntime {
                         topK = 64,
                         topP = 0.95,
                         temperature = temperature,
-                    )
+                    ),
                 ),
                 preferCpu = preferCpu,
             )
@@ -179,7 +359,7 @@ object LocalModelRuntime {
 
         val lease = activeConversationLease ?: throw IllegalStateException("No active lease")
         val newMessages = messages.subList(processedMessageCount.coerceAtMost(messages.size), messages.size)
-        
+
         var lastResponse: String? = null
         for (msg in newMessages) {
             val role = msg["role"] ?: "user"
@@ -187,15 +367,15 @@ object LocalModelRuntime {
             if (role == "user") {
                 lastResponse = lease.conversation.sendMessage(content, emptyMap()).contents?.toString()?.trim()
             }
-            // "assistant" messages are skipped because they are already present in the native Conversation state.
         }
-        
-        // Account for the messages we just sent + the assistant response we just got back.
+
         processedMessageCount = messages.size + 1
-        
+
         return LocalSingleShotResult(
             text = lastResponse,
-            backendLabel = lease.backendLabel
+            backendLabel = lease.backendLabel,
+            toolCallsJson = null,
+            finishReason = "stop",
         )
     }
 
@@ -206,15 +386,40 @@ object LocalModelRuntime {
         messages: List<Map<String, String>>,
         temperature: Double = 0.3,
         preferCpu: Boolean = false,
+        toolsJson: String? = null,
         onToken: (String) -> Unit,
-        onComplete: (String, String) -> Unit,
-        onError: (String) -> Unit
+        onComplete: (String, String, String?, String) -> Unit,
+        onError: (String) -> Unit,
     ) {
-        // Detect reset needed
+        val useTools = !toolsJson.isNullOrBlank()
+        val hasToolTurn = messages.any { (it["role"] ?: "") == "tool" }
+        if (useTools || hasToolTurn) {
+            try {
+                val res = runChatFullReplay(
+                    context,
+                    modelPath,
+                    systemPrompt,
+                    messages,
+                    temperature,
+                    preferCpu,
+                    toolsJson,
+                )
+                val txt = res.text ?: ""
+                val CHUNK = 16
+                for (i in txt.indices step CHUNK) {
+                    onToken(txt.substring(i, minOf(i + CHUNK, txt.length)))
+                }
+                onComplete(txt, res.backendLabel, res.toolCallsJson, res.finishReason)
+            } catch (e: Exception) {
+                onError(e.message ?: "Unknown error")
+            }
+            return
+        }
+
         if (activeConversationLease == null || currentSessionModelPath != modelPath || processedMessageCount == 0 || messages.size < processedMessageCount) {
             resetSession()
             currentSessionModelPath = modelPath
-            
+
             val lease = openConversation(
                 context = context,
                 modelPath = modelPath,
@@ -224,7 +429,7 @@ object LocalModelRuntime {
                         topK = 64,
                         topP = 0.95,
                         temperature = temperature,
-                    )
+                    ),
                 ),
                 preferCpu = preferCpu,
             )
@@ -234,7 +439,7 @@ object LocalModelRuntime {
 
         val lease = activeConversationLease ?: throw IllegalStateException("No active lease")
         val newMessages = messages.subList(processedMessageCount.coerceAtMost(messages.size), messages.size)
-        
+
         var prompt = ""
         for (msg in newMessages) {
             val role = msg["role"] ?: "user"
@@ -243,9 +448,9 @@ object LocalModelRuntime {
                 prompt = content
             }
         }
-        
+
         if (prompt.isEmpty()) {
-            onComplete("", lease.backendLabel)
+            onComplete("", lease.backendLabel, null, "stop")
             return
         }
 
@@ -257,27 +462,6 @@ object LocalModelRuntime {
                 Contents.of(mutableListOf(Content.Text(prompt))),
                 object : MessageCallback {
                     override fun onMessage(message: Message) {
-                        // Diagnostic: log what the Message object actually contains
-                        if (lastEmittedLength == 0) {
-                            Log.d(TAG, "onMessage first call — message.toString()=${message.toString().take(200)}")
-                            Log.d(TAG, "onMessage first call — message.javaClass=${message.javaClass.name}")
-                            Log.d(TAG, "onMessage first call — message.contents=${message.contents}")
-                            Log.d(TAG, "onMessage first call — message.contents?.javaClass=${message.contents?.javaClass?.name}")
-                            Log.d(TAG, "onMessage first call — message.contents?.toString()=${message.contents?.toString()?.take(200)}")
-                            // Try to iterate contents if it's iterable
-                            try {
-                                val c = message.contents
-                                if (c is Iterable<*>) {
-                                    for ((idx, part) in c.withIndex()) {
-                                        Log.d(TAG, "onMessage contents[$idx] class=${part?.javaClass?.name} toString=${part?.toString()?.take(200)}")
-                                    }
-                                }
-                            } catch (e: Exception) {
-                                Log.w(TAG, "onMessage contents iteration failed: ${e.message}")
-                            }
-                        }
-
-                        // Try multiple text extraction approaches
                         val currentText = message.contents?.toString() ?: message.toString()
                         if (currentText.length > lastEmittedLength) {
                             val delta = currentText.substring(lastEmittedLength)
@@ -285,7 +469,6 @@ object LocalModelRuntime {
                             fullResponse.append(delta)
                             try {
                                 onToken(delta)
-                                Log.d(TAG, "Successfully emitted onToken with delta length: ${delta.length}")
                             } catch (e: Exception) {
                                 Log.e(TAG, "Failed to emit onToken", e)
                             }
@@ -294,13 +477,13 @@ object LocalModelRuntime {
 
                     override fun onDone() {
                         processedMessageCount = messages.size + 1
-                        onComplete(fullResponse.toString(), lease.backendLabel)
+                        onComplete(fullResponse.toString(), lease.backendLabel, null, "stop")
                     }
 
                     override fun onError(throwable: Throwable) {
                         onError(throwable.message ?: "Unknown streaming error")
                     }
-                }
+                },
             )
         } catch (e: Exception) {
             onError(e.message ?: "Unknown error starting stream")

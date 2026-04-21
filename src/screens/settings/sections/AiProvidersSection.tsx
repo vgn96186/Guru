@@ -227,13 +227,6 @@ export default function AiProvidersSection(props: any) {
             <LinearText variant="meta" tone="accent" style={styles.summaryEyebrow}>
               COMMAND CENTER
             </LinearText>
-            <LinearText variant="label" style={styles.summaryTitle}>
-              Routing, subscriptions, and transcription setup
-            </LinearText>
-            <LinearText variant="bodySmall" tone="secondary" style={styles.summaryText}>
-              Default chat model, OAuth subscriptions, API keys, image generation, and local AI all
-              feed the same routing stack here.
-            </LinearText>
           </View>
           <View style={styles.summaryPill}>
             <LinearText variant="chip" tone="accent">
@@ -2119,10 +2112,6 @@ export default function AiProvidersSection(props: any) {
 
         <View style={styles.subSectionDivider} />
         <SubSectionToggle id="ai_local_ai" title="LOCAL AI">
-          <Text style={styles.hint}>
-            On-device AI for offline chat, grading, and transcription. No API key needed.
-          </Text>
-
           {/* ── Gemini Nano (AICore) ── */}
           <View style={styles.localAiCard}>
             <View style={styles.localAiCardHeader}>
@@ -2132,9 +2121,6 @@ export default function AiProvidersSection(props: any) {
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={[styles.label, { marginBottom: 0 }]}>Gemini Nano</Text>
-                  <Text style={styles.hint}>
-                    Built-in AI via AICore. Best for grading, confidence checks, short summaries.
-                  </Text>
                 </View>
               </View>
             </View>
@@ -2168,10 +2154,6 @@ export default function AiProvidersSection(props: any) {
                 contentStyle={{ paddingRight: 0 }}
               />
             </View>
-            <Text style={[styles.hint, { marginTop: 4 }]}>
-              Pixel 9+ and select Samsung devices. Auto-injected before cloud providers in fallback
-              chain.
-            </Text>
           </View>
 
           {/* ── LiteRT LLM (file-based) ── */}
@@ -2188,9 +2170,6 @@ export default function AiProvidersSection(props: any) {
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={[styles.label, { marginBottom: 0 }]}>LiteRT Text Model</Text>
-                  <Text style={styles.hint}>
-                    Full-featured local LLM. Higher quality + longer context than Nano.
-                  </Text>
                 </View>
               </View>
             </View>
@@ -2202,7 +2181,7 @@ export default function AiProvidersSection(props: any) {
                 marginTop: 6,
               }}
             >
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flex: 1 }}>
                 {localLlmReady ? (
                   <View
                     style={[
@@ -2225,9 +2204,7 @@ export default function AiProvidersSection(props: any) {
                   </View>
                 )}
                 {localLlmReady ? (
-                  <Text style={styles.hint} numberOfLines={1}>
-                    {localLlmFileName}
-                  </Text>
+                  <Text style={[styles.hint, { flex: 1 }]}>{localLlmFileName}</Text>
                 ) : null}
               </View>
               {localLlmReady ? (
@@ -2258,9 +2235,6 @@ export default function AiProvidersSection(props: any) {
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={[styles.label, { marginBottom: 0 }]}>Local Whisper</Text>
-                  <Text style={styles.hint}>
-                    On-device transcription for lecture recording and audio notes.
-                  </Text>
                 </View>
               </View>
             </View>
@@ -2272,7 +2246,7 @@ export default function AiProvidersSection(props: any) {
                 marginTop: 6,
               }}
             >
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flex: 1 }}>
                 {localWhisperReady ? (
                   <View
                     style={[
@@ -2295,9 +2269,7 @@ export default function AiProvidersSection(props: any) {
                   </View>
                 )}
                 {localWhisperReady ? (
-                  <Text style={styles.hint} numberOfLines={1}>
-                    {localWhisperFileName}
-                  </Text>
+                  <Text style={[styles.hint, { flex: 1 }]}>{localWhisperFileName}</Text>
                 ) : null}
               </View>
               {localWhisperReady ? (

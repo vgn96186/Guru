@@ -138,6 +138,7 @@ export async function getUserProfile(): Promise<UserProfile> {
     local_model_path: string | null;
     use_local_whisper: number;
     local_whisper_path: string | null;
+    use_nano?: number;
     quick_start_streak: number;
     groq_api_key: string;
     gemini_key: string;
@@ -583,8 +584,9 @@ export async function updateUserProfile(updates: Partial<UserProfile>): Promise<
   try {
     await db.runAsync(`UPDATE user_profile SET ${setClauses.join(', ')} WHERE id = ?`, values);
     notifyDbUpdate(DB_EVENT_KEYS.PROFILE_UPDATED);
-  } catch (err: any) {
-    showToast(`Failed to update profile: ${err.message || 'Unknown error'}`, 'error');
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Unknown error';
+    showToast(`Failed to update profile: ${message}`, 'error');
     throw err;
   }
 }

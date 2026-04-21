@@ -43,9 +43,7 @@ function killAllAdb() {
 
 function adb(args, options = {}) {
   const timeout = options.timeout ?? 10_000;
-  const scoped = activeDeviceSerial && !options.global
-    ? ['-s', activeDeviceSerial, ...args]
-    : args;
+  const scoped = activeDeviceSerial && !options.global ? ['-s', activeDeviceSerial, ...args] : args;
 
   const result = spawnSync(ADB_CMD, scoped, {
     stdio: options.stdio ?? 'pipe',
@@ -74,9 +72,11 @@ function readLogTail(filePath, maxLines = 30) {
 
 function ensureHealthyAdb() {
   for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
-    log(attempt === 1
-      ? `Checking adb at ${ADB_CMD}...`
-      : `ADB health check attempt ${attempt}/${MAX_RETRIES}...`);
+    log(
+      attempt === 1
+        ? `Checking adb at ${ADB_CMD}...`
+        : `ADB health check attempt ${attempt}/${MAX_RETRIES}...`,
+    );
 
     if (adbOk(['version'], { timeout: 5_000, global: true })) {
       log('ADB is responsive.');
@@ -112,16 +112,20 @@ function parseDevices(stdout) {
 
 function ensureDevice() {
   for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
-    log(attempt === 1
-      ? 'Checking connected Android devices...'
-      : `Device check attempt ${attempt}/${MAX_RETRIES}...`);
+    log(
+      attempt === 1
+        ? 'Checking connected Android devices...'
+        : `Device check attempt ${attempt}/${MAX_RETRIES}...`,
+    );
 
     const result = adb(['devices', '-l'], { global: true });
     if (result.error || result.status !== 0) {
       log('Failed to query devices. Restarting ADB server...');
       killAllAdb();
       spawnSync(ADB_CMD, ['start-server'], {
-        stdio: 'pipe', encoding: 'utf8', timeout: 15_000,
+        stdio: 'pipe',
+        encoding: 'utf8',
+        timeout: 15_000,
       });
       continue;
     }
@@ -133,19 +137,25 @@ function ensureDevice() {
         spawnSync(ADB_CMD, ['wait-for-device'], { timeout: 5_000, stdio: 'pipe' });
         continue;
       }
-      fail('No adb device detected. Start an Android emulator (AVD) or connect a device with USB debugging enabled.');
+      fail(
+        'No adb device detected. Start an Android emulator (AVD) or connect a device with USB debugging enabled.',
+      );
     }
 
     if (REQUESTED_DEVICE_SERIAL) {
       const match = devices.find((d) => d.serial === REQUESTED_DEVICE_SERIAL);
       if (!match) {
-        fail(`Requested device "${REQUESTED_DEVICE_SERIAL}" not found. Available: ${devices.map((d) => d.serial).join(', ')}`);
+        fail(
+          `Requested device "${REQUESTED_DEVICE_SERIAL}" not found. Available: ${devices.map((d) => d.serial).join(', ')}`,
+        );
       }
       activeDeviceSerial = match.serial;
     } else {
       activeDeviceSerial = devices[0].serial;
       if (devices.length > 1) {
-        log(`Multiple devices: ${devices.map((d) => d.serial).join(', ')}. Using ${activeDeviceSerial}. Set GURU_ANDROID_SERIAL to override.`);
+        log(
+          `Multiple devices: ${devices.map((d) => d.serial).join(', ')}. Using ${activeDeviceSerial}. Set GURU_ANDROID_SERIAL to override.`,
+        );
       }
     }
 
@@ -158,9 +168,11 @@ function ensureDevice() {
 
 function ensureReverse() {
   for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
-    log(attempt === 1
-      ? `Setting adb reverse tcp:${ADB_PORT}...`
-      : `Reverse port attempt ${attempt}/${MAX_RETRIES}...`);
+    log(
+      attempt === 1
+        ? `Setting adb reverse tcp:${ADB_PORT}...`
+        : `Reverse port attempt ${attempt}/${MAX_RETRIES}...`,
+    );
 
     if (adbOk(['reverse', `tcp:${ADB_PORT}`, `tcp:${ADB_PORT}`], { stdio: 'ignore' })) {
       log('Reverse port tunnel established.');
@@ -170,7 +182,9 @@ function ensureReverse() {
     log('Reverse failed. Restarting ADB and retrying...');
     killAllAdb();
     spawnSync(ADB_CMD, ['start-server'], {
-      stdio: 'pipe', encoding: 'utf8', timeout: 15_000,
+      stdio: 'pipe',
+      encoding: 'utf8',
+      timeout: 15_000,
     });
   }
 
@@ -187,7 +201,10 @@ function isMetroRunning() {
       res.on('end', () => resolve(body.includes('packager-status:running')));
     });
     req.on('error', () => resolve(false));
-    req.setTimeout(2_000, () => { req.destroy(); resolve(false); });
+    req.setTimeout(2_000, () => {
+      req.destroy();
+      resolve(false);
+    });
   });
 }
 
@@ -202,7 +219,9 @@ function startMetro() {
 
   if (result.error || result.status !== 0) {
     const detail = [result.stdout, result.stderr, result.error?.message]
-      .filter(Boolean).join('\n').trim();
+      .filter(Boolean)
+      .join('\n')
+      .trim();
     fail(`Failed to start Metro.${detail ? '\n' + detail : ''}`);
   }
 
@@ -266,18 +285,18 @@ function installApp() {
   const deviceAbi = getDevicePrimaryAbi();
   const archArg = envArch || deviceAbi;
 
-  const gradleArgs = [
-    ':app:installDevDebug',
-    '--console=plain',
-    '--build-cache',
-  ];
+  const gradleArgs = [':app:installDevDebug', '--console=plain', '--build-cache'];
   // Speed: single ABI matching the connected device/emulator. Omit to use android/gradle.properties
   // (slower first build). Typical AVDs are x86_64; ARM tablets/phones are arm64-v8a.
   if (archArg) {
     gradleArgs.push(`-PreactNativeArchitectures=${archArg}`);
-    log(`Native libs: -PreactNativeArchitectures=${archArg}${envArch ? ' (from GURU_REACT_NATIVE_ARCHITECTURES)' : deviceAbi ? ' (from device)' : ''}`);
+    log(
+      `Native libs: -PreactNativeArchitectures=${archArg}${envArch ? ' (from GURU_REACT_NATIVE_ARCHITECTURES)' : deviceAbi ? ' (from device)' : ''}`,
+    );
   } else {
-    log('Native libs: using default reactNativeArchitectures from Gradle (no single-ABI override).');
+    log(
+      'Native libs: using default reactNativeArchitectures from Gradle (no single-ABI override).',
+    );
   }
 
   const result = spawnSync(
@@ -305,16 +324,30 @@ function installApp() {
 // ─── Step 6: Open the app ───────────────────────────────────────────────────
 
 function openApp() {
+  const preferDeepLink =
+    process.env.GURU_OPEN_MODE === 'deeplink' || process.argv.includes('--deeplink');
   for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
-    log(attempt === 1
-      ? 'Opening Guru dev client on device...'
-      : `Open app attempt ${attempt}/${MAX_RETRIES}...`);
-
-    const result = adb(
-      ['shell', 'am', 'start', '-n', `${APP_PACKAGE}/${APP_ACTIVITY}`,
-       '-a', 'android.intent.action.VIEW', '-d', DEV_CLIENT_URL],
-      { stdio: 'inherit', timeout: 10_000 },
+    log(
+      attempt === 1
+        ? 'Opening Guru dev client on device...'
+        : `Open app attempt ${attempt}/${MAX_RETRIES}...`,
     );
+
+    const args = preferDeepLink
+      ? [
+          'shell',
+          'am',
+          'start',
+          '-n',
+          `${APP_PACKAGE}/${APP_ACTIVITY}`,
+          '-a',
+          'android.intent.action.VIEW',
+          '-d',
+          DEV_CLIENT_URL,
+        ]
+      : ['shell', 'am', 'start', '-n', `${APP_PACKAGE}/${APP_ACTIVITY}`];
+
+    const result = adb(args, { stdio: 'inherit', timeout: 10_000 });
 
     if (!result.error && (result.status === 0 || result.status === null)) {
       return;
@@ -324,7 +357,9 @@ function openApp() {
       log('Failed to open app. Re-establishing adb connection...');
       killAllAdb();
       spawnSync(ADB_CMD, ['start-server'], {
-        stdio: 'pipe', encoding: 'utf8', timeout: 15_000,
+        stdio: 'pipe',
+        encoding: 'utf8',
+        timeout: 15_000,
       });
       adb(['reverse', `tcp:${ADB_PORT}`, `tcp:${ADB_PORT}`], { stdio: 'ignore' });
     }

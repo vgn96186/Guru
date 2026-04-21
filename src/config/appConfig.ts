@@ -356,5 +356,5 @@ export const MOCK_EXTERNAL_LECTURE_AUDIO_URL =
     'https://www.learningcontainer.com/wp-content/uploads/2020/02/Kalimba.mp3'
   ).trim() || 'https://www.learningcontainer.com/wp-content/uploads/2020/02/Kalimba.mp3';
 
-/** Enable quiet dot-dither texture on empty states + e0 backgrounds. */
+/** Enable quiet dot-dither texture on empty states + e0 backgrounds (`EmptyState` mounts `Texture`). */
 export const FEATURE_TEXTURE = false;

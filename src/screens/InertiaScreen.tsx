@@ -24,6 +24,7 @@ import LinearButton from '../components/primitives/LinearButton';
 import { ResponsiveContainer } from '../hooks/useResponsive';
 import { MarkdownRender } from '../components/MarkdownRender';
 import { linearTheme as n } from '../theme/linearTheme';
+import { motion } from '../motion/presets';
 import type { DetectiveContent, TopicWithProgress } from '../types';
 
 function TopicImage({ topicName }: { topicName: string }) {
@@ -55,7 +56,14 @@ export default function InertiaScreen() {
 
   const fadeIn = useCallback(() => {
     fadeAnim.setValue(0);
-    Animated.timing(fadeAnim, { toValue: 1, duration: 800, useNativeDriver: true }).start();
+    motion
+      .to(fadeAnim, {
+        toValue: 1,
+        duration: 800,
+        useNativeDriver: true,
+        easing: Easing.out(Easing.cubic),
+      })
+      .start();
   }, [fadeAnim]);
 
   async function fetchMicroWin() {
@@ -102,13 +110,13 @@ export default function InertiaScreen() {
     if (phase === 'fetching' || phase === 'micro_win') {
       anim = Animated.loop(
         Animated.sequence([
-          Animated.timing(pulseAnim, {
+          motion.to(pulseAnim, {
             toValue: 1.4,
             duration: 4000,
             easing: Easing.inOut(Easing.ease),
             useNativeDriver: true,
           }),
-          Animated.timing(pulseAnim, {
+          motion.to(pulseAnim, {
             toValue: 1,
             duration: 4000,
             easing: Easing.inOut(Easing.ease),

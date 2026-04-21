@@ -25,11 +25,17 @@ export interface GenerateOptions {
   temperature?: number;
   topK?: number;
   topP?: number;
+  /** JSON array of `{ name, description, parameters }` for LiteRT OpenAPI tools. */
+  toolsJson?: string;
 }
 
 export interface GenerateResult {
   text: string;
   backend: LocalLlmBackend;
+  /** Present when LiteRT returned structured tool calls (JSON array). */
+  toolCallsJson?: string | null;
+  /** `"stop"` or `"tool_calls"` — mirrors agentic loop finish. */
+  finishReason?: string;
 }
 
 export interface ChatMessage {
@@ -115,7 +121,12 @@ export function addLlmTokenListener(
 }
 
 export function addLlmCompleteListener(
-  listener: (event: { text: string; backend: LocalLlmBackend }) => void,
+  listener: (event: {
+    text: string;
+    backend: LocalLlmBackend;
+    toolCallsJson?: string | null;
+    finishReason?: string;
+  }) => void,
 ): EventSubscription {
   return emitter.addListener('onLlmComplete', listener);
 }

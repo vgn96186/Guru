@@ -1,7 +1,9 @@
 import React, { memo, useCallback } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { type FlashListRef, type ListRenderItem } from '@shopify/flash-list';
 import { AppFlashList } from '../primitives/AppFlashList';
+import LinearText from '../primitives/LinearText';
 import { GuruChatMessageItem } from './GuruChatMessageItem';
 import { GuruChatStarters } from './GuruChatStarters';
 import { TypingDots } from './TypingDots';
@@ -25,7 +27,7 @@ interface GuruChatMessageListProps {
   bannerVisible: boolean;
   imageJobKey: string | null;
   expandedSourcesMessageId: string | null;
-  flatListRef: React.RefObject<FlashListRef<ChatItem>>;
+  flatListRef: React.RefObject<FlashListRef<ChatItem> | null>;
   viewportWidth: number;
   onToggleSources: (messageId: string) => void;
   onCopyMessage: (text: string) => void;
@@ -37,11 +39,76 @@ interface GuruChatMessageListProps {
   onBannerDismiss: () => void;
 }
 
+function getLatestGuruMessageId(messages: ChatMessage[]): string | null {
+  for (let index = messages.length - 1; index >= 0; index -= 1) {
+    if (messages[index]?.role === 'guru') {
+      return messages[index].id;
+    }
+  }
+
+  return null;
+}
+
+function getTypingLabel(isHydrating: boolean, isInitializing: boolean) {
+  if (isHydrating) {
+    return 'Loading conversation...';
+  }
+
+  if (isInitializing) {
+    return 'Waking up on-device AI...';
+  }
+
+  return 'Thinking...';
+}
+
+type TypingIndicatorRowProps = {
+  isHydrating: boolean;
+  isInitializing: boolean;
+  entryComplete: boolean;
+};
+
+const TypingIndicatorRow = memo(function TypingIndicatorRow({
+  isHydrating,
+  isInitializing,
+  entryComplete,
+}: TypingIndicatorRowProps) {
+  return (
+    <View style={[styles.msgRow, styles.msgRowGuru]}>
+      <View style={styles.avatar}>
+        <Ionicons name="sparkles" size={11} color={n.colors.accent} />
+      </View>
+
+      <View style={[styles.msgContent, styles.msgContentGuru]}>
+        <View style={[styles.messageStack, styles.messageStackGuru]}>
+          <View style={styles.msgMetaRow}>
+            <LinearText variant="meta" style={styles.msgAuthor}>
+              Guru
+            </LinearText>
+            <LinearText variant="meta" tone="muted" style={styles.msgMetaDivider}>
+              •
+            </LinearText>
+            <LinearText variant="meta" tone="muted" style={styles.msgMetaText}>
+              {getTypingLabel(isHydrating, isInitializing)}
+            </LinearText>
+          </View>
+
+          <View style={[styles.bubbleWrap, styles.bubbleWrapGuru]}>
+            <View style={[styles.bubble, styles.guruBubble, styles.typingBubble]}>
+              <TypingDots active={entryComplete && !isHydrating} />
+            </View>
+          </View>
+        </View>
+      </View>
+    </View>
+  );
+});
+
 export const GuruChatMessageList = memo(function GuruChatMessageList({
   messages,
   chatItems,
   isLoading,
   isInitializing,
+  isHydrating,
   entryComplete,
   showEmptyState,
   starters,
@@ -62,43 +129,17 @@ export const GuruChatMessageList = memo(function GuruChatMessageList({
   onSelectStarter,
   onBannerDismiss,
 }: GuruChatMessageListProps) {
-  const latestGuruMessageId = (() => {
-    for (let i = messages.length - 1; i >= 0; i--) {
-      if (messages[i]?.role === 'guru') return messages[i].id;
-    }
-    return null;
-  })();
+  const latestGuruMessageId = getLatestGuruMessageId(messages);
 
   const renderItem = useCallback<ListRenderItem<ChatItem>>(
-    (info) => {
-      const { item } = info;
+    ({ item }) => {
       if (item.type === 'typing') {
         return (
-          <View style={[styles.msgRow, styles.msgRowGuru]}>
-            <View style={styles.guruAvatarTiny}>
-              <></>
-            </View>
-            <View style={[styles.msgContent, styles.msgContentGuru]}>
-              <View style={[styles.messageStack, styles.messageStackGuru]}>
-                <View style={styles.msgMetaRow}>
-                  <LinearText variant="meta" style={styles.msgAuthor}>
-                    Guru
-                  </LinearText>
-                  <LinearText variant="meta" tone="muted" style={styles.msgMetaDivider}>
-                    •
-                  </LinearText>
-                  <LinearText variant="meta" tone="muted" style={styles.msgMetaText}>
-                    {isInitializing ? 'Waking up on-device AI...' : 'Thinking...'}
-                  </LinearText>
-                </View>
-                <View style={[styles.bubbleWrap, styles.bubbleWrapGuru]}>
-                  <View style={[styles.bubble, styles.guruBubble, styles.typingBubble]}>
-                    <TypingDots active={entryComplete} />
-                  </View>
-                </View>
-              </View>
-            </View>
-          </View>
+          <TypingIndicatorRow
+            isHydrating={isHydrating}
+            isInitializing={isInitializing}
+            entryComplete={entryComplete}
+          />
         );
       }
 
@@ -108,6 +149,8 @@ export const GuruChatMessageList = memo(function GuruChatMessageList({
           isLatestGuruMessage={item.message.id === latestGuruMessageId}
           isLoading={isLoading}
           isInitializing={isInitializing}
+          isHydrating={isHydrating}
+          entryComplete={entryComplete}
           imageJobKey={imageJobKey}
           expandedSourcesMessageId={expandedSourcesMessageId}
           onToggleSources={onToggleSources}
@@ -120,18 +163,19 @@ export const GuruChatMessageList = memo(function GuruChatMessageList({
       );
     },
     [
-      isInitializing,
       entryComplete,
-      latestGuruMessageId,
-      isLoading,
-      imageJobKey,
       expandedSourcesMessageId,
-      onToggleSources,
+      imageJobKey,
+      isHydrating,
+      isInitializing,
+      isLoading,
+      latestGuruMessageId,
       onCopyMessage,
-      onRegenerate,
       onGenerateImage,
       onOpenSource,
+      onRegenerate,
       onSetLightboxUri,
+      onToggleSources,
     ],
   );
 
@@ -152,9 +196,14 @@ export const GuruChatMessageList = memo(function GuruChatMessageList({
 
   return (
     <View style={styles.contentWrap}>
-      {bannerVisible && (
+      {bannerVisible ? (
         <View style={styles.infoBanner}>
-          <Ionicons name="library-outline" size={14} color={n.colors.accent} style={styles.bannerIcon} />
+          <Ionicons
+            name="library-outline"
+            size={14}
+            color={n.colors.accent}
+            style={styles.bannerIcon}
+          />
           <LinearText style={styles.infoText}>
             Grounded with Wikipedia, Europe PMC and PubMed. Sources are linked inline.
           </LinearText>
@@ -162,7 +211,7 @@ export const GuruChatMessageList = memo(function GuruChatMessageList({
             <Ionicons name="close" size={14} color={n.colors.textMuted} />
           </Pressable>
         </View>
-      )}
+      ) : null}
 
       <View style={styles.chatSurface}>
         <AppFlashList
@@ -184,13 +233,7 @@ export const GuruChatMessageList = memo(function GuruChatMessageList({
       </View>
     </View>
   );
-}
-);
-
-// Need to import these for the inline typing indicator
-import LinearText from '../primitives/LinearText';
-import { Ionicons } from '@expo/vector-icons';
-import { Pressable } from 'react-native';
+});
 
 const styles = StyleSheet.create({
   contentWrap: {
@@ -235,22 +278,28 @@ const styles = StyleSheet.create({
   messagesContent: {
     paddingHorizontal: n.spacing.xs,
     paddingTop: n.spacing.sm,
-    paddingBottom: n.spacing.md,
+    paddingBottom: 132,
     gap: n.spacing.sm,
     flexGrow: 1,
     justifyContent: 'flex-end',
   },
-  // Inline typing indicator styles (copied from GuruChatMessageItem for the inline use)
   msgRow: {
     flexDirection: 'row',
-    alignItems: 'flex-end',
-    gap: 10,
+    alignItems: 'flex-start',
+    gap: 12,
     width: '100%',
   },
   msgRowGuru: {},
-  guruAvatarTiny: {
-    width: 28,
-    height: 28,
+  avatar: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: whiteAlpha['8'],
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'transparent',
+    marginTop: 2,
   },
   msgContent: {
     flex: 1,
@@ -263,39 +312,10 @@ const styles = StyleSheet.create({
     flexShrink: 1,
   },
   messageStackGuru: {
-    width: '88%',
-    maxWidth: '88%',
+    width: '92%',
+    maxWidth: '92%',
     alignSelf: 'flex-start',
     alignItems: 'flex-start',
-  },
-  bubbleWrap: {
-    maxWidth: '100%',
-    minWidth: 0,
-    flexShrink: 1,
-  },
-  bubbleWrapGuru: {
-    maxWidth: '88%',
-    minWidth: 0,
-    alignSelf: 'flex-start',
-  },
-  bubble: {
-    alignSelf: 'flex-start',
-    minWidth: 0,
-    borderRadius: 18,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderWidth: StyleSheet.hairlineWidth,
-  },
-  guruBubble: {
-    backgroundColor: whiteAlpha['3'],
-    borderColor: whiteAlpha['8'],
-    borderBottomLeftRadius: 6,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: whiteAlpha['12'],
-  },
-  typingBubble: {
-    paddingVertical: 16,
-    paddingHorizontal: 18,
   },
   msgMetaRow: {
     flexDirection: 'row',
@@ -315,5 +335,32 @@ const styles = StyleSheet.create({
   msgMetaText: {
     ...n.typography.meta,
     color: n.colors.textSecondary,
+  },
+  bubbleWrap: {
+    maxWidth: '100%',
+    minWidth: 0,
+    flexShrink: 1,
+  },
+  bubbleWrapGuru: {
+    maxWidth: '92%',
+    minWidth: 0,
+    alignSelf: 'flex-start',
+  },
+  bubble: {
+    alignSelf: 'flex-start',
+    minWidth: 0,
+    borderRadius: 18,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderWidth: StyleSheet.hairlineWidth,
+  },
+  guruBubble: {
+    backgroundColor: whiteAlpha['3'],
+    borderColor: whiteAlpha['8'],
+    borderBottomLeftRadius: 8,
+  },
+  typingBubble: {
+    paddingVertical: 16,
+    paddingHorizontal: 18,
   },
 });

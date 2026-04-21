@@ -57,11 +57,15 @@ class LocalLlmModule : Module() {
                         modelPath = options.modelPath ?: throw Exception("Model path required for chat"),
                         systemPrompt = options.systemInstruction ?: "",
                         messages = messages,
-                        temperature = options.temperature?.toDouble() ?: 0.7
+                        temperature = options.temperature?.toDouble() ?: 0.7,
+                        preferCpu = false,
+                        toolsJson = options.toolsJson,
                     )
                     promise.resolve(mapOf(
                         "text" to result.text,
-                        "backend" to result.backendLabel
+                        "backend" to result.backendLabel,
+                        "toolCallsJson" to result.toolCallsJson,
+                        "finishReason" to result.finishReason,
                     ))
                 } catch (t: Throwable) {
                     promise.reject("ERR_LOCAL_LLM_CHAT", t.message, t)
@@ -81,11 +85,20 @@ class LocalLlmModule : Module() {
                         messages = messages,
                         temperature = options.temperature?.toDouble() ?: 0.7,
                         preferCpu = false,
+                        toolsJson = options.toolsJson,
                         onToken = { token ->
                             sendEvent("onLlmToken", mapOf("token" to token))
                         },
-                        onComplete = { fullText, backendLabel ->
-                            sendEvent("onLlmComplete", mapOf("text" to fullText, "backend" to backendLabel))
+                        onComplete = { fullText, backendLabel, toolCallsJson, finishReason ->
+                            sendEvent(
+                                "onLlmComplete",
+                                mapOf(
+                                    "text" to fullText,
+                                    "backend" to backendLabel,
+                                    "toolCallsJson" to toolCallsJson,
+                                    "finishReason" to finishReason,
+                                ),
+                            )
                         },
                         onError = { errorMsg ->
                             sendEvent("onLlmError", mapOf("error" to errorMsg))
@@ -202,7 +215,8 @@ data class GenerateOptions(
     @expo.modules.kotlin.records.Field val systemInstruction: String?,
     @expo.modules.kotlin.records.Field val temperature: Float?,
     @expo.modules.kotlin.records.Field val topK: Int?,
-    @expo.modules.kotlin.records.Field val topP: Float?
+    @expo.modules.kotlin.records.Field val topP: Float?,
+    @expo.modules.kotlin.records.Field val toolsJson: String?
 ) : expo.modules.kotlin.records.Record
 
 data class NanoGenerateOptions(

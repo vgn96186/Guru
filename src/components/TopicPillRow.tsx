@@ -7,7 +7,7 @@ import {
   type TextStyle,
   type ViewStyle,
 } from 'react-native';
-import AppText from './AppText';
+import LinearText from './primitives/LinearText';
 import { linearTheme as n } from '../theme/linearTheme';
 
 interface Props {
@@ -36,21 +36,26 @@ export default React.memo(function TopicPillRow({
   const hiddenCount = topics.length - visibleTopics.length;
 
   const pills = visibleTopics.map((topic, index) => (
-    <AppText
+    <LinearText
       key={`${topic}-${index}`}
       variant="chip"
       truncate={truncate}
       style={[styles.pill, pillStyle]}
     >
       {topic}
-    </AppText>
+    </LinearText>
   ));
 
   if (hiddenCount > 0) {
     pills.push(
-      <AppText key="__more" variant="badge" tone="muted" style={[styles.moreBadge, moreBadgeStyle]}>
+      <LinearText
+        key="__more"
+        variant="badge"
+        tone="muted"
+        style={[styles.moreBadge, moreBadgeStyle]}
+      >
         +{hiddenCount}
-      </AppText>,
+      </LinearText>,
     );
   }
 

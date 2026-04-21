@@ -28,7 +28,9 @@ export default class ErrorBoundary extends React.Component<React.PropsWithChildr
   }
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-    console.error('ErrorBoundary caught an error', error, errorInfo);
+    if (__DEV__) {
+      console.error('ErrorBoundary caught an error', error, errorInfo);
+    }
     reportStartupHealth('render_error', error.message || 'Unknown rendering error');
     this.setState({ errorMessage: error.message || 'Unknown rendering error' });
   }

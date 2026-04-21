@@ -137,15 +137,11 @@ const ChatBubbleComponent = ({
 
           {hasGuruImages ? (
             <View style={{ width: '100%' }}>
-              <Pressable
-                style={[styles.bubbleWrap, styles.bubbleWrapGuru]}
-                onLongPress={() => copyMessage(message.text)}
-                delayLongPress={400}
-              >
+              <View style={[styles.bubbleWrap, styles.bubbleWrapGuru]}>
                 <View style={[styles.bubble, styles.guruBubble]}>
                   <FormattedGuruMessage text={message.text} />
                 </View>
-              </Pressable>
+              </View>
               <ScrollView
                 horizontal
                 showsHorizontalScrollIndicator={false}
@@ -173,10 +169,8 @@ const ChatBubbleComponent = ({
               </ScrollView>
             </View>
           ) : (
-            <Pressable
+            <View
               style={[styles.bubbleWrap, isUser ? styles.bubbleWrapUser : styles.bubbleWrapGuru]}
-              onLongPress={() => copyMessage(message.text)}
-              delayLongPress={400}
             >
               <View style={[styles.bubble, isUser ? styles.userBubble : styles.guruBubble]}>
                 {isUser ? (
@@ -191,7 +185,7 @@ const ChatBubbleComponent = ({
                   <FormattedGuruMessage text={message.text} />
                 )}
               </View>
-            </Pressable>
+            </View>
           )}
 
           {!isUser && message.sources && message.sources.length > 0 && (

@@ -1,7 +1,8 @@
 import React from 'react';
 import { StyleSheet, View, type StyleProp, type TextStyle } from 'react-native';
 import { linearTheme as n } from '../theme/linearTheme';
-import AppText from './AppText';
+import { density } from '../theme/density';
+import LinearText from './primitives/LinearText';
 import LinearSurface from './primitives/LinearSurface';
 import BackIconButton from './primitives/BackIconButton';
 
@@ -41,17 +42,21 @@ export default function ScreenBannerFrame({
           <View style={styles.backSpacer} />
         )}
         <View style={styles.copy}>
-          <AppText
+          <LinearText
             style={[styles.title, titleStyle]}
             numberOfLines={titleNumberOfLines}
             variant="sectionTitle"
           >
             {title}
-          </AppText>
+          </LinearText>
           {subtitle ? (
-            <AppText style={[styles.subtitle, subtitleStyle]} variant="bodySmall" tone="secondary">
+            <LinearText
+              style={[styles.subtitle, subtitleStyle]}
+              variant="bodySmall"
+              tone="secondary"
+            >
               {subtitle}
-            </AppText>
+            </LinearText>
           ) : null}
           {children}
         </View>
@@ -74,8 +79,8 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 14,
-    paddingVertical: 14,
+    paddingHorizontal: density.comfortable.paddingHorizontal,
+    paddingVertical: density.comfortable.paddingVertical,
   },
   backSpacer: {
     width: 48,

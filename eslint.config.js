@@ -70,6 +70,7 @@ module.exports = [
       'babel.config.js',
       'eslint.config.js',
       'scripts/**/*.js',
+      '__mocks__/**/*.js',
     ],
     languageOptions: {
       globals: {

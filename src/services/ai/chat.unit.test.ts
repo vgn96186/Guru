@@ -120,4 +120,21 @@ describe('chatWithGuru', () => {
     expect(result.reply).toContain('counter-transport');
     expect(result.reply.length).toBeGreaterThan(truncatedBody.length);
   });
+
+  it('injects explicit highlight marker instructions into the study-session chat prompt', async () => {
+    mockGenerateText.mockResolvedValue(makeTextResult('Use ==Acute Inflammation== and !!C5a!!'));
+
+    await chatWithGuru('explain', 'Inflammation', []);
+
+    expect(mockGenerateText).toHaveBeenCalledWith(
+      expect.objectContaining({
+        messages: expect.arrayContaining([
+          expect.objectContaining({
+            role: 'system',
+            content: expect.stringContaining('Wrap important topic names in ==double equals=='),
+          }),
+        ]),
+      }),
+    );
+  });
 });

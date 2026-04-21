@@ -25,8 +25,8 @@ import { ResponsiveContainer } from '../hooks/useResponsive';
 import { linearTheme as n } from '../theme/linearTheme';
 import {
   blackAlpha,
-  transcriptBlueAlpha,
-  transcriptBlueBorderAlpha,
+  captureFillAlpha,
+  captureBorderAlpha,
   warningAlpha,
 } from '../theme/colorUtils';
 import LinearSurface from '../components/primitives/LinearSurface';
@@ -605,8 +605,8 @@ const styles = StyleSheet.create({
     borderColor: n.colors.border,
   },
   illustrationChip: {
-    backgroundColor: transcriptBlueAlpha['12'],
-    borderColor: transcriptBlueBorderAlpha['35'],
+    backgroundColor: captureFillAlpha['12'],
+    borderColor: captureBorderAlpha['35'],
   },
   chartChip: {
     backgroundColor: warningAlpha['14'],

@@ -1,14 +1,15 @@
-import React from 'react';
+import React, { type ComponentProps } from 'react';
 import { TouchableOpacity, View, StyleSheet } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { linearTheme as n } from '../../theme/linearTheme';
+import { density } from '../../theme/density';
 import { HIT_SIZE } from '../../theme/a11y';
-import AppText from '../AppText';
+import LinearText from '../primitives/LinearText';
+import Icon from '../primitives/Icon';
 
 interface ShortcutTileProps {
   title: string;
-  icon: keyof typeof Ionicons.glyphMap;
+  icon: ComponentProps<typeof Icon>['name'];
   accent: string;
   onPress: () => void;
   accessibilityLabel?: string;
@@ -37,9 +38,9 @@ export default React.memo(function ShortcutTile({
       accessibilityLabel={accessibilityLabel}
     >
       <View style={[styles.iconWrap, { backgroundColor: `${accent}18` }]}>
-        <Ionicons name={icon} size={18} color={accent} />
+        <Icon name={icon} size="md" color={accent} />
       </View>
-      <AppText
+      <LinearText
         style={styles.title}
         numberOfLines={2}
         ellipsizeMode="tail"
@@ -47,7 +48,7 @@ export default React.memo(function ShortcutTile({
         tone="secondary"
       >
         {title}
-      </AppText>
+      </LinearText>
     </TouchableOpacity>
   );
 });
@@ -59,9 +60,9 @@ const styles = StyleSheet.create({
     minHeight: HIT_SIZE,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
-    paddingVertical: 12,
-    paddingHorizontal: 14,
+    gap: density.compact.gap,
+    paddingVertical: density.compact.paddingVertical,
+    paddingHorizontal: density.compact.paddingHorizontal,
     borderRadius: n.radius.sm,
   },
   iconWrap: {

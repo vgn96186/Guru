@@ -101,24 +101,19 @@ export const blackAlpha = {
   '92': 'rgba(0, 0, 0, 0.92)',
 } as const;
 
-/**
- * Informational blue — distinct from the purple `accent`.
- * Used for transcript / audio / capture surfaces (ContentCard, TranscriptVault, etc.).
- */
-export const TRANSCRIPT_BLUE = '#6D99FF';
-export const TRANSCRIPT_BLUE_BORDER = '#82AAFF';
+const CAPTURE_BORDER = '#82AAFF';
 
-/** Pre-computed transcript-blue opacity variants (fill). */
-export const transcriptBlueAlpha = {
-  '10': withAlpha(TRANSCRIPT_BLUE, 0.1),
-  '12': withAlpha(TRANSCRIPT_BLUE, 0.12),
-  '14': withAlpha(TRANSCRIPT_BLUE, 0.14),
-  '35': withAlpha(TRANSCRIPT_BLUE, 0.35),
+/** Capture role fill alphas — transcript / audio / recording surfaces. */
+export const captureFillAlpha = {
+  '10': withAlpha(linearTheme.colors.roles.capture, 0.1),
+  '12': withAlpha(linearTheme.colors.roles.capture, 0.12),
+  '14': withAlpha(linearTheme.colors.roles.capture, 0.14),
+  '35': withAlpha(linearTheme.colors.roles.capture, 0.35),
 } as const;
 
-/** Pre-computed transcript-blue border opacity variants. */
-export const transcriptBlueBorderAlpha = {
-  '20': withAlpha(TRANSCRIPT_BLUE_BORDER, 0.2),
-  '24': withAlpha(TRANSCRIPT_BLUE_BORDER, 0.24),
-  '35': withAlpha(TRANSCRIPT_BLUE_BORDER, 0.35),
+/** Capture role border alphas (lighter hue for edge definition). */
+export const captureBorderAlpha = {
+  '20': withAlpha(CAPTURE_BORDER, 0.2),
+  '24': withAlpha(CAPTURE_BORDER, 0.24),
+  '35': withAlpha(CAPTURE_BORDER, 0.35),
 } as const;

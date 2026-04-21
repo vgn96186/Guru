@@ -282,6 +282,13 @@ export interface NativeRecordingEntry {
   size: number;
 }
 
+export interface NativeModelFileEntry {
+  name: string;
+  path: string;
+  size: number;
+  modifiedAt: number;
+}
+
 /**
  * Recursively finds all .m4a files under Documents/Guru/ (Recordings, Backups, etc.).
  * Returns entries with absolute path and size so no further validation is needed.
@@ -337,15 +344,20 @@ export async function scanSafUri(uriString: string): Promise<NativeRecordingEntr
 }
 
 /**
+ * Broadly scans common external-storage roots for LiteRT/LiteLLM model files.
+ * Returns absolute paths with size and last-modified time for JS-side validation.
+ */
+export async function findLocalModelFiles(): Promise<NativeModelFileEntry[]> {
+  return GuruAppLauncher.findLocalModelFiles();
+}
+
+/**
  * Concatenates multiple files into a single output file using streaming I/O.
  * Used by parallel chunk downloads to merge parts without loading them into memory.
  * @param inputPaths - Absolute paths to chunk files, in order.
  * @param outputPath - Absolute path for the merged output file.
  * @returns `true` if all chunks were concatenated successfully.
  */
-export async function concatenateFiles(
-  inputPaths: string[],
-  outputPath: string,
-): Promise<boolean> {
+export async function concatenateFiles(inputPaths: string[], outputPath: string): Promise<boolean> {
   return GuruAppLauncher.concatenateFiles(inputPaths, outputPath);
 }

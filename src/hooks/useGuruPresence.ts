@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Animated } from 'react-native';
+import { motion } from '../motion/presets';
 import { generateGuruPresenceMessages } from '../services/ai';
 import type { GuruEventType, GuruPresenceMessage } from '../services/ai';
 
@@ -63,12 +64,13 @@ export function useGuruPresence({
   // Pulse animation — run when active, pause otherwise
   useEffect(() => {
     if (isActive) {
-      const anim = Animated.loop(
-        Animated.sequence([
-          Animated.timing(presencePulse, { toValue: 1.2, duration: 1000, useNativeDriver: true }),
-          Animated.timing(presencePulse, { toValue: 0.8, duration: 1000, useNativeDriver: true }),
-        ]),
-      );
+      const anim = motion.pulseValue(presencePulse, {
+        from: 0.8,
+        to: 1.2,
+        duration: 1000,
+        loop: true,
+        useNativeDriver: true,
+      });
       pulseAnimRef.current = anim;
       anim.start();
       return () => {
@@ -77,7 +79,7 @@ export function useGuruPresence({
       };
     } else {
       pulseAnimRef.current?.stop();
-      Animated.timing(presencePulse, { toValue: 1, duration: 200, useNativeDriver: true }).start();
+      motion.to(presencePulse, { toValue: 1, duration: 200, useNativeDriver: true }).start();
     }
   }, [isActive, presencePulse]);
 
@@ -87,9 +89,9 @@ export function useGuruPresence({
       isShowingRef.current = true;
       setCurrentMessage(text);
       Animated.sequence([
-        Animated.timing(toastOpacity, { toValue: 1, duration: 200, useNativeDriver: true }),
+        motion.to(toastOpacity, { toValue: 1, duration: 200, useNativeDriver: true }),
         Animated.delay(7000),
-        Animated.timing(toastOpacity, { toValue: 0, duration: 500, useNativeDriver: true }),
+        motion.to(toastOpacity, { toValue: 0, duration: 500, useNativeDriver: true }),
       ]).start(() => {
         setCurrentMessage(null);
         isShowingRef.current = false;

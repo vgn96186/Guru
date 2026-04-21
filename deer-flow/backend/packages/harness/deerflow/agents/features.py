@@ -44,7 +44,8 @@ def Next(anchor: type[AgentMiddleware]):
         raise TypeError(f"@Next expects an AgentMiddleware subclass, got {anchor!r}")
 
     def decorator(cls: type[AgentMiddleware]) -> type[AgentMiddleware]:
-        cls._next_anchor = anchor  # type: ignore[attr-defined]
+        # Use __dict__ to avoid triggering __setattr__ on some metaclasses
+        cls.__dict__["_next_anchor"] = anchor
         return cls
 
     return decorator
@@ -56,7 +57,7 @@ def Prev(anchor: type[AgentMiddleware]):
         raise TypeError(f"@Prev expects an AgentMiddleware subclass, got {anchor!r}")
 
     def decorator(cls: type[AgentMiddleware]) -> type[AgentMiddleware]:
-        cls._prev_anchor = anchor  # type: ignore[attr-defined]
+        cls.__dict__["_prev_anchor"] = anchor
         return cls
 
     return decorator

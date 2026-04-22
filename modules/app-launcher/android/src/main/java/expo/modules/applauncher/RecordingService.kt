@@ -162,6 +162,15 @@ class RecordingService : Service() {
                     }
                 }
 
+                val perfCtx = applicationContext
+                runCatching {
+                    val perf = SamsungPerfController(perfCtx)
+                    if (perf.init()) {
+                        // Short BUS boost to reduce latency of MediaCodec init.
+                        perf.startPresetBoost(/* BUS */ 2, 2_000)
+                    }
+                }
+
                 if (useInternal) {
                     startInternalRecording(path, targetUid)
                 } else {

@@ -94,6 +94,10 @@ class OverlayService : Service(), LifecycleOwner {
     private var lastFaceAnalysisTime = 0L
     private val FACE_ANALYSIS_INTERVAL_MS = 2000L
 
+    @Volatile private var thermalThrottleLevel: Int = 0
+    private var frameCounter: Int = 0
+    private var sperf: SamsungPerfController? = null
+
     private val tickRunnable = object : Runnable {
         override fun run() {
             if (!isPaused) {
@@ -197,6 +201,15 @@ class OverlayService : Service(), LifecycleOwner {
     private fun startCamera() {
         cameraExecutor = Executors.newSingleThreadExecutor()
 
+        val sperf = SamsungPerfController(applicationContext)
+        this.sperf = sperf
+        val sperfActive = sperf.init()
+        val faceBoostId = if (sperfActive) sperf.startPresetBoost(/* GPU */ 1, 5_000) else -1
+        sperf.onThermalWarning = { level ->
+            // Level >= 2 → throttle: skip every other frame downstream.
+            thermalThrottleLevel = level
+        }
+
         val options = FaceDetectorOptions.Builder()
             .setPerformanceMode(FaceDetectorOptions.PERFORMANCE_MODE_FAST)
             .setClassificationMode(FaceDetectorOptions.CLASSIFICATION_MODE_ALL)
@@ -222,6 +235,10 @@ class OverlayService : Service(), LifecycleOwner {
             .build()
 
         analysis.setAnalyzer(executor) { imageProxy ->
+            if (thermalThrottleLevel >= 2 && (frameCounter++ % 2) == 0) {
+                imageProxy.close()
+                return@setAnalyzer
+            }
             val now = System.currentTimeMillis()
             if (now - lastFaceAnalysisTime < FACE_ANALYSIS_INTERVAL_MS) {
                 imageProxy.close()
@@ -417,6 +434,7 @@ class OverlayService : Service(), LifecycleOwner {
     override fun onDestroy() {
         isServiceRunning = false
         stopCamera()
+        runCatching { sperf?.stopAllBoosts(); sperf?.shutdown() }
         overlayView?.destroy() // Clean up the animation handler before clearing the reference
         hideOverlay()
         stopTimer()

@@ -1,7 +1,6 @@
 import { FC } from 'react';
 import type { UserProfile, ChatGptAccountSlot, ProviderId } from '../../../../types';
 import type { ValidationProviderId } from '../../types';
-import type { MenuStackParamList } from '../../../../navigation/types';
 
 export interface OAuthSlot {
   connecting: boolean;

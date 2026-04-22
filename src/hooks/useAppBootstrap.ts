@@ -19,6 +19,7 @@ import { validateAiProvidersOnBoot } from '../services/ai/bootProviderValidation
 import { shouldRunAutoBackup, runAutoBackup } from '../services/unifiedBackupService';
 import { reportStartupHealth } from '../services/startupHealth';
 import { maybePromptSamsungBattery } from '../services/samsungBatteryPrompt';
+import * as samsungPerf from '../services/samsungPerf';
 import '../services/fgsBlockedListener';
 
 /**
@@ -121,6 +122,17 @@ export function useAppBootstrap(onFatalError?: (message: string) => void): void 
           navigationRef.navigate('SamsungBatterySheet');
         }
       }).catch((e) => console.warn('[SamsungPrompt] failed:', e));
+
+      try {
+        const ok = await samsungPerf.init();
+        if (ok) {
+          // Hold a brief CPU boost during cold boot (service init, profile load,
+          // DB warmup). SDK auto-releases after WORKLOAD_PRESET.app_boot duration.
+          void samsungPerf.acquire('app_boot').then(() => samsungPerf.release('app_boot'));
+        }
+      } catch (e) {
+        console.warn('[samsungPerf] init failed', e);
+      }
 
       // 4. Auto-backup check (deferred, non-blocking)
       backupTimerRef.current = setTimeout(() => {

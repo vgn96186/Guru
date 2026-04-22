@@ -12,6 +12,7 @@ jest.mock('../services/imageService', () => ({
 }));
 
 jest.mock('../db/queries/aiCache', () => ({
+  __esModule: true,
   isContentFlagged: jest.fn().mockResolvedValue(false),
   setContentFlagged: jest.fn(),
 }));
@@ -113,5 +114,88 @@ describe('ContentCard Ask Guru context', () => {
     await waitFor(() => {
       expect(getByText(/\*\*STEMI\*\*/)).toBeTruthy();
     });
+  });
+});
+
+import type { AIContent } from '../types';
+
+const mockContents: AIContent[] = [
+  {
+    type: 'keypoints',
+    topicName: 'Test Topic',
+    points: ['Point 1'],
+    memoryHook: 'Hook',
+  },
+  {
+    type: 'must_know',
+    topicName: 'Test Topic',
+    mustKnow: ['MK 1'],
+    mostTested: ['MT 1'],
+    examTip: 'Tip',
+  },
+  {
+    type: 'story',
+    topicName: 'Test Topic',
+    story: 'Story',
+    keyConceptHighlights: ['Highlight 1'],
+  },
+  {
+    type: 'mnemonic',
+    topicName: 'Test Topic',
+    mnemonic: 'MNE',
+    expansion: ['M', 'N', 'E'],
+    tip: 'Tip',
+  },
+  {
+    type: 'teach_back',
+    topicName: 'Test Topic',
+    prompt: 'Prompt',
+    keyPointsToMention: ['KP 1'],
+    guruReaction: 'Reaction',
+  },
+  {
+    type: 'error_hunt',
+    topicName: 'Test Topic',
+    paragraph: 'Para',
+    errors: [{ wrong: 'W', correct: 'C', explanation: 'E' }],
+  },
+  {
+    type: 'detective',
+    topicName: 'Test Topic',
+    clues: ['Clue 1'],
+    answer: 'Ans',
+    explanation: 'Exp',
+  },
+  {
+    type: 'manual',
+    topicName: 'Test Topic',
+  },
+  {
+    type: 'socratic',
+    topicName: 'Test Topic',
+    questions: [{ question: 'Q1', answer: 'A1', whyItMatters: 'W1' }],
+  },
+  {
+    type: 'flashcards',
+    topicName: 'Test Topic',
+    cards: [{ front: 'Front 1', back: 'Back 1', imageUrl: null }],
+  },
+];
+
+describe('ContentCard Snapshots', () => {
+  it.each(mockContents)('matches snapshot for %p type', async (content) => {
+    const { isContentFlagged } = require('../db/queries/aiCache');
+    console.log('Mock is:', isContentFlagged);
+
+    const { toJSON } = render(
+      <ContentCard
+        content={content}
+        topicId={undefined}
+        contentType={content.type}
+        onDone={jest.fn()}
+        onSkip={jest.fn()}
+      />,
+    );
+    expect(toJSON()).toMatchSnapshot();
   });
 });

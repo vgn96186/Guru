@@ -1,0 +1,4065 @@
+// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
+
+exports[`ContentCard Snapshots matches snapshot for {"answer": "Ans", "clues": [Array], "explanation": "Exp", "topicName": "Test Topic", "type": "detective"} type 1`] = `
+<View
+  style={
+    [
+      {
+        "backgroundColor": "transparent",
+        "borderColor": "rgba(255, 255, 255, 0.08)",
+        "borderRadius": 16,
+        "borderWidth": 1,
+        "overflow": "hidden",
+        "padding": 0,
+      },
+      {
+        "flex": 1,
+        "marginBottom": 4,
+        "marginHorizontal": 16,
+        "marginTop": 4,
+        "minHeight": 0,
+      },
+    ]
+  }
+>
+  <LinearGradient
+    colors={
+      [
+        "rgba(255, 255, 255, 0.05)",
+        "rgba(255, 255, 255, 0.01)",
+      ]
+    }
+    end={
+      {
+        "x": 0,
+        "y": 1,
+      }
+    }
+    pointerEvents="none"
+    start={
+      {
+        "x": 0,
+        "y": 0,
+      }
+    }
+    style={
+      {
+        "bottom": 0,
+        "left": 0,
+        "position": "absolute",
+        "right": 0,
+        "top": 0,
+      }
+    }
+  />
+  <View
+    style={
+      {
+        "flex": 1,
+        "minHeight": 0,
+        "position": "relative",
+      }
+    }
+  >
+    <View
+      style={
+        {
+          "flex": 1,
+          "minHeight": 0,
+          "minWidth": 0,
+        }
+      }
+    >
+      <ScrollView
+        contentContainerStyle={
+          [
+            {
+              "alignItems": "stretch",
+              "flexGrow": 1,
+              "padding": 20,
+              "paddingBottom": 72,
+            },
+            {
+              "paddingBottom": 114,
+            },
+          ]
+        }
+        style={
+          {
+            "flex": 1,
+            "minHeight": 0,
+            "minWidth": 0,
+          }
+        }
+      >
+        <Text
+          allowFontScaling={true}
+          style={
+            [
+              {
+                "includeFontPadding": false,
+              },
+              {
+                "fontFamily": "Inter_400Regular",
+                "fontSize": 15,
+                "lineHeight": 22,
+              },
+              {
+                "color": "#F2F2F2",
+              },
+              false,
+              false,
+              {
+                "color": "#5E6AD2",
+                "fontSize": 12,
+                "fontWeight": "700",
+                "letterSpacing": 1.5,
+                "marginBottom": 6,
+              },
+            ]
+          }
+          textBreakStrategy="simple"
+        >
+          🕵️ CLINICAL DETECTIVE
+        </Text>
+        <View
+          style={
+            {
+              "alignItems": "center",
+              "flexDirection": "row",
+              "justifyContent": "space-between",
+              "marginBottom": 20,
+            }
+          }
+        >
+          <Text
+            allowFontScaling={true}
+            ellipsizeMode="tail"
+            numberOfLines={3}
+            style={
+              [
+                {
+                  "includeFontPadding": false,
+                },
+                {
+                  "fontFamily": "Inter_400Regular",
+                  "fontSize": 15,
+                  "lineHeight": 22,
+                },
+                {
+                  "color": "#F2F2F2",
+                },
+                false,
+                false,
+                {
+                  "color": "#F2F2F2",
+                  "fontSize": 22,
+                  "fontWeight": "800",
+                  "lineHeight": 28,
+                  "marginBottom": 20,
+                  "minWidth": 0,
+                  "width": "100%",
+                },
+              ]
+            }
+            textBreakStrategy="simple"
+          >
+            Test Topic
+          </Text>
+        </View>
+        <View
+          style={
+            [
+              {
+                "backgroundColor": "rgba(255, 255, 255, 0.03)",
+                "borderRadius": 12,
+                "marginBottom": 8,
+                "padding": 14,
+              },
+              {
+                "borderColor": "#5E6AD2",
+                "borderWidth": 1,
+              },
+            ]
+          }
+        >
+          <Text
+            allowFontScaling={true}
+            style={
+              [
+                {
+                  "includeFontPadding": false,
+                },
+                {
+                  "fontFamily": "Inter_400Regular",
+                  "fontSize": 15,
+                  "lineHeight": 22,
+                },
+                {
+                  "color": "#F2F2F2",
+                },
+                false,
+                false,
+                {
+                  "color": "#5E6AD2",
+                  "fontSize": 12,
+                  "fontWeight": "700",
+                  "marginBottom": 4,
+                },
+              ]
+            }
+            textBreakStrategy="simple"
+          >
+            Clue 
+            1
+          </Text>
+          <Text
+            allowFontScaling={true}
+            style={
+              [
+                {
+                  "includeFontPadding": false,
+                },
+                {
+                  "fontFamily": "Inter_400Regular",
+                  "fontSize": 15,
+                  "lineHeight": 22,
+                },
+                {
+                  "color": "#F2F2F2",
+                },
+                false,
+                false,
+                {
+                  "color": "#F2F2F2",
+                  "fontSize": 15,
+                  "lineHeight": 22,
+                },
+              ]
+            }
+            textBreakStrategy="simple"
+          >
+            Clue 1
+          </Text>
+        </View>
+        <View
+          style={
+            {
+              "gap": 8,
+              "marginTop": 8,
+            }
+          }
+        >
+          <TouchableOpacity
+            activeOpacity={0.8}
+            onPress={[Function]}
+            style={
+              {
+                "alignItems": "center",
+                "backgroundColor": "rgba(109, 153, 255, 0.14)",
+                "borderColor": "rgba(130, 170, 255, 0.24)",
+                "borderRadius": 14,
+                "borderWidth": 1,
+                "marginBottom": 10,
+                "padding": 16,
+              }
+            }
+          >
+            <Text
+              allowFontScaling={true}
+              style={
+                [
+                  {
+                    "includeFontPadding": false,
+                  },
+                  {
+                    "fontFamily": "Inter_400Regular",
+                    "fontSize": 15,
+                    "lineHeight": 22,
+                  },
+                  {
+                    "color": "#F2F2F2",
+                  },
+                  false,
+                  false,
+                  {
+                    "color": "#F2F2F2",
+                    "fontSize": 16,
+                    "fontWeight": "800",
+                  },
+                ]
+              }
+              textBreakStrategy="simple"
+            >
+              I know the answer →
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            activeOpacity={0.8}
+            onPress={[Function]}
+            style={
+              {
+                "alignItems": "center",
+                "backgroundColor": "rgba(255, 255, 255, 0.04)",
+                "borderColor": "#D97706",
+                "borderRadius": 12,
+                "borderWidth": 1,
+                "marginBottom": 12,
+                "paddingVertical": 14,
+              }
+            }
+          >
+            <Text
+              allowFontScaling={true}
+              style={
+                [
+                  {
+                    "includeFontPadding": false,
+                  },
+                  {
+                    "fontFamily": "Inter_400Regular",
+                    "fontSize": 15,
+                    "lineHeight": 22,
+                  },
+                  {
+                    "color": "#F2F2F2",
+                  },
+                  false,
+                  false,
+                  {
+                    "color": "#D97706",
+                    "fontSize": 15,
+                    "fontWeight": "700",
+                  },
+                ]
+              }
+              textBreakStrategy="simple"
+            >
+              I don't know
+            </Text>
+          </TouchableOpacity>
+        </View>
+        <TouchableOpacity
+          accessibilityLabel="Skip"
+          accessibilityRole="button"
+          onPress={[MockFunction]}
+          style={
+            {
+              "alignItems": "center",
+              "padding": 12,
+            }
+          }
+        >
+          <Text
+            allowFontScaling={true}
+            style={
+              [
+                {
+                  "includeFontPadding": false,
+                },
+                {
+                  "fontFamily": "Inter_400Regular",
+                  "fontSize": 15,
+                  "lineHeight": 22,
+                },
+                {
+                  "color": "#F2F2F2",
+                },
+                false,
+                false,
+                {
+                  "color": "#939396",
+                  "fontSize": 13,
+                },
+              ]
+            }
+            textBreakStrategy="simple"
+          >
+            Skip case
+          </Text>
+        </TouchableOpacity>
+      </ScrollView>
+    </View>
+    <View
+      style={
+        {
+          "alignItems": "center",
+          "flexDirection": "row",
+          "justifyContent": "space-between",
+          "paddingBottom": 12,
+          "paddingHorizontal": 20,
+        }
+      }
+    >
+      <View />
+    </View>
+    <TouchableOpacity
+      accessibilityLabel="Ask Guru about this topic"
+      accessibilityRole="button"
+      activeOpacity={0.85}
+      onPress={[Function]}
+      style={
+        {
+          "alignItems": "center",
+          "backgroundColor": "#5E6AD2",
+          "borderRadius": 26,
+          "bottom": 80,
+          "elevation": 6,
+          "height": 52,
+          "justifyContent": "center",
+          "position": "absolute",
+          "right": 20,
+          "shadowColor": "#5E6AD2",
+          "shadowOffset": {
+            "height": 3,
+            "width": 0,
+          },
+          "shadowOpacity": 0.35,
+          "shadowRadius": 8,
+          "width": 52,
+          "zIndex": 10,
+        }
+      }
+    >
+      <Ionicons
+        color="#F2F2F2"
+        name="sparkles"
+        size={20}
+      />
+    </TouchableOpacity>
+    <Text
+      testID="guru-context"
+    >
+      Card type: Detective
+Clues: Clue 1
+Answer: Ans
+Explanation: Exp
+
+Current study step:
+Card type: Detective
+Diagnosis (Student shouldn't know yet unless solved): Ans
+Explanation: Exp
+All Clues: Clue 1
+Visible Clues count: 1
+Student is still investigating.
+    </Text>
+  </View>
+</View>
+`;
+
+exports[`ContentCard Snapshots matches snapshot for {"cards": [Array], "topicName": "Test Topic", "type": "flashcards"} type 1`] = `
+<View
+  style={
+    [
+      {
+        "backgroundColor": "transparent",
+        "borderColor": "rgba(255, 255, 255, 0.08)",
+        "borderRadius": 16,
+        "borderWidth": 1,
+        "overflow": "hidden",
+        "padding": 0,
+      },
+      {
+        "flex": 1,
+        "marginBottom": 4,
+        "marginHorizontal": 16,
+        "marginTop": 4,
+        "minHeight": 0,
+      },
+    ]
+  }
+>
+  <LinearGradient
+    colors={
+      [
+        "rgba(255, 255, 255, 0.05)",
+        "rgba(255, 255, 255, 0.01)",
+      ]
+    }
+    end={
+      {
+        "x": 0,
+        "y": 1,
+      }
+    }
+    pointerEvents="none"
+    start={
+      {
+        "x": 0,
+        "y": 0,
+      }
+    }
+    style={
+      {
+        "bottom": 0,
+        "left": 0,
+        "position": "absolute",
+        "right": 0,
+        "top": 0,
+      }
+    }
+  />
+  <View
+    style={
+      {
+        "flex": 1,
+        "minHeight": 0,
+        "position": "relative",
+      }
+    }
+  >
+    <View
+      style={
+        {
+          "flex": 1,
+          "minHeight": 0,
+          "minWidth": 0,
+        }
+      }
+    >
+      <View
+        style={
+          {
+            "alignItems": "center",
+            "flex": 1,
+            "justifyContent": "center",
+            "padding": 20,
+          }
+        }
+      >
+        <View
+          style={
+            {
+              "alignItems": "center",
+              "flexDirection": "row",
+              "justifyContent": "space-between",
+              "marginBottom": 20,
+            }
+          }
+        >
+          <Text
+            allowFontScaling={true}
+            style={
+              [
+                {
+                  "includeFontPadding": false,
+                },
+                {
+                  "fontFamily": "Inter_600SemiBold",
+                  "fontSize": 12,
+                  "letterSpacing": 0.2,
+                  "lineHeight": 16,
+                },
+                {
+                  "color": "#939396",
+                },
+                false,
+                false,
+                undefined,
+              ]
+            }
+            textBreakStrategy="simple"
+          >
+            Test Topic
+             · Card 
+            1
+            /
+            1
+          </Text>
+        </View>
+        <TouchableOpacity
+          activeOpacity={0.7}
+          onPress={[Function]}
+          style={
+            {
+              "alignItems": "center",
+              "backgroundColor": "rgba(255, 255, 255, 0.03)",
+              "borderColor": "rgba(255, 255, 255, 0.08)",
+              "borderRadius": 20,
+              "borderWidth": 1,
+              "justifyContent": "center",
+              "minHeight": 200,
+              "padding": 28,
+              "width": "100%",
+            }
+          }
+        >
+          <Text
+            allowFontScaling={true}
+            style={
+              [
+                {
+                  "includeFontPadding": false,
+                },
+                {
+                  "fontFamily": "Inter_400Regular",
+                  "fontSize": 15,
+                  "lineHeight": 22,
+                },
+                {
+                  "color": "#F2F2F2",
+                },
+                false,
+                false,
+                {
+                  "color": "#939396",
+                  "fontSize": 12,
+                  "fontWeight": "900",
+                  "letterSpacing": 2,
+                  "marginBottom": 20,
+                },
+              ]
+            }
+            textBreakStrategy="simple"
+          >
+            QUESTION
+          </Text>
+          <Text
+            allowFontScaling={true}
+            style={
+              [
+                {
+                  "includeFontPadding": false,
+                },
+                {
+                  "fontFamily": "Inter_400Regular",
+                  "fontSize": 15,
+                  "lineHeight": 22,
+                },
+                {
+                  "color": "#F2F2F2",
+                },
+                false,
+                false,
+                {
+                  "color": "#F2F2F2",
+                  "fontSize": 20,
+                  "fontWeight": "700",
+                  "lineHeight": 30,
+                  "textAlign": "center",
+                },
+              ]
+            }
+            textBreakStrategy="simple"
+          >
+            Front 1
+          </Text>
+          <Text
+            allowFontScaling={true}
+            style={
+              [
+                {
+                  "includeFontPadding": false,
+                },
+                {
+                  "fontFamily": "Inter_500Medium",
+                  "fontSize": 12,
+                  "lineHeight": 16,
+                },
+                {
+                  "color": "#939396",
+                },
+                false,
+                false,
+                {
+                  "marginTop": 20,
+                },
+              ]
+            }
+            textBreakStrategy="simple"
+          >
+            Tap to reveal
+          </Text>
+        </TouchableOpacity>
+        <View
+          style={
+            {
+              "alignItems": "center",
+              "marginTop": 20,
+              "width": "100%",
+            }
+          }
+        >
+          <TouchableOpacity
+            onPress={[Function]}
+            style={
+              {
+                "backgroundColor": "#5E6AD2",
+                "borderRadius": 16,
+                "paddingHorizontal": 28,
+                "paddingVertical": 14,
+              }
+            }
+          >
+            <Text
+              allowFontScaling={true}
+              style={
+                [
+                  {
+                    "includeFontPadding": false,
+                  },
+                  {
+                    "fontFamily": "Inter_400Regular",
+                    "fontSize": 15,
+                    "lineHeight": 22,
+                  },
+                  {
+                    "color": "#F2F2F2",
+                  },
+                  false,
+                  false,
+                  {
+                    "color": "#F2F2F2",
+                    "fontSize": 16,
+                    "fontWeight": "800",
+                  },
+                ]
+              }
+              textBreakStrategy="simple"
+            >
+              Reveal Answer
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </View>
+    <View
+      style={
+        {
+          "alignItems": "center",
+          "flexDirection": "row",
+          "justifyContent": "space-between",
+          "paddingBottom": 12,
+          "paddingHorizontal": 20,
+        }
+      }
+    >
+      <View />
+    </View>
+    <TouchableOpacity
+      accessibilityLabel="Ask Guru about this topic"
+      accessibilityRole="button"
+      activeOpacity={0.85}
+      onPress={[Function]}
+      style={
+        {
+          "alignItems": "center",
+          "backgroundColor": "#5E6AD2",
+          "borderRadius": 26,
+          "bottom": 80,
+          "elevation": 6,
+          "height": 52,
+          "justifyContent": "center",
+          "position": "absolute",
+          "right": 20,
+          "shadowColor": "#5E6AD2",
+          "shadowOffset": {
+            "height": 3,
+            "width": 0,
+          },
+          "shadowOpacity": 0.35,
+          "shadowRadius": 8,
+          "width": 52,
+          "zIndex": 10,
+        }
+      }
+    >
+      <Ionicons
+        color="#F2F2F2"
+        name="sparkles"
+        size={20}
+      />
+    </TouchableOpacity>
+    <Text
+      testID="guru-context"
+    />
+  </View>
+</View>
+`;
+
+exports[`ContentCard Snapshots matches snapshot for {"errors": [Array], "paragraph": "Para", "topicName": "Test Topic", "type": "error_hunt"} type 1`] = `
+<View
+  style={
+    [
+      {
+        "backgroundColor": "transparent",
+        "borderColor": "rgba(255, 255, 255, 0.08)",
+        "borderRadius": 16,
+        "borderWidth": 1,
+        "overflow": "hidden",
+        "padding": 0,
+      },
+      {
+        "flex": 1,
+        "marginBottom": 4,
+        "marginHorizontal": 16,
+        "marginTop": 4,
+        "minHeight": 0,
+      },
+    ]
+  }
+>
+  <LinearGradient
+    colors={
+      [
+        "rgba(255, 255, 255, 0.05)",
+        "rgba(255, 255, 255, 0.01)",
+      ]
+    }
+    end={
+      {
+        "x": 0,
+        "y": 1,
+      }
+    }
+    pointerEvents="none"
+    start={
+      {
+        "x": 0,
+        "y": 0,
+      }
+    }
+    style={
+      {
+        "bottom": 0,
+        "left": 0,
+        "position": "absolute",
+        "right": 0,
+        "top": 0,
+      }
+    }
+  />
+  <View
+    style={
+      {
+        "flex": 1,
+        "minHeight": 0,
+        "position": "relative",
+      }
+    }
+  >
+    <View
+      style={
+        {
+          "flex": 1,
+          "minHeight": 0,
+          "minWidth": 0,
+        }
+      }
+    >
+      <ScrollView
+        contentContainerStyle={
+          [
+            {
+              "alignItems": "stretch",
+              "flexGrow": 1,
+              "padding": 20,
+              "paddingBottom": 72,
+            },
+            {
+              "paddingBottom": 114,
+            },
+          ]
+        }
+        style={
+          {
+            "flex": 1,
+            "minHeight": 0,
+            "minWidth": 0,
+          }
+        }
+      >
+        <Text
+          allowFontScaling={true}
+          style={
+            [
+              {
+                "includeFontPadding": false,
+              },
+              {
+                "fontFamily": "Inter_400Regular",
+                "fontSize": 15,
+                "lineHeight": 22,
+              },
+              {
+                "color": "#F2F2F2",
+              },
+              false,
+              false,
+              {
+                "color": "#5E6AD2",
+                "fontSize": 12,
+                "fontWeight": "700",
+                "letterSpacing": 1.5,
+                "marginBottom": 6,
+              },
+            ]
+          }
+          textBreakStrategy="simple"
+        >
+          🔍 ERROR HUNT
+        </Text>
+        <View
+          style={
+            {
+              "alignItems": "center",
+              "flexDirection": "row",
+              "justifyContent": "space-between",
+              "marginBottom": 20,
+            }
+          }
+        >
+          <Text
+            allowFontScaling={true}
+            ellipsizeMode="tail"
+            numberOfLines={3}
+            style={
+              [
+                {
+                  "includeFontPadding": false,
+                },
+                {
+                  "fontFamily": "Inter_400Regular",
+                  "fontSize": 15,
+                  "lineHeight": 22,
+                },
+                {
+                  "color": "#F2F2F2",
+                },
+                false,
+                false,
+                {
+                  "color": "#F2F2F2",
+                  "fontSize": 22,
+                  "fontWeight": "800",
+                  "lineHeight": 28,
+                  "marginBottom": 20,
+                  "minWidth": 0,
+                  "width": "100%",
+                },
+              ]
+            }
+            textBreakStrategy="simple"
+          >
+            Test Topic
+          </Text>
+        </View>
+        <Text
+          allowFontScaling={true}
+          style={
+            [
+              {
+                "includeFontPadding": false,
+              },
+              {
+                "fontFamily": "Inter_400Regular",
+                "fontSize": 15,
+                "lineHeight": 22,
+              },
+              {
+                "color": "#F2F2F2",
+              },
+              false,
+              false,
+              {
+                "color": "#F2F2F2",
+                "fontSize": 16,
+                "lineHeight": 24,
+                "marginBottom": 16,
+              },
+            ]
+          }
+          textBreakStrategy="simple"
+        >
+          Find the 2 factual errors in this paragraph:
+        </Text>
+        <View
+          style={
+            {
+              "backgroundColor": "rgba(255, 255, 255, 0.03)",
+              "borderRadius": 12,
+              "marginBottom": 16,
+              "padding": 16,
+            }
+          }
+        >
+          <Text
+            allowFontScaling={true}
+            style={
+              [
+                {
+                  "includeFontPadding": false,
+                },
+                {
+                  "fontFamily": "Inter_400Regular",
+                  "fontSize": 15,
+                  "lineHeight": 22,
+                },
+                {
+                  "color": "#F2F2F2",
+                },
+                false,
+                false,
+                {
+                  "color": "#F2F2F2",
+                  "fontSize": 15,
+                  "lineHeight": 24,
+                },
+              ]
+            }
+            textBreakStrategy="simple"
+          >
+            Para
+          </Text>
+        </View>
+        <TouchableOpacity
+          activeOpacity={0.8}
+          onPress={[Function]}
+          style={
+            {
+              "alignItems": "center",
+              "backgroundColor": "rgba(109, 153, 255, 0.14)",
+              "borderColor": "rgba(130, 170, 255, 0.24)",
+              "borderRadius": 14,
+              "borderWidth": 1,
+              "marginBottom": 10,
+              "padding": 16,
+            }
+          }
+        >
+          <Text
+            allowFontScaling={true}
+            style={
+              [
+                {
+                  "includeFontPadding": false,
+                },
+                {
+                  "fontFamily": "Inter_400Regular",
+                  "fontSize": 15,
+                  "lineHeight": 22,
+                },
+                {
+                  "color": "#F2F2F2",
+                },
+                false,
+                false,
+                {
+                  "color": "#F2F2F2",
+                  "fontSize": 16,
+                  "fontWeight": "800",
+                },
+              ]
+            }
+            textBreakStrategy="simple"
+          >
+            Reveal Errors →
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          accessibilityLabel="Skip"
+          accessibilityRole="button"
+          onPress={[MockFunction]}
+          style={
+            {
+              "alignItems": "center",
+              "padding": 12,
+            }
+          }
+        >
+          <Text
+            allowFontScaling={true}
+            style={
+              [
+                {
+                  "includeFontPadding": false,
+                },
+                {
+                  "fontFamily": "Inter_400Regular",
+                  "fontSize": 15,
+                  "lineHeight": 22,
+                },
+                {
+                  "color": "#F2F2F2",
+                },
+                false,
+                false,
+                {
+                  "color": "#939396",
+                  "fontSize": 13,
+                },
+              ]
+            }
+            textBreakStrategy="simple"
+          >
+            Skip this
+          </Text>
+        </TouchableOpacity>
+      </ScrollView>
+    </View>
+    <View
+      style={
+        {
+          "alignItems": "center",
+          "flexDirection": "row",
+          "justifyContent": "space-between",
+          "paddingBottom": 12,
+          "paddingHorizontal": 20,
+        }
+      }
+    >
+      <View />
+    </View>
+    <TouchableOpacity
+      accessibilityLabel="Ask Guru about this topic"
+      accessibilityRole="button"
+      activeOpacity={0.85}
+      onPress={[Function]}
+      style={
+        {
+          "alignItems": "center",
+          "backgroundColor": "#5E6AD2",
+          "borderRadius": 26,
+          "bottom": 80,
+          "elevation": 6,
+          "height": 52,
+          "justifyContent": "center",
+          "position": "absolute",
+          "right": 20,
+          "shadowColor": "#5E6AD2",
+          "shadowOffset": {
+            "height": 3,
+            "width": 0,
+          },
+          "shadowOpacity": 0.35,
+          "shadowRadius": 8,
+          "width": 52,
+          "zIndex": 10,
+        }
+      }
+    >
+      <Ionicons
+        color="#F2F2F2"
+        name="sparkles"
+        size={20}
+      />
+    </TouchableOpacity>
+    <Text
+      testID="guru-context"
+    >
+      Card type: Error hunt
+Paragraph: Para
+Error 1: wrong "W", correct "C". E
+
+Current study step:
+Card type: Error hunt
+Paragraph: Para
+Actual errors to find: "W" should be "C" because E
+Student is still searching for errors.
+    </Text>
+  </View>
+</View>
+`;
+
+exports[`ContentCard Snapshots matches snapshot for {"examTip": "Tip", "mostTested": [Array], "mustKnow": [Array], "topicName": "Test Topic", "type": "must_know"} type 1`] = `
+<View
+  style={
+    [
+      {
+        "backgroundColor": "transparent",
+        "borderColor": "rgba(255, 255, 255, 0.08)",
+        "borderRadius": 16,
+        "borderWidth": 1,
+        "overflow": "hidden",
+        "padding": 0,
+      },
+      {
+        "flex": 1,
+        "marginBottom": 4,
+        "marginHorizontal": 16,
+        "marginTop": 4,
+        "minHeight": 0,
+      },
+    ]
+  }
+>
+  <LinearGradient
+    colors={
+      [
+        "rgba(255, 255, 255, 0.05)",
+        "rgba(255, 255, 255, 0.01)",
+      ]
+    }
+    end={
+      {
+        "x": 0,
+        "y": 1,
+      }
+    }
+    pointerEvents="none"
+    start={
+      {
+        "x": 0,
+        "y": 0,
+      }
+    }
+    style={
+      {
+        "bottom": 0,
+        "left": 0,
+        "position": "absolute",
+        "right": 0,
+        "top": 0,
+      }
+    }
+  />
+  <View
+    style={
+      {
+        "flex": 1,
+        "minHeight": 0,
+        "position": "relative",
+      }
+    }
+  >
+    <View
+      style={
+        {
+          "flex": 1,
+          "minHeight": 0,
+          "minWidth": 0,
+        }
+      }
+    >
+      <ScrollView
+        contentContainerStyle={
+          [
+            {
+              "alignItems": "stretch",
+              "flexGrow": 1,
+              "padding": 20,
+              "paddingBottom": 72,
+            },
+            {
+              "paddingBottom": 114,
+            },
+          ]
+        }
+        style={
+          {
+            "flex": 1,
+            "minHeight": 0,
+            "minWidth": 0,
+          }
+        }
+      >
+        <Text
+          allowFontScaling={true}
+          style={
+            [
+              {
+                "includeFontPadding": false,
+              },
+              {
+                "fontFamily": "Inter_400Regular",
+                "fontSize": 15,
+                "lineHeight": 22,
+              },
+              {
+                "color": "#F2F2F2",
+              },
+              false,
+              false,
+              {
+                "color": "#5E6AD2",
+                "fontSize": 12,
+                "fontWeight": "700",
+                "letterSpacing": 1.5,
+                "marginBottom": 6,
+              },
+            ]
+          }
+          textBreakStrategy="simple"
+        >
+          MUST KNOW
+        </Text>
+        <View
+          style={
+            {
+              "alignItems": "center",
+              "flexDirection": "row",
+              "justifyContent": "space-between",
+              "marginBottom": 20,
+            }
+          }
+        >
+          <Text
+            allowFontScaling={true}
+            ellipsizeMode="tail"
+            numberOfLines={3}
+            style={
+              [
+                {
+                  "includeFontPadding": false,
+                },
+                {
+                  "fontFamily": "Inter_400Regular",
+                  "fontSize": 15,
+                  "lineHeight": 22,
+                },
+                {
+                  "color": "#F2F2F2",
+                },
+                false,
+                false,
+                {
+                  "color": "#F2F2F2",
+                  "fontSize": 22,
+                  "fontWeight": "800",
+                  "lineHeight": 28,
+                  "marginBottom": 20,
+                  "minWidth": 0,
+                  "width": "100%",
+                },
+              ]
+            }
+            textBreakStrategy="simple"
+          >
+            Test Topic
+          </Text>
+        </View>
+        <Text
+          allowFontScaling={true}
+          style={
+            [
+              {
+                "includeFontPadding": false,
+              },
+              {
+                "fontFamily": "Inter_400Regular",
+                "fontSize": 15,
+                "lineHeight": 22,
+              },
+              {
+                "color": "#F2F2F2",
+              },
+              false,
+              false,
+              {
+                "color": "#A0A0A5",
+                "fontSize": 12,
+                "fontWeight": "800",
+                "letterSpacing": 1,
+                "marginBottom": 10,
+                "marginTop": 20,
+                "textTransform": "uppercase",
+              },
+            ]
+          }
+          textBreakStrategy="simple"
+        >
+          <Ionicons
+            color="#F14C4C"
+            name="alert-circle"
+            size={13}
+          />
+            
+          CANNOT FORGET
+        </Text>
+        <View
+          style={
+            {
+              "gap": 10,
+              "marginBottom": 10,
+            }
+          }
+        >
+          <View
+            style={
+              [
+                {
+                  "backgroundColor": "rgba(255, 255, 255, 0.03)",
+                  "borderLeftWidth": 4,
+                  "borderRadius": 12,
+                  "padding": 12,
+                },
+                {
+                  "borderLeftColor": "#F14C4C",
+                },
+              ]
+            }
+          >
+            <Text>
+              **MK** **1**
+            </Text>
+          </View>
+        </View>
+        <Text
+          allowFontScaling={true}
+          style={
+            [
+              {
+                "includeFontPadding": false,
+              },
+              {
+                "fontFamily": "Inter_400Regular",
+                "fontSize": 15,
+                "lineHeight": 22,
+              },
+              {
+                "color": "#F2F2F2",
+              },
+              false,
+              false,
+              {
+                "color": "#A0A0A5",
+                "fontSize": 12,
+                "fontWeight": "800",
+                "letterSpacing": 1,
+                "marginBottom": 10,
+                "marginTop": 20,
+                "textTransform": "uppercase",
+              },
+            ]
+          }
+          textBreakStrategy="simple"
+        >
+          <Ionicons
+            color="#D97706"
+            name="flame"
+            size={13}
+          />
+            
+          MOST TESTED
+        </Text>
+        <View
+          style={
+            {
+              "gap": 10,
+              "marginBottom": 10,
+            }
+          }
+        >
+          <View
+            style={
+              [
+                {
+                  "backgroundColor": "rgba(255, 255, 255, 0.03)",
+                  "borderLeftWidth": 4,
+                  "borderRadius": 12,
+                  "padding": 12,
+                },
+                {
+                  "borderLeftColor": "#D97706",
+                },
+              ]
+            }
+          >
+            <Text>
+              **MT** **1**
+            </Text>
+            <TouchableOpacity
+              activeOpacity={0.8}
+              onPress={[Function]}
+              style={
+                {
+                  "alignItems": "center",
+                  "alignSelf": "flex-start",
+                  "backgroundColor": "rgba(109, 153, 255, 0.1)",
+                  "borderColor": "#5E6AD2",
+                  "borderRadius": 8,
+                  "borderWidth": 1,
+                  "flexDirection": "row",
+                  "gap": 4,
+                  "marginTop": 8,
+                  "paddingHorizontal": 10,
+                  "paddingVertical": 6,
+                }
+              }
+            >
+              <Ionicons
+                color="#5E6AD2"
+                name="sparkles"
+                size={14}
+              />
+              <Text
+                allowFontScaling={true}
+                style={
+                  [
+                    {
+                      "includeFontPadding": false,
+                    },
+                    {
+                      "fontFamily": "Inter_400Regular",
+                      "fontSize": 15,
+                      "lineHeight": 22,
+                    },
+                    {
+                      "color": "#F2F2F2",
+                    },
+                    false,
+                    false,
+                    {
+                      "color": "#5E6AD2",
+                      "fontSize": 12,
+                      "fontWeight": "700",
+                    },
+                  ]
+                }
+                textBreakStrategy="simple"
+              >
+                Explain this
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+        <View
+          style={
+            {
+              "backgroundColor": "rgba(22, 29, 54, 0.9)",
+              "borderColor": "#5E6AD233",
+              "borderRadius": 12,
+              "borderWidth": 1,
+              "marginBottom": 30,
+              "marginTop": 20,
+              "padding": 16,
+            }
+          }
+        >
+          <Text
+            allowFontScaling={true}
+            style={
+              [
+                {
+                  "includeFontPadding": false,
+                },
+                {
+                  "fontFamily": "Inter_400Regular",
+                  "fontSize": 15,
+                  "lineHeight": 22,
+                },
+                {
+                  "color": "#F2F2F2",
+                },
+                false,
+                false,
+                {
+                  "color": "#5E6AD2",
+                  "fontSize": 11,
+                  "fontWeight": "900",
+                  "letterSpacing": 1,
+                  "marginBottom": 6,
+                },
+              ]
+            }
+            textBreakStrategy="simple"
+          >
+            EXAM TIP
+          </Text>
+          <Text
+            allowFontScaling={true}
+            style={
+              [
+                {
+                  "includeFontPadding": false,
+                },
+                {
+                  "fontFamily": "Inter_400Regular",
+                  "fontSize": 15,
+                  "lineHeight": 22,
+                },
+                {
+                  "color": "#F2F2F2",
+                },
+                false,
+                false,
+                {
+                  "color": "#F2F2F2",
+                  "fontSize": 14,
+                  "fontStyle": "italic",
+                  "lineHeight": 20,
+                },
+              ]
+            }
+            textBreakStrategy="simple"
+          >
+            Tip
+          </Text>
+        </View>
+        <TouchableOpacity
+          activeOpacity={0.8}
+          onPress={[Function]}
+          style={
+            {
+              "alignItems": "center",
+              "backgroundColor": "rgba(109, 153, 255, 0.14)",
+              "borderColor": "rgba(130, 170, 255, 0.24)",
+              "borderRadius": 14,
+              "borderWidth": 1,
+              "marginBottom": 10,
+              "padding": 16,
+            }
+          }
+        >
+          <Text
+            allowFontScaling={true}
+            style={
+              [
+                {
+                  "includeFontPadding": false,
+                },
+                {
+                  "fontFamily": "Inter_400Regular",
+                  "fontSize": 15,
+                  "lineHeight": 22,
+                },
+                {
+                  "color": "#F2F2F2",
+                },
+                false,
+                false,
+                {
+                  "color": "#F2F2F2",
+                  "fontSize": 16,
+                  "fontWeight": "800",
+                },
+              ]
+            }
+            textBreakStrategy="simple"
+          >
+            Got it
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          accessibilityLabel="Skip content type"
+          accessibilityRole="button"
+          onPress={[MockFunction]}
+          style={
+            {
+              "alignItems": "center",
+              "padding": 12,
+            }
+          }
+        >
+          <Text
+            allowFontScaling={true}
+            style={
+              [
+                {
+                  "includeFontPadding": false,
+                },
+                {
+                  "fontFamily": "Inter_400Regular",
+                  "fontSize": 15,
+                  "lineHeight": 22,
+                },
+                {
+                  "color": "#F2F2F2",
+                },
+                false,
+                false,
+                {
+                  "color": "#939396",
+                  "fontSize": 13,
+                },
+              ]
+            }
+            textBreakStrategy="simple"
+          >
+            Skip content type
+          </Text>
+        </TouchableOpacity>
+      </ScrollView>
+    </View>
+    <View
+      style={
+        {
+          "alignItems": "center",
+          "flexDirection": "row",
+          "justifyContent": "space-between",
+          "paddingBottom": 12,
+          "paddingHorizontal": 20,
+        }
+      }
+    >
+      <View />
+    </View>
+    <TouchableOpacity
+      accessibilityLabel="Ask Guru about this topic"
+      accessibilityRole="button"
+      activeOpacity={0.85}
+      onPress={[Function]}
+      style={
+        {
+          "alignItems": "center",
+          "backgroundColor": "#5E6AD2",
+          "borderRadius": 26,
+          "bottom": 80,
+          "elevation": 6,
+          "height": 52,
+          "justifyContent": "center",
+          "position": "absolute",
+          "right": 20,
+          "shadowColor": "#5E6AD2",
+          "shadowOffset": {
+            "height": 3,
+            "width": 0,
+          },
+          "shadowOpacity": 0.35,
+          "shadowRadius": 8,
+          "width": 52,
+          "zIndex": 10,
+        }
+      }
+    >
+      <Ionicons
+        color="#F2F2F2"
+        name="sparkles"
+        size={20}
+      />
+    </TouchableOpacity>
+    <Text
+      testID="guru-context"
+    >
+      Card type: Must Know & Most Tested
+Must know: MK 1
+Most tested: MT 1
+    </Text>
+  </View>
+</View>
+`;
+
+exports[`ContentCard Snapshots matches snapshot for {"expansion": [Array], "mnemonic": "MNE", "tip": "Tip", "topicName": "Test Topic", "type": "mnemonic"} type 1`] = `
+<View
+  style={
+    [
+      {
+        "backgroundColor": "transparent",
+        "borderColor": "rgba(255, 255, 255, 0.08)",
+        "borderRadius": 16,
+        "borderWidth": 1,
+        "overflow": "hidden",
+        "padding": 0,
+      },
+      {
+        "flex": 1,
+        "marginBottom": 4,
+        "marginHorizontal": 16,
+        "marginTop": 4,
+        "minHeight": 0,
+      },
+    ]
+  }
+>
+  <LinearGradient
+    colors={
+      [
+        "rgba(255, 255, 255, 0.05)",
+        "rgba(255, 255, 255, 0.01)",
+      ]
+    }
+    end={
+      {
+        "x": 0,
+        "y": 1,
+      }
+    }
+    pointerEvents="none"
+    start={
+      {
+        "x": 0,
+        "y": 0,
+      }
+    }
+    style={
+      {
+        "bottom": 0,
+        "left": 0,
+        "position": "absolute",
+        "right": 0,
+        "top": 0,
+      }
+    }
+  />
+  <View
+    style={
+      {
+        "flex": 1,
+        "minHeight": 0,
+        "position": "relative",
+      }
+    }
+  >
+    <View
+      style={
+        {
+          "flex": 1,
+          "minHeight": 0,
+          "minWidth": 0,
+        }
+      }
+    >
+      <ScrollView
+        contentContainerStyle={
+          [
+            {
+              "alignItems": "stretch",
+              "flexGrow": 1,
+              "padding": 20,
+              "paddingBottom": 72,
+            },
+            {
+              "paddingBottom": 114,
+            },
+          ]
+        }
+        style={
+          {
+            "flex": 1,
+            "minHeight": 0,
+            "minWidth": 0,
+          }
+        }
+      >
+        <Text
+          allowFontScaling={true}
+          style={
+            [
+              {
+                "includeFontPadding": false,
+              },
+              {
+                "fontFamily": "Inter_400Regular",
+                "fontSize": 15,
+                "lineHeight": 22,
+              },
+              {
+                "color": "#F2F2F2",
+              },
+              false,
+              false,
+              {
+                "color": "#5E6AD2",
+                "fontSize": 12,
+                "fontWeight": "700",
+                "letterSpacing": 1.5,
+                "marginBottom": 6,
+              },
+            ]
+          }
+          textBreakStrategy="simple"
+        >
+          🧠 MNEMONIC
+        </Text>
+        <View
+          style={
+            {
+              "alignItems": "center",
+              "flexDirection": "row",
+              "justifyContent": "space-between",
+              "marginBottom": 20,
+            }
+          }
+        >
+          <Text
+            allowFontScaling={true}
+            ellipsizeMode="tail"
+            numberOfLines={3}
+            style={
+              [
+                {
+                  "includeFontPadding": false,
+                },
+                {
+                  "fontFamily": "Inter_400Regular",
+                  "fontSize": 15,
+                  "lineHeight": 22,
+                },
+                {
+                  "color": "#F2F2F2",
+                },
+                false,
+                false,
+                {
+                  "color": "#F2F2F2",
+                  "fontSize": 22,
+                  "fontWeight": "800",
+                  "lineHeight": 28,
+                  "marginBottom": 20,
+                  "minWidth": 0,
+                  "width": "100%",
+                },
+              ]
+            }
+            textBreakStrategy="simple"
+          >
+            Test Topic
+          </Text>
+        </View>
+        <View
+          style={
+            {
+              "alignItems": "center",
+              "backgroundColor": "rgba(255, 255, 255, 0.03)",
+              "borderColor": "#5E6AD2",
+              "borderRadius": 16,
+              "borderWidth": 2,
+              "marginBottom": 16,
+              "padding": 20,
+            }
+          }
+        >
+          <Text
+            allowFontScaling={true}
+            style={
+              [
+                {
+                  "includeFontPadding": false,
+                },
+                {
+                  "fontFamily": "Inter_400Regular",
+                  "fontSize": 15,
+                  "lineHeight": 22,
+                },
+                {
+                  "color": "#F2F2F2",
+                },
+                false,
+                false,
+                {
+                  "color": "#5E6AD2",
+                  "fontSize": 28,
+                  "fontWeight": "900",
+                  "letterSpacing": 2,
+                  "textAlign": "center",
+                },
+              ]
+            }
+            textBreakStrategy="simple"
+          >
+            MNE
+          </Text>
+        </View>
+        <View
+          style={
+            {
+              "marginBottom": 16,
+            }
+          }
+        />
+        <TouchableOpacity
+          activeOpacity={0.8}
+          onPress={[Function]}
+          style={
+            {
+              "alignItems": "center",
+              "backgroundColor": "rgba(109, 153, 255, 0.14)",
+              "borderColor": "rgba(130, 170, 255, 0.24)",
+              "borderRadius": 14,
+              "borderWidth": 1,
+              "marginBottom": 10,
+              "padding": 16,
+            }
+          }
+        >
+          <Text
+            allowFontScaling={true}
+            style={
+              [
+                {
+                  "includeFontPadding": false,
+                },
+                {
+                  "fontFamily": "Inter_400Regular",
+                  "fontSize": 15,
+                  "lineHeight": 22,
+                },
+                {
+                  "color": "#F2F2F2",
+                },
+                false,
+                false,
+                {
+                  "color": "#F2F2F2",
+                  "fontSize": 16,
+                  "fontWeight": "800",
+                },
+              ]
+            }
+            textBreakStrategy="simple"
+          >
+            Decode it →
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          accessibilityLabel="Skip"
+          accessibilityRole="button"
+          onPress={[MockFunction]}
+          style={
+            {
+              "alignItems": "center",
+              "padding": 12,
+            }
+          }
+        >
+          <Text
+            allowFontScaling={true}
+            style={
+              [
+                {
+                  "includeFontPadding": false,
+                },
+                {
+                  "fontFamily": "Inter_400Regular",
+                  "fontSize": 15,
+                  "lineHeight": 22,
+                },
+                {
+                  "color": "#F2F2F2",
+                },
+                false,
+                false,
+                {
+                  "color": "#939396",
+                  "fontSize": 13,
+                },
+              ]
+            }
+            textBreakStrategy="simple"
+          >
+            Skip mnemonic
+          </Text>
+        </TouchableOpacity>
+      </ScrollView>
+    </View>
+    <View
+      style={
+        {
+          "alignItems": "center",
+          "flexDirection": "row",
+          "justifyContent": "space-between",
+          "paddingBottom": 12,
+          "paddingHorizontal": 20,
+        }
+      }
+    >
+      <View />
+    </View>
+    <TouchableOpacity
+      accessibilityLabel="Ask Guru about this topic"
+      accessibilityRole="button"
+      activeOpacity={0.85}
+      onPress={[Function]}
+      style={
+        {
+          "alignItems": "center",
+          "backgroundColor": "#5E6AD2",
+          "borderRadius": 26,
+          "bottom": 80,
+          "elevation": 6,
+          "height": 52,
+          "justifyContent": "center",
+          "position": "absolute",
+          "right": 20,
+          "shadowColor": "#5E6AD2",
+          "shadowOffset": {
+            "height": 3,
+            "width": 0,
+          },
+          "shadowOpacity": 0.35,
+          "shadowRadius": 8,
+          "width": 52,
+          "zIndex": 10,
+        }
+      }
+    >
+      <Ionicons
+        color="#F2F2F2"
+        name="sparkles"
+        size={20}
+      />
+    </TouchableOpacity>
+    <Text
+      testID="guru-context"
+    >
+      Card type: Mnemonic
+Mnemonic: MNE
+Expansion: M | N | E
+Tip: Tip
+
+Current study step:
+Card type: Mnemonic
+Mnemonic visible: MNE
+Expansion is hidden.
+Tip is hidden.
+    </Text>
+  </View>
+</View>
+`;
+
+exports[`ContentCard Snapshots matches snapshot for {"guruReaction": "Reaction", "keyPointsToMention": [Array], "prompt": "Prompt", "topicName": "Test Topic", "type": "teach_back"} type 1`] = `
+<View
+  style={
+    [
+      {
+        "backgroundColor": "transparent",
+        "borderColor": "rgba(255, 255, 255, 0.08)",
+        "borderRadius": 16,
+        "borderWidth": 1,
+        "overflow": "hidden",
+        "padding": 0,
+      },
+      {
+        "flex": 1,
+        "marginBottom": 4,
+        "marginHorizontal": 16,
+        "marginTop": 4,
+        "minHeight": 0,
+      },
+    ]
+  }
+>
+  <LinearGradient
+    colors={
+      [
+        "rgba(255, 255, 255, 0.05)",
+        "rgba(255, 255, 255, 0.01)",
+      ]
+    }
+    end={
+      {
+        "x": 0,
+        "y": 1,
+      }
+    }
+    pointerEvents="none"
+    start={
+      {
+        "x": 0,
+        "y": 0,
+      }
+    }
+    style={
+      {
+        "bottom": 0,
+        "left": 0,
+        "position": "absolute",
+        "right": 0,
+        "top": 0,
+      }
+    }
+  />
+  <View
+    style={
+      {
+        "flex": 1,
+        "minHeight": 0,
+        "position": "relative",
+      }
+    }
+  >
+    <View
+      style={
+        {
+          "flex": 1,
+          "minHeight": 0,
+          "minWidth": 0,
+        }
+      }
+    >
+      <ScrollView
+        contentContainerStyle={
+          [
+            {
+              "alignItems": "stretch",
+              "flexGrow": 1,
+              "padding": 20,
+              "paddingBottom": 72,
+            },
+            {
+              "paddingBottom": 114,
+            },
+          ]
+        }
+        style={
+          {
+            "flex": 1,
+            "minHeight": 0,
+            "minWidth": 0,
+          }
+        }
+      >
+        <Text
+          allowFontScaling={true}
+          style={
+            [
+              {
+                "includeFontPadding": false,
+              },
+              {
+                "fontFamily": "Inter_400Regular",
+                "fontSize": 15,
+                "lineHeight": 22,
+              },
+              {
+                "color": "#F2F2F2",
+              },
+              false,
+              false,
+              {
+                "color": "#5E6AD2",
+                "fontSize": 12,
+                "fontWeight": "700",
+                "letterSpacing": 1.5,
+                "marginBottom": 6,
+              },
+            ]
+          }
+          textBreakStrategy="simple"
+        >
+          🎤 TEACH BACK
+        </Text>
+        <View
+          style={
+            {
+              "alignItems": "center",
+              "flexDirection": "row",
+              "justifyContent": "space-between",
+              "marginBottom": 20,
+            }
+          }
+        >
+          <Text
+            allowFontScaling={true}
+            ellipsizeMode="tail"
+            numberOfLines={3}
+            style={
+              [
+                {
+                  "includeFontPadding": false,
+                },
+                {
+                  "fontFamily": "Inter_400Regular",
+                  "fontSize": 15,
+                  "lineHeight": 22,
+                },
+                {
+                  "color": "#F2F2F2",
+                },
+                false,
+                false,
+                {
+                  "color": "#F2F2F2",
+                  "fontSize": 22,
+                  "fontWeight": "800",
+                  "lineHeight": 28,
+                  "marginBottom": 20,
+                  "minWidth": 0,
+                  "width": "100%",
+                },
+              ]
+            }
+            textBreakStrategy="simple"
+          >
+            Test Topic
+          </Text>
+        </View>
+        <Text
+          allowFontScaling={true}
+          style={
+            [
+              {
+                "includeFontPadding": false,
+              },
+              {
+                "fontFamily": "Inter_400Regular",
+                "fontSize": 15,
+                "lineHeight": 22,
+              },
+              {
+                "color": "#F2F2F2",
+              },
+              false,
+              false,
+              {
+                "color": "#F2F2F2",
+                "fontSize": 16,
+                "lineHeight": 24,
+                "marginBottom": 16,
+              },
+            ]
+          }
+          textBreakStrategy="simple"
+        >
+          Prompt
+        </Text>
+        <TextInput
+          multiline={true}
+          onChangeText={[Function]}
+          placeholder="Type your explanation here..."
+          placeholderTextColor="#939396"
+          style={
+            {
+              "backgroundColor": "rgba(255, 255, 255, 0.03)",
+              "borderColor": "rgba(255, 255, 255, 0.08)",
+              "borderRadius": 12,
+              "borderWidth": 1,
+              "color": "#F2F2F2",
+              "fontSize": 15,
+              "marginBottom": 12,
+              "minHeight": 100,
+              "padding": 14,
+              "textAlignVertical": "top",
+            }
+          }
+          value=""
+        />
+        <TouchableOpacity
+          activeOpacity={0.8}
+          disabled={false}
+          onPress={[Function]}
+          style={
+            [
+              {
+                "alignItems": "center",
+                "backgroundColor": "rgba(109, 153, 255, 0.14)",
+                "borderColor": "rgba(130, 170, 255, 0.24)",
+                "borderRadius": 14,
+                "borderWidth": 1,
+                "marginBottom": 10,
+                "padding": 16,
+              },
+              {
+                "opacity": 0.5,
+              },
+            ]
+          }
+        >
+          <Text
+            allowFontScaling={true}
+            style={
+              [
+                {
+                  "includeFontPadding": false,
+                },
+                {
+                  "fontFamily": "Inter_400Regular",
+                  "fontSize": 15,
+                  "lineHeight": 22,
+                },
+                {
+                  "color": "#F2F2F2",
+                },
+                false,
+                false,
+                {
+                  "color": "#F2F2F2",
+                  "fontSize": 16,
+                  "fontWeight": "800",
+                },
+              ]
+            }
+            textBreakStrategy="simple"
+          >
+            Submit to Guru →
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          accessibilityLabel="Skip"
+          accessibilityRole="button"
+          onPress={[MockFunction]}
+          style={
+            {
+              "alignItems": "center",
+              "padding": 12,
+            }
+          }
+        >
+          <Text
+            allowFontScaling={true}
+            style={
+              [
+                {
+                  "includeFontPadding": false,
+                },
+                {
+                  "fontFamily": "Inter_400Regular",
+                  "fontSize": 15,
+                  "lineHeight": 22,
+                },
+                {
+                  "color": "#F2F2F2",
+                },
+                false,
+                false,
+                {
+                  "color": "#939396",
+                  "fontSize": 13,
+                },
+              ]
+            }
+            textBreakStrategy="simple"
+          >
+            Skip this
+          </Text>
+        </TouchableOpacity>
+      </ScrollView>
+    </View>
+    <View
+      style={
+        {
+          "alignItems": "center",
+          "flexDirection": "row",
+          "justifyContent": "space-between",
+          "paddingBottom": 12,
+          "paddingHorizontal": 20,
+        }
+      }
+    >
+      <View />
+    </View>
+    <TouchableOpacity
+      accessibilityLabel="Ask Guru about this topic"
+      accessibilityRole="button"
+      activeOpacity={0.85}
+      onPress={[Function]}
+      style={
+        {
+          "alignItems": "center",
+          "backgroundColor": "#5E6AD2",
+          "borderRadius": 26,
+          "bottom": 80,
+          "elevation": 6,
+          "height": 52,
+          "justifyContent": "center",
+          "position": "absolute",
+          "right": 20,
+          "shadowColor": "#5E6AD2",
+          "shadowOffset": {
+            "height": 3,
+            "width": 0,
+          },
+          "shadowOpacity": 0.35,
+          "shadowRadius": 8,
+          "width": 52,
+          "zIndex": 10,
+        }
+      }
+    >
+      <Ionicons
+        color="#F2F2F2"
+        name="sparkles"
+        size={20}
+      />
+    </TouchableOpacity>
+    <Text
+      testID="guru-context"
+    >
+      Card type: Teach-back
+Prompt: Prompt
+Key points to mention: KP 1
+Guru reaction target: Reaction
+
+Current study step:
+Card type: Teach-back
+Topic: Test Topic
+Prompt given to student: Prompt
+Key points student MUST mention: KP 1
+Ideal Guru reaction/answer: Reaction
+Student hasn't started typing yet.
+Result not yet revealed.
+    </Text>
+  </View>
+</View>
+`;
+
+exports[`ContentCard Snapshots matches snapshot for {"keyConceptHighlights": [Array], "story": "Story", "topicName": "Test Topic", "type": "story"} type 1`] = `
+<View
+  style={
+    [
+      {
+        "backgroundColor": "transparent",
+        "borderColor": "rgba(255, 255, 255, 0.08)",
+        "borderRadius": 16,
+        "borderWidth": 1,
+        "overflow": "hidden",
+        "padding": 0,
+      },
+      {
+        "flex": 1,
+        "marginBottom": 4,
+        "marginHorizontal": 16,
+        "marginTop": 4,
+        "minHeight": 0,
+      },
+    ]
+  }
+>
+  <LinearGradient
+    colors={
+      [
+        "rgba(255, 255, 255, 0.05)",
+        "rgba(255, 255, 255, 0.01)",
+      ]
+    }
+    end={
+      {
+        "x": 0,
+        "y": 1,
+      }
+    }
+    pointerEvents="none"
+    start={
+      {
+        "x": 0,
+        "y": 0,
+      }
+    }
+    style={
+      {
+        "bottom": 0,
+        "left": 0,
+        "position": "absolute",
+        "right": 0,
+        "top": 0,
+      }
+    }
+  />
+  <View
+    style={
+      {
+        "flex": 1,
+        "minHeight": 0,
+        "position": "relative",
+      }
+    }
+  >
+    <View
+      style={
+        {
+          "flex": 1,
+          "minHeight": 0,
+          "minWidth": 0,
+        }
+      }
+    >
+      <ScrollView
+        contentContainerStyle={
+          [
+            {
+              "alignItems": "stretch",
+              "flexGrow": 1,
+              "padding": 20,
+              "paddingBottom": 72,
+            },
+            {
+              "paddingBottom": 114,
+            },
+          ]
+        }
+        style={
+          {
+            "flex": 1,
+            "minHeight": 0,
+            "minWidth": 0,
+          }
+        }
+      >
+        <Text
+          allowFontScaling={true}
+          style={
+            [
+              {
+                "includeFontPadding": false,
+              },
+              {
+                "fontFamily": "Inter_400Regular",
+                "fontSize": 15,
+                "lineHeight": 22,
+              },
+              {
+                "color": "#F2F2F2",
+              },
+              false,
+              false,
+              {
+                "color": "#5E6AD2",
+                "fontSize": 12,
+                "fontWeight": "700",
+                "letterSpacing": 1.5,
+                "marginBottom": 6,
+              },
+            ]
+          }
+          textBreakStrategy="simple"
+        >
+          📖 CLINICAL STORY
+        </Text>
+        <View
+          style={
+            {
+              "alignItems": "center",
+              "flexDirection": "row",
+              "justifyContent": "space-between",
+              "marginBottom": 20,
+            }
+          }
+        >
+          <Text
+            allowFontScaling={true}
+            ellipsizeMode="tail"
+            numberOfLines={3}
+            style={
+              [
+                {
+                  "includeFontPadding": false,
+                },
+                {
+                  "fontFamily": "Inter_400Regular",
+                  "fontSize": 15,
+                  "lineHeight": 22,
+                },
+                {
+                  "color": "#F2F2F2",
+                },
+                false,
+                false,
+                {
+                  "color": "#F2F2F2",
+                  "fontSize": 22,
+                  "fontWeight": "800",
+                  "lineHeight": 28,
+                  "marginBottom": 20,
+                  "minWidth": 0,
+                  "width": "100%",
+                },
+              ]
+            }
+            textBreakStrategy="simple"
+          >
+            Test Topic
+          </Text>
+        </View>
+        <View
+          style={
+            {
+              "marginBottom": 20,
+            }
+          }
+        >
+          <Text>
+            Story
+          </Text>
+        </View>
+        <View
+          style={
+            {
+              "backgroundColor": "rgba(255, 255, 255, 0.03)",
+              "borderRadius": 12,
+              "marginBottom": 20,
+              "padding": 14,
+            }
+          }
+        >
+          <Text
+            allowFontScaling={true}
+            style={
+              [
+                {
+                  "includeFontPadding": false,
+                },
+                {
+                  "fontFamily": "Inter_400Regular",
+                  "fontSize": 15,
+                  "lineHeight": 22,
+                },
+                {
+                  "color": "#F2F2F2",
+                },
+                false,
+                false,
+                {
+                  "color": "#A0A0A5",
+                  "fontSize": 12,
+                  "fontWeight": "700",
+                  "marginBottom": 8,
+                },
+              ]
+            }
+            textBreakStrategy="simple"
+          >
+            Key concepts in this story:
+          </Text>
+          <View
+            style={
+              {
+                "flexDirection": "row",
+                "flexWrap": "wrap",
+                "gap": 6,
+              }
+            }
+          >
+            <View
+              style={
+                {
+                  "backgroundColor": "#5E6AD222",
+                  "borderColor": "#5E6AD244",
+                  "borderRadius": 20,
+                  "borderWidth": 1,
+                  "paddingHorizontal": 10,
+                  "paddingVertical": 4,
+                }
+              }
+            >
+              <Text
+                allowFontScaling={true}
+                style={
+                  [
+                    {
+                      "includeFontPadding": false,
+                    },
+                    {
+                      "fontFamily": "Inter_400Regular",
+                      "fontSize": 15,
+                      "lineHeight": 22,
+                    },
+                    {
+                      "color": "#F2F2F2",
+                    },
+                    false,
+                    false,
+                    {
+                      "color": "#5E6AD2",
+                      "fontSize": 12,
+                      "fontWeight": "600",
+                      "lineHeight": 18,
+                    },
+                  ]
+                }
+                textBreakStrategy="simple"
+              >
+                Highlight 1
+              </Text>
+            </View>
+          </View>
+        </View>
+        <TouchableOpacity
+          activeOpacity={0.8}
+          onPress={[Function]}
+          style={
+            {
+              "alignItems": "center",
+              "backgroundColor": "rgba(109, 153, 255, 0.14)",
+              "borderColor": "rgba(130, 170, 255, 0.24)",
+              "borderRadius": 14,
+              "borderWidth": 1,
+              "marginBottom": 10,
+              "padding": 16,
+            }
+          }
+        >
+          <Text
+            allowFontScaling={true}
+            style={
+              [
+                {
+                  "includeFontPadding": false,
+                },
+                {
+                  "fontFamily": "Inter_400Regular",
+                  "fontSize": 15,
+                  "lineHeight": 22,
+                },
+                {
+                  "color": "#F2F2F2",
+                },
+                false,
+                false,
+                {
+                  "color": "#F2F2F2",
+                  "fontSize": 16,
+                  "fontWeight": "800",
+                },
+              ]
+            }
+            textBreakStrategy="simple"
+          >
+            Read it →
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          accessibilityLabel="Skip"
+          accessibilityRole="button"
+          onPress={[MockFunction]}
+          style={
+            {
+              "alignItems": "center",
+              "padding": 12,
+            }
+          }
+        >
+          <Text
+            allowFontScaling={true}
+            style={
+              [
+                {
+                  "includeFontPadding": false,
+                },
+                {
+                  "fontFamily": "Inter_400Regular",
+                  "fontSize": 15,
+                  "lineHeight": 22,
+                },
+                {
+                  "color": "#F2F2F2",
+                },
+                false,
+                false,
+                {
+                  "color": "#939396",
+                  "fontSize": 13,
+                },
+              ]
+            }
+            textBreakStrategy="simple"
+          >
+            Skip story
+          </Text>
+        </TouchableOpacity>
+      </ScrollView>
+    </View>
+    <View
+      style={
+        {
+          "alignItems": "center",
+          "flexDirection": "row",
+          "justifyContent": "space-between",
+          "paddingBottom": 12,
+          "paddingHorizontal": 20,
+        }
+      }
+    >
+      <View />
+    </View>
+    <TouchableOpacity
+      accessibilityLabel="Ask Guru about this topic"
+      accessibilityRole="button"
+      activeOpacity={0.85}
+      onPress={[Function]}
+      style={
+        {
+          "alignItems": "center",
+          "backgroundColor": "#5E6AD2",
+          "borderRadius": 26,
+          "bottom": 80,
+          "elevation": 6,
+          "height": 52,
+          "justifyContent": "center",
+          "position": "absolute",
+          "right": 20,
+          "shadowColor": "#5E6AD2",
+          "shadowOffset": {
+            "height": 3,
+            "width": 0,
+          },
+          "shadowOpacity": 0.35,
+          "shadowRadius": 8,
+          "width": 52,
+          "zIndex": 10,
+        }
+      }
+    >
+      <Ionicons
+        color="#F2F2F2"
+        name="sparkles"
+        size={20}
+      />
+    </TouchableOpacity>
+    <Text
+      testID="guru-context"
+    >
+      Card type: Story
+Story: Story
+Highlights: Highlight 1
+    </Text>
+  </View>
+</View>
+`;
+
+exports[`ContentCard Snapshots matches snapshot for {"memoryHook": "Hook", "points": [Array], "topicName": "Test Topic", "type": "keypoints"} type 1`] = `
+<View
+  style={
+    [
+      {
+        "backgroundColor": "transparent",
+        "borderColor": "rgba(255, 255, 255, 0.08)",
+        "borderRadius": 16,
+        "borderWidth": 1,
+        "overflow": "hidden",
+        "padding": 0,
+      },
+      {
+        "flex": 1,
+        "marginBottom": 4,
+        "marginHorizontal": 16,
+        "marginTop": 4,
+        "minHeight": 0,
+      },
+    ]
+  }
+>
+  <LinearGradient
+    colors={
+      [
+        "rgba(255, 255, 255, 0.05)",
+        "rgba(255, 255, 255, 0.01)",
+      ]
+    }
+    end={
+      {
+        "x": 0,
+        "y": 1,
+      }
+    }
+    pointerEvents="none"
+    start={
+      {
+        "x": 0,
+        "y": 0,
+      }
+    }
+    style={
+      {
+        "bottom": 0,
+        "left": 0,
+        "position": "absolute",
+        "right": 0,
+        "top": 0,
+      }
+    }
+  />
+  <View
+    style={
+      {
+        "flex": 1,
+        "minHeight": 0,
+        "position": "relative",
+      }
+    }
+  >
+    <View
+      style={
+        {
+          "flex": 1,
+          "minHeight": 0,
+          "minWidth": 0,
+        }
+      }
+    >
+      <ScrollView
+        contentContainerStyle={
+          [
+            {
+              "alignItems": "stretch",
+              "flexGrow": 1,
+              "padding": 20,
+              "paddingBottom": 72,
+            },
+            {
+              "paddingBottom": 114,
+            },
+          ]
+        }
+        style={
+          {
+            "flex": 1,
+            "minHeight": 0,
+            "minWidth": 0,
+          }
+        }
+      >
+        <Text
+          allowFontScaling={true}
+          style={
+            [
+              {
+                "includeFontPadding": false,
+              },
+              {
+                "fontFamily": "Inter_400Regular",
+                "fontSize": 15,
+                "lineHeight": 22,
+              },
+              {
+                "color": "#F2F2F2",
+              },
+              false,
+              false,
+              {
+                "color": "#5E6AD2",
+                "fontSize": 12,
+                "fontWeight": "700",
+                "letterSpacing": 1.5,
+                "marginBottom": 6,
+              },
+            ]
+          }
+          textBreakStrategy="simple"
+        >
+          KEY POINTS
+        </Text>
+        <View
+          style={
+            {
+              "alignItems": "center",
+              "flexDirection": "row",
+              "justifyContent": "space-between",
+              "marginBottom": 20,
+            }
+          }
+        >
+          <Text
+            allowFontScaling={true}
+            numberOfLines={3}
+            style={
+              [
+                {
+                  "includeFontPadding": false,
+                },
+                {
+                  "fontFamily": "Inter_600SemiBold",
+                  "fontSize": 22,
+                  "letterSpacing": -0.3,
+                  "lineHeight": 28,
+                },
+                {
+                  "color": "#F2F2F2",
+                },
+                false,
+                false,
+                {
+                  "color": "#F2F2F2",
+                  "fontSize": 22,
+                  "fontWeight": "800",
+                  "lineHeight": 28,
+                  "marginBottom": 20,
+                  "minWidth": 0,
+                  "width": "100%",
+                },
+              ]
+            }
+            textBreakStrategy="simple"
+          >
+            Test Topic
+          </Text>
+        </View>
+        <Text
+          allowFontScaling={true}
+          style={
+            [
+              {
+                "includeFontPadding": false,
+              },
+              {
+                "fontFamily": "Inter_400Regular",
+                "fontSize": 15,
+                "lineHeight": 22,
+              },
+              {
+                "color": "#F2F2F2",
+              },
+              false,
+              false,
+              {
+                "color": "#939396",
+                "fontSize": 12,
+                "fontWeight": "600",
+                "marginBottom": 12,
+              },
+            ]
+          }
+          textBreakStrategy="simple"
+        >
+          1
+           / 
+          1
+        </Text>
+        <View
+          style={
+            {
+              "gap": 10,
+              "marginBottom": 16,
+            }
+          }
+        >
+          <View
+            style={
+              [
+                {
+                  "alignItems": "flex-start",
+                  "alignSelf": "stretch",
+                  "backgroundColor": "rgba(255, 255, 255, 0.03)",
+                  "borderLeftWidth": 3,
+                  "borderRadius": 12,
+                  "flexDirection": "row",
+                  "gap": 10,
+                  "minWidth": 0,
+                  "padding": 12,
+                },
+                {
+                  "borderLeftColor": "#5E6AD2",
+                },
+              ]
+            }
+          >
+            <View
+              style={
+                [
+                  {
+                    "alignItems": "center",
+                    "borderRadius": 14,
+                    "height": 28,
+                    "justifyContent": "center",
+                    "width": 28,
+                  },
+                  {
+                    "backgroundColor": "#5E6AD222",
+                  },
+                ]
+              }
+            >
+              <Text
+                allowFontScaling={true}
+                style={
+                  [
+                    {
+                      "includeFontPadding": false,
+                    },
+                    {
+                      "fontFamily": "Inter_400Regular",
+                      "fontSize": 15,
+                      "lineHeight": 22,
+                    },
+                    {
+                      "color": "#F2F2F2",
+                    },
+                    false,
+                    false,
+                    [
+                      {
+                        "fontSize": 13,
+                        "fontWeight": "800",
+                      },
+                      {
+                        "color": "#5E6AD2",
+                      },
+                    ],
+                  ]
+                }
+                textBreakStrategy="simple"
+              >
+                1
+              </Text>
+            </View>
+            <View
+              style={
+                {
+                  "flex": 1,
+                  "minWidth": 0,
+                }
+              }
+            >
+              <Text>
+                Point **1**
+              </Text>
+            </View>
+          </View>
+        </View>
+        <TouchableOpacity
+          activeOpacity={0.8}
+          onPress={[Function]}
+          style={
+            {
+              "alignItems": "center",
+              "backgroundColor": "rgba(109, 153, 255, 0.14)",
+              "borderColor": "rgba(130, 170, 255, 0.24)",
+              "borderRadius": 14,
+              "borderWidth": 1,
+              "marginBottom": 10,
+              "padding": 16,
+            }
+          }
+        >
+          <Text
+            allowFontScaling={true}
+            style={
+              [
+                {
+                  "includeFontPadding": false,
+                },
+                {
+                  "fontFamily": "Inter_400Regular",
+                  "fontSize": 15,
+                  "lineHeight": 22,
+                },
+                {
+                  "color": "#F2F2F2",
+                },
+                false,
+                false,
+                {
+                  "color": "#F2F2F2",
+                  "fontSize": 16,
+                  "fontWeight": "800",
+                },
+              ]
+            }
+            textBreakStrategy="simple"
+          >
+            Next (
+            1
+            /
+            1
+            )
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          accessibilityLabel="Skip content type"
+          accessibilityRole="button"
+          onPress={[MockFunction]}
+          style={
+            {
+              "alignItems": "center",
+              "padding": 12,
+            }
+          }
+        >
+          <Text
+            allowFontScaling={true}
+            style={
+              [
+                {
+                  "includeFontPadding": false,
+                },
+                {
+                  "fontFamily": "Inter_400Regular",
+                  "fontSize": 15,
+                  "lineHeight": 22,
+                },
+                {
+                  "color": "#F2F2F2",
+                },
+                false,
+                false,
+                {
+                  "color": "#939396",
+                  "fontSize": 13,
+                },
+              ]
+            }
+            textBreakStrategy="simple"
+          >
+            Skip content type
+          </Text>
+        </TouchableOpacity>
+      </ScrollView>
+    </View>
+    <View
+      style={
+        {
+          "alignItems": "center",
+          "flexDirection": "row",
+          "justifyContent": "space-between",
+          "paddingBottom": 12,
+          "paddingHorizontal": 20,
+        }
+      }
+    >
+      <View />
+    </View>
+    <TouchableOpacity
+      accessibilityLabel="Ask Guru about this topic"
+      accessibilityRole="button"
+      activeOpacity={0.85}
+      onPress={[Function]}
+      style={
+        {
+          "alignItems": "center",
+          "backgroundColor": "#5E6AD2",
+          "borderRadius": 26,
+          "bottom": 80,
+          "elevation": 6,
+          "height": 52,
+          "justifyContent": "center",
+          "position": "absolute",
+          "right": 20,
+          "shadowColor": "#5E6AD2",
+          "shadowOffset": {
+            "height": 3,
+            "width": 0,
+          },
+          "shadowOpacity": 0.35,
+          "shadowRadius": 8,
+          "width": 52,
+          "zIndex": 10,
+        }
+      }
+    >
+      <Ionicons
+        color="#F2F2F2"
+        name="sparkles"
+        size={20}
+      />
+    </TouchableOpacity>
+    <Text
+      testID="guru-context"
+    >
+      Card type: Key points
+Points: 1. Point 1
+Memory hook: Hook
+
+Current study step:
+Card type: Key points
+Currently visible points: Point 1
+    </Text>
+  </View>
+</View>
+`;
+
+exports[`ContentCard Snapshots matches snapshot for {"questions": [Array], "topicName": "Test Topic", "type": "socratic"} type 1`] = `
+<View
+  style={
+    [
+      {
+        "backgroundColor": "transparent",
+        "borderColor": "rgba(255, 255, 255, 0.08)",
+        "borderRadius": 16,
+        "borderWidth": 1,
+        "overflow": "hidden",
+        "padding": 0,
+      },
+      {
+        "flex": 1,
+        "marginBottom": 4,
+        "marginHorizontal": 16,
+        "marginTop": 4,
+        "minHeight": 0,
+      },
+    ]
+  }
+>
+  <LinearGradient
+    colors={
+      [
+        "rgba(255, 255, 255, 0.05)",
+        "rgba(255, 255, 255, 0.01)",
+      ]
+    }
+    end={
+      {
+        "x": 0,
+        "y": 1,
+      }
+    }
+    pointerEvents="none"
+    start={
+      {
+        "x": 0,
+        "y": 0,
+      }
+    }
+    style={
+      {
+        "bottom": 0,
+        "left": 0,
+        "position": "absolute",
+        "right": 0,
+        "top": 0,
+      }
+    }
+  />
+  <View
+    style={
+      {
+        "flex": 1,
+        "minHeight": 0,
+        "position": "relative",
+      }
+    }
+  >
+    <View
+      style={
+        {
+          "flex": 1,
+          "minHeight": 0,
+          "minWidth": 0,
+        }
+      }
+    >
+      <ScrollView
+        contentContainerStyle={
+          {
+            "alignItems": "stretch",
+            "flexGrow": 1,
+            "paddingBottom": 114,
+            "paddingHorizontal": 20,
+            "paddingTop": 12,
+          }
+        }
+        style={
+          {
+            "flex": 1,
+            "minHeight": 0,
+            "minWidth": 0,
+          }
+        }
+      >
+        <View
+          style={
+            {
+              "paddingBottom": 4,
+            }
+          }
+        >
+          <Text
+            allowFontScaling={true}
+            style={
+              [
+                {
+                  "includeFontPadding": false,
+                },
+                {
+                  "fontFamily": "Inter_400Regular",
+                  "fontSize": 15,
+                  "lineHeight": 22,
+                },
+                {
+                  "color": "#F2F2F2",
+                },
+                false,
+                false,
+                {
+                  "color": "#5E6AD2",
+                  "fontSize": 11,
+                  "fontWeight": "800",
+                  "letterSpacing": 1.2,
+                  "marginBottom": 16,
+                },
+              ]
+            }
+            textBreakStrategy="simple"
+          >
+            QUESTION 
+            1
+             / 
+            1
+          </Text>
+          <View
+            style={
+              {
+                "backgroundColor": "rgba(255, 255, 255, 0.03)",
+                "borderColor": "rgba(255, 255, 255, 0.08)",
+                "borderRadius": 16,
+                "borderWidth": 1,
+                "marginBottom": 20,
+                "padding": 20,
+              }
+            }
+          >
+            <Text
+              allowFontScaling={true}
+              style={
+                [
+                  {
+                    "includeFontPadding": false,
+                  },
+                  {
+                    "fontFamily": "Inter_400Regular",
+                    "fontSize": 15,
+                    "lineHeight": 22,
+                  },
+                  {
+                    "color": "#F2F2F2",
+                  },
+                  false,
+                  false,
+                  {
+                    "color": "#F2F2F2",
+                    "fontSize": 18,
+                    "fontWeight": "700",
+                    "lineHeight": 28,
+                  },
+                ]
+              }
+              textBreakStrategy="simple"
+            >
+              Q1
+            </Text>
+          </View>
+          <TouchableOpacity
+            activeOpacity={0.8}
+            onPress={[Function]}
+            style={
+              {
+                "alignItems": "center",
+                "backgroundColor": "#5E6AD2",
+                "borderRadius": 14,
+                "marginBottom": 12,
+                "paddingVertical": 14,
+              }
+            }
+          >
+            <Text
+              allowFontScaling={true}
+              style={
+                [
+                  {
+                    "includeFontPadding": false,
+                  },
+                  {
+                    "fontFamily": "Inter_400Regular",
+                    "fontSize": 15,
+                    "lineHeight": 22,
+                  },
+                  {
+                    "color": "#F2F2F2",
+                  },
+                  false,
+                  false,
+                  {
+                    "color": "#000000",
+                    "fontSize": 15,
+                    "fontWeight": "800",
+                  },
+                ]
+              }
+              textBreakStrategy="simple"
+            >
+              Reveal Answer
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            accessibilityLabel="Skip"
+            accessibilityRole="button"
+            onPress={[MockFunction]}
+            style={
+              {
+                "alignItems": "center",
+                "padding": 12,
+              }
+            }
+          >
+            <Text
+              allowFontScaling={true}
+              style={
+                [
+                  {
+                    "includeFontPadding": false,
+                  },
+                  {
+                    "fontFamily": "Inter_400Regular",
+                    "fontSize": 15,
+                    "lineHeight": 22,
+                  },
+                  {
+                    "color": "#F2F2F2",
+                  },
+                  false,
+                  false,
+                  {
+                    "color": "#939396",
+                    "fontSize": 13,
+                  },
+                ]
+              }
+              textBreakStrategy="simple"
+            >
+              Skip topic
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </ScrollView>
+    </View>
+    <View
+      style={
+        {
+          "alignItems": "center",
+          "flexDirection": "row",
+          "justifyContent": "space-between",
+          "paddingBottom": 12,
+          "paddingHorizontal": 20,
+        }
+      }
+    >
+      <View />
+    </View>
+    <TouchableOpacity
+      accessibilityLabel="Ask Guru about this topic"
+      accessibilityRole="button"
+      activeOpacity={0.85}
+      onPress={[Function]}
+      style={
+        {
+          "alignItems": "center",
+          "backgroundColor": "#5E6AD2",
+          "borderRadius": 26,
+          "bottom": 80,
+          "elevation": 6,
+          "height": 52,
+          "justifyContent": "center",
+          "position": "absolute",
+          "right": 20,
+          "shadowColor": "#5E6AD2",
+          "shadowOffset": {
+            "height": 3,
+            "width": 0,
+          },
+          "shadowOpacity": 0.35,
+          "shadowRadius": 8,
+          "width": 52,
+          "zIndex": 10,
+        }
+      }
+    >
+      <Ionicons
+        color="#F2F2F2"
+        name="sparkles"
+        size={20}
+      />
+    </TouchableOpacity>
+    <Text
+      testID="guru-context"
+    >
+      Card type: Socratic
+Q1: Q1 Answer: A1 Why it matters: W1
+
+Current study step:
+Card type: Socratic
+Current question 1 of 1: Q1
+Answer is not shown yet.
+    </Text>
+  </View>
+</View>
+`;
+
+exports[`ContentCard Snapshots matches snapshot for {"topicName": "Test Topic", "type": "manual"} type 1`] = `
+<View
+  style={
+    [
+      {
+        "backgroundColor": "transparent",
+        "borderColor": "rgba(255, 255, 255, 0.08)",
+        "borderRadius": 16,
+        "borderWidth": 1,
+        "overflow": "hidden",
+        "padding": 0,
+      },
+      {
+        "flex": 1,
+        "marginBottom": 4,
+        "marginHorizontal": 16,
+        "marginTop": 4,
+        "minHeight": 0,
+      },
+    ]
+  }
+>
+  <LinearGradient
+    colors={
+      [
+        "rgba(255, 255, 255, 0.05)",
+        "rgba(255, 255, 255, 0.01)",
+      ]
+    }
+    end={
+      {
+        "x": 0,
+        "y": 1,
+      }
+    }
+    pointerEvents="none"
+    start={
+      {
+        "x": 0,
+        "y": 0,
+      }
+    }
+    style={
+      {
+        "bottom": 0,
+        "left": 0,
+        "position": "absolute",
+        "right": 0,
+        "top": 0,
+      }
+    }
+  />
+  <View
+    style={
+      {
+        "flex": 1,
+        "minHeight": 0,
+        "position": "relative",
+      }
+    }
+  >
+    <View
+      style={
+        {
+          "flex": 1,
+          "minHeight": 0,
+          "minWidth": 0,
+        }
+      }
+    >
+      <ScrollView
+        contentContainerStyle={
+          [
+            {
+              "alignItems": "stretch",
+              "flexGrow": 1,
+              "padding": 20,
+              "paddingBottom": 72,
+            },
+            {
+              "paddingBottom": 114,
+            },
+          ]
+        }
+        style={
+          {
+            "flex": 1,
+            "minHeight": 0,
+            "minWidth": 0,
+          }
+        }
+      >
+        <Text
+          allowFontScaling={true}
+          style={
+            [
+              {
+                "includeFontPadding": false,
+              },
+              {
+                "fontFamily": "Inter_400Regular",
+                "fontSize": 15,
+                "lineHeight": 22,
+              },
+              {
+                "color": "#F2F2F2",
+              },
+              false,
+              false,
+              {
+                "color": "#5E6AD2",
+                "fontSize": 12,
+                "fontWeight": "700",
+                "letterSpacing": 1.5,
+                "marginBottom": 6,
+              },
+            ]
+          }
+          textBreakStrategy="simple"
+        >
+          📴 MANUAL REVIEW (OFFLINE)
+        </Text>
+        <View
+          style={
+            {
+              "alignItems": "center",
+              "flexDirection": "row",
+              "justifyContent": "space-between",
+              "marginBottom": 20,
+            }
+          }
+        >
+          <Text
+            allowFontScaling={true}
+            ellipsizeMode="tail"
+            numberOfLines={3}
+            style={
+              [
+                {
+                  "includeFontPadding": false,
+                },
+                {
+                  "fontFamily": "Inter_400Regular",
+                  "fontSize": 15,
+                  "lineHeight": 22,
+                },
+                {
+                  "color": "#F2F2F2",
+                },
+                false,
+                false,
+                {
+                  "color": "#F2F2F2",
+                  "fontSize": 22,
+                  "fontWeight": "800",
+                  "lineHeight": 28,
+                  "marginBottom": 20,
+                  "minWidth": 0,
+                  "width": "100%",
+                },
+              ]
+            }
+            textBreakStrategy="simple"
+          >
+            Test Topic
+          </Text>
+        </View>
+        <View
+          style={
+            {
+              "backgroundColor": "rgba(255, 255, 255, 0.03)",
+              "borderColor": "rgba(255, 255, 255, 0.08)",
+              "borderRadius": 16,
+              "borderWidth": 1,
+              "marginBottom": 24,
+              "padding": 20,
+            }
+          }
+        >
+          <Text
+            allowFontScaling={true}
+            style={
+              [
+                {
+                  "includeFontPadding": false,
+                },
+                {
+                  "fontFamily": "Inter_400Regular",
+                  "fontSize": 15,
+                  "lineHeight": 22,
+                },
+                {
+                  "color": "#F2F2F2",
+                },
+                false,
+                false,
+                {
+                  "fontSize": 32,
+                  "marginBottom": 12,
+                  "textAlign": "center",
+                },
+              ]
+            }
+            textBreakStrategy="simple"
+          >
+            📡❌
+          </Text>
+          <Text
+            allowFontScaling={true}
+            style={
+              [
+                {
+                  "includeFontPadding": false,
+                },
+                {
+                  "fontFamily": "Inter_400Regular",
+                  "fontSize": 15,
+                  "lineHeight": 22,
+                },
+                {
+                  "color": "#F2F2F2",
+                },
+                false,
+                false,
+                {
+                  "color": "#A0A0A5",
+                  "fontSize": 14,
+                  "lineHeight": 20,
+                  "textAlign": "center",
+                },
+              ]
+            }
+            textBreakStrategy="simple"
+          >
+            Guru is offline or AI is unavailable. Spend 2-5 minutes recalling everything you know about this topic.
+          </Text>
+        </View>
+        <Text
+          allowFontScaling={true}
+          style={
+            [
+              {
+                "includeFontPadding": false,
+              },
+              {
+                "fontFamily": "Inter_400Regular",
+                "fontSize": 15,
+                "lineHeight": 22,
+              },
+              {
+                "color": "#F2F2F2",
+              },
+              false,
+              false,
+              {
+                "backgroundColor": "#000000",
+                "borderRadius": 12,
+                "color": "#F2F2F2",
+                "fontSize": 15,
+                "lineHeight": 28,
+                "marginBottom": 32,
+                "padding": 20,
+              },
+            ]
+          }
+          textBreakStrategy="simple"
+        >
+          Close your eyes and try to visualize:
+          
+
+          • Classification / Types
+          
+
+          • Clinical presentation
+          
+
+          • Gold standard diagnosis
+          
+
+          • First-line treatment
+        </Text>
+        <TouchableOpacity
+          activeOpacity={0.8}
+          onPress={[Function]}
+          style={
+            {
+              "alignItems": "center",
+              "backgroundColor": "rgba(109, 153, 255, 0.14)",
+              "borderColor": "rgba(130, 170, 255, 0.24)",
+              "borderRadius": 14,
+              "borderWidth": 1,
+              "marginBottom": 10,
+              "padding": 16,
+            }
+          }
+        >
+          <Text
+            allowFontScaling={true}
+            style={
+              [
+                {
+                  "includeFontPadding": false,
+                },
+                {
+                  "fontFamily": "Inter_400Regular",
+                  "fontSize": 15,
+                  "lineHeight": 22,
+                },
+                {
+                  "color": "#F2F2F2",
+                },
+                false,
+                false,
+                {
+                  "color": "#F2F2F2",
+                  "fontSize": 16,
+                  "fontWeight": "800",
+                },
+              ]
+            }
+            textBreakStrategy="simple"
+          >
+            I've reviewed it →
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          accessibilityLabel="Skip"
+          accessibilityRole="button"
+          onPress={[MockFunction]}
+          style={
+            {
+              "alignItems": "center",
+              "padding": 12,
+            }
+          }
+        >
+          <Text
+            allowFontScaling={true}
+            style={
+              [
+                {
+                  "includeFontPadding": false,
+                },
+                {
+                  "fontFamily": "Inter_400Regular",
+                  "fontSize": 15,
+                  "lineHeight": 22,
+                },
+                {
+                  "color": "#F2F2F2",
+                },
+                false,
+                false,
+                {
+                  "color": "#939396",
+                  "fontSize": 13,
+                },
+              ]
+            }
+            textBreakStrategy="simple"
+          >
+            Skip topic
+          </Text>
+        </TouchableOpacity>
+      </ScrollView>
+    </View>
+    <View
+      style={
+        {
+          "alignItems": "center",
+          "flexDirection": "row",
+          "justifyContent": "space-between",
+          "paddingBottom": 12,
+          "paddingHorizontal": 20,
+        }
+      }
+    >
+      <View />
+    </View>
+    <TouchableOpacity
+      accessibilityLabel="Ask Guru about this topic"
+      accessibilityRole="button"
+      activeOpacity={0.85}
+      onPress={[Function]}
+      style={
+        {
+          "alignItems": "center",
+          "backgroundColor": "#5E6AD2",
+          "borderRadius": 26,
+          "bottom": 80,
+          "elevation": 6,
+          "height": 52,
+          "justifyContent": "center",
+          "position": "absolute",
+          "right": 20,
+          "shadowColor": "#5E6AD2",
+          "shadowOffset": {
+            "height": 3,
+            "width": 0,
+          },
+          "shadowOpacity": 0.35,
+          "shadowRadius": 8,
+          "width": 52,
+          "zIndex": 10,
+        }
+      }
+    >
+      <Ionicons
+        color="#F2F2F2"
+        name="sparkles"
+        size={20}
+      />
+    </TouchableOpacity>
+    <Text
+      testID="guru-context"
+    >
+      Card type: Manual review
+    </Text>
+  </View>
+</View>
+`;

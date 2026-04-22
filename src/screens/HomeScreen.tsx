@@ -352,7 +352,7 @@ function HomeScreenContent() {
               const db = getDb();
               const placeholders = allIds.map(() => '?').join(',');
               const rows = await db.getAllAsync<{ id: number }>(
-                `SELECT id FROM topics WHERE id IN (${placeholders}) AND parent_topic_id IS NOT NULL`,
+                `SELECT id FROM topics WHERE id IN (${placeholders}) AND id NOT IN (SELECT parent_topic_id FROM topics WHERE parent_topic_id IS NOT NULL)`,
                 allIds,
               );
               const validLeafIds = new Set(rows.map((r) => r.id));

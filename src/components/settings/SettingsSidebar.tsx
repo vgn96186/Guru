@@ -1,8 +1,16 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, ScrollView } from 'react-native';
 import { SidebarNavItem } from './SidebarNavItem';
-import { SettingsCategory } from '../../screens/SettingsScreen';
 import { linearTheme } from '../../theme/linearTheme';
+
+export type SettingsCategory =
+  | 'general'
+  | 'ai'
+  | 'interventions'
+  | 'integrations'
+  | 'planning'
+  | 'sync'
+  | 'storage';
 
 export const SETTINGS_CATEGORIES: {
   id: SettingsCategory;

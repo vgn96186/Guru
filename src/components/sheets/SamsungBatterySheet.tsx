@@ -57,9 +57,9 @@ export default function SamsungBatterySheet() {
 
         {!isIgnoring && (
           <LinearButton
-            title="Step 1: Allow background (Android)"
+            label="Step 1: Allow background (Android)"
             onPress={handleAllowBackground}
-            tone="primary"
+            variant="primary"
             style={styles.btn}
           />
         )}
@@ -73,9 +73,9 @@ export default function SamsungBatterySheet() {
         )}
 
         <LinearButton
-          title={isIgnoring ? 'Step 2: Open Device Care' : 'Open Device Care'}
+          label={isIgnoring ? 'Step 2: Open Device Care' : 'Open Device Care'}
           onPress={handleDeviceCare}
-          tone={isIgnoring ? 'primary' : 'secondary'}
+          variant={isIgnoring ? 'primary' : 'secondary'}
           style={styles.btn}
         />
         <LinearText variant="label" style={styles.hint}>
@@ -83,11 +83,11 @@ export default function SamsungBatterySheet() {
         </LinearText>
 
         <View style={styles.footerRow}>
-          <LinearButton title="Not now" onPress={handleNotNow} tone="secondary" />
+          <LinearButton label="Not now" onPress={handleNotNow} variant="secondary" />
           <LinearButton
-            title="Done"
+            label="Done"
             onPress={handleDone}
-            tone={isIgnoring ? 'primary' : 'secondary'}
+            variant={isIgnoring ? 'primary' : 'secondary'}
           />
         </View>
       </LinearSurface>

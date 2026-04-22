@@ -14,6 +14,7 @@ import PunishmentMode from '../screens/PunishmentMode';
 import DoomscrollInterceptor from '../screens/DoomscrollInterceptor';
 import LocalModelScreen from '../screens/LocalModelScreen';
 import PomodoroQuizScreen from '../screens/PomodoroQuizScreen';
+import SamsungBatterySheet from '../components/sheets/SamsungBatterySheet';
 import { PersistentScreenBannerProvider } from '../components/PersistentScreenBanner';
 import { linearTheme as n } from '../theme/linearTheme';
 
@@ -88,6 +89,11 @@ export default function RootNavigator({ initialRoute }: { initialRoute: 'Tabs' |
           name="PomodoroQuiz"
           component={PomodoroQuizScreen}
           options={{ presentation: 'fullScreenModal' }}
+        />
+        <Stack.Screen
+          name="SamsungBatterySheet"
+          component={SamsungBatterySheet}
+          options={{ presentation: 'transparentModal', animation: 'fade' }}
         />
       </Stack.Navigator>
     </PersistentScreenBannerProvider>

@@ -6,7 +6,7 @@ import type { MenuStackParamList } from '../../../../navigation/types';
 export interface OAuthSlot {
   connecting: boolean;
   deviceCode: {
-    verification_uri: string;
+    verification_uri?: string;
     user_code: string;
     verification_uri_complete?: string;
   } | null;
@@ -18,7 +18,9 @@ export interface OAuthSlot {
 export interface ApiKeyField {
   value: string;
   setValue: (v: string) => void;
-  setTestResult: (r: unknown) => void;
+  setTestResult:
+    | React.Dispatch<React.SetStateAction<'ok' | 'fail' | null>>
+    | ((r: unknown) => void);
   validationStatus: 'idle' | 'testing' | 'valid' | 'invalid';
   test: () => void;
   testing: boolean;
@@ -29,7 +31,9 @@ export interface CloudflareKeyField {
   setAccountId: (id: string) => void;
   apiToken: string;
   setApiToken: (token: string) => void;
-  setTestResult: (r: unknown) => void;
+  setTestResult:
+    | React.Dispatch<React.SetStateAction<'ok' | 'fail' | null>>
+    | ((r: unknown) => void);
   validationStatus: 'idle' | 'testing' | 'valid' | 'invalid';
   test: () => void;
   testing: boolean;
@@ -38,7 +42,7 @@ export interface CloudflareKeyField {
 export interface ChatGptSlotState {
   connectingSlot: 'primary' | 'secondary' | null;
   deviceCode: {
-    verification_uri: string;
+    verification_uri?: string;
     user_code: string;
     verification_uri_complete?: string;
   } | null;
@@ -53,7 +57,7 @@ export interface ChatGptSlotState {
 export interface CopilotState {
   connecting: boolean;
   deviceCode: {
-    verification_uri: string;
+    verification_uri?: string;
     user_code: string;
     verification_uri_complete?: string;
   } | null;
@@ -107,7 +111,7 @@ export interface LocalAiState {
 }
 
 export interface GuruChatState {
-  models: Record<string, string[]> & { loading?: boolean; refresh?: () => void };
+  models: Record<string, readonly string[]> & { loading?: boolean; refresh?: () => void };
   defaultModel: string;
   setDefaultModel: (m: string) => void;
   formatModelChipLabel: (val: string) => string;

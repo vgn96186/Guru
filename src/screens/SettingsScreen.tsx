@@ -12,6 +12,7 @@ import {
   Modal,
   Pressable,
   KeyboardAvoidingView,
+  useWindowDimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import LinearSurface from '../components/primitives/LinearSurface';
@@ -142,7 +143,7 @@ import { DeviceSyncSection } from './settings/sections/DeviceSyncSection';
 import { DataStorageSection } from './settings/sections/DataStorageSection';
 import { DashboardOverview } from './settings/sections/DashboardOverview';
 import StorageSections from './settings/sections/StorageSections';
-import AiProvidersSection from './settings/sections/AiProvidersSection';
+import AiProvidersSection from './settings/sections/ai-providers';
 import {
   SettingsSectionAccordion,
   SettingsSubSectionAccordion,
@@ -158,6 +159,11 @@ import {
 } from '../services/unifiedBackupService';
 import { isSamsungDevice, isIgnoringBatteryOptimizations } from '../../modules/app-launcher';
 import { profileRepository } from '../db/repositories';
+import {
+  SettingsSidebar,
+  SETTINGS_CATEGORIES,
+  type SettingsCategory,
+} from '../components/settings/SettingsSidebar';
 
 function SamsungBackgroundRow() {
   const [isSamsung, setIsSamsung] = useState(false);
@@ -436,9 +442,12 @@ export default function SettingsScreen() {
         NativeStackNavigationProp<RootStackParamList>
       >
     >();
+  const { width } = useWindowDimensions();
+  const isTabletLayout = width >= 980;
   const isFocused = useIsFocused();
   const { data: profile } = useProfileQuery();
   const refreshProfile = useRefreshProfile();
+  const [activeCategory, setActiveCategory] = useState<SettingsCategory>('general');
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set());
 
   const toggleExpandedSection = useCallback((id: string) => {
@@ -1901,49 +1910,67 @@ export default function SettingsScreen() {
     { label: 'Plan anchors set', value: `${planningAnchorCount}/4`, tone: 'warning' as const },
   ];
 
-  return (
-    <SafeAreaView style={styles.safe}>
-      <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
-      <KeyboardAvoidingView
-        style={styles.flex}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+  const activeCategoryMeta =
+    SETTINGS_CATEGORIES.find((category) => category.id === activeCategory) ??
+    SETTINGS_CATEGORIES[0];
+
+  const categoryDescriptions: Record<SettingsCategory, string> = {
+    general: 'Identity, targets, appearance, and the settings control-room overview.',
+    ai: 'Provider keys, routing order, local inference, and Guru chat defaults.',
+    interventions: 'Strict mode, focus guardrails, and break-enforcement controls.',
+    integrations: 'Permissions, external app hooks, diagnostics, and Samsung reliability.',
+    planning: 'Exam anchors, alerts, pacing, and notification timing.',
+    sync: 'Body doubling and cross-device presence settings.',
+    storage: 'Backups, vault maintenance, restore flows, and data housekeeping.',
+  };
+
+  function renderMobileCategoryNav() {
+    return (
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.mobileCategoryNav}
+        style={styles.mobileCategoryScroller}
       >
-        <ScrollView
-          contentContainerStyle={styles.content}
-          showsVerticalScrollIndicator={false}
-          keyboardShouldPersistTaps="handled"
-          keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'none'}
-          overScrollMode="never"
-        >
-          <ScreenHeader title="Settings" onBackPress={() => navigation.navigate('MenuHome')} />
+        {SETTINGS_CATEGORIES.map((category) => {
+          const active = activeCategory === category.id;
+          return (
+            <TouchableOpacity
+              key={category.id}
+              style={[styles.mobileCategoryButton, active && styles.mobileCategoryButtonActive]}
+              onPress={() => setActiveCategory(category.id)}
+              activeOpacity={0.8}
+            >
+              <LinearText variant="chip" tone={active ? 'accent' : 'secondary'}>
+                {category.label}
+              </LinearText>
+            </TouchableOpacity>
+          );
+        })}
+      </ScrollView>
+    );
+  }
 
-          <LinearSurface compact style={styles.summaryCard}>
-            <View style={styles.summaryRow}>
-              <View style={styles.summaryCopy}>
-                <LinearText variant="meta" tone="accent" style={styles.summaryEyebrow}>
-                  CONTROL ROOM
-                </LinearText>
-              </View>
-              <View style={styles.summaryPill}>
-                <LinearText variant="chip" tone="accent">
-                  Auto-save
-                </LinearText>
-              </View>
-            </View>
-            <View style={styles.summaryMetricsRow}>
-              {settingsSummaryCards.map((card) => (
-                <View key={card.label} style={styles.summaryMetricCard}>
-                  <LinearText variant="title" tone={card.tone} style={styles.summaryMetricValue}>
-                    {card.value}
-                  </LinearText>
-                  <LinearText variant="caption" tone="secondary" style={styles.summaryMetricLabel}>
-                    {card.label}
-                  </LinearText>
-                </View>
-              ))}
-            </View>
-          </LinearSurface>
-
+  function renderActiveCategoryContent() {
+    switch (activeCategory) {
+      case 'general':
+        return (
+          <View style={styles.categoryStack}>
+            <DashboardOverview
+              isTablet={isTabletLayout}
+              providerOrder={providerOrder}
+              localLlmReady={localLlmReady}
+              setActiveCategory={setActiveCategory}
+            />
+            <GeneralOverviewSection
+              styles={styles}
+              SectionToggle={SectionToggle}
+              navigation={navigation}
+            />
+          </View>
+        );
+      case 'ai':
+        return (
           <AiProvidersSection
             styles={styles}
             SectionToggle={SectionToggle}
@@ -1951,7 +1978,7 @@ export default function SettingsScreen() {
             navigation={navigation}
             profile={profile!}
             guruChat={{
-              models: liveGuruChatModels,
+              models: liveGuruChatModels as any,
               defaultModel: guruChatDefaultModel,
               setDefaultModel: setGuruChatDefaultModel,
               formatModelChipLabel: formatGuruChatModelChipLabel,
@@ -2169,6 +2196,7 @@ export default function SettingsScreen() {
             routing={{
               providerOrder: providerOrder,
               moveProvider: moveProvider,
+              setProviderOrder: setProviderOrder,
             }}
             imageGen={{
               options: imageGenerationOptions,
@@ -2182,41 +2210,16 @@ export default function SettingsScreen() {
               whisperReady: localWhisperReady,
               whisperFileName: localWhisperFileName,
               llmAllowed: localLlmAllowed,
-              llmWarning: localLlmWarning,
+              llmWarning: localLlmWarning ?? '',
               useNano: profile?.useNano ?? true,
             }}
             updateUserProfile={updateUserProfile}
             refreshProfile={refreshProfile}
             clearProviderValidated={clearProviderValidated}
           />
-          <GeneralOverviewSection
-            styles={styles}
-            SectionToggle={SectionToggle}
-            navigation={navigation}
-          />
-
-          <PlanningAlertsSection
-            styles={styles}
-            SectionToggle={SectionToggle}
-            dbmciClassStartDate={dbmciClassStartDate}
-            setDbmciClassStartDate={setDbmciClassStartDate}
-            btrStartDate={btrStartDate}
-            setBtrStartDate={setBtrStartDate}
-            homeNoveltyCooldownHours={homeNoveltyCooldownHours}
-            setHomeNoveltyCooldownHours={setHomeNoveltyCooldownHours}
-            sessionLength={sessionLength}
-            setSessionLength={setSessionLength}
-            dailyGoal={dailyGoal}
-            setDailyGoal={setDailyGoal}
-            notifs={notifs}
-            setNotifs={setNotifs}
-            notifHour={notifHour}
-            setNotifHour={setNotifHour}
-            testNotification={testNotification}
-            guruFrequency={guruFrequency}
-            setGuruFrequency={setGuruFrequency}
-          />
-
+        );
+      case 'interventions':
+        return (
           <InterventionsSection
             styles={styles}
             SectionToggle={SectionToggle}
@@ -2243,8 +2246,51 @@ export default function SettingsScreen() {
             pomodoroInterval={pomodoroInterval}
             setPomodoroInterval={setPomodoroInterval}
           />
-
-          <SamsungBackgroundRow />
+        );
+      case 'integrations':
+        return (
+          <View style={styles.categoryStack}>
+            <AppIntegrationsSection
+              styles={styles}
+              permStatus={permStatus}
+              onRequestNotifications={onRequestNotifications}
+              onRequestMic={onRequestMic}
+              onRequestLocalFiles={onRequestLocalFiles}
+              onRequestOverlay={onRequestOverlay}
+              onOpenSystemSettings={onOpenSystemSettings}
+              onOpenDevConsole={onOpenDevConsole}
+            />
+            <SamsungBackgroundRow />
+          </View>
+        );
+      case 'planning':
+        return (
+          <PlanningAlertsSection
+            styles={styles}
+            SectionToggle={SectionToggle}
+            dbmciClassStartDate={dbmciClassStartDate}
+            setDbmciClassStartDate={setDbmciClassStartDate}
+            btrStartDate={btrStartDate}
+            setBtrStartDate={setBtrStartDate}
+            homeNoveltyCooldownHours={homeNoveltyCooldownHours}
+            setHomeNoveltyCooldownHours={setHomeNoveltyCooldownHours}
+            sessionLength={sessionLength}
+            setSessionLength={setSessionLength}
+            dailyGoal={dailyGoal}
+            setDailyGoal={setDailyGoal}
+            notifs={notifs}
+            setNotifs={setNotifs}
+            notifHour={notifHour}
+            setNotifHour={setNotifHour}
+            testNotification={testNotification}
+            guruFrequency={guruFrequency}
+            setGuruFrequency={setGuruFrequency}
+          />
+        );
+      case 'sync':
+        return <DeviceSyncSection />;
+      case 'storage':
+        return (
           <StorageSections
             styles={styles}
             SectionToggle={SectionToggle}
@@ -2272,18 +2318,103 @@ export default function SettingsScreen() {
             runMaintenanceTask={runMaintenanceTask}
             getUserProfile={getUserProfile}
           />
+        );
+      default:
+        return null;
+    }
+  }
 
-          {saving && (
-            <View style={[styles.saveBtn, styles.saveBtnDisabled]}>
-              <ActivityIndicator size="small" color={n.colors.textPrimary} />
-              <LinearText style={[styles.saveBtnText, { marginLeft: 8 }]}>
-                Auto-savingâ€¦
-              </LinearText>
-            </View>
-          )}
+  function renderLegacySettingsReference() {
+    return null;
+  }
 
-          <LinearText style={styles.footer}>Guru AI Â· v1.0.0</LinearText>
-        </ScrollView>
+  void renderLegacySettingsReference;
+
+  return (
+    <SafeAreaView style={styles.safe}>
+      <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
+      <KeyboardAvoidingView
+        style={styles.flex}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
+        <View style={styles.settingsShell}>
+          {isTabletLayout ? (
+            <SettingsSidebar
+              activeCategory={activeCategory}
+              onSelectCategory={setActiveCategory}
+              isCollapsed={false}
+              profileName={profile?.displayName}
+              totalXp={profile?.totalXp}
+            />
+          ) : null}
+          <View style={styles.settingsMain}>
+            <ScrollView
+              contentContainerStyle={styles.content}
+              showsVerticalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled"
+              keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'none'}
+              overScrollMode="never"
+            >
+              <ScreenHeader title="Settings" onBackPress={() => navigation.navigate('MenuHome')} />
+
+              {!isTabletLayout ? renderMobileCategoryNav() : null}
+
+              <LinearSurface compact style={[styles.summaryCard, styles.shellSummaryCard]}>
+                <View style={styles.summaryRow}>
+                  <View style={styles.summaryCopy}>
+                    <LinearText variant="meta" tone="accent" style={styles.summaryEyebrow}>
+                      {activeCategoryMeta.label.toUpperCase()}
+                    </LinearText>
+                    <LinearText variant="title" style={styles.summaryTitle}>
+                      {activeCategoryMeta.label}
+                    </LinearText>
+                    <LinearText variant="body" tone="secondary" style={styles.summaryText}>
+                      {categoryDescriptions[activeCategory]}
+                    </LinearText>
+                  </View>
+                  <View style={styles.summaryPill}>
+                    <LinearText variant="chip" tone="accent">
+                      {saving ? 'Auto-saving' : 'Live settings'}
+                    </LinearText>
+                  </View>
+                </View>
+                <View style={styles.summaryMetricsRow}>
+                  {settingsSummaryCards.map((card) => (
+                    <View key={card.label} style={styles.summaryMetricCard}>
+                      <LinearText
+                        variant="title"
+                        tone={card.tone}
+                        style={styles.summaryMetricValue}
+                      >
+                        {card.value}
+                      </LinearText>
+                      <LinearText
+                        variant="caption"
+                        tone="secondary"
+                        style={styles.summaryMetricLabel}
+                      >
+                        {card.label}
+                      </LinearText>
+                    </View>
+                  ))}
+                </View>
+              </LinearSurface>
+
+              <View style={styles.categoryContent}>{renderActiveCategoryContent()}</View>
+
+              {saving && (
+                <View style={[styles.saveBtn, styles.saveBtnDisabled]}>
+                  <ActivityIndicator size="small" color={n.colors.textPrimary} />
+                  <LinearText style={[styles.saveBtnText, { marginLeft: 8 }]}>
+                    Auto-saving…
+                  </LinearText>
+                </View>
+              )}
+
+              <LinearText style={styles.footer}>Guru AI · v1.0.0</LinearText>
+            </ScrollView>
+          </View>
+        </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
@@ -2396,7 +2527,43 @@ function _ModelDropdown({
 const styles = StyleSheet.create({
   flex: { flex: 1 },
   safe: { flex: 1, backgroundColor: n.colors.background },
+  settingsShell: {
+    flex: 1,
+    flexDirection: 'row',
+  },
+  settingsMain: {
+    flex: 1,
+    minWidth: 0,
+  },
   content: { padding: n.spacing.lg, paddingBottom: 60 },
+  mobileCategoryScroller: {
+    marginBottom: n.spacing.md,
+  },
+  mobileCategoryNav: {
+    gap: 8,
+    paddingRight: n.spacing.sm,
+  },
+  mobileCategoryButton: {
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: n.colors.border,
+    backgroundColor: n.colors.surface,
+  },
+  mobileCategoryButtonActive: {
+    borderColor: n.colors.borderHighlight,
+    backgroundColor: n.colors.primaryTintSoft,
+  },
+  shellSummaryCard: {
+    marginTop: 0,
+  },
+  categoryContent: {
+    flex: 1,
+  },
+  categoryStack: {
+    gap: n.spacing.lg,
+  },
   summaryCard: {
     marginTop: n.spacing.sm,
     marginBottom: n.spacing.lg,

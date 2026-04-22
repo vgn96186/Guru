@@ -34,7 +34,7 @@ try {
     }),
   });
 } catch (error) {
-  if (__DEV__) console.warn('Notifications not supported (likely running in Expo Go):', error);
+  if (__DEV__) console.warn('Notifications not supported (native module unavailable):', error);
   areNotificationsSupported = false;
 }
 

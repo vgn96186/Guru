@@ -9,10 +9,25 @@
  * reserved for *interactive* e1/e2 surfaces to signal "this can be pressed."
  */
 export const elevation = {
-  e0: { bg: '#0A0A0B', border: 'transparent' },
-  e1: { bg: '#121214', border: 'rgba(255, 255, 255, 0.06)' },
-  e2: { bg: '#18181C', border: 'rgba(255, 255, 255, 0.10)' },
-  topEdgeInteractive: 'rgba(255, 255, 255, 0.08)',
+  e0: {
+    bg: 'transparent',
+    border: 'transparent',
+    gradientStart: 'rgba(255, 255, 255, 0.01)',
+    gradientEnd: 'rgba(0, 0, 0, 0.0)',
+  },
+  e1: {
+    bg: 'transparent',
+    border: 'rgba(255, 255, 255, 0.08)',
+    gradientStart: 'rgba(255, 255, 255, 0.05)',
+    gradientEnd: 'rgba(255, 255, 255, 0.01)',
+  },
+  e2: {
+    bg: 'transparent',
+    border: 'rgba(255, 255, 255, 0.12)',
+    gradientStart: 'rgba(255, 255, 255, 0.08)',
+    gradientEnd: 'rgba(255, 255, 255, 0.02)',
+  },
+  topEdgeInteractive: 'rgba(255, 255, 255, 0.15)',
 } as const;
 
 export type ElevationLevel = 'e0' | 'e1' | 'e2';

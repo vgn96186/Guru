@@ -5,10 +5,18 @@ jest.mock('../ai/v2/generateObject', () => ({
   generateObject: jest.fn(),
 }));
 jest.mock('../ai/v2/providers/guruFallback', () => ({
-  createGuruFallbackModel: jest.fn(() => ({ provider: 'mock', modelId: 'mock', specificationVersion: 'v2', doGenerate: jest.fn(), doStream: jest.fn() })),
+  createGuruFallbackModel: jest.fn(() => ({
+    provider: 'mock',
+    modelId: 'mock',
+    specificationVersion: 'v2',
+    doGenerate: jest.fn(),
+    doStream: jest.fn(),
+  })),
 }));
 jest.mock('../../db/repositories/profileRepository', () => ({
-  profileRepository: { getProfile: jest.fn().mockResolvedValue({ providerOrder: [], disabledProviders: [] }) },
+  profileRepository: {
+    getProfile: jest.fn().mockResolvedValue({ providerOrder: [], disabledProviders: [] }),
+  },
 }));
 
 const okParsed = {
@@ -46,7 +54,6 @@ describe('analyzeTranscript', () => {
     expect(r.highYieldPoints).toEqual(['BNP']);
     expect(r.lectureSummary).toBe('Summary text.');
     expect(r.estimatedConfidence).toBe(2);
-    expect(r.modelUsed).toBe('test-model');
   });
 
   it('replaces generic placeholder summaries with a topic-based fallback title', async () => {

@@ -1,19 +1,11 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import {
-  Animated,
-  LayoutChangeEvent,
-  Platform,
-  Pressable,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
+import { Animated, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import LinearText from '../primitives/LinearText';
 import { linearTheme as n } from '../../theme/linearTheme';
-import { useReducedMotion, motion } from '../../motion';
 import { profileRepository } from '../../db/repositories';
 import { PROFILE_QUERY_KEY } from '../../hooks/queries/useProfile';
 import { queryClient } from '../../services/queryClient';
+import { LinearGradient } from 'expo-linear-gradient';
 
 export type CompactQuickStatsBarProps = {
   progressPercent: number;
@@ -22,16 +14,11 @@ export type CompactQuickStatsBarProps = {
   streak: number;
   level: number;
   completedSessions: number;
-  /** Optional hook after a goal preset is chosen (DB still updated by this component). */
   onGoalChange?: (minutes: number) => void;
 };
 
 const GOAL_PRESETS = [30, 60, 90, 120, 180, 240];
-const SHELL_RADIUS = 22;
-const PROGRESS_TRACK_H = 4;
 const FILL_ANIM_MS = 700;
-/** Glass base between app black and e1 */
-const GLASS_BG = 'rgba(8, 10, 14, 0.88)';
 
 export default function CompactQuickStatsBar({
   progressPercent,
@@ -43,18 +30,11 @@ export default function CompactQuickStatsBar({
   onGoalChange,
 }: CompactQuickStatsBarProps) {
   const [showGoalPicker, setShowGoalPicker] = useState(false);
-  const [showFraction, setShowFraction] = useState(false);
   const [currentGoal, setCurrentGoal] = useState(dailyGoal);
-  const [trackWidth, setTrackWidth] = useState(0);
 
   const progressClamped = Math.min(100, Math.max(0, Math.round(progressPercent)));
-  /** Start at real progress so the bar is not empty on first paint (Android layout). */
   const fillAnim = useRef(new Animated.Value(progressClamped)).current;
-  const glowOpacity = useRef(new Animated.Value(0.72)).current;
-  const glowScale = useRef(new Animated.Value(1)).current;
-  const flameScale = useRef(new Animated.Value(1)).current;
 
-  const reducedMotion = useReducedMotion();
   const goalOptions = GOAL_PRESETS;
 
   useEffect(() => {
@@ -70,29 +50,6 @@ export default function CompactQuickStatsBar({
     }).start();
   }, [progressClamped, fillAnim]);
 
-  useEffect(() => {
-    if (streak < 3) {
-      glowOpacity.setValue(0);
-      glowScale.setValue(1);
-      flameScale.setValue(1);
-      return;
-    }
-    const anim = motion.keyframes(
-      {
-        glowOpacity: { value: glowOpacity, rest: 0.78, frames: [0.94, 0.62, 0.8, 0.72] },
-        glowScale: { value: glowScale, rest: 1, frames: [1.08, 0.94, 1.02, 1] },
-        flameScale: { value: flameScale, rest: 1, frames: [1.06, 0.96, 1.02, 1] },
-      },
-      {
-        durations: [380, 380, 380, 380],
-        loop: true,
-        reducedMotion,
-      },
-    );
-    anim.start();
-    return () => anim.stop();
-  }, [flameScale, glowOpacity, glowScale, reducedMotion, streak]);
-
   const handleGoalChange = useCallback(
     async (minutes: number) => {
       await profileRepository.updateProfile({ dailyGoalMinutes: minutes });
@@ -104,119 +61,69 @@ export default function CompactQuickStatsBar({
     [onGoalChange],
   );
 
-  const fillWidthStyle =
-    trackWidth > 0
-      ? {
-          width: fillAnim.interpolate({
-            inputRange: [0, 100],
-            outputRange: [0, trackWidth],
-          }),
-        }
-      : { width: 0 };
-
   const summaryLabel = `Daily progress ${progressClamped} percent. ${todayMinutes} of ${currentGoal} minutes completed. ${streak} day streak. Level ${level}. ${completedSessions} sessions done.`;
+
+  const fillWidth = fillAnim.interpolate({
+    inputRange: [0, 100],
+    outputRange: ['0%', '100%'],
+  });
 
   return (
     <View
-      testID="compact-quick-stats-bar"
-      style={styles.statsShell}
+      style={styles.container}
       collapsable={Platform.OS === 'android' ? false : undefined}
+      testID="compact-quick-stats-bar"
+      accessibilityRole="summary"
+      accessibilityLabel={summaryLabel}
     >
-      <View accessibilityRole="summary" accessibilityLabel={summaryLabel} style={styles.glassOuter}>
-        <View pointerEvents="none" style={styles.topHighlight} />
-        <View style={styles.row}>
-          <View style={styles.progressCol}>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={
-                showFraction
-                  ? `${todayMinutes} of ${currentGoal} minutes. Tap to show percent. Long press to change goal.`
-                  : `${progressClamped} percent of daily goal. Tap to show minutes. Long press to change goal.`
-              }
-              accessibilityState={{ expanded: showGoalPicker }}
-              onPress={() => setShowFraction((v) => !v)}
-              onLongPress={() => setShowGoalPicker((v) => !v)}
-              delayLongPress={320}
-              style={({ pressed }) => [styles.progressPressable, pressed && styles.pressed]}
-            >
-              <View style={styles.progressHeader}>
-                <LinearText variant="label" tone="secondary" style={styles.progressEyebrow}>
-                  Today
-                </LinearText>
-                {showFraction ? (
-                  <Text style={styles.progressValueText}>{`${todayMinutes}/${currentGoal}m`}</Text>
-                ) : (
-                  <Text style={styles.progressValueText}>
-                    {progressClamped}
-                    <Text style={styles.progressValueSuffix}>%</Text>
-                  </Text>
-                )}
-              </View>
-              <View
-                style={styles.trackWrap}
-                onLayout={(e: LayoutChangeEvent) => setTrackWidth(e.nativeEvent.layout.width)}
-              >
-                <View style={styles.trackBg}>
-                  <Animated.View pointerEvents="none" style={[styles.trackFill, fillWidthStyle]} />
-                  {trackWidth > 0 && progressClamped > 0 && progressClamped < 100 ? (
-                    <Animated.View
-                      pointerEvents="none"
-                      style={[
-                        styles.leadingEdge,
-                        {
-                          left: fillAnim.interpolate({
-                            inputRange: [0, 100],
-                            outputRange: [0, trackWidth],
-                          }),
-                        },
-                      ]}
-                    />
-                  ) : null}
-                </View>
-              </View>
-            </Pressable>
-          </View>
-
-          <View style={styles.divider} />
-
-          <View style={styles.streakCol}>
-            <LinearText variant="badge" tone="muted" style={styles.sectionLabel}>
-              Streak
-            </LinearText>
-            <View style={styles.streakInner} testID="streak-burn">
-              <Animated.View
-                pointerEvents="none"
-                style={[
-                  styles.streakGlow,
-                  {
-                    opacity: glowOpacity,
-                    transform: [{ scale: glowScale }],
-                  },
-                ]}
+      <View style={styles.ticker}>
+        <Pressable
+          style={styles.tickerCell}
+          onPress={() => setShowGoalPicker((v) => !v)}
+          accessibilityRole="button"
+          accessibilityLabel="Change daily goal"
+        >
+          <Text style={styles.tickerLabel}>TODAY</Text>
+          <Text style={[styles.tickerVal, styles.tickerValAccent]}>{progressClamped}%</Text>
+          <Text style={[styles.tickerSub, styles.tickerSubAccent]}>
+            {todayMinutes} / {currentGoal}m
+          </Text>
+          <View style={styles.barMini}>
+            <Animated.View style={[styles.barMiniFill, { width: fillWidth }]}>
+              <LinearGradient
+                colors={[n.colors.accent, '#8b95eb']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.barMiniGradient}
               />
-              <Animated.View style={{ transform: [{ scale: flameScale }] }}>
-                <Text style={streak > 0 ? styles.streakValue : styles.streakIdle}>{`${Math.max(
-                  0,
-                  streak,
-                )}d`}</Text>
-              </Animated.View>
-            </View>
+            </Animated.View>
           </View>
+        </Pressable>
 
-          <View style={styles.divider} />
+        <View style={styles.tickerCell}>
+          <Text style={styles.tickerLabel}>STREAK</Text>
+          <Text style={[styles.tickerVal, styles.tickerValWarn]}>{streak}</Text>
+          <Text style={[styles.tickerSub, styles.tickerSubWarn]}>days</Text>
+          <View style={styles.barMini} />
+        </View>
 
-          <View style={styles.metaCol}>
-            <View style={styles.metaChip}>
-              <Text style={styles.metaChipText}>{`LV ${level}`}</Text>
-            </View>
-            <View style={styles.metaChip}>
-              <Text style={styles.metaChipText}>{`${completedSessions} SES`}</Text>
-            </View>
-          </View>
+        <View style={styles.tickerCell}>
+          <Text style={styles.tickerLabel}>LEVEL</Text>
+          <Text style={styles.tickerVal}>{level}</Text>
+          <Text style={styles.tickerSub}>·</Text>
+          <View style={styles.barMini} />
+        </View>
+
+        <View style={[styles.tickerCell, styles.tickerCellLast]}>
+          <Text style={styles.tickerLabel}>SESSIONS</Text>
+          <Text style={styles.tickerVal}>{completedSessions}</Text>
+          <Text style={styles.tickerSub}>done</Text>
+          <View style={styles.barMini} />
         </View>
       </View>
 
-      {showGoalPicker ? (
+      {/* Goal Picker Overlay */}
+      {showGoalPicker && (
         <View testID="goal-overlay" style={styles.goalPickerRow}>
           <LinearText variant="badge" tone="muted" style={styles.goalPickerTitle}>
             Daily Goal
@@ -228,15 +135,19 @@ export default function CompactQuickStatsBar({
                 <Pressable
                   key={minutes}
                   style={({ pressed }) => [
-                    styles.goalChip,
-                    active && styles.goalChipActive,
-                    pressed && styles.goalChipPressed,
+                    styles.goalChipLarge,
+                    active && styles.goalChipLargeActive,
+                    pressed && styles.goalChipLargePressed,
                   ]}
                   onPress={() => handleGoalChange(minutes)}
                 >
-                  <Text style={[styles.goalChipText, active && styles.goalChipTextActive]}>
+                  <Text
+                    style={[styles.goalChipLargeText, active && styles.goalChipLargeTextActive]}
+                  >
                     {minutes}
-                    <Text style={[styles.goalChipUnit, active && styles.goalChipTextActive]}>
+                    <Text
+                      style={[styles.goalChipLargeUnit, active && styles.goalChipLargeTextActive]}
+                    >
                       m
                     </Text>
                   </Text>
@@ -245,169 +156,91 @@ export default function CompactQuickStatsBar({
             })}
           </View>
         </View>
-      ) : null}
+      )}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  statsShell: {
+  container: {
     position: 'relative',
     overflow: 'visible',
     zIndex: 4,
     alignSelf: 'center',
-    width: '89%',
+    width: '100%',
     maxWidth: 392,
     marginBottom: n.spacing.md,
   },
-  glassOuter: {
-    borderRadius: SHELL_RADIUS,
+  ticker: {
+    borderRadius: 12,
     borderWidth: 1,
-    borderColor: n.colors.border,
-    backgroundColor: GLASS_BG,
-    overflow: 'hidden',
-    paddingHorizontal: 14,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
+    backgroundColor: 'rgba(9, 11, 18, 0.88)',
     paddingVertical: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.35,
-    shadowRadius: 20,
-    elevation: 6,
-  },
-  topHighlight: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    top: 0,
-    height: 1,
-    backgroundColor: n.colors.borderHighlight,
-  },
-  row: {
     flexDirection: 'row',
+    alignItems: 'stretch',
+  },
+  tickerCell: {
+    flex: 1,
+    paddingHorizontal: 6,
+    flexDirection: 'column',
     alignItems: 'center',
-    gap: 12,
+    gap: 4,
+    borderRightWidth: 1,
+    borderRightColor: 'rgba(255, 255, 255, 0.07)',
   },
-  progressCol: {
-    flex: 1.65,
-    minWidth: 0,
+  tickerCellLast: {
+    borderRightWidth: 0,
   },
-  progressPressable: {
-    gap: 10,
-  },
-  progressHeader: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
-    justifyContent: 'space-between',
-    gap: 8,
-  },
-  progressEyebrow: {
-    textTransform: 'uppercase',
-    letterSpacing: 1.2,
-  },
-  progressValueText: {
-    color: n.colors.textPrimary,
-    fontSize: 24,
+  tickerLabel: {
+    fontSize: 9,
     fontWeight: '700',
-    letterSpacing: -0.8,
-    fontVariant: ['tabular-nums'],
+    letterSpacing: 1.08,
+    color: n.colors.textMuted,
+    textTransform: 'uppercase',
   },
-  progressValueSuffix: {
-    fontSize: 20,
+  tickerVal: {
+    fontSize: 16,
+    fontWeight: '900',
+    letterSpacing: -0.48,
+    lineHeight: 18,
+    color: n.colors.textPrimary,
+  },
+  tickerValAccent: {
+    color: '#c7cdf7',
+  },
+  tickerValWarn: {
+    color: '#fbbf24',
+  },
+  tickerSub: {
+    fontSize: 10,
+    fontWeight: '600',
     color: n.colors.textSecondary,
+    lineHeight: 12,
   },
-  trackWrap: {
+  tickerSubAccent: {
+    color: 'rgba(167, 176, 245, 0.85)',
+  },
+  tickerSubWarn: {
+    color: 'rgba(251, 191, 36, 0.75)',
+  },
+  barMini: {
     width: '100%',
-  },
-  trackBg: {
-    height: PROGRESS_TRACK_H,
+    maxWidth: 72,
+    height: 4,
     borderRadius: 999,
-    backgroundColor: 'rgba(255,255,255,0.08)',
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    marginTop: 2,
     overflow: 'hidden',
   },
-  trackFill: {
-    position: 'absolute',
-    left: 0,
-    top: 0,
-    bottom: 0,
+  barMiniFill: {
+    height: '100%',
     borderRadius: 999,
-    backgroundColor: n.colors.accent,
-    opacity: 1,
   },
-  leadingEdge: {
-    position: 'absolute',
-    top: -3,
-    bottom: -3,
-    width: 14,
-    marginLeft: -10,
+  barMiniGradient: {
+    width: '100%',
+    height: '100%',
     borderRadius: 999,
-    backgroundColor: `${n.colors.accent}44`,
-    opacity: 0.7,
-  },
-  divider: {
-    width: 1,
-    alignSelf: 'stretch',
-    backgroundColor: 'rgba(255,255,255,0.08)',
-  },
-  streakCol: {
-    minWidth: 56,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 4,
-  },
-  sectionLabel: {
-    textTransform: 'uppercase',
-    letterSpacing: 1.1,
-  },
-  streakInner: {
-    position: 'relative',
-    alignItems: 'center',
-    justifyContent: 'center',
-    minHeight: 28,
-    minWidth: 52,
-    paddingHorizontal: 4,
-  },
-  streakGlow: {
-    position: 'absolute',
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: 'rgba(63, 185, 80, 0.18)',
-  },
-  streakValue: {
-    color: n.colors.success,
-    fontSize: 19,
-    fontWeight: '700',
-    fontVariant: ['tabular-nums'],
-    letterSpacing: -0.4,
-    textShadowColor: 'rgba(63, 185, 80, 0.35)',
-    textShadowOffset: { width: 0, height: 0 },
-    textShadowRadius: 8,
-  },
-  streakIdle: {
-    color: n.colors.textMuted,
-    fontSize: 19,
-    fontWeight: '700',
-    fontVariant: ['tabular-nums'],
-  },
-  metaCol: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  metaChip: {
-    paddingHorizontal: 10,
-    paddingVertical: 7,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
-    backgroundColor: 'rgba(255,255,255,0.04)',
-  },
-  metaChipText: {
-    color: n.colors.textSecondary,
-    fontSize: 12,
-    fontWeight: '600',
-    fontVariant: ['tabular-nums'],
-    letterSpacing: 0.4,
   },
   goalPickerRow: {
     position: 'absolute',
@@ -439,7 +272,7 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: 6,
   },
-  goalChip: {
+  goalChipLarge: {
     width: '31%',
     paddingVertical: 9,
     borderRadius: 10,
@@ -449,7 +282,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  goalChipActive: {
+  goalChipLargeActive: {
     backgroundColor: n.colors.accent,
     borderColor: n.colors.accent,
     shadowColor: n.colors.accent,
@@ -458,24 +291,21 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 4,
   },
-  goalChipPressed: {
+  goalChipLargePressed: {
     opacity: 0.75,
   },
-  goalChipText: {
+  goalChipLargeText: {
     fontSize: 12,
     fontWeight: '800',
     color: n.colors.textSecondary,
     fontVariant: ['tabular-nums'],
   },
-  goalChipTextActive: {
+  goalChipLargeTextActive: {
     color: '#fff',
   },
-  goalChipUnit: {
+  goalChipLargeUnit: {
     fontSize: 9,
     fontWeight: '700',
     letterSpacing: 0.5,
-  },
-  pressed: {
-    opacity: 0.92,
   },
 });

@@ -279,8 +279,8 @@ export async function processQueue(): Promise<void> {
         await processor(item);
         await markCompleted(item.id);
         if (__DEV__) console.log(`[OfflineQueue] Successfully processed item ${item.id}`);
-      } catch (err: any) {
-        const errorMsg = err?.message ?? String(err);
+      } catch (err: unknown) {
+        const errorMsg = err instanceof Error ? err.message : String(err);
         await markFailed(item.id, errorMsg);
         console.warn(`[OfflineQueue] Request ${item.id} failed (attempt ${item.attempts}):`, err);
       }

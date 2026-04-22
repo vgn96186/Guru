@@ -131,7 +131,9 @@ describe('chatWithGuru', () => {
         messages: expect.arrayContaining([
           expect.objectContaining({
             role: 'system',
-            content: expect.stringContaining('Wrap important topic names in ==double equals=='),
+            content: expect.stringContaining(
+              'MUST use ==double equals== for important topic names',
+            ),
           }),
         ]),
       }),

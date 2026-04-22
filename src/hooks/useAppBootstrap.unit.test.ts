@@ -141,7 +141,10 @@ describe('useAppBootstrap', () => {
   it('reports fatal async bootstrap errors instead of letting them fail silently', async () => {
     const onFatalError = jest.fn();
     const errorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
-    mockLoadProfile.mockRejectedValue(new Error('bootstrap exploded'));
+    const { profileRepository } = require('../db/repositories');
+    (profileRepository.getProfile as jest.Mock).mockRejectedValueOnce(
+      new Error('bootstrap exploded'),
+    );
 
     renderHook(() => useAppBootstrap(onFatalError));
 

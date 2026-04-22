@@ -11,6 +11,8 @@ import Animated, {
 import Svg, { Defs, RadialGradient, Stop, Circle, Ellipse } from 'react-native-svg';
 import { linearTheme as n } from '../theme/linearTheme';
 import LinearText from './primitives/LinearText';
+import { useProfileQuery } from '../hooks/queries/useProfile';
+import TurbulentOrb from './TurbulentOrb';
 
 // Derived accent shades for 3-D glass-sphere look
 const ACCENT_LIGHT = '#9BA3EE';
@@ -91,6 +93,13 @@ export default React.memo(function LoadingOrb({
   message = 'Hey there! Let me think...',
   size = 180,
 }: Props) {
+  const { data: profile } = useProfileQuery();
+  const isTurbulent = profile?.loadingOrbStyle === 'turbulent';
+
+  if (isTurbulent) {
+    return <TurbulentOrb message={message} size={size} />;
+  }
+
   const [displayMessage, setDisplayMessage] = React.useState(message);
   const lastMessageRef = useRef(message);
 

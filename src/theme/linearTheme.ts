@@ -3,19 +3,19 @@ export const linearTheme = {
     // Structural — opaque on true black. Alpha on #000 bought nothing and
     // forced composite math; these are the rgb equivalents.
     background: '#000000',
-    surface: '#05070C',
-    surfaceHover: '#080A10',
-    card: '#090C12',
-    cardHover: '#0D1018',
+    surface: 'rgba(255, 255, 255, 0.03)',
+    surfaceHover: 'rgba(255, 255, 255, 0.06)',
+    card: 'rgba(255, 255, 255, 0.03)',
+    cardHover: 'rgba(255, 255, 255, 0.06)',
     border: 'rgba(255, 255, 255, 0.08)',
     borderHighlight: 'rgba(255, 255, 255, 0.18)',
 
-    // Gradients tuned toward darker black glass, similar to the Action Hub sheet.
-    surfaceGradientStart: 'rgba(255, 255, 255, 0.05)',
-    surfaceGradientMid: 'rgba(255, 255, 255, 0.012)',
-    surfaceGradientEnd: 'transparent',
-    surfaceInset: 'rgba(255, 255, 255, 0.008)',
-    surfaceTint: 'rgba(94, 106, 210, 0.055)',
+    // Dark glassy gradient tokens — subtle top→bottom white sheen.
+    surfaceGradientStart: 'rgba(255, 255, 255, 0.035)',
+    surfaceGradientMid: 'rgba(255, 255, 255, 0.01)',
+    surfaceGradientEnd: 'rgba(0, 0, 0, 0.0)',
+    surfaceInset: 'rgba(255, 255, 255, 0.02)',
+    surfaceTint: 'rgba(255, 255, 255, 0.015)',
 
     // Text
     textPrimary: '#F2F2F2',

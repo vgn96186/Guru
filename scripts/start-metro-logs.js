@@ -44,16 +44,17 @@ function startMetroWithLogging() {
   const logFd = fs.openSync(METRO_LOG_PATH, 'a');
   const errFd = fs.openSync(METRO_ERR_LOG_PATH, 'a');
 
-  const NPX_CMD = isWindows() ? 'npx.cmd' : 'npx';
+  const NPM_CMD = isWindows() ? 'npm.cmd' : 'npm';
   const USE_SHELL = isWindows();
 
   const metroEnv = {
     ...process.env,
     CI: process.env.CI || '',
     NODE_ENV: 'development',
+    BROWSER: 'none',
   };
 
-  const child = spawn(NPX_CMD, ['expo', 'start', '--clear'], {
+  const child = spawn(NPM_CMD, ['run', 'android:metro:fresh'], {
     stdio: ['inherit', 'pipe', 'pipe'],
     shell: USE_SHELL,
     cwd: ROOT,

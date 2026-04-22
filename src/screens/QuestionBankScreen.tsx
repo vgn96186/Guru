@@ -1,12 +1,5 @@
 import React, { useCallback, useState } from 'react';
-import {
-  View,
-  StyleSheet,
-  TouchableOpacity,
-  FlatList,
-  StatusBar,
-  Modal,
-} from 'react-native';
+import { View, StyleSheet, TouchableOpacity, FlatList, StatusBar, Modal } from 'react-native';
 import LinearText from '../components/primitives/LinearText';
 import { EmptyState } from '../components/primitives';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -330,19 +323,21 @@ export default function QuestionBankScreen() {
           <View style={styles.center}>
             <LoadingOrb message="Loading questions..." size={120} />
           </View>
-        ) : questions.length === 0 ? (
-          <EmptyState
-            icon="help-circle-outline"
-            iconSize={48}
-            title="No questions saved yet"
-          />
         ) : (
           <FlatList
             data={questions}
             renderItem={renderItem}
             keyExtractor={keyExtractor}
-            contentContainerStyle={styles.list}
+            contentContainerStyle={[styles.list, questions.length === 0 && { flex: 1 }]}
             showsVerticalScrollIndicator={false}
+            ListEmptyComponent={
+              <EmptyState
+                icon="help-circle-outline"
+                iconSize={48}
+                title="No questions saved yet"
+                subtitle="Questions are generated automatically as you study topics."
+              />
+            }
           />
         )}
       </ResponsiveContainer>
@@ -387,8 +382,8 @@ export default function QuestionBankScreen() {
                     showResult && isCorrect
                       ? styles.practiceOptionCorrect
                       : showResult && isSelected && !isCorrect
-                      ? styles.practiceOptionWrong
-                      : styles.practiceOption;
+                        ? styles.practiceOptionWrong
+                        : styles.practiceOption;
 
                   return (
                     <TouchableOpacity

@@ -3,7 +3,7 @@
  */
 
 import { planSessionTool, dailyAgendaTool } from './planningTools';
-import { analyzeLectureTool } from './lectureTools';
+import { analyzeLectureTool, catalyzeTranscriptTool } from './lectureTools';
 import {
   createQuizTool,
   fetchContentTool,
@@ -22,6 +22,19 @@ import {
   generateFlashcardsTool,
   fetchExamDatesTool,
 } from './medicalTools';
+import {
+  guruAiPlanningTools,
+  planSessionAiTool,
+  accountabilityMessagesTool,
+  guruPresenceMessagesTool,
+  dailyAgendaAiTool,
+  replanDayAiTool,
+} from './aiPlanningTools';
+import {
+  guruNotificationTools,
+  wakeUpMessageTool,
+  breakEndMessagesTool,
+} from './notificationTools';
 
 export const guruPlanningTools = {
   plan_session: planSessionTool,
@@ -30,6 +43,7 @@ export const guruPlanningTools = {
 
 export const guruLectureTools = {
   analyze_lecture: analyzeLectureTool,
+  catalyze_transcript: catalyzeTranscriptTool,
 };
 
 export const guruContentTools = {
@@ -51,8 +65,10 @@ export const guruContentTools = {
 export const guruCoreTools = {
   ...guruMedicalTools,
   ...guruPlanningTools,
+  ...guruAiPlanningTools,
   ...guruLectureTools,
   ...guruContentTools,
+  ...guruNotificationTools,
 };
 
 // Re-export individual tools for direct usage if needed
@@ -60,6 +76,7 @@ export {
   planSessionTool,
   dailyAgendaTool,
   analyzeLectureTool,
+  catalyzeTranscriptTool,
   createQuizTool,
   fetchContentTool,
   generateMindmapTool,
@@ -73,4 +90,13 @@ export {
   generateErrorHuntTool,
   generateDetectiveTool,
   generateSocraticTool,
+  planSessionAiTool,
+  accountabilityMessagesTool,
+  guruPresenceMessagesTool,
+  dailyAgendaAiTool,
+  replanDayAiTool,
+  wakeUpMessageTool,
+  breakEndMessagesTool,
 };
+
+export { guruAiPlanningTools, guruNotificationTools };

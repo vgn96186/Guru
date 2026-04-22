@@ -1703,25 +1703,25 @@ export default function AiProvidersSection(props: any) {
                 case 'chatgpt':
                   return isChatGptEnabled(chatgptAccounts) || !!profile?.chatgptConnected;
                 case 'groq':
-                  return !!(groqKey.trim() || profile?.groqApiKey);
+                  return !!(groqKey?.trim() || profile?.groqApiKey);
                 case 'github':
-                  return !!(githubModelsPat.trim() || profile?.githubModelsPat);
+                  return !!(githubModelsPat?.trim() || profile?.githubModelsPat);
                 case 'kilo':
-                  return !!(kiloApiKey.trim() || profile?.kiloApiKey);
+                  return !!(kiloApiKey?.trim() || profile?.kiloApiKey);
                 case 'deepseek':
-                  return !!(deepseekKey.trim() || profile?.deepseekKey);
+                  return !!(deepseekKey?.trim() || profile?.deepseekKey);
                 case 'agentrouter':
-                  return !!(agentRouterKey.trim() || profile?.agentRouterKey);
+                  return !!(agentRouterKey?.trim() || profile?.agentRouterKey);
                 case 'gemini':
-                  return !!(geminiKey.trim() || profile?.geminiKey);
+                  return !!(geminiKey?.trim() || profile?.geminiKey);
                 case 'gemini_fallback':
                   return true;
                 case 'openrouter':
-                  return !!(orKey.trim() || profile?.openrouterKey);
+                  return !!(orKey?.trim() || profile?.openrouterKey);
                 case 'cloudflare':
                   return !!(
-                    (cfAccountId.trim() || profile?.cloudflareAccountId) &&
-                    (cfApiToken.trim() || profile?.cloudflareApiToken)
+                    (cfAccountId?.trim() || profile?.cloudflareAccountId) &&
+                    (cfApiToken?.trim() || profile?.cloudflareApiToken)
                   );
                 case 'github_copilot':
                   return !!profile?.githubCopilotConnected;

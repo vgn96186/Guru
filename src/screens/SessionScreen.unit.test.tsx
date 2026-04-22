@@ -1,5 +1,7 @@
 import React from 'react';
 import { fireEvent, render, waitFor } from '@testing-library/react-native';
+import { BackHandler } from 'react-native';
+import { useQuery } from '@tanstack/react-query';
 import {
   incrementWrongCount,
   markTopicNeedsAttention,
@@ -15,51 +17,6 @@ const mockBuildSession = jest.fn();
 const mockCreateSession = jest.fn();
 const mockPrefetchTopicContent = jest.fn();
 const mockUseGuruPresence = jest.fn();
-
-jest.mock('react-native', () => {
-  const React = require('react');
-  const View = ({ children, ...props }: React.PropsWithChildren<Record<string, unknown>>) =>
-    React.createElement('View', props, children);
-  const Text = ({ children, ...props }: React.PropsWithChildren<Record<string, unknown>>) =>
-    React.createElement('Text', props, children);
-  const ScrollView = ({ children, ...props }: React.PropsWithChildren<Record<string, unknown>>) =>
-    React.createElement('ScrollView', props, children);
-  const Pressable = ({ children, ...props }: React.PropsWithChildren<Record<string, unknown>>) =>
-    React.createElement('Pressable', props, children);
-  const TouchableOpacity = ({
-    children,
-    ...props
-  }: React.PropsWithChildren<Record<string, unknown>>) =>
-    React.createElement('TouchableOpacity', props, children);
-  const StatusBar = (props: unknown) => React.createElement('StatusBar', props);
-  return {
-    View,
-    Text,
-    ScrollView,
-    Pressable,
-    TouchableOpacity,
-    StatusBar,
-    Alert: { alert: jest.fn() },
-    BackHandler: {
-      addEventListener: jest.fn(() => ({ remove: jest.fn() })),
-    },
-    Animated: {
-      View: ({ children, ...props }: React.PropsWithChildren<Record<string, unknown>>) =>
-        React.createElement('View', props, children),
-      Value: class {
-        setValue = jest.fn();
-        interpolate = jest.fn(() => 0);
-      },
-      timing: jest.fn(() => ({ start: jest.fn() })),
-      delay: jest.fn(() => ({})),
-      sequence: jest.fn(() => ({ start: jest.fn() })),
-    },
-    StyleSheet: {
-      create: (styles: unknown) => styles,
-      flatten: (style: unknown) => style,
-    },
-  };
-});
 
 jest.mock('expo-haptics', () => ({
   impactAsync: jest.fn(),
@@ -168,7 +125,7 @@ jest.mock('../db/queries/sessions', () => ({
   isSessionAlreadyFinalized: jest.fn(async () => false),
 }));
 
-jest.mock('../services/aiService', () => ({
+jest.mock('../services/ai', () => ({
   fetchContent: jest.fn(),
   prefetchTopicContent: (...args: unknown[]) => mockPrefetchTopicContent(...args),
 }));
@@ -257,8 +214,23 @@ jest.mock('../hooks/useResponsive', () => ({
 describe('SessionScreen', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    const { BackHandler } = require('react-native');
-    BackHandler.addEventListener.mockImplementation(() => ({ remove: jest.fn() }));
+    jest
+      .spyOn(BackHandler, 'addEventListener')
+      .mockImplementation(() => ({ remove: jest.fn() }) as any);
+
+    (useQuery as jest.Mock).mockReturnValue({
+      data: {
+        preferredSessionLength: 45,
+        openrouterApiKey: '',
+        openrouterKey: '',
+        groqApiKey: '',
+        bodyDoublingEnabled: false,
+        guruFrequency: 'normal',
+        idleTimeoutMinutes: 2,
+        strictModeEnabled: false,
+      },
+    });
+
     sessionStoreState.sessionId = null;
     sessionStoreState.sessionState = 'planning';
     sessionStoreState.agenda = null;

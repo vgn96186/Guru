@@ -53,6 +53,13 @@
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
+      [
+        "expo-dev-client",
+        {
+          "launchMode": "most-recent",
+          "android": { "launchMode": "most-recent" }
+        }
+      ],
       "expo-background-task",
       "expo-sqlite",
       "expo-media-library",

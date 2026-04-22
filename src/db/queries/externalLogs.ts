@@ -144,8 +144,8 @@ export async function updateSessionNoteEnhancementStatus(
       status,
       logId,
     ]);
-  } catch (err: any) {
-    const msg = err?.message ?? '';
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
     if (msg.includes('no such column') || msg.includes('no column named')) {
       if (__DEV__) console.warn('[externalLogs] Query failed, old schema:', msg);
     } else {
@@ -212,8 +212,8 @@ export async function updateSessionPipelineTelemetry(
       JSON.stringify(merged),
       logId,
     ]);
-  } catch (err: any) {
-    const msg = err?.message ?? '';
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
     if (msg.includes('no such column') || msg.includes('no column named')) {
       if (__DEV__) console.warn('[externalLogs] Query failed, old schema:', msg);
     } else {
@@ -244,8 +244,8 @@ export async function appendSessionPipelineEvent(
       JSON.stringify(merged),
       logId,
     ]);
-  } catch (err: any) {
-    const msg = err?.message ?? '';
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
     if (msg.includes('no such column') || msg.includes('no column named')) {
       if (__DEV__) console.warn('[externalLogs] Query failed, old schema:', msg);
     } else {

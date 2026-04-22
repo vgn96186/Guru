@@ -1,17 +1,11 @@
-import { z } from 'zod';
-import { profileRepository } from '../../db/repositories/profileRepository';
-import { createGuruFallbackModel } from '../ai/v2/providers/guruFallback';
-import { generateObject } from '../ai/v2/generateObject';
-import type { ProviderId } from '../../types';
+import {
+  analyzeTranscriptSegmentTool,
+  metaSummarizeLectureTool,
+  LectureAnalysisRawSchema,
+} from '../ai/v2/tools/transcriptionTools';
+import { invokeTool } from '../ai/v2/toolRunner';
 
-export const LectureAnalysisSchema = z.object({
-  subject: z.string().nullable().catch('Unknown'),
-  topics: z.array(z.string()).catch([]),
-  key_concepts: z.array(z.string()).catch([]),
-  high_yield_highlights: z.array(z.string()).catch([]),
-  lecture_summary: z.string().nullable().catch('Lecture content recorded.'),
-  estimated_confidence: z.number().min(1).max(3).catch(1),
-});
+export const LectureAnalysisSchema = LectureAnalysisRawSchema;
 
 export type LectureAnalysis = {
   subject: string;
@@ -43,26 +37,6 @@ const NON_MEANINGFUL_SUMMARIES = new Set([
   'Lecture summary captured.',
 ]);
 const isDev = typeof __DEV__ !== 'undefined' && __DEV__;
-
-const MEDICAL_EXTRACT_PROMPT = `You are a medical scribe. Extract key clinical facts, subject, and topics from the following transcript segment.`;
-const META_SUMMARIZE_PROMPT = `Combine the following medical transcript segment analyses into a single coherent lecture analysis.`;
-
-const GROQ_FIRST_ORDER: ProviderId[] = [
-  'groq',
-  'openrouter',
-  'deepseek',
-  'cloudflare',
-  'github',
-  'gemini',
-  'gemini_fallback',
-  'agentrouter',
-  'kilo',
-  'chatgpt',
-  'github_copilot',
-  'gitlab_duo',
-  'poe',
-  'qwen',
-];
 
 function normalizeSummary(summary: string | null | undefined): string {
   return summary?.trim().replace(/[.]+$/, '') ?? '';
@@ -201,13 +175,9 @@ export function isMeaningfulLectureAnalysis(analysis: Partial<LectureAnalysis> |
 }
 
 async function runSingleAnalysisPass(text: string): Promise<LectureAnalysis> {
-  const extractPrompt = `${MEDICAL_EXTRACT_PROMPT}\n\nHere is the transcript segment:\n"""\n${text}\n"""`;
-  const profile = await profileRepository.getProfile();
-  const model = createGuruFallbackModel({ profile, forceOrder: GROQ_FIRST_ORDER });
-  const { object } = await generateObject({
-    model,
-    messages: [{ role: 'user', content: extractPrompt }],
-    schema: LectureAnalysisSchema,
+  const object = await invokeTool(analyzeTranscriptSegmentTool, {
+    input: { segment: text },
+    tag: 'analyzeTranscriptSegment',
   });
   return mapParsedAnalysis(object);
 }
@@ -226,16 +196,11 @@ Segment ${i + 1}:
     )
     .join('\n');
 
-  const extractPrompt = `${META_SUMMARIZE_PROMPT}\n\nHere are the segment summaries:\n"""\n${aggregatedInput}\n"""`;
-
   if (isDev) console.log('[Analysis] Running final meta-summarization pass...');
   try {
-    const profile = await profileRepository.getProfile();
-    const model = createGuruFallbackModel({ profile, forceOrder: GROQ_FIRST_ORDER });
-    const { object } = await generateObject({
-      model,
-      messages: [{ role: 'user', content: extractPrompt }],
-      schema: LectureAnalysisSchema,
+    const object = await invokeTool(metaSummarizeLectureTool, {
+      input: { aggregatedInput },
+      tag: 'metaSummarizeLecture',
     });
     return mapParsedAnalysis(object);
   } catch (_err) {

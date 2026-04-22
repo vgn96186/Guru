@@ -1,10 +1,22 @@
-import React, { type ComponentProps } from 'react';
-import { StyleSheet, TouchableOpacity, View } from 'react-native';
+import React, { type ComponentProps, useRef } from 'react';
+import {
+  StyleSheet,
+  TouchableOpacity,
+  View,
+  Animated,
+  LayoutAnimation,
+  UIManager,
+  Platform,
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import LinearSurface from '../../../components/primitives/LinearSurface';
+import GlassSurface from '../../../components/primitives/GlassSurface';
 import LinearText from '../../../components/primitives/LinearText';
 import { linearTheme } from '../../../theme/linearTheme';
-import { whiteAlpha } from '../../../theme/colorUtils';
+
+// Enable LayoutAnimation on Android
+if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
+  UIManager.setLayoutAnimationEnabledExperimental(true);
+}
 
 export type SettingsSectionIconName = ComponentProps<typeof Ionicons>['name'];
 
@@ -40,32 +52,51 @@ export function SettingsSectionAccordion({
   onToggle,
   children,
 }: SettingsSectionAccordionProps) {
+  const handleToggle = () => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    onToggle();
+  };
+
   return (
-    <View style={styles.section}>
-      <TouchableOpacity style={styles.sectionHeader} onPress={onToggle} activeOpacity={0.8}>
+    <GlassSurface
+      elevation="medium"
+      intensity={30}
+      style={[styles.section, expanded && styles.sectionExpanded]}
+      contentContainerStyle={{ padding: 0 }}
+    >
+      <TouchableOpacity style={styles.sectionHeader} onPress={handleToggle} activeOpacity={0.7}>
         <View style={styles.sectionHeaderLeft}>
           <View
             style={[
               styles.sectionIconWrap,
-              { backgroundColor: `${tint}18`, borderColor: `${tint}55` },
+              { backgroundColor: `${tint}15`, borderColor: `${tint}40` },
             ]}
           >
             <Ionicons name={icon} size={18} color={tint} />
           </View>
           <LinearText style={styles.sectionTitle}>{title}</LinearText>
         </View>
-        <Ionicons
-          name={expanded ? 'chevron-up' : 'chevron-down'}
-          size={18}
-          color={linearTheme.colors.textMuted}
-        />
+        <View style={styles.sectionHeaderRight}>
+          <Ionicons
+            name={expanded ? 'chevron-up' : 'chevron-down'}
+            size={18}
+            color={expanded ? linearTheme.colors.accent : linearTheme.colors.textMuted}
+          />
+        </View>
       </TouchableOpacity>
       {expanded ? (
-        <LinearSurface padded={false} style={styles.sectionContent}>
-          {children}
-        </LinearSurface>
+        <View style={styles.sectionContent}>
+          <View
+            style={{
+              paddingHorizontal: linearTheme.spacing.lg,
+              paddingBottom: linearTheme.spacing.lg,
+            }}
+          >
+            {children}
+          </View>
+        </View>
       ) : null}
-    </View>
+    </GlassSurface>
   );
 }
 
@@ -75,17 +106,24 @@ export function SettingsSubSectionAccordion({
   onToggle,
   children,
 }: SettingsSubSectionAccordionProps) {
+  const handleToggle = () => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    onToggle();
+  };
+
   return (
     <View style={styles.subSectionPanel}>
-      <TouchableOpacity style={styles.subSectionHeader} onPress={onToggle} activeOpacity={0.8}>
+      <TouchableOpacity style={styles.subSectionHeader} onPress={handleToggle} activeOpacity={0.7}>
         <View style={styles.subSectionHeaderLeft}>
-          <View style={styles.subSectionAccent} />
-          <LinearText style={styles.subSectionLabel}>{title}</LinearText>
+          <LinearText style={[styles.subSectionLabel, expanded && styles.subSectionLabelExpanded]}>
+            {title}
+          </LinearText>
         </View>
+        <View style={styles.subSectionHeaderLine} />
         <Ionicons
           name={expanded ? 'chevron-up' : 'chevron-down'}
           size={14}
-          color={linearTheme.colors.accent}
+          color={expanded ? linearTheme.colors.accent : linearTheme.colors.borderHighlight}
         />
       </TouchableOpacity>
       {expanded ? <View style={styles.subSectionBody}>{children}</View> : null}
@@ -96,19 +134,16 @@ export function SettingsSubSectionAccordion({
 const styles = StyleSheet.create({
   section: {
     marginBottom: linearTheme.spacing.md,
-    borderRadius: 18,
-    borderWidth: 1,
-    borderColor: linearTheme.colors.border,
-    backgroundColor: linearTheme.colors.surface,
+    borderRadius: 16,
     overflow: 'hidden',
   },
+  sectionExpanded: {},
   sectionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: linearTheme.spacing.lg,
-    paddingVertical: 14,
-    minHeight: 68,
+    paddingVertical: 18,
   },
   sectionHeaderLeft: {
     flexDirection: 'row',
@@ -116,60 +151,63 @@ const styles = StyleSheet.create({
     gap: linearTheme.spacing.md,
     flex: 1,
   },
+  sectionHeaderRight: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   sectionIconWrap: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
+    width: 44,
+    height: 44,
+    borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
   },
   sectionTitle: {
     color: linearTheme.colors.textPrimary,
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '700',
+    letterSpacing: 0.3,
   },
   sectionContent: {
-    borderRadius: 0,
     borderTopWidth: 1,
-    borderTopColor: linearTheme.colors.border,
-    padding: linearTheme.spacing.lg,
-    backgroundColor: whiteAlpha['1.5'],
+    borderTopColor: 'rgba(255, 255, 255, 0.05)',
+    paddingTop: linearTheme.spacing.md,
   },
   subSectionPanel: {
-    backgroundColor: linearTheme.colors.card,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: linearTheme.colors.border,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
+    marginBottom: 16,
+    marginTop: 8,
   },
   subSectionHeader: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    gap: linearTheme.spacing.sm,
-    minHeight: 34,
+    gap: linearTheme.spacing.md,
+    paddingVertical: 12,
   },
   subSectionHeaderLeft: {
-    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
   },
-  subSectionAccent: {
-    width: 7,
-    height: 7,
-    borderRadius: 999,
-    backgroundColor: linearTheme.colors.accent,
+  subSectionHeaderLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
   },
   subSectionLabel: {
-    color: linearTheme.colors.accent,
-    fontSize: 11,
+    color: linearTheme.colors.textMuted,
+    fontSize: 12,
     fontWeight: '800',
-    letterSpacing: 1,
+    letterSpacing: 1.5,
+    textTransform: 'uppercase',
+  },
+  subSectionLabelExpanded: {
+    color: linearTheme.colors.accent,
   },
   subSectionBody: {
-    paddingTop: 10,
+    paddingTop: 8,
   },
 });

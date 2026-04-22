@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, type ViewProps, type ViewStyle, type StyleProp } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { linearTheme } from '../../theme/linearTheme';
 import { elevation, type ElevationLevel } from '../../theme/elevation';
 
@@ -44,6 +45,13 @@ export default function LinearSurface({
       ]}
       {...rest}
     >
+      <LinearGradient
+        pointerEvents="none"
+        colors={[tokens.gradientStart, tokens.gradientEnd]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 0, y: 1 }}
+        style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0 }}
+      />
       {interactive ? (
         <View
           pointerEvents="none"

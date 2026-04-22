@@ -1,3 +1,4 @@
+import './global.css';
 import React, { useState, useEffect, useLayoutEffect } from 'react';
 import { View, StyleSheet, DevSettings, Text, TextInput, LogBox } from 'react-native';
 import { QueryClientProvider } from '@tanstack/react-query';

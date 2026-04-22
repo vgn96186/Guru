@@ -692,8 +692,16 @@ export async function markNemesisTopics(): Promise<void> {
     );
     await db.execAsync(`RELEASE ${sp}`);
   } catch (err) {
-    await db.execAsync(`ROLLBACK TO ${sp}`);
-    await db.execAsync(`RELEASE ${sp}`);
+    try {
+      await db.execAsync(`ROLLBACK TO ${sp}`);
+    } catch (rollbackErr) {
+      if (__DEV__) console.warn('[DB] Rollback failed:', rollbackErr);
+    }
+    try {
+      await db.execAsync(`RELEASE ${sp}`);
+    } catch (releaseErr) {
+      if (__DEV__) console.warn('[DB] Release failed:', releaseErr);
+    }
     throw err;
   }
 }
@@ -715,8 +723,16 @@ export async function incrementWrongCount(topicId: number): Promise<void> {
     );
     await db.execAsync(`RELEASE ${sp}`);
   } catch (err) {
-    await db.execAsync(`ROLLBACK TO ${sp}`);
-    await db.execAsync(`RELEASE ${sp}`);
+    try {
+      await db.execAsync(`ROLLBACK TO ${sp}`);
+    } catch (rollbackErr) {
+      if (__DEV__) console.warn('[DB] Rollback failed:', rollbackErr);
+    }
+    try {
+      await db.execAsync(`RELEASE ${sp}`);
+    } catch (releaseErr) {
+      if (__DEV__) console.warn('[DB] Release failed:', releaseErr);
+    }
     throw err;
   }
 }
@@ -739,8 +755,16 @@ export async function markTopicNeedsAttention(topicId: number): Promise<void> {
     );
     await db.execAsync(`RELEASE ${sp}`);
   } catch (err) {
-    await db.execAsync(`ROLLBACK TO ${sp}`);
-    await db.execAsync(`RELEASE ${sp}`);
+    try {
+      await db.execAsync(`ROLLBACK TO ${sp}`);
+    } catch (rollbackErr) {
+      if (__DEV__) console.warn('[DB] Rollback failed:', rollbackErr);
+    }
+    try {
+      await db.execAsync(`RELEASE ${sp}`);
+    } catch (releaseErr) {
+      if (__DEV__) console.warn('[DB] Release failed:', releaseErr);
+    }
     throw err;
   }
 }
@@ -766,8 +790,16 @@ export async function markTopicDiscussedInChat(topicId: number): Promise<void> {
     );
     await db.execAsync(`RELEASE ${sp}`);
   } catch (err) {
-    await db.execAsync(`ROLLBACK TO ${sp}`);
-    await db.execAsync(`RELEASE ${sp}`);
+    try {
+      await db.execAsync(`ROLLBACK TO ${sp}`);
+    } catch (rollbackErr) {
+      if (__DEV__) console.warn('[DB] Rollback failed:', rollbackErr);
+    }
+    try {
+      await db.execAsync(`RELEASE ${sp}`);
+    } catch (releaseErr) {
+      if (__DEV__) console.warn('[DB] Release failed:', releaseErr);
+    }
     throw err;
   }
 }

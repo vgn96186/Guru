@@ -26,11 +26,10 @@ async function loadAppLauncher({
 }) {
   jest.resetModules();
 
-  jest.doMock('react-native', () => ({
-    Linking: { openURL: openURLMock },
-    Platform: { OS: 'android' },
-    Alert: { alert: alertMock },
-  }));
+  const rn = require('react-native');
+  rn.Linking.openURL = openURLMock;
+  rn.Alert.alert = alertMock;
+  Object.defineProperty(rn.Platform, 'OS', { value: 'android', configurable: true });
 
   jest.doMock('../config/appConfig', () => ({
     MOCK_EXTERNAL_LECTURE_AUDIO_ENABLED: mockEnabled,

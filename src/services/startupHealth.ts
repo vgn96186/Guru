@@ -19,6 +19,7 @@ function sanitizeDetail(detail?: string | null): string {
 
 export function reportStartupHealth(stage: StartupHealthStage, detail?: string | null): void {
   const payload = sanitizeDetail(detail);
+  if (stage === 'runtime_error') console.log('RUNTIME ERROR TRACE', new Error().stack);
   if (payload) {
     console.log(`GURU_HEALTH:${stage}:${payload}`);
     return;

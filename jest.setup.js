@@ -50,7 +50,7 @@ jest.mock('expo-haptics', () => ({
 jest.mock('expo-linear-gradient', () => {
   const React = require('react');
   const LinearGradient = ({ children, ...props }) =>
-    React.createElement('LinearGradient', props, children);
+    React['createElement']('LinearGradient', props, children);
   return {
     __esModule: true,
     LinearGradient,
@@ -61,7 +61,7 @@ jest.mock('expo-linear-gradient', () => {
 jest.mock('expo-blur', () => {
   const React = require('react');
   const { View } = require('react-native');
-  const BlurView = ({ children, ...props }) => React.createElement(View, props, children);
+  const BlurView = ({ children, ...props }) => React['createElement'](View, props, children);
   return { __esModule: true, BlurView };
 });
 
@@ -104,7 +104,7 @@ jest.mock('react-native-reanimated', () => {
 
 jest.mock('react-native-svg', () => {
   const React = require('react');
-  const el = (tag) => (props) => React.createElement(tag, props, props.children);
+  const el = (tag) => (props) => React['createElement'](tag, props, props.children);
   return {
     __esModule: true,
     default: el('Svg'),
@@ -121,21 +121,23 @@ jest.mock('react-native-svg', () => {
 
 jest.mock('react-native', () => {
   const React = require('react');
-  const View = ({ children, ...props }) => React.createElement('View', props, children);
-  const Text = ({ children, ...props }) => React.createElement('Text', props, children);
-  const ScrollView = ({ children, ...props }) => React.createElement('ScrollView', props, children);
+  const View = ({ children, ...props }) => React['createElement']('View', props, children);
+  const Text = ({ children, ...props }) => React['createElement']('Text', props, children);
+  const ScrollView = ({ children, ...props }) =>
+    React['createElement']('ScrollView', props, children);
   const TouchableOpacity = ({ children, ...props }) =>
-    React.createElement('TouchableOpacity', props, children);
-  const Pressable = ({ children, ...props }) => React.createElement('Pressable', props, children);
-  const TextInput = (props) => React.createElement('TextInput', props);
-  const ActivityIndicator = (props) => React.createElement('ActivityIndicator', props);
-  const Switch = (props) => React.createElement('Switch', props);
-  const Image = (props) => React.createElement('Image', props);
+    React['createElement']('TouchableOpacity', props, children);
+  const Pressable = ({ children, ...props }) =>
+    React['createElement']('Pressable', props, children);
+  const TextInput = (props) => React['createElement']('TextInput', props);
+  const ActivityIndicator = (props) => React['createElement']('ActivityIndicator', props);
+  const Switch = (props) => React['createElement']('Switch', props);
+  const Image = (props) => React['createElement']('Image', props);
   const Modal = ({ children, visible, ...props }) =>
-    visible ? React.createElement('Modal', props, children) : null;
+    visible ? React['createElement']('Modal', props, children) : null;
   const KeyboardAvoidingView = ({ children, ...props }) =>
-    React.createElement('KeyboardAvoidingView', props, children);
-  const StatusBar = (props) => React.createElement('StatusBar', props);
+    React['createElement']('KeyboardAvoidingView', props, children);
+  const StatusBar = (props) => React['createElement']('StatusBar', props);
 
   return {
     Platform: {
@@ -158,6 +160,10 @@ jest.mock('react-native', () => {
       isReduceMotionEnabled: jest.fn(() => Promise.resolve(false)),
       addEventListener: jest.fn(() => ({ remove: jest.fn() })),
     },
+    Appearance: {
+      getColorScheme: () => 'dark',
+      addChangeListener: jest.fn(() => ({ remove: jest.fn() })),
+    },
     Alert: {
       alert: jest.fn(),
     },
@@ -175,6 +181,9 @@ jest.mock('react-native', () => {
       openURL: jest.fn(),
       canOpenURL: jest.fn(() => Promise.resolve(true)),
       getInitialURL: jest.fn(() => Promise.resolve(null)),
+    },
+    BackHandler: {
+      addEventListener: jest.fn(() => ({ remove: jest.fn() })),
     },
     StyleSheet: {
       create: (styles) => styles,
@@ -225,10 +234,11 @@ jest.mock('react-native', () => {
         diffClamp: jest.fn(),
         event: jest.fn(),
         createAnimatedComponent: jest.fn((Component) => Component),
-        View: ({ children, ...props }) => React.createElement('View', props, children),
-        Text: ({ children, ...props }) => React.createElement('Text', props, children),
-        ScrollView: ({ children, ...props }) => React.createElement('ScrollView', props, children),
-        Image: (props) => React.createElement('Image', props),
+        View: ({ children, ...props }) => React['createElement']('View', props, children),
+        Text: ({ children, ...props }) => React['createElement']('Text', props, children),
+        ScrollView: ({ children, ...props }) =>
+          React['createElement']('ScrollView', props, children),
+        Image: (props) => React['createElement']('Image', props),
       };
     })(),
   };
@@ -239,7 +249,7 @@ jest.mock('react-native-safe-area-context', () => {
   const inset = { top: 0, right: 0, bottom: 34, left: 0 };
   return {
     SafeAreaProvider: ({ children }) => children,
-    SafeAreaView: ({ children, ...props }) => React.createElement('View', props, children),
+    SafeAreaView: ({ children, ...props }) => React['createElement']('View', props, children),
     useSafeAreaInsets: () => inset,
     useSafeAreaFrame: () => ({ x: 0, y: 0, width: 390, height: 844 }),
   };
@@ -277,7 +287,7 @@ jest.mock('expo-sqlite', () => ({
 // Mocking expo-file-system as it requires native module support
 jest.mock('expo-file-system/legacy', () => ({
   documentDirectory:
-    'file:///data/user/0/host.exp.exponent/files/ExperienceData/%40anonymous%2FGuru/',
+    'file:///data/user/0/com.anonymous.gurustudy.dev/files/ExperienceData/%40anonymous%2FGuru/',
   getInfoAsync: jest.fn(async () => ({ exists: true })),
   makeDirectoryAsync: jest.fn(async () => {}),
   writeAsStringAsync: jest.fn(async () => {}),
@@ -318,6 +328,7 @@ jest.mock('@tanstack/react-query', () => {
   const defaultClient = new QueryClient({
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
   });
+  defaultClient.invalidateQueries = jest.fn();
   return {
     ...actual,
     useQuery: jest.fn((options) => ({

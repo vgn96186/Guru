@@ -1,18 +1,22 @@
-import { z } from 'zod';
-import type { Mood, ProviderId, TopicWithProgress } from '../../types';
-import {
-  SYSTEM_PROMPT,
-  buildAgendaPrompt,
-  buildAccountabilityPrompt,
-  buildDailyAgendaPrompt,
-  buildReplanPrompt,
-} from '../../constants/prompts';
+/**
+ * planning — public API preserved; implementation delegates to the v2
+ * `guruAiPlanningTools` so there is ONE LLM path per capability.
+ *
+ * Fallback behavior (low-signal agenda detection, hand-built fallback daily
+ * agenda, FALLBACK_MESSAGES) stays here because it's pure business logic
+ * that should run whether or not the LLM path works.
+ */
+
+import type { Mood, TopicWithProgress } from '../../types';
 import type { GuruPresenceMessage, AgendaResponse, DailyAgenda } from './types';
-import { AgendaSchema, DailyAgendaSchema } from './schemas';
-import { profileRepository } from '../../db/repositories/profileRepository';
-import { createGuruFallbackModel } from './v2/providers/guruFallback';
-import { generateObject } from './v2/generateObject';
-import type { ModelMessage } from './v2/spec';
+import {
+  planSessionAiTool,
+  accountabilityMessagesTool,
+  guruPresenceMessagesTool,
+  dailyAgendaAiTool,
+  replanDayAiTool,
+} from './v2/tools/aiPlanningTools';
+import { invokeTool } from './v2/toolRunner';
 
 const FALLBACK_MESSAGES: GuruPresenceMessage[] = [
   {
@@ -29,54 +33,6 @@ const FALLBACK_MESSAGES: GuruPresenceMessage[] = [
   },
 ];
 
-const GuruTriggerSchema = z.enum([
-  'periodic',
-  'card_done',
-  'quiz_correct',
-  'quiz_wrong',
-  'again_rated',
-]);
-
-const GuruPresenceMessageSchema = z.object({
-  text: z.string(),
-  trigger: GuruTriggerSchema,
-});
-
-const GuruPresenceMessagesArraySchema = z.array(GuruPresenceMessageSchema);
-
-const GuruPresenceMessagesResponseSchema = z.union([
-  GuruPresenceMessagesArraySchema,
-  z.object({ messages: GuruPresenceMessagesArraySchema }),
-]);
-
-/**
- * Planning calls historically forced the chain to start at Groq (via
- * `forceProvider: 'groq'` in legacy routing) because the prompts are latency-
- * sensitive and Groq was fastest. We preserve that preference here by putting
- * `groq` first in the forced order; the rest of the chain is the default.
- */
-const GROQ_FIRST_ORDER: ProviderId[] = [
-  'groq',
-  'openrouter',
-  'deepseek',
-  'cloudflare',
-  'github',
-  'gemini',
-  'gemini_fallback',
-  'agentrouter',
-  'kilo',
-  'chatgpt',
-  'github_copilot',
-  'gitlab_duo',
-  'poe',
-  'qwen',
-];
-
-async function buildModel() {
-  const profile = await profileRepository.getProfile();
-  return createGuruFallbackModel({ profile, forceOrder: GROQ_FIRST_ORDER });
-}
-
 export async function planSessionWithAI(
   candidates: TopicWithProgress[],
   sessionMinutes: number,
@@ -92,17 +48,10 @@ export async function planSessionWithAI(
     score: t.score ?? 0,
   }));
 
-  const userPrompt = buildAgendaPrompt(candidateData, sessionMinutes, mood, recentTopics);
-  const messages: ModelMessage[] = [
-    { role: 'system', content: SYSTEM_PROMPT },
-    { role: 'user', content: userPrompt },
-  ];
-  const { object } = await generateObject({
-    model: await buildModel(),
-    messages,
-    schema: AgendaSchema,
-  });
-  return object;
+  return invokeTool(planSessionAiTool, {
+    input: { candidates: candidateData, sessionMinutes, mood, recentTopics },
+    tag: 'planSessionWithAI',
+  }) as Promise<AgendaResponse>;
 }
 
 export async function generateAccountabilityMessages(stats: {
@@ -120,51 +69,24 @@ export async function generateAccountabilityMessages(stats: {
   lastMood: Mood | null;
   guruFrequency: 'rare' | 'normal' | 'frequent' | 'off';
 }): Promise<Array<{ title: string; body: string; scheduledFor: string }>> {
-  const userPrompt = buildAccountabilityPrompt(stats);
-  const messages: ModelMessage[] = [
-    { role: 'system', content: SYSTEM_PROMPT },
-    { role: 'user', content: userPrompt },
-  ];
-
-  const AccountMsgSchema = z.object({
-    messages: z.array(z.object({ title: z.string(), body: z.string(), scheduledFor: z.string() })),
+  const result = await invokeTool(accountabilityMessagesTool, {
+    input: stats,
+    tag: 'accountabilityMessages',
   });
-  const { object } = await generateObject({
-    model: await buildModel(),
-    messages,
-    schema: AccountMsgSchema,
-  });
-  return object.messages;
+  return result.messages;
 }
 
 export async function generateGuruPresenceMessages(
   topicNames: string[],
   allTopicNames: string[],
 ): Promise<GuruPresenceMessage[]> {
-  const guruTopic =
-    allTopicNames[Math.floor(Math.random() * allTopicNames.length)] ?? 'Biochemistry';
-  const systemPrompt = `You are Guru, a study companion working alongside a medical student. You are currently studying ${guruTopic}. Be brief, warm, and grounding.`;
-  const userPrompt = `The student is studying: ${topicNames.join(', ')}.
-Generate exactly 6 ambient presence messages as JSON.
-Return one object with a "messages" array. Each item has "text" (1-2 short sentences) and "trigger" (one of: periodic, card_done, quiz_correct, quiz_wrong, again_rated).
-Include 2 "periodic" messages and 1 each of the other 4. Reference their topics or yours naturally.
-Return only valid JSON: {"messages":[{"text":"...","trigger":"..."},...]}`;
-  try {
-    const messages: ModelMessage[] = [
-      { role: 'system', content: systemPrompt },
-      { role: 'user', content: userPrompt },
-    ];
-    const { object } = await generateObject({
-      model: await buildModel(),
-      messages,
-      schema: GuruPresenceMessagesResponseSchema,
-    });
-    const normalized = Array.isArray(object) ? object : object.messages;
-    if (normalized.length > 0) return normalized as GuruPresenceMessage[];
-    return FALLBACK_MESSAGES;
-  } catch {
-    return FALLBACK_MESSAGES;
-  }
+  return invokeTool(guruPresenceMessagesTool, {
+    input: { topicNames, allTopicNames },
+    tag: 'guruPresenceMessages',
+    fallback: () => ({ messages: FALLBACK_MESSAGES }),
+  }).then((r) =>
+    r.messages.length > 0 ? (r.messages as GuruPresenceMessage[]) : FALLBACK_MESSAGES,
+  );
 }
 
 export async function generateDailyAgendaWithRouting(
@@ -180,25 +102,30 @@ export async function generateDailyAgendaWithRouting(
   },
   availableMinutes: number = 480,
 ): Promise<DailyAgenda> {
-  const userPrompt = buildDailyAgendaPrompt(displayName, stats, availableMinutes);
-  const messages: ModelMessage[] = [
-    { role: 'system', content: SYSTEM_PROMPT },
-    { role: 'user', content: userPrompt },
-  ];
-
-  try {
-    const { object } = await generateObject({
-      model: await buildModel(),
-      messages,
-      schema: DailyAgendaSchema,
-    });
-    return isLowSignalAgenda(object)
+  return invokeTool(dailyAgendaAiTool, {
+    input: { displayName, stats, availableMinutes },
+    tag: 'dailyAgenda',
+    fallback: () => buildFallbackDailyAgenda(displayName, stats, availableMinutes),
+  }).then((plan) =>
+    isLowSignalAgenda(plan as DailyAgenda)
       ? buildFallbackDailyAgenda(displayName, stats, availableMinutes)
-      : object;
-  } catch {
-    return buildFallbackDailyAgenda(displayName, stats, availableMinutes);
-  }
+      : (plan as DailyAgenda),
+  );
 }
+
+export async function replanDayWithRouting(
+  currentPlan: DailyAgenda,
+  completedBlockIds: string[],
+  missedBlockIds: string[],
+  remainingMinutes: number,
+): Promise<DailyAgenda> {
+  return invokeTool(replanDayAiTool, {
+    input: { currentPlan, completedBlockIds, missedBlockIds, remainingMinutes },
+    tag: 'replanDay',
+  }) as Promise<DailyAgenda>;
+}
+
+// ─── Pure logic helpers (kept here; no LLM work) ────────────────────────────
 
 function isLowSignalAgenda(plan: DailyAgenda): boolean {
   const nonBreakBlocks = plan.blocks.filter((block) => block.type !== 'break');
@@ -309,29 +236,4 @@ function formatAgendaTime(totalMinutes: number) {
     .padStart(2, '0');
   const minutes = (totalMinutes % 60).toString().padStart(2, '0');
   return `${hours}:${minutes}`;
-}
-
-export async function replanDayWithRouting(
-  currentPlan: DailyAgenda,
-  completedBlockIds: string[],
-  missedBlockIds: string[],
-  remainingMinutes: number,
-): Promise<DailyAgenda> {
-  const userPrompt = buildReplanPrompt(
-    currentPlan,
-    completedBlockIds,
-    missedBlockIds,
-    remainingMinutes,
-  );
-  const messages: ModelMessage[] = [
-    { role: 'system', content: SYSTEM_PROMPT },
-    { role: 'user', content: userPrompt },
-  ];
-
-  const { object } = await generateObject({
-    model: await buildModel(),
-    messages,
-    schema: DailyAgendaSchema,
-  });
-  return object;
 }

@@ -1109,7 +1109,12 @@ DROP TABLE ai_cache_old;`,
     sql: `ALTER TABLE user_profile ADD COLUMN use_nano INTEGER NOT NULL DEFAULT 1`,
     description: 'Add toggle for Gemini Nano (AICore) in local AI fallback chain',
   },
+  {
+    version: 168,
+    sql: `ALTER TABLE user_profile ADD COLUMN loading_orb_style TEXT NOT NULL DEFAULT 'classic'`,
+    description: 'Add loading orb style preference',
+  },
 ];
 
 /** Latest schema version. Bump when adding new migrations. */
-export const LATEST_VERSION = 167;
+export const LATEST_VERSION = 168;

@@ -188,9 +188,30 @@ export async function bootstrapLocalModels(): Promise<void> {
         }
       }
 
+      let registeredWhisperPath = profile.localWhisperPath;
+      if (!registeredWhisperPath) {
+        const discoveredWhisper = await discoverBestExistingWhisper().catch((e) => {
+          console.warn('[Bootstrap] Local whisper discovery failed:', e);
+          return null;
+        });
+        if (discoveredWhisper) {
+          registeredWhisperPath = discoveredWhisper.path;
+          await profileRepository.updateProfile({
+            localWhisperPath: discoveredWhisper.path,
+            useLocalWhisper: true,
+          });
+          refreshProfileSafely();
+          logBootstrapEvent('discovered_existing_local_whisper', {
+            path: discoveredWhisper.path,
+            size: discoveredWhisper.size,
+            modifiedAt: discoveredWhisper.modifiedAt,
+          });
+        }
+      }
+
       const llmAllowed = isLocalLlmAllowedOnThisDevice();
       const needsLlm = !registeredLlmPath;
-      const needsWhisper = !profile.localWhisperPath;
+      const needsWhisper = !registeredWhisperPath;
 
       if (!needsLlm && !needsWhisper) return;
 
@@ -199,7 +220,7 @@ export async function bootstrapLocalModels(): Promise<void> {
         needsWhisper,
         llmAllowed,
         hasLocalModel: !!registeredLlmPath,
-        hasLocalWhisper: !!profile.localWhisperPath,
+        hasLocalWhisper: !!registeredWhisperPath,
       });
 
       if (!llmAllowed && !registeredLlmPath) {
@@ -236,21 +257,67 @@ async function discoverBestExistingLlm(): Promise<NativeModelFileEntry | null> {
   const fileNameFor = (candidate: NativeModelFileEntry) =>
     candidate.name || candidate.path.split('/').pop() || '';
 
-  const ranked = [...candidates].sort((a, b) => {
-    const aPreferred = fileNameFor(a).toLowerCase().includes(LLM_MODEL.name.toLowerCase()) ? 1 : 0;
-    const bPreferred = fileNameFor(b).toLowerCase().includes(LLM_MODEL.name.toLowerCase()) ? 1 : 0;
-    if (aPreferred !== bPreferred) return bPreferred - aPreferred;
-    if (a.size !== b.size) return b.size - a.size;
-    return (b.modifiedAt ?? 0) - (a.modifiedAt ?? 0);
-  });
+  const ranked = [...candidates]
+    .filter((c) => fileNameFor(c).toLowerCase().endsWith('.litertlm'))
+    .sort((a, b) => {
+      const aPreferred = fileNameFor(a).toLowerCase().includes(LLM_MODEL.name.toLowerCase())
+        ? 1
+        : 0;
+      const bPreferred = fileNameFor(b).toLowerCase().includes(LLM_MODEL.name.toLowerCase())
+        ? 1
+        : 0;
+      if (aPreferred !== bPreferred) return bPreferred - aPreferred;
+      if (a.size !== b.size) return b.size - a.size;
+      return (b.modifiedAt ?? 0) - (a.modifiedAt ?? 0);
+    });
 
   for (const candidate of ranked) {
+    const validPath = candidate.path.startsWith('file://')
+      ? candidate.path
+      : `file://${candidate.path}`;
     const validation = await validateLocalModelFile({
-      path: candidate.path,
+      path: validPath,
       minBytes: MIN_MODEL_SIZES.llm,
     });
     if (validation.exists && validation.isValid) {
-      return candidate;
+      return { ...candidate, path: validPath };
+    }
+  }
+
+  return null;
+}
+
+async function discoverBestExistingWhisper(): Promise<NativeModelFileEntry | null> {
+  const candidates = await findLocalModelFiles();
+  if (!Array.isArray(candidates) || candidates.length === 0) return null;
+
+  const fileNameFor = (candidate: NativeModelFileEntry) =>
+    candidate.name || candidate.path.split('/').pop() || '';
+
+  const ranked = [...candidates]
+    .filter((c) => fileNameFor(c).toLowerCase().endsWith('.bin'))
+    .sort((a, b) => {
+      const aPreferred = fileNameFor(a).toLowerCase().includes(WHISPER_MODEL.name.toLowerCase())
+        ? 1
+        : 0;
+      const bPreferred = fileNameFor(b).toLowerCase().includes(WHISPER_MODEL.name.toLowerCase())
+        ? 1
+        : 0;
+      if (aPreferred !== bPreferred) return bPreferred - aPreferred;
+      if (a.size !== b.size) return b.size - a.size;
+      return (b.modifiedAt ?? 0) - (a.modifiedAt ?? 0);
+    });
+
+  for (const candidate of ranked) {
+    const validPath = candidate.path.startsWith('file://')
+      ? candidate.path
+      : `file://${candidate.path}`;
+    const validation = await validateLocalModelFile({
+      path: validPath,
+      minBytes: MIN_MODEL_SIZES.whisper,
+    });
+    if (validation.exists && validation.isValid) {
+      return { ...candidate, path: validPath };
     }
   }
 

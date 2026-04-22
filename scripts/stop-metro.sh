@@ -4,7 +4,8 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 
 pkill -f "${ROOT}/node_modules/.bin/expo" 2>/dev/null || true
-pkill -f "npm run generate:bundled-env && NODE_ENV=development expo start" 2>/dev/null || true
+pkill -f "expo start --dev-client" 2>/dev/null || true
+pkill -f "npm run generate:bundled-env" 2>/dev/null || true
 
 for p in 8081 8082 8083 19000 19001 19002; do
   for pid in $(lsof -tiTCP:"$p" -sTCP:LISTEN 2>/dev/null || true); do

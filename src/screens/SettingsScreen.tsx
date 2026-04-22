@@ -1894,144 +1894,245 @@ export default function SettingsScreen() {
             SectionToggle={SectionToggle}
             SubSectionToggle={SubSectionToggle}
             navigation={navigation}
-            profile={profile}
-            liveGuruChatModels={liveGuruChatModels}
-            formatGuruChatModelChipLabel={formatGuruChatModelChipLabel}
-            guruChatDefaultModel={guruChatDefaultModel}
-            setGuruChatDefaultModel={setGuruChatDefaultModel}
-            guruMemoryNotes={guruMemoryNotes}
-            setGuruMemoryNotes={setGuruMemoryNotes}
-            chatgptConnectingSlot={chatgptConnectingSlot}
-            chatgptDeviceCode={chatgptDeviceCode}
-            chatgptAccounts={chatgptAccounts}
-            setChatgptAccounts={setChatgptAccounts}
-            disconnectChatGpt={disconnectChatGpt}
-            connectChatGpt={connectChatGpt}
-            githubCopilotConnecting={githubCopilotConnecting}
-            githubCopilotDeviceCode={githubCopilotDeviceCode}
-            githubCopilotConnected={githubCopilotConnected}
-            githubCopilotOAuthTestResult={githubCopilotOAuthTestResult}
-            validateGitHubCopilotConnection={validateGitHubCopilotConnection}
-            testingGitHubCopilotOAuth={testingGitHubCopilotOAuth}
-            disconnectGitHubCopilot={disconnectGitHubCopilot}
-            connectGitHubCopilot={connectGitHubCopilot}
-            githubCopilotPreferredModel={githubCopilotPreferredModel}
-            setGithubCopilotPreferredModel={setGithubCopilotPreferredModel}
-            gitlabOauthClientId={gitlabOauthClientId}
-            setGitlabOauthClientId={setGitlabOauthClientId}
-            gitlabOauthClientSecret={gitlabOauthClientSecret}
-            setGitlabOauthClientSecret={setGitlabOauthClientSecret}
-            gitlabDuoConnected={gitlabDuoConnected}
-            gitlabDuoOAuthTestResult={gitlabDuoOAuthTestResult}
-            validateGitLabDuoConnection={validateGitLabDuoConnection}
-            testingGitLabDuoOAuth={testingGitLabDuoOAuth}
-            gitlabDuoConnecting={gitlabDuoConnecting}
-            disconnectGitLabDuo={disconnectGitLabDuo}
-            connectGitLabDuo={connectGitLabDuo}
-            setGitlabPasteModalVisible={setGitlabPasteModalVisible}
-            gitlabDuoPreferredModel={gitlabDuoPreferredModel}
-            setGitlabDuoPreferredModel={setGitlabDuoPreferredModel}
-            gitlabPasteModalVisible={gitlabPasteModalVisible}
-            gitlabPasteUrl={gitlabPasteUrl}
-            setGitlabPasteUrl={setGitlabPasteUrl}
-            submitGitLabPasteUrl={submitGitLabPasteUrl}
-            gitlabPasteSubmitting={gitlabPasteSubmitting}
-            poeConnecting={poeConnecting}
-            poeDeviceCode={poeDeviceCode}
-            poeConnected={poeConnected}
-            disconnectPoe={disconnectPoe}
-            connectPoe={connectPoe}
-            qwenConnecting={qwenConnecting}
-            qwenDeviceCode={qwenDeviceCode}
-            qwenConnected={qwenConnected}
-            connectQwen={connectQwen}
-            disconnectQwen={disconnectQwen}
-            groqKey={groqKey}
-            setGroqKey={setGroqKey}
-            setGroqKeyTestResult={setGroqKeyTestResult}
-            clearProviderValidated={clearProviderValidated}
-            groqValidationStatus={groqValidationStatus}
-            testGroqKey={testGroqKey}
-            testingGroqKey={testingGroqKey}
-            githubModelsPat={githubModelsPat}
-            setGithubModelsPat={setGithubModelsPat}
-            setGithubPatTestResult={setGithubPatTestResult}
-            githubValidationStatus={githubValidationStatus}
-            testGithubModelsPat={testGithubModelsPat}
-            testingGithubPat={testingGithubPat}
-            orKey={orKey}
-            setOrKey={setOrKey}
-            setOpenRouterKeyTestResult={setOpenRouterKeyTestResult}
-            openRouterValidationStatus={openRouterValidationStatus}
-            testOpenRouterKey={testOpenRouterKey}
-            testingOpenRouterKey={testingOpenRouterKey}
-            kiloApiKey={kiloApiKey}
-            setKiloApiKey={setKiloApiKey}
-            setKiloKeyTestResult={setKiloKeyTestResult}
-            kiloValidationStatus={kiloValidationStatus}
-            testKiloKey={testKiloKey}
-            testingKiloKey={testingKiloKey}
-            deepseekKey={deepseekKey}
-            setDeepseekKey={setDeepseekKey}
-            setDeepseekKeyTestResult={setDeepseekKeyTestResult}
-            deepseekValidationStatus={deepseekValidationStatus}
-            testDeepseekKey={testDeepseekKey}
-            testingDeepseekKey={testingDeepseekKey}
-            agentRouterKey={agentRouterKey}
-            setAgentRouterKey={setAgentRouterKey}
-            setAgentRouterKeyTestResult={setAgentRouterKeyTestResult}
-            agentRouterValidationStatus={agentRouterValidationStatus}
-            testAgentRouterKey={testAgentRouterKey}
-            testingAgentRouterKey={testingAgentRouterKey}
-            geminiKey={geminiKey}
-            setGeminiKey={setGeminiKey}
-            setGeminiKeyTestResult={setGeminiKeyTestResult}
-            geminiValidationStatus={geminiValidationStatus}
-            testGeminiKey={testGeminiKey}
-            testingGeminiKey={testingGeminiKey}
-            preferGeminiStructuredJson={preferGeminiStructuredJson}
-            setPreferGeminiStructuredJson={setPreferGeminiStructuredJson}
-            deepgramApiKey={deepgramApiKey}
-            setDeepgramApiKey={setDeepgramApiKey}
-            setDeepgramKeyTestResult={setDeepgramKeyTestResult}
-            deepgramValidationStatus={deepgramValidationStatus}
-            testDeepgramKey={testDeepgramKey}
-            testingDeepgramKey={testingDeepgramKey}
-            cfAccountId={cfAccountId}
-            setCfAccountId={setCfAccountId}
-            setCloudflareTestResult={setCloudflareTestResult}
-            cloudflareValidationStatus={cloudflareValidationStatus}
-            testCloudflareKeys={testCloudflareKeys}
-            testingCloudflare={testingCloudflare}
-            cfApiToken={cfApiToken}
-            setCfApiToken={setCfApiToken}
-            providerOrder={providerOrder}
-            moveProvider={moveProvider}
+            profile={profile!}
+            guruChat={{
+              models: liveGuruChatModels,
+              defaultModel: guruChatDefaultModel,
+              setDefaultModel: setGuruChatDefaultModel,
+              formatModelChipLabel: formatGuruChatModelChipLabel,
+            }}
+            guruMemory={{
+              notes: guruMemoryNotes,
+              setNotes: setGuruMemoryNotes,
+            }}
+            chatgpt={{
+              connectingSlot: chatgptConnectingSlot,
+              deviceCode: chatgptDeviceCode,
+              accounts: chatgptAccounts,
+              setAccounts: setChatgptAccounts,
+              connect: connectChatGpt,
+              disconnect: disconnectChatGpt,
+            }}
+            githubCopilot={{
+              connecting: githubCopilotConnecting,
+              deviceCode: githubCopilotDeviceCode,
+              connected: githubCopilotConnected,
+              connect: connectGitHubCopilot,
+              disconnect: disconnectGitHubCopilot,
+              testResult: githubCopilotOAuthTestResult,
+              validateConnection: validateGitHubCopilotConnection,
+              testingOAuth: testingGitHubCopilotOAuth,
+              preferredModel: githubCopilotPreferredModel,
+              setPreferredModel: setGithubCopilotPreferredModel,
+            }}
+            gitlabDuo={{
+              connecting: gitlabDuoConnecting,
+              connected: gitlabDuoConnected,
+              connect: connectGitLabDuo,
+              disconnect: disconnectGitLabDuo,
+              clientId: gitlabOauthClientId,
+              setClientId: setGitlabOauthClientId,
+              clientSecret: gitlabOauthClientSecret,
+              setClientSecret: setGitlabOauthClientSecret,
+              testResult: gitlabDuoOAuthTestResult,
+              validateConnection: validateGitLabDuoConnection,
+              testingOAuth: testingGitLabDuoOAuth,
+              preferredModel: gitlabDuoPreferredModel,
+              setPreferredModel: setGitlabDuoPreferredModel,
+              pasteModalVisible: gitlabPasteModalVisible,
+              setPasteModalVisible: setGitlabPasteModalVisible,
+              pasteUrl: gitlabPasteUrl,
+              setPasteUrl: setGitlabPasteUrl,
+              submitPasteUrl: submitGitLabPasteUrl,
+              pasteSubmitting: gitlabPasteSubmitting,
+            }}
+            poe={{
+              connecting: poeConnecting,
+              deviceCode: poeDeviceCode,
+              connected: poeConnected,
+              connect: connectPoe,
+              disconnect: disconnectPoe,
+            }}
+            qwen={{
+              connecting: qwenConnecting,
+              deviceCode: qwenDeviceCode,
+              connected: qwenConnected,
+              connect: connectQwen,
+              disconnect: disconnectQwen,
+            }}
+            apiKeys={{
+              groq: {
+                value: groqKey,
+                setValue: setGroqKey,
+                setTestResult: setGroqKeyTestResult,
+                validationStatus:
+                  groqValidationStatus === 'ok'
+                    ? 'valid'
+                    : groqValidationStatus === 'fail'
+                      ? 'invalid'
+                      : 'idle',
+                test: testGroqKey,
+                testing: testingGroqKey,
+              },
+              githubModelsPat: {
+                value: githubModelsPat,
+                setValue: setGithubModelsPat,
+                setTestResult: setGithubPatTestResult,
+                validationStatus:
+                  githubValidationStatus === 'ok'
+                    ? 'valid'
+                    : githubValidationStatus === 'fail'
+                      ? 'invalid'
+                      : 'idle',
+                test: testGithubModelsPat,
+                testing: testingGithubPat,
+              },
+              openrouter: {
+                value: orKey,
+                setValue: setOrKey,
+                setTestResult: setOpenRouterKeyTestResult,
+                validationStatus:
+                  openRouterValidationStatus === 'ok'
+                    ? 'valid'
+                    : openRouterValidationStatus === 'fail'
+                      ? 'invalid'
+                      : 'idle',
+                test: testOpenRouterKey,
+                testing: testingOpenRouterKey,
+              },
+              kilo: {
+                value: kiloApiKey,
+                setValue: setKiloApiKey,
+                setTestResult: setKiloKeyTestResult,
+                validationStatus:
+                  kiloValidationStatus === 'ok'
+                    ? 'valid'
+                    : kiloValidationStatus === 'fail'
+                      ? 'invalid'
+                      : 'idle',
+                test: testKiloKey,
+                testing: testingKiloKey,
+              },
+              deepseek: {
+                value: deepseekKey,
+                setValue: setDeepseekKey,
+                setTestResult: setDeepseekKeyTestResult,
+                validationStatus:
+                  deepseekValidationStatus === 'ok'
+                    ? 'valid'
+                    : deepseekValidationStatus === 'fail'
+                      ? 'invalid'
+                      : 'idle',
+                test: testDeepseekKey,
+                testing: testingDeepseekKey,
+              },
+              agentRouter: {
+                value: agentRouterKey,
+                setValue: setAgentRouterKey,
+                setTestResult: setAgentRouterKeyTestResult,
+                validationStatus:
+                  agentRouterValidationStatus === 'ok'
+                    ? 'valid'
+                    : agentRouterValidationStatus === 'fail'
+                      ? 'invalid'
+                      : 'idle',
+                test: testAgentRouterKey,
+                testing: testingAgentRouterKey,
+              },
+              gemini: {
+                value: geminiKey,
+                setValue: setGeminiKey,
+                setTestResult: setGeminiKeyTestResult,
+                validationStatus:
+                  geminiValidationStatus === 'ok'
+                    ? 'valid'
+                    : geminiValidationStatus === 'fail'
+                      ? 'invalid'
+                      : 'idle',
+                test: testGeminiKey,
+                testing: testingGeminiKey,
+              },
+              deepgram: {
+                value: deepgramApiKey,
+                setValue: setDeepgramApiKey,
+                setTestResult: setDeepgramKeyTestResult,
+                validationStatus:
+                  deepgramValidationStatus === 'ok'
+                    ? 'valid'
+                    : deepgramValidationStatus === 'fail'
+                      ? 'invalid'
+                      : 'idle',
+                test: testDeepgramKey,
+                testing: testingDeepgramKey,
+              },
+              cloudflare: {
+                accountId: cfAccountId,
+                setAccountId: setCfAccountId,
+                apiToken: cfApiToken,
+                setApiToken: setCfApiToken,
+                setTestResult: setCloudflareTestResult,
+                validationStatus:
+                  cloudflareValidationStatus === 'ok'
+                    ? 'valid'
+                    : cloudflareValidationStatus === 'fail'
+                      ? 'invalid'
+                      : 'idle',
+                test: testCloudflareKeys,
+                testing: testingCloudflare,
+              },
+              fal: {
+                value: falApiKey,
+                setValue: setFalApiKey,
+                setTestResult: setFalKeyTestResult,
+                validationStatus:
+                  falValidationStatus === 'ok'
+                    ? 'valid'
+                    : falValidationStatus === 'fail'
+                      ? 'invalid'
+                      : 'idle',
+                test: testFalKey,
+                testing: testingFalKey,
+              },
+              braveSearch: {
+                value: braveSearchApiKey,
+                setValue: setBraveSearchApiKey,
+                setTestResult: setBraveSearchKeyTestResult,
+                validationStatus:
+                  braveValidationStatus === 'ok'
+                    ? 'valid'
+                    : braveValidationStatus === 'fail'
+                      ? 'invalid'
+                      : 'idle',
+                test: testBraveSearchKey,
+                testing: testingBraveSearchKey,
+              },
+            }}
+            gemini={{
+              preferStructuredJson: preferGeminiStructuredJson,
+              setPrefer: setPreferGeminiStructuredJson,
+            }}
+            routing={{
+              providerOrder: providerOrder,
+              moveProvider: moveProvider,
+            }}
+            imageGen={{
+              options: imageGenerationOptions,
+              model: imageGenerationModel,
+              setModel: setImageGenerationModel,
+            }}
+            localAi={{
+              enabled: localAiEnabled,
+              llmReady: localLlmReady,
+              llmFileName: localLlmFileName,
+              whisperReady: localWhisperReady,
+              whisperFileName: localWhisperFileName,
+              llmAllowed: localLlmAllowed,
+              llmWarning: localLlmWarning,
+              useNano: profile?.useNano ?? true,
+            }}
             updateUserProfile={updateUserProfile}
             refreshProfile={refreshProfile}
-            falApiKey={falApiKey}
-            setFalApiKey={setFalApiKey}
-            setFalKeyTestResult={setFalKeyTestResult}
-            falValidationStatus={falValidationStatus}
-            testFalKey={testFalKey}
-            testingFalKey={testingFalKey}
-            braveSearchApiKey={braveSearchApiKey}
-            setBraveSearchApiKey={setBraveSearchApiKey}
-            setBraveSearchKeyTestResult={setBraveSearchKeyTestResult}
-            braveValidationStatus={braveValidationStatus}
-            testBraveSearchKey={testBraveSearchKey}
-            testingBraveSearchKey={testingBraveSearchKey}
-            imageGenerationOptions={imageGenerationOptions}
-            imageGenerationModel={imageGenerationModel}
-            setImageGenerationModel={setImageGenerationModel}
-            localAiEnabled={localAiEnabled}
-            localLlmReady={localLlmReady}
-            localLlmFileName={localLlmFileName}
-            localWhisperReady={localWhisperReady}
-            localWhisperFileName={localWhisperFileName}
-            localLlmAllowed={localLlmAllowed}
-            localLlmWarning={localLlmWarning}
-            useNano={profile?.useNano ?? true}
+            clearProviderValidated={clearProviderValidated}
           />
           <AccountSections
             styles={styles}

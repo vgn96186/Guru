@@ -4,13 +4,14 @@ const { spawn } = require('child_process');
 const { execSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
+const { GURU_DEBUG_PACKAGE } = require('./android-tooling');
 
 function printHelp() {
   console.log(`
 Usage: node fetchLogs.js [options]
 
 Options:
-  --package, -p <packageName>   Override the Android package name (default: read from app.json/app.config.js or host.exp.exponent for Expo)
+  --package, -p <packageName>   Override the Android package name (default: app.config.js, then app.json, then Guru dev client id)
   --level, -l <level>           Log level: V (verbose), D (debug), I (info), W (warn), E (error), S (silent). Default: V
   --help, -h                    Show this help message
 
@@ -25,23 +26,28 @@ function getPackageNameFromConfig() {
   const appJsonPath = path.resolve(__dirname, '..', 'app.json');
   const appConfigJsPath = path.resolve(__dirname, '..', 'app.config.js');
 
-  if (fs.existsSync(appJsonPath)) {
+  if (fs.existsSync(appConfigJsPath)) {
     try {
-      const appJson = JSON.parse(fs.readFileSync(appJsonPath, 'utf8'));
-      return appJson.android?.package || appJson.package;
+      const appConfig = require(appConfigJsPath);
+      const fromConfig = appConfig.android?.package || appConfig.package;
+      if (fromConfig) return fromConfig;
     } catch (e) {
-      console.warn(`Could not parse ${appJsonPath}: ${e.message}`);
+      console.warn(`Could not load ${appConfigJsPath}: ${e.message}`);
     }
   }
 
-  if (fs.existsSync(appConfigJsPath)) {
+  if (fs.existsSync(appJsonPath)) {
     try {
-      // Note: This requires the config to be a CommonJS module that exports an object.
-      // If your config is ESM or has complex logic, you may need to adjust this.
-      const appConfig = require(appConfigJsPath);
-      return appConfig.android?.package || appConfig.package;
+      const appJson = JSON.parse(fs.readFileSync(appJsonPath, 'utf8'));
+      return (
+        appJson.expo?.android?.package ||
+        appJson.android?.package ||
+        appJson.expo?.package ||
+        appJson.package ||
+        null
+      );
     } catch (e) {
-      console.warn(`Could not parse ${appConfigJsPath}: ${e.message}`);
+      console.warn(`Could not parse ${appJsonPath}: ${e.message}`);
     }
   }
 
@@ -111,9 +117,9 @@ function main() {
   let packageName = packageNameFromArg || getPackageNameFromConfig();
   if (!packageName) {
     console.warn(
-      'Could not determine package name from app.json or app.config.js. Falling back to host.exp.exponent (Expo Go).',
+      `Could not determine package name from app config. Falling back to dev client package ${GURU_DEBUG_PACKAGE}.`,
     );
-    packageName = 'host.exp.exponent';
+    packageName = GURU_DEBUG_PACKAGE;
   }
 
   console.log(`Fetching logs for package: ${packageName} at level: ${level}`);

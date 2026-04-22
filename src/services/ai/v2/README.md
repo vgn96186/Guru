@@ -122,7 +122,7 @@ For each: reuse the existing session/token-refresh code, only implement the
 
 8. ~~Reasoning-delta support~~ — ✅ done (OpenAI-compatible adapter routes
    `delta.reasoning` / `delta.reasoning_content` to `reasoning-delta` parts).
-   Gemini thinking still TODO.
+   Gemini thinking implemented.
 
 9. ~~`streamObject`~~ — ✅ done. See `streamObject.ts`.
 

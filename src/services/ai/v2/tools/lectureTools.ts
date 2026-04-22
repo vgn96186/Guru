@@ -5,6 +5,13 @@
 import { z } from 'zod';
 import { tool } from '../tool';
 import { getDb } from '../../../../db/database';
+import { CatalystSchema } from '../../schemas';
+import { profileRepository } from '../../../../db/repositories/profileRepository';
+import { createGuruFallbackModel } from '../providers/guruFallback';
+import { generateObject } from '../generateObject';
+import { SYSTEM_PROMPT } from '../../../../constants/prompts';
+import { DEFAULT_PROVIDER_ORDER } from '../../../../types';
+import type { z as zType } from 'zod';
 
 /**
  * analyze_lecture — "Catalyze" lecture content: extract key topics, match syllabus,
@@ -96,3 +103,58 @@ function generateSummary(transcript: string): string {
 function generateRecallQuestions(transcript: string, topics: Array<{ name: string }>): string[] {
   return topics.slice(0, 5).map((t, i) => `What are the key ${t.name} mechanisms?`);
 }
+
+/**
+ * catalyze_transcript — LLM-powered: extract subject + topics + key concepts
+ * + 3-question MCQ quiz from a raw lecture transcript. This is the canonical
+ * "catalyze" path — `catalyzeTranscript()` delegates here.
+ *
+ * On LLM failure the caller receives a thrown error and should fall back to
+ * the heuristic `analyze_lecture` tool above.
+ */
+export const catalyzeTranscriptTool = tool({
+  name: 'catalyze_transcript',
+  description:
+    'Analyze a raw lecture transcript with an LLM: identify the subject, extract topic names, a 2-line summary, 5 high-yield key concepts, and a 3-question MCQ quiz. Returns structured JSON.',
+  inputSchema: z.object({
+    transcript: z.string().min(1).describe('Full lecture transcript or running summary'),
+  }),
+  execute: async ({ transcript }): Promise<zType.infer<typeof CatalystSchema>> => {
+    const userPrompt = `
+You are a medical lecture analyst. Below is a raw transcript or summary of a lecture.
+Your task is to:
+1. Identify the primary medical subject.
+2. Extract specific topic names mentioned.
+3. Provide a 2-line high-level summary.
+4. Extract 5 high-yield key concepts.
+5. Generate a 3-question MCQ quiz based on the content.
+
+TRANSCRIPT:
+${transcript}
+
+Return ONLY a JSON object matching this structure:
+{
+  "subject": "string",
+  "topics": ["string", "string"],
+  "summary": "string",
+  "keyConcepts": ["string", "string"],
+  "quiz": {
+    "questions": [
+      { "question": "...", "options": ["...", "...", "...", "..."], "correctIndex": 0, "explanation": "..." }
+    ]
+  }
+}
+`;
+    const profile = await profileRepository.getProfile();
+    const model = createGuruFallbackModel({ profile, forceOrder: DEFAULT_PROVIDER_ORDER });
+    const { object } = await generateObject({
+      model,
+      messages: [
+        { role: 'system', content: SYSTEM_PROMPT },
+        { role: 'user', content: userPrompt },
+      ],
+      schema: CatalystSchema,
+    });
+    return object;
+  },
+});

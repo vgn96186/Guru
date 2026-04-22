@@ -178,7 +178,7 @@ const mockContents: AIContent[] = [
   {
     type: 'flashcards',
     topicName: 'Test Topic',
-    cards: [{ front: 'Front 1', back: 'Back 1', imageUrl: null }],
+    cards: [{ front: 'Front 1', back: 'Back 1', imageUrl: undefined }],
   },
 ];
 

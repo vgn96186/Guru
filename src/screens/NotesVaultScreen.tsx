@@ -944,46 +944,48 @@ export default function NotesVaultScreen() {
           )}
 
           {/* List */}
-          {visibleNotes.length === 0 ? (
-            <EmptyState icon="document-text-outline" iconSize={64} title="No Notes Yet" />
-          ) : (
-            <>
-              <FlatList
-                ref={listRef}
-                data={visibleNotes.slice(0, displayCount)}
-                key={listLayoutKey}
-                keyExtractor={(item) => item.id.toString()}
-                renderItem={renderNote}
-                extraData={listLayoutKey}
-                contentContainerStyle={styles.list}
-                onScroll={onScroll}
-                onContentSizeChange={onContentSizeChange}
-                scrollEventThrottle={16}
-                initialNumToRender={10}
-                maxToRenderPerBatch={5}
-                windowSize={11}
-                removeClippedSubviews={Platform.OS === 'android' ? true : undefined}
-                updateCellsBatchingPeriod={100}
-                refreshControl={
-                  <RefreshControl
-                    refreshing={refreshing}
-                    onRefresh={handleRefresh}
-                    tintColor={n.colors.textPrimary}
-                  />
-                }
+          <FlatList
+            ref={listRef}
+            data={visibleNotes.slice(0, displayCount)}
+            key={listLayoutKey}
+            keyExtractor={(item) => item.id.toString()}
+            renderItem={renderNote}
+            extraData={listLayoutKey}
+            contentContainerStyle={[styles.list, visibleNotes.length === 0 && { flex: 1 }]}
+            onScroll={onScroll}
+            onContentSizeChange={onContentSizeChange}
+            scrollEventThrottle={16}
+            initialNumToRender={10}
+            maxToRenderPerBatch={5}
+            windowSize={11}
+            removeClippedSubviews={Platform.OS === 'android' ? true : undefined}
+            updateCellsBatchingPeriod={100}
+            refreshControl={
+              <RefreshControl
+                refreshing={refreshing}
+                onRefresh={handleRefresh}
+                tintColor={n.colors.textPrimary}
               />
-              {displayCount < visibleNotes.length && (
-                <TouchableOpacity
-                  style={styles.loadMoreBtn}
-                  onPress={() => setDisplayCount((prev) => prev + PAGE_SIZE)}
-                  activeOpacity={0.7}
-                >
-                  <LinearText style={styles.loadMoreText}>
-                    Load More ({visibleNotes.length - displayCount} remaining)
-                  </LinearText>
-                </TouchableOpacity>
-              )}
-            </>
+            }
+            ListEmptyComponent={
+              <EmptyState
+                icon="document-text-outline"
+                iconSize={64}
+                title="No Notes Yet"
+                subtitle="Process transcripts or create manual notes to see them here."
+              />
+            }
+          />
+          {visibleNotes.length > 0 && displayCount < visibleNotes.length && (
+            <TouchableOpacity
+              style={styles.loadMoreBtn}
+              onPress={() => setDisplayCount((prev) => prev + PAGE_SIZE)}
+              activeOpacity={0.7}
+            >
+              <LinearText style={styles.loadMoreText}>
+                Load More ({visibleNotes.length - displayCount} remaining)
+              </LinearText>
+            </TouchableOpacity>
           )}
 
           <Modal

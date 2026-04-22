@@ -623,8 +623,9 @@ export async function addXp(
       leveledUp: result.newLevel > oldLevel,
       newLevel: result.newLevel,
     };
-  } catch (err: any) {
-    showToast(`Failed to update XP: ${err.message || 'Unknown error'}`, 'error');
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : String(err);
+    showToast(`Failed to update XP: ${message || 'Unknown error'}`, 'error');
     throw err;
   }
 }
@@ -685,8 +686,9 @@ export async function updateStreak(studiedToday: boolean, useShield = false): Pr
       );
       notifyDbUpdate(DB_EVENT_KEYS.PROFILE_UPDATED);
       return;
-    } catch (err: any) {
-      showToast(`Failed to use shield: ${err.message || 'Unknown error'}`, 'error');
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
+      showToast(`Failed to use shield: ${message || 'Unknown error'}`, 'error');
       throw err;
     }
   }
@@ -704,8 +706,9 @@ export async function updateStreak(studiedToday: boolean, useShield = false): Pr
       [newStreak, newBest, today, shieldAvailable],
     );
     notifyDbUpdate(DB_EVENT_KEYS.PROFILE_UPDATED);
-  } catch (err: any) {
-    showToast(`Failed to update streak: ${err.message || 'Unknown error'}`, 'error');
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : String(err);
+    showToast(`Failed to update streak: ${message || 'Unknown error'}`, 'error');
     throw err;
   }
 }
@@ -754,8 +757,9 @@ export async function checkinToday(mood: Mood): Promise<void> {
       [today, mood],
     );
     notifyDbUpdate(DB_EVENT_KEYS.PROGRESS_UPDATED);
-  } catch (err: any) {
-    showToast(`Check-in failed: ${err.message || 'Unknown error'}`, 'error');
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : String(err);
+    showToast(`Check-in failed: ${message || 'Unknown error'}`, 'error');
     throw err;
   }
 }
@@ -858,8 +862,9 @@ export async function resetStudyProgress(): Promise<void> {
       await tx.runAsync(`DELETE FROM daily_log`);
     });
     notifyDbUpdate(DB_EVENT_KEYS.PROGRESS_UPDATED);
-  } catch (err: any) {
-    showToast(`Failed to reset progress: ${err.message || 'Unknown error'}`, 'error');
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : String(err);
+    showToast(`Failed to reset progress: ${message || 'Unknown error'}`, 'error');
     throw err;
   }
 }
@@ -867,8 +872,9 @@ export async function resetStudyProgress(): Promise<void> {
 export async function clearAiCache(): Promise<void> {
   try {
     await getAiCacheDb().runAsync(`DELETE FROM ${SQL_AI_CACHE}`);
-  } catch (err: any) {
-    showToast(`Failed to clear AI cache: ${err.message || 'Unknown error'}`, 'error');
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : String(err);
+    showToast(`Failed to clear AI cache: ${message || 'Unknown error'}`, 'error');
     throw err;
   }
 }

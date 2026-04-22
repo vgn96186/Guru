@@ -179,6 +179,7 @@ export const userProfile = sqliteTable('user_profile', {
   transcriptionProvider: text('transcription_provider').notNull().default('auto'),
   studyResourceMode: text('study_resource_mode').notNull().default('hybrid'),
   subjectLoadOverridesJson: text('subject_load_overrides_json').notNull().default('{}'),
+  loadingOrbStyle: text('loading_orb_style').notNull().default('classic'),
   backupDirectoryUri: text('backup_directory_uri'),
   pomodoroEnabled: integer('pomodoro_enabled').notNull().default(1),
   pomodoroIntervalMinutes: integer('pomodoro_interval_minutes').notNull().default(20),

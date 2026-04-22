@@ -1,12 +1,5 @@
 import React, { useCallback, useState } from 'react';
-import {
-  ActivityIndicator,
-  FlatList,
-  Pressable,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
+import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import LoadingOrb from '../components/LoadingOrb';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -184,14 +177,20 @@ export default function FlaggedContentScreen() {
         <View style={styles.loadingContainer}>
           <LoadingOrb message="Loading flagged content..." size={120} />
         </View>
-      ) : flaggedItems.length === 0 ? (
-        <EmptyState icon="checkmark-circle" iconSize={64} title="All Clear!" />
       ) : (
         <FlatList
           data={flaggedItems}
           renderItem={renderItem}
           keyExtractor={(item) => `${item.topicId}-${item.contentType}`}
-          contentContainerStyle={styles.listContent}
+          contentContainerStyle={[styles.listContent, flaggedItems.length === 0 && { flex: 1 }]}
+          ListEmptyComponent={
+            <EmptyState
+              icon="checkmark-circle"
+              iconSize={64}
+              title="All Clear!"
+              subtitle="You haven't flagged any content for review yet."
+            />
+          }
         />
       )}
     </View>

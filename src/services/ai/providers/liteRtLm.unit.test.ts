@@ -39,8 +39,15 @@ jest.mock('local-llm', () => ({
 import { createLiteRtModel } from './liteRtLm';
 import type { LanguageModelV2StreamPart } from '../v2/spec';
 
-async function collectStreamParts(parts: ReadableStream<LanguageModelV2StreamPart>) {
-  const seen: LanguageModelV2StreamPart[] = [];
+async function collectStreamParts(parts: any) {
+  if (parts && typeof parts[Symbol.asyncIterator] === 'function') {
+    const seen: any[] = [];
+    for await (const value of parts) {
+      seen.push(value);
+    }
+    return seen;
+  }
+  const seen: any[] = [];
   const reader = parts.getReader();
   try {
     while (true) {

@@ -81,6 +81,8 @@ jest.mock('./qwen', () => ({
 import { createGuruFallbackModel } from './guruFallback';
 import { createFallbackModel } from './fallback';
 import { createGroqModel, createOpenRouterModel } from './presets';
+import { createGeminiModel } from './gemini';
+import { createChatGptModel } from './chatgpt';
 import { createLocalLlmModel, createNanoModel } from './localLlm';
 import type { UserProfile } from '../../../../types';
 
@@ -120,6 +122,22 @@ function makeProfile(overrides: Partial<UserProfile> = {}): UserProfile {
 describe('createGuruFallbackModel', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    (createGroqModel as jest.Mock).mockImplementation(({ modelId }: any) => ({
+      provider: 'groq',
+      modelId,
+    }));
+    (createOpenRouterModel as jest.Mock).mockImplementation(({ modelId }: any) => ({
+      provider: 'openrouter',
+      modelId,
+    }));
+    (createGeminiModel as jest.Mock).mockImplementation(({ modelId }: any) => ({
+      provider: 'gemini',
+      modelId,
+    }));
+    (createChatGptModel as jest.Mock).mockImplementation(({ modelId }: any) => ({
+      provider: 'chatgpt',
+      modelId,
+    }));
   });
 
   it('uses only the explicitly selected cloud model when chosenModel targets a provider', () => {

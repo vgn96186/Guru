@@ -5,7 +5,7 @@ import * as Haptics from 'expo-haptics';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Controller, useForm } from 'react-hook-form';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
+import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RouteProp } from '@react-navigation/native';
@@ -124,193 +124,193 @@ export default function ManualLogScreen() {
   return (
     <SafeAreaView style={styles.safe}>
       <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
-      <KeyboardAwareScrollView
-        contentContainerStyle={styles.content}
-        keyboardDismissMode="on-drag"
-        bottomOffset={24}
-        extraKeyboardSpace={24}
-        showsVerticalScrollIndicator={false}
-      >
-        <ResponsiveContainer>
-          <LinearText variant="title" style={styles.title}>
-            Log External Study
-          </LinearText>
-          <LinearText variant="bodySmall" tone="secondary" style={styles.subtitle}>
-            Did you watch a video on Cerebellum or solve MCQs on Marrow? Log it here to keep your
-            streak alive!
-          </LinearText>
+      <KeyboardAvoidingView behavior="padding" style={{ flex: 1 }}>
+        <ScrollView
+          contentContainerStyle={styles.content}
+          keyboardDismissMode="on-drag"
+          showsVerticalScrollIndicator={false}
+        >
+          <ResponsiveContainer>
+            <LinearText variant="title" style={styles.title}>
+              Log External Study
+            </LinearText>
+            <LinearText variant="bodySmall" tone="secondary" style={styles.subtitle}>
+              Did you watch a video on Cerebellum or solve MCQs on Marrow? Log it here to keep your
+              streak alive!
+            </LinearText>
 
-          <LinearText variant="label" tone="accent" style={styles.label}>
-            Which App?
-          </LinearText>
-          <View style={styles.appGrid}>
-            {EXTERNAL_APPS.map((app) => (
-              <TouchableOpacity
-                key={app.id}
-                style={[styles.appBtn, selectedAppId === app.id && styles.appBtnActive]}
-                onPress={() => setSelectedAppId(app.id)}
-              >
-                <Ionicons name={app.iconName as never} size={24} color={app.color} />
-                <LinearText
-                  variant="chip"
-                  style={[styles.appName, selectedAppId === app.id && styles.appNameActive]}
+            <LinearText variant="label" tone="accent" style={styles.label}>
+              Which App?
+            </LinearText>
+            <View style={styles.appGrid}>
+              {EXTERNAL_APPS.map((app) => (
+                <TouchableOpacity
+                  key={app.id}
+                  style={[styles.appBtn, selectedAppId === app.id && styles.appBtnActive]}
+                  onPress={() => setSelectedAppId(app.id)}
                 >
-                  {app.name}
-                </LinearText>
-              </TouchableOpacity>
-            ))}
-          </View>
-
-          <LinearText variant="label" tone="accent" style={styles.label}>
-            Subject (Optional)
-          </LinearText>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            style={styles.subjectScroll}
-          >
-            {subjects.map((subject) => (
-              <TouchableOpacity
-                key={subject.id}
-                style={[
-                  styles.subjectChip,
-                  selectedSubjectId === subject.id && { backgroundColor: subject.colorHex },
-                ]}
-                onPress={() =>
-                  setSelectedSubjectId((current) => (current === subject.id ? null : subject.id))
-                }
-              >
-                <LinearText
-                  variant="chip"
-                  tone={selectedSubjectId === subject.id ? 'inverse' : 'primary'}
-                  style={styles.subjectText}
-                >
-                  {subject.shortCode}
-                </LinearText>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
-
-          {subjectTopics.length > 0 ? (
-            <>
-              <LinearText variant="label" tone="accent" style={styles.label}>
-                Topic Studied (Optional)
-              </LinearText>
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                style={styles.subjectScroll}
-              >
-                {subjectTopics.map((topic) => (
-                  <TouchableOpacity
-                    key={topic.id}
-                    style={[
-                      styles.subjectChip,
-                      styles.topicChip,
-                      selectedTopicId === topic.id && { backgroundColor: n.colors.accent },
-                    ]}
-                    onPress={() =>
-                      setSelectedTopicId((current) => (current === topic.id ? null : topic.id))
-                    }
+                  <Ionicons name={app.iconName as never} size={24} color={app.color} />
+                  <LinearText
+                    variant="chip"
+                    style={[styles.appName, selectedAppId === app.id && styles.appNameActive]}
                   >
-                    <LinearText
-                      variant="chip"
-                      tone={selectedTopicId === topic.id ? 'inverse' : 'primary'}
-                      style={styles.subjectText}
-                      numberOfLines={1}
-                      ellipsizeMode="tail"
-                    >
-                      {topic.name}
-                    </LinearText>
-                  </TouchableOpacity>
-                ))}
-              </ScrollView>
-            </>
-          ) : null}
+                    {app.name}
+                  </LinearText>
+                </TouchableOpacity>
+              ))}
+            </View>
 
-          <LinearText variant="label" tone="accent" style={styles.label}>
-            Topic / Chapter Name
-          </LinearText>
-          <Controller
-            control={control}
-            name="topicName"
-            render={({ field: { onBlur, onChange, value } }) => (
-              <TextInput
-                style={styles.input}
-                placeholder="e.g. Heart Failure"
-                placeholderTextColor={n.colors.textMuted}
-                value={value}
-                onChangeText={onChange}
-                onBlur={onBlur}
-              />
-            )}
-          />
-          {errors.topicName ? (
-            <LinearText style={styles.errorText}>{errors.topicName.message}</LinearText>
-          ) : null}
-
-          <LinearText variant="label" tone="accent" style={styles.label}>
-            Duration (minutes)
-          </LinearText>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            style={styles.durationScroll}
-          >
-            {[15, 30, 45, 60, 90].map((mins) => (
-              <TouchableOpacity
-                key={mins}
-                style={[
-                  styles.durationChip,
-                  duration === mins.toString() && styles.durationChipActive,
-                ]}
-                onPress={() =>
-                  setValue('duration', mins.toString(), {
-                    shouldDirty: true,
-                    shouldValidate: true,
-                  })
-                }
-              >
-                <LinearText
-                  variant="chip"
-                  tone={duration === mins.toString() ? 'inverse' : 'primary'}
-                  style={styles.durationText}
+            <LinearText variant="label" tone="accent" style={styles.label}>
+              Subject (Optional)
+            </LinearText>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              style={styles.subjectScroll}
+            >
+              {subjects.map((subject) => (
+                <TouchableOpacity
+                  key={subject.id}
+                  style={[
+                    styles.subjectChip,
+                    selectedSubjectId === subject.id && { backgroundColor: subject.colorHex },
+                  ]}
+                  onPress={() =>
+                    setSelectedSubjectId((current) => (current === subject.id ? null : subject.id))
+                  }
                 >
-                  {mins}m
-                </LinearText>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
-          <Controller
-            control={control}
-            name="duration"
-            render={({ field: { onBlur, onChange, value } }) => (
-              <TextInput
-                style={styles.input}
-                value={value}
-                onChangeText={onChange}
-                onBlur={onBlur}
-                keyboardType="number-pad"
-                placeholder="45"
-                placeholderTextColor={n.colors.textMuted}
-              />
-            )}
-          />
-          {errors.duration ? (
-            <LinearText style={styles.errorText}>{errors.duration.message}</LinearText>
-          ) : null}
+                  <LinearText
+                    variant="chip"
+                    tone={selectedSubjectId === subject.id ? 'inverse' : 'primary'}
+                    style={styles.subjectText}
+                  >
+                    {subject.shortCode}
+                  </LinearText>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
 
-          <LinearButton
-            variant="secondary"
-            style={[styles.submitBtn, isSubmitting && { opacity: 0.6 }]}
-            onPress={handleSubmit(handleValidSubmit)}
-            disabled={isSubmitting}
-            accessibilityRole="button"
-            accessibilityLabel={`Log session, ${projectedXp} XP`}
-            label={isSubmitting ? 'Logging…' : `Log Session (+${projectedXp} XP)`}
-          />
-        </ResponsiveContainer>
-      </KeyboardAwareScrollView>
+            {subjectTopics.length > 0 ? (
+              <>
+                <LinearText variant="label" tone="accent" style={styles.label}>
+                  Topic Studied (Optional)
+                </LinearText>
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  style={styles.subjectScroll}
+                >
+                  {subjectTopics.map((topic) => (
+                    <TouchableOpacity
+                      key={topic.id}
+                      style={[
+                        styles.subjectChip,
+                        styles.topicChip,
+                        selectedTopicId === topic.id && { backgroundColor: n.colors.accent },
+                      ]}
+                      onPress={() =>
+                        setSelectedTopicId((current) => (current === topic.id ? null : topic.id))
+                      }
+                    >
+                      <LinearText
+                        variant="chip"
+                        tone={selectedTopicId === topic.id ? 'inverse' : 'primary'}
+                        style={styles.subjectText}
+                        numberOfLines={1}
+                        ellipsizeMode="tail"
+                      >
+                        {topic.name}
+                      </LinearText>
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+              </>
+            ) : null}
+
+            <LinearText variant="label" tone="accent" style={styles.label}>
+              Topic / Chapter Name
+            </LinearText>
+            <Controller
+              control={control}
+              name="topicName"
+              render={({ field: { onBlur, onChange, value } }) => (
+                <TextInput
+                  style={styles.input}
+                  placeholder="e.g. Heart Failure"
+                  placeholderTextColor={n.colors.textMuted}
+                  value={value}
+                  onChangeText={onChange}
+                  onBlur={onBlur}
+                />
+              )}
+            />
+            {errors.topicName ? (
+              <LinearText style={styles.errorText}>{errors.topicName.message}</LinearText>
+            ) : null}
+
+            <LinearText variant="label" tone="accent" style={styles.label}>
+              Duration (minutes)
+            </LinearText>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              style={styles.durationScroll}
+            >
+              {[15, 30, 45, 60, 90].map((mins) => (
+                <TouchableOpacity
+                  key={mins}
+                  style={[
+                    styles.durationChip,
+                    duration === mins.toString() && styles.durationChipActive,
+                  ]}
+                  onPress={() =>
+                    setValue('duration', mins.toString(), {
+                      shouldDirty: true,
+                      shouldValidate: true,
+                    })
+                  }
+                >
+                  <LinearText
+                    variant="chip"
+                    tone={duration === mins.toString() ? 'inverse' : 'primary'}
+                    style={styles.durationText}
+                  >
+                    {mins}m
+                  </LinearText>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+            <Controller
+              control={control}
+              name="duration"
+              render={({ field: { onBlur, onChange, value } }) => (
+                <TextInput
+                  style={styles.input}
+                  value={value}
+                  onChangeText={onChange}
+                  onBlur={onBlur}
+                  keyboardType="number-pad"
+                  placeholder="45"
+                  placeholderTextColor={n.colors.textMuted}
+                />
+              )}
+            />
+            {errors.duration ? (
+              <LinearText style={styles.errorText}>{errors.duration.message}</LinearText>
+            ) : null}
+
+            <LinearButton
+              variant="secondary"
+              style={[styles.submitBtn, isSubmitting && { opacity: 0.6 }]}
+              onPress={handleSubmit(handleValidSubmit)}
+              disabled={isSubmitting}
+              accessibilityRole="button"
+              accessibilityLabel={`Log session, ${projectedXp} XP`}
+              label={isSubmitting ? 'Logging…' : `Log Session (+${projectedXp} XP)`}
+            />
+          </ResponsiveContainer>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }

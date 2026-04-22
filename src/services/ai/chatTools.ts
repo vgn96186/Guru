@@ -8,6 +8,7 @@ import { searchLatestMedicalSources, searchMedicalImages } from './medicalSearch
 import { generateStudyImage, buildChatImageContextKey } from '../studyImageService';
 import type { GeneratedStudyImageStyle } from '../../db/queries/generatedStudyImages';
 import type { ToolSet } from './v2/tool';
+import { guruCoreTools } from './v2/tools';
 
 // Search medical schema
 const searchMedicalSchema = z.object({
@@ -102,11 +103,12 @@ const createGenerateImageImpl =
     }
   };
 
-// Tool set for useChat
-export const createGuruChatTools = (
-  topicName: string,
-  getAssistantTimestamp?: () => number,
-): ToolSet => ({
+/**
+ * Chat-specific tool overrides that require conversation context
+ * (topic name + assistant-message timestamp for DB keys).
+ * These win over any same-named tool in `guruCoreTools`.
+ */
+const createChatOverrides = (topicName: string, getAssistantTimestamp?: () => number): ToolSet => ({
   search_medical: {
     name: 'search_medical',
     description:
@@ -126,4 +128,20 @@ export const createGuruChatTools = (
     inputSchema: generateImageSchema,
     execute: createGenerateImageImpl(topicName, getAssistantTimestamp),
   },
+});
+
+/**
+ * Full tool set for useChat: all `guruCoreTools` (planning, lecture, content,
+ * medical) merged with chat-specific overrides that need topic/timestamp
+ * context.
+ *
+ * Chat-specific entries win where names overlap (e.g. generate_image binds to
+ * the current topic + assistant timestamp).
+ */
+export const createGuruChatTools = (
+  topicName: string,
+  getAssistantTimestamp?: () => number,
+): ToolSet => ({
+  ...(guruCoreTools as ToolSet),
+  ...createChatOverrides(topicName, getAssistantTimestamp),
 });

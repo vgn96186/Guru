@@ -1,9 +1,18 @@
-import { z } from 'zod';
-import { profileRepository } from '../../db/repositories/profileRepository';
-import { NON_STUDY_PROVIDER_ORDER } from '../../types';
-import { createGuruFallbackModel } from './v2/providers/guruFallback';
-import { generateObject } from './v2/generateObject';
-import { generateText } from './v2/generateText';
+/**
+ * notifications — public API preserved; implementation delegates to the v2
+ * `guruNotificationTools` so there is ONE LLM path per capability.
+ *
+ * Fallback arrays stay here because they're pure business constants that
+ * must work whether or not the LLM path works.
+ */
+
+import { wakeUpMessageTool, breakEndMessagesTool } from './v2/tools/notificationTools';
+import { invokeTool } from './v2/toolRunner';
+
+const FALLBACK_WAKE_UP = {
+  title: 'Good Morning, Doctor. 🌅',
+  body: 'Time to rise and build some momentum. Tap here to wake up.',
+};
 
 const FALLBACK_BREAK_MESSAGES = [
   '🚨 BREAK IS OVER. Return to the tablet now.',
@@ -17,60 +26,19 @@ const FALLBACK_BREAK_MESSAGES = [
   'Resume the lecture on the tablet to silence me.',
 ];
 
-const WakeUpSchema = z.object({
-  title: z.string().describe('Short notification title'),
-  body: z.string().describe('Body text; concise'),
-});
-
 export async function generateWakeUpMessage(): Promise<{ title: string; body: string }> {
-  const systemPrompt = `You are Guru, an elite medical tutor. A student is waking up for another day of NEET-PG/INI-CET prep.
-Generate a short, sharp, and motivating wake-up call. Reference "Doctor" and the morning ahead.
-Return JSON: { "title": "...", "body": "..." }`;
-  try {
-    const profile = await profileRepository.getProfile();
-    const model = createGuruFallbackModel({ profile });
-    const { object } = await generateObject({
-      model,
-      messages: [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: 'Wake up call.' },
-      ],
-      schema: WakeUpSchema,
-    });
-    return object;
-  } catch {
-    return {
-      title: 'Good Morning, Doctor. 🌅',
-      body: 'Time to rise and build some momentum. Tap here to wake up.',
-    };
-  }
+  return invokeTool(wakeUpMessageTool, {
+    input: {},
+    tag: 'wakeUpMessage',
+    fallback: () => FALLBACK_WAKE_UP,
+  });
 }
 
 export async function generateBreakEndMessages(): Promise<string[]> {
-  const systemPrompt = `You are Guru, an aggressive medical tutor. A student is on a 5-minute break and likely scrolling Instagram/reels instead of returning to study.
-Generate exactly 8 increasingly aggressive, sharp, and sarcastic one-line reminders to get them back to their tablet.
-Mention INI-CET/NEET-PG pressure. Be blunt. No JSON, just one message per line.`;
-  const userPrompt = `The break is over. They are still on their phone. Give me 8 lines.`;
-  try {
-    const profile = await profileRepository.getProfile();
-    const model = createGuruFallbackModel({
-      profile,
-      forceOrder: NON_STUDY_PROVIDER_ORDER,
-    });
-    const { text } = await generateText({
-      model,
-      messages: [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: userPrompt },
-      ],
-    });
-    const lines = text
-      .split('\n')
-      .map((l) => l.trim())
-      .filter((l) => l.length > 5 && !l.startsWith('[') && !l.startsWith('{'));
-    if (lines.length >= 5) return lines.slice(0, 9);
-    return FALLBACK_BREAK_MESSAGES;
-  } catch {
-    return FALLBACK_BREAK_MESSAGES;
-  }
+  const result = await invokeTool(breakEndMessagesTool, {
+    input: {},
+    tag: 'breakEndMessages',
+    fallback: () => ({ messages: FALLBACK_BREAK_MESSAGES }),
+  });
+  return result.messages.length >= 5 ? result.messages : FALLBACK_BREAK_MESSAGES;
 }

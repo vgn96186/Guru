@@ -1,17 +1,22 @@
 import React, { type ComponentProps } from 'react';
-import { StyleSheet, type StyleProp, type TextStyle, type ViewStyle } from 'react-native';
-import LinearText from '../../../components/primitives/LinearText';
-import type { LinearTextTone } from '../../../components/primitives/LinearText';
-import LinearTextInput from '../../../components/primitives/LinearTextInput';
-import { linearTheme } from '../../../theme/linearTheme';
-import SettingsLabel from './SettingsLabel';
+import {
+  View,
+  Text,
+  TextInput,
+  type StyleProp,
+  type TextStyle,
+  type ViewStyle,
+} from 'react-native';
+import { linearTheme as n } from '../../../theme/linearTheme';
 
-interface SettingsFieldProps
-  extends Omit<ComponentProps<typeof LinearTextInput>, 'style' | 'containerStyle'> {
+interface SettingsFieldProps extends Omit<
+  ComponentProps<typeof TextInput>,
+  'style' | 'containerStyle'
+> {
   label: string;
   hint?: string;
   error?: string;
-  hintTone?: LinearTextTone;
+  hintTone?: string;
   hintStyle?: StyleProp<TextStyle>;
   inputStyle?: StyleProp<TextStyle>;
   inputContainerStyle?: StyleProp<ViewStyle>;
@@ -30,43 +35,30 @@ export default function SettingsField({
   const helperText = error ?? hint;
 
   return (
-    <>
-      <SettingsLabel text={label} />
-      <LinearTextInput
+    <View style={{ marginBottom: 16 }}>
+      <Text style={{ fontSize: 13, fontWeight: '500', color: '#E8E8E8', marginBottom: 8 }}>
+        {label}
+      </Text>
+      <TextInput
+        style={{
+          width: '100%',
+          height: 44,
+          backgroundColor: 'rgba(255, 255, 255, 0.03)',
+          borderRadius: 8,
+          borderWidth: 1,
+          borderColor: 'rgba(255, 255, 255, 0.08)',
+          paddingHorizontal: 12,
+          color: '#E8E8E8',
+          fontSize: 15,
+        }}
+        placeholderTextColor="#5E626B"
         {...inputProps}
-        containerStyle={[styles.inputContainer, inputContainerStyle]}
-        style={[styles.input, inputStyle]}
       />
       {helperText ? (
-        <LinearText
-          variant="body"
-          tone={error ? 'error' : hintTone}
-          style={[styles.hint, error && styles.errorText, hintStyle]}
-        >
+        <Text style={{ fontSize: 12, marginTop: 8, color: error ? '#F87171' : '#8A8F98' }}>
           {helperText}
-        </LinearText>
+        </Text>
       ) : null}
-    </>
+    </View>
   );
 }
-
-const styles = StyleSheet.create({
-  inputContainer: {
-    backgroundColor: linearTheme.colors.background,
-    borderRadius: 10,
-    borderColor: linearTheme.colors.border,
-    marginBottom: 4,
-  },
-  input: {
-    color: linearTheme.colors.textPrimary,
-    fontSize: 14,
-  },
-  hint: {
-    color: linearTheme.colors.textMuted,
-    fontSize: 12,
-    marginBottom: 4,
-  },
-  errorText: {
-    color: linearTheme.colors.error,
-  },
-});

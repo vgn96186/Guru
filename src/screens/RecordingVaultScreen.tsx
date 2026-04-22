@@ -661,15 +661,21 @@ export default function RecordingVaultScreen() {
           <View style={styles.center}>
             <LoadingOrb message="Scanning recordings..." size={120} />
           </View>
-        ) : recordings.length === 0 ? (
-          <EmptyState icon="mic-off-outline" iconSize={48} title="No recordings found" />
         ) : (
           <FlatList
             data={recordings}
             keyExtractor={(item) => item.path}
             renderItem={renderItem}
-            contentContainerStyle={styles.list}
+            contentContainerStyle={[styles.list, recordings.length === 0 && { flex: 1 }]}
             showsVerticalScrollIndicator={false}
+            ListEmptyComponent={
+              <EmptyState
+                icon="mic-off-outline"
+                iconSize={48}
+                title="No recordings found"
+                subtitle="Use the app to record a lecture, or import existing audio files."
+              />
+            }
           />
         )}
       </ResponsiveContainer>

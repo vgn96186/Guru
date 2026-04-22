@@ -203,10 +203,11 @@ export default function GuruChatOverlay({
         chosenModel: chosenModel === 'auto' ? undefined : chosenModel,
         textMode: true,
         onProviderError: (provider: string, model: string, error: unknown) => {
-          console.warn(`[GuruChatOverlay] Provider error: ${provider}/${model}`, error);
+          if (__DEV__)
+            console.warn(`[GuruChatOverlay] Provider error: ${provider}/${model}`, error);
         },
         onProviderSuccess: (provider: string, model: string) => {
-          console.log(`[GuruChatOverlay] Provider success: ${provider}/${model}`);
+          if (__DEV__) console.log(`[GuruChatOverlay] Provider success: ${provider}/${model}`);
         },
       });
     } catch (error) {
@@ -275,7 +276,7 @@ export default function GuruChatOverlay({
       };
     },
     onError: (err) => {
-      console.error('[GuruChatOverlay]', err);
+      if (__DEV__) console.error('[GuruChatOverlay]', err);
     },
   });
 

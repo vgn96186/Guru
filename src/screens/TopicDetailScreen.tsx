@@ -58,6 +58,33 @@ function TopicImage({ topicName }: { topicName: string }) {
 type Route = RouteProp<SyllabusStackParamList, 'TopicDetail'>;
 type Nav = NativeStackNavigationProp<SyllabusStackParamList, 'TopicDetail'>;
 
+function MasterButton({ onPress }: { onPress: () => void }) {
+  const scale = useRef(new Animated.Value(1)).current;
+  const [mastered, setMastered] = useState(false);
+
+  return (
+    <Animated.View style={{ transform: [{ scale }] }}>
+      <TouchableOpacity
+        style={[styles.studyNowBtn, styles.masteredBtn]}
+        onPress={() => {
+          if (mastered) return;
+          setMastered(true);
+          const anim = motion.pulseScale(scale, { to: 1.08, duration: 300, loop: false });
+          anim.start();
+          onPress();
+        }}
+        activeOpacity={0.8}
+        accessibilityRole="button"
+        accessibilityLabel="Mark topic as mastered"
+      >
+        <LinearText variant="label" tone="inverse" style={styles.studyNowText}>
+          {mastered ? 'Mastered!' : 'Mark as mastered'}
+        </LinearText>
+      </TouchableOpacity>
+    </Animated.View>
+  );
+}
+
 const STATUS_COLORS: Record<TopicStatus, string> = {
   unseen: n.colors.textMuted,
   seen: n.colors.accent,
@@ -367,7 +394,9 @@ export default function TopicDetailScreen() {
           : t,
       ),
     );
-    setExpandedId(null);
+    setTimeout(() => {
+      setExpandedId(null);
+    }, 300);
   }
 
   const leafTopics = useMemo(
@@ -864,17 +893,7 @@ export default function TopicDetailScreen() {
                           Start focused session
                         </LinearText>
                       </TouchableOpacity>
-                      <TouchableOpacity
-                        style={[styles.studyNowBtn, styles.masteredBtn]}
-                        onPress={() => markTopicMastered(item)}
-                        activeOpacity={0.8}
-                        accessibilityRole="button"
-                        accessibilityLabel="Mark topic as mastered"
-                      >
-                        <LinearText variant="label" tone="inverse" style={styles.studyNowText}>
-                          Mark as mastered
-                        </LinearText>
-                      </TouchableOpacity>
+                      <MasterButton onPress={() => markTopicMastered(item)} />
                       <LinearText variant="label" tone="accent" style={styles.notesLabel}>
                         Your Notes / Mnemonic
                       </LinearText>

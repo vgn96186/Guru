@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react';
 import { Alert, Linking } from 'react-native';
 import * as Notifications from 'expo-notifications';
 import { useRefreshProfile, PROFILE_QUERY_KEY } from './queries/useProfile';
-import { queryClient } from '../services/queryClient';
+import { useQueryClient } from '@tanstack/react-query';
 import type { UserProfile } from '../types';
 import { syncExamDatesIfStale } from '../services/examDateSyncService';
 import { refreshAccountabilityNotificationsSafely } from '../services/notificationService';
@@ -25,6 +25,7 @@ import { reportStartupHealth } from '../services/startupHealth';
  */
 export function useAppBootstrap(onFatalError?: (message: string) => void): void {
   const refreshProfile = useRefreshProfile();
+  const queryClient = useQueryClient();
   const initialized = useRef(false);
   const backupTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const warmCacheTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -58,7 +59,7 @@ export function useAppBootstrap(onFatalError?: (message: string) => void): void 
       );
 
       // Check for newer GDrive backup from another device
-      void checkForNewerGDriveBackup().catch((e) =>
+      void checkForNewerGDriveBackup(queryClient).catch((e) =>
         console.warn('[GDrive] Foreground sync check failed:', e),
       );
     },
@@ -153,6 +154,7 @@ export function useAppBootstrap(onFatalError?: (message: string) => void): void 
     };
 
     void bootstrap().catch((e) => {
+      console.error('[AppBootstrap] Fatal startup error stack:', e instanceof Error ? e.stack : e);
       console.error('[AppBootstrap] Fatal startup error:', e);
       reportStartupHealth('runtime_error', e instanceof Error ? e.message : 'App startup failed');
       initialized.current = false; // Allow retry on next mount
@@ -179,7 +181,7 @@ export function useAppBootstrap(onFatalError?: (message: string) => void): void 
  * Check GDrive for a newer backup from a different device.
  * Shows a prompt if found — user taps "Restore" or "Skip".
  */
-async function checkForNewerGDriveBackup(): Promise<void> {
+async function checkForNewerGDriveBackup(queryClient: any): Promise<void> {
   try {
     const { isGDriveConnected, listGDriveBackups, downloadBackupFromGDrive } =
       await import('../services/gdriveBackupService');

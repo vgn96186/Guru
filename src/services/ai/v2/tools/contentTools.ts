@@ -204,10 +204,10 @@ export const generateKeypointsTool = tool({
         name: topicRow.name,
         subjectName: topicRow.subjectName,
         progress: {
-          status: (topicRow.status as any) ?? 'unseen',
+          status: (topicRow.status as 'unseen' | 'seen' | 'reviewed' | 'mastered') ?? 'unseen',
           confidence: topicRow.confidence ?? 0,
         },
-      } as any,
+      } as unknown as import('../../../../types').TopicWithProgress,
       'keypoints',
     );
 
@@ -264,10 +264,10 @@ export const generateMustKnowTool = tool({
         name: topicRow.name,
         subjectName: topicRow.subjectName,
         progress: {
-          status: (topicRow.status as any) ?? 'unseen',
+          status: (topicRow.status as 'unseen' | 'seen' | 'reviewed' | 'mastered') ?? 'unseen',
           confidence: topicRow.confidence ?? 0,
         },
-      } as any,
+      } as unknown as import('../../../../types').TopicWithProgress,
       'must_know',
     );
 
@@ -325,10 +325,10 @@ export const generateStoryTool = tool({
         name: topicRow.name,
         subjectName: topicRow.subjectName,
         progress: {
-          status: (topicRow.status as any) ?? 'unseen',
+          status: (topicRow.status as 'unseen' | 'seen' | 'reviewed' | 'mastered') ?? 'unseen',
           confidence: topicRow.confidence ?? 0,
         },
-      } as any,
+      } as unknown as import('../../../../types').TopicWithProgress,
       'story',
     );
 
@@ -385,10 +385,10 @@ export const generateMnemonicTool = tool({
         name: topicRow.name,
         subjectName: topicRow.subjectName,
         progress: {
-          status: (topicRow.status as any) ?? 'unseen',
+          status: (topicRow.status as 'unseen' | 'seen' | 'reviewed' | 'mastered') ?? 'unseen',
           confidence: topicRow.confidence ?? 0,
         },
-      } as any,
+      } as unknown as import('../../../../types').TopicWithProgress,
       'mnemonic',
     );
 
@@ -446,10 +446,10 @@ export const generateTeachBackTool = tool({
         name: topicRow.name,
         subjectName: topicRow.subjectName,
         progress: {
-          status: (topicRow.status as any) ?? 'unseen',
+          status: (topicRow.status as 'unseen' | 'seen' | 'reviewed' | 'mastered') ?? 'unseen',
           confidence: topicRow.confidence ?? 0,
         },
-      } as any,
+      } as unknown as import('../../../../types').TopicWithProgress,
       'teach_back',
     );
 
@@ -507,10 +507,10 @@ export const generateErrorHuntTool = tool({
         name: topicRow.name,
         subjectName: topicRow.subjectName,
         progress: {
-          status: (topicRow.status as any) ?? 'unseen',
+          status: (topicRow.status as 'unseen' | 'seen' | 'reviewed' | 'mastered') ?? 'unseen',
           confidence: topicRow.confidence ?? 0,
         },
-      } as any,
+      } as unknown as import('../../../../types').TopicWithProgress,
       'error_hunt',
     );
 
@@ -567,10 +567,10 @@ export const generateDetectiveTool = tool({
         name: topicRow.name,
         subjectName: topicRow.subjectName,
         progress: {
-          status: (topicRow.status as any) ?? 'unseen',
+          status: (topicRow.status as 'unseen' | 'seen' | 'reviewed' | 'mastered') ?? 'unseen',
           confidence: topicRow.confidence ?? 0,
         },
-      } as any,
+      } as unknown as import('../../../../types').TopicWithProgress,
       'detective',
     );
 
@@ -628,10 +628,10 @@ export const generateSocraticTool = tool({
         name: topicRow.name,
         subjectName: topicRow.subjectName,
         progress: {
-          status: (topicRow.status as any) ?? 'unseen',
+          status: (topicRow.status as 'unseen' | 'seen' | 'reviewed' | 'mastered') ?? 'unseen',
           confidence: topicRow.confidence ?? 0,
         },
-      } as any,
+      } as unknown as import('../../../../types').TopicWithProgress,
       'socratic',
     );
 

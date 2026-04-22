@@ -1073,36 +1073,40 @@ export default function TranscriptVaultScreen() {
             <View style={styles.center}>
               <LoadingOrb message="Scanning transcripts..." size={120} />
             </View>
-          ) : files.length === 0 ? (
-            <EmptyState icon="mic-outline" iconSize={64} title="No Transcripts Yet" />
           ) : (
-            <>
-              <FlatList
-                data={sortedFiles.slice(0, displayCount)}
-                key={listLayoutKey}
-                keyExtractor={(item) => item.path}
-                renderItem={renderItem}
-                extraData={listLayoutKey}
-                contentContainerStyle={styles.list}
-                showsVerticalScrollIndicator={false}
-                initialNumToRender={10}
-                maxToRenderPerBatch={5}
-                windowSize={11}
-                removeClippedSubviews={Platform.OS === 'android' ? true : undefined}
-                updateCellsBatchingPeriod={100}
-              />
-              {displayCount < sortedFiles.length && (
-                <TouchableOpacity
-                  style={styles.loadMoreBtn}
-                  onPress={() => setDisplayCount((prev) => prev + PAGE_SIZE)}
-                  activeOpacity={0.7}
-                >
-                  <LinearText style={styles.loadMoreText}>
-                    Load More ({sortedFiles.length - displayCount} remaining)
-                  </LinearText>
-                </TouchableOpacity>
-              )}
-            </>
+            <FlatList
+              data={sortedFiles.slice(0, displayCount)}
+              key={listLayoutKey}
+              keyExtractor={(item) => item.path}
+              renderItem={renderItem}
+              extraData={listLayoutKey}
+              contentContainerStyle={[styles.list, sortedFiles.length === 0 && { flex: 1 }]}
+              showsVerticalScrollIndicator={false}
+              initialNumToRender={10}
+              maxToRenderPerBatch={5}
+              windowSize={11}
+              removeClippedSubviews={Platform.OS === 'android' ? true : undefined}
+              updateCellsBatchingPeriod={100}
+              ListEmptyComponent={
+                <EmptyState
+                  icon="mic-outline"
+                  iconSize={64}
+                  title="No Transcripts Yet"
+                  subtitle="Record lectures or import text files to get started."
+                />
+              }
+            />
+          )}
+          {!loading && sortedFiles.length > 0 && displayCount < sortedFiles.length && (
+            <TouchableOpacity
+              style={styles.loadMoreBtn}
+              onPress={() => setDisplayCount((prev) => prev + PAGE_SIZE)}
+              activeOpacity={0.7}
+            >
+              <LinearText style={styles.loadMoreText}>
+                Load More ({sortedFiles.length - displayCount} remaining)
+              </LinearText>
+            </TouchableOpacity>
           )}
 
           {/* Full-screen reader */}

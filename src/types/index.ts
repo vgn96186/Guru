@@ -161,6 +161,7 @@ export interface UserProfile {
   studyResourceMode?: StudyResourceMode;
   customSubjectLoadMultipliers?: Record<string, number>;
   harassmentTone?: HarassmentTone;
+  loadingOrbStyle?: 'classic' | 'turbulent';
   backupDirectoryUri?: string | null;
   pomodoroEnabled?: boolean;
   pomodoroIntervalMinutes?: number;

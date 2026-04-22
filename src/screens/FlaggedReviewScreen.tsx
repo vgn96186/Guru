@@ -12,6 +12,7 @@ import { ResponsiveContainer } from '../hooks/useResponsive';
 import { emphasizeHighYieldMarkdown } from '../utils/highlightMarkdown';
 import ScreenHeader from '../components/ScreenHeader';
 import LinearSurface from '../components/primitives/LinearSurface';
+import { EmptyState } from '../components/primitives';
 import { confirmDestructive } from '../components/dialogService';
 
 function renderPreview(item: FlaggedItem) {
@@ -169,13 +170,12 @@ export default function FlaggedReviewScreen() {
         />
 
         {items.length === 0 ? (
-          <View style={styles.empty}>
-            <Ionicons name="checkmark-circle-outline" size={48} color={n.colors.textMuted} />
-            <LinearText style={styles.emptyTitle}>No flagged content</LinearText>
-            <LinearText style={styles.emptySub}>
-              Tap the flag button on any content card to mark it for review here.
-            </LinearText>
-          </View>
+          <EmptyState
+            icon="checkmark-circle-outline"
+            iconSize={48}
+            title="No flagged content"
+            subtitle="Tap the flag button on any content card to mark it for review here."
+          />
         ) : (
           <ScrollView contentContainerStyle={styles.list} showsVerticalScrollIndicator={false}>
             <LinearText style={styles.hint}>

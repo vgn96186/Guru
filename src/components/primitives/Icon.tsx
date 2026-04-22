@@ -26,11 +26,19 @@ export default function Icon({
   accessibilityLabel,
 }: IconProps) {
   const resolved = style === 'filled' ? stripOutline(name) : ensureOutline(name);
-  return <Ionicons name={resolved} size={iconSize[size]} color={color} accessibilityLabel={accessibilityLabel} />;
+  return (
+    <Ionicons
+      name={resolved}
+      size={iconSize[size]}
+      color={color}
+      accessibilityLabel={accessibilityLabel}
+    />
+  );
 }
 
 function ensureOutline(n: string): any {
   if (n.endsWith('-outline')) return n;
+  if (n.startsWith('logo-')) return n;
   return `${n}-outline`;
 }
 function stripOutline(n: string): any {

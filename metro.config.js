@@ -1,13 +1,10 @@
 const { getDefaultConfig } = require('expo/metro-config');
+const { withNativeWind } = require('nativewind/metro');
 
 const config = getDefaultConfig(__dirname);
 config.resolver.unstable_enablePackageExports = true;
 
-config.resolver.blockList = [
-  /.*\/android\/build\/.*/,
-  /.*\/android\/\.cxx\/.*/,
-  /.*\.llama\.rn.*/,
-];
+config.resolver.blockList = [/.*\/android\/build\/.*/, /.*\/android\/\.cxx\/.*/, /.*\.llama\.rn.*/];
 
 const isTermux =
   process.env.TERMUX_VERSION != null ||
@@ -20,4 +17,4 @@ if (!process.env.EAS_BUILD) {
   }
 }
 
-module.exports = config;
+module.exports = withNativeWind(config, { input: './global.css' });

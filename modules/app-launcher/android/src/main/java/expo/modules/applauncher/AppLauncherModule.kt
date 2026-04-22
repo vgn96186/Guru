@@ -114,11 +114,11 @@ class AppLauncherModule : Module() {
         for (f in files) {
             if (f.isDirectory) {
                 results.addAll(findLocalModelFiles(f, maxDepth, depth + 1))
-            } else if (f.name.endsWith(".litertlm", ignoreCase = true) && f.length() > 100) {
+            } else if ((f.name.endsWith(".litertlm", ignoreCase = true) || f.name.endsWith(".bin", ignoreCase = true)) && f.length() > 100) {
                 results.add(
                     mapOf(
                         "name" to f.name,
-                        "path" to f.absolutePath,
+                        "path" to "file://" + f.absolutePath,
                         "size" to f.length(),
                         "modifiedAt" to f.lastModified(),
                     ),

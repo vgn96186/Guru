@@ -50,6 +50,7 @@ jest.mock('../db/database', () => ({
   resetDbSingleton: jest.fn(),
   walCheckpoint: jest.fn().mockResolvedValue(undefined),
   closeDbGracefully: jest.fn().mockResolvedValue(undefined),
+  DB_PATH: 'neet_study.db',
 }));
 
 jest.mock('../db/repositories', () => ({

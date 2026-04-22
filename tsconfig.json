@@ -12,7 +12,14 @@
       "@/*": ["*"]
     }
   },
-  "include": ["App.tsx", "index.ts", "src/**/*", "modules/**/*"],
+  "include": [
+    "App.tsx",
+    "index.ts",
+    "src/**/*",
+    "modules/**/*",
+    "nativewind-env.d.ts",
+    "global.css"
+  ],
   "exclude": [
     "Floating Overlay Widget Design",
     "**/Floating Overlay Widget Design/**",

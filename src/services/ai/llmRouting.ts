@@ -823,7 +823,7 @@ export async function attemptCloudLLMStream(
       const text = await streamOpenRouterChat(messages, orKey, preferredOpenRouterModel, onDelta);
       return { text, modelUsed: preferredOpenRouterModel };
     } catch (err) {
-      lastCloudError = err as Error;
+      lastCloudError = err instanceof Error ? err : new Error(String(err));
     }
   }
 
@@ -832,7 +832,7 @@ export async function attemptCloudLLMStream(
       const text = await streamGroqChat(messages, groqKey, preferredGroqModel, onDelta);
       return { text, modelUsed: `groq/${preferredGroqModel}` };
     } catch (err) {
-      lastCloudError = err as Error;
+      lastCloudError = err instanceof Error ? err : new Error(String(err));
     }
   }
 
@@ -846,7 +846,7 @@ export async function attemptCloudLLMStream(
       );
       return { text, modelUsed: `gemini/${preferredGeminiModel}` };
     } catch (err) {
-      lastCloudError = err as Error;
+      lastCloudError = err instanceof Error ? err : new Error(String(err));
     }
   }
 
@@ -861,7 +861,7 @@ export async function attemptCloudLLMStream(
       );
       return { text, modelUsed: `cf/${preferredCfModel}` };
     } catch (err) {
-      lastCloudError = err as Error;
+      lastCloudError = err instanceof Error ? err : new Error(String(err));
     }
   }
 
@@ -875,7 +875,7 @@ export async function attemptCloudLLMStream(
       );
       return { text, modelUsed: `github/${preferredGithubModel}` };
     } catch (err) {
-      lastCloudError = err as Error;
+      lastCloudError = err instanceof Error ? err : new Error(String(err));
     }
   }
 
@@ -884,7 +884,7 @@ export async function attemptCloudLLMStream(
       const text = await streamKiloChat(messages, kiloApiKey, preferredKiloModel, onDelta);
       return { text, modelUsed: `kilo/${preferredKiloModel}` };
     } catch (err) {
-      lastCloudError = err as Error;
+      lastCloudError = err instanceof Error ? err : new Error(String(err));
     }
   }
 
@@ -893,7 +893,7 @@ export async function attemptCloudLLMStream(
       const text = await streamDeepSeekChat(messages, deepseekKey, preferredDeepseekModel, onDelta);
       return { text, modelUsed: `deepseek/${preferredDeepseekModel}` };
     } catch (err) {
-      lastCloudError = err as Error;
+      lastCloudError = err instanceof Error ? err : new Error(String(err));
     }
   }
 
@@ -907,7 +907,7 @@ export async function attemptCloudLLMStream(
       );
       return { text, modelUsed: `ar/${preferredAgentRouterModel}` };
     } catch (err) {
-      lastCloudError = err as Error;
+      lastCloudError = err instanceof Error ? err : new Error(String(err));
     }
   }
 
@@ -921,7 +921,7 @@ export async function attemptCloudLLMStream(
       );
       return { text, modelUsed: `chatgpt/${preferredChatGptModel}` };
     } catch (err) {
-      lastCloudError = err as Error;
+      lastCloudError = err instanceof Error ? err : new Error(String(err));
     }
   }
 
@@ -936,7 +936,7 @@ export async function attemptCloudLLMStream(
       );
       return { text, modelUsed: `github_copilot/${preferredGithubCopilotModel}` };
     } catch (err) {
-      lastCloudError = err as Error;
+      lastCloudError = err instanceof Error ? err : new Error(String(err));
     }
   }
 
@@ -946,7 +946,7 @@ export async function attemptCloudLLMStream(
       const text = await streamGitLabDuoChat(messages, token, preferredGitlabDuoModel, onDelta);
       return { text, modelUsed: `gitlab_duo/${preferredGitlabDuoModel}` };
     } catch (err) {
-      lastCloudError = err as Error;
+      lastCloudError = err instanceof Error ? err : new Error(String(err));
     }
   }
 
@@ -956,7 +956,7 @@ export async function attemptCloudLLMStream(
       const text = await streamPoeChat(messages, token, preferredPoeModel, onDelta);
       return { text, modelUsed: `poe/${preferredPoeModel}` };
     } catch (err) {
-      lastCloudError = err as Error;
+      lastCloudError = err instanceof Error ? err : new Error(String(err));
     }
   }
 
@@ -1121,12 +1121,21 @@ export async function attemptLocalLLM(
 ): Promise<{ text: string; modelUsed: string }> {
   const isQwen = localModelPath.toLowerCase().includes('qwen');
   const isMedGemma = localModelPath.toLowerCase().includes('medgemma');
+  const isE2b = localModelPath.toLowerCase().includes('e2b');
+  const isE4b = localModelPath.toLowerCase().includes('e4b');
+  const isGemma = localModelPath.toLowerCase().includes('gemma');
   const cleanPath = localModelPath.replace(/^file:\/\//, '');
   const modelUsed = isMedGemma
     ? 'local-medgemma-4b'
     : isQwen
       ? 'local-qwen-2.5-3b'
-      : 'local-llama-3.2-1b';
+      : isE2b
+        ? 'local-gemma-4-e2b'
+        : isE4b
+          ? 'local-gemma-4-e4b'
+          : isGemma
+            ? 'local-gemma'
+            : 'local-llama-3.2-1b';
   try {
     const text = await callLocalLLM(messages, cleanPath, textMode);
     if (!text || !text.trim()) {
@@ -1268,7 +1277,7 @@ export async function attemptCloudLLM(
       );
       return { text, modelUsed: `chatgpt/${preferredChatGptModel}` };
     } catch (err) {
-      lastCloudError = err as Error;
+      lastCloudError = err instanceof Error ? err : new Error(String(err));
     }
   }
 
@@ -1279,7 +1288,7 @@ export async function attemptCloudLLM(
         : await callDeepSeek(messages, deepseekKey, preferredDeepseekModel);
       return { text, modelUsed: `deepseek/${preferredDeepseekModel}` };
     } catch (err) {
-      lastCloudError = err as Error;
+      lastCloudError = err instanceof Error ? err : new Error(String(err));
     }
   }
 
@@ -1290,7 +1299,7 @@ export async function attemptCloudLLM(
         : await callGitHubModels(messages, githubModelsPat, preferredGithubModel);
       return { text, modelUsed: `github/${preferredGithubModel}` };
     } catch (err) {
-      lastCloudError = err as Error;
+      lastCloudError = err instanceof Error ? err : new Error(String(err));
     }
   }
 
@@ -1301,7 +1310,7 @@ export async function attemptCloudLLM(
         : await callKilo(messages, kiloApiKey, preferredKiloModel);
       return { text, modelUsed: `kilo/${preferredKiloModel}` };
     } catch (err) {
-      lastCloudError = err as Error;
+      lastCloudError = err instanceof Error ? err : new Error(String(err));
     }
   }
 
@@ -1312,7 +1321,7 @@ export async function attemptCloudLLM(
         : await callAgentRouter(messages, agentRouterKey, preferredAgentRouterModel);
       return { text, modelUsed: `ar/${preferredAgentRouterModel}` };
     } catch (err) {
-      lastCloudError = err as Error;
+      lastCloudError = err instanceof Error ? err : new Error(String(err));
     }
   }
 
@@ -1321,7 +1330,7 @@ export async function attemptCloudLLM(
       const text = await callOpenRouter(messages, orKey, preferredOpenRouterModel);
       return { text, modelUsed: preferredOpenRouterModel };
     } catch (err) {
-      lastCloudError = err as Error;
+      lastCloudError = err instanceof Error ? err : new Error(String(err));
     }
   }
 
@@ -1332,7 +1341,7 @@ export async function attemptCloudLLM(
         : await callGroq(messages, groqKey, preferredGroqModel);
       return { text, modelUsed: `groq/${preferredGroqModel}` };
     } catch (err) {
-      lastCloudError = err as Error;
+      lastCloudError = err instanceof Error ? err : new Error(String(err));
     }
   }
 
@@ -1341,7 +1350,7 @@ export async function attemptCloudLLM(
       const text = await geminiGenerateContentSdk(messages, geminiKey, preferredGeminiModel);
       return { text, modelUsed: `gemini/${preferredGeminiModel}` };
     } catch (err) {
-      lastCloudError = err as Error;
+      lastCloudError = err instanceof Error ? err : new Error(String(err));
     }
   }
 
@@ -1350,7 +1359,7 @@ export async function attemptCloudLLM(
       const text = await callCloudflare(messages, cfAccountId, cfApiToken, preferredCfModel);
       return { text, modelUsed: `cf/${preferredCfModel}` };
     } catch (err) {
-      lastCloudError = err as Error;
+      lastCloudError = err instanceof Error ? err : new Error(String(err));
     }
   }
 
@@ -1362,7 +1371,7 @@ export async function attemptCloudLLM(
         : await callGitHubCopilot(messages, token, preferredGithubCopilotModel);
       return { text, modelUsed: `github_copilot/${preferredGithubCopilotModel}` };
     } catch (err) {
-      lastCloudError = err as Error;
+      lastCloudError = err instanceof Error ? err : new Error(String(err));
     }
   }
 
@@ -1374,7 +1383,7 @@ export async function attemptCloudLLM(
         : await callGitLabDuo(messages, token, preferredGitlabDuoModel);
       return { text, modelUsed: `gitlab_duo/${preferredGitlabDuoModel}` };
     } catch (err) {
-      lastCloudError = err as Error;
+      lastCloudError = err instanceof Error ? err : new Error(String(err));
     }
   }
 
@@ -1386,7 +1395,7 @@ export async function attemptCloudLLM(
         : await callPoe(messages, token, preferredPoeModel);
       return { text, modelUsed: `poe/${preferredPoeModel}` };
     } catch (err) {
-      lastCloudError = err as Error;
+      lastCloudError = err instanceof Error ? err : new Error(String(err));
     }
   }
 

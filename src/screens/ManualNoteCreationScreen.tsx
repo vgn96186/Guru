@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import LinearText from '../components/primitives/LinearText';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { MenuStackParamList } from '../navigation/types';
@@ -139,51 +140,53 @@ export default function ManualNoteCreationScreen(
     return (
       <SafeAreaView style={styles.safe}>
         <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => setResult(null)} style={styles.backBtn}>
-            <LinearText style={styles.backText}>← Edit</LinearText>
-          </TouchableOpacity>
-          <LinearText style={styles.title}>Review Notes</LinearText>
-        </View>
-        <ScrollView contentContainerStyle={styles.content}>
-          {subjectSelectionRequired ? (
-            <SubjectSelectionCard
-              detectedSubjectName={analysis.subject}
-              selectedSubjectName={selectedSubjectName}
-              onSelectSubject={setSelectedSubjectName}
+        <KeyboardAvoidingView behavior="padding" style={{ flex: 1 }}>
+          <View style={styles.header}>
+            <TouchableOpacity onPress={() => setResult(null)} style={styles.backBtn}>
+              <LinearText style={styles.backText}>← Edit</LinearText>
+            </TouchableOpacity>
+            <LinearText style={styles.title}>Review Notes</LinearText>
+          </View>
+          <ScrollView contentContainerStyle={styles.content}>
+            {subjectSelectionRequired ? (
+              <SubjectSelectionCard
+                detectedSubjectName={analysis.subject}
+                selectedSubjectName={selectedSubjectName}
+                onSelectSubject={setSelectedSubjectName}
+              />
+            ) : (
+              <SubjectChip subject={selectedSubjectName ?? analysis.subject} />
+            )}
+
+            {analysis.topics.length > 0 && (
+              <>
+                <LinearText style={styles.sectionLabel}>TOPICS DETECTED</LinearText>
+                <TopicPillRow topics={analysis.topics} wrap />
+              </>
+            )}
+
+            <LinearText style={styles.sectionLabel}>YOUR CONFIDENCE LEVEL</LinearText>
+            <ConfidenceSelector
+              value={confidence ?? (analysis.estimatedConfidence as 1 | 2 | 3)}
+              onChange={setConfidence}
             />
-          ) : (
-            <SubjectChip subject={selectedSubjectName ?? analysis.subject} />
-          )}
 
-          {analysis.topics.length > 0 && (
-            <>
-              <LinearText style={styles.sectionLabel}>TOPICS DETECTED</LinearText>
-              <TopicPillRow topics={analysis.topics} wrap />
-            </>
-          )}
+            <LinearText style={styles.sectionLabel}>GENERATED NOTES</LinearText>
+            <LinearSurface padded={false} style={styles.noteCard}>
+              <LinearText style={styles.noteText}>{note}</LinearText>
+            </LinearSurface>
+          </ScrollView>
 
-          <LinearText style={styles.sectionLabel}>YOUR CONFIDENCE LEVEL</LinearText>
-          <ConfidenceSelector
-            value={confidence ?? (analysis.estimatedConfidence as 1 | 2 | 3)}
-            onChange={setConfidence}
-          />
-
-          <LinearText style={styles.sectionLabel}>GENERATED NOTES</LinearText>
-          <LinearSurface padded={false} style={styles.noteCard}>
-            <LinearText style={styles.noteText}>{note}</LinearText>
-          </LinearSurface>
-        </ScrollView>
-
-        <View style={styles.footer}>
-          <LinearButton
-            variant="secondary"
-            style={[styles.saveBtn, isSaving && { opacity: 0.6 }]}
-            onPress={handleSave}
-            disabled={isSaving || (subjectSelectionRequired && !selectedSubjectName)}
-            label={isSaving ? 'Saving…' : 'Save to Notes Vault'}
-          />
-        </View>
+          <View style={styles.footer}>
+            <LinearButton
+              variant="secondary"
+              style={[styles.saveBtn, isSaving && { opacity: 0.6 }]}
+              onPress={handleSave}
+              disabled={isSaving || (subjectSelectionRequired && !selectedSubjectName)}
+              label={isSaving ? 'Saving…' : 'Save to Notes Vault'}
+            />
+          </View>
+        </KeyboardAvoidingView>
       </SafeAreaView>
     );
   }
@@ -192,42 +195,48 @@ export default function ManualNoteCreationScreen(
   return (
     <SafeAreaView style={styles.safe}>
       <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
-      <ScreenHeader title="Paste Transcript" onBackPress={() => navigation.goBack()} showSettings />
-      <ScrollView contentContainerStyle={styles.content}>
-        <LinearText style={styles.label}>Paste your lecture transcript below:</LinearText>
-        <LinearText style={styles.formatHint}>
-          Works with any text — lecture transcripts, recorded audio text, textbook paragraphs,
-          notes, or copied slides. Guru will extract topics, summarise, and rate your confidence.
-        </LinearText>
-        <TextInput
-          style={styles.input}
-          multiline
-          placeholder="Paste transcript here..."
-          placeholderTextColor={n.colors.textMuted}
-          value={transcript}
-          onChangeText={setTranscript}
-          editable={!isProcessing}
+      <KeyboardAvoidingView behavior="padding" style={{ flex: 1 }}>
+        <ScreenHeader
+          title="Paste Transcript"
+          onBackPress={() => navigation.goBack()}
+          showSettings
         />
-        <LinearButton
-          variant="secondary"
-          style={[styles.btn, (!transcript.trim() || isProcessing) && styles.btnDisabled]}
-          onPress={handleGenerate}
-          disabled={!transcript.trim() || isProcessing}
-          label={isProcessing ? 'Generating Notes…' : 'Generate Notes'}
-        />
-        {isProcessing && (
-          <LinearText style={styles.processingText}>
-            Analyzing transcript and building notes...
+        <ScrollView contentContainerStyle={styles.content}>
+          <LinearText style={styles.label}>Paste your lecture transcript below:</LinearText>
+          <LinearText style={styles.formatHint}>
+            Works with any text — lecture transcripts, recorded audio text, textbook paragraphs,
+            notes, or copied slides. Guru will extract topics, summarise, and rate your confidence.
           </LinearText>
-        )}
-        <TouchableOpacity
-          onPress={() => navigation.goBack()}
-          style={styles.cancelInlineBtn}
-          disabled={isProcessing}
-        >
-          <LinearText style={styles.cancelInlineText}>Cancel</LinearText>
-        </TouchableOpacity>
-      </ScrollView>
+          <TextInput
+            style={styles.input}
+            multiline
+            placeholder="Paste transcript here..."
+            placeholderTextColor={n.colors.textMuted}
+            value={transcript}
+            onChangeText={setTranscript}
+            editable={!isProcessing}
+          />
+          <LinearButton
+            variant="secondary"
+            style={[styles.btn, (!transcript.trim() || isProcessing) && styles.btnDisabled]}
+            onPress={handleGenerate}
+            disabled={!transcript.trim() || isProcessing}
+            label={isProcessing ? 'Generating Notes…' : 'Generate Notes'}
+          />
+          {isProcessing && (
+            <LinearText style={styles.processingText}>
+              Analyzing transcript and building notes...
+            </LinearText>
+          )}
+          <TouchableOpacity
+            onPress={() => navigation.goBack()}
+            style={styles.cancelInlineBtn}
+            disabled={isProcessing}
+          >
+            <LinearText style={styles.cancelInlineText}>Cancel</LinearText>
+          </TouchableOpacity>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }

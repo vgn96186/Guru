@@ -1,7 +1,9 @@
 import React, { type ComponentProps } from 'react';
 import { TouchableOpacity, View, StyleSheet } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import { linearTheme as n } from '../../theme/linearTheme';
+import { elevation } from '../../theme/elevation';
 import { density } from '../../theme/density';
 import { HIT_SIZE } from '../../theme/a11y';
 import LinearText from '../primitives/LinearText';
@@ -37,7 +39,17 @@ export default React.memo(function ShortcutTile({
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel}
     >
-      <View style={[styles.iconWrap, { backgroundColor: `${accent}18` }]}>
+      <LinearGradient
+        pointerEvents="none"
+        colors={[elevation.e1.gradientStart, elevation.e1.gradientEnd]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 0, y: 1 }}
+        style={StyleSheet.absoluteFill}
+      />
+      <View pointerEvents="none" style={styles.topEdge} />
+      <View
+        style={[styles.iconWrap, { backgroundColor: `${accent}22`, borderColor: `${accent}33` }]}
+      >
         <Icon name={icon} size="md" color={accent} />
       </View>
       <LinearText
@@ -63,12 +75,25 @@ const styles = StyleSheet.create({
     gap: density.compact.gap,
     paddingVertical: density.compact.paddingVertical,
     paddingHorizontal: density.compact.paddingHorizontal,
-    borderRadius: n.radius.sm,
+    borderRadius: n.radius.md,
+    borderWidth: 1,
+    borderColor: elevation.e1.border,
+    backgroundColor: elevation.e1.bg,
+    overflow: 'hidden',
+  },
+  topEdge: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: 0,
+    height: 1,
+    backgroundColor: elevation.topEdgeInteractive,
   },
   iconWrap: {
     width: 36,
     height: 36,
     borderRadius: 10,
+    borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },

@@ -79,7 +79,7 @@ export function showToast(
     _listener(payload);
   } else {
     // Fallback if ToastContainer is not mounted yet
-    console.warn(`[Toast] ${payload.type.toUpperCase()}: ${payload.message}`);
+    if (__DEV__) console.warn(`[Toast] ${payload.type.toUpperCase()}: ${payload.message}`);
   }
 }
 

@@ -12,12 +12,7 @@ jest.mock('./v2/generateObject', () => ({
 }));
 
 jest.mock('./v2/providers/guruFallback', () => ({
-  createGuruFallbackModel: jest.fn().mockReturnValue({
-    provider: 'groq',
-    modelId: 'test-model',
-    doGenerate: jest.fn(),
-    doStream: jest.fn(),
-  }),
+  createGuruFallbackModel: jest.fn(),
 }));
 
 jest.mock('./medicalSearch', () => ({
@@ -40,6 +35,7 @@ import { getCachedContent, setCachedContent } from '../../db/queries/aiCache';
 import { saveBulkQuestions } from '../../db/queries/questionBank';
 import { generateObject } from './v2/generateObject';
 import { searchMedicalImages, generateVisualSearchQueries } from './medicalSearch';
+import { createGuruFallbackModel } from './v2/providers/guruFallback';
 
 const mockGetCachedContent = getCachedContent as jest.MockedFunction<typeof getCachedContent>;
 const mockSetCachedContent = setCachedContent as jest.MockedFunction<typeof setCachedContent>;
@@ -61,6 +57,12 @@ describe('ai content prefetching', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    (createGuruFallbackModel as jest.Mock).mockReturnValue({
+      provider: 'groq',
+      modelId: 'test-model',
+      doGenerate: jest.fn(),
+      doStream: jest.fn(),
+    });
     (global as any).__DEV__ = true;
     mockSaveBulkQuestions.mockResolvedValue(0 as any);
     mockGenerateVisualSearchQueries.mockResolvedValue(['mocked query']);
@@ -79,7 +81,9 @@ describe('ai content prefetching', () => {
 
     const first = fetchContent(topic, 'keypoints');
     const second = fetchContent(topic, 'keypoints');
-    await Promise.resolve();
+    await new Promise(process.nextTick);
+    await new Promise(process.nextTick);
+    await new Promise(process.nextTick);
 
     expect(generateObject).toHaveBeenCalledTimes(1);
 

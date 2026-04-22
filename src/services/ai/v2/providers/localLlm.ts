@@ -18,6 +18,7 @@ import type {
   ToolDescription,
 } from '../spec';
 import { chatWithLocalNative } from '../../llmRouting';
+import * as samsungPerf from '../../../samsungPerf';
 import type { ChatMessage } from 'local-llm';
 import type { Message as LegacyMessage } from '../../types';
 
@@ -37,12 +38,14 @@ export function createLocalLlmModel(config: LocalLlmConfig): LanguageModelV2 {
       const toolsJson = toolsToJsonString(options.tools);
       const chatMessages = modelMessagesToChatMaps(options.prompt);
       const systemText = extractSystemText(options.prompt);
-      const native = await chatWithLocalNative({
-        chatMessages,
-        modelPath: config.modelPath,
-        systemInstruction: systemText || undefined,
-        toolsJson,
-      });
+      const native = await samsungPerf.runBoosted('llm_inference', () =>
+        chatWithLocalNative({
+          chatMessages,
+          modelPath: config.modelPath,
+          systemInstruction: systemText || undefined,
+          toolsJson,
+        }),
+      );
       const content = buildGenerateContent(native.text, native.toolCallsJson);
       const finishReason =
         parseLiteRtToolCallsJson(native.toolCallsJson).length > 0
@@ -90,12 +93,14 @@ export function createLocalLlmModel(config: LocalLlmConfig): LanguageModelV2 {
 
       void (async () => {
         try {
-          const native = await chatWithLocalNative({
-            chatMessages,
-            modelPath,
-            systemInstruction: systemText || undefined,
-            toolsJson,
-          });
+          const native = await samsungPerf.runBoosted('llm_inference', () =>
+            chatWithLocalNative({
+              chatMessages,
+              modelPath,
+              systemInstruction: systemText || undefined,
+              toolsJson,
+            }),
+          );
           const toolCalls = parseLiteRtToolCallsJson(native.toolCallsJson);
           for (const tc of toolCalls) {
             push({

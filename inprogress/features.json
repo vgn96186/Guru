@@ -1,0 +1,554 @@
+{
+  "mission": "Drizzle ORM Migration",
+  "description": "Migrate 26 tables from raw SQL to Drizzle ORM with incremental validation",
+  "version": "1.0.0",
+  "created": "2026-04-20",
+  "totalTables": 26,
+  "milestones": 7,
+  "totalAssertions": 45,
+  "features": [
+    {
+      "id": "infra-001",
+      "description": "Setup Drizzle tooling and infrastructure",
+      "skillName": "drizzle-schema-worker",
+      "milestone": 1,
+      "preconditions": ["project-structure-exists", "typescript-configured"],
+      "expectedBehavior": "Drizzle config files created, basic schema setup complete",
+      "verificationSteps": [
+        "drizzle.config.ts exists and is valid",
+        "Basic drizzleSchema.ts file structure exists",
+        "TypeScript compilation passes",
+        "drizzle-kit generate command works"
+      ],
+      "fulfills": ["VAL-SCHEMA-001", "VAL-TYPE-001", "VAL-LINT-001"],
+      "status": "pending"
+    },
+    {
+      "id": "schema-001",
+      "description": "Migrate subjects table schema to Drizzle",
+      "skillName": "drizzle-schema-worker",
+      "milestone": 1,
+      "preconditions": ["infra-001"],
+      "expectedBehavior": "subjects table schema defined in Drizzle with exact column parity",
+      "verificationSteps": [
+        "Schema matches CREATE_SUBJECTS SQL",
+        "All columns have correct types",
+        "Primary key correctly defined",
+        "TypeScript types inferred correctly"
+      ],
+      "fulfills": ["VAL-SCHEMA-002", "VAL-SCHEMA-003", "VAL-TYPE-002"],
+      "status": "pending"
+    },
+    {
+      "id": "schema-002",
+      "description": "Migrate topics table schema to Drizzle",
+      "skillName": "drizzle-schema-worker",
+      "milestone": 1,
+      "preconditions": ["schema-001"],
+      "expectedBehavior": "topics table schema defined with parent_topic_id foreign key",
+      "verificationSteps": [
+        "Foreign key relationships correctly mapped",
+        "UNIQUE constraint preserved",
+        "embedding BLOB column type correct",
+        "parent_topic_id self-reference works"
+      ],
+      "fulfills": ["VAL-SCHEMA-004", "VAL-SCHEMA-005", "VAL-TYPE-003"],
+      "status": "pending"
+    },
+    {
+      "id": "query-001",
+      "description": "Implement subjects table repository with Drizzle queries",
+      "skillName": "drizzle-query-worker",
+      "milestone": 2,
+      "preconditions": ["schema-001"],
+      "expectedBehavior": "All subjects CRUD operations work identically to SQL",
+      "verificationSteps": [
+        "SELECT queries return identical rows",
+        "INSERT operations work with auto-increment",
+        "UPDATE modifies correct rows",
+        "DELETE operations match SQL behavior"
+      ],
+      "fulfills": ["VAL-QUERY-001", "VAL-QUERY-002", "VAL-QUERY-003", "VAL-QUERY-004"],
+      "status": "pending"
+    },
+    {
+      "id": "query-002",
+      "description": "Implement topics table repository with Drizzle queries",
+      "skillName": "drizzle-query-worker",
+      "milestone": 2,
+      "preconditions": ["schema-002", "query-001"],
+      "expectedBehavior": "Topics queries with joins and hierarchical queries work correctly",
+      "verificationSteps": [
+        "JOIN queries with subjects return correct data",
+        "Parent/child hierarchical queries work",
+        "LIKE searches function identically",
+        "Transaction support for related operations"
+      ],
+      "fulfills": ["VAL-QUERY-005", "VAL-QUERY-007", "VAL-QUERY-009"],
+      "status": "pending"
+    },
+    {
+      "id": "schema-003",
+      "description": "Migrate topic_progress table schema to Drizzle",
+      "skillName": "drizzle-schema-worker",
+      "milestone": 2,
+      "preconditions": ["schema-002"],
+      "expectedBehavior": "Complex topic_progress schema with FSRS fields correctly defined",
+      "verificationSteps": [
+        "CHECK constraints for status field preserved",
+        "FSRS columns (stability, difficulty, etc.) correctly typed",
+        "Foreign key to topics table works",
+        "All default values preserved"
+      ],
+      "fulfills": ["VAL-SCHEMA-006", "VAL-TYPE-004", "VAL-TYPE-005"],
+      "status": "pending"
+    },
+    {
+      "id": "query-003",
+      "description": "Implement topic_progress repository with complex queries",
+      "skillName": "drizzle-query-worker",
+      "milestone": 2,
+      "preconditions": ["schema-003", "query-002"],
+      "expectedBehavior": "Spaced repetition and progress tracking queries work identically",
+      "verificationSteps": [
+        "FSRS scheduling queries return correct results",
+        "Confidence update queries work",
+        "Status transition queries function",
+        "Aggregate queries for statistics match SQL"
+      ],
+      "fulfills": ["VAL-QUERY-006", "VAL-QUERY-008", "VAL-QUERY-010", "VAL-PERF-001"],
+      "status": "pending"
+    },
+    {
+      "id": "schema-004",
+      "description": "Migrate sessions table schema to Drizzle",
+      "skillName": "drizzle-schema-worker",
+      "milestone": 3,
+      "preconditions": ["schema-003"],
+      "expectedBehavior": "sessions table with JSON columns and mood tracking correctly defined",
+      "verificationSteps": [
+        "JSON columns (planned_topics, completed_topics) correctly typed",
+        "mood TEXT column constraints preserved",
+        "mode field with default value works",
+        "Indexes for date queries defined"
+      ],
+      "fulfills": ["VAL-SCHEMA-007", "VAL-LINT-002", "VAL-LINT-003"],
+      "status": "pending"
+    },
+    {
+      "id": "schema-005",
+      "description": "Migrate daily_log, daily_agenda, and plan_events tables to Drizzle",
+      "skillName": "drizzle-schema-worker",
+      "milestone": 3,
+      "preconditions": ["schema-004"],
+      "expectedBehavior": "Daily tracking and planning tables with date-based queries correctly defined",
+      "verificationSteps": [
+        "daily_log date PRIMARY KEY works",
+        "daily_agenda JSON plan storage correct",
+        "plan_events date-based queries work",
+        "UNIQUE constraints preserved"
+      ],
+      "fulfills": ["VAL-TYPE-006", "VAL-LINT-004"],
+      "status": "pending"
+    },
+    {
+      "id": "query-004",
+      "description": "Implement session management repositories",
+      "skillName": "drizzle-query-worker",
+      "milestone": 3,
+      "preconditions": ["schema-004", "schema-005"],
+      "expectedBehavior": "Session tracking and daily logging queries perform identically",
+      "verificationSteps": [
+        "Session creation with planned topics works",
+        "Daily log date-based queries correct",
+        "Aggregate statistics queries match SQL",
+        "Concurrent session updates handled correctly"
+      ],
+      "fulfills": ["VAL-PERF-002", "VAL-PERF-003", "VAL-PERF-005", "VAL-INT-001"],
+      "status": "pending"
+    },
+    {
+      "id": "schema-006",
+      "description": "Migrate lecture system tables (lecture_notes, lecture_learned_topics)",
+      "skillName": "drizzle-schema-worker",
+      "milestone": 4,
+      "preconditions": ["schema-003", "schema-005"],
+      "expectedBehavior": "Lecture recording and analysis tables correctly defined",
+      "verificationSteps": [
+        "lecture_notes BLOB embedding column works",
+        "lecture_learned_topics junction table with UNIQUE constraint",
+        "transcription_status CHECK constraints preserved",
+        "JSON processing_metrics column correctly typed"
+      ],
+      "fulfills": ["VAL-TEST-001", "VAL-TEST-002"],
+      "status": "pending"
+    },
+    {
+      "id": "schema-007",
+      "description": "Migrate external_app_logs and lecture_schedule_progress tables",
+      "skillName": "drizzle-schema-worker",
+      "milestone": 4,
+      "preconditions": ["schema-006"],
+      "expectedBehavior": "External app tracking and lecture schedule tables defined",
+      "verificationSteps": [
+        "external_app_logs transcription_status CHECK works",
+        "lecture_schedule_progress UNIQUE constraint preserved",
+        "Foreign key to lecture_notes works",
+        "pipeline_metrics_json column typing correct"
+      ],
+      "fulfills": ["VAL-TEST-003", "VAL-TEST-004"],
+      "status": "pending"
+    },
+    {
+      "id": "query-005",
+      "description": "Implement lecture system repositories",
+      "skillName": "drizzle-query-worker",
+      "milestone": 4,
+      "preconditions": ["schema-006", "schema-007"],
+      "expectedBehavior": "Lecture transcription and topic matching queries work end-to-end",
+      "verificationSteps": [
+        "Mark topics from lecture workflow functions",
+        "External app session tracking queries work",
+        "Lecture schedule progress queries correct",
+        "Complex JOINs between lecture tables work"
+      ],
+      "fulfills": ["VAL-INT-002", "VAL-INT-003", "VAL-TEST-005", "VAL-TEST-006"],
+      "status": "pending"
+    },
+    {
+      "id": "schema-008",
+      "description": "Migrate AI content tables (ai_cache, topic_suggestions)",
+      "skillName": "drizzle-schema-worker",
+      "milestone": 5,
+      "preconditions": ["schema-002", "schema-003"],
+      "expectedBehavior": "AI-generated content caching tables correctly defined",
+      "verificationSteps": [
+        "ai_cache content_type CHECK constraint with all types",
+        "topic_suggestions status CHECK constraint preserved",
+        "UNIQUE constraints for deduplication work",
+        "is_flagged boolean column correctly typed"
+      ],
+      "fulfills": ["VAL-TEST-007", "VAL-PERF-004"],
+      "status": "pending"
+    },
+    {
+      "id": "schema-009",
+      "description": "Migrate generated_study_images, content_fact_checks, and user_content_flags tables",
+      "skillName": "drizzle-schema-worker",
+      "milestone": 5,
+      "preconditions": ["schema-008"],
+      "expectedBehavior": "Image generation and content validation tables defined",
+      "verificationSteps": [
+        "generated_study_images style CHECK constraint works",
+        "content_fact_checks check_status CHECK constraint",
+        "user_content_flags flag_reason CHECK constraint",
+        "context_type and context_key indexing works"
+      ],
+      "fulfills": ["VAL-INT-004", "VAL-INT-005"],
+      "status": "pending"
+    },
+    {
+      "id": "query-006",
+      "description": "Implement AI content system repositories",
+      "skillName": "drizzle-query-worker",
+      "milestone": 5,
+      "preconditions": ["schema-008", "schema-009"],
+      "expectedBehavior": "AI content caching and validation queries perform without degradation",
+      "verificationSteps": [
+        "Content type filtering queries work",
+        "Image generation context queries function",
+        "Fact check status queries correct",
+        "Content flagging workflow works end-to-end"
+      ],
+      "fulfills": ["VAL-INT-006", "VAL-PERF-001"],
+      "status": "pending"
+    },
+    {
+      "id": "schema-010",
+      "description": "Migrate chat system tables (guru_chat_threads, guru_chat_session_memory)",
+      "skillName": "drizzle-schema-worker",
+      "milestone": 6,
+      "preconditions": ["schema-002", "schema-003"],
+      "expectedBehavior": "Chat thread and session memory tables correctly defined",
+      "verificationSteps": [
+        "guru_chat_threads foreign key to topics works",
+        "guru_chat_session_memory state_json column typed",
+        "last_message_preview text column constraints",
+        "UNIQUE constraint for thread memory works"
+      ],
+      "fulfills": ["VAL-SCHEMA-001", "VAL-SCHEMA-002"],
+      "status": "pending"
+    },
+    {
+      "id": "schema-011",
+      "description": "Migrate chat_history and offline_ai_queue tables",
+      "skillName": "drizzle-schema-worker",
+      "milestone": 6,
+      "preconditions": ["schema-010"],
+      "expectedBehavior": "Message history and offline processing tables defined",
+      "verificationSteps": [
+        "chat_history thread_id foreign key works",
+        "offline_ai_queue status CHECK constraint preserved",
+        "sources_json column for chat history correct",
+        "timestamp ordering indexes work"
+      ],
+      "fulfills": ["VAL-SCHEMA-003", "VAL-SCHEMA-004"],
+      "status": "pending"
+    },
+    {
+      "id": "query-007",
+      "description": "Implement chat system repositories",
+      "skillName": "drizzle-query-worker",
+      "milestone": 6,
+      "preconditions": ["schema-010", "schema-011"],
+      "expectedBehavior": "Chat messaging and thread management queries handle concurrency",
+      "verificationSteps": [
+        "Message history pagination works",
+        "Thread creation and updating functions",
+        "Session memory state queries correct",
+        "Offline queue processing queries work"
+      ],
+      "fulfills": ["VAL-QUERY-007", "VAL-PERF-005", "VAL-PERF-002"],
+      "status": "pending"
+    },
+    {
+      "id": "schema-012",
+      "description": "Migrate brain_dumps table to Drizzle",
+      "skillName": "drizzle-schema-worker",
+      "milestone": 7,
+      "preconditions": [],
+      "expectedBehavior": "Simple brain_dumps table correctly defined",
+      "verificationSteps": [
+        "note TEXT column constraints preserved",
+        "created_at timestamp column works",
+        "Simple CRUD operations possible",
+        "TypeScript types inferred correctly"
+      ],
+      "fulfills": ["VAL-SCHEMA-005", "VAL-SCHEMA-006"],
+      "status": "pending"
+    },
+    {
+      "id": "schema-013",
+      "description": "Migrate question_bank table to Drizzle",
+      "skillName": "drizzle-schema-worker",
+      "milestone": 7,
+      "preconditions": ["schema-002", "schema-003"],
+      "expectedBehavior": "Complex question bank with SR scheduling correctly defined",
+      "verificationSteps": [
+        "source CHECK constraint with all types preserved",
+        "is_bookmarked and is_mastered boolean columns",
+        "difficulty REAL column correct",
+        "next_review_at and last_seen_at timestamps"
+      ],
+      "fulfills": ["VAL-SCHEMA-007", "VAL-TYPE-001"],
+      "status": "pending"
+    },
+    {
+      "id": "schema-014",
+      "description": "Migrate mind map tables (mind_maps, mind_map_nodes, mind_map_edges)",
+      "skillName": "drizzle-schema-worker",
+      "milestone": 7,
+      "preconditions": ["schema-002"],
+      "expectedBehavior": "Mind map hierarchy and relationship tables correctly defined",
+      "verificationSteps": [
+        "mind_maps viewport_json column typed",
+        "mind_map_nodes is_center boolean column",
+        "mind_map_edges is_cross_link boolean column",
+        "Foreign key relationships between map tables"
+      ],
+      "fulfills": ["VAL-TYPE-002", "VAL-TYPE-003"],
+      "status": "pending"
+    },
+    {
+      "id": "query-008",
+      "description": "Implement advanced feature repositories",
+      "skillName": "drizzle-query-worker",
+      "milestone": 7,
+      "preconditions": ["schema-012", "schema-013", "schema-014"],
+      "expectedBehavior": "All advanced feature queries work with full system integration",
+      "verificationSteps": [
+        "Question bank spaced repetition queries function",
+        "Mind map node and edge queries work",
+        "Brain dump search and retrieval queries",
+        "Full system integration testing passes"
+      ],
+      "fulfills": ["VAL-TYPE-004", "VAL-TYPE-005", "VAL-TYPE-006", "VAL-INT-001"],
+      "status": "pending"
+    },
+    {
+      "id": "schema-015",
+      "description": "Migrate migration_history table to Drizzle (table #27)",
+      "skillName": "drizzle-schema-worker",
+      "milestone": 7,
+      "preconditions": [],
+      "expectedBehavior": "Migration tracking table for audit trail correctly defined",
+      "verificationSteps": [
+        "version PRIMARY KEY works",
+        "applied_at timestamp column",
+        "description text column",
+        "Simple version tracking queries work"
+      ],
+      "fulfills": ["VAL-LINT-001", "VAL-LINT-002"],
+      "status": "pending"
+    },
+    {
+      "id": "test-001",
+      "description": "Schema parity testing infrastructure",
+      "skillName": "drizzle-schema-worker",
+      "milestone": 1,
+      "preconditions": ["infra-001"],
+      "expectedBehavior": "Automated schema comparison tests verify Drizzle matches SQL",
+      "verificationSteps": [
+        "drizzleSchemaParity.unit.test.ts runs successfully",
+        "All 26 tables pass schema validation",
+        "Type mismatches are detected and reported",
+        "Test coverage for schema validation exists"
+      ],
+      "fulfills": ["VAL-TEST-001", "VAL-TEST-002", "VAL-TEST-003"],
+      "status": "pending"
+    },
+    {
+      "id": "test-002",
+      "description": "Query result equality testing",
+      "skillName": "drizzle-query-worker",
+      "milestone": 2,
+      "preconditions": ["test-001"],
+      "expectedBehavior": "All queries return identical results between SQL and Drizzle",
+      "verificationSteps": [
+        "SELECT query comparison tests pass",
+        "INSERT/UPDATE/DELETE result tests pass",
+        "JOIN query accuracy verified",
+        "NULL and edge case handling matches"
+      ],
+      "fulfills": ["VAL-TEST-004", "VAL-TEST-005", "VAL-TEST-006"],
+      "status": "pending"
+    },
+    {
+      "id": "perf-001",
+      "description": "Performance benchmarking suite",
+      "skillName": "drizzle-query-worker",
+      "milestone": 3,
+      "preconditions": ["test-002"],
+      "expectedBehavior": "Drizzle performance within 10% of raw SQL for all critical queries",
+      "verificationSteps": [
+        "Query execution time benchmarks recorded",
+        "Memory usage measurements taken",
+        "Cold start time comparisons",
+        "Concurrent query handling tests"
+      ],
+      "fulfills": ["VAL-PERF-001", "VAL-PERF-002", "VAL-PERF-003", "VAL-PERF-004", "VAL-PERF-005"],
+      "status": "pending"
+    },
+    {
+      "id": "integration-001",
+      "description": "Zustand store integration validation",
+      "skillName": "drizzle-query-worker",
+      "milestone": 4,
+      "preconditions": ["query-003"],
+      "expectedBehavior": "All Zustand stores work correctly with Drizzle repositories",
+      "verificationSteps": [
+        "useAppStore refreshProfile() works with Drizzle",
+        "Topic progress updates propagate to UI",
+        "Session state management functions",
+        "Error handling in stores works correctly"
+      ],
+      "fulfills": ["VAL-INT-001", "VAL-INT-002"],
+      "status": "pending"
+    },
+    {
+      "id": "integration-002",
+      "description": "React Native and Expo SQLite integration",
+      "skillName": "drizzle-query-worker",
+      "milestone": 5,
+      "preconditions": ["integration-001"],
+      "expectedBehavior": "Drizzle works correctly in React Native environment with expo-sqlite",
+      "verificationSteps": [
+        "Async/await pattern works in RN context",
+        "expo-sqlite driver compatibility verified",
+        "Error handling for RN-specific scenarios",
+        "Bundle size impact within limits"
+      ],
+      "fulfills": ["VAL-INT-003", "VAL-INT-004"],
+      "status": "pending"
+    },
+    {
+      "id": "integration-003",
+      "description": "Rollback capability and error handling",
+      "skillName": "drizzle-query-worker",
+      "milestone": 6,
+      "preconditions": ["integration-002"],
+      "expectedBehavior": "System can rollback to SQL queries within 30 minutes if needed",
+      "verificationSteps": [
+        "Rollback procedure documented and tested",
+        "Error scenarios handled appropriately",
+        "Fallback to raw SQL queries works",
+        "Migration can be paused and resumed"
+      ],
+      "fulfills": ["VAL-INT-005", "VAL-INT-006"],
+      "status": "pending"
+    },
+    {
+      "id": "validation-001",
+      "description": "Comprehensive validation report generation",
+      "skillName": "drizzle-schema-worker",
+      "milestone": 7,
+      "preconditions": ["perf-001", "integration-003"],
+      "expectedBehavior": "Complete validation evidence collected for all 45 assertions",
+      "verificationSteps": [
+        "All 45 assertion IDs have documented evidence",
+        "Validation surfaces covered completely",
+        "Cross-area validation flows verified",
+        "Final migration report generated"
+      ],
+      "fulfills": ["VAL-TEST-007", "VAL-LINT-003", "VAL-LINT-004"],
+      "status": "pending"
+    }
+  ],
+  "assertionMapping": {
+    "VAL-SCHEMA-001": ["infra-001", "schema-010"],
+    "VAL-SCHEMA-002": ["schema-001", "schema-010"],
+    "VAL-SCHEMA-003": ["schema-001", "schema-011"],
+    "VAL-SCHEMA-004": ["schema-002", "schema-011"],
+    "VAL-SCHEMA-005": ["schema-002", "schema-012"],
+    "VAL-SCHEMA-006": ["schema-003", "schema-012"],
+    "VAL-SCHEMA-007": ["schema-004", "schema-013"],
+    "VAL-QUERY-001": ["query-001"],
+    "VAL-QUERY-002": ["query-001"],
+    "VAL-QUERY-003": ["query-001"],
+    "VAL-QUERY-004": ["query-001"],
+    "VAL-QUERY-005": ["query-002"],
+    "VAL-QUERY-006": ["query-003"],
+    "VAL-QUERY-007": ["query-002", "query-007"],
+    "VAL-QUERY-008": ["query-003"],
+    "VAL-QUERY-009": ["query-002"],
+    "VAL-QUERY-010": ["query-003"],
+    "VAL-TEST-001": ["schema-006", "test-001"],
+    "VAL-TEST-002": ["schema-006", "test-001"],
+    "VAL-TEST-003": ["schema-007", "test-001"],
+    "VAL-TEST-004": ["schema-007", "test-002"],
+    "VAL-TEST-005": ["query-005", "test-002"],
+    "VAL-TEST-006": ["query-005", "test-002"],
+    "VAL-TEST-007": ["schema-008", "validation-001"],
+    "VAL-TYPE-001": ["infra-001", "schema-013"],
+    "VAL-TYPE-002": ["schema-001", "schema-014"],
+    "VAL-TYPE-003": ["schema-002", "schema-014"],
+    "VAL-TYPE-004": ["schema-003", "query-008"],
+    "VAL-TYPE-005": ["schema-003", "query-008"],
+    "VAL-TYPE-006": ["schema-005", "query-008"],
+    "VAL-LINT-001": ["infra-001", "schema-015"],
+    "VAL-LINT-002": ["schema-004", "schema-015"],
+    "VAL-LINT-003": ["schema-004", "validation-001"],
+    "VAL-LINT-004": ["schema-005", "validation-001"],
+    "VAL-PERF-001": ["query-003", "query-006", "perf-001"],
+    "VAL-PERF-002": ["query-004", "query-007", "perf-001"],
+    "VAL-PERF-003": ["query-004", "perf-001"],
+    "VAL-PERF-004": ["schema-008", "perf-001"],
+    "VAL-PERF-005": ["query-004", "query-007", "perf-001"],
+    "VAL-INT-001": ["query-004", "query-008", "integration-001"],
+    "VAL-INT-002": ["query-005", "integration-001"],
+    "VAL-INT-003": ["query-005", "integration-002"],
+    "VAL-INT-004": ["schema-009", "integration-002"],
+    "VAL-INT-005": ["schema-009", "integration-003"],
+    "VAL-INT-006": ["query-006", "integration-003"]
+  }
+}

@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Quick stats bar - redesign mockup</title>
+    <!-- No external CSS/fonts: opens from file:// and in Cursor Simple Browser without network. -->
+    <style>
+      :root {
+        --bg: #000000;
+        --text: #f2f2f2;
+        --muted: #939396;
+        --secondary: #a0a0a5;
+        --accent: #5e6ad2;
+        --accent-soft: rgba(94, 106, 210, 0.22);
+        --warning: #d97706;
+        --warning-glow: rgba(217, 119, 6, 0.35);
+        --border: rgba(255, 255, 255, 0.08);
+        --border-hi: rgba(255, 255, 255, 0.14);
+        --glass: rgba(12, 14, 22, 0.72);
+        --glass-top: rgba(255, 255, 255, 0.06);
+        --radius: 16px;
+        --radius-sm: 12px;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        font-family: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+        background: var(--bg);
+        color: var(--text);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 48px;
+        padding: 32px 16px 64px;
+      }
+
+      h1 {
+        margin: 0;
+        font-size: 13px;
+        font-weight: 700;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+
+      .caption {
+        max-width: 420px;
+        text-align: center;
+        font-size: 13px;
+        line-height: 1.5;
+        color: var(--secondary);
+        margin: -32px 0 0;
+      }
+
+      /* ─── Concept A: “Instrument rail” — one glass surface, clearer tiers ─── */
+      .rail {
+        width: 100%;
+        max-width: 392px;
+        position: relative;
+        border-radius: var(--radius);
+        padding: 1px;
+        background: linear-gradient(
+          165deg,
+          rgba(255, 255, 255, 0.14) 0%,
+          rgba(255, 255, 255, 0.04) 40%,
+          rgba(255, 255, 255, 0.02) 100%
+        );
+        box-shadow: 0 24px 48px rgba(0, 0, 0, 0.55);
+      }
+
+      .rail-inner {
+        border-radius: calc(var(--radius) - 1px);
+        background: linear-gradient(180deg, var(--glass-top) 0%, transparent 42%), var(--glass);
+        border: 1px solid var(--border);
+        padding: 14px 16px 16px;
+        display: grid;
+        grid-template-columns: auto 1fr auto;
+        gap: 14px 18px;
+        align-items: center;
+      }
+
+      .ring-block {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 6px;
+      }
+
+      .ring {
+        width: 56px;
+        height: 56px;
+        border-radius: 50%;
+        background: conic-gradient(var(--accent) calc(63 * 3.6deg), rgba(255, 255, 255, 0.06) 0);
+        display: grid;
+        place-items: center;
+        position: relative;
+      }
+
+      .ring::before {
+        content: '';
+        width: 42px;
+        height: 42px;
+        border-radius: 50%;
+        background: rgba(6, 8, 14, 0.96);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+      }
+
+      .ring span {
+        position: absolute;
+        font-size: 12px;
+        font-weight: 900;
+        letter-spacing: -0.03em;
+        color: var(--text);
+      }
+
+      .ratio {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        min-width: 0;
+      }
+
+      .ratio-row {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: baseline;
+        gap: 6px 10px;
+      }
+
+      .ratio-big {
+        font-size: 28px;
+        font-weight: 900;
+        letter-spacing: -0.04em;
+        line-height: 1;
+      }
+
+      .ratio-big em {
+        font-style: normal;
+        color: var(--muted);
+        font-weight: 700;
+        font-size: 0.55em;
+        margin-left: 2px;
+      }
+
+      .ratio-sub {
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--secondary);
+      }
+
+      .goal-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 5px 10px 5px 8px;
+        border-radius: 999px;
+        background: var(--accent-soft);
+        border: 1px solid rgba(94, 106, 210, 0.45);
+        font-size: 11px;
+        font-weight: 800;
+        color: #b4bbf5;
+        letter-spacing: 0.02em;
+        cursor: default;
+      }
+
+      .goal-chip svg {
+        width: 10px;
+        height: 10px;
+        opacity: 0.85;
+      }
+
+      .divider {
+        width: 1px;
+        height: 52px;
+        background: linear-gradient(
+          180deg,
+          transparent 0%,
+          rgba(255, 255, 255, 0.08) 20%,
+          rgba(255, 255, 255, 0.08) 80%,
+          transparent 100%
+        );
+        justify-self: center;
+      }
+
+      .streak-block {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 6px;
+        text-align: right;
+      }
+
+      .streak-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 12px;
+        border-radius: var(--radius-sm);
+        background: rgba(217, 119, 6, 0.1);
+        border: 1px solid rgba(217, 119, 6, 0.28);
+        box-shadow: 0 0 28px var(--warning-glow);
+      }
+
+      .flame {
+        width: 22px;
+        height: 22px;
+        background: radial-gradient(circle at 40% 20%, #fde68a 0%, transparent 55%),
+          radial-gradient(circle at 50% 100%, var(--warning) 0%, #b45309 100%);
+        border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+        transform: rotate(-4deg);
+      }
+
+      .streak-num {
+        font-size: 22px;
+        font-weight: 900;
+        letter-spacing: -0.03em;
+        line-height: 1;
+      }
+
+      .streak-meta {
+        font-size: 11px;
+        font-weight: 600;
+        color: var(--warning);
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+      }
+
+      .level-row {
+        font-size: 13px;
+        font-weight: 800;
+        color: var(--text);
+      }
+
+      .level-row span {
+        color: var(--muted);
+        font-weight: 600;
+        font-size: 11px;
+      }
+
+      /* second row under grid for level + sessions */
+      .rail-footer {
+        grid-column: 1 / -1;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding-top: 12px;
+        margin-top: 2px;
+        border-top: 1px solid rgba(255, 255, 255, 0.06);
+      }
+
+      .badge-lv {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 10px;
+        border-radius: 8px;
+        background: rgba(94, 106, 210, 0.12);
+        border: 1px solid rgba(94, 106, 210, 0.25);
+        font-size: 12px;
+        font-weight: 800;
+        color: #c7cdf7;
+      }
+
+      .sessions {
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--muted);
+      }
+
+      .sessions strong {
+        color: var(--text);
+        font-weight: 800;
+      }
+
+      /* ─── Dense ticker · symmetric 4-up (matches current stats, balanced layout) ─── */
+      .ticker-wrap {
+        width: 100%;
+        max-width: 392px;
+      }
+
+      .ticker {
+        --ticker-pad-x: 6px;
+        border-radius: var(--radius-sm);
+        border: 1px solid var(--border);
+        background: rgba(9, 11, 18, 0.88);
+        padding: 12px 0;
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        font-variant-numeric: tabular-nums;
+        align-items: stretch;
+      }
+
+      .ticker-cell {
+        padding: 0 var(--ticker-pad-x);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        gap: 4px;
+        border-right: 1px solid rgba(255, 255, 255, 0.07);
+        min-width: 0;
+      }
+
+      .ticker-cell:last-child {
+        border-right: none;
+      }
+
+      .ticker-cell label {
+        font-size: 9px;
+        font-weight: 700;
+        letter-spacing: 0.12em;
+        color: var(--muted);
+        text-transform: uppercase;
+      }
+
+      .ticker-cell .ticker-val {
+        font-size: 16px;
+        font-weight: 900;
+        letter-spacing: -0.03em;
+        line-height: 1.15;
+        min-height: 1.15em;
+      }
+
+      .ticker-cell .ticker-val.accent {
+        color: #c7cdf7;
+      }
+
+      .ticker-cell .ticker-val.warn {
+        color: #fbbf24;
+      }
+
+      .ticker-cell .ticker-sub {
+        font-size: 10px;
+        font-weight: 600;
+        color: var(--secondary);
+        line-height: 1.2;
+        min-height: 1.2em;
+      }
+
+      .ticker-cell .ticker-sub.accent-sub {
+        color: rgba(167, 176, 245, 0.85);
+      }
+
+      .ticker-cell .ticker-sub.warn-sub {
+        color: rgba(251, 191, 36, 0.75);
+      }
+
+      .bar-mini {
+        width: 100%;
+        max-width: 72px;
+        height: 4px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.08);
+        margin-top: 2px;
+        overflow: hidden;
+        flex-shrink: 0;
+      }
+
+      .bar-mini i {
+        display: block;
+        height: 100%;
+        width: 63%;
+        border-radius: inherit;
+        background: linear-gradient(90deg, var(--accent), #8b95eb);
+      }
+
+      .bar-mini--ghost i {
+        width: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Redesign mockup · Quick stats</h1>
+    <p class="caption">
+      Static HTML/CSS only (no network). If preview fails in the IDE, open this file in Chrome or
+      Safari: Finder → double-click, or Terminal:
+      <code>open design-mockups/quick-stats-bar-redesign.html</code>
+      from the repo root. Theme: black / accent #5E6AD2 / warning #D97706. Not wired to the app.
+    </p>
+
+    <section aria-label="Concept A instrument rail">
+      <div class="rail">
+        <div class="rail-inner">
+          <div class="ring-block">
+            <div class="ring" aria-hidden="true"><span>63%</span></div>
+          </div>
+
+          <div class="ratio">
+            <div class="ratio-row">
+              <div class="ratio-big">75<em>/ 120</em></div>
+              <button type="button" class="goal-chip" title="Tap to change daily goal (mock)">
+                Goal 120m
+                <svg viewBox="0 0 12 12" fill="none" aria-hidden="true">
+                  <path
+                    d="M3 4.5L6 7.5L9 4.5"
+                    stroke="currentColor"
+                    stroke-width="1.4"
+                    stroke-linecap="round"
+                  />
+                </svg>
+              </button>
+            </div>
+            <div class="ratio-sub">minutes logged today</div>
+          </div>
+
+          <div class="divider" aria-hidden="true"></div>
+
+          <div class="streak-block">
+            <div class="streak-pill">
+              <div class="flame" aria-hidden="true"></div>
+              <div>
+                <div class="streak-num">9</div>
+                <div class="streak-meta">day streak</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="rail-footer">
+            <div class="badge-lv">Level 4</div>
+            <p class="sessions"><strong>12</strong> sessions done</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <h1>Dense ticker · symmetric</h1>
+
+    <section class="ticker-wrap" aria-label="Symmetric dense ticker">
+      <div class="ticker">
+        <div class="ticker-cell">
+          <label>Today</label>
+          <div class="ticker-val accent">63%</div>
+          <div class="ticker-sub accent-sub">75 / 120m</div>
+          <div class="bar-mini" aria-hidden="true"><i></i></div>
+        </div>
+        <div class="ticker-cell">
+          <label>Streak</label>
+          <div class="ticker-val warn">9</div>
+          <div class="ticker-sub warn-sub">days</div>
+          <div class="bar-mini bar-mini--ghost" aria-hidden="true"><i></i></div>
+        </div>
+        <div class="ticker-cell">
+          <label>Level</label>
+          <div class="ticker-val">4</div>
+          <div class="ticker-sub" aria-hidden="true">&middot;</div>
+          <div class="bar-mini bar-mini--ghost" aria-hidden="true"><i></i></div>
+        </div>
+        <div class="ticker-cell">
+          <label>Sessions</label>
+          <div class="ticker-val">12</div>
+          <div class="ticker-sub">done</div>
+          <div class="bar-mini bar-mini--ghost" aria-hidden="true"><i></i></div>
+        </div>
+      </div>
+    </section>
+  </body>
+</html>

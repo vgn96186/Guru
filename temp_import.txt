@@ -1,0 +1,120 @@
+          <LinearText
+            variant="caption"
+            tone={isIgnoring ? 'success' : 'warning'}
+            style={{ marginTop: 2 }}
+          >
+            {isIgnoring ? '✓ Whitelisted (Never sleeping)' : '⚠ May be killed in background'}
+          </LinearText>
+        </View>
+        <TouchableOpacity
+          style={{
+            backgroundColor: n.colors.card,
+            paddingHorizontal: 12,
+            paddingVertical: 8,
+            borderRadius: 8,
+            borderWidth: 1,
+            borderColor: n.colors.borderHighlight,
+          }}
+          onPress={() => navigation.navigate('SamsungBatterySheet')}
+        >
+          <LinearText variant="chip" tone="accent">
+            Configure
+          </LinearText>
+        </TouchableOpacity>
+      </View>
+    </LinearSurface>
+  );
+}
+import { profileRepository } from '../db/repositories';
+
+function hasValue(value: string | null | undefined): boolean {
+  return Boolean(value?.trim());
+}
+
+function sanitizeGithubCopilotPreferredModel(value: string): string {
+  const t = value.trim();
+  if (!t) return '';
+  return (GITHUB_COPILOT_MODELS as readonly string[]).includes(t) ? t : '';
+}
+
+function sanitizeGitlabDuoPreferredModel(value: string): string {
+  const t = value.trim();
+  if (!t) return '';
+  return (GITLAB_DUO_MODELS as readonly string[]).includes(t) ? t : '';
+}
+
+const LOCAL_FILE_ACCESS_PERMISSION =
+  PermissionsAndroid.PERMISSIONS.READ_MEDIA_AUDIO ??
+  PermissionsAndroid.PERMISSIONS.READ_EXTERNAL_STORAGE;
+
+const BACKUP_VERSION = 1;
+type BackupRow = Record<string, unknown>;
+
+interface AppBackup {
+  version: number;
+  exportedAt: string;
+  user_profile: BackupRow | null;
+  topic_progress: BackupRow[];
+  daily_log: BackupRow[];
+  lecture_notes: BackupRow[];
+}
+
+type ValidationProviderId = ProviderId | 'deepgram' | 'fal' | 'brave' | 'google';
+type ApiValidationEntry = { verified: boolean; verifiedAt: number; fingerprint: string };
+type ApiValidationState = Partial<Record<ValidationProviderId, ApiValidationEntry>>;
+type ChatGptAccountSettings = {
+  primary: { enabled: boolean; connected: boolean };
+  secondary: { enabled: boolean; connected: boolean };
+};
+
+function defaultChatGptAccountSettings(): ChatGptAccountSettings {
+  return {
+    primary: { enabled: true, connected: false },
+    secondary: { enabled: false, connected: false },
+  };
+}
+
+function sanitizeChatGptAccountSettings(value: unknown): ChatGptAccountSettings {
+  const fallback = defaultChatGptAccountSettings();
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return fallback;
+  const root = value as Record<string, unknown>;
+  const readSlot = (slot: ChatGptAccountSlot) => {
+    const raw = root[slot];
+    if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return fallback[slot];
+    const record = raw as Record<string, unknown>;
+    return {
+      enabled: typeof record.enabled === 'boolean' ? record.enabled : fallback[slot].enabled,
+      connected:
+        typeof record.connected === 'boolean' ? record.connected : fallback[slot].connected,
+    };
+  };
+  return {
+    primary: readSlot('primary'),
+    secondary: readSlot('secondary'),
+  };
+}
+
+function isChatGptEnabled(settings: ChatGptAccountSettings): boolean {
+  return (
+    (settings.primary.enabled && settings.primary.connected) ||
+    (settings.secondary.enabled && settings.secondary.connected)
+  );
+}
+
+function fingerprintSecret(secret: string): string {
+  // Lightweight stable fingerprint so we never persist raw secret copies.
+  let hash = 5381;
+  for (let i = 0; i < secret.length; i += 1) {
+    hash = (hash * 33) ^ secret.charCodeAt(i);
+  }
+  return `fp_${(hash >>> 0).toString(16)}`;
+}
+
+function yieldToUi(): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, 0));
+}
+
+function asNumber(value: unknown, fallback = 0): number {
+  return typeof value === 'number' && Number.isFinite(value) ? value : fallback;
+}
+

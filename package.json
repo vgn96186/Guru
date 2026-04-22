@@ -23,6 +23,7 @@
     "logs:android": "adb logcat '*:S' 'ReactNative:V' 'ReactNativeJS:V' 'AndroidRuntime:E'",
     "logs:guru": "node ./scripts/fetchLogs.js",
     "android": "npm run generate:bundled-env && cross-env NODE_ENV=development GURU_OPEN_MODE=deeplink node ./scripts/run-android-dev.js",
+    "dev": "bash ./scripts/dev-clean.sh",
     "android:dev": "node ./scripts/android-dev.js",
     "android:apk:device": "npm run generate:bundled-env && node ./scripts/build-apk.js --abi arm64-v8a --type debug",
     "android:apk:release:device": "npm run generate:bundled-env && node ./scripts/build-apk.js --abi arm64-v8a --type release",

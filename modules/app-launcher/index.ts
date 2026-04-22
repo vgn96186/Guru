@@ -361,3 +361,29 @@ export async function findLocalModelFiles(): Promise<NativeModelFileEntry[]> {
 export async function concatenateFiles(inputPaths: string[], outputPath: string): Promise<boolean> {
   return GuruAppLauncher.concatenateFiles(inputPaths, outputPath);
 }
+
+export async function isSamsungDevice(): Promise<boolean> {
+  return GuruAppLauncher.isSamsungDevice();
+}
+
+export async function isIgnoringBatteryOptimizations(): Promise<boolean> {
+  return GuruAppLauncher.isIgnoringBatteryOptimizations();
+}
+
+export async function requestIgnoreBatteryOptimizations(): Promise<boolean> {
+  return GuruAppLauncher.requestIgnoreBatteryOptimizations();
+}
+
+export async function openSamsungDeviceCare(): Promise<boolean> {
+  return GuruAppLauncher.openSamsungDeviceCare();
+}
+
+export async function isSPenSupported(): Promise<boolean> {
+  return GuruAppLauncher.isSPenSupported();
+}
+export async function startSPenListening(): Promise<boolean> {
+  return GuruAppLauncher.startSPenListening();
+}
+export async function stopSPenListening(): Promise<boolean> {
+  return GuruAppLauncher.stopSPenListening();
+}

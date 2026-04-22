@@ -146,14 +146,27 @@ class OverlayService : Service(), LifecycleOwner {
                 pomodoroEnabled = intent.getBooleanExtra(EXTRA_POMODORO_ENABLED, true)
                 pomodoroIntervalMinutes = intent.getIntExtra(EXTRA_POMODORO_INTERVAL, 20)
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-                    var fgsType = ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE or
-                        ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC
+                    var fgsType = ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE
                     if (faceTrackingEnabled) {
                         fgsType = fgsType or ServiceInfo.FOREGROUND_SERVICE_TYPE_CAMERA
                     }
-                    startForeground(NOTIF_ID, buildNotification(), fgsType)
+                    try {
+                        startForeground(NOTIF_ID, buildNotification(), fgsType)
+                    } catch (e: Exception) {
+                        android.util.Log.e("OverlayService", "startForeground rejected by OneUI: ${e.message}", e)
+                        sendBroadcast(Intent("guru.fgs.blocked").setPackage(packageName))
+                        stopSelf()
+                        return START_NOT_STICKY
+                    }
                 } else {
-                    startForeground(NOTIF_ID, buildNotification())
+                    try {
+                        startForeground(NOTIF_ID, buildNotification())
+                    } catch (e: Exception) {
+                        android.util.Log.e("OverlayService", "startForeground rejected: ${e.message}", e)
+                        sendBroadcast(Intent("guru.fgs.blocked").setPackage(packageName))
+                        stopSelf()
+                        return START_NOT_STICKY
+                    }
                 }
                 showOverlay()
                 startTimer()

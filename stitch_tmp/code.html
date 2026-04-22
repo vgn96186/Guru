@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Obsidian Productivity Dashboard</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "primary-fixed": "#dfe0ff",
+                        "on-secondary": "#303030",
+                        "on-surface-variant": "#c6c5d5",
+                        "secondary": "#c6c6c6",
+                        "tertiary-fixed-dim": "#c8c6c5",
+                        "secondary-fixed": "#e2e2e2",
+                        "tertiary-fixed": "#e5e2e1",
+                        "secondary-fixed-dim": "#c6c6c6",
+                        "inverse-primary": "#4854bb",
+                        "on-primary": "#121f8b",
+                        "surface-dim": "#0e141a",
+                        "tertiary-container": "#747373",
+                        "on-tertiary-fixed": "#1c1b1b",
+                        "on-tertiary-container": "#fdfafa",
+                        "on-error": "#690005",
+                        "on-tertiary": "#313030",
+                        "surface-container-lowest": "#090f15",
+                        "on-surface": "#dee3ec",
+                        "primary": "#bdc2ff",
+                        "on-secondary-fixed-variant": "#474747",
+                        "on-secondary-container": "#b5b5b5",
+                        "secondary-container": "#474747",
+                        "on-secondary-fixed": "#1b1b1b",
+                        "on-background": "#dee3ec",
+                        "surface-container-high": "#252a32",
+                        "outline-variant": "#454652",
+                        "outline": "#908f9e",
+                        "on-primary-container": "#fdfaff",
+                        "background": "#0e141a",
+                        "surface-variant": "#30353d",
+                        "tertiary": "#c8c6c5",
+                        "surface-container-low": "#171c23",
+                        "on-primary-fixed": "#000965",
+                        "inverse-on-surface": "#2c3138",
+                        "error-container": "#93000a",
+                        "inverse-surface": "#dee3ec",
+                        "surface-container": "#1b2027",
+                        "surface-bright": "#343a41",
+                        "on-tertiary-fixed-variant": "#474746",
+                        "on-error-container": "#ffdad6",
+                        "on-primary-fixed-variant": "#2e3aa2",
+                        "primary-fixed-dim": "#bdc2ff",
+                        "surface": "#0e141a",
+                        "primary-container": "#5e6ad2",
+                        "surface-tint": "#bdc2ff",
+                        "surface-container-highest": "#30353d",
+                        "error": "#ffb4ab"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "container-max": "1200px",
+                        "gutter": "16px",
+                        "unit": "4px",
+                        "margin": "24px"
+                    },
+                    "fontFamily": {
+                        "headline-md": ["Inter"],
+                        "body-sm": ["Inter"],
+                        "code-mono": ["monospace"],
+                        "body-base": ["Inter"],
+                        "label-caps": ["Inter"],
+                        "display-lg": ["Inter"]
+                    },
+                    "fontSize": {
+                        "headline-md": ["24px", { "lineHeight": "1.2", "letterSpacing": "-0.01em", "fontWeight": "500" }],
+                        "body-sm": ["13px", { "lineHeight": "1.4", "letterSpacing": "0", "fontWeight": "400" }],
+                        "code-mono": ["13px", { "lineHeight": "1.4", "letterSpacing": "0", "fontWeight": "400" }],
+                        "body-base": ["14px", { "lineHeight": "1.5", "letterSpacing": "0", "fontWeight": "400" }],
+                        "label-caps": ["11px", { "lineHeight": "1", "letterSpacing": "0.05em", "fontWeight": "600" }],
+                        "display-lg": ["48px", { "lineHeight": "1.1", "letterSpacing": "-0.02em", "fontWeight": "600" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body {
+            background-color: #030406; /* Deep AMOLED black override as requested */
+            color: #dee3ec; /* on-background */
+        }
+        
+        /* Glassmorphism Utilities */
+        .glass-panel {
+            background: linear-gradient(180deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0.01) 100%);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: 1px solid rgba(255,255,255,0.08);
+            box-shadow: 0 4px 24px -4px rgba(0,0,0,0.5);
+        }
+        
+        .glass-panel-interactive {
+            transition: all 0.2s ease;
+        }
+        
+        .glass-panel-interactive:hover {
+            border-color: rgba(255,255,255,0.15);
+            background: linear-gradient(180deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%);
+        }
+
+        .gradient-bg-blur {
+            position: fixed;
+            top: 20%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 80vw;
+            height: 60vh;
+            background: radial-gradient(circle, rgba(94,106,210,0.1) 0%, rgba(0,0,0,0) 70%);
+            filter: blur(80px);
+            z-index: -1;
+            pointer-events: none;
+        }
+        
+        .gradient-bg-blur-secondary {
+            position: fixed;
+            bottom: 10%;
+            right: 10%;
+            width: 50vw;
+            height: 50vh;
+            background: radial-gradient(circle, rgba(26,26,26,0.8) 0%, rgba(0,0,0,0) 70%);
+            filter: blur(60px);
+            z-index: -1;
+            pointer-events: none;
+        }
+        
+        /* Hide scrollbar for clean aesthetic */
+        ::-webkit-scrollbar {
+            display: none;
+        }
+        
+        /* Top Navigation specific overrides */
+        header.top-app-bar {
+            background-color: rgba(0,0,0,0.6) !important;
+            backdrop-filter: blur(24px) !important;
+            -webkit-backdrop-filter: blur(24px) !important;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="antialiased min-h-screen flex flex-col font-sans">
+<!-- Ambient Background Blurs -->
+<div class="gradient-bg-blur"></div>
+<div class="gradient-bg-blur-secondary"></div>
+<!-- TopAppBar -->
+<header class="top-app-bar fixed top-0 left-0 w-full z-50 flex items-center justify-between px-6 h-16 border-b border-white/10 no-shadows">
+<div class="flex items-center gap-3">
+<button aria-label="Menu" class="text-indigo-500 hover:bg-white/5 transition-colors p-2 rounded-lg active:scale-95 duration-200">
+<span class="material-symbols-outlined" data-icon="grid_view" data-weight="fill" style="font-variation-settings: 'FILL' 1;">grid_view</span>
+</button>
+<h1 class="text-indigo-500 font-inter text-xs font-bold tracking-[0.2em] uppercase tracking-tighter">DASHBOARD</h1>
+</div>
+<div>
+<button aria-label="User Profile" class="hover:bg-white/5 transition-colors p-1 rounded-full active:scale-95 duration-200 border border-white/10">
+<div class="w-8 h-8 rounded-full bg-surface-container-highest overflow-hidden">
+<img alt="User Profile" class="w-full h-full object-cover" data-alt="close up portrait of a young professional in soft studio lighting against a dark background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCaB2rYJ7OTbq9J9G80Z_Aouy_T_bghGCRtVtR6f3robdtKWk2MxbtyIBB-sVO4bzj1ZTHqNxlc8Ecdj51cLLEtuDynTvELyazotXtkI3QLAFacX59DbnuzqSZk7S7BcPR7UZbSQr2St4O7rm-gpey9RHR0O8P48kT9RerYTaMLY0JgMS39-mDA73coLCjh-tv6qutZd7dnkgbZTfNc73YgdrX2Zpg0TDi1m5fVii94jomaUGqUV8pExXK25LQpHp3SSabRO2faWhk"/>
+</div>
+</button>
+</div>
+</header>
+<!-- Main Content Canvas -->
+<main class="flex-1 pt-20 pb-24 px-4 md:px-6 max-w-container-max mx-auto w-full flex flex-col gap-4">
+<!-- Welcome & Date Section -->
+<section class="py-2">
+<p class="font-body-sm text-body-sm text-outline mb-1">Wednesday, Oct 25</p>
+<h2 class="font-headline-md text-headline-md text-on-surface">Good Morning, Alex.</h2>
+</section>
+<!-- Daily Focus Card -->
+<section class="glass-panel rounded-xl p-5 relative overflow-hidden group glass-panel-interactive">
+<div class="absolute top-0 right-0 w-32 h-32 bg-primary-container/10 rounded-full blur-2xl -mr-10 -mt-10 group-hover:bg-primary-container/20 transition-all duration-500"></div>
+<div class="flex justify-between items-start mb-4 relative z-10">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary-container text-sm" data-icon="adjust">adjust</span>
+<span class="font-label-caps text-label-caps text-outline uppercase tracking-widest">Daily Focus</span>
+</div>
+<button aria-label="Edit focus" class="text-outline hover:text-on-surface transition-colors">
+<span class="material-symbols-outlined text-sm" data-icon="more_horiz">more_horiz</span>
+</button>
+</div>
+<div class="relative z-10">
+<h3 class="font-headline-md text-headline-md text-on-surface mb-2">Ship v2.0 Design System</h3>
+<p class="font-body-sm text-body-sm text-outline-variant mb-6 w-5/6">Finalize glassmorphism tokens, update component library, and prepare developer handoff documentation.</p>
+<div class="flex items-center gap-3">
+<button class="bg-primary-container text-on-primary-container font-body-sm text-body-sm py-2 px-4 rounded-lg hover:bg-primary-container/90 transition-colors flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px]" data-icon="play_arrow" data-weight="fill" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
+                        Start Session
+                    </button>
+<span class="font-code-mono text-code-mono text-outline">Est. 4h 30m</span>
+</div>
+</div>
+</section>
+<!-- Metrics Bento Grid -->
+<section class="grid grid-cols-2 gap-4">
+<!-- Deep Work Card -->
+<div class="glass-panel rounded-xl p-4 flex flex-col justify-between h-32 glass-panel-interactive">
+<div class="flex items-center gap-2 text-outline">
+<span class="material-symbols-outlined text-[16px]" data-icon="hourglass_top">hourglass_top</span>
+<span class="font-label-caps text-label-caps">DEEP WORK</span>
+</div>
+<div>
+<div class="flex items-baseline gap-1">
+<span class="font-display-lg text-[32px] font-semibold text-on-surface leading-none">12.4</span>
+<span class="font-body-sm text-body-sm text-outline-variant">hrs</span>
+</div>
+<div class="w-full bg-surface-container-high h-1 mt-3 rounded-full overflow-hidden">
+<div class="bg-primary-container h-full w-[65%] rounded-full"></div>
+</div>
+</div>
+</div>
+<!-- Tasks Completed Card -->
+<div class="glass-panel rounded-xl p-4 flex flex-col justify-between h-32 glass-panel-interactive relative overflow-hidden">
+<div class="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGNpcmNsZSBjeD0iMSIgY3k9IjEiIHI9IjEiIGZpbGw9InJnYmEoMjU1LCAyNTUsIDI1NSwgMC4wNSkiLz48L3N2Zz4=')] opacity-50 z-0"></div>
+<div class="flex items-center gap-2 text-outline relative z-10">
+<span class="material-symbols-outlined text-[16px]" data-icon="check_circle">check_circle</span>
+<span class="font-label-caps text-label-caps">COMPLETED</span>
+</div>
+<div class="relative z-10">
+<div class="flex items-baseline gap-2">
+<span class="font-display-lg text-[32px] font-semibold text-on-surface leading-none">24</span>
+<span class="font-label-caps text-label-caps text-emerald-400 bg-emerald-400/10 px-1.5 py-0.5 rounded border border-emerald-400/20">+12%</span>
+</div>
+<p class="font-body-sm text-[11px] text-outline-variant mt-1">vs last week</p>
+</div>
+</div>
+</section>
+<!-- Upcoming Tasks List -->
+<section class="glass-panel rounded-xl flex flex-col mb-6">
+<div class="p-4 border-b border-white/5 flex justify-between items-center">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[16px] text-outline" data-icon="format_list_bulleted">format_list_bulleted</span>
+<h3 class="font-label-caps text-label-caps text-outline uppercase tracking-widest">Upcoming Tasks</h3>
+</div>
+<button class="text-primary hover:text-primary-container transition-colors font-body-sm text-[12px]">View All</button>
+</div>
+<div class="flex flex-col">
+<!-- Task Item 1 -->
+<div class="p-4 border-b border-white/5 flex items-center gap-3 hover:bg-white/[0.02] transition-colors cursor-pointer group">
+<button aria-label="Mark complete" class="w-5 h-5 rounded border border-outline-variant flex items-center justify-center group-hover:border-primary-container transition-colors">
+</button>
+<div class="flex-1">
+<p class="font-body-base text-body-base text-on-surface leading-tight">Review PR #442 for Navigation</p>
+<p class="font-body-sm text-[11px] text-outline-variant mt-0.5">Engineering • Today, 2:00 PM</p>
+</div>
+<div class="flex items-center gap-2">
+<span aria-label="High Priority" class="w-2 h-2 rounded-full bg-error"></span>
+</div>
+</div>
+<!-- Task Item 2 -->
+<div class="p-4 border-b border-white/5 flex items-center gap-3 hover:bg-white/[0.02] transition-colors cursor-pointer group">
+<button aria-label="Mark complete" class="w-5 h-5 rounded border border-outline-variant flex items-center justify-center group-hover:border-primary-container transition-colors">
+</button>
+<div class="flex-1">
+<p class="font-body-base text-body-base text-on-surface leading-tight">Draft Q4 OKRs</p>
+<p class="font-body-sm text-[11px] text-outline-variant mt-0.5">Management • Tomorrow</p>
+</div>
+<div class="flex items-center gap-2">
+<span aria-label="Medium Priority" class="w-2 h-2 rounded-full bg-amber-400"></span>
+</div>
+</div>
+<!-- Task Item 3 -->
+<div class="p-4 flex items-center gap-3 hover:bg-white/[0.02] transition-colors cursor-pointer group">
+<button aria-label="Mark complete" class="w-5 h-5 rounded border border-outline-variant flex items-center justify-center group-hover:border-primary-container transition-colors">
+</button>
+<div class="flex-1">
+<p class="font-body-base text-body-base text-on-surface leading-tight">Update API documentation</p>
+<p class="font-body-sm text-[11px] text-outline-variant mt-0.5">Documentation • Oct 28</p>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-4 py-3 pb-safe bg-black/80 backdrop-blur-[40px] border-t border-white/10 no-shadows md:hidden">
+<!-- Active Tab: Home (Matches intent of a Dashboard) -->
+<a class="flex flex-col items-center justify-center text-indigo-400 bg-indigo-500/10 rounded-xl px-3 py-1 active:opacity-80 transition-all duration-300" href="#">
+<span class="material-symbols-outlined mb-1" data-icon="home" data-weight="fill" style="font-variation-settings: 'FILL' 1;">home</span>
+<span class="font-inter text-[10px] font-medium tracking-wide">Home</span>
+</a>
+<!-- Inactive Tab: Analytics -->
+<a class="flex flex-col items-center justify-center text-zinc-600 hover:text-zinc-300 active:opacity-80 transition-all duration-300 px-3 py-1" href="#">
+<span class="material-symbols-outlined mb-1" data-icon="insert_chart">insert_chart</span>
+<span class="font-inter text-[10px] font-medium tracking-wide">Analytics</span>
+</a>
+<!-- Inactive Tab: Security -->
+<a class="flex flex-col items-center justify-center text-zinc-600 hover:text-zinc-300 active:opacity-80 transition-all duration-300 px-3 py-1" href="#">
+<span class="material-symbols-outlined mb-1" data-icon="security">security</span>
+<span class="font-inter text-[10px] font-medium tracking-wide">Security</span>
+</a>
+<!-- Inactive Tab: Profile -->
+<a class="flex flex-col items-center justify-center text-zinc-600 hover:text-zinc-300 active:opacity-80 transition-all duration-300 px-3 py-1" href="#">
+<span class="material-symbols-outlined mb-1" data-icon="person">person</span>
+<span class="font-inter text-[10px] font-medium tracking-wide">Profile</span>
+</a>
+</nav>
+<!-- Web Navigation Cluster (Hidden on mobile, visible on md breakpoint) -->
+<!-- Not strictly required by the prompt's focus on mobile, but aligns with "Responsive Pivot" rule -->
+<div class="hidden md:flex fixed top-0 right-20 h-16 items-center gap-6 z-50">
+<a class="text-indigo-400 font-inter text-sm font-medium" href="#">Home</a>
+<a class="text-zinc-500 hover:text-zinc-300 font-inter text-sm font-medium transition-colors" href="#">Analytics</a>
+<a class="text-zinc-500 hover:text-zinc-300 font-inter text-sm font-medium transition-colors" href="#">Security</a>
+<a class="text-zinc-500 hover:text-zinc-300 font-inter text-sm font-medium transition-colors" href="#">Profile</a>
+</div>
+</body></html>

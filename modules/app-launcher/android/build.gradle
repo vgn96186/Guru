@@ -77,6 +77,9 @@ dependencies {
     implementation 'androidx.compose.material3:material3'
     implementation 'androidx.compose.animation:animation'
     implementation 'androidx.activity:activity-compose:1.10.0'
+    
+    // Samsung SDKs (S Pen Remote v1.0.1 + Performance v1.0.0) dropped into libs/
+    implementation fileTree(dir: 'libs', include: ['*.jar', '*.aar'])
 }
 
 def safeExtGet(prop, fallback) {

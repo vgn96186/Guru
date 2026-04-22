@@ -143,9 +143,23 @@ class RecordingService : Service() {
                     } else {
                         ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE
                     }
-                    startForeground(NOTIF_ID, buildNotification(mode), fgsType)
+                    try {
+                        startForeground(NOTIF_ID, buildNotification(mode), fgsType)
+                    } catch (e: Exception) {
+                        android.util.Log.e(TAG, "startForeground rejected by OneUI: ${e.message}", e)
+                        sendBroadcast(Intent("guru.fgs.blocked").setPackage(packageName))
+                        stopSelf()
+                        return START_NOT_STICKY
+                    }
                 } else {
-                    startForeground(NOTIF_ID, buildNotification(mode))
+                    try {
+                        startForeground(NOTIF_ID, buildNotification(mode))
+                    } catch (e: Exception) {
+                        android.util.Log.e(TAG, "startForeground rejected: ${e.message}", e)
+                        sendBroadcast(Intent("guru.fgs.blocked").setPackage(packageName))
+                        stopSelf()
+                        return START_NOT_STICKY
+                    }
                 }
 
                 if (useInternal) {

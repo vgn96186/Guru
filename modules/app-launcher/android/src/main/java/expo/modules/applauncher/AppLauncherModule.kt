@@ -25,18 +25,21 @@ import java.io.RandomAccessFile
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 
+import android.content.BroadcastReceiver
+import android.content.IntentFilter
+
 class AppLauncherModule : Module() {
-    // Holds the current recording output path so JS can retrieve it after stopRecording
+    private var fgsReceiver: BroadcastReceiver? = null
+    private var spen: SPenController? = null
+
     private var currentRecordingPath: String? = null
     private var currentLiveTranscriptPath: String? = null
     private var currentLectureInsightPath: String? = null
 
-    // MediaProjection request handling
     private var projectionDeferred: CompletableDeferred<Boolean>? = null
     private var projectionResultCode: Int = 0
     private var projectionData: Intent? = null
 
-    // SAF folder picker handling â€” returns { treeUri, label, entries[] }
     private var folderPickerDeferred: CompletableDeferred<Map<String, Any>>? = null
 
     private companion object {
@@ -44,7 +47,7 @@ class AppLauncherModule : Module() {
         private const val FOLDER_PICKER_RC = 7002
         private const val TAG = "GuruAppLauncher"
         private const val WAV_HEADER_BYTES = 44
-        private const val WAV_BYTES_PER_SECOND = 16_000 * 1 * 2 // 16kHz mono 16-bit
+        private const val WAV_BYTES_PER_SECOND = 16_000 * 1 * 2
     }
 
     private fun buildWavHeader(dataSize: Int): ByteArray {
@@ -53,13 +56,13 @@ class AppLauncherModule : Module() {
         header.putInt(36 + dataSize)
         header.put("WAVE".toByteArray(Charsets.US_ASCII))
         header.put("fmt ".toByteArray(Charsets.US_ASCII))
-        header.putInt(16) // PCM format chunk size
-        header.putShort(1) // PCM
-        header.putShort(1) // Mono
-        header.putInt(16_000) // Sample rate
-        header.putInt(32_000) // Byte rate
-        header.putShort(2) // Block align
-        header.putShort(16) // Bits per sample
+        header.putInt(16)
+        header.putShort(1)
+        header.putShort(1)
+        header.putInt(16_000)
+        header.putInt(32_000)
+        header.putShort(2)
+        header.putShort(16)
         header.put("data".toByteArray(Charsets.US_ASCII))
         header.putInt(dataSize)
         return header.array()
@@ -81,10 +84,13 @@ class AppLauncherModule : Module() {
         return if (guruDir.exists()) guruDir else appContext.reactContext?.filesDir ?: File("/tmp")
     }
 
-    /**
-     * Recursively collects all .m4a files under Documents/Guru/.
-     * Returns a list of maps with { name, path, size }.
-     */
+    private fun getPublicGuruBackupDir(): File {
+        val publicDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS)
+        val dir = File(publicDir, "Guru/Backups")
+        if (!dir.exists()) dir.mkdirs()
+        return if (dir.exists()) dir else appContext.reactContext?.filesDir ?: File("/tmp")
+    }
+
     private fun findAllM4aFiles(dir: File): List<Map<String, Any>> {
         val results = mutableListOf<Map<String, Any>>()
         val files = dir.listFiles() ?: return results
@@ -109,7 +115,6 @@ class AppLauncherModule : Module() {
         } catch (e: Exception) {
             return emptyList()
         }
-
         val results = mutableListOf<Map<String, Any>>()
         for (f in files) {
             if (f.isDirectory) {
@@ -147,10 +152,6 @@ class AppLauncherModule : Module() {
         return roots.distinctBy { it.absolutePath }
     }
 
-    /**
-     * Walks a SAF document tree URI and collects all .m4a files.
-     * Returns list of maps with { name, path (content URI string), size }.
-     */
     private fun walkDocumentTree(context: Context, treeUri: android.net.Uri): List<Map<String, Any>> {
         val results = mutableListOf<Map<String, Any>>()
         val docUri = androidx.documentfile.provider.DocumentFile.fromTreeUri(context, treeUri) ?: return results
@@ -173,13 +174,6 @@ class AppLauncherModule : Module() {
                 ))
             }
         }
-    }
-
-    private fun getPublicGuruBackupDir(): File {
-        val publicDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS)
-        val dir = File(publicDir, "Guru/Backups")
-        if (!dir.exists()) dir.mkdirs()
-        return if (dir.exists()) dir else appContext.reactContext?.filesDir ?: File("/tmp")
     }
 
     private fun splitWavIntoChunksNative(
@@ -247,6 +241,29 @@ class AppLauncherModule : Module() {
 
     override fun definition() = ModuleDefinition {
         Name("GuruAppLauncher")
+        Events("guru.fgs.blocked", "onSPenButton", "onSPenAirMotion")
+
+        OnCreate {
+            val context = appContext.reactContext ?: return@OnCreate
+            fgsReceiver = object : BroadcastReceiver() {
+                override fun onReceive(c: Context?, intent: Intent?) {
+                    if (intent?.action == "guru.fgs.blocked") {
+                        sendEvent("guru.fgs.blocked", mapOf<String, Any>())
+                    }
+                }
+            }
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                context.registerReceiver(fgsReceiver, IntentFilter("guru.fgs.blocked"), Context.RECEIVER_NOT_EXPORTED)
+            } else {
+                context.registerReceiver(fgsReceiver, IntentFilter("guru.fgs.blocked"))
+            }
+        }
+
+        OnDestroy {
+            try {
+                fgsReceiver?.let { appContext.reactContext?.unregisterReceiver(it) }
+            } catch (e: Exception) {}
+        }
 
         AsyncFunction("copyFileToPublicBackup") { sourcePath: String, destFilename: String ->
             return@AsyncFunction try {
@@ -377,7 +394,67 @@ class AppLauncherModule : Module() {
             }
         }
 
-        // â”€â”€ Activity result handlers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        AsyncFunction("isSamsungDevice") {
+            Build.MANUFACTURER.equals("samsung", ignoreCase = true)
+        }
+
+        AsyncFunction("isIgnoringBatteryOptimizations") {
+            val ctx = appContext.reactContext ?: return@AsyncFunction false
+            val pm = ctx.getSystemService(Context.POWER_SERVICE) as android.os.PowerManager
+            pm.isIgnoringBatteryOptimizations(ctx.packageName)
+        }
+
+        AsyncFunction("requestIgnoreBatteryOptimizations") {
+            val ctx = appContext.reactContext ?: return@AsyncFunction false
+            val intent = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {
+                data = android.net.Uri.parse("package:${ctx.packageName}")
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+            runCatching { ctx.startActivity(intent) }.isSuccess
+        }
+
+        AsyncFunction("openSamsungDeviceCare") {
+            val ctx = appContext.reactContext ?: return@AsyncFunction false
+            val candidates = listOf(
+                Intent().setClassName("com.samsung.android.lool",
+                    "com.samsung.android.sm.battery.ui.BatteryActivity"),
+                Intent().setClassName("com.samsung.android.sm",
+                    "com.samsung.android.sm.ui.battery.BatteryActivity"),
+                Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                    data = android.net.Uri.parse("package:${ctx.packageName}")
+                }
+            )
+            candidates.any { intent ->
+                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                runCatching { ctx.startActivity(intent); true }.getOrDefault(false)
+            }
+        }
+
+        AsyncFunction("isSPenSupported") {
+            val ctx = appContext.reactContext ?: return@AsyncFunction false
+            SPenController(ctx).isSupported()
+        }
+
+        AsyncFunction("startSPenListening") {
+            val ctx = appContext.reactContext ?: return@AsyncFunction false
+            if (spen != null) return@AsyncFunction true
+            val c = SPenController(ctx)
+            c.onButton = { sendEvent("onSPenButton", mapOf("ts" to System.currentTimeMillis())) }
+            c.onAirMotion = { dx, dy -> sendEvent("onSPenAirMotion", mapOf("dx" to dx, "dy" to dy)) }
+            val deferred = CompletableDeferred<Boolean>()
+            c.connect { deferred.complete(it) }
+            val ok = runBlocking { deferred.await() }
+            if (ok) spen = c
+            ok
+        }
+
+        AsyncFunction("stopSPenListening") {
+            spen?.disconnect()
+            spen = null
+            true
+        }
+
+        // ─ Activity result handlers ────────────
         OnActivityResult { _, payload ->
             if (payload.requestCode == MEDIA_PROJECTION_RC) {
                 projectionResultCode = payload.resultCode

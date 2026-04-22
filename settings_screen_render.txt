@@ -1,0 +1,637 @@
+163:  return (GITHUB_COPILOT_MODELS as readonly string[]).includes(t) ? t : '';
+164-}
+165-
+166-function sanitizeGitlabDuoPreferredModel(value: string): string {
+167-  const t = value.trim();
+168-  if (!t) return '';
+169:  return (GITLAB_DUO_MODELS as readonly string[]).includes(t) ? t : '';
+170-}
+171-
+172-const LOCAL_FILE_ACCESS_PERMISSION =
+173-  PermissionsAndroid.PERMISSIONS.READ_MEDIA_AUDIO ??
+174-  PermissionsAndroid.PERMISSIONS.READ_EXTERNAL_STORAGE;
+175-
+176-const BACKUP_VERSION = 1;
+177-type BackupRow = Record<string, unknown>;
+178-
+179-interface AppBackup {
+180-  version: number;
+181-  exportedAt: string;
+182-  user_profile: BackupRow | null;
+183-  topic_progress: BackupRow[];
+184-  daily_log: BackupRow[];
+185-  lecture_notes: BackupRow[];
+186-}
+187-
+188-type ValidationProviderId = ProviderId | 'deepgram' | 'fal' | 'brave' | 'google';
+189-type ApiValidationEntry = { verified: boolean; verifiedAt: number; fingerprint: string };
+190-type ApiValidationState = Partial<Record<ValidationProviderId, ApiValidationEntry>>;
+191-type ChatGptAccountSettings = {
+192-  primary: { enabled: boolean; connected: boolean };
+193-  secondary: { enabled: boolean; connected: boolean };
+194-};
+195-
+196-function defaultChatGptAccountSettings(): ChatGptAccountSettings {
+197-  return {
+198-    primary: { enabled: true, connected: false },
+199-    secondary: { enabled: false, connected: false },
+200-  };
+201-}
+202-
+203-function sanitizeChatGptAccountSettings(value: unknown): ChatGptAccountSettings {
+204-  const fallback = defaultChatGptAccountSettings();
+205-  if (!value || typeof value !== 'object' || Array.isArray(value)) return fallback;
+206-  const root = value as Record<string, unknown>;
+207-  const readSlot = (slot: ChatGptAccountSlot) => {
+208-    const raw = root[slot];
+209-    if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return fallback[slot];
+210-    const record = raw as Record<string, unknown>;
+211-    return {
+212-      enabled: typeof record.enabled === 'boolean' ? record.enabled : fallback[slot].enabled,
+213-      connected:
+214-        typeof record.connected === 'boolean' ? record.connected : fallback[slot].connected,
+215-    };
+216-  };
+217-  return {
+218-    primary: readSlot('primary'),
+219-    secondary: readSlot('secondary'),
+220-  };
+221-}
+222-
+223-function isChatGptEnabled(settings: ChatGptAccountSettings): boolean {
+224:  return (
+225-    (settings.primary.enabled && settings.primary.connected) ||
+226-    (settings.secondary.enabled && settings.secondary.connected)
+227-  );
+228-}
+229-
+230-function fingerprintSecret(secret: string): string {
+231-  // Lightweight stable fingerprint so we never persist raw secret copies.
+232-  let hash = 5381;
+233-  for (let i = 0; i < secret.length; i += 1) {
+234-    hash = (hash * 33) ^ secret.charCodeAt(i);
+235-  }
+236-  return `fp_${(hash >>> 0).toString(16)}`;
+237-}
+238-
+239-function yieldToUi(): Promise<void> {
+240-  return new Promise((resolve) => setTimeout(resolve, 0));
+241-}
+242-
+243-function asNumber(value: unknown, fallback = 0): number {
+244-  return typeof value === 'number' && Number.isFinite(value) ? value : fallback;
+245-}
+246-
+247-function asString(value: unknown, fallback = ''): string {
+248-  return typeof value === 'string' ? value : fallback;
+249-}
+250-
+251-function asNullableString(value: unknown): string | null {
+252-  return typeof value === 'string' ? value : null;
+253-}
+254-
+255-function sanitizeApiValidationState(value: unknown): ApiValidationState {
+256-  if (!value || typeof value !== 'object' || Array.isArray(value)) return {};
+257-  return value as ApiValidationState;
+258-}
+259-
+260-function getErrorMessage(error: unknown): string {
+261-  if (error instanceof Error && error.message) return error.message;
+262-  if (typeof error === 'string' && error.trim()) return error;
+263-  return 'Unknown error';
+264-}
+265-
+266-async function _importBackup(): Promise<{ ok: boolean; message: string }> {
+267-  const result = await pickDocumentOnce({
+268-    type: 'application/json',
+269-    copyToCacheDirectory: true,
+270-  });
+271-  if (result.canceled || !result.assets?.[0]) return { ok: false, message: 'Cancelled' };
+272-
+273-  const content = await FileSystem.readAsStringAsync(result.assets[0].uri);
+274-  let backup: AppBackup;
+275-  try {
+276-    backup = JSON.parse(content);
+277-  } catch {
+278-    return { ok: false, message: 'Invalid JSON file' };
+279-  }
+280-
+281-  if (!backup.version || !backup.topic_progress || !backup.user_profile) {
+282-    return { ok: false, message: 'Invalid backup format â€” missing required fields' };
+283-  }
+284-  if (backup.version > BACKUP_VERSION) {
+285-    return { ok: false, message: 'Backup was made with a newer version of the app' };
+286-  }
+287-
+288-  let restoredTopics = 0;
+289-  let restoredLogs = 0;
+290-
+291-  await runInTransaction(async (tx) => {
+292-    const validStatuses = new Set(['unseen', 'seen', 'reviewed', 'mastered']);
+293-
+294-    for (const [index, row] of (backup.topic_progress ?? []).entries()) {
+295-      const typedRow = row as Record<string, unknown>;
+296-      if (!typedRow.topic_id || typeof typedRow.status === 'undefined') {
+297-        if (__DEV__) console.warn('Skipping invalid topic_progress row:', typedRow);
+298-        continue;
+299-      }
+300-
+301-      const status =
+302-        typeof typedRow.status === 'string' && validStatuses.has(typedRow.status)
+303-          ? typedRow.status
+304-          : 'unseen';
+305-      const confidence =
+306-        typeof typedRow.confidence === 'number' ? Math.min(5, Math.max(0, typedRow.confidence)) : 0;
+307-
+308-      await tx.runAsync(
+309-        `INSERT OR REPLACE INTO topic_progress
+310-         (topic_id, status, confidence, last_studied_at, times_studied, xp_earned, next_review_date, user_notes)
+311-         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+312-        [
+313-          asNumber(typedRow.topic_id),
+314-          status,
+315-          confidence,
+316-          asNullableString(typedRow.last_studied_at),
+317-          asNumber(typedRow.times_studied),
+318-          asNumber(typedRow.xp_earned),
+319-          asNullableString(typedRow.next_review_date),
+320-          asString(typedRow.user_notes),
+321-        ],
+322-      );
+323-      restoredTopics++;
+324-
+--
+399:    return (
+400-      <SettingsSectionAccordion
+401-        {...rest}
+402-        expanded={expandedSections.has(id)}
+403-        onToggle={() => toggleExpandedSection(id)}
+404-      />
+405-    );
+406-  }
+407-
+408-  function SubSectionToggle({ id, ...rest }: SettingsSubSectionToggleProps) {
+409:    return (
+410-      <SettingsSubSectionAccordion
+411-        {...rest}
+412-        expanded={expandedSections.has(id)}
+413-        onToggle={() => toggleExpandedSection(id)}
+414-      />
+415-    );
+416-  }
+417-
+418-  // Permissions State
+419-  const [permStatus, setPermStatus] = useState({
+420-    notifs: 'undetermined',
+421-    overlay: 'undetermined',
+422-    mic: 'undetermined',
+423-    localFiles: 'undetermined',
+424-  });
+425-
+426-  const [groqKey, setGroqKey] = useState('');
+427-  const [orKey, setOrKey] = useState('');
+428-  const [huggingFaceToken, setHuggingFaceToken] = useState('');
+429-  const [huggingFaceModel, setHuggingFaceModel] = useState(DEFAULT_HF_TRANSCRIPTION_MODEL);
+430-  const [transcriptionProvider, setTranscriptionProvider] = useState<
+431-    'auto' | 'groq' | 'huggingface' | 'cloudflare' | 'deepgram' | 'local'
+432-  >('auto');
+433-  const [name, setName] = useState('');
+434-  const [inicetDate, setInicetDate] = useState(DEFAULT_INICET_DATE);
+435-  const [neetDate, setNeetDate] = useState(DEFAULT_NEET_DATE);
+436-  const [dbmciClassStartDate, setDbmciClassStartDate] = useState('');
+437-  const [btrStartDate, setBtrStartDate] = useState('');
+438-  const [homeNoveltyCooldownHours, setHomeNoveltyCooldownHours] = useState('6');
+439-  const [sessionLength, setSessionLength] = useState('45');
+440-  const [dailyGoal, setDailyGoal] = useState('120');
+441-  const [notifs, setNotifs] = useState(true);
+442-  const [strictMode, setStrictMode] = useState(false);
+443-  const [saving, setSaving] = useState(false);
+444-  const [backupBusy, setBackupBusy] = useState(false);
+445-  const [autoBackupFrequency, setAutoBackupFrequency] = useState<AutoBackupFrequency>('off');
+446-  const [maintenanceBusy, setMaintenanceBusy] = useState<string | null>(null);
+447-  const [bodyDoubling, setBodyDoubling] = useState(true);
+448-  const [autoRepairLegacyNotes, setAutoRepairLegacyNotes] = useState(false);
+449-  const [scanOrphanedTranscripts, setScanOrphanedTranscripts] = useState(false);
+450-  const [blockedTypes, setBlockedTypes] = useState<ContentType[]>([]);
+451-  const [idleTimeout, setIdleTimeout] = useState('2');
+452-  const [breakDuration, setBreakDuration] = useState('5');
+453-  const [pomodoroEnabled, setPomodoroEnabled] = useState(true);
+454-  const [pomodoroInterval, setPomodoroInterval] = useState('20');
+455-  const [notifHour, setNotifHour] = useState('7');
+456-  const [guruFrequency, setGuruFrequency] = useState<'rare' | 'normal' | 'frequent' | 'off'>(
+457-    'normal',
+458-  );
+459-  const [focusSubjectIds, setFocusSubjectIds] = useState<number[]>([]);
+460-  const [subjects, setSubjects] = useState<Subject[]>([]);
+461-
+462-  const [fetchingDates, setFetchingDates] = useState(false);
+463-  const [fetchDatesMsg, setFetchDatesMsg] = useState('');
+464-  const [testingGroqKey, setTestingGroqKey] = useState(false);
+465-  const [groqKeyTestResult, setGroqKeyTestResult] = useState<'ok' | 'fail' | null>(null);
+466-  const [_testingQwenKey, _setTestingQwenKey] = useState(false);
+467-  const [_qwenKeyTestResult, _setQwenKeyTestResult] = useState<'ok' | 'fail' | null>(null);
+468-  const [githubModelsPat, setGithubModelsPat] = useState('');
+469-  const [testingGithubPat, setTestingGithubPat] = useState(false);
+470-  const [githubPatTestResult, setGithubPatTestResult] = useState<'ok' | 'fail' | null>(null);
+471-  const [testingOpenRouterKey, setTestingOpenRouterKey] = useState(false);
+472-  const [openRouterKeyTestResult, setOpenRouterKeyTestResult] = useState<'ok' | 'fail' | null>(
+473-    null,
+474-  );
+475-  const [_testingHuggingFaceToken, _setTestingHuggingFaceToken] = useState(false);
+476-  const [_huggingFaceTokenTestResult, _setHuggingFaceTokenTestResult] = useState<
+477-    'ok' | 'fail' | null
+478-  >(null);
+479-  const [geminiKey, setGeminiKey] = useState('');
+480-  const [cfAccountId, setCfAccountId] = useState('');
+481-  const [cfApiToken, setCfApiToken] = useState('');
+482-  const [falApiKey, setFalApiKey] = useState('');
+483-  const [braveSearchApiKey, setBraveSearchApiKey] = useState('');
+484-  const [googleCustomSearchApiKey, setGoogleCustomSearchApiKey] = useState('');
+485-  const [testingGeminiKey, setTestingGeminiKey] = useState(false);
+486-  const [geminiKeyTestResult, setGeminiKeyTestResult] = useState<'ok' | 'fail' | null>(null);
+487-  const [testingCloudflare, setTestingCloudflare] = useState(false);
+488-  const [cloudflareTestResult, setCloudflareTestResult] = useState<'ok' | 'fail' | null>(null);
+489-  const [testingFalKey, setTestingFalKey] = useState(false);
+490-  const [falKeyTestResult, setFalKeyTestResult] = useState<'ok' | 'fail' | null>(null);
+491-  const [testingBraveSearchKey, setTestingBraveSearchKey] = useState(false);
+492-  const [braveSearchKeyTestResult, setBraveSearchKeyTestResult] = useState<'ok' | 'fail' | null>(
+493-    null,
+494-  );
+495-  const [_testingGoogleCustomSearchKey, _setTestingGoogleCustomSearchKey] = useState(false);
+496-  const [googleCustomSearchKeyTestResult, setGoogleCustomSearchKeyTestResult] = useState<
+497-    'ok' | 'fail' | null
+498-  >(null);
+499-  const [kiloApiKey, setKiloApiKey] = useState('');
+500-  const [testingKiloKey, setTestingKiloKey] = useState(false);
+501-  const [kiloKeyTestResult, setKiloKeyTestResult] = useState<'ok' | 'fail' | null>(null);
+502-  const [deepseekKey, setDeepseekKey] = useState('');
+503-  const [testingDeepseekKey, setTestingDeepseekKey] = useState(false);
+504-  const [deepseekKeyTestResult, setDeepseekKeyTestResult] = useState<'ok' | 'fail' | null>(null);
+505-  const [agentRouterKey, setAgentRouterKey] = useState('');
+506-  const [testingAgentRouterKey, setTestingAgentRouterKey] = useState(false);
+507-  const [agentRouterKeyTestResult, setAgentRouterKeyTestResult] = useState<'ok' | 'fail' | null>(
+508-    null,
+509-  );
+--
+1638:    return () => {
+1639-      if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
+1640-    };
+1641-  }, [doAutoSave]);
+1642-
+1643-  useEffect(() => {
+1644-    const unsubscribe = navigation.addListener('blur', () => {
+1645-      refreshProfile().catch((err) => {
+1646-        if (__DEV__) console.warn('[Settings] refresh on blur failed:', err);
+1647-      });
+1648-    });
+1649-    return unsubscribe;
+1650-  }, [navigation, refreshProfile]);
+1651-
+1652-  const moveProvider = useCallback(
+1653-    (fromIndex: number, toIndex: number) => {
+1654-      setProviderOrder((currentOrder) => {
+1655-        if (
+1656-          fromIndex < 0 ||
+1657-          toIndex < 0 ||
+1658-          fromIndex >= currentOrder.length ||
+1659-          toIndex >= currentOrder.length ||
+1660-          fromIndex === toIndex
+1661-        ) {
+1662-          return currentOrder;
+1663-        }
+1664-
+1665-        const next = [...currentOrder];
+1666-        const [moved] = next.splice(fromIndex, 1);
+1667-        next.splice(toIndex, 0, moved);
+1668-        const sanitized = sanitizeProviderOrder(next);
+1669-        void updateUserProfile({ providerOrder: sanitized })
+1670-          .then(() => refreshProfile())
+1671-          .catch((err) => {
+1672-            if (__DEV__) console.warn('[Settings] Failed to save provider order:', err);
+1673-          });
+1674-        return sanitized;
+1675-      });
+1676-    },
+1677-    [refreshProfile],
+1678-  );
+1679-
+1680-  async function testNotification() {
+1681-    try {
+1682-      await refreshAccountabilityNotifications();
+1683-      showSuccess('Done', 'Notifications scheduled! Check your notification panel.');
+1684-    } catch {
+1685-      showError('Error', 'Could not schedule notifications.');
+1686-    }
+1687-  }
+1688-
+1689-  const _handleSelectBackupDir = async () => {
+1690-    if (Platform.OS !== 'android') {
+1691-      showWarning('Not supported', 'This feature is only available on Android.');
+1692-      return;
+1693-    }
+1694-    try {
+1695-      const { StorageAccessFramework } = await import('expo-file-system/legacy');
+1696-      const permissions = await StorageAccessFramework.requestDirectoryPermissionsAsync();
+1697-      if (permissions.granted) {
+1698-        await updateUserProfile({ backupDirectoryUri: permissions.directoryUri });
+1699-        await refreshProfile();
+1700-        showSuccess(
+1701-          'Success',
+1702-          'Backup directory configured! Your data will now stay synced there.',
+1703-        );
+1704-      }
+1705-    } catch {
+1706-      showError('Error', 'Failed to configure backup directory.');
+1707-    }
+1708-  };
+1709-
+1710-  async function runMaintenanceTask(
+1711-    key: string,
+1712-    task: () => Promise<number>,
+1713-    labels: { done: string; none: string; failed: string },
+1714-  ) {
+1715-    setMaintenanceBusy(key);
+1716-    try {
+1717-      const count = await task();
+1718-      if (count > 0) {
+1719-        showSuccess(labels.done, `${count} item(s) processed.`);
+1720-      } else {
+1721-        showInfo(labels.none, 'Nothing needed fixing.');
+1722-      }
+1723-    } catch (err) {
+1724-      showError(labels.failed, err instanceof Error ? err.message : 'Unknown error');
+1725-    } finally {
+1726-      setMaintenanceBusy(null);
+1727-    }
+1728-  }
+1729-
+1730-  const groqValidationStatus = resolveValidationStatus(
+1731-    'groq',
+1732-    groqKeyTestResult,
+1733-    groqKey.trim() || profile?.groqApiKey || '',
+1734-  );
+1735-  const githubValidationStatus = resolveValidationStatus(
+1736-    'github',
+1737-    githubPatTestResult,
+1738-    githubModelsPat.trim() || profile?.githubModelsPat || '',
+--
+1849:  return (
+1850-    <SafeAreaView style={styles.safe}>
+1851-      <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
+1852-      <KeyboardAvoidingView
+1853-        style={styles.flex}
+1854-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+1855-      >
+1856-        <ScrollView
+1857-          contentContainerStyle={styles.content}
+1858-          showsVerticalScrollIndicator={false}
+1859-          keyboardShouldPersistTaps="handled"
+1860-          keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'none'}
+1861-          overScrollMode="never"
+1862-        >
+1863-          <ScreenHeader title="Settings" onBackPress={() => navigation.navigate('MenuHome')} />
+1864-
+1865-          <LinearSurface compact style={styles.summaryCard}>
+1866-            <View style={styles.summaryRow}>
+1867-              <View style={styles.summaryCopy}>
+1868-                <LinearText variant="meta" tone="accent" style={styles.summaryEyebrow}>
+1869-                  CONTROL ROOM
+1870-                </LinearText>
+1871-              </View>
+1872-              <View style={styles.summaryPill}>
+1873-                <LinearText variant="chip" tone="accent">
+1874-                  Auto-save
+1875-                </LinearText>
+1876-              </View>
+1877-            </View>
+1878-            <View style={styles.summaryMetricsRow}>
+1879-              {settingsSummaryCards.map((card) => (
+1880-                <View key={card.label} style={styles.summaryMetricCard}>
+1881-                  <LinearText variant="title" tone={card.tone} style={styles.summaryMetricValue}>
+1882-                    {card.value}
+1883-                  </LinearText>
+1884-                  <LinearText variant="caption" tone="secondary" style={styles.summaryMetricLabel}>
+1885-                    {card.label}
+1886-                  </LinearText>
+1887-                </View>
+1888-              ))}
+1889-            </View>
+1890-          </LinearSurface>
+1891-
+1892-          <AiProvidersSection
+1893-            styles={styles}
+1894-            SectionToggle={SectionToggle}
+1895-            SubSectionToggle={SubSectionToggle}
+1896-            navigation={navigation}
+1897-            profile={profile!}
+1898-            guruChat={{
+1899-              models: liveGuruChatModels,
+1900-              defaultModel: guruChatDefaultModel,
+1901-              setDefaultModel: setGuruChatDefaultModel,
+1902-              formatModelChipLabel: formatGuruChatModelChipLabel,
+1903-            }}
+1904-            guruMemory={{
+1905-              notes: guruMemoryNotes,
+1906-              setNotes: setGuruMemoryNotes,
+1907-            }}
+1908-            chatgpt={{
+1909-              connectingSlot: chatgptConnectingSlot,
+1910-              deviceCode: chatgptDeviceCode,
+1911-              accounts: chatgptAccounts,
+1912-              setAccounts: setChatgptAccounts,
+1913-              connect: connectChatGpt,
+1914-              disconnect: disconnectChatGpt,
+1915-            }}
+1916-            githubCopilot={{
+1917-              connecting: githubCopilotConnecting,
+1918-              deviceCode: githubCopilotDeviceCode,
+1919-              connected: githubCopilotConnected,
+1920-              connect: connectGitHubCopilot,
+1921-              disconnect: disconnectGitHubCopilot,
+1922-              testResult: githubCopilotOAuthTestResult,
+1923-              validateConnection: validateGitHubCopilotConnection,
+1924-              testingOAuth: testingGitHubCopilotOAuth,
+1925-              preferredModel: githubCopilotPreferredModel,
+1926-              setPreferredModel: setGithubCopilotPreferredModel,
+1927-            }}
+1928-            gitlabDuo={{
+1929-              connecting: gitlabDuoConnecting,
+1930-              connected: gitlabDuoConnected,
+1931-              connect: connectGitLabDuo,
+1932-              disconnect: disconnectGitLabDuo,
+1933-              clientId: gitlabOauthClientId,
+1934-              setClientId: setGitlabOauthClientId,
+1935-              clientSecret: gitlabOauthClientSecret,
+1936-              setClientSecret: setGitlabOauthClientSecret,
+1937-              testResult: gitlabDuoOAuthTestResult,
+1938-              validateConnection: validateGitLabDuoConnection,
+1939-              testingOAuth: testingGitLabDuoOAuth,
+1940-              preferredModel: gitlabDuoPreferredModel,
+1941-              setPreferredModel: setGitlabDuoPreferredModel,
+1942-              pasteModalVisible: gitlabPasteModalVisible,
+1943-              setPasteModalVisible: setGitlabPasteModalVisible,
+1944-              pasteUrl: gitlabPasteUrl,
+1945-              setPasteUrl: setGitlabPasteUrl,
+1946-              submitPasteUrl: submitGitLabPasteUrl,
+1947-              pasteSubmitting: gitlabPasteSubmitting,
+1948-            }}
+1949-            poe={{
+--
+2261:  return (
+2262-    <View style={styles.permRow}>
+2263-      <View style={{ flex: 1 }}>
+2264-        <LinearText style={styles.permLabel}>{label}</LinearText>
+2265-        <LinearText style={[styles.permStatus, isOk ? styles.permOk : styles.permError]}>
+2266-          {isOk ? 'âœ“ Active' : status === 'denied' ? 'âœ— Disabled' : 'â—‹ Not Set'}
+2267-        </LinearText>
+2268-      </View>
+2269-      {!isOk && (
+2270-        <TouchableOpacity style={styles.fixBtn} onPress={onFix}>
+2271-          <LinearText style={styles.fixBtnText}>Fix</LinearText>
+2272-        </TouchableOpacity>
+2273-      )}
+2274-    </View>
+2275-  );
+2276-}
+2277-
+2278-function Label({ text }: { text: string }) {
+2279-  return <LinearText style={styles.label}>{text}</LinearText>;
+2280-}
+2281-
+2282-/** Dropdown picker for model selection â€” replaces congested chip rows. */
+2283-function _ModelDropdown({
+2284-  label,
+2285-  value,
+2286-  options,
+2287-  onSelect,
+2288-}: {
+2289-  label: string;
+2290-  value: string;
+2291-  options: Array<{ id: string; label: string; group?: string }>;
+2292-  onSelect: (id: string) => void;
+2293-}) {
+2294-  const open = false;
+2295-  const setOpen = (_next: boolean) => {};
+2296-  const selectedLabel = options.find((o) => o.id === value)?.label ?? (value || 'Select...');
+2297-
+2298:  return (
+2299-    <>
+2300-      <Label text={label} />
+2301-      <TouchableOpacity
+2302-        style={styles.dropdownTrigger}
+2303-        onPress={() => setOpen(true)}
+2304-        activeOpacity={0.8}
+2305-      >
+2306-        <LinearText style={styles.dropdownValue} numberOfLines={2}>
+2307-          {selectedLabel}
+2308-        </LinearText>
+2309-        <LinearText style={styles.dropdownArrow}>â–¾</LinearText>
+2310-      </TouchableOpacity>
+2311-      <Modal visible={open} transparent animationType="fade" onRequestClose={() => setOpen(false)}>
+2312-        <Pressable style={styles.dropdownBackdrop} onPress={() => setOpen(false)}>
+2313-          <LinearSurface padded={false} style={styles.dropdownSheet}>
+2314-            <LinearText style={styles.dropdownSheetTitle}>{label}</LinearText>
+2315-            <ScrollView style={{ maxHeight: 400 }} showsVerticalScrollIndicator>
+2316-              {options.map((opt, idx) => {
+2317-                const showGroup = opt.group && (idx === 0 || options[idx - 1]?.group !== opt.group);
+2318:                return (
+2319-                  <React.Fragment key={opt.id}>
+2320-                    {showGroup && (
+2321-                      <LinearText style={styles.dropdownGroupLabel}>{opt.group}</LinearText>
+2322-                    )}
+2323-                    <TouchableOpacity
+2324-                      style={[styles.dropdownItem, value === opt.id && styles.dropdownItemActive]}
+2325-                      onPress={() => {
+2326-                        onSelect(opt.id);
+2327-                        setOpen(false);
+2328-                      }}
+2329-                      activeOpacity={0.7}
+2330-                    >
+2331-                      <LinearText
+2332-                        style={[
+2333-                          styles.dropdownItemText,
+2334-                          value === opt.id && styles.dropdownItemTextActive,
+2335-                        ]}
+2336-                        numberOfLines={2}
+2337-                      >
+2338-                        {opt.label}
+2339-                      </LinearText>
+2340-                      {value === opt.id && (
+2341-                        <LinearText style={styles.dropdownCheck}>âœ“</LinearText>
+2342-                      )}
+2343-                    </TouchableOpacity>
+2344-                  </React.Fragment>
+2345-                );
+2346-              })}
+2347-            </ScrollView>
+2348-          </LinearSurface>
+2349-        </Pressable>
+2350-      </Modal>
+2351-    </>
+2352-  );
+2353-}
+2354-
+2355-const styles = StyleSheet.create({
+2356-  flex: { flex: 1 },
+2357-  safe: { flex: 1, backgroundColor: n.colors.background },
+2358-  content: { padding: n.spacing.lg, paddingBottom: 60 },
+2359-  summaryCard: {
+2360-    marginTop: n.spacing.sm,
+2361-    marginBottom: n.spacing.lg,
+2362-  },
+2363-  summaryCardCompact: {
+2364-    marginBottom: n.spacing.md,
+2365-  },
+2366-  summaryRow: {
+2367-    flexDirection: 'row',
+2368-    alignItems: 'flex-start',
+2369-    justifyContent: 'space-between',
+2370-    gap: n.spacing.md,
+2371-  },
+2372-  summaryCopy: {
+2373-    flex: 1,
+2374-  },
+2375-  summaryEyebrow: {
+2376-    letterSpacing: 1.1,
+2377-  },
+2378-  summaryTitle: {
+2379-    marginTop: n.spacing.xs,
+2380-  },
+2381-  summaryText: {
+2382-    marginTop: n.spacing.xs,
+2383-    maxWidth: 560,
+2384-  },
+2385-  summaryPill: {
+2386-    backgroundColor: n.colors.primaryTintSoft,
+2387-    borderRadius: n.radius.full,
+2388-    borderWidth: 1,
+2389-    borderColor: n.colors.borderHighlight,
+2390-    paddingHorizontal: 12,
+2391-    paddingVertical: 8,
+2392-  },
+2393-  summaryMetricsRow: {
+2394-    flexDirection: 'row',
+2395-    flexWrap: 'wrap',
+2396-    gap: 10,
+2397-    marginTop: n.spacing.md,
+2398-  },
+2399-  summaryMetricCard: {
+2400-    flexGrow: 1,
+2401-    minWidth: 110,
+2402-    backgroundColor: n.colors.background,
+2403-    borderRadius: 14,
+2404-    borderWidth: 1,
+2405-    borderColor: n.colors.border,
+2406-    paddingHorizontal: 14,
+2407-    paddingVertical: 12,
+2408-  },
+2409-  summaryMetricValue: {
+2410-    marginBottom: 2,
+2411-  },
+2412-  summaryMetricLabel: {
+2413-    lineHeight: 16,
+2414-  },
+2415-  title: {
+2416-    color: n.colors.textPrimary,
+2417-    fontSize: 26,
+2418-    fontWeight: '900',

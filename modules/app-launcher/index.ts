@@ -1,6 +1,6 @@
 import { requireNativeModule } from 'expo-modules-core';
 
-const GuruAppLauncher = requireNativeModule('GuruAppLauncher');
+export const GuruAppLauncher = requireNativeModule('GuruAppLauncher');
 
 /** Wraps a native promise with a timeout to prevent indefinite hangs. */
 function withTimeout<T>(promise: Promise<T>, ms: number, name: string): Promise<T> {

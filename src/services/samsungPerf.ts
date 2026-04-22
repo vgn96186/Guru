@@ -1,5 +1,5 @@
 import { EventEmitter } from 'expo-modules-core';
-import GuruAppLauncher from '../../modules/app-launcher';
+import { GuruAppLauncher } from '../../modules/app-launcher';
 import {
   samsungPerf as native,
   SamsungPerfPreset,
@@ -50,11 +50,11 @@ export async function init(): Promise<boolean> {
   initialized = true;
   if (samsung) {
     // Wire events once.
-    const emitter = new EventEmitter(GuruAppLauncher as unknown as object);
-    emitter.addListener<{ level: number }>('onSamsungPerfWarning', ({ level }) => {
+    const emitter = new EventEmitter(GuruAppLauncher as any) as any;
+    emitter.addListener('onSamsungPerfWarning', ({ level }: { level: number }) => {
       warningListeners.forEach((l) => l(level));
     });
-    emitter.addListener<{ ts: number }>('onSamsungPerfReleased', () => {
+    emitter.addListener('onSamsungPerfReleased', ({ ts }: { ts: number }) => {
       releaseListeners.forEach((l) => l());
     });
   }

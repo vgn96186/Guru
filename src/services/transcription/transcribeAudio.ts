@@ -6,6 +6,7 @@
  */
 import { profileRepository } from '../../db/repositories';
 import * as FileSystem from 'expo-file-system/legacy';
+import * as samsungPerf from '../samsungPerf';
 import { getApiKeys } from '../aiService';
 import { toFileUri } from '../fileUri';
 import {
@@ -323,7 +324,9 @@ export async function transcribeAudio(opts: {
       },
       local: async () => {
         if (!(useLocalWhisper && localWhisperPath)) return '';
-        return transcribeRawWithLocalWhisper(audioFilePath, localWhisperPath);
+        return samsungPerf.runBoosted('whisper_transcription', () =>
+          transcribeRawWithLocalWhisper(audioFilePath, localWhisperPath),
+        );
       },
     },
   });
@@ -347,7 +350,7 @@ export async function transcribeAudio(opts: {
         logId: logId ?? null,
         audioFilePath,
         providerOrder,
-        lastError: lastError instanceof Error ? lastError.message : lastError ?? null,
+        lastError: lastError instanceof Error ? lastError.message : (lastError ?? null),
       });
     }
     if (!hasGroq && !hasHuggingFace && !hasCloudflare && !hasDeepgram && !hasLocalWhisper) {

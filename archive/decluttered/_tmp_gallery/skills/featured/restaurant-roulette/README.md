@@ -1,5 +1,4 @@
-Restaurant Roulette Skill
-========
+# Restaurant Roulette Skill
 
 This skill searches for up to 10 restaurants matching a specific cuisine and location in a spin wheel.
 

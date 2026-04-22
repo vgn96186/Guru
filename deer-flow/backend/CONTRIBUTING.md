@@ -194,6 +194,7 @@ feat: add support for Claude 3.5 model
 ```
 
 Prefix types:
+
 - `feat:` - New feature
 - `fix:` - Bug fix
 - `docs:` - Documentation

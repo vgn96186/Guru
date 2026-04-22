@@ -194,7 +194,9 @@ function ensureDeviceConnected() {
   if (unauthorizedDevices.length) {
     fail(
       [
-        `ADB device detected but not authorized: ${unauthorizedDevices.map((row) => row.serial).join(', ')}`,
+        `ADB device detected but not authorized: ${unauthorizedDevices
+          .map((row) => row.serial)
+          .join(', ')}`,
         'Unlock the phone/tablet and accept the USB debugging prompt, then click Connect again.',
       ].join(' '),
     );
@@ -202,7 +204,9 @@ function ensureDeviceConnected() {
 
   if (offlineDevices.length && !readyDevices.length) {
     warnStep(
-      `ADB device is offline: ${offlineDevices.map((row) => row.serial).join(', ')}. Restarting adb server once...`,
+      `ADB device is offline: ${offlineDevices
+        .map((row) => row.serial)
+        .join(', ')}. Restarting adb server once...`,
     );
     runSync(['kill-server']);
     ensureAdbServerRunning();
@@ -222,7 +226,9 @@ function ensureDeviceConnected() {
       const requestedRetried = retriedReady.find((row) => row.serial === REQUESTED_DEVICE_SERIAL);
       if (!requestedRetried) {
         fail(
-          `Requested device "${REQUESTED_DEVICE_SERIAL}" was not found after adb recovery. Available devices: ${retriedReady.map((row) => row.serial).join(', ')}.`,
+          `Requested device "${REQUESTED_DEVICE_SERIAL}" was not found after adb recovery. Available devices: ${retriedReady
+            .map((row) => row.serial)
+            .join(', ')}.`,
         );
       }
       activeDeviceSerial = requestedRetried.serial;
@@ -259,7 +265,9 @@ function ensureDeviceConnected() {
 
 function ensureAdbReverse() {
   logStep(
-    `Setting adb reverse for ${activeDeviceSerial || 'default device'} tcp:${ADB_PORT} -> tcp:${ADB_PORT}...`,
+    `Setting adb reverse for ${
+      activeDeviceSerial || 'default device'
+    } tcp:${ADB_PORT} -> tcp:${ADB_PORT}...`,
   );
   const result = runDeviceSync(['reverse', `tcp:${ADB_PORT}`, `tcp:${ADB_PORT}`]);
   if (result.status !== 0) {

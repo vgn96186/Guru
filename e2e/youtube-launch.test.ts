@@ -52,15 +52,13 @@ describe('YouTube launch flow', () => {
     // 1. NewPipe/YouTube opens (app goes to background) — verify no crash on return
     // 2. An alert appears if YouTube is not installed
     // Wait briefly for the action to complete
-    await new Promise(resolve => setTimeout(resolve, 3000));
+    await new Promise((resolve) => setTimeout(resolve, 3000));
 
     // Bring our app back to foreground
     await device.launchApp({ newInstance: false });
 
     // App should still be alive — verify we're still on home or a return sheet appeared
-    await waitFor(
-      element(by.text('TOOLS & LIBRARY'))
-    )
+    await waitFor(element(by.text('TOOLS & LIBRARY')))
       .toBeVisible()
       .withTimeout(10000);
   });

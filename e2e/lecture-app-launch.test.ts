@@ -76,7 +76,7 @@ describe('External Lecture App Launch', () => {
     await element(by.id('external-app-cerebellum')).tap();
 
     // Wait for system dialogs / external app to appear
-    await new Promise(resolve => setTimeout(resolve, 5000));
+    await new Promise((resolve) => setTimeout(resolve, 5000));
 
     // Restart app fresh to verify it didn't crash permanently
     // (newInstance: true clears any stuck system dialog state)

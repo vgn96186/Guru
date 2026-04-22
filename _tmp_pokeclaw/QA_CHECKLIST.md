@@ -11,11 +11,13 @@ Every build must pass ALL checks before shipping.
 Use all three. Do not claim a user-facing fix from backend smoke alone.
 
 1. **Backend smoke**
+
    - Fast validation through ADB + logcat.
    - Proves tool routing, rules, runtime guards, and final backend result.
    - Does **not** by itself prove that the result showed up in the visible chatroom.
 
 2. **Chatroom bridge smoke**
+
    - Short user-visible verification.
    - Proves that once backend has a result, the answer appears in the same chatroom as a visible assistant bubble and is persisted to the current conversation.
    - Use this whenever changing chat/task result rendering, auto-return, or task-to-chat bridging.
@@ -25,6 +27,7 @@ Use all three. Do not claim a user-facing fix from backend smoke alone.
    - Use this for release confidence, major regressions, and high-risk flows such as send-message, monitor, permission flows, and context handoff.
 
 Rule of thumb:
+
 - backend-only bug -> backend smoke first, then at least one chatroom bridge check
 - user-visible chat/task behavior -> backend smoke + chatroom bridge
 - shipping / RC claims -> real E2E, not smoke theater
@@ -36,11 +39,13 @@ Do not judge stochastic agent behavior from a single run.
 Use these rules:
 
 1. **Deterministic / direct-tool / state-truth flows**
+
    - Examples: battery, storage, clipboard, model switching, permission truth, monitor start/stop, auto-return shell state
    - Expected standard: effectively `10/10` on the target device
    - If one of these flakes, treat it as a real bug until proven environmental
 
 2. **Cloud exploratory multi-step tasks**
+
    - Examples: cross-app search, email drafting, app install, read-then-act tasks, `M` section flows, `S` quick tasks, M-session style prompts
    - Run `10` trials and judge by **success rate**, not one lucky pass or one unlucky fail
    - Default release threshold:
@@ -49,6 +54,7 @@ Use these rules:
      - `<8/10` = still unstable; keep as experimental or fix before shipping
 
 3. **Local exploratory tasks**
+
    - Use repeated trials too, but evaluate against the intended model tier:
      - `E4B` = primary Local UX target
      - `E2B` = fallback tier that only needs to be broadly usable, not feature-parity with E4B
@@ -150,6 +156,7 @@ adb logcat -d | grep "$PID" | grep -E "DebugTask|PipelineRouter|AgentService|Tas
 ### Verify PASS/FAIL
 
 For each M test, check:
+
 1. **Correct tool called** — e.g., "how much battery" should call `get_device_info(battery)`, NOT open Settings
 2. **Actual data in answer** — "73%, not charging, 32°C" NOT "I checked the battery"
 3. **Rounds** — system queries should be 2 rounds, complex tasks 5-15
@@ -175,6 +182,7 @@ for node in root.iter():
 ```
 
 Use this to verify:
+
 - UI elements are present (tabs, buttons, prompts)
 - Placeholder text changes when switching modes
 - Correct model name shows in dropdown
@@ -200,6 +208,7 @@ adb shell input tap 746 2041
 ### Three QA Layers
 
 **Layer 1: Backend QA (ADB broadcast)**
+
 - Fast: ~10s per test
 - Uses `am broadcast` to send tasks directly to DebugTaskReceiver
 - Bypasses UI entirely — tests tools, LLM routing, error handling, agent loop
@@ -208,6 +217,7 @@ adb shell input tap 746 2041
 - When to run: every backend/agent/tool change
 
 **Layer 2: UI Structure QA (uiautomator dump)**
+
 - Medium: ~5s per test
 - Verifies UI elements are present, positioned correctly, styled correctly
 - No message sending — purely visual/structural verification
@@ -216,6 +226,7 @@ adb shell input tap 746 2041
 - When to run: every UI/layout change
 
 **Layer 3: UI E2E QA (tap + type + send + verify response)**
+
 - Slow: ~30s per test
 - Simulates real user: tap input → type → dismiss keyboard → tap send → wait → verify response bubble
 - Tests the FULL pipeline: UI routing → Activity callback → LLM → response → UI update
@@ -228,6 +239,7 @@ adb shell input tap 746 2041
 Layer 1 broadcast calls `sendTask()` directly — it never touches `ChatInputBar`, `isLocalUI`, or the Chat/Task toggle routing. If UI routing breaks (e.g., Cloud mode accidentally routes to `onSendChat`), Layer 1 won't catch it. Layer 3 covers this gap.
 
 **Run order:**
+
 1. Layer 2 first (fast, catches layout breaks)
 2. Layer 3 second (catches routing/interaction breaks)
 3. Layer 1 last (catches backend/agent breaks)
@@ -265,10 +277,12 @@ for node in root.iter():
 ### Cross-Device Testing
 
 Test on at least 2 devices:
+
 - **Stock Android** (Pixel): baseline, everything should work
 - **MIUI/Samsung/OEM** (Xiaomi etc): test for OEM restrictions (autostart, different Settings UI)
 
 Key OEM differences:
+
 - MIUI blocks background app launches (autostart whitelist needed)
 - Samsung has different Settings layout
 - Some OEMs have chain-launch dialogs (auto-dismissed by OpenAppTool)
@@ -412,6 +426,7 @@ When in doubt, rerun the smaller bundle first, then expand only if something dri
 ---
 
 ## Prerequisites
+
 - [ ] Accessibility service enabled
 - [ ] Cloud LLM configured (API key set)
 - [ ] Local LLM downloaded (Gemma 4)
@@ -530,6 +545,7 @@ When in doubt, rerun the smaller bundle first, then expand only if something dri
 Design principle: User perspective. INFO tasks → report actual data. ACTION tasks → confirm result. Must work on ANY Android device.
 
 ### System Queries (direct tool, no UI)
+
 - [ ] **M1. Battery**: "how much battery left" → "73%, not charging, ~5h remaining" (get_device_info)
 - [ ] **M2. WiFi**: "what WiFi am I connected to" → SSID + signal (get_device_info)
 - [ ] **M3. Storage**: "how much storage do i have free" → "47GB free of 128GB" (get_device_info)
@@ -538,6 +554,7 @@ Design principle: User perspective. INFO tasks → report actual data. ACTION ta
 - [ ] **M6. Screen info**: "check what's on my screen" → describe visible UI elements
 
 ### App Navigation
+
 - [ ] **M7. Open app**: "open spotify" → Spotify launches, confirmed
 - [ ] **M8. YouTube search**: "search youtube for lofi beats" → YouTube opens, types query, results shown
 - [ ] **M9. Web search**: "open Chrome and search for weather today" → Chrome, types, results
@@ -546,6 +563,7 @@ Design principle: User perspective. INFO tasks → report actual data. ACTION ta
 - [ ] **M12. Deep navigation**: "open settings then go to about phone and tell me my android version" → Settings → About → reports version
 
 ### Information Retrieval (agent reads and reports back)
+
 - [ ] **M13. Weather**: "what's the weather today" → actual temp + conditions
 - [ ] **M14. Last email**: "read my latest email" → sender + subject + preview text
 - [ ] **M15. Calendar**: "what's on my calendar tomorrow" → event list with times
@@ -554,11 +572,13 @@ Design principle: User perspective. INFO tasks → report actual data. ACTION ta
 - [ ] **M18. Find photo**: "find the photo i took yesterday" → open Gallery, describe what's there
 
 ### Text Input Tasks
+
 - [ ] **M19. Compose email**: "compose an email to test@example.com saying hello" → fills To/Subject/Body, does NOT send
 - [ ] **M20. Search Twitter**: "go to twitter and find elon's latest post" → opens X, searches, reports post
 - [ ] **M21. Google Maps search**: "open maps and navigate to nearest gas station" → Maps, search, results
 
 ### Settings Changes
+
 - [ ] **M22. Dark mode**: "turn on dark mode" → toggles, confirms "Dark mode ON"
 - [ ] **M23. Brightness**: "brightness to 50%" → adjusts, confirms level
 - [ ] **M24. Timer**: "set a timer for 10 minutes" → Clock app, sets 10:00, starts
@@ -567,17 +587,20 @@ Design principle: User perspective. INFO tasks → report actual data. ACTION ta
 - [ ] **M27. Compound settings**: "turn off wifi and turn on bluetooth" → both done, both confirmed
 
 ### Media
+
 - [ ] **M28. Take photo**: "take a selfie" → front camera, shutter, send_file back
 - [ ] **M29. Screenshot**: "screenshot" → take_screenshot + send_file
 - [ ] **M30. Play music**: "play music" → picks music app, attempts playback
 - [ ] **M31. Next song**: "play the next song" → skip track in music player
 
 ### Cross-App Workflows
+
 - [ ] **M32. Install app**: "install Telegram from Play Store" → Play Store → search → Install
 - [ ] **M33. Copy-paste cross-app**: "copy tracking number from gmail and search it on amazon" → Gmail → copy → Amazon → paste
 - [ ] **M34. Photo to message**: "take a photo and send it to Mom on WhatsApp" → camera → capture → WhatsApp → send
 
 ### Pure Chat (NO phone control)
+
 - [ ] **M35. Joke**: "tell me a joke" → text response, NO tools called
 - [ ] **M36. Math**: "whats 234 times 891" → "208,494", NO tools
 - [ ] **M37. Timezone**: "what time is it in tokyo" → time answer, NO tools
@@ -594,18 +617,21 @@ Design principle: User perspective. INFO tasks → report actual data. ACTION ta
 - [ ] **DD7. Conceptual control stays chat**: Cloud input `what is an Android clipboard` → normal text answer; guard must not falsely force a device-data tool
 
 ### Error Handling
+
 - [ ] **M39. Wrong app name**: "open flurpmaster 3000" → "App not found" + suggestion
 - [ ] **M40. Impossible platform**: "text sarah on imessage" → "iMessage not available on Android, try SMS/WhatsApp"
 - [ ] **M41. Typo tolerance**: "check my instagarm messages" → understands Instagram
 - [ ] **M42. Missing permission**: "monitor WhatsApp" with Notification Access off → guides to Settings
 
 ### Natural Language Understanding
+
 - [ ] **M43. Complaint as action**: "my screen is too dim" → increase brightness
 - [ ] **M44. Vague request**: "scroll down" → asks clarification OR scrolls current
 - [ ] **M45. Slang**: "yo whats on my notifs" → reads notifications
 - [ ] **M46. Implicit action**: "go back" → system_key(back), reports new screen
 
 ### Device-Agnostic Edge Cases
+
 - [ ] **M47. Call**: "call Mom" → dials Mom (works on any device with Phone app)
 - [ ] **M48. Lock**: "lock my phone" → system_key(lock), confirms
 - [ ] **M49. Clear notifications**: "clear all my notifications" → clears, confirms
@@ -632,6 +658,7 @@ Design principle: User perspective. INFO tasks → report actual data. ACTION ta
 - [ ] **S8. "Write an email saying I'll be late"**: opens Gmail → compose draft ready with Subject/Body filled; recipient stays blank unless the task names one; does NOT send (M8/M19 verified)
 
 Current Pixel 8 Pro status on 2026-04-10:
+
 - `S2`, `S3`, `S5`, `S6`, `S7`, and `S8` are verified pass on the latest hardening branch.
 - `S1` is currently environment-blocked by a foreground YouTube runtime permission dialog (`GrantPermissionsActivity`), not by a deterministic search-flow failure in PokeClaw.
 
@@ -640,6 +667,7 @@ Current Pixel 8 Pro status on 2026-04-10:
 Reference prototype: `/home/nicole/MyGithub/PokeClaw/prototype/dashboard-v9.html`
 
 ### P1. Local/Cloud Toggle (in toolbar)
+
 - [ ] **P1-1. Both buttons render**: "Local" and "Cloud" visible on same line as PokeClaw title, right side
 - [ ] **P1-2. Selected state**: selected button has aiBubble bg + aiBubbleBorder, unselected has no bg/border
 - [ ] **P1-3. No background container**: buttons sit directly in toolbar actions, no wrapping rectangle
@@ -649,6 +677,7 @@ Reference prototype: `/home/nicole/MyGithub/PokeClaw/prototype/dashboard-v9.html
 - [ ] **P1-7. Tab controls UI mode**: tap Local → Chat/Task toggle appears, prompts change to local, placeholder changes; tap Cloud → toggle hides, cloud prompts, cloud placeholder
 
 ### P2. Input Area (bottom)
+
 - [ ] **P2-1. Local Chat/Task toggle**: "💬 Chat" and "🤖 Task" segment buttons visible ABOVE input (not beside)
 - [ ] **P2-2. Input full width**: input bar takes full width, toggle is separate row above
 - [ ] **P2-3. Task mode orange**: tap Task → toggle turns orange, input border orange, input bg tinted, placeholder "Describe a phone task...", send button orange
@@ -658,6 +687,7 @@ Reference prototype: `/home/nicole/MyGithub/PokeClaw/prototype/dashboard-v9.html
 - [ ] **P2-7. Same chatroom**: switching Chat↔Task does NOT clear messages, stays in same session
 
 ### P3. Quick Tasks Panel (between chat and input)
+
 - [ ] **P3-1. Panel visible**: "▲ Quick Tasks ▲" handle with centered up-chevrons visible
 - [ ] **P3-2. Default open**: panel open when new chat starts
 - [ ] **P3-3. Collapsible**: tap handle → panel collapses (chevrons flip down); tap again → expands (chevrons flip up)
@@ -670,22 +700,26 @@ Reference prototype: `/home/nicole/MyGithub/PokeClaw/prototype/dashboard-v9.html
 - [ ] **P3-10. Monitor card tap**: tap Monitor card → centered dialog (NOT bottom sheet) with Contact/App/Tone form + "Start Monitoring" button
 
 ### P4. Empty State
+
 - [ ] **P4-1. Local empty**: PokeClaw icon + "PokeClaw" + "Local AI" + hint with bold 💬 Chat / 🤖 Task + 3 chat prompts (joke, what can you do, email)
 - [ ] **P4-2. Cloud empty**: PokeClaw icon + "PokeClaw" + "Cloud AI" + "Chat and tasks work together" + 3 prompts (Tokyo, birthday, WhatsApp)
 - [ ] **P4-3. Prompt style matches Quick Tasks**: same accent bar, same height (~38dp), same font size, same bg color
 - [ ] **P4-4. Prompt tap**: tap empty state prompt → fills input, correct mode (local prompts = chat, cloud WhatsApp = task)
 
 ### P5. No Duplicate Panels
+
 - [ ] **P5-1. Task mode clean**: when Task mode active → old TaskSkillsPanel does NOT appear alongside QuickTasksPanel
 - [ ] **P5-2. No old ModeTab**: old "Chat | Task" ModeTab rows (from before v9) do NOT render
 - [ ] **P5-3. No stale labels**: "Tap a skill above to start" label does NOT appear
 
 ### P6. Theme Consistency
+
 - [ ] **P6-1. Theme-aware colors**: all UI uses `colors.accent` (theme-dependent), NOT hardcoded orange
 - [ ] **P6-2. Task mode styling**: task mode input area uses taskBg (#1A1410) + accent border + accent send button
 - [ ] **P6-3. Send button states**: empty = dim (alpha 0.35, bg color), chat active = userBubble color, task active = accent color
 
 ### P7. Chat Bubble Metadata
+
 - [ ] **P7-1. User footer time**: user bubbles show a subtle time footer under the bubble (IG-chatroom style)
 - [ ] **P7-2. Assistant footer metadata**: assistant bubbles show `model name · time` when a model tag exists
 - [ ] **P7-3. History restore keeps timestamps**: relaunch or reload a saved conversation → visible bubble times stay stable instead of resetting to "now"
@@ -696,6 +730,7 @@ Tests the complete path: user tap → ChatInputBar routing → Activity → LLM 
 Layer 1 broadcast bypasses UI routing. Only Layer 3 catches routing bugs.
 
 ### Q1. Tab Switch = Model Switch
+
 - [ ] **Q1-1. Cloud→Local switch**: tap Local button → model status changes to local model name → `isLocalModel` becomes true
 - [ ] **Q1-2. Local→Cloud switch**: tap Cloud button → model status changes to cloud model name → `isLocalModel` becomes false
 - [ ] **Q1-3. No model available**: tap Local with no downloaded model → no crash, stays on current model
@@ -706,6 +741,7 @@ Layer 1 broadcast bypasses UI routing. Only Layer 3 catches routing bugs.
 - [ ] **Q1-8. Footer/top-bar consistency after switch**: after switching models in the same conversation, old bubbles may keep their original model footers, but the newest assistant bubble must match the current top-bar model state
 
 ### Q2. Cloud Tab Send Routing
+
 - [ ] **Q2-1. Cloud chat**: Cloud tab → type "hello" → tap send → AI response in chat bubble (routed via onSendTask)
 - [ ] **Q2-1b. Cloud chat stays out of task-running state**: Cloud tab → type a normal chat message like `hello` → reply appears in chat, but the orange `Task running...` bar never appears unless the backend actually enters task/tool execution
 - [ ] **Q2-1c. Cloud plain chat imperative does not misroute to Send Message**: Cloud tab → type `say hi` or `tell me more` → stays in ordinary chat, does NOT launch a send-message task, and does NOT reuse any old contact/app state
@@ -718,6 +754,7 @@ Layer 1 broadcast bypasses UI routing. Only Layer 3 catches routing bugs.
 - [ ] **Q2-7. Cloud context handoff proof**: in the same conversation, ask Cloud to summarize something, then say `send that summary by email` → Cloud uses the earlier chat context and the resulting reply/task output stays tagged as Cloud
 
 ### Q3. Local Tab Send Routing
+
 - [x] **Q3-1. Local chat**: Local tab → Chat mode → type "hello" → tap send → AI response (routed via onSendChat to local LLM)
 - [ ] **Q3-2. Local task**: Local tab → Task mode → type "how much battery left" → tap send → task executes (routed via onSendTask)
 - [ ] **Q3-3. Mode switch**: Local tab → start in Chat → type "hello" → get response → tap Task → type task → executes correctly
@@ -727,16 +764,19 @@ Layer 1 broadcast bypasses UI routing. Only Layer 3 catches routing bugs.
 - [ ] **Q3-7. Local-vs-Cloud separation proof**: after a successful Cloud-only task, switch back to Local in the same conversation and ask a simple on-device task (`how much battery left`) → result comes from Local, not from the previously active Cloud model
 
 ### Q4. Quick Task → Send E2E
+
 - [ ] **Q4-1. Quick task fill + send**: Local tab → tap "🔋 How much battery left?" → verify input fills + Task mode active → tap send → battery info returned
 - [ ] **Q4-2. Quick task in Cloud**: Cloud tab → tap quick task → input fills → tap send → task executes
 
 ### Q5. Routing Regression Guards
+
 - [x] **Q5-1. No OpenCL crash on Local chat**: Local tab → Chat mode → send message → should NOT get "OpenCL not found" (must use CPU fallback)
 - [x] **Q5-1b. GPU fallback updates UI label**: Local tab → GPU load/inference fails → fallback to CPU → top-left model status changes to CPU
-- [ ] **Q5-2. No API error on Cloud task**: Cloud tab → send task → should NOT get "invalid_request_error" 
+- [ ] **Q5-2. No API error on Cloud task**: Cloud tab → send task → should NOT get "invalid_request_error"
 - [ ] **Q5-3. Tab switch mid-conversation**: send message on Cloud → switch to Local → send message → no crash, correct routing for each
 
 ### Q6. Tab Isolation — Local/Cloud Independent Configs
+
 - [ ] **Q6-1. Cloud→Local preserves cloud config**: configure Cloud (gpt-4.1) → switch to Local → switch back to Cloud → model shows gpt-4.1 (not reset)
 - [ ] **Q6-2. Local tab uses local model**: switch to Local tab → model status shows local model name (Gemma/etc), NOT any cloud model
 - [ ] **Q6-3. Cloud tab uses cloud model**: switch to Cloud tab → model status shows cloud model name, NOT local model
@@ -746,6 +786,7 @@ Layer 1 broadcast bypasses UI routing. Only Layer 3 catches routing bugs.
 - [ ] **Q6-7. Cloud task actually uses cloud LLM**: Cloud tab → send "battery" → logcat shows OpenAI/gpt (NOT LiteRT)
 
 ### Q7. Task Stop + Session Preservation
+
 - [ ] **Q7-1. Cloud stop responds immediately**: start cloud/network task → tap Stop → task stops within 3 seconds (thread interrupted, HTTP call aborted)
 - [x] **Q7-1b. Local stop is safe and honest**: start local task → tap Stop → UI stays in `Task running...`/`Stop` while the current LiteRT round unwinds, then returns to idle with `Task cancelled`, no crash
 - [ ] **Q7-2. Stop returns to same session**: start task → task opens other app → tap Stop → returns to PokeClaw → same conversation visible (not new session)
@@ -756,12 +797,14 @@ Layer 1 broadcast bypasses UI routing. Only Layer 3 catches routing bugs.
 - [ ] **Q7-7. Auto-return preserves conversation**: task completes in other app → auto-return to PokeClaw → previous messages + task result visible in same conversation
 
 ### Q8. Chatroom Memory Continuity
+
 - [ ] **Q8-1. Cloud same-chatroom memory**: in one Cloud chatroom, tell it a fact (e.g. "Remember: call Mom at 3pm") → exchange 2-3 unrelated turns → ask "What time did I say to call Mom?" → it should answer from the earlier message, not act like the chat started fresh
 - [ ] **Q8-2. Local same-chatroom memory**: in one Local chatroom, tell it a fact → exchange 2-3 unrelated turns → ask for the fact again → it should answer from the same ongoing conversation, not as one-shot QA
 - [ ] **Q8-3. Cloud relaunch memory continuity**: in one Cloud chatroom, establish a fact → fully relaunch the app → reopen the same conversation → ask for the fact again → it should still answer from the restored conversation context
 - [ ] **Q8-4. Local relaunch memory continuity**: in one Local chatroom, establish a fact → fully relaunch the app → reopen the same conversation → ask for the fact again → it should still answer from the restored conversation context
 
 ### Q9. Chat -> Task Context Handoff
+
 - [ ] **Q9-1. Cloud task inherits chatroom history**: in one Cloud chatroom, ask for a summary or establish a reusable fact → then send a task like `send that summary by email` or `text that to Monica` without repeating the content → task should use the earlier chatroom context and complete using the referenced content
 - [ ] **Q9-2. Local task stays prompt-only**: in one Local chatroom, establish a fact/summary → switch to Task mode and send a vague task like `send that summary by email` without repeating the content → app should not pretend it has the full chat context; expected product behavior is either a graceful failure or a result that clearly depends only on the current task prompt
 
@@ -955,21 +998,21 @@ Format: `[date] [status] [test-id] description`
 
 ### Open Issues (unfixed)
 
-| ID | Issue | Root Cause | Priority |
-|----|-------|-----------|----------|
-| ~~A1-a~~ | ~~Floating button flashes on chat questions~~ | ~~FIXED: finish tool filtered from showTaskNotify~~ | ~~Medium~~ |
-| ~~A1-b~~ | ~~"Accessibility starting..." on every new chat~~ | ~~FIXED: moved keyword routing before accessibility check~~ | ~~Low~~ |
-| ~~F1~~ | ~~Top bar "Task running..." not showing~~ | ~~FIXED~~ | ~~High~~ |
-| ~~F2~~ | ~~Send button not turning red~~ | ~~FIXED~~ | ~~High~~ |
-| H6 | Pencil icon cannot rename chat session | Not implemented — deferred to feature backlog | Low |
-| ~~F3~~ | ~~Floating button IDLE in other apps~~ | ~~FIXED: show() callback now restores state via updateStateView~~ | ~~Medium~~ |
-| ~~F6~~ | ~~"..." coexists with tool actions~~ | ~~FIXED: removeTypingIndicator() on first ToolAction~~ | ~~Medium~~ |
-| B2-a | ~~No auto-return after task in other app~~ | Fixed 2026-04-10: cloud task completion now auto-returns to `ComposeChatActivity`, and recent YouTube search passes restored the same PokeClaw session after finishing in another app | Fixed |
-| M1-a | ~~YouTube search: LLM skips input_text~~ | Fixed 2026-04-10: generic in-app search guard now blocks premature completion on explicit `search [app] for [query]` / `search for [query] on [app]` tasks until the agent actually calls `input_text`, then inspects results before finishing | Fixed |
-| M3-a | ~~Screen reading routed as chat~~ | ~~FIXED: added "check", "screen", "notification", "compose", "find", "read my" to task detection~~ | ~~High~~ |
-| M4-a | ~~Compound tasks truncated by Tier 1~~ | ~~FIXED: PipelineRouter skips Tier 1 for tasks with "and"/"then"/"after"~~ | ~~High~~ |
-| M8-a | ~~Gmail compose loops~~ | Fixed 2026-04-10: explicit email-compose tasks now use a generic compose guard, so task mode no longer short-circuits into draft text or loops; it opens an email app, fills the draft fields, and finishes only after in-app compose work has started | Fixed |
-| M12-a | YouTube Music system dialog | Login/premium dialog blocks music playback task | Low |
+| ID       | Issue                                             | Root Cause                                                                                                                                                                                                                                             | Priority   |
+| -------- | ------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------- |
+| ~~A1-a~~ | ~~Floating button flashes on chat questions~~     | ~~FIXED: finish tool filtered from showTaskNotify~~                                                                                                                                                                                                    | ~~Medium~~ |
+| ~~A1-b~~ | ~~"Accessibility starting..." on every new chat~~ | ~~FIXED: moved keyword routing before accessibility check~~                                                                                                                                                                                            | ~~Low~~    |
+| ~~F1~~   | ~~Top bar "Task running..." not showing~~         | ~~FIXED~~                                                                                                                                                                                                                                              | ~~High~~   |
+| ~~F2~~   | ~~Send button not turning red~~                   | ~~FIXED~~                                                                                                                                                                                                                                              | ~~High~~   |
+| H6       | Pencil icon cannot rename chat session            | Not implemented — deferred to feature backlog                                                                                                                                                                                                          | Low        |
+| ~~F3~~   | ~~Floating button IDLE in other apps~~            | ~~FIXED: show() callback now restores state via updateStateView~~                                                                                                                                                                                      | ~~Medium~~ |
+| ~~F6~~   | ~~"..." coexists with tool actions~~              | ~~FIXED: removeTypingIndicator() on first ToolAction~~                                                                                                                                                                                                 | ~~Medium~~ |
+| B2-a     | ~~No auto-return after task in other app~~        | Fixed 2026-04-10: cloud task completion now auto-returns to `ComposeChatActivity`, and recent YouTube search passes restored the same PokeClaw session after finishing in another app                                                                  | Fixed      |
+| M1-a     | ~~YouTube search: LLM skips input_text~~          | Fixed 2026-04-10: generic in-app search guard now blocks premature completion on explicit `search [app] for [query]` / `search for [query] on [app]` tasks until the agent actually calls `input_text`, then inspects results before finishing         | Fixed      |
+| M3-a     | ~~Screen reading routed as chat~~                 | ~~FIXED: added "check", "screen", "notification", "compose", "find", "read my" to task detection~~                                                                                                                                                     | ~~High~~   |
+| M4-a     | ~~Compound tasks truncated by Tier 1~~            | ~~FIXED: PipelineRouter skips Tier 1 for tasks with "and"/"then"/"after"~~                                                                                                                                                                             | ~~High~~   |
+| M8-a     | ~~Gmail compose loops~~                           | Fixed 2026-04-10: explicit email-compose tasks now use a generic compose guard, so task mode no longer short-circuits into draft text or loops; it opens an email app, fills the draft fields, and finishes only after in-app compose work has started | Fixed      |
+| M12-a    | YouTube Music system dialog                       | Login/premium dialog blocks music playback task                                                                                                                                                                                                        | Low        |
 
 ### 2026-04-09 — v9 UI Redesign QA
 
@@ -1140,15 +1183,15 @@ Format: `[date] [status] [test-id] description`
 
 ### Bugs Found During v9 QA
 
-| ID | Issue | Root Cause | Priority |
-|----|-------|-----------|----------|
-| Q5-1 | ~~LiteRT "Can not find OpenCL" crash in sendChat()~~ | Fixed 2026-04-09: `sendChat()` now mirrors the Local client fallback path, resets the engine after OpenCL/native errors, and retries on CPU instead of failing the chat send | Fixed |
-| Q5-2 | ~~API key was "test"~~ | ~~Device had dummy key, reconfigured~~ | ~~Config~~ |
-| K2-a | ~~Accessibility status row shows `Disabled` while Android Accessibility page has `Use PokeClaw` ON~~ | Fixed 2026-04-10: app Settings now reads `enabled_accessibility_services` via `isEnabledInSettings()` | Fixed |
-| K3-b | ~~Accessibility enable flow does not foreground PokeClaw after system toggle ON~~ | Fixed 2026-04-10: pending return only arms for a real disabled→enabled flow, then unwinds Settings and foregrounds app | Fixed |
-| Q6-7 | ~~Cloud tab tasks can reuse stale Local agent config after a model switch~~ | Fixed 2026-04-10: task agent config now syncs on model switch and immediately before `startTask()` | Fixed |
-| Q1-r1 | ~~Toolbar tab UI can drift out of sync with the actual active model after Settings/model changes~~ | Fixed 2026-04-10: `ChatScreen` now re-syncs `selectedTab` from `isLocalModel`, so placeholder/quick-tasks/toggle follow the true active model again | Fixed |
-| L1-v9 | ~~Auto-return after task completion can reopen a fresh chat state instead of preserving the active conversation~~ | Fixed 2026-04-10: same conversation remained visible after Cloud `send_message` auto-return, with result appended in place | Fixed |
-| A11Y-r1 | Accessibility-dependent tools can false-fail during transient service rebinds | Fixed 2026-04-10: tools now wait for an enabled service to reconnect before returning `Accessibility service is not running` | Fixed |
-| Q7-local | ~~Stopping a Local task could crash with native `SIGSEGV` / `session already exists` race~~ | Fixed 2026-04-10: local cancel no longer interrupts LiteRT mid-send, and UI cleanup waits until the task-side client has closed cleanly | Fixed |
-| Bgt-1 | Existing installs could stay pinned to the legacy task budget even after code defaults increased | Fixed 2026-04-10: `TaskBudget` now one-time migrates untouched 100K / $0.50 legacy defaults to 250K / $1.00, while preserving explicit user overrides and exposing `250K` in Settings | Fixed |
+| ID       | Issue                                                                                                             | Root Cause                                                                                                                                                                            | Priority   |
+| -------- | ----------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------- |
+| Q5-1     | ~~LiteRT "Can not find OpenCL" crash in sendChat()~~                                                              | Fixed 2026-04-09: `sendChat()` now mirrors the Local client fallback path, resets the engine after OpenCL/native errors, and retries on CPU instead of failing the chat send          | Fixed      |
+| Q5-2     | ~~API key was "test"~~                                                                                            | ~~Device had dummy key, reconfigured~~                                                                                                                                                | ~~Config~~ |
+| K2-a     | ~~Accessibility status row shows `Disabled` while Android Accessibility page has `Use PokeClaw` ON~~              | Fixed 2026-04-10: app Settings now reads `enabled_accessibility_services` via `isEnabledInSettings()`                                                                                 | Fixed      |
+| K3-b     | ~~Accessibility enable flow does not foreground PokeClaw after system toggle ON~~                                 | Fixed 2026-04-10: pending return only arms for a real disabled→enabled flow, then unwinds Settings and foregrounds app                                                                | Fixed      |
+| Q6-7     | ~~Cloud tab tasks can reuse stale Local agent config after a model switch~~                                       | Fixed 2026-04-10: task agent config now syncs on model switch and immediately before `startTask()`                                                                                    | Fixed      |
+| Q1-r1    | ~~Toolbar tab UI can drift out of sync with the actual active model after Settings/model changes~~                | Fixed 2026-04-10: `ChatScreen` now re-syncs `selectedTab` from `isLocalModel`, so placeholder/quick-tasks/toggle follow the true active model again                                   | Fixed      |
+| L1-v9    | ~~Auto-return after task completion can reopen a fresh chat state instead of preserving the active conversation~~ | Fixed 2026-04-10: same conversation remained visible after Cloud `send_message` auto-return, with result appended in place                                                            | Fixed      |
+| A11Y-r1  | Accessibility-dependent tools can false-fail during transient service rebinds                                     | Fixed 2026-04-10: tools now wait for an enabled service to reconnect before returning `Accessibility service is not running`                                                          | Fixed      |
+| Q7-local | ~~Stopping a Local task could crash with native `SIGSEGV` / `session already exists` race~~                       | Fixed 2026-04-10: local cancel no longer interrupts LiteRT mid-send, and UI cleanup waits until the task-side client has closed cleanly                                               | Fixed      |
+| Bgt-1    | Existing installs could stay pinned to the legacy task budget even after code defaults increased                  | Fixed 2026-04-10: `TaskBudget` now one-time migrates untouched 100K / $0.50 legacy defaults to 250K / $1.00, while preserving explicit user overrides and exposing `250K` in Settings | Fixed      |

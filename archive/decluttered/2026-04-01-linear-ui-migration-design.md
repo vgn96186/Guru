@@ -10,15 +10,15 @@
 
 Every tappable or grouping element uses `LinearSurface` — a frosted glass slice. The app becomes a stack of glass surfaces against true black (`#000000`).
 
-| Property | Value |
-|---|---|
-| Surface background | `#111111` with white SVG gradient overlay (0.04 → 0 opacity, top-to-bottom) |
-| Border | `rgba(255,255,255,0.08)` |
-| Top-edge highlight | 1px at `rgba(255,255,255,0.12)` |
-| Radius (item) | `12px` (`radius.md`) |
-| Radius (group container) | `16px` (`radius.lg`) |
-| Gap between items | `8px` |
-| Shadows | None — depth from gradient + border only |
+| Property                 | Value                                                                       |
+| ------------------------ | --------------------------------------------------------------------------- |
+| Surface background       | `#111111` with white SVG gradient overlay (0.04 → 0 opacity, top-to-bottom) |
+| Border                   | `rgba(255,255,255,0.08)`                                                    |
+| Top-edge highlight       | 1px at `rgba(255,255,255,0.12)`                                             |
+| Radius (item)            | `12px` (`radius.md`)                                                        |
+| Radius (group container) | `16px` (`radius.lg`)                                                        |
+| Gap between items        | `8px`                                                                       |
+| Shadows                  | None — depth from gradient + border only                                    |
 
 ---
 
@@ -237,6 +237,7 @@ AI PROVIDERS                          ← section header
 Screens: `StatsScreen`, `StudyPlanScreen`, `ContentCard`, `FlashcardsScreen`, `GuruChatScreen`, `TopicDetailScreen`, `SessionScreen`, `ReviewScreen`, `NotesVaultScreen`, `BossBattleScreen`, `InertiaScreen`, `ManualLogScreen`, `DailyChallengeScreen`, `FlaggedReviewScreen`, and remaining screens.
 
 For each:
+
 - Swap `theme.colors` references → `linearTheme` equivalents
 - Wrap any card-like elements in `LinearSurface` (compact for rows, default for groups)
 - Use `LinearText` for typography where feasible

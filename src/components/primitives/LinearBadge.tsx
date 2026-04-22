@@ -1,72 +1,55 @@
 import React from 'react';
-import { View, StyleSheet, type ViewProps } from 'react-native';
-import { linearTheme } from '../../theme/linearTheme';
+import { View, type ViewProps } from 'react-native';
+import { tv } from 'tailwind-variants';
 import LinearText from './LinearText';
 
 export type LinearBadgeVariant = 'default' | 'accent' | 'success' | 'warning' | 'error';
 
-interface LinearBadgeProps extends ViewProps {
+interface LinearBadgeProps extends Omit<ViewProps, 'style' | 'className'> {
   label: string;
   variant?: LinearBadgeVariant;
+  className?: string;
+  /** @deprecated Use className instead */
+  style?: ViewProps['style'];
 }
+
+const badgeVariants = tv({
+  base: 'px-2 py-1 rounded-full border self-start items-center justify-center',
+  variants: {
+    variant: {
+      default: 'bg-surface border-border',
+      accent: 'bg-accent/[0.09] border-accent/[0.32]',
+      success: 'bg-success/[0.09] border-success/[0.32]',
+      warning: 'bg-warning/[0.09] border-warning/[0.32]',
+      error: 'bg-error/[0.09] border-error/[0.32]',
+    },
+  },
+  defaultVariants: {
+    variant: 'default',
+  },
+});
+
+const textToneMap: Record<LinearBadgeVariant, 'secondary' | 'accent' | 'success' | 'warning' | 'error'> = {
+  default: 'secondary',
+  accent: 'accent',
+  success: 'success',
+  warning: 'warning',
+  error: 'error',
+};
 
 export default function LinearBadge({
   label,
   variant = 'default',
+  className,
   style,
   ...props
 }: LinearBadgeProps) {
   return (
-    <View style={[styles.base, variantStyles[variant], style]} {...props}>
-      <LinearText variant="badge" style={[styles.text, textStyles[variant]]}>
+    <View className={badgeVariants({ variant, className })} style={style} {...props}>
+      <LinearText variant="badge" tone={textToneMap[variant]} className="uppercase">
         {label}
       </LinearText>
     </View>
   );
 }
 
-const styles = StyleSheet.create({
-  base: {
-    paddingHorizontal: linearTheme.spacing.sm,
-    paddingVertical: linearTheme.spacing.xs,
-    borderRadius: linearTheme.radius.full, // pill shaped
-    borderWidth: 1,
-    alignSelf: 'flex-start',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  text: {
-    textTransform: 'uppercase',
-  },
-});
-
-const variantStyles = StyleSheet.create({
-  default: {
-    backgroundColor: linearTheme.colors.surface,
-    borderColor: linearTheme.colors.border,
-  },
-  accent: {
-    backgroundColor: `${linearTheme.colors.accent}16`,
-    borderColor: `${linearTheme.colors.accent}52`,
-  },
-  success: {
-    backgroundColor: `${linearTheme.colors.success}16`,
-    borderColor: `${linearTheme.colors.success}52`,
-  },
-  warning: {
-    backgroundColor: `${linearTheme.colors.warning}16`,
-    borderColor: `${linearTheme.colors.warning}52`,
-  },
-  error: {
-    backgroundColor: `${linearTheme.colors.error}16`,
-    borderColor: `${linearTheme.colors.error}52`,
-  },
-});
-
-const textStyles = StyleSheet.create({
-  default: { color: linearTheme.colors.textSecondary },
-  accent: { color: linearTheme.colors.accent },
-  success: { color: linearTheme.colors.success },
-  warning: { color: linearTheme.colors.warning },
-  error: { color: linearTheme.colors.error },
-});

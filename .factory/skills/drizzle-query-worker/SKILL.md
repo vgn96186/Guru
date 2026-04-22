@@ -10,6 +10,7 @@ NOTE: Startup and cleanup are handled by `worker-base`. This skill defines the W
 ## When to Use This Skill
 
 Use this worker for migrating raw SQL queries to Drizzle ORM repositories. Handles:
+
 - Creating repository files following `profileRepository.drizzle.ts` pattern
 - Migrating queries from `src/db/queries/` files to Drizzle repositories
 - Implementing fallback support during transition
@@ -22,30 +23,35 @@ None - this is a TypeScript/Jest testing and code modification task.
 ## Work Procedure
 
 ### Phase 1: Investigation & Analysis
+
 1. **Identify target queries**: Analyze which queries in `src/db/queries/` files use the target table
 2. **Understand query patterns**: Note SELECT, INSERT, UPDATE, DELETE operations
 3. **Check transaction usage**: Look for `runInTransaction` or complex multi-query operations
 4. **Review business logic**: Understand the context and requirements of each query
 
 ### Phase 2: Repository Design
+
 5. **Create repository file**: `src/db/repositories/{tableName}Repository.drizzle.ts`
 6. **Import dependencies**: Drizzle db, schema, and any utilities
 7. **Design repository interface**: Methods for each query operation
 8. **Plan fallback strategy**: How to maintain compatibility with existing raw SQL
 
 ### Phase 3: Test-First Implementation
+
 9. **Write failing tests**: Create or update `{tableName}Repository.unit.test.ts` with Drizzle repository tests
 10. **Verify tests fail**: Run tests - should fail because repository not implemented
 11. **Implement repository**: Create repository methods using Drizzle query builder
 12. **Add fallback support**: Implement dual-write or feature flag if needed
 
 ### Phase 4: Query Migration
+
 13. **Update query files**: Replace raw SQL in `src/db/queries/` files with repository calls
 14. **Maintain compatibility**: Keep old queries commented or feature-flagged during transition
 15. **Update imports**: Ensure all files importing queries get repository imports
 16. **Handle edge cases**: Transactions, error handling, performance optimizations
 
 ### Phase 5: Verification & Validation
+
 17. **Run unit tests**: `npm run test:unit -- --testPathPattern={tableName}` - all should pass
 18. **Run type checking**: `npm run typecheck` - fix any TypeScript errors
 19. **Run linting**: `npm run lint` - fix any lint errors
@@ -53,6 +59,7 @@ None - this is a TypeScript/Jest testing and code modification task.
 21. **Performance test**: Compare query execution times if significant
 
 ### Phase 6: Manual Verification
+
 22. **Test integration**: Create integration test or manual test script
 23. **Verify fallback**: Test both Drizzle and raw SQL paths if fallback maintained
 24. **Check error handling**: Verify errors are properly caught and handled

@@ -114,20 +114,20 @@ const ChatBox: React.FC<{ children: React.ReactNode; threadId: string }> = ({
         id={`${resizableIdBase}-separator`}
         className={cn(
           "opacity-33 hover:opacity-100",
-          !artifactPanelOpen && "pointer-events-none opacity-0",
+          !artifactPanelOpen && "pointer-events-none opacity-0"
         )}
       />
       <ResizablePanel
         className={cn(
           "transition-all duration-300 ease-in-out",
-          !artifactsOpen && "opacity-0",
+          !artifactsOpen && "opacity-0"
         )}
         id="artifacts"
       >
         <div
           className={cn(
             "h-full p-4 transition-transform duration-300 ease-in-out",
-            artifactPanelOpen ? "translate-x-0" : "translate-x-full",
+            artifactPanelOpen ? "translate-x-0" : "translate-x-full"
           )}
         >
           {selectedArtifact ? (

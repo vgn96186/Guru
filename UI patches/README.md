@@ -24,20 +24,20 @@ independent quality lifts that can ship one per PR. 12 is the final
 cleanup — **do not land it until the `__DEV__` deprecation warnings from
 patch 05 have gone quiet** (typically two sprints after 1–5 land).
 
-| # | Title | Depends on | Est. |
-|---|---|---|---|
-| 01 | `tokens-legacy-theme-shim` | — | 1d |
-| 02 | `color-accent-roles` | 01 | 0.5d |
-| 03 | `elevation-retire-linear-surface` | 01 | 1d |
-| 04 | `type-ramp` | 02 | 0.5d |
-| 05 | `button-collapse-variants` | 01, 02 | 1d |
-| 06 | `hero-card-single-fact` | 03, 04 | 0.5d |
-| 07 | `icons-vocabulary` | — | 0.5d |
-| 08 | `density-tiers` | 01 | 0.5d |
-| 09 | `motion-presets` | — | 0.5d |
-| 10 | `a11y-hit-size-contrast` | 01 | 0.5d |
-| 11 | `texture-feature-flag` | 03 | 0.5d |
-| 12 | `governance-cleanup` | 01–11 | 0.5d |
+| #   | Title                             | Depends on | Est. |
+| --- | --------------------------------- | ---------- | ---- |
+| 01  | `tokens-legacy-theme-shim`        | —          | 1d   |
+| 02  | `color-accent-roles`              | 01         | 0.5d |
+| 03  | `elevation-retire-linear-surface` | 01         | 1d   |
+| 04  | `type-ramp`                       | 02         | 0.5d |
+| 05  | `button-collapse-variants`        | 01, 02     | 1d   |
+| 06  | `hero-card-single-fact`           | 03, 04     | 0.5d |
+| 07  | `icons-vocabulary`                | —          | 0.5d |
+| 08  | `density-tiers`                   | 01         | 0.5d |
+| 09  | `motion-presets`                  | —          | 0.5d |
+| 10  | `a11y-hit-size-contrast`          | 01         | 0.5d |
+| 11  | `texture-feature-flag`            | 03         | 0.5d |
+| 12  | `governance-cleanup`              | 01–11      | 0.5d |
 
 ## After landing 01–05
 

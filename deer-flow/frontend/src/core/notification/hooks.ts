@@ -86,7 +86,7 @@ export function useNotification(): UseNotificationReturn {
         console.error("Notification error:", error);
       };
     },
-    [isSupported, settings.notification.enabled, permission],
+    [isSupported, settings.notification.enabled, permission]
   );
 
   return {

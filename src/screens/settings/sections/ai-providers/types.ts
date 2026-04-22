@@ -38,6 +38,21 @@ export interface CloudflareKeyField {
   testing: boolean;
 }
 
+export interface VertexKeyField {
+  project: string;
+  setProject: (v: string) => void;
+  location: string;
+  setLocation: (v: string) => void;
+  token: string;
+  setToken: (v: string) => void;
+  setTestResult:
+    | React.Dispatch<React.SetStateAction<'ok' | 'fail' | null>>
+    | ((r: unknown) => void);
+  validationStatus: 'idle' | 'testing' | 'valid' | 'invalid';
+  test: () => void;
+  testing: boolean;
+}
+
 export interface ChatGptSlotState {
   connectingSlot: 'primary' | 'secondary' | null;
   deviceCode: {
@@ -140,6 +155,7 @@ export interface AiProvidersProps {
     deepseek: ApiKeyField;
     agentRouter: ApiKeyField;
     gemini: ApiKeyField;
+    vertex: VertexKeyField;
     deepgram: ApiKeyField;
     cloudflare: CloudflareKeyField;
     fal: ApiKeyField;

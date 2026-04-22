@@ -59,6 +59,7 @@ The LangGraph server is the core agent runtime, built on LangGraph for robust mu
 **Entry Point**: `packages/harness/deerflow/agents/lead_agent/agent.py:make_lead_agent`
 
 **Key Responsibilities**:
+
 - Agent creation and configuration
 - Thread state management
 - Middleware chain execution
@@ -83,6 +84,7 @@ FastAPI application providing REST endpoints for non-agent operations.
 **Entry Point**: `app/gateway/app.py`
 
 **Routers**:
+
 - `models.py` - `/api/models` - Model listing and details
 - `mcp.py` - `/api/mcp` - MCP server configuration
 - `skills.py` - `/api/skills` - Skills management
@@ -181,12 +183,12 @@ class ThreadState(AgentState):
 
 **Virtual Path Mapping**:
 
-| Virtual Path | Physical Path |
-|-------------|---------------|
+| Virtual Path               | Physical Path                                                |
+| -------------------------- | ------------------------------------------------------------ |
 | `/mnt/user-data/workspace` | `backend/.deer-flow/threads/{thread_id}/user-data/workspace` |
-| `/mnt/user-data/uploads` | `backend/.deer-flow/threads/{thread_id}/user-data/uploads` |
-| `/mnt/user-data/outputs` | `backend/.deer-flow/threads/{thread_id}/user-data/outputs` |
-| `/mnt/skills` | `deer-flow/skills/` |
+| `/mnt/user-data/uploads`   | `backend/.deer-flow/threads/{thread_id}/user-data/uploads`   |
+| `/mnt/user-data/outputs`   | `backend/.deer-flow/threads/{thread_id}/user-data/outputs`   |
+| `/mnt/skills`              | `deer-flow/skills/`                                          |
 
 ### Tool System
 
@@ -259,6 +261,7 @@ config.yaml:
 ```
 
 **Supported Providers**:
+
 - OpenAI (`langchain_openai:ChatOpenAI`)
 - Anthropic (`langchain_anthropic:ChatAnthropic`)
 - DeepSeek (`langchain_deepseek:ChatDeepSeek`)

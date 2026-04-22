@@ -1,8 +1,8 @@
 ---
 name: 🆘 Support Request
 about: Ask a question or get help with usage.
-title: "[Support]: "
-labels: ["support", "question"]
+title: '[Support]: '
+labels: ['support', 'question']
 assignees: []
 ---
 
@@ -37,9 +37,9 @@ Please provide details about your operating environment, relevant URLs, or any m
 - **Operating System:**
 - **Browser & Version (if applicable):**
 - **Any relevant messages (e.g., from UI, console):**
-    ```
-    PASTE_ANY_MESSAGES_HERE
-    ```
+  ```
+  PASTE_ANY_MESSAGES_HERE
+  ```
 
 **Any additional context?:**
 

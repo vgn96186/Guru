@@ -1,577 +1,3379 @@
 [
-  [10,"Obstetrics",10,60],
-  [10,"Normal Pregnancy & Antenatal Care",10,45,"Obstetrics"],
-  [10,"ANC Schedule — Booking Visit, Investigations & High-risk Criteria",10,15,"Normal Pregnancy & Antenatal Care"],
-  [10,"ANC Schedule — Booking Visit, Investigations",10,7,"ANC Schedule — Booking Visit, Investigations & High-risk Criteria"],
-  [10,"ANC Schedule — Booking Visit, Investigations - Etiology & Risk Factors",10,5,"ANC Schedule — Booking Visit, Investigations"],
-  [10,"ANC Schedule — Booking Visit, Investigations - Pathophysiology",10,5,"ANC Schedule — Booking Visit, Investigations"],
-  [10,"ANC Schedule — Booking Visit, Investigations - Clinical Presentation & Signs",10,5,"ANC Schedule — Booking Visit, Investigations"],
-  [10,"ANC Schedule — Booking Visit, Investigations - Differential Diagnosis",10,5,"ANC Schedule — Booking Visit, Investigations"],
-  [10,"ANC Schedule — Booking Visit, Investigations - Investigations & Lab Findings",10,5,"ANC Schedule — Booking Visit, Investigations"],
-  [10,"ANC Schedule — Booking Visit, Investigations - Medical & Surgical Management",10,5,"ANC Schedule — Booking Visit, Investigations"],
-  [10,"ANC Schedule — Booking Visit, Investigations - Complications & Prognosis",10,5,"ANC Schedule — Booking Visit, Investigations"],
-  [10,"ANC Schedule — High-risk Criteria",10,8,"ANC Schedule — Booking Visit, Investigations & High-risk Criteria"],
-  [10,"ANC Schedule — High-risk Criteria - Etiology & Risk Factors",10,5,"ANC Schedule — High-risk Criteria"],
-  [10,"ANC Schedule — High-risk Criteria - Pathophysiology",10,5,"ANC Schedule — High-risk Criteria"],
-  [10,"ANC Schedule — High-risk Criteria - Clinical Presentation & Signs",10,5,"ANC Schedule — High-risk Criteria"],
-  [10,"ANC Schedule — High-risk Criteria - Differential Diagnosis",10,5,"ANC Schedule — High-risk Criteria"],
-  [10,"ANC Schedule — High-risk Criteria - Investigations & Lab Findings",10,5,"ANC Schedule — High-risk Criteria"],
-  [10,"ANC Schedule — High-risk Criteria - Medical & Surgical Management",10,5,"ANC Schedule — High-risk Criteria"],
-  [10,"ANC Schedule — High-risk Criteria - Complications & Prognosis",10,5,"ANC Schedule — High-risk Criteria"],
-  [10,"Pregnancy Diagnosis & Duration — LMP, Naegele's Rule, USG Dating",10,12,"Normal Pregnancy & Antenatal Care"],
-  [10,"Pregnancy Diagnosis & Duration — LMP",10,6,"Pregnancy Diagnosis & Duration — LMP, Naegele's Rule, USG Dating"],
-  [10,"Pregnancy Diagnosis & Duration — LMP - Etiology & Risk Factors",10,5,"Pregnancy Diagnosis & Duration — LMP"],
-  [10,"Pregnancy Diagnosis & Duration — LMP - Pathophysiology",10,5,"Pregnancy Diagnosis & Duration — LMP"],
-  [10,"Pregnancy Diagnosis & Duration — LMP - Clinical Presentation & Signs",10,5,"Pregnancy Diagnosis & Duration — LMP"],
-  [10,"Pregnancy Diagnosis & Duration — LMP - Differential Diagnosis",10,5,"Pregnancy Diagnosis & Duration — LMP"],
-  [10,"Pregnancy Diagnosis & Duration — LMP - Investigations & Lab Findings",10,5,"Pregnancy Diagnosis & Duration — LMP"],
-  [10,"Pregnancy Diagnosis & Duration — LMP - Medical & Surgical Management",10,5,"Pregnancy Diagnosis & Duration — LMP"],
-  [10,"Pregnancy Diagnosis & Duration — LMP - Complications & Prognosis",10,5,"Pregnancy Diagnosis & Duration — LMP"],
-  [10,"Pregnancy Diagnosis & Duration — Naegele's Rule, USG Dating",10,6,"Pregnancy Diagnosis & Duration — LMP, Naegele's Rule, USG Dating"],
-  [10,"Pregnancy Diagnosis & Duration — Naegele's Rule, USG Dating - Etiology & Risk Factors",10,5,"Pregnancy Diagnosis & Duration — Naegele's Rule, USG Dating"],
-  [10,"Pregnancy Diagnosis & Duration — Naegele's Rule, USG Dating - Pathophysiology",10,5,"Pregnancy Diagnosis & Duration — Naegele's Rule, USG Dating"],
-  [10,"Pregnancy Diagnosis & Duration — Naegele's Rule, USG Dating - Clinical Presentation & Signs",10,5,"Pregnancy Diagnosis & Duration — Naegele's Rule, USG Dating"],
-  [10,"Pregnancy Diagnosis & Duration — Naegele's Rule, USG Dating - Differential Diagnosis",10,5,"Pregnancy Diagnosis & Duration — Naegele's Rule, USG Dating"],
-  [10,"Pregnancy Diagnosis & Duration — Naegele's Rule, USG Dating - Investigations & Lab Findings",10,5,"Pregnancy Diagnosis & Duration — Naegele's Rule, USG Dating"],
-  [10,"Pregnancy Diagnosis & Duration — Naegele's Rule, USG Dating - Medical & Surgical Management",10,5,"Pregnancy Diagnosis & Duration — Naegele's Rule, USG Dating"],
-  [10,"Pregnancy Diagnosis & Duration — Naegele's Rule, USG Dating - Complications & Prognosis",10,5,"Pregnancy Diagnosis & Duration — Naegele's Rule, USG Dating"],
-  [10,"Physiological Changes in Pregnancy — CVS, Respiratory & Renal",10,15,"Normal Pregnancy & Antenatal Care"],
-  [10,"Physiological Changes in Pregnancy — CVS, Respiratory",10,7,"Physiological Changes in Pregnancy — CVS, Respiratory & Renal"],
-  [10,"Physiological Changes in Pregnancy — CVS, Respiratory - Etiology & Risk Factors",10,5,"Physiological Changes in Pregnancy — CVS, Respiratory"],
-  [10,"Physiological Changes in Pregnancy — CVS, Respiratory - Pathophysiology",10,5,"Physiological Changes in Pregnancy — CVS, Respiratory"],
-  [10,"Physiological Changes in Pregnancy — CVS, Respiratory - Clinical Presentation & Signs",10,5,"Physiological Changes in Pregnancy — CVS, Respiratory"],
-  [10,"Physiological Changes in Pregnancy — CVS, Respiratory - Differential Diagnosis",10,5,"Physiological Changes in Pregnancy — CVS, Respiratory"],
-  [10,"Physiological Changes in Pregnancy — CVS, Respiratory - Investigations & Lab Findings",10,5,"Physiological Changes in Pregnancy — CVS, Respiratory"],
-  [10,"Physiological Changes in Pregnancy — CVS, Respiratory - Medical & Surgical Management",10,5,"Physiological Changes in Pregnancy — CVS, Respiratory"],
-  [10,"Physiological Changes in Pregnancy — CVS, Respiratory - Complications & Prognosis",10,5,"Physiological Changes in Pregnancy — CVS, Respiratory"],
-  [10,"Physiological Changes in Pregnancy — Renal",10,8,"Physiological Changes in Pregnancy — CVS, Respiratory & Renal"],
-  [10,"Physiological Changes in Pregnancy — Renal - Etiology & Risk Factors",10,5,"Physiological Changes in Pregnancy — Renal"],
-  [10,"Physiological Changes in Pregnancy — Renal - Pathophysiology",10,5,"Physiological Changes in Pregnancy — Renal"],
-  [10,"Physiological Changes in Pregnancy — Renal - Clinical Presentation & Signs",10,5,"Physiological Changes in Pregnancy — Renal"],
-  [10,"Physiological Changes in Pregnancy — Renal - Differential Diagnosis",10,5,"Physiological Changes in Pregnancy — Renal"],
-  [10,"Physiological Changes in Pregnancy — Renal - Investigations & Lab Findings",10,5,"Physiological Changes in Pregnancy — Renal"],
-  [10,"Physiological Changes in Pregnancy — Renal - Medical & Surgical Management",10,5,"Physiological Changes in Pregnancy — Renal"],
-  [10,"Physiological Changes in Pregnancy — Renal - Complications & Prognosis",10,5,"Physiological Changes in Pregnancy — Renal"],
-  [10,"Normal Labor & Partogram",10,50,"Obstetrics"],
-  [10,"Stages of Labor — Cervicograph, Station & Bishop Score",10,18,"Normal Labor & Partogram"],
-  [10,"Stages of Labor — Cervicograph, Station",10,9,"Stages of Labor — Cervicograph, Station & Bishop Score"],
-  [10,"Stages of Labor — Cervicograph, Station - Etiology & Risk Factors",10,5,"Stages of Labor — Cervicograph, Station"],
-  [10,"Stages of Labor — Cervicograph, Station - Pathophysiology",10,5,"Stages of Labor — Cervicograph, Station"],
-  [10,"Stages of Labor — Cervicograph, Station - Clinical Presentation & Signs",10,5,"Stages of Labor — Cervicograph, Station"],
-  [10,"Stages of Labor — Cervicograph, Station - Differential Diagnosis",10,5,"Stages of Labor — Cervicograph, Station"],
-  [10,"Stages of Labor — Cervicograph, Station - Investigations & Lab Findings",10,5,"Stages of Labor — Cervicograph, Station"],
-  [10,"Stages of Labor — Cervicograph, Station - Medical & Surgical Management",10,5,"Stages of Labor — Cervicograph, Station"],
-  [10,"Stages of Labor — Cervicograph, Station - Complications & Prognosis",10,5,"Stages of Labor — Cervicograph, Station"],
-  [10,"Stages of Labor — Bishop Score",10,9,"Stages of Labor — Cervicograph, Station & Bishop Score"],
-  [10,"Stages of Labor — Bishop Score - Etiology & Risk Factors",10,5,"Stages of Labor — Bishop Score"],
-  [10,"Stages of Labor — Bishop Score - Pathophysiology",10,5,"Stages of Labor — Bishop Score"],
-  [10,"Stages of Labor — Bishop Score - Clinical Presentation & Signs",10,5,"Stages of Labor — Bishop Score"],
-  [10,"Stages of Labor — Bishop Score - Differential Diagnosis",10,5,"Stages of Labor — Bishop Score"],
-  [10,"Stages of Labor — Bishop Score - Investigations & Lab Findings",10,5,"Stages of Labor — Bishop Score"],
-  [10,"Stages of Labor — Bishop Score - Medical & Surgical Management",10,5,"Stages of Labor — Bishop Score"],
-  [10,"Stages of Labor — Bishop Score - Complications & Prognosis",10,5,"Stages of Labor — Bishop Score"],
-  [10,"Partogram — Alert & Action Lines, Indications for Intervention",10,15,"Normal Labor & Partogram"],
-  [10,"Partogram — Alert",10,7,"Partogram — Alert & Action Lines, Indications for Intervention"],
-  [10,"Partogram — Alert - Etiology & Risk Factors",10,5,"Partogram — Alert"],
-  [10,"Partogram — Alert - Pathophysiology",10,5,"Partogram — Alert"],
-  [10,"Partogram — Alert - Clinical Presentation & Signs",10,5,"Partogram — Alert"],
-  [10,"Partogram — Alert - Differential Diagnosis",10,5,"Partogram — Alert"],
-  [10,"Partogram — Alert - Investigations & Lab Findings",10,5,"Partogram — Alert"],
-  [10,"Partogram — Alert - Medical & Surgical Management",10,5,"Partogram — Alert"],
-  [10,"Partogram — Alert - Complications & Prognosis",10,5,"Partogram — Alert"],
-  [10,"Partogram — Action Lines, Indications for Intervention",10,8,"Partogram — Alert & Action Lines, Indications for Intervention"],
-  [10,"Partogram — Action Lines, Indications for Intervention - Etiology & Risk Factors",10,5,"Partogram — Action Lines, Indications for Intervention"],
-  [10,"Partogram — Action Lines, Indications for Intervention - Pathophysiology",10,5,"Partogram — Action Lines, Indications for Intervention"],
-  [10,"Partogram — Action Lines, Indications for Intervention - Clinical Presentation & Signs",10,5,"Partogram — Action Lines, Indications for Intervention"],
-  [10,"Partogram — Action Lines, Indications for Intervention - Differential Diagnosis",10,5,"Partogram — Action Lines, Indications for Intervention"],
-  [10,"Partogram — Action Lines, Indications for Intervention - Investigations & Lab Findings",10,5,"Partogram — Action Lines, Indications for Intervention"],
-  [10,"Partogram — Action Lines, Indications for Intervention - Medical & Surgical Management",10,5,"Partogram — Action Lines, Indications for Intervention"],
-  [10,"Partogram — Action Lines, Indications for Intervention - Complications & Prognosis",10,5,"Partogram — Action Lines, Indications for Intervention"],
-  [10,"Mechanism of Labor (LOA) — Steps & Perineal Tears Classification",10,15,"Normal Labor & Partogram"],
-  [10,"Mechanism of Labor (LOA) — Steps",10,7,"Mechanism of Labor (LOA) — Steps & Perineal Tears Classification"],
-  [10,"Mechanism of Labor (LOA) — Steps - Etiology & Risk Factors",10,5,"Mechanism of Labor (LOA) — Steps"],
-  [10,"Mechanism of Labor (LOA) — Steps - Pathophysiology",10,5,"Mechanism of Labor (LOA) — Steps"],
-  [10,"Mechanism of Labor (LOA) — Steps - Clinical Presentation & Signs",10,5,"Mechanism of Labor (LOA) — Steps"],
-  [10,"Mechanism of Labor (LOA) — Steps - Differential Diagnosis",10,5,"Mechanism of Labor (LOA) — Steps"],
-  [10,"Mechanism of Labor (LOA) — Steps - Investigations & Lab Findings",10,5,"Mechanism of Labor (LOA) — Steps"],
-  [10,"Mechanism of Labor (LOA) — Steps - Medical & Surgical Management",10,5,"Mechanism of Labor (LOA) — Steps"],
-  [10,"Mechanism of Labor (LOA) — Steps - Complications & Prognosis",10,5,"Mechanism of Labor (LOA) — Steps"],
-  [10,"Mechanism of Labor (LOA) — Perineal Tears Classification",10,8,"Mechanism of Labor (LOA) — Steps & Perineal Tears Classification"],
-  [10,"Mechanism of Labor (LOA) — Perineal Tears Classification - Etiology & Risk Factors",10,5,"Mechanism of Labor (LOA) — Perineal Tears Classification"],
-  [10,"Mechanism of Labor (LOA) — Perineal Tears Classification - Pathophysiology",10,5,"Mechanism of Labor (LOA) — Perineal Tears Classification"],
-  [10,"Mechanism of Labor (LOA) — Perineal Tears Classification - Clinical Presentation & Signs",10,5,"Mechanism of Labor (LOA) — Perineal Tears Classification"],
-  [10,"Mechanism of Labor (LOA) — Perineal Tears Classification - Differential Diagnosis",10,5,"Mechanism of Labor (LOA) — Perineal Tears Classification"],
-  [10,"Mechanism of Labor (LOA) — Perineal Tears Classification - Investigations & Lab Findings",10,5,"Mechanism of Labor (LOA) — Perineal Tears Classification"],
-  [10,"Mechanism of Labor (LOA) — Perineal Tears Classification - Medical & Surgical Management",10,5,"Mechanism of Labor (LOA) — Perineal Tears Classification"],
-  [10,"Mechanism of Labor (LOA) — Perineal Tears Classification - Complications & Prognosis",10,5,"Mechanism of Labor (LOA) — Perineal Tears Classification"],
-  [10,"Pre-eclampsia & Eclampsia",10,45,"Obstetrics"],
-  [10,"Pre-eclampsia — Diagnosis Criteria, Severe Features & HELLP",10,18,"Pre-eclampsia & Eclampsia"],
-  [10,"Pre-eclampsia — Diagnosis Criteria, Severe Features",10,9,"Pre-eclampsia — Diagnosis Criteria, Severe Features & HELLP"],
-  [10,"Pre-eclampsia — Diagnosis Criteria, Severe Features - Etiology & Risk Factors",10,5,"Pre-eclampsia — Diagnosis Criteria, Severe Features"],
-  [10,"Pre-eclampsia — Diagnosis Criteria, Severe Features - Pathophysiology",10,5,"Pre-eclampsia — Diagnosis Criteria, Severe Features"],
-  [10,"Pre-eclampsia — Diagnosis Criteria, Severe Features - Clinical Presentation & Signs",10,5,"Pre-eclampsia — Diagnosis Criteria, Severe Features"],
-  [10,"Pre-eclampsia — Diagnosis Criteria, Severe Features - Differential Diagnosis",10,5,"Pre-eclampsia — Diagnosis Criteria, Severe Features"],
-  [10,"Pre-eclampsia — Diagnosis Criteria, Severe Features - Investigations & Lab Findings",10,5,"Pre-eclampsia — Diagnosis Criteria, Severe Features"],
-  [10,"Pre-eclampsia — Diagnosis Criteria, Severe Features - Medical & Surgical Management",10,5,"Pre-eclampsia — Diagnosis Criteria, Severe Features"],
-  [10,"Pre-eclampsia — Diagnosis Criteria, Severe Features - Complications & Prognosis",10,5,"Pre-eclampsia — Diagnosis Criteria, Severe Features"],
-  [10,"Pre-eclampsia — HELLP",10,9,"Pre-eclampsia — Diagnosis Criteria, Severe Features & HELLP"],
-  [10,"Pre-eclampsia — HELLP - Etiology & Risk Factors",10,5,"Pre-eclampsia — HELLP"],
-  [10,"Pre-eclampsia — HELLP - Pathophysiology",10,5,"Pre-eclampsia — HELLP"],
-  [10,"Pre-eclampsia — HELLP - Clinical Presentation & Signs",10,5,"Pre-eclampsia — HELLP"],
-  [10,"Pre-eclampsia — HELLP - Differential Diagnosis",10,5,"Pre-eclampsia — HELLP"],
-  [10,"Pre-eclampsia — HELLP - Investigations & Lab Findings",10,5,"Pre-eclampsia — HELLP"],
-  [10,"Pre-eclampsia — HELLP - Medical & Surgical Management",10,5,"Pre-eclampsia — HELLP"],
-  [10,"Pre-eclampsia — HELLP - Complications & Prognosis",10,5,"Pre-eclampsia — HELLP"],
-  [10,"Eclampsia Management — MgSO4 (Pritchard/Zuspan) & Antihypertensives",10,18,"Pre-eclampsia & Eclampsia"],
-  [10,"Eclampsia Management — MgSO4 (Pritchard/Zuspan)",10,9,"Eclampsia Management — MgSO4 (Pritchard/Zuspan) & Antihypertensives"],
-  [10,"Eclampsia Management — MgSO4 (Pritchard/Zuspan) - Etiology & Risk Factors",10,5,"Eclampsia Management — MgSO4 (Pritchard/Zuspan)"],
-  [10,"Eclampsia Management — MgSO4 (Pritchard/Zuspan) - Pathophysiology",10,5,"Eclampsia Management — MgSO4 (Pritchard/Zuspan)"],
-  [10,"Eclampsia Management — MgSO4 (Pritchard/Zuspan) - Clinical Presentation & Signs",10,5,"Eclampsia Management — MgSO4 (Pritchard/Zuspan)"],
-  [10,"Eclampsia Management — MgSO4 (Pritchard/Zuspan) - Differential Diagnosis",10,5,"Eclampsia Management — MgSO4 (Pritchard/Zuspan)"],
-  [10,"Eclampsia Management — MgSO4 (Pritchard/Zuspan) - Investigations & Lab Findings",10,5,"Eclampsia Management — MgSO4 (Pritchard/Zuspan)"],
-  [10,"Eclampsia Management — MgSO4 (Pritchard/Zuspan) - Medical & Surgical Management",10,5,"Eclampsia Management — MgSO4 (Pritchard/Zuspan)"],
-  [10,"Eclampsia Management — MgSO4 (Pritchard/Zuspan) - Complications & Prognosis",10,5,"Eclampsia Management — MgSO4 (Pritchard/Zuspan)"],
-  [10,"Eclampsia Management — Antihypertensives",10,9,"Eclampsia Management — MgSO4 (Pritchard/Zuspan) & Antihypertensives"],
-  [10,"Eclampsia Management — Antihypertensives - Etiology & Risk Factors",10,5,"Eclampsia Management — Antihypertensives"],
-  [10,"Eclampsia Management — Antihypertensives - Pathophysiology",10,5,"Eclampsia Management — Antihypertensives"],
-  [10,"Eclampsia Management — Antihypertensives - Clinical Presentation & Signs",10,5,"Eclampsia Management — Antihypertensives"],
-  [10,"Eclampsia Management — Antihypertensives - Differential Diagnosis",10,5,"Eclampsia Management — Antihypertensives"],
-  [10,"Eclampsia Management — Antihypertensives - Investigations & Lab Findings",10,5,"Eclampsia Management — Antihypertensives"],
-  [10,"Eclampsia Management — Antihypertensives - Medical & Surgical Management",10,5,"Eclampsia Management — Antihypertensives"],
-  [10,"Eclampsia Management — Antihypertensives - Complications & Prognosis",10,5,"Eclampsia Management — Antihypertensives"],
-  [10,"Antepartum & Postpartum Hemorrhage",10,55,"Obstetrics"],
-  [10,"APH — Placenta Previa: Types, USG & Management",10,18,"Antepartum & Postpartum Hemorrhage"],
-  [10,"APH — Placenta Previa: Types, USG",10,9,"APH — Placenta Previa: Types, USG & Management"],
-  [10,"APH — Placenta Previa: Types, USG - Etiology & Risk Factors",10,5,"APH — Placenta Previa: Types, USG"],
-  [10,"APH — Placenta Previa: Types, USG - Pathophysiology",10,5,"APH — Placenta Previa: Types, USG"],
-  [10,"APH — Placenta Previa: Types, USG - Clinical Presentation & Signs",10,5,"APH — Placenta Previa: Types, USG"],
-  [10,"APH — Placenta Previa: Types, USG - Differential Diagnosis",10,5,"APH — Placenta Previa: Types, USG"],
-  [10,"APH — Placenta Previa: Types, USG - Investigations & Lab Findings",10,5,"APH — Placenta Previa: Types, USG"],
-  [10,"APH — Placenta Previa: Types, USG - Medical & Surgical Management",10,5,"APH — Placenta Previa: Types, USG"],
-  [10,"APH — Placenta Previa: Types, USG - Complications & Prognosis",10,5,"APH — Placenta Previa: Types, USG"],
-  [10,"APH — Management",10,9,"APH — Placenta Previa: Types, USG & Management"],
-  [10,"APH — Management - Etiology & Risk Factors",10,5,"APH — Management"],
-  [10,"APH — Management - Pathophysiology",10,5,"APH — Management"],
-  [10,"APH — Management - Clinical Presentation & Signs",10,5,"APH — Management"],
-  [10,"APH — Management - Differential Diagnosis",10,5,"APH — Management"],
-  [10,"APH — Management - Investigations & Lab Findings",10,5,"APH — Management"],
-  [10,"APH — Management - Medical & Surgical Management",10,5,"APH — Management"],
-  [10,"APH — Management - Complications & Prognosis",10,5,"APH — Management"],
-  [10,"Abruptio Placentae vs Placenta Previa — Key Differences & Couvelaire",10,15,"Antepartum & Postpartum Hemorrhage"],
-  [10,"Abruptio Placentae vs Placenta Previa — Key Differences",10,7,"Abruptio Placentae vs Placenta Previa — Key Differences & Couvelaire"],
-  [10,"Abruptio Placentae vs Placenta Previa — Key Differences - Etiology & Risk Factors",10,5,"Abruptio Placentae vs Placenta Previa — Key Differences"],
-  [10,"Abruptio Placentae vs Placenta Previa — Key Differences - Pathophysiology",10,5,"Abruptio Placentae vs Placenta Previa — Key Differences"],
-  [10,"Abruptio Placentae vs Placenta Previa — Key Differences - Clinical Presentation & Signs",10,5,"Abruptio Placentae vs Placenta Previa — Key Differences"],
-  [10,"Abruptio Placentae vs Placenta Previa — Key Differences - Differential Diagnosis",10,5,"Abruptio Placentae vs Placenta Previa — Key Differences"],
-  [10,"Abruptio Placentae vs Placenta Previa — Key Differences - Investigations & Lab Findings",10,5,"Abruptio Placentae vs Placenta Previa — Key Differences"],
-  [10,"Abruptio Placentae vs Placenta Previa — Key Differences - Medical & Surgical Management",10,5,"Abruptio Placentae vs Placenta Previa — Key Differences"],
-  [10,"Abruptio Placentae vs Placenta Previa — Key Differences - Complications & Prognosis",10,5,"Abruptio Placentae vs Placenta Previa — Key Differences"],
-  [10,"Abruptio Placentae vs Placenta Previa — Couvelaire",10,8,"Abruptio Placentae vs Placenta Previa — Key Differences & Couvelaire"],
-  [10,"Abruptio Placentae vs Placenta Previa — Couvelaire - Etiology & Risk Factors",10,5,"Abruptio Placentae vs Placenta Previa — Couvelaire"],
-  [10,"Abruptio Placentae vs Placenta Previa — Couvelaire - Pathophysiology",10,5,"Abruptio Placentae vs Placenta Previa — Couvelaire"],
-  [10,"Abruptio Placentae vs Placenta Previa — Couvelaire - Clinical Presentation & Signs",10,5,"Abruptio Placentae vs Placenta Previa — Couvelaire"],
-  [10,"Abruptio Placentae vs Placenta Previa — Couvelaire - Differential Diagnosis",10,5,"Abruptio Placentae vs Placenta Previa — Couvelaire"],
-  [10,"Abruptio Placentae vs Placenta Previa — Couvelaire - Investigations & Lab Findings",10,5,"Abruptio Placentae vs Placenta Previa — Couvelaire"],
-  [10,"Abruptio Placentae vs Placenta Previa — Couvelaire - Medical & Surgical Management",10,5,"Abruptio Placentae vs Placenta Previa — Couvelaire"],
-  [10,"Abruptio Placentae vs Placenta Previa — Couvelaire - Complications & Prognosis",10,5,"Abruptio Placentae vs Placenta Previa — Couvelaire"],
-  [10,"PPH — 4 T's (Tone, Trauma, Tissue, Thrombin), Uterotonics & Surgery",10,18,"Antepartum & Postpartum Hemorrhage"],
-  [10,"PPH — 4 T's (Tone, Trauma, Tissue, Thrombin), Uterotonics",10,9,"PPH — 4 T's (Tone, Trauma, Tissue, Thrombin), Uterotonics & Surgery"],
-  [10,"PPH — 4 T's (Tone, Trauma, Tissue, Thrombin), Uterotonics - Etiology & Risk Factors",10,5,"PPH — 4 T's (Tone, Trauma, Tissue, Thrombin), Uterotonics"],
-  [10,"PPH — 4 T's (Tone, Trauma, Tissue, Thrombin), Uterotonics - Pathophysiology",10,5,"PPH — 4 T's (Tone, Trauma, Tissue, Thrombin), Uterotonics"],
-  [10,"PPH — 4 T's (Tone, Trauma, Tissue, Thrombin), Uterotonics - Clinical Presentation & Signs",10,5,"PPH — 4 T's (Tone, Trauma, Tissue, Thrombin), Uterotonics"],
-  [10,"PPH — 4 T's (Tone, Trauma, Tissue, Thrombin), Uterotonics - Differential Diagnosis",10,5,"PPH — 4 T's (Tone, Trauma, Tissue, Thrombin), Uterotonics"],
-  [10,"PPH — 4 T's (Tone, Trauma, Tissue, Thrombin), Uterotonics - Investigations & Lab Findings",10,5,"PPH — 4 T's (Tone, Trauma, Tissue, Thrombin), Uterotonics"],
-  [10,"PPH — 4 T's (Tone, Trauma, Tissue, Thrombin), Uterotonics - Medical & Surgical Management",10,5,"PPH — 4 T's (Tone, Trauma, Tissue, Thrombin), Uterotonics"],
-  [10,"PPH — 4 T's (Tone, Trauma, Tissue, Thrombin), Uterotonics - Complications & Prognosis",10,5,"PPH — 4 T's (Tone, Trauma, Tissue, Thrombin), Uterotonics"],
-  [10,"PPH — Surgery",10,9,"PPH — 4 T's (Tone, Trauma, Tissue, Thrombin), Uterotonics & Surgery"],
-  [10,"PPH — Surgery - Etiology & Risk Factors",10,5,"PPH — Surgery"],
-  [10,"PPH — Surgery - Pathophysiology",10,5,"PPH — Surgery"],
-  [10,"PPH — Surgery - Clinical Presentation & Signs",10,5,"PPH — Surgery"],
-  [10,"PPH — Surgery - Differential Diagnosis",10,5,"PPH — Surgery"],
-  [10,"PPH — Surgery - Investigations & Lab Findings",10,5,"PPH — Surgery"],
-  [10,"PPH — Surgery - Medical & Surgical Management",10,5,"PPH — Surgery"],
-  [10,"PPH — Surgery - Complications & Prognosis",10,5,"PPH — Surgery"],
-  [10,"Medical Disorders in Pregnancy (Anemia, Diabetes)",10,50,"Obstetrics"],
-  [10,"Anemia in Pregnancy — Iron, Folate & Hb Cutoffs; Treatment",10,15,"Medical Disorders in Pregnancy (Anemia, Diabetes)"],
-  [10,"Anemia in Pregnancy — Iron, Folate",10,7,"Anemia in Pregnancy — Iron, Folate & Hb Cutoffs; Treatment"],
-  [10,"Anemia in Pregnancy — Iron, Folate - Etiology & Risk Factors",10,5,"Anemia in Pregnancy — Iron, Folate"],
-  [10,"Anemia in Pregnancy — Iron, Folate - Pathophysiology",10,5,"Anemia in Pregnancy — Iron, Folate"],
-  [10,"Anemia in Pregnancy — Iron, Folate - Clinical Presentation & Signs",10,5,"Anemia in Pregnancy — Iron, Folate"],
-  [10,"Anemia in Pregnancy — Iron, Folate - Differential Diagnosis",10,5,"Anemia in Pregnancy — Iron, Folate"],
-  [10,"Anemia in Pregnancy — Iron, Folate - Investigations & Lab Findings",10,5,"Anemia in Pregnancy — Iron, Folate"],
-  [10,"Anemia in Pregnancy — Iron, Folate - Medical & Surgical Management",10,5,"Anemia in Pregnancy — Iron, Folate"],
-  [10,"Anemia in Pregnancy — Iron, Folate - Complications & Prognosis",10,5,"Anemia in Pregnancy — Iron, Folate"],
-  [10,"Anemia in Pregnancy — Hb Cutoffs; Treatment",10,8,"Anemia in Pregnancy — Iron, Folate & Hb Cutoffs; Treatment"],
-  [10,"Anemia in Pregnancy — Hb Cutoffs; Treatment - Etiology & Risk Factors",10,5,"Anemia in Pregnancy — Hb Cutoffs; Treatment"],
-  [10,"Anemia in Pregnancy — Hb Cutoffs; Treatment - Pathophysiology",10,5,"Anemia in Pregnancy — Hb Cutoffs; Treatment"],
-  [10,"Anemia in Pregnancy — Hb Cutoffs; Treatment - Clinical Presentation & Signs",10,5,"Anemia in Pregnancy — Hb Cutoffs; Treatment"],
-  [10,"Anemia in Pregnancy — Hb Cutoffs; Treatment - Differential Diagnosis",10,5,"Anemia in Pregnancy — Hb Cutoffs; Treatment"],
-  [10,"Anemia in Pregnancy — Hb Cutoffs; Treatment - Investigations & Lab Findings",10,5,"Anemia in Pregnancy — Hb Cutoffs; Treatment"],
-  [10,"Anemia in Pregnancy — Hb Cutoffs; Treatment - Medical & Surgical Management",10,5,"Anemia in Pregnancy — Hb Cutoffs; Treatment"],
-  [10,"Anemia in Pregnancy — Hb Cutoffs; Treatment - Complications & Prognosis",10,5,"Anemia in Pregnancy — Hb Cutoffs; Treatment"],
-  [10,"GDM — Screening (DIPSI/GCT), Diagnosis (OGTT) & Insulin Management",10,18,"Medical Disorders in Pregnancy (Anemia, Diabetes)"],
-  [10,"GDM — Screening (DIPSI/GCT), Diagnosis (OGTT)",10,9,"GDM — Screening (DIPSI/GCT), Diagnosis (OGTT) & Insulin Management"],
-  [10,"GDM — Screening (DIPSI/GCT), Diagnosis (OGTT) - Etiology & Risk Factors",10,5,"GDM — Screening (DIPSI/GCT), Diagnosis (OGTT)"],
-  [10,"GDM — Screening (DIPSI/GCT), Diagnosis (OGTT) - Pathophysiology",10,5,"GDM — Screening (DIPSI/GCT), Diagnosis (OGTT)"],
-  [10,"GDM — Screening (DIPSI/GCT), Diagnosis (OGTT) - Clinical Presentation & Signs",10,5,"GDM — Screening (DIPSI/GCT), Diagnosis (OGTT)"],
-  [10,"GDM — Screening (DIPSI/GCT), Diagnosis (OGTT) - Differential Diagnosis",10,5,"GDM — Screening (DIPSI/GCT), Diagnosis (OGTT)"],
-  [10,"GDM — Screening (DIPSI/GCT), Diagnosis (OGTT) - Investigations & Lab Findings",10,5,"GDM — Screening (DIPSI/GCT), Diagnosis (OGTT)"],
-  [10,"GDM — Screening (DIPSI/GCT), Diagnosis (OGTT) - Medical & Surgical Management",10,5,"GDM — Screening (DIPSI/GCT), Diagnosis (OGTT)"],
-  [10,"GDM — Screening (DIPSI/GCT), Diagnosis (OGTT) - Complications & Prognosis",10,5,"GDM — Screening (DIPSI/GCT), Diagnosis (OGTT)"],
-  [10,"GDM — Insulin Management",10,9,"GDM — Screening (DIPSI/GCT), Diagnosis (OGTT) & Insulin Management"],
-  [10,"GDM — Insulin Management - Etiology & Risk Factors",10,5,"GDM — Insulin Management"],
-  [10,"GDM — Insulin Management - Pathophysiology",10,5,"GDM — Insulin Management"],
-  [10,"GDM — Insulin Management - Clinical Presentation & Signs",10,5,"GDM — Insulin Management"],
-  [10,"GDM — Insulin Management - Differential Diagnosis",10,5,"GDM — Insulin Management"],
-  [10,"GDM — Insulin Management - Investigations & Lab Findings",10,5,"GDM — Insulin Management"],
-  [10,"GDM — Insulin Management - Medical & Surgical Management",10,5,"GDM — Insulin Management"],
-  [10,"GDM — Insulin Management - Complications & Prognosis",10,5,"GDM — Insulin Management"],
-  [10,"Cardiac Disease in Pregnancy — Risk Classification & Anticoagulation",10,15,"Medical Disorders in Pregnancy (Anemia, Diabetes)"],
-  [10,"Cardiac Disease in Pregnancy — Risk Classification",10,7,"Cardiac Disease in Pregnancy — Risk Classification & Anticoagulation"],
-  [10,"Cardiac Disease in Pregnancy — Risk Classification - Etiology & Risk Factors",10,5,"Cardiac Disease in Pregnancy — Risk Classification"],
-  [10,"Cardiac Disease in Pregnancy — Risk Classification - Pathophysiology",10,5,"Cardiac Disease in Pregnancy — Risk Classification"],
-  [10,"Cardiac Disease in Pregnancy — Risk Classification - Clinical Presentation & Signs",10,5,"Cardiac Disease in Pregnancy — Risk Classification"],
-  [10,"Cardiac Disease in Pregnancy — Risk Classification - Differential Diagnosis",10,5,"Cardiac Disease in Pregnancy — Risk Classification"],
-  [10,"Cardiac Disease in Pregnancy — Risk Classification - Investigations & Lab Findings",10,5,"Cardiac Disease in Pregnancy — Risk Classification"],
-  [10,"Cardiac Disease in Pregnancy — Risk Classification - Medical & Surgical Management",10,5,"Cardiac Disease in Pregnancy — Risk Classification"],
-  [10,"Cardiac Disease in Pregnancy — Risk Classification - Complications & Prognosis",10,5,"Cardiac Disease in Pregnancy — Risk Classification"],
-  [10,"Cardiac Disease in Pregnancy — Anticoagulation",10,8,"Cardiac Disease in Pregnancy — Risk Classification & Anticoagulation"],
-  [10,"Cardiac Disease in Pregnancy — Anticoagulation - Etiology & Risk Factors",10,5,"Cardiac Disease in Pregnancy — Anticoagulation"],
-  [10,"Cardiac Disease in Pregnancy — Anticoagulation - Pathophysiology",10,5,"Cardiac Disease in Pregnancy — Anticoagulation"],
-  [10,"Cardiac Disease in Pregnancy — Anticoagulation - Clinical Presentation & Signs",10,5,"Cardiac Disease in Pregnancy — Anticoagulation"],
-  [10,"Cardiac Disease in Pregnancy — Anticoagulation - Differential Diagnosis",10,5,"Cardiac Disease in Pregnancy — Anticoagulation"],
-  [10,"Cardiac Disease in Pregnancy — Anticoagulation - Investigations & Lab Findings",10,5,"Cardiac Disease in Pregnancy — Anticoagulation"],
-  [10,"Cardiac Disease in Pregnancy — Anticoagulation - Medical & Surgical Management",10,5,"Cardiac Disease in Pregnancy — Anticoagulation"],
-  [10,"Cardiac Disease in Pregnancy — Anticoagulation - Complications & Prognosis",10,5,"Cardiac Disease in Pregnancy — Anticoagulation"],
-  [10,"Multiple Pregnancy & Rh Isoimmunization",9,40,"Obstetrics"],
-  [10,"Multiple Pregnancy — Zygosity, TTTS & Delivery Management",9,18,"Multiple Pregnancy & Rh Isoimmunization"],
-  [10,"Multiple Pregnancy — Zygosity, TTTS",9,9,"Multiple Pregnancy — Zygosity, TTTS & Delivery Management"],
-  [10,"Multiple Pregnancy — Zygosity, TTTS - Etiology & Risk Factors",9,5,"Multiple Pregnancy — Zygosity, TTTS"],
-  [10,"Multiple Pregnancy — Zygosity, TTTS - Pathophysiology",9,5,"Multiple Pregnancy — Zygosity, TTTS"],
-  [10,"Multiple Pregnancy — Zygosity, TTTS - Clinical Presentation & Signs",9,5,"Multiple Pregnancy — Zygosity, TTTS"],
-  [10,"Multiple Pregnancy — Zygosity, TTTS - Differential Diagnosis",9,5,"Multiple Pregnancy — Zygosity, TTTS"],
-  [10,"Multiple Pregnancy — Zygosity, TTTS - Investigations & Lab Findings",9,5,"Multiple Pregnancy — Zygosity, TTTS"],
-  [10,"Multiple Pregnancy — Zygosity, TTTS - Medical & Surgical Management",9,5,"Multiple Pregnancy — Zygosity, TTTS"],
-  [10,"Multiple Pregnancy — Zygosity, TTTS - Complications & Prognosis",9,5,"Multiple Pregnancy — Zygosity, TTTS"],
-  [10,"Multiple Pregnancy — Delivery Management",9,9,"Multiple Pregnancy — Zygosity, TTTS & Delivery Management"],
-  [10,"Multiple Pregnancy — Delivery Management - Etiology & Risk Factors",9,5,"Multiple Pregnancy — Delivery Management"],
-  [10,"Multiple Pregnancy — Delivery Management - Pathophysiology",9,5,"Multiple Pregnancy — Delivery Management"],
-  [10,"Multiple Pregnancy — Delivery Management - Clinical Presentation & Signs",9,5,"Multiple Pregnancy — Delivery Management"],
-  [10,"Multiple Pregnancy — Delivery Management - Differential Diagnosis",9,5,"Multiple Pregnancy — Delivery Management"],
-  [10,"Multiple Pregnancy — Delivery Management - Investigations & Lab Findings",9,5,"Multiple Pregnancy — Delivery Management"],
-  [10,"Multiple Pregnancy — Delivery Management - Medical & Surgical Management",9,5,"Multiple Pregnancy — Delivery Management"],
-  [10,"Multiple Pregnancy — Delivery Management - Complications & Prognosis",9,5,"Multiple Pregnancy — Delivery Management"],
-  [10,"Rh Isoimmunization — Coombs Test, Anti-D Prophylaxis & Exchange Transfusion",9,18,"Multiple Pregnancy & Rh Isoimmunization"],
-  [10,"Rh Isoimmunization — Coombs Test, Anti-D Prophylaxis",9,9,"Rh Isoimmunization — Coombs Test, Anti-D Prophylaxis & Exchange Transfusion"],
-  [10,"Rh Isoimmunization — Coombs Test, Anti-D Prophylaxis - Etiology & Risk Factors",9,5,"Rh Isoimmunization — Coombs Test, Anti-D Prophylaxis"],
-  [10,"Rh Isoimmunization — Coombs Test, Anti-D Prophylaxis - Pathophysiology",9,5,"Rh Isoimmunization — Coombs Test, Anti-D Prophylaxis"],
-  [10,"Rh Isoimmunization — Coombs Test, Anti-D Prophylaxis - Clinical Presentation & Signs",9,5,"Rh Isoimmunization — Coombs Test, Anti-D Prophylaxis"],
-  [10,"Rh Isoimmunization — Coombs Test, Anti-D Prophylaxis - Differential Diagnosis",9,5,"Rh Isoimmunization — Coombs Test, Anti-D Prophylaxis"],
-  [10,"Rh Isoimmunization — Coombs Test, Anti-D Prophylaxis - Investigations & Lab Findings",9,5,"Rh Isoimmunization — Coombs Test, Anti-D Prophylaxis"],
-  [10,"Rh Isoimmunization — Coombs Test, Anti-D Prophylaxis - Medical & Surgical Management",9,5,"Rh Isoimmunization — Coombs Test, Anti-D Prophylaxis"],
-  [10,"Rh Isoimmunization — Coombs Test, Anti-D Prophylaxis - Complications & Prognosis",9,5,"Rh Isoimmunization — Coombs Test, Anti-D Prophylaxis"],
-  [10,"Rh Isoimmunization — Exchange Transfusion",9,9,"Rh Isoimmunization — Coombs Test, Anti-D Prophylaxis & Exchange Transfusion"],
-  [10,"Rh Isoimmunization — Exchange Transfusion - Etiology & Risk Factors",9,5,"Rh Isoimmunization — Exchange Transfusion"],
-  [10,"Rh Isoimmunization — Exchange Transfusion - Pathophysiology",9,5,"Rh Isoimmunization — Exchange Transfusion"],
-  [10,"Rh Isoimmunization — Exchange Transfusion - Clinical Presentation & Signs",9,5,"Rh Isoimmunization — Exchange Transfusion"],
-  [10,"Rh Isoimmunization — Exchange Transfusion - Differential Diagnosis",9,5,"Rh Isoimmunization — Exchange Transfusion"],
-  [10,"Rh Isoimmunization — Exchange Transfusion - Investigations & Lab Findings",9,5,"Rh Isoimmunization — Exchange Transfusion"],
-  [10,"Rh Isoimmunization — Exchange Transfusion - Medical & Surgical Management",9,5,"Rh Isoimmunization — Exchange Transfusion"],
-  [10,"Rh Isoimmunization — Exchange Transfusion - Complications & Prognosis",9,5,"Rh Isoimmunization — Exchange Transfusion"],
-  [10,"Fetal Monitoring",9,35,"Obstetrics"],
-  [10,"CTG Interpretation — Baseline, Variability, Accelerations & Decelerations",9,18,"Fetal Monitoring"],
-  [10,"CTG Interpretation — Baseline, Variability, Accelerations",9,9,"CTG Interpretation — Baseline, Variability, Accelerations & Decelerations"],
-  [10,"CTG Interpretation — Baseline, Variability, Accelerations - Etiology & Risk Factors",9,5,"CTG Interpretation — Baseline, Variability, Accelerations"],
-  [10,"CTG Interpretation — Baseline, Variability, Accelerations - Pathophysiology",9,5,"CTG Interpretation — Baseline, Variability, Accelerations"],
-  [10,"CTG Interpretation — Baseline, Variability, Accelerations - Clinical Presentation & Signs",9,5,"CTG Interpretation — Baseline, Variability, Accelerations"],
-  [10,"CTG Interpretation — Baseline, Variability, Accelerations - Differential Diagnosis",9,5,"CTG Interpretation — Baseline, Variability, Accelerations"],
-  [10,"CTG Interpretation — Baseline, Variability, Accelerations - Investigations & Lab Findings",9,5,"CTG Interpretation — Baseline, Variability, Accelerations"],
-  [10,"CTG Interpretation — Baseline, Variability, Accelerations - Medical & Surgical Management",9,5,"CTG Interpretation — Baseline, Variability, Accelerations"],
-  [10,"CTG Interpretation — Baseline, Variability, Accelerations - Complications & Prognosis",9,5,"CTG Interpretation — Baseline, Variability, Accelerations"],
-  [10,"CTG Interpretation — Decelerations",9,9,"CTG Interpretation — Baseline, Variability, Accelerations & Decelerations"],
-  [10,"CTG Interpretation — Decelerations - Etiology & Risk Factors",9,5,"CTG Interpretation — Decelerations"],
-  [10,"CTG Interpretation — Decelerations - Pathophysiology",9,5,"CTG Interpretation — Decelerations"],
-  [10,"CTG Interpretation — Decelerations - Clinical Presentation & Signs",9,5,"CTG Interpretation — Decelerations"],
-  [10,"CTG Interpretation — Decelerations - Differential Diagnosis",9,5,"CTG Interpretation — Decelerations"],
-  [10,"CTG Interpretation — Decelerations - Investigations & Lab Findings",9,5,"CTG Interpretation — Decelerations"],
-  [10,"CTG Interpretation — Decelerations - Medical & Surgical Management",9,5,"CTG Interpretation — Decelerations"],
-  [10,"CTG Interpretation — Decelerations - Complications & Prognosis",9,5,"CTG Interpretation — Decelerations"],
-  [10,"BPP, Doppler & Amniocentesis — Indications & Interpretation",9,15,"Fetal Monitoring"],
-  [10,"BPP, Doppler & Amniocentesis — Indications",9,7,"BPP, Doppler & Amniocentesis — Indications & Interpretation"],
-  [10,"BPP, Doppler & Amniocentesis — Indications - Etiology & Risk Factors",9,5,"BPP, Doppler & Amniocentesis — Indications"],
-  [10,"BPP, Doppler & Amniocentesis — Indications - Pathophysiology",9,5,"BPP, Doppler & Amniocentesis — Indications"],
-  [10,"BPP, Doppler & Amniocentesis — Indications - Clinical Presentation & Signs",9,5,"BPP, Doppler & Amniocentesis — Indications"],
-  [10,"BPP, Doppler & Amniocentesis — Indications - Differential Diagnosis",9,5,"BPP, Doppler & Amniocentesis — Indications"],
-  [10,"BPP, Doppler & Amniocentesis — Indications - Investigations & Lab Findings",9,5,"BPP, Doppler & Amniocentesis — Indications"],
-  [10,"BPP, Doppler & Amniocentesis — Indications - Medical & Surgical Management",9,5,"BPP, Doppler & Amniocentesis — Indications"],
-  [10,"BPP, Doppler & Amniocentesis — Indications - Complications & Prognosis",9,5,"BPP, Doppler & Amniocentesis — Indications"],
-  [10,"BPP, Doppler & Amniocentesis — Interpretation",9,8,"BPP, Doppler & Amniocentesis — Indications & Interpretation"],
-  [10,"BPP, Doppler & Amniocentesis — Interpretation - Etiology & Risk Factors",9,5,"BPP, Doppler & Amniocentesis — Interpretation"],
-  [10,"BPP, Doppler & Amniocentesis — Interpretation - Pathophysiology",9,5,"BPP, Doppler & Amniocentesis — Interpretation"],
-  [10,"BPP, Doppler & Amniocentesis — Interpretation - Clinical Presentation & Signs",9,5,"BPP, Doppler & Amniocentesis — Interpretation"],
-  [10,"BPP, Doppler & Amniocentesis — Interpretation - Differential Diagnosis",9,5,"BPP, Doppler & Amniocentesis — Interpretation"],
-  [10,"BPP, Doppler & Amniocentesis — Interpretation - Investigations & Lab Findings",9,5,"BPP, Doppler & Amniocentesis — Interpretation"],
-  [10,"BPP, Doppler & Amniocentesis — Interpretation - Medical & Surgical Management",9,5,"BPP, Doppler & Amniocentesis — Interpretation"],
-  [10,"BPP, Doppler & Amniocentesis — Interpretation - Complications & Prognosis",9,5,"BPP, Doppler & Amniocentesis — Interpretation"],
-  [10,"Gynecology",10,60],
-  [10,"Menstrual Disorders (DUB, PCOS)",10,50,"Gynecology"],
-  [10,"DUB — PALM-COEIN Classification, Diagnosis & Medical Management",10,18,"Menstrual Disorders (DUB, PCOS)"],
-  [10,"DUB — PALM-COEIN Classification, Diagnosis",10,9,"DUB — PALM-COEIN Classification, Diagnosis & Medical Management"],
-  [10,"DUB — PALM-COEIN Classification, Diagnosis - Etiology & Risk Factors",10,5,"DUB — PALM-COEIN Classification, Diagnosis"],
-  [10,"DUB — PALM-COEIN Classification, Diagnosis - Pathophysiology",10,5,"DUB — PALM-COEIN Classification, Diagnosis"],
-  [10,"DUB — PALM-COEIN Classification, Diagnosis - Clinical Presentation & Signs",10,5,"DUB — PALM-COEIN Classification, Diagnosis"],
-  [10,"DUB — PALM-COEIN Classification, Diagnosis - Differential Diagnosis",10,5,"DUB — PALM-COEIN Classification, Diagnosis"],
-  [10,"DUB — PALM-COEIN Classification, Diagnosis - Investigations & Lab Findings",10,5,"DUB — PALM-COEIN Classification, Diagnosis"],
-  [10,"DUB — PALM-COEIN Classification, Diagnosis - Medical & Surgical Management",10,5,"DUB — PALM-COEIN Classification, Diagnosis"],
-  [10,"DUB — PALM-COEIN Classification, Diagnosis - Complications & Prognosis",10,5,"DUB — PALM-COEIN Classification, Diagnosis"],
-  [10,"DUB — Medical Management",10,9,"DUB — PALM-COEIN Classification, Diagnosis & Medical Management"],
-  [10,"DUB — Medical Management - Etiology & Risk Factors",10,5,"DUB — Medical Management"],
-  [10,"DUB — Medical Management - Pathophysiology",10,5,"DUB — Medical Management"],
-  [10,"DUB — Medical Management - Clinical Presentation & Signs",10,5,"DUB — Medical Management"],
-  [10,"DUB — Medical Management - Differential Diagnosis",10,5,"DUB — Medical Management"],
-  [10,"DUB — Medical Management - Investigations & Lab Findings",10,5,"DUB — Medical Management"],
-  [10,"DUB — Medical Management - Medical & Surgical Management",10,5,"DUB — Medical Management"],
-  [10,"DUB — Medical Management - Complications & Prognosis",10,5,"DUB — Medical Management"],
-  [10,"PCOS — Rotterdam Criteria, Hormonal Profile & Management",10,18,"Menstrual Disorders (DUB, PCOS)"],
-  [10,"PCOS — Rotterdam Criteria, Hormonal Profile",10,9,"PCOS — Rotterdam Criteria, Hormonal Profile & Management"],
-  [10,"PCOS — Rotterdam Criteria, Hormonal Profile - Etiology & Risk Factors",10,5,"PCOS — Rotterdam Criteria, Hormonal Profile"],
-  [10,"PCOS — Rotterdam Criteria, Hormonal Profile - Pathophysiology",10,5,"PCOS — Rotterdam Criteria, Hormonal Profile"],
-  [10,"PCOS — Rotterdam Criteria, Hormonal Profile - Clinical Presentation & Signs",10,5,"PCOS — Rotterdam Criteria, Hormonal Profile"],
-  [10,"PCOS — Rotterdam Criteria, Hormonal Profile - Differential Diagnosis",10,5,"PCOS — Rotterdam Criteria, Hormonal Profile"],
-  [10,"PCOS — Rotterdam Criteria, Hormonal Profile - Investigations & Lab Findings",10,5,"PCOS — Rotterdam Criteria, Hormonal Profile"],
-  [10,"PCOS — Rotterdam Criteria, Hormonal Profile - Medical & Surgical Management",10,5,"PCOS — Rotterdam Criteria, Hormonal Profile"],
-  [10,"PCOS — Rotterdam Criteria, Hormonal Profile - Complications & Prognosis",10,5,"PCOS — Rotterdam Criteria, Hormonal Profile"],
-  [10,"PCOS — Management",10,9,"PCOS — Rotterdam Criteria, Hormonal Profile & Management"],
-  [10,"PCOS — Management - Etiology & Risk Factors",10,5,"PCOS — Management"],
-  [10,"PCOS — Management - Pathophysiology",10,5,"PCOS — Management"],
-  [10,"PCOS — Management - Clinical Presentation & Signs",10,5,"PCOS — Management"],
-  [10,"PCOS — Management - Differential Diagnosis",10,5,"PCOS — Management"],
-  [10,"PCOS — Management - Investigations & Lab Findings",10,5,"PCOS — Management"],
-  [10,"PCOS — Management - Medical & Surgical Management",10,5,"PCOS — Management"],
-  [10,"PCOS — Management - Complications & Prognosis",10,5,"PCOS — Management"],
-  [10,"Dysmenorrhea, Endometriosis & Adenomyosis — Clinical Features & Treatment",10,15,"Menstrual Disorders (DUB, PCOS)"],
-  [10,"Dysmenorrhea, Endometriosis & Adenomyosis — Clinical Features",10,7,"Dysmenorrhea, Endometriosis & Adenomyosis — Clinical Features & Treatment"],
-  [10,"Dysmenorrhea, Endometriosis & Adenomyosis — Clinical Features - Etiology & Risk Factors",10,5,"Dysmenorrhea, Endometriosis & Adenomyosis — Clinical Features"],
-  [10,"Dysmenorrhea, Endometriosis & Adenomyosis — Clinical Features - Pathophysiology",10,5,"Dysmenorrhea, Endometriosis & Adenomyosis — Clinical Features"],
-  [10,"Dysmenorrhea, Endometriosis & Adenomyosis — Clinical Features - Clinical Presentation & Signs",10,5,"Dysmenorrhea, Endometriosis & Adenomyosis — Clinical Features"],
-  [10,"Dysmenorrhea, Endometriosis & Adenomyosis — Clinical Features - Differential Diagnosis",10,5,"Dysmenorrhea, Endometriosis & Adenomyosis — Clinical Features"],
-  [10,"Dysmenorrhea, Endometriosis & Adenomyosis — Clinical Features - Investigations & Lab Findings",10,5,"Dysmenorrhea, Endometriosis & Adenomyosis — Clinical Features"],
-  [10,"Dysmenorrhea, Endometriosis & Adenomyosis — Clinical Features - Medical & Surgical Management",10,5,"Dysmenorrhea, Endometriosis & Adenomyosis — Clinical Features"],
-  [10,"Dysmenorrhea, Endometriosis & Adenomyosis — Clinical Features - Complications & Prognosis",10,5,"Dysmenorrhea, Endometriosis & Adenomyosis — Clinical Features"],
-  [10,"Dysmenorrhea, Endometriosis & Adenomyosis — Treatment",10,8,"Dysmenorrhea, Endometriosis & Adenomyosis — Clinical Features & Treatment"],
-  [10,"Dysmenorrhea, Endometriosis & Adenomyosis — Treatment - Etiology & Risk Factors",10,5,"Dysmenorrhea, Endometriosis & Adenomyosis — Treatment"],
-  [10,"Dysmenorrhea, Endometriosis & Adenomyosis — Treatment - Pathophysiology",10,5,"Dysmenorrhea, Endometriosis & Adenomyosis — Treatment"],
-  [10,"Dysmenorrhea, Endometriosis & Adenomyosis — Treatment - Clinical Presentation & Signs",10,5,"Dysmenorrhea, Endometriosis & Adenomyosis — Treatment"],
-  [10,"Dysmenorrhea, Endometriosis & Adenomyosis — Treatment - Differential Diagnosis",10,5,"Dysmenorrhea, Endometriosis & Adenomyosis — Treatment"],
-  [10,"Dysmenorrhea, Endometriosis & Adenomyosis — Treatment - Investigations & Lab Findings",10,5,"Dysmenorrhea, Endometriosis & Adenomyosis — Treatment"],
-  [10,"Dysmenorrhea, Endometriosis & Adenomyosis — Treatment - Medical & Surgical Management",10,5,"Dysmenorrhea, Endometriosis & Adenomyosis — Treatment"],
-  [10,"Dysmenorrhea, Endometriosis & Adenomyosis — Treatment - Complications & Prognosis",10,5,"Dysmenorrhea, Endometriosis & Adenomyosis — Treatment"],
-  [10,"Infertility & ART",10,50,"Gynecology"],
-  [10,"Infertility — Definition, Causes & Initial Investigation (Semen Analysis)",10,15,"Infertility & ART"],
-  [10,"Infertility — Definition, Causes",10,7,"Infertility — Definition, Causes & Initial Investigation (Semen Analysis)"],
-  [10,"Infertility — Definition, Causes - Etiology & Risk Factors",10,5,"Infertility — Definition, Causes"],
-  [10,"Infertility — Definition, Causes - Pathophysiology",10,5,"Infertility — Definition, Causes"],
-  [10,"Infertility — Definition, Causes - Clinical Presentation & Signs",10,5,"Infertility — Definition, Causes"],
-  [10,"Infertility — Definition, Causes - Differential Diagnosis",10,5,"Infertility — Definition, Causes"],
-  [10,"Infertility — Definition, Causes - Investigations & Lab Findings",10,5,"Infertility — Definition, Causes"],
-  [10,"Infertility — Definition, Causes - Medical & Surgical Management",10,5,"Infertility — Definition, Causes"],
-  [10,"Infertility — Definition, Causes - Complications & Prognosis",10,5,"Infertility — Definition, Causes"],
-  [10,"Infertility — Initial Investigation (Semen Analysis)",10,8,"Infertility — Definition, Causes & Initial Investigation (Semen Analysis)"],
-  [10,"Infertility — Initial Investigation (Semen Analysis) - Etiology & Risk Factors",10,5,"Infertility — Initial Investigation (Semen Analysis)"],
-  [10,"Infertility — Initial Investigation (Semen Analysis) - Pathophysiology",10,5,"Infertility — Initial Investigation (Semen Analysis)"],
-  [10,"Infertility — Initial Investigation (Semen Analysis) - Clinical Presentation & Signs",10,5,"Infertility — Initial Investigation (Semen Analysis)"],
-  [10,"Infertility — Initial Investigation (Semen Analysis) - Differential Diagnosis",10,5,"Infertility — Initial Investigation (Semen Analysis)"],
-  [10,"Infertility — Initial Investigation (Semen Analysis) - Investigations & Lab Findings",10,5,"Infertility — Initial Investigation (Semen Analysis)"],
-  [10,"Infertility — Initial Investigation (Semen Analysis) - Medical & Surgical Management",10,5,"Infertility — Initial Investigation (Semen Analysis)"],
-  [10,"Infertility — Initial Investigation (Semen Analysis) - Complications & Prognosis",10,5,"Infertility — Initial Investigation (Semen Analysis)"],
-  [10,"Ovulation Induction — Clomiphene, Letrozole & Gonadotropins",10,15,"Infertility & ART"],
-  [10,"Ovulation Induction — Clomiphene, Letrozole",10,7,"Ovulation Induction — Clomiphene, Letrozole & Gonadotropins"],
-  [10,"Ovulation Induction — Clomiphene, Letrozole - Etiology & Risk Factors",10,5,"Ovulation Induction — Clomiphene, Letrozole"],
-  [10,"Ovulation Induction — Clomiphene, Letrozole - Pathophysiology",10,5,"Ovulation Induction — Clomiphene, Letrozole"],
-  [10,"Ovulation Induction — Clomiphene, Letrozole - Clinical Presentation & Signs",10,5,"Ovulation Induction — Clomiphene, Letrozole"],
-  [10,"Ovulation Induction — Clomiphene, Letrozole - Differential Diagnosis",10,5,"Ovulation Induction — Clomiphene, Letrozole"],
-  [10,"Ovulation Induction — Clomiphene, Letrozole - Investigations & Lab Findings",10,5,"Ovulation Induction — Clomiphene, Letrozole"],
-  [10,"Ovulation Induction — Clomiphene, Letrozole - Medical & Surgical Management",10,5,"Ovulation Induction — Clomiphene, Letrozole"],
-  [10,"Ovulation Induction — Clomiphene, Letrozole - Complications & Prognosis",10,5,"Ovulation Induction — Clomiphene, Letrozole"],
-  [10,"Ovulation Induction — Gonadotropins",10,8,"Ovulation Induction — Clomiphene, Letrozole & Gonadotropins"],
-  [10,"Ovulation Induction — Gonadotropins - Etiology & Risk Factors",10,5,"Ovulation Induction — Gonadotropins"],
-  [10,"Ovulation Induction — Gonadotropins - Pathophysiology",10,5,"Ovulation Induction — Gonadotropins"],
-  [10,"Ovulation Induction — Gonadotropins - Clinical Presentation & Signs",10,5,"Ovulation Induction — Gonadotropins"],
-  [10,"Ovulation Induction — Gonadotropins - Differential Diagnosis",10,5,"Ovulation Induction — Gonadotropins"],
-  [10,"Ovulation Induction — Gonadotropins - Investigations & Lab Findings",10,5,"Ovulation Induction — Gonadotropins"],
-  [10,"Ovulation Induction — Gonadotropins - Medical & Surgical Management",10,5,"Ovulation Induction — Gonadotropins"],
-  [10,"Ovulation Induction — Gonadotropins - Complications & Prognosis",10,5,"Ovulation Induction — Gonadotropins"],
-  [10,"ART — IUI, IVF, ICSI: Steps & Indications",10,18,"Infertility & ART"],
-  [10,"ART — IUI, IVF, ICSI: Steps",10,9,"ART — IUI, IVF, ICSI: Steps & Indications"],
-  [10,"ART — IUI, IVF, ICSI: Steps - Etiology & Risk Factors",10,5,"ART — IUI, IVF, ICSI: Steps"],
-  [10,"ART — IUI, IVF, ICSI: Steps - Pathophysiology",10,5,"ART — IUI, IVF, ICSI: Steps"],
-  [10,"ART — IUI, IVF, ICSI: Steps - Clinical Presentation & Signs",10,5,"ART — IUI, IVF, ICSI: Steps"],
-  [10,"ART — IUI, IVF, ICSI: Steps - Differential Diagnosis",10,5,"ART — IUI, IVF, ICSI: Steps"],
-  [10,"ART — IUI, IVF, ICSI: Steps - Investigations & Lab Findings",10,5,"ART — IUI, IVF, ICSI: Steps"],
-  [10,"ART — IUI, IVF, ICSI: Steps - Medical & Surgical Management",10,5,"ART — IUI, IVF, ICSI: Steps"],
-  [10,"ART — IUI, IVF, ICSI: Steps - Complications & Prognosis",10,5,"ART — IUI, IVF, ICSI: Steps"],
-  [10,"ART — Indications",10,9,"ART — IUI, IVF, ICSI: Steps & Indications"],
-  [10,"ART — Indications - Etiology & Risk Factors",10,5,"ART — Indications"],
-  [10,"ART — Indications - Pathophysiology",10,5,"ART — Indications"],
-  [10,"ART — Indications - Clinical Presentation & Signs",10,5,"ART — Indications"],
-  [10,"ART — Indications - Differential Diagnosis",10,5,"ART — Indications"],
-  [10,"ART — Indications - Investigations & Lab Findings",10,5,"ART — Indications"],
-  [10,"ART — Indications - Medical & Surgical Management",10,5,"ART — Indications"],
-  [10,"ART — Indications - Complications & Prognosis",10,5,"ART — Indications"],
-  [10,"Contraception",10,45,"Gynecology"],
-  [10,"OCP — Types, Mechanism, Non-contraceptive Benefits & Contraindications",10,18,"Contraception"],
-  [10,"OCP — Types, Mechanism, Non-contraceptive Benefits",10,9,"OCP — Types, Mechanism, Non-contraceptive Benefits & Contraindications"],
-  [10,"OCP — Types, Mechanism, Non-contraceptive Benefits - Etiology & Risk Factors",10,5,"OCP — Types, Mechanism, Non-contraceptive Benefits"],
-  [10,"OCP — Types, Mechanism, Non-contraceptive Benefits - Pathophysiology",10,5,"OCP — Types, Mechanism, Non-contraceptive Benefits"],
-  [10,"OCP — Types, Mechanism, Non-contraceptive Benefits - Clinical Presentation & Signs",10,5,"OCP — Types, Mechanism, Non-contraceptive Benefits"],
-  [10,"OCP — Types, Mechanism, Non-contraceptive Benefits - Differential Diagnosis",10,5,"OCP — Types, Mechanism, Non-contraceptive Benefits"],
-  [10,"OCP — Types, Mechanism, Non-contraceptive Benefits - Investigations & Lab Findings",10,5,"OCP — Types, Mechanism, Non-contraceptive Benefits"],
-  [10,"OCP — Types, Mechanism, Non-contraceptive Benefits - Medical & Surgical Management",10,5,"OCP — Types, Mechanism, Non-contraceptive Benefits"],
-  [10,"OCP — Types, Mechanism, Non-contraceptive Benefits - Complications & Prognosis",10,5,"OCP — Types, Mechanism, Non-contraceptive Benefits"],
-  [10,"OCP — Contraindications",10,9,"OCP — Types, Mechanism, Non-contraceptive Benefits & Contraindications"],
-  [10,"OCP — Contraindications - Etiology & Risk Factors",10,5,"OCP — Contraindications"],
-  [10,"OCP — Contraindications - Pathophysiology",10,5,"OCP — Contraindications"],
-  [10,"OCP — Contraindications - Clinical Presentation & Signs",10,5,"OCP — Contraindications"],
-  [10,"OCP — Contraindications - Differential Diagnosis",10,5,"OCP — Contraindications"],
-  [10,"OCP — Contraindications - Investigations & Lab Findings",10,5,"OCP — Contraindications"],
-  [10,"OCP — Contraindications - Medical & Surgical Management",10,5,"OCP — Contraindications"],
-  [10,"OCP — Contraindications - Complications & Prognosis",10,5,"OCP — Contraindications"],
-  [10,"IUCD — Cu-T 380A, Mirena: Mechanism, Insertion & Complications",10,15,"Contraception"],
-  [10,"IUCD — Cu-T 380A, Mirena: Mechanism, Insertion",10,7,"IUCD — Cu-T 380A, Mirena: Mechanism, Insertion & Complications"],
-  [10,"IUCD — Cu-T 380A, Mirena: Mechanism, Insertion - Etiology & Risk Factors",10,5,"IUCD — Cu-T 380A, Mirena: Mechanism, Insertion"],
-  [10,"IUCD — Cu-T 380A, Mirena: Mechanism, Insertion - Pathophysiology",10,5,"IUCD — Cu-T 380A, Mirena: Mechanism, Insertion"],
-  [10,"IUCD — Cu-T 380A, Mirena: Mechanism, Insertion - Clinical Presentation & Signs",10,5,"IUCD — Cu-T 380A, Mirena: Mechanism, Insertion"],
-  [10,"IUCD — Cu-T 380A, Mirena: Mechanism, Insertion - Differential Diagnosis",10,5,"IUCD — Cu-T 380A, Mirena: Mechanism, Insertion"],
-  [10,"IUCD — Cu-T 380A, Mirena: Mechanism, Insertion - Investigations & Lab Findings",10,5,"IUCD — Cu-T 380A, Mirena: Mechanism, Insertion"],
-  [10,"IUCD — Cu-T 380A, Mirena: Mechanism, Insertion - Medical & Surgical Management",10,5,"IUCD — Cu-T 380A, Mirena: Mechanism, Insertion"],
-  [10,"IUCD — Cu-T 380A, Mirena: Mechanism, Insertion - Complications & Prognosis",10,5,"IUCD — Cu-T 380A, Mirena: Mechanism, Insertion"],
-  [10,"IUCD — Complications",10,8,"IUCD — Cu-T 380A, Mirena: Mechanism, Insertion & Complications"],
-  [10,"IUCD — Complications - Etiology & Risk Factors",10,5,"IUCD — Complications"],
-  [10,"IUCD — Complications - Pathophysiology",10,5,"IUCD — Complications"],
-  [10,"IUCD — Complications - Clinical Presentation & Signs",10,5,"IUCD — Complications"],
-  [10,"IUCD — Complications - Differential Diagnosis",10,5,"IUCD — Complications"],
-  [10,"IUCD — Complications - Investigations & Lab Findings",10,5,"IUCD — Complications"],
-  [10,"IUCD — Complications - Medical & Surgical Management",10,5,"IUCD — Complications"],
-  [10,"IUCD — Complications - Complications & Prognosis",10,5,"IUCD — Complications"],
-  [10,"Emergency Contraception, Barrier & Permanent Methods",10,12,"Contraception"],
-  [10,"Emergency Contraception, Barrier",10,6,"Emergency Contraception, Barrier & Permanent Methods"],
-  [10,"Emergency Contraception, Barrier - Etiology & Risk Factors",10,5,"Emergency Contraception, Barrier"],
-  [10,"Emergency Contraception, Barrier - Pathophysiology",10,5,"Emergency Contraception, Barrier"],
-  [10,"Emergency Contraception, Barrier - Clinical Presentation & Signs",10,5,"Emergency Contraception, Barrier"],
-  [10,"Emergency Contraception, Barrier - Differential Diagnosis",10,5,"Emergency Contraception, Barrier"],
-  [10,"Emergency Contraception, Barrier - Investigations & Lab Findings",10,5,"Emergency Contraception, Barrier"],
-  [10,"Emergency Contraception, Barrier - Medical & Surgical Management",10,5,"Emergency Contraception, Barrier"],
-  [10,"Emergency Contraception, Barrier - Complications & Prognosis",10,5,"Emergency Contraception, Barrier"],
-  [10,"Permanent Methods",10,6,"Emergency Contraception, Barrier & Permanent Methods"],
-  [10,"Permanent Methods - Etiology & Risk Factors",10,5,"Permanent Methods"],
-  [10,"Permanent Methods - Pathophysiology",10,5,"Permanent Methods"],
-  [10,"Permanent Methods - Clinical Presentation & Signs",10,5,"Permanent Methods"],
-  [10,"Permanent Methods - Differential Diagnosis",10,5,"Permanent Methods"],
-  [10,"Permanent Methods - Investigations & Lab Findings",10,5,"Permanent Methods"],
-  [10,"Permanent Methods - Medical & Surgical Management",10,5,"Permanent Methods"],
-  [10,"Permanent Methods - Complications & Prognosis",10,5,"Permanent Methods"],
-  [10,"Genital Prolapse",9,35,"Gynecology"],
-  [10,"Pelvic Organ Prolapse — POP-Q System, Grades & Surgical Repair",9,18,"Genital Prolapse"],
-  [10,"Pelvic Organ Prolapse — POP-Q System, Grades",9,9,"Pelvic Organ Prolapse — POP-Q System, Grades & Surgical Repair"],
-  [10,"Pelvic Organ Prolapse — POP-Q System, Grades - Etiology & Risk Factors",9,5,"Pelvic Organ Prolapse — POP-Q System, Grades"],
-  [10,"Pelvic Organ Prolapse — POP-Q System, Grades - Pathophysiology",9,5,"Pelvic Organ Prolapse — POP-Q System, Grades"],
-  [10,"Pelvic Organ Prolapse — POP-Q System, Grades - Clinical Presentation & Signs",9,5,"Pelvic Organ Prolapse — POP-Q System, Grades"],
-  [10,"Pelvic Organ Prolapse — POP-Q System, Grades - Differential Diagnosis",9,5,"Pelvic Organ Prolapse — POP-Q System, Grades"],
-  [10,"Pelvic Organ Prolapse — POP-Q System, Grades - Investigations & Lab Findings",9,5,"Pelvic Organ Prolapse — POP-Q System, Grades"],
-  [10,"Pelvic Organ Prolapse — POP-Q System, Grades - Medical & Surgical Management",9,5,"Pelvic Organ Prolapse — POP-Q System, Grades"],
-  [10,"Pelvic Organ Prolapse — POP-Q System, Grades - Complications & Prognosis",9,5,"Pelvic Organ Prolapse — POP-Q System, Grades"],
-  [10,"Pelvic Organ Prolapse — Surgical Repair",9,9,"Pelvic Organ Prolapse — POP-Q System, Grades & Surgical Repair"],
-  [10,"Pelvic Organ Prolapse — Surgical Repair - Etiology & Risk Factors",9,5,"Pelvic Organ Prolapse — Surgical Repair"],
-  [10,"Pelvic Organ Prolapse — Surgical Repair - Pathophysiology",9,5,"Pelvic Organ Prolapse — Surgical Repair"],
-  [10,"Pelvic Organ Prolapse — Surgical Repair - Clinical Presentation & Signs",9,5,"Pelvic Organ Prolapse — Surgical Repair"],
-  [10,"Pelvic Organ Prolapse — Surgical Repair - Differential Diagnosis",9,5,"Pelvic Organ Prolapse — Surgical Repair"],
-  [10,"Pelvic Organ Prolapse — Surgical Repair - Investigations & Lab Findings",9,5,"Pelvic Organ Prolapse — Surgical Repair"],
-  [10,"Pelvic Organ Prolapse — Surgical Repair - Medical & Surgical Management",9,5,"Pelvic Organ Prolapse — Surgical Repair"],
-  [10,"Pelvic Organ Prolapse — Surgical Repair - Complications & Prognosis",9,5,"Pelvic Organ Prolapse — Surgical Repair"],
-  [10,"Stress Urinary Incontinence vs OAB — Urodynamics & Treatment",9,15,"Genital Prolapse"],
-  [10,"Stress Urinary Incontinence vs OAB — Urodynamics",9,7,"Stress Urinary Incontinence vs OAB — Urodynamics & Treatment"],
-  [10,"Stress Urinary Incontinence vs OAB — Urodynamics - Etiology & Risk Factors",9,5,"Stress Urinary Incontinence vs OAB — Urodynamics"],
-  [10,"Stress Urinary Incontinence vs OAB — Urodynamics - Pathophysiology",9,5,"Stress Urinary Incontinence vs OAB — Urodynamics"],
-  [10,"Stress Urinary Incontinence vs OAB — Urodynamics - Clinical Presentation & Signs",9,5,"Stress Urinary Incontinence vs OAB — Urodynamics"],
-  [10,"Stress Urinary Incontinence vs OAB — Urodynamics - Differential Diagnosis",9,5,"Stress Urinary Incontinence vs OAB — Urodynamics"],
-  [10,"Stress Urinary Incontinence vs OAB — Urodynamics - Investigations & Lab Findings",9,5,"Stress Urinary Incontinence vs OAB — Urodynamics"],
-  [10,"Stress Urinary Incontinence vs OAB — Urodynamics - Medical & Surgical Management",9,5,"Stress Urinary Incontinence vs OAB — Urodynamics"],
-  [10,"Stress Urinary Incontinence vs OAB — Urodynamics - Complications & Prognosis",9,5,"Stress Urinary Incontinence vs OAB — Urodynamics"],
-  [10,"Stress Urinary Incontinence vs OAB — Treatment",9,8,"Stress Urinary Incontinence vs OAB — Urodynamics & Treatment"],
-  [10,"Stress Urinary Incontinence vs OAB — Treatment - Etiology & Risk Factors",9,5,"Stress Urinary Incontinence vs OAB — Treatment"],
-  [10,"Stress Urinary Incontinence vs OAB — Treatment - Pathophysiology",9,5,"Stress Urinary Incontinence vs OAB — Treatment"],
-  [10,"Stress Urinary Incontinence vs OAB — Treatment - Clinical Presentation & Signs",9,5,"Stress Urinary Incontinence vs OAB — Treatment"],
-  [10,"Stress Urinary Incontinence vs OAB — Treatment - Differential Diagnosis",9,5,"Stress Urinary Incontinence vs OAB — Treatment"],
-  [10,"Stress Urinary Incontinence vs OAB — Treatment - Investigations & Lab Findings",9,5,"Stress Urinary Incontinence vs OAB — Treatment"],
-  [10,"Stress Urinary Incontinence vs OAB — Treatment - Medical & Surgical Management",9,5,"Stress Urinary Incontinence vs OAB — Treatment"],
-  [10,"Stress Urinary Incontinence vs OAB — Treatment - Complications & Prognosis",9,5,"Stress Urinary Incontinence vs OAB — Treatment"],
-  [10,"Gynae-Oncology (Cervix, Uterus, Ovary)",10,60,"Gynecology"],
-  [10,"Cervical Cancer — CIN, HPV (16, 18), Pap Smear & FIGO Staging",10,18,"Gynae-Oncology (Cervix, Uterus, Ovary)"],
-  [10,"Cervical Cancer — CIN, HPV (16, 18), Pap Smear",10,9,"Cervical Cancer — CIN, HPV (16, 18), Pap Smear & FIGO Staging"],
-  [10,"Cervical Cancer — CIN, HPV (16, 18), Pap Smear - Etiology & Risk Factors",10,5,"Cervical Cancer — CIN, HPV (16, 18), Pap Smear"],
-  [10,"Cervical Cancer — CIN, HPV (16, 18), Pap Smear - Pathophysiology",10,5,"Cervical Cancer — CIN, HPV (16, 18), Pap Smear"],
-  [10,"Cervical Cancer — CIN, HPV (16, 18), Pap Smear - Clinical Presentation & Signs",10,5,"Cervical Cancer — CIN, HPV (16, 18), Pap Smear"],
-  [10,"Cervical Cancer — CIN, HPV (16, 18), Pap Smear - Differential Diagnosis",10,5,"Cervical Cancer — CIN, HPV (16, 18), Pap Smear"],
-  [10,"Cervical Cancer — CIN, HPV (16, 18), Pap Smear - Investigations & Lab Findings",10,5,"Cervical Cancer — CIN, HPV (16, 18), Pap Smear"],
-  [10,"Cervical Cancer — CIN, HPV (16, 18), Pap Smear - Medical & Surgical Management",10,5,"Cervical Cancer — CIN, HPV (16, 18), Pap Smear"],
-  [10,"Cervical Cancer — CIN, HPV (16, 18), Pap Smear - Complications & Prognosis",10,5,"Cervical Cancer — CIN, HPV (16, 18), Pap Smear"],
-  [10,"Cervical Cancer — FIGO Staging",10,9,"Cervical Cancer — CIN, HPV (16, 18), Pap Smear & FIGO Staging"],
-  [10,"Cervical Cancer — FIGO Staging - Etiology & Risk Factors",10,5,"Cervical Cancer — FIGO Staging"],
-  [10,"Cervical Cancer — FIGO Staging - Pathophysiology",10,5,"Cervical Cancer — FIGO Staging"],
-  [10,"Cervical Cancer — FIGO Staging - Clinical Presentation & Signs",10,5,"Cervical Cancer — FIGO Staging"],
-  [10,"Cervical Cancer — FIGO Staging - Differential Diagnosis",10,5,"Cervical Cancer — FIGO Staging"],
-  [10,"Cervical Cancer — FIGO Staging - Investigations & Lab Findings",10,5,"Cervical Cancer — FIGO Staging"],
-  [10,"Cervical Cancer — FIGO Staging - Medical & Surgical Management",10,5,"Cervical Cancer — FIGO Staging"],
-  [10,"Cervical Cancer — FIGO Staging - Complications & Prognosis",10,5,"Cervical Cancer — FIGO Staging"],
-  [10,"Endometrial Cancer — Post-menopausal Bleeding, Type I vs II & Staging",10,15,"Gynae-Oncology (Cervix, Uterus, Ovary)"],
-  [10,"Endometrial Cancer — Post-menopausal Bleeding, Type I vs II",10,7,"Endometrial Cancer — Post-menopausal Bleeding, Type I vs II & Staging"],
-  [10,"Endometrial Cancer — Post-menopausal Bleeding, Type I vs II - Etiology & Risk Factors",10,5,"Endometrial Cancer — Post-menopausal Bleeding, Type I vs II"],
-  [10,"Endometrial Cancer — Post-menopausal Bleeding, Type I vs II - Pathophysiology",10,5,"Endometrial Cancer — Post-menopausal Bleeding, Type I vs II"],
-  [10,"Endometrial Cancer — Post-menopausal Bleeding, Type I vs II - Clinical Presentation & Signs",10,5,"Endometrial Cancer — Post-menopausal Bleeding, Type I vs II"],
-  [10,"Endometrial Cancer — Post-menopausal Bleeding, Type I vs II - Differential Diagnosis",10,5,"Endometrial Cancer — Post-menopausal Bleeding, Type I vs II"],
-  [10,"Endometrial Cancer — Post-menopausal Bleeding, Type I vs II - Investigations & Lab Findings",10,5,"Endometrial Cancer — Post-menopausal Bleeding, Type I vs II"],
-  [10,"Endometrial Cancer — Post-menopausal Bleeding, Type I vs II - Medical & Surgical Management",10,5,"Endometrial Cancer — Post-menopausal Bleeding, Type I vs II"],
-  [10,"Endometrial Cancer — Post-menopausal Bleeding, Type I vs II - Complications & Prognosis",10,5,"Endometrial Cancer — Post-menopausal Bleeding, Type I vs II"],
-  [10,"Endometrial Cancer — Staging",10,8,"Endometrial Cancer — Post-menopausal Bleeding, Type I vs II & Staging"],
-  [10,"Endometrial Cancer — Staging - Etiology & Risk Factors",10,5,"Endometrial Cancer — Staging"],
-  [10,"Endometrial Cancer — Staging - Pathophysiology",10,5,"Endometrial Cancer — Staging"],
-  [10,"Endometrial Cancer — Staging - Clinical Presentation & Signs",10,5,"Endometrial Cancer — Staging"],
-  [10,"Endometrial Cancer — Staging - Differential Diagnosis",10,5,"Endometrial Cancer — Staging"],
-  [10,"Endometrial Cancer — Staging - Investigations & Lab Findings",10,5,"Endometrial Cancer — Staging"],
-  [10,"Endometrial Cancer — Staging - Medical & Surgical Management",10,5,"Endometrial Cancer — Staging"],
-  [10,"Endometrial Cancer — Staging - Complications & Prognosis",10,5,"Endometrial Cancer — Staging"],
-  [10,"Ovarian Tumors — Classification (Epithelial/GCT/Germ Cell), CA-125 & FIGO",10,18,"Gynae-Oncology (Cervix, Uterus, Ovary)"],
-  [10,"Ovarian Tumors — Classification (Epithelial/GCT/Germ Cell), CA-125",10,9,"Ovarian Tumors — Classification (Epithelial/GCT/Germ Cell), CA-125 & FIGO"],
-  [10,"Ovarian Tumors — Classification (Epithelial/GCT/Germ Cell), CA-125 - Etiology & Risk Factors",10,5,"Ovarian Tumors — Classification (Epithelial/GCT/Germ Cell), CA-125"],
-  [10,"Ovarian Tumors — Classification (Epithelial/GCT/Germ Cell), CA-125 - Pathophysiology",10,5,"Ovarian Tumors — Classification (Epithelial/GCT/Germ Cell), CA-125"],
-  [10,"Ovarian Tumors — Classification (Epithelial/GCT/Germ Cell), CA-125 - Clinical Presentation & Signs",10,5,"Ovarian Tumors — Classification (Epithelial/GCT/Germ Cell), CA-125"],
-  [10,"Ovarian Tumors — Classification (Epithelial/GCT/Germ Cell), CA-125 - Differential Diagnosis",10,5,"Ovarian Tumors — Classification (Epithelial/GCT/Germ Cell), CA-125"],
-  [10,"Ovarian Tumors — Classification (Epithelial/GCT/Germ Cell), CA-125 - Investigations & Lab Findings",10,5,"Ovarian Tumors — Classification (Epithelial/GCT/Germ Cell), CA-125"],
-  [10,"Ovarian Tumors — Classification (Epithelial/GCT/Germ Cell), CA-125 - Medical & Surgical Management",10,5,"Ovarian Tumors — Classification (Epithelial/GCT/Germ Cell), CA-125"],
-  [10,"Ovarian Tumors — Classification (Epithelial/GCT/Germ Cell), CA-125 - Complications & Prognosis",10,5,"Ovarian Tumors — Classification (Epithelial/GCT/Germ Cell), CA-125"],
-  [10,"Ovarian Tumors — FIGO",10,9,"Ovarian Tumors — Classification (Epithelial/GCT/Germ Cell), CA-125 & FIGO"],
-  [10,"Ovarian Tumors — FIGO - Etiology & Risk Factors",10,5,"Ovarian Tumors — FIGO"],
-  [10,"Ovarian Tumors — FIGO - Pathophysiology",10,5,"Ovarian Tumors — FIGO"],
-  [10,"Ovarian Tumors — FIGO - Clinical Presentation & Signs",10,5,"Ovarian Tumors — FIGO"],
-  [10,"Ovarian Tumors — FIGO - Differential Diagnosis",10,5,"Ovarian Tumors — FIGO"],
-  [10,"Ovarian Tumors — FIGO - Investigations & Lab Findings",10,5,"Ovarian Tumors — FIGO"],
-  [10,"Ovarian Tumors — FIGO - Medical & Surgical Management",10,5,"Ovarian Tumors — FIGO"],
-  [10,"Ovarian Tumors — FIGO - Complications & Prognosis",10,5,"Ovarian Tumors — FIGO"],
-  [10,"Gestational Trophoblastic Disease — Mole, Choriocarcinoma & β-hCG Monitoring",10,15,"Gynae-Oncology (Cervix, Uterus, Ovary)"],
-  [10,"Gestational Trophoblastic Disease — Mole, Choriocarcinoma",10,7,"Gestational Trophoblastic Disease — Mole, Choriocarcinoma & β-hCG Monitoring"],
-  [10,"Gestational Trophoblastic Disease — Mole, Choriocarcinoma - Etiology & Risk Factors",10,5,"Gestational Trophoblastic Disease — Mole, Choriocarcinoma"],
-  [10,"Gestational Trophoblastic Disease — Mole, Choriocarcinoma - Pathophysiology",10,5,"Gestational Trophoblastic Disease — Mole, Choriocarcinoma"],
-  [10,"Gestational Trophoblastic Disease — Mole, Choriocarcinoma - Clinical Presentation & Signs",10,5,"Gestational Trophoblastic Disease — Mole, Choriocarcinoma"],
-  [10,"Gestational Trophoblastic Disease — Mole, Choriocarcinoma - Differential Diagnosis",10,5,"Gestational Trophoblastic Disease — Mole, Choriocarcinoma"],
-  [10,"Gestational Trophoblastic Disease — Mole, Choriocarcinoma - Investigations & Lab Findings",10,5,"Gestational Trophoblastic Disease — Mole, Choriocarcinoma"],
-  [10,"Gestational Trophoblastic Disease — Mole, Choriocarcinoma - Medical & Surgical Management",10,5,"Gestational Trophoblastic Disease — Mole, Choriocarcinoma"],
-  [10,"Gestational Trophoblastic Disease — Mole, Choriocarcinoma - Complications & Prognosis",10,5,"Gestational Trophoblastic Disease — Mole, Choriocarcinoma"],
-  [10,"Gestational Trophoblastic Disease — β-hCG Monitoring",10,8,"Gestational Trophoblastic Disease — Mole, Choriocarcinoma & β-hCG Monitoring"],
-  [10,"Gestational Trophoblastic Disease — β-hCG Monitoring - Etiology & Risk Factors",10,5,"Gestational Trophoblastic Disease — β-hCG Monitoring"],
-  [10,"Gestational Trophoblastic Disease — β-hCG Monitoring - Pathophysiology",10,5,"Gestational Trophoblastic Disease — β-hCG Monitoring"],
-  [10,"Gestational Trophoblastic Disease — β-hCG Monitoring - Clinical Presentation & Signs",10,5,"Gestational Trophoblastic Disease — β-hCG Monitoring"],
-  [10,"Gestational Trophoblastic Disease — β-hCG Monitoring - Differential Diagnosis",10,5,"Gestational Trophoblastic Disease — β-hCG Monitoring"],
-  [10,"Gestational Trophoblastic Disease — β-hCG Monitoring - Investigations & Lab Findings",10,5,"Gestational Trophoblastic Disease — β-hCG Monitoring"],
-  [10,"Gestational Trophoblastic Disease — β-hCG Monitoring - Medical & Surgical Management",10,5,"Gestational Trophoblastic Disease — β-hCG Monitoring"],
-  [10,"Gestational Trophoblastic Disease — β-hCG Monitoring - Complications & Prognosis",10,5,"Gestational Trophoblastic Disease — β-hCG Monitoring"]
+  [10, "Obstetrics", 10, 60],
+  [10, "Normal Pregnancy & Antenatal Care", 10, 45, "Obstetrics"],
+  [
+    10,
+    "ANC Schedule — Booking Visit, Investigations & High-risk Criteria",
+    10,
+    15,
+    "Normal Pregnancy & Antenatal Care"
+  ],
+  [
+    10,
+    "ANC Schedule — Booking Visit, Investigations",
+    10,
+    7,
+    "ANC Schedule — Booking Visit, Investigations & High-risk Criteria"
+  ],
+  [
+    10,
+    "ANC Schedule — Booking Visit, Investigations - Etiology & Risk Factors",
+    10,
+    5,
+    "ANC Schedule — Booking Visit, Investigations"
+  ],
+  [
+    10,
+    "ANC Schedule — Booking Visit, Investigations - Pathophysiology",
+    10,
+    5,
+    "ANC Schedule — Booking Visit, Investigations"
+  ],
+  [
+    10,
+    "ANC Schedule — Booking Visit, Investigations - Clinical Presentation & Signs",
+    10,
+    5,
+    "ANC Schedule — Booking Visit, Investigations"
+  ],
+  [
+    10,
+    "ANC Schedule — Booking Visit, Investigations - Differential Diagnosis",
+    10,
+    5,
+    "ANC Schedule — Booking Visit, Investigations"
+  ],
+  [
+    10,
+    "ANC Schedule — Booking Visit, Investigations - Investigations & Lab Findings",
+    10,
+    5,
+    "ANC Schedule — Booking Visit, Investigations"
+  ],
+  [
+    10,
+    "ANC Schedule — Booking Visit, Investigations - Medical & Surgical Management",
+    10,
+    5,
+    "ANC Schedule — Booking Visit, Investigations"
+  ],
+  [
+    10,
+    "ANC Schedule — Booking Visit, Investigations - Complications & Prognosis",
+    10,
+    5,
+    "ANC Schedule — Booking Visit, Investigations"
+  ],
+  [
+    10,
+    "ANC Schedule — High-risk Criteria",
+    10,
+    8,
+    "ANC Schedule — Booking Visit, Investigations & High-risk Criteria"
+  ],
+  [
+    10,
+    "ANC Schedule — High-risk Criteria - Etiology & Risk Factors",
+    10,
+    5,
+    "ANC Schedule — High-risk Criteria"
+  ],
+  [
+    10,
+    "ANC Schedule — High-risk Criteria - Pathophysiology",
+    10,
+    5,
+    "ANC Schedule — High-risk Criteria"
+  ],
+  [
+    10,
+    "ANC Schedule — High-risk Criteria - Clinical Presentation & Signs",
+    10,
+    5,
+    "ANC Schedule — High-risk Criteria"
+  ],
+  [
+    10,
+    "ANC Schedule — High-risk Criteria - Differential Diagnosis",
+    10,
+    5,
+    "ANC Schedule — High-risk Criteria"
+  ],
+  [
+    10,
+    "ANC Schedule — High-risk Criteria - Investigations & Lab Findings",
+    10,
+    5,
+    "ANC Schedule — High-risk Criteria"
+  ],
+  [
+    10,
+    "ANC Schedule — High-risk Criteria - Medical & Surgical Management",
+    10,
+    5,
+    "ANC Schedule — High-risk Criteria"
+  ],
+  [
+    10,
+    "ANC Schedule — High-risk Criteria - Complications & Prognosis",
+    10,
+    5,
+    "ANC Schedule — High-risk Criteria"
+  ],
+  [
+    10,
+    "Pregnancy Diagnosis & Duration — LMP, Naegele's Rule, USG Dating",
+    10,
+    12,
+    "Normal Pregnancy & Antenatal Care"
+  ],
+  [
+    10,
+    "Pregnancy Diagnosis & Duration — LMP",
+    10,
+    6,
+    "Pregnancy Diagnosis & Duration — LMP, Naegele's Rule, USG Dating"
+  ],
+  [
+    10,
+    "Pregnancy Diagnosis & Duration — LMP - Etiology & Risk Factors",
+    10,
+    5,
+    "Pregnancy Diagnosis & Duration — LMP"
+  ],
+  [
+    10,
+    "Pregnancy Diagnosis & Duration — LMP - Pathophysiology",
+    10,
+    5,
+    "Pregnancy Diagnosis & Duration — LMP"
+  ],
+  [
+    10,
+    "Pregnancy Diagnosis & Duration — LMP - Clinical Presentation & Signs",
+    10,
+    5,
+    "Pregnancy Diagnosis & Duration — LMP"
+  ],
+  [
+    10,
+    "Pregnancy Diagnosis & Duration — LMP - Differential Diagnosis",
+    10,
+    5,
+    "Pregnancy Diagnosis & Duration — LMP"
+  ],
+  [
+    10,
+    "Pregnancy Diagnosis & Duration — LMP - Investigations & Lab Findings",
+    10,
+    5,
+    "Pregnancy Diagnosis & Duration — LMP"
+  ],
+  [
+    10,
+    "Pregnancy Diagnosis & Duration — LMP - Medical & Surgical Management",
+    10,
+    5,
+    "Pregnancy Diagnosis & Duration — LMP"
+  ],
+  [
+    10,
+    "Pregnancy Diagnosis & Duration — LMP - Complications & Prognosis",
+    10,
+    5,
+    "Pregnancy Diagnosis & Duration — LMP"
+  ],
+  [
+    10,
+    "Pregnancy Diagnosis & Duration — Naegele's Rule, USG Dating",
+    10,
+    6,
+    "Pregnancy Diagnosis & Duration — LMP, Naegele's Rule, USG Dating"
+  ],
+  [
+    10,
+    "Pregnancy Diagnosis & Duration — Naegele's Rule, USG Dating - Etiology & Risk Factors",
+    10,
+    5,
+    "Pregnancy Diagnosis & Duration — Naegele's Rule, USG Dating"
+  ],
+  [
+    10,
+    "Pregnancy Diagnosis & Duration — Naegele's Rule, USG Dating - Pathophysiology",
+    10,
+    5,
+    "Pregnancy Diagnosis & Duration — Naegele's Rule, USG Dating"
+  ],
+  [
+    10,
+    "Pregnancy Diagnosis & Duration — Naegele's Rule, USG Dating - Clinical Presentation & Signs",
+    10,
+    5,
+    "Pregnancy Diagnosis & Duration — Naegele's Rule, USG Dating"
+  ],
+  [
+    10,
+    "Pregnancy Diagnosis & Duration — Naegele's Rule, USG Dating - Differential Diagnosis",
+    10,
+    5,
+    "Pregnancy Diagnosis & Duration — Naegele's Rule, USG Dating"
+  ],
+  [
+    10,
+    "Pregnancy Diagnosis & Duration — Naegele's Rule, USG Dating - Investigations & Lab Findings",
+    10,
+    5,
+    "Pregnancy Diagnosis & Duration — Naegele's Rule, USG Dating"
+  ],
+  [
+    10,
+    "Pregnancy Diagnosis & Duration — Naegele's Rule, USG Dating - Medical & Surgical Management",
+    10,
+    5,
+    "Pregnancy Diagnosis & Duration — Naegele's Rule, USG Dating"
+  ],
+  [
+    10,
+    "Pregnancy Diagnosis & Duration — Naegele's Rule, USG Dating - Complications & Prognosis",
+    10,
+    5,
+    "Pregnancy Diagnosis & Duration — Naegele's Rule, USG Dating"
+  ],
+  [
+    10,
+    "Physiological Changes in Pregnancy — CVS, Respiratory & Renal",
+    10,
+    15,
+    "Normal Pregnancy & Antenatal Care"
+  ],
+  [
+    10,
+    "Physiological Changes in Pregnancy — CVS, Respiratory",
+    10,
+    7,
+    "Physiological Changes in Pregnancy — CVS, Respiratory & Renal"
+  ],
+  [
+    10,
+    "Physiological Changes in Pregnancy — CVS, Respiratory - Etiology & Risk Factors",
+    10,
+    5,
+    "Physiological Changes in Pregnancy — CVS, Respiratory"
+  ],
+  [
+    10,
+    "Physiological Changes in Pregnancy — CVS, Respiratory - Pathophysiology",
+    10,
+    5,
+    "Physiological Changes in Pregnancy — CVS, Respiratory"
+  ],
+  [
+    10,
+    "Physiological Changes in Pregnancy — CVS, Respiratory - Clinical Presentation & Signs",
+    10,
+    5,
+    "Physiological Changes in Pregnancy — CVS, Respiratory"
+  ],
+  [
+    10,
+    "Physiological Changes in Pregnancy — CVS, Respiratory - Differential Diagnosis",
+    10,
+    5,
+    "Physiological Changes in Pregnancy — CVS, Respiratory"
+  ],
+  [
+    10,
+    "Physiological Changes in Pregnancy — CVS, Respiratory - Investigations & Lab Findings",
+    10,
+    5,
+    "Physiological Changes in Pregnancy — CVS, Respiratory"
+  ],
+  [
+    10,
+    "Physiological Changes in Pregnancy — CVS, Respiratory - Medical & Surgical Management",
+    10,
+    5,
+    "Physiological Changes in Pregnancy — CVS, Respiratory"
+  ],
+  [
+    10,
+    "Physiological Changes in Pregnancy — CVS, Respiratory - Complications & Prognosis",
+    10,
+    5,
+    "Physiological Changes in Pregnancy — CVS, Respiratory"
+  ],
+  [
+    10,
+    "Physiological Changes in Pregnancy — Renal",
+    10,
+    8,
+    "Physiological Changes in Pregnancy — CVS, Respiratory & Renal"
+  ],
+  [
+    10,
+    "Physiological Changes in Pregnancy — Renal - Etiology & Risk Factors",
+    10,
+    5,
+    "Physiological Changes in Pregnancy — Renal"
+  ],
+  [
+    10,
+    "Physiological Changes in Pregnancy — Renal - Pathophysiology",
+    10,
+    5,
+    "Physiological Changes in Pregnancy — Renal"
+  ],
+  [
+    10,
+    "Physiological Changes in Pregnancy — Renal - Clinical Presentation & Signs",
+    10,
+    5,
+    "Physiological Changes in Pregnancy — Renal"
+  ],
+  [
+    10,
+    "Physiological Changes in Pregnancy — Renal - Differential Diagnosis",
+    10,
+    5,
+    "Physiological Changes in Pregnancy — Renal"
+  ],
+  [
+    10,
+    "Physiological Changes in Pregnancy — Renal - Investigations & Lab Findings",
+    10,
+    5,
+    "Physiological Changes in Pregnancy — Renal"
+  ],
+  [
+    10,
+    "Physiological Changes in Pregnancy — Renal - Medical & Surgical Management",
+    10,
+    5,
+    "Physiological Changes in Pregnancy — Renal"
+  ],
+  [
+    10,
+    "Physiological Changes in Pregnancy — Renal - Complications & Prognosis",
+    10,
+    5,
+    "Physiological Changes in Pregnancy — Renal"
+  ],
+  [10, "Normal Labor & Partogram", 10, 50, "Obstetrics"],
+  [
+    10,
+    "Stages of Labor — Cervicograph, Station & Bishop Score",
+    10,
+    18,
+    "Normal Labor & Partogram"
+  ],
+  [
+    10,
+    "Stages of Labor — Cervicograph, Station",
+    10,
+    9,
+    "Stages of Labor — Cervicograph, Station & Bishop Score"
+  ],
+  [
+    10,
+    "Stages of Labor — Cervicograph, Station - Etiology & Risk Factors",
+    10,
+    5,
+    "Stages of Labor — Cervicograph, Station"
+  ],
+  [
+    10,
+    "Stages of Labor — Cervicograph, Station - Pathophysiology",
+    10,
+    5,
+    "Stages of Labor — Cervicograph, Station"
+  ],
+  [
+    10,
+    "Stages of Labor — Cervicograph, Station - Clinical Presentation & Signs",
+    10,
+    5,
+    "Stages of Labor — Cervicograph, Station"
+  ],
+  [
+    10,
+    "Stages of Labor — Cervicograph, Station - Differential Diagnosis",
+    10,
+    5,
+    "Stages of Labor — Cervicograph, Station"
+  ],
+  [
+    10,
+    "Stages of Labor — Cervicograph, Station - Investigations & Lab Findings",
+    10,
+    5,
+    "Stages of Labor — Cervicograph, Station"
+  ],
+  [
+    10,
+    "Stages of Labor — Cervicograph, Station - Medical & Surgical Management",
+    10,
+    5,
+    "Stages of Labor — Cervicograph, Station"
+  ],
+  [
+    10,
+    "Stages of Labor — Cervicograph, Station - Complications & Prognosis",
+    10,
+    5,
+    "Stages of Labor — Cervicograph, Station"
+  ],
+  [
+    10,
+    "Stages of Labor — Bishop Score",
+    10,
+    9,
+    "Stages of Labor — Cervicograph, Station & Bishop Score"
+  ],
+  [
+    10,
+    "Stages of Labor — Bishop Score - Etiology & Risk Factors",
+    10,
+    5,
+    "Stages of Labor — Bishop Score"
+  ],
+  [10, "Stages of Labor — Bishop Score - Pathophysiology", 10, 5, "Stages of Labor — Bishop Score"],
+  [
+    10,
+    "Stages of Labor — Bishop Score - Clinical Presentation & Signs",
+    10,
+    5,
+    "Stages of Labor — Bishop Score"
+  ],
+  [
+    10,
+    "Stages of Labor — Bishop Score - Differential Diagnosis",
+    10,
+    5,
+    "Stages of Labor — Bishop Score"
+  ],
+  [
+    10,
+    "Stages of Labor — Bishop Score - Investigations & Lab Findings",
+    10,
+    5,
+    "Stages of Labor — Bishop Score"
+  ],
+  [
+    10,
+    "Stages of Labor — Bishop Score - Medical & Surgical Management",
+    10,
+    5,
+    "Stages of Labor — Bishop Score"
+  ],
+  [
+    10,
+    "Stages of Labor — Bishop Score - Complications & Prognosis",
+    10,
+    5,
+    "Stages of Labor — Bishop Score"
+  ],
+  [
+    10,
+    "Partogram — Alert & Action Lines, Indications for Intervention",
+    10,
+    15,
+    "Normal Labor & Partogram"
+  ],
+  [
+    10,
+    "Partogram — Alert",
+    10,
+    7,
+    "Partogram — Alert & Action Lines, Indications for Intervention"
+  ],
+  [10, "Partogram — Alert - Etiology & Risk Factors", 10, 5, "Partogram — Alert"],
+  [10, "Partogram — Alert - Pathophysiology", 10, 5, "Partogram — Alert"],
+  [10, "Partogram — Alert - Clinical Presentation & Signs", 10, 5, "Partogram — Alert"],
+  [10, "Partogram — Alert - Differential Diagnosis", 10, 5, "Partogram — Alert"],
+  [10, "Partogram — Alert - Investigations & Lab Findings", 10, 5, "Partogram — Alert"],
+  [10, "Partogram — Alert - Medical & Surgical Management", 10, 5, "Partogram — Alert"],
+  [10, "Partogram — Alert - Complications & Prognosis", 10, 5, "Partogram — Alert"],
+  [
+    10,
+    "Partogram — Action Lines, Indications for Intervention",
+    10,
+    8,
+    "Partogram — Alert & Action Lines, Indications for Intervention"
+  ],
+  [
+    10,
+    "Partogram — Action Lines, Indications for Intervention - Etiology & Risk Factors",
+    10,
+    5,
+    "Partogram — Action Lines, Indications for Intervention"
+  ],
+  [
+    10,
+    "Partogram — Action Lines, Indications for Intervention - Pathophysiology",
+    10,
+    5,
+    "Partogram — Action Lines, Indications for Intervention"
+  ],
+  [
+    10,
+    "Partogram — Action Lines, Indications for Intervention - Clinical Presentation & Signs",
+    10,
+    5,
+    "Partogram — Action Lines, Indications for Intervention"
+  ],
+  [
+    10,
+    "Partogram — Action Lines, Indications for Intervention - Differential Diagnosis",
+    10,
+    5,
+    "Partogram — Action Lines, Indications for Intervention"
+  ],
+  [
+    10,
+    "Partogram — Action Lines, Indications for Intervention - Investigations & Lab Findings",
+    10,
+    5,
+    "Partogram — Action Lines, Indications for Intervention"
+  ],
+  [
+    10,
+    "Partogram — Action Lines, Indications for Intervention - Medical & Surgical Management",
+    10,
+    5,
+    "Partogram — Action Lines, Indications for Intervention"
+  ],
+  [
+    10,
+    "Partogram — Action Lines, Indications for Intervention - Complications & Prognosis",
+    10,
+    5,
+    "Partogram — Action Lines, Indications for Intervention"
+  ],
+  [
+    10,
+    "Mechanism of Labor (LOA) — Steps & Perineal Tears Classification",
+    10,
+    15,
+    "Normal Labor & Partogram"
+  ],
+  [
+    10,
+    "Mechanism of Labor (LOA) — Steps",
+    10,
+    7,
+    "Mechanism of Labor (LOA) — Steps & Perineal Tears Classification"
+  ],
+  [
+    10,
+    "Mechanism of Labor (LOA) — Steps - Etiology & Risk Factors",
+    10,
+    5,
+    "Mechanism of Labor (LOA) — Steps"
+  ],
+  [
+    10,
+    "Mechanism of Labor (LOA) — Steps - Pathophysiology",
+    10,
+    5,
+    "Mechanism of Labor (LOA) — Steps"
+  ],
+  [
+    10,
+    "Mechanism of Labor (LOA) — Steps - Clinical Presentation & Signs",
+    10,
+    5,
+    "Mechanism of Labor (LOA) — Steps"
+  ],
+  [
+    10,
+    "Mechanism of Labor (LOA) — Steps - Differential Diagnosis",
+    10,
+    5,
+    "Mechanism of Labor (LOA) — Steps"
+  ],
+  [
+    10,
+    "Mechanism of Labor (LOA) — Steps - Investigations & Lab Findings",
+    10,
+    5,
+    "Mechanism of Labor (LOA) — Steps"
+  ],
+  [
+    10,
+    "Mechanism of Labor (LOA) — Steps - Medical & Surgical Management",
+    10,
+    5,
+    "Mechanism of Labor (LOA) — Steps"
+  ],
+  [
+    10,
+    "Mechanism of Labor (LOA) — Steps - Complications & Prognosis",
+    10,
+    5,
+    "Mechanism of Labor (LOA) — Steps"
+  ],
+  [
+    10,
+    "Mechanism of Labor (LOA) — Perineal Tears Classification",
+    10,
+    8,
+    "Mechanism of Labor (LOA) — Steps & Perineal Tears Classification"
+  ],
+  [
+    10,
+    "Mechanism of Labor (LOA) — Perineal Tears Classification - Etiology & Risk Factors",
+    10,
+    5,
+    "Mechanism of Labor (LOA) — Perineal Tears Classification"
+  ],
+  [
+    10,
+    "Mechanism of Labor (LOA) — Perineal Tears Classification - Pathophysiology",
+    10,
+    5,
+    "Mechanism of Labor (LOA) — Perineal Tears Classification"
+  ],
+  [
+    10,
+    "Mechanism of Labor (LOA) — Perineal Tears Classification - Clinical Presentation & Signs",
+    10,
+    5,
+    "Mechanism of Labor (LOA) — Perineal Tears Classification"
+  ],
+  [
+    10,
+    "Mechanism of Labor (LOA) — Perineal Tears Classification - Differential Diagnosis",
+    10,
+    5,
+    "Mechanism of Labor (LOA) — Perineal Tears Classification"
+  ],
+  [
+    10,
+    "Mechanism of Labor (LOA) — Perineal Tears Classification - Investigations & Lab Findings",
+    10,
+    5,
+    "Mechanism of Labor (LOA) — Perineal Tears Classification"
+  ],
+  [
+    10,
+    "Mechanism of Labor (LOA) — Perineal Tears Classification - Medical & Surgical Management",
+    10,
+    5,
+    "Mechanism of Labor (LOA) — Perineal Tears Classification"
+  ],
+  [
+    10,
+    "Mechanism of Labor (LOA) — Perineal Tears Classification - Complications & Prognosis",
+    10,
+    5,
+    "Mechanism of Labor (LOA) — Perineal Tears Classification"
+  ],
+  [10, "Pre-eclampsia & Eclampsia", 10, 45, "Obstetrics"],
+  [
+    10,
+    "Pre-eclampsia — Diagnosis Criteria, Severe Features & HELLP",
+    10,
+    18,
+    "Pre-eclampsia & Eclampsia"
+  ],
+  [
+    10,
+    "Pre-eclampsia — Diagnosis Criteria, Severe Features",
+    10,
+    9,
+    "Pre-eclampsia — Diagnosis Criteria, Severe Features & HELLP"
+  ],
+  [
+    10,
+    "Pre-eclampsia — Diagnosis Criteria, Severe Features - Etiology & Risk Factors",
+    10,
+    5,
+    "Pre-eclampsia — Diagnosis Criteria, Severe Features"
+  ],
+  [
+    10,
+    "Pre-eclampsia — Diagnosis Criteria, Severe Features - Pathophysiology",
+    10,
+    5,
+    "Pre-eclampsia — Diagnosis Criteria, Severe Features"
+  ],
+  [
+    10,
+    "Pre-eclampsia — Diagnosis Criteria, Severe Features - Clinical Presentation & Signs",
+    10,
+    5,
+    "Pre-eclampsia — Diagnosis Criteria, Severe Features"
+  ],
+  [
+    10,
+    "Pre-eclampsia — Diagnosis Criteria, Severe Features - Differential Diagnosis",
+    10,
+    5,
+    "Pre-eclampsia — Diagnosis Criteria, Severe Features"
+  ],
+  [
+    10,
+    "Pre-eclampsia — Diagnosis Criteria, Severe Features - Investigations & Lab Findings",
+    10,
+    5,
+    "Pre-eclampsia — Diagnosis Criteria, Severe Features"
+  ],
+  [
+    10,
+    "Pre-eclampsia — Diagnosis Criteria, Severe Features - Medical & Surgical Management",
+    10,
+    5,
+    "Pre-eclampsia — Diagnosis Criteria, Severe Features"
+  ],
+  [
+    10,
+    "Pre-eclampsia — Diagnosis Criteria, Severe Features - Complications & Prognosis",
+    10,
+    5,
+    "Pre-eclampsia — Diagnosis Criteria, Severe Features"
+  ],
+  [
+    10,
+    "Pre-eclampsia — HELLP",
+    10,
+    9,
+    "Pre-eclampsia — Diagnosis Criteria, Severe Features & HELLP"
+  ],
+  [10, "Pre-eclampsia — HELLP - Etiology & Risk Factors", 10, 5, "Pre-eclampsia — HELLP"],
+  [10, "Pre-eclampsia — HELLP - Pathophysiology", 10, 5, "Pre-eclampsia — HELLP"],
+  [10, "Pre-eclampsia — HELLP - Clinical Presentation & Signs", 10, 5, "Pre-eclampsia — HELLP"],
+  [10, "Pre-eclampsia — HELLP - Differential Diagnosis", 10, 5, "Pre-eclampsia — HELLP"],
+  [10, "Pre-eclampsia — HELLP - Investigations & Lab Findings", 10, 5, "Pre-eclampsia — HELLP"],
+  [10, "Pre-eclampsia — HELLP - Medical & Surgical Management", 10, 5, "Pre-eclampsia — HELLP"],
+  [10, "Pre-eclampsia — HELLP - Complications & Prognosis", 10, 5, "Pre-eclampsia — HELLP"],
+  [
+    10,
+    "Eclampsia Management — MgSO4 (Pritchard/Zuspan) & Antihypertensives",
+    10,
+    18,
+    "Pre-eclampsia & Eclampsia"
+  ],
+  [
+    10,
+    "Eclampsia Management — MgSO4 (Pritchard/Zuspan)",
+    10,
+    9,
+    "Eclampsia Management — MgSO4 (Pritchard/Zuspan) & Antihypertensives"
+  ],
+  [
+    10,
+    "Eclampsia Management — MgSO4 (Pritchard/Zuspan) - Etiology & Risk Factors",
+    10,
+    5,
+    "Eclampsia Management — MgSO4 (Pritchard/Zuspan)"
+  ],
+  [
+    10,
+    "Eclampsia Management — MgSO4 (Pritchard/Zuspan) - Pathophysiology",
+    10,
+    5,
+    "Eclampsia Management — MgSO4 (Pritchard/Zuspan)"
+  ],
+  [
+    10,
+    "Eclampsia Management — MgSO4 (Pritchard/Zuspan) - Clinical Presentation & Signs",
+    10,
+    5,
+    "Eclampsia Management — MgSO4 (Pritchard/Zuspan)"
+  ],
+  [
+    10,
+    "Eclampsia Management — MgSO4 (Pritchard/Zuspan) - Differential Diagnosis",
+    10,
+    5,
+    "Eclampsia Management — MgSO4 (Pritchard/Zuspan)"
+  ],
+  [
+    10,
+    "Eclampsia Management — MgSO4 (Pritchard/Zuspan) - Investigations & Lab Findings",
+    10,
+    5,
+    "Eclampsia Management — MgSO4 (Pritchard/Zuspan)"
+  ],
+  [
+    10,
+    "Eclampsia Management — MgSO4 (Pritchard/Zuspan) - Medical & Surgical Management",
+    10,
+    5,
+    "Eclampsia Management — MgSO4 (Pritchard/Zuspan)"
+  ],
+  [
+    10,
+    "Eclampsia Management — MgSO4 (Pritchard/Zuspan) - Complications & Prognosis",
+    10,
+    5,
+    "Eclampsia Management — MgSO4 (Pritchard/Zuspan)"
+  ],
+  [
+    10,
+    "Eclampsia Management — Antihypertensives",
+    10,
+    9,
+    "Eclampsia Management — MgSO4 (Pritchard/Zuspan) & Antihypertensives"
+  ],
+  [
+    10,
+    "Eclampsia Management — Antihypertensives - Etiology & Risk Factors",
+    10,
+    5,
+    "Eclampsia Management — Antihypertensives"
+  ],
+  [
+    10,
+    "Eclampsia Management — Antihypertensives - Pathophysiology",
+    10,
+    5,
+    "Eclampsia Management — Antihypertensives"
+  ],
+  [
+    10,
+    "Eclampsia Management — Antihypertensives - Clinical Presentation & Signs",
+    10,
+    5,
+    "Eclampsia Management — Antihypertensives"
+  ],
+  [
+    10,
+    "Eclampsia Management — Antihypertensives - Differential Diagnosis",
+    10,
+    5,
+    "Eclampsia Management — Antihypertensives"
+  ],
+  [
+    10,
+    "Eclampsia Management — Antihypertensives - Investigations & Lab Findings",
+    10,
+    5,
+    "Eclampsia Management — Antihypertensives"
+  ],
+  [
+    10,
+    "Eclampsia Management — Antihypertensives - Medical & Surgical Management",
+    10,
+    5,
+    "Eclampsia Management — Antihypertensives"
+  ],
+  [
+    10,
+    "Eclampsia Management — Antihypertensives - Complications & Prognosis",
+    10,
+    5,
+    "Eclampsia Management — Antihypertensives"
+  ],
+  [10, "Antepartum & Postpartum Hemorrhage", 10, 55, "Obstetrics"],
+  [
+    10,
+    "APH — Placenta Previa: Types, USG & Management",
+    10,
+    18,
+    "Antepartum & Postpartum Hemorrhage"
+  ],
+  [
+    10,
+    "APH — Placenta Previa: Types, USG",
+    10,
+    9,
+    "APH — Placenta Previa: Types, USG & Management"
+  ],
+  [
+    10,
+    "APH — Placenta Previa: Types, USG - Etiology & Risk Factors",
+    10,
+    5,
+    "APH — Placenta Previa: Types, USG"
+  ],
+  [
+    10,
+    "APH — Placenta Previa: Types, USG - Pathophysiology",
+    10,
+    5,
+    "APH — Placenta Previa: Types, USG"
+  ],
+  [
+    10,
+    "APH — Placenta Previa: Types, USG - Clinical Presentation & Signs",
+    10,
+    5,
+    "APH — Placenta Previa: Types, USG"
+  ],
+  [
+    10,
+    "APH — Placenta Previa: Types, USG - Differential Diagnosis",
+    10,
+    5,
+    "APH — Placenta Previa: Types, USG"
+  ],
+  [
+    10,
+    "APH — Placenta Previa: Types, USG - Investigations & Lab Findings",
+    10,
+    5,
+    "APH — Placenta Previa: Types, USG"
+  ],
+  [
+    10,
+    "APH — Placenta Previa: Types, USG - Medical & Surgical Management",
+    10,
+    5,
+    "APH — Placenta Previa: Types, USG"
+  ],
+  [
+    10,
+    "APH — Placenta Previa: Types, USG - Complications & Prognosis",
+    10,
+    5,
+    "APH — Placenta Previa: Types, USG"
+  ],
+  [10, "APH — Management", 10, 9, "APH — Placenta Previa: Types, USG & Management"],
+  [10, "APH — Management - Etiology & Risk Factors", 10, 5, "APH — Management"],
+  [10, "APH — Management - Pathophysiology", 10, 5, "APH — Management"],
+  [10, "APH — Management - Clinical Presentation & Signs", 10, 5, "APH — Management"],
+  [10, "APH — Management - Differential Diagnosis", 10, 5, "APH — Management"],
+  [10, "APH — Management - Investigations & Lab Findings", 10, 5, "APH — Management"],
+  [10, "APH — Management - Medical & Surgical Management", 10, 5, "APH — Management"],
+  [10, "APH — Management - Complications & Prognosis", 10, 5, "APH — Management"],
+  [
+    10,
+    "Abruptio Placentae vs Placenta Previa — Key Differences & Couvelaire",
+    10,
+    15,
+    "Antepartum & Postpartum Hemorrhage"
+  ],
+  [
+    10,
+    "Abruptio Placentae vs Placenta Previa — Key Differences",
+    10,
+    7,
+    "Abruptio Placentae vs Placenta Previa — Key Differences & Couvelaire"
+  ],
+  [
+    10,
+    "Abruptio Placentae vs Placenta Previa — Key Differences - Etiology & Risk Factors",
+    10,
+    5,
+    "Abruptio Placentae vs Placenta Previa — Key Differences"
+  ],
+  [
+    10,
+    "Abruptio Placentae vs Placenta Previa — Key Differences - Pathophysiology",
+    10,
+    5,
+    "Abruptio Placentae vs Placenta Previa — Key Differences"
+  ],
+  [
+    10,
+    "Abruptio Placentae vs Placenta Previa — Key Differences - Clinical Presentation & Signs",
+    10,
+    5,
+    "Abruptio Placentae vs Placenta Previa — Key Differences"
+  ],
+  [
+    10,
+    "Abruptio Placentae vs Placenta Previa — Key Differences - Differential Diagnosis",
+    10,
+    5,
+    "Abruptio Placentae vs Placenta Previa — Key Differences"
+  ],
+  [
+    10,
+    "Abruptio Placentae vs Placenta Previa — Key Differences - Investigations & Lab Findings",
+    10,
+    5,
+    "Abruptio Placentae vs Placenta Previa — Key Differences"
+  ],
+  [
+    10,
+    "Abruptio Placentae vs Placenta Previa — Key Differences - Medical & Surgical Management",
+    10,
+    5,
+    "Abruptio Placentae vs Placenta Previa — Key Differences"
+  ],
+  [
+    10,
+    "Abruptio Placentae vs Placenta Previa — Key Differences - Complications & Prognosis",
+    10,
+    5,
+    "Abruptio Placentae vs Placenta Previa — Key Differences"
+  ],
+  [
+    10,
+    "Abruptio Placentae vs Placenta Previa — Couvelaire",
+    10,
+    8,
+    "Abruptio Placentae vs Placenta Previa — Key Differences & Couvelaire"
+  ],
+  [
+    10,
+    "Abruptio Placentae vs Placenta Previa — Couvelaire - Etiology & Risk Factors",
+    10,
+    5,
+    "Abruptio Placentae vs Placenta Previa — Couvelaire"
+  ],
+  [
+    10,
+    "Abruptio Placentae vs Placenta Previa — Couvelaire - Pathophysiology",
+    10,
+    5,
+    "Abruptio Placentae vs Placenta Previa — Couvelaire"
+  ],
+  [
+    10,
+    "Abruptio Placentae vs Placenta Previa — Couvelaire - Clinical Presentation & Signs",
+    10,
+    5,
+    "Abruptio Placentae vs Placenta Previa — Couvelaire"
+  ],
+  [
+    10,
+    "Abruptio Placentae vs Placenta Previa — Couvelaire - Differential Diagnosis",
+    10,
+    5,
+    "Abruptio Placentae vs Placenta Previa — Couvelaire"
+  ],
+  [
+    10,
+    "Abruptio Placentae vs Placenta Previa — Couvelaire - Investigations & Lab Findings",
+    10,
+    5,
+    "Abruptio Placentae vs Placenta Previa — Couvelaire"
+  ],
+  [
+    10,
+    "Abruptio Placentae vs Placenta Previa — Couvelaire - Medical & Surgical Management",
+    10,
+    5,
+    "Abruptio Placentae vs Placenta Previa — Couvelaire"
+  ],
+  [
+    10,
+    "Abruptio Placentae vs Placenta Previa — Couvelaire - Complications & Prognosis",
+    10,
+    5,
+    "Abruptio Placentae vs Placenta Previa — Couvelaire"
+  ],
+  [
+    10,
+    "PPH — 4 T's (Tone, Trauma, Tissue, Thrombin), Uterotonics & Surgery",
+    10,
+    18,
+    "Antepartum & Postpartum Hemorrhage"
+  ],
+  [
+    10,
+    "PPH — 4 T's (Tone, Trauma, Tissue, Thrombin), Uterotonics",
+    10,
+    9,
+    "PPH — 4 T's (Tone, Trauma, Tissue, Thrombin), Uterotonics & Surgery"
+  ],
+  [
+    10,
+    "PPH — 4 T's (Tone, Trauma, Tissue, Thrombin), Uterotonics - Etiology & Risk Factors",
+    10,
+    5,
+    "PPH — 4 T's (Tone, Trauma, Tissue, Thrombin), Uterotonics"
+  ],
+  [
+    10,
+    "PPH — 4 T's (Tone, Trauma, Tissue, Thrombin), Uterotonics - Pathophysiology",
+    10,
+    5,
+    "PPH — 4 T's (Tone, Trauma, Tissue, Thrombin), Uterotonics"
+  ],
+  [
+    10,
+    "PPH — 4 T's (Tone, Trauma, Tissue, Thrombin), Uterotonics - Clinical Presentation & Signs",
+    10,
+    5,
+    "PPH — 4 T's (Tone, Trauma, Tissue, Thrombin), Uterotonics"
+  ],
+  [
+    10,
+    "PPH — 4 T's (Tone, Trauma, Tissue, Thrombin), Uterotonics - Differential Diagnosis",
+    10,
+    5,
+    "PPH — 4 T's (Tone, Trauma, Tissue, Thrombin), Uterotonics"
+  ],
+  [
+    10,
+    "PPH — 4 T's (Tone, Trauma, Tissue, Thrombin), Uterotonics - Investigations & Lab Findings",
+    10,
+    5,
+    "PPH — 4 T's (Tone, Trauma, Tissue, Thrombin), Uterotonics"
+  ],
+  [
+    10,
+    "PPH — 4 T's (Tone, Trauma, Tissue, Thrombin), Uterotonics - Medical & Surgical Management",
+    10,
+    5,
+    "PPH — 4 T's (Tone, Trauma, Tissue, Thrombin), Uterotonics"
+  ],
+  [
+    10,
+    "PPH — 4 T's (Tone, Trauma, Tissue, Thrombin), Uterotonics - Complications & Prognosis",
+    10,
+    5,
+    "PPH — 4 T's (Tone, Trauma, Tissue, Thrombin), Uterotonics"
+  ],
+  [
+    10,
+    "PPH — Surgery",
+    10,
+    9,
+    "PPH — 4 T's (Tone, Trauma, Tissue, Thrombin), Uterotonics & Surgery"
+  ],
+  [10, "PPH — Surgery - Etiology & Risk Factors", 10, 5, "PPH — Surgery"],
+  [10, "PPH — Surgery - Pathophysiology", 10, 5, "PPH — Surgery"],
+  [10, "PPH — Surgery - Clinical Presentation & Signs", 10, 5, "PPH — Surgery"],
+  [10, "PPH — Surgery - Differential Diagnosis", 10, 5, "PPH — Surgery"],
+  [10, "PPH — Surgery - Investigations & Lab Findings", 10, 5, "PPH — Surgery"],
+  [10, "PPH — Surgery - Medical & Surgical Management", 10, 5, "PPH — Surgery"],
+  [10, "PPH — Surgery - Complications & Prognosis", 10, 5, "PPH — Surgery"],
+  [10, "Medical Disorders in Pregnancy (Anemia, Diabetes)", 10, 50, "Obstetrics"],
+  [
+    10,
+    "Anemia in Pregnancy — Iron, Folate & Hb Cutoffs; Treatment",
+    10,
+    15,
+    "Medical Disorders in Pregnancy (Anemia, Diabetes)"
+  ],
+  [
+    10,
+    "Anemia in Pregnancy — Iron, Folate",
+    10,
+    7,
+    "Anemia in Pregnancy — Iron, Folate & Hb Cutoffs; Treatment"
+  ],
+  [
+    10,
+    "Anemia in Pregnancy — Iron, Folate - Etiology & Risk Factors",
+    10,
+    5,
+    "Anemia in Pregnancy — Iron, Folate"
+  ],
+  [
+    10,
+    "Anemia in Pregnancy — Iron, Folate - Pathophysiology",
+    10,
+    5,
+    "Anemia in Pregnancy — Iron, Folate"
+  ],
+  [
+    10,
+    "Anemia in Pregnancy — Iron, Folate - Clinical Presentation & Signs",
+    10,
+    5,
+    "Anemia in Pregnancy — Iron, Folate"
+  ],
+  [
+    10,
+    "Anemia in Pregnancy — Iron, Folate - Differential Diagnosis",
+    10,
+    5,
+    "Anemia in Pregnancy — Iron, Folate"
+  ],
+  [
+    10,
+    "Anemia in Pregnancy — Iron, Folate - Investigations & Lab Findings",
+    10,
+    5,
+    "Anemia in Pregnancy — Iron, Folate"
+  ],
+  [
+    10,
+    "Anemia in Pregnancy — Iron, Folate - Medical & Surgical Management",
+    10,
+    5,
+    "Anemia in Pregnancy — Iron, Folate"
+  ],
+  [
+    10,
+    "Anemia in Pregnancy — Iron, Folate - Complications & Prognosis",
+    10,
+    5,
+    "Anemia in Pregnancy — Iron, Folate"
+  ],
+  [
+    10,
+    "Anemia in Pregnancy — Hb Cutoffs; Treatment",
+    10,
+    8,
+    "Anemia in Pregnancy — Iron, Folate & Hb Cutoffs; Treatment"
+  ],
+  [
+    10,
+    "Anemia in Pregnancy — Hb Cutoffs; Treatment - Etiology & Risk Factors",
+    10,
+    5,
+    "Anemia in Pregnancy — Hb Cutoffs; Treatment"
+  ],
+  [
+    10,
+    "Anemia in Pregnancy — Hb Cutoffs; Treatment - Pathophysiology",
+    10,
+    5,
+    "Anemia in Pregnancy — Hb Cutoffs; Treatment"
+  ],
+  [
+    10,
+    "Anemia in Pregnancy — Hb Cutoffs; Treatment - Clinical Presentation & Signs",
+    10,
+    5,
+    "Anemia in Pregnancy — Hb Cutoffs; Treatment"
+  ],
+  [
+    10,
+    "Anemia in Pregnancy — Hb Cutoffs; Treatment - Differential Diagnosis",
+    10,
+    5,
+    "Anemia in Pregnancy — Hb Cutoffs; Treatment"
+  ],
+  [
+    10,
+    "Anemia in Pregnancy — Hb Cutoffs; Treatment - Investigations & Lab Findings",
+    10,
+    5,
+    "Anemia in Pregnancy — Hb Cutoffs; Treatment"
+  ],
+  [
+    10,
+    "Anemia in Pregnancy — Hb Cutoffs; Treatment - Medical & Surgical Management",
+    10,
+    5,
+    "Anemia in Pregnancy — Hb Cutoffs; Treatment"
+  ],
+  [
+    10,
+    "Anemia in Pregnancy — Hb Cutoffs; Treatment - Complications & Prognosis",
+    10,
+    5,
+    "Anemia in Pregnancy — Hb Cutoffs; Treatment"
+  ],
+  [
+    10,
+    "GDM — Screening (DIPSI/GCT), Diagnosis (OGTT) & Insulin Management",
+    10,
+    18,
+    "Medical Disorders in Pregnancy (Anemia, Diabetes)"
+  ],
+  [
+    10,
+    "GDM — Screening (DIPSI/GCT), Diagnosis (OGTT)",
+    10,
+    9,
+    "GDM — Screening (DIPSI/GCT), Diagnosis (OGTT) & Insulin Management"
+  ],
+  [
+    10,
+    "GDM — Screening (DIPSI/GCT), Diagnosis (OGTT) - Etiology & Risk Factors",
+    10,
+    5,
+    "GDM — Screening (DIPSI/GCT), Diagnosis (OGTT)"
+  ],
+  [
+    10,
+    "GDM — Screening (DIPSI/GCT), Diagnosis (OGTT) - Pathophysiology",
+    10,
+    5,
+    "GDM — Screening (DIPSI/GCT), Diagnosis (OGTT)"
+  ],
+  [
+    10,
+    "GDM — Screening (DIPSI/GCT), Diagnosis (OGTT) - Clinical Presentation & Signs",
+    10,
+    5,
+    "GDM — Screening (DIPSI/GCT), Diagnosis (OGTT)"
+  ],
+  [
+    10,
+    "GDM — Screening (DIPSI/GCT), Diagnosis (OGTT) - Differential Diagnosis",
+    10,
+    5,
+    "GDM — Screening (DIPSI/GCT), Diagnosis (OGTT)"
+  ],
+  [
+    10,
+    "GDM — Screening (DIPSI/GCT), Diagnosis (OGTT) - Investigations & Lab Findings",
+    10,
+    5,
+    "GDM — Screening (DIPSI/GCT), Diagnosis (OGTT)"
+  ],
+  [
+    10,
+    "GDM — Screening (DIPSI/GCT), Diagnosis (OGTT) - Medical & Surgical Management",
+    10,
+    5,
+    "GDM — Screening (DIPSI/GCT), Diagnosis (OGTT)"
+  ],
+  [
+    10,
+    "GDM — Screening (DIPSI/GCT), Diagnosis (OGTT) - Complications & Prognosis",
+    10,
+    5,
+    "GDM — Screening (DIPSI/GCT), Diagnosis (OGTT)"
+  ],
+  [
+    10,
+    "GDM — Insulin Management",
+    10,
+    9,
+    "GDM — Screening (DIPSI/GCT), Diagnosis (OGTT) & Insulin Management"
+  ],
+  [10, "GDM — Insulin Management - Etiology & Risk Factors", 10, 5, "GDM — Insulin Management"],
+  [10, "GDM — Insulin Management - Pathophysiology", 10, 5, "GDM — Insulin Management"],
+  [
+    10,
+    "GDM — Insulin Management - Clinical Presentation & Signs",
+    10,
+    5,
+    "GDM — Insulin Management"
+  ],
+  [10, "GDM — Insulin Management - Differential Diagnosis", 10, 5, "GDM — Insulin Management"],
+  [
+    10,
+    "GDM — Insulin Management - Investigations & Lab Findings",
+    10,
+    5,
+    "GDM — Insulin Management"
+  ],
+  [
+    10,
+    "GDM — Insulin Management - Medical & Surgical Management",
+    10,
+    5,
+    "GDM — Insulin Management"
+  ],
+  [10, "GDM — Insulin Management - Complications & Prognosis", 10, 5, "GDM — Insulin Management"],
+  [
+    10,
+    "Cardiac Disease in Pregnancy — Risk Classification & Anticoagulation",
+    10,
+    15,
+    "Medical Disorders in Pregnancy (Anemia, Diabetes)"
+  ],
+  [
+    10,
+    "Cardiac Disease in Pregnancy — Risk Classification",
+    10,
+    7,
+    "Cardiac Disease in Pregnancy — Risk Classification & Anticoagulation"
+  ],
+  [
+    10,
+    "Cardiac Disease in Pregnancy — Risk Classification - Etiology & Risk Factors",
+    10,
+    5,
+    "Cardiac Disease in Pregnancy — Risk Classification"
+  ],
+  [
+    10,
+    "Cardiac Disease in Pregnancy — Risk Classification - Pathophysiology",
+    10,
+    5,
+    "Cardiac Disease in Pregnancy — Risk Classification"
+  ],
+  [
+    10,
+    "Cardiac Disease in Pregnancy — Risk Classification - Clinical Presentation & Signs",
+    10,
+    5,
+    "Cardiac Disease in Pregnancy — Risk Classification"
+  ],
+  [
+    10,
+    "Cardiac Disease in Pregnancy — Risk Classification - Differential Diagnosis",
+    10,
+    5,
+    "Cardiac Disease in Pregnancy — Risk Classification"
+  ],
+  [
+    10,
+    "Cardiac Disease in Pregnancy — Risk Classification - Investigations & Lab Findings",
+    10,
+    5,
+    "Cardiac Disease in Pregnancy — Risk Classification"
+  ],
+  [
+    10,
+    "Cardiac Disease in Pregnancy — Risk Classification - Medical & Surgical Management",
+    10,
+    5,
+    "Cardiac Disease in Pregnancy — Risk Classification"
+  ],
+  [
+    10,
+    "Cardiac Disease in Pregnancy — Risk Classification - Complications & Prognosis",
+    10,
+    5,
+    "Cardiac Disease in Pregnancy — Risk Classification"
+  ],
+  [
+    10,
+    "Cardiac Disease in Pregnancy — Anticoagulation",
+    10,
+    8,
+    "Cardiac Disease in Pregnancy — Risk Classification & Anticoagulation"
+  ],
+  [
+    10,
+    "Cardiac Disease in Pregnancy — Anticoagulation - Etiology & Risk Factors",
+    10,
+    5,
+    "Cardiac Disease in Pregnancy — Anticoagulation"
+  ],
+  [
+    10,
+    "Cardiac Disease in Pregnancy — Anticoagulation - Pathophysiology",
+    10,
+    5,
+    "Cardiac Disease in Pregnancy — Anticoagulation"
+  ],
+  [
+    10,
+    "Cardiac Disease in Pregnancy — Anticoagulation - Clinical Presentation & Signs",
+    10,
+    5,
+    "Cardiac Disease in Pregnancy — Anticoagulation"
+  ],
+  [
+    10,
+    "Cardiac Disease in Pregnancy — Anticoagulation - Differential Diagnosis",
+    10,
+    5,
+    "Cardiac Disease in Pregnancy — Anticoagulation"
+  ],
+  [
+    10,
+    "Cardiac Disease in Pregnancy — Anticoagulation - Investigations & Lab Findings",
+    10,
+    5,
+    "Cardiac Disease in Pregnancy — Anticoagulation"
+  ],
+  [
+    10,
+    "Cardiac Disease in Pregnancy — Anticoagulation - Medical & Surgical Management",
+    10,
+    5,
+    "Cardiac Disease in Pregnancy — Anticoagulation"
+  ],
+  [
+    10,
+    "Cardiac Disease in Pregnancy — Anticoagulation - Complications & Prognosis",
+    10,
+    5,
+    "Cardiac Disease in Pregnancy — Anticoagulation"
+  ],
+  [10, "Multiple Pregnancy & Rh Isoimmunization", 9, 40, "Obstetrics"],
+  [
+    10,
+    "Multiple Pregnancy — Zygosity, TTTS & Delivery Management",
+    9,
+    18,
+    "Multiple Pregnancy & Rh Isoimmunization"
+  ],
+  [
+    10,
+    "Multiple Pregnancy — Zygosity, TTTS",
+    9,
+    9,
+    "Multiple Pregnancy — Zygosity, TTTS & Delivery Management"
+  ],
+  [
+    10,
+    "Multiple Pregnancy — Zygosity, TTTS - Etiology & Risk Factors",
+    9,
+    5,
+    "Multiple Pregnancy — Zygosity, TTTS"
+  ],
+  [
+    10,
+    "Multiple Pregnancy — Zygosity, TTTS - Pathophysiology",
+    9,
+    5,
+    "Multiple Pregnancy — Zygosity, TTTS"
+  ],
+  [
+    10,
+    "Multiple Pregnancy — Zygosity, TTTS - Clinical Presentation & Signs",
+    9,
+    5,
+    "Multiple Pregnancy — Zygosity, TTTS"
+  ],
+  [
+    10,
+    "Multiple Pregnancy — Zygosity, TTTS - Differential Diagnosis",
+    9,
+    5,
+    "Multiple Pregnancy — Zygosity, TTTS"
+  ],
+  [
+    10,
+    "Multiple Pregnancy — Zygosity, TTTS - Investigations & Lab Findings",
+    9,
+    5,
+    "Multiple Pregnancy — Zygosity, TTTS"
+  ],
+  [
+    10,
+    "Multiple Pregnancy — Zygosity, TTTS - Medical & Surgical Management",
+    9,
+    5,
+    "Multiple Pregnancy — Zygosity, TTTS"
+  ],
+  [
+    10,
+    "Multiple Pregnancy — Zygosity, TTTS - Complications & Prognosis",
+    9,
+    5,
+    "Multiple Pregnancy — Zygosity, TTTS"
+  ],
+  [
+    10,
+    "Multiple Pregnancy — Delivery Management",
+    9,
+    9,
+    "Multiple Pregnancy — Zygosity, TTTS & Delivery Management"
+  ],
+  [
+    10,
+    "Multiple Pregnancy — Delivery Management - Etiology & Risk Factors",
+    9,
+    5,
+    "Multiple Pregnancy — Delivery Management"
+  ],
+  [
+    10,
+    "Multiple Pregnancy — Delivery Management - Pathophysiology",
+    9,
+    5,
+    "Multiple Pregnancy — Delivery Management"
+  ],
+  [
+    10,
+    "Multiple Pregnancy — Delivery Management - Clinical Presentation & Signs",
+    9,
+    5,
+    "Multiple Pregnancy — Delivery Management"
+  ],
+  [
+    10,
+    "Multiple Pregnancy — Delivery Management - Differential Diagnosis",
+    9,
+    5,
+    "Multiple Pregnancy — Delivery Management"
+  ],
+  [
+    10,
+    "Multiple Pregnancy — Delivery Management - Investigations & Lab Findings",
+    9,
+    5,
+    "Multiple Pregnancy — Delivery Management"
+  ],
+  [
+    10,
+    "Multiple Pregnancy — Delivery Management - Medical & Surgical Management",
+    9,
+    5,
+    "Multiple Pregnancy — Delivery Management"
+  ],
+  [
+    10,
+    "Multiple Pregnancy — Delivery Management - Complications & Prognosis",
+    9,
+    5,
+    "Multiple Pregnancy — Delivery Management"
+  ],
+  [
+    10,
+    "Rh Isoimmunization — Coombs Test, Anti-D Prophylaxis & Exchange Transfusion",
+    9,
+    18,
+    "Multiple Pregnancy & Rh Isoimmunization"
+  ],
+  [
+    10,
+    "Rh Isoimmunization — Coombs Test, Anti-D Prophylaxis",
+    9,
+    9,
+    "Rh Isoimmunization — Coombs Test, Anti-D Prophylaxis & Exchange Transfusion"
+  ],
+  [
+    10,
+    "Rh Isoimmunization — Coombs Test, Anti-D Prophylaxis - Etiology & Risk Factors",
+    9,
+    5,
+    "Rh Isoimmunization — Coombs Test, Anti-D Prophylaxis"
+  ],
+  [
+    10,
+    "Rh Isoimmunization — Coombs Test, Anti-D Prophylaxis - Pathophysiology",
+    9,
+    5,
+    "Rh Isoimmunization — Coombs Test, Anti-D Prophylaxis"
+  ],
+  [
+    10,
+    "Rh Isoimmunization — Coombs Test, Anti-D Prophylaxis - Clinical Presentation & Signs",
+    9,
+    5,
+    "Rh Isoimmunization — Coombs Test, Anti-D Prophylaxis"
+  ],
+  [
+    10,
+    "Rh Isoimmunization — Coombs Test, Anti-D Prophylaxis - Differential Diagnosis",
+    9,
+    5,
+    "Rh Isoimmunization — Coombs Test, Anti-D Prophylaxis"
+  ],
+  [
+    10,
+    "Rh Isoimmunization — Coombs Test, Anti-D Prophylaxis - Investigations & Lab Findings",
+    9,
+    5,
+    "Rh Isoimmunization — Coombs Test, Anti-D Prophylaxis"
+  ],
+  [
+    10,
+    "Rh Isoimmunization — Coombs Test, Anti-D Prophylaxis - Medical & Surgical Management",
+    9,
+    5,
+    "Rh Isoimmunization — Coombs Test, Anti-D Prophylaxis"
+  ],
+  [
+    10,
+    "Rh Isoimmunization — Coombs Test, Anti-D Prophylaxis - Complications & Prognosis",
+    9,
+    5,
+    "Rh Isoimmunization — Coombs Test, Anti-D Prophylaxis"
+  ],
+  [
+    10,
+    "Rh Isoimmunization — Exchange Transfusion",
+    9,
+    9,
+    "Rh Isoimmunization — Coombs Test, Anti-D Prophylaxis & Exchange Transfusion"
+  ],
+  [
+    10,
+    "Rh Isoimmunization — Exchange Transfusion - Etiology & Risk Factors",
+    9,
+    5,
+    "Rh Isoimmunization — Exchange Transfusion"
+  ],
+  [
+    10,
+    "Rh Isoimmunization — Exchange Transfusion - Pathophysiology",
+    9,
+    5,
+    "Rh Isoimmunization — Exchange Transfusion"
+  ],
+  [
+    10,
+    "Rh Isoimmunization — Exchange Transfusion - Clinical Presentation & Signs",
+    9,
+    5,
+    "Rh Isoimmunization — Exchange Transfusion"
+  ],
+  [
+    10,
+    "Rh Isoimmunization — Exchange Transfusion - Differential Diagnosis",
+    9,
+    5,
+    "Rh Isoimmunization — Exchange Transfusion"
+  ],
+  [
+    10,
+    "Rh Isoimmunization — Exchange Transfusion - Investigations & Lab Findings",
+    9,
+    5,
+    "Rh Isoimmunization — Exchange Transfusion"
+  ],
+  [
+    10,
+    "Rh Isoimmunization — Exchange Transfusion - Medical & Surgical Management",
+    9,
+    5,
+    "Rh Isoimmunization — Exchange Transfusion"
+  ],
+  [
+    10,
+    "Rh Isoimmunization — Exchange Transfusion - Complications & Prognosis",
+    9,
+    5,
+    "Rh Isoimmunization — Exchange Transfusion"
+  ],
+  [10, "Fetal Monitoring", 9, 35, "Obstetrics"],
+  [
+    10,
+    "CTG Interpretation — Baseline, Variability, Accelerations & Decelerations",
+    9,
+    18,
+    "Fetal Monitoring"
+  ],
+  [
+    10,
+    "CTG Interpretation — Baseline, Variability, Accelerations",
+    9,
+    9,
+    "CTG Interpretation — Baseline, Variability, Accelerations & Decelerations"
+  ],
+  [
+    10,
+    "CTG Interpretation — Baseline, Variability, Accelerations - Etiology & Risk Factors",
+    9,
+    5,
+    "CTG Interpretation — Baseline, Variability, Accelerations"
+  ],
+  [
+    10,
+    "CTG Interpretation — Baseline, Variability, Accelerations - Pathophysiology",
+    9,
+    5,
+    "CTG Interpretation — Baseline, Variability, Accelerations"
+  ],
+  [
+    10,
+    "CTG Interpretation — Baseline, Variability, Accelerations - Clinical Presentation & Signs",
+    9,
+    5,
+    "CTG Interpretation — Baseline, Variability, Accelerations"
+  ],
+  [
+    10,
+    "CTG Interpretation — Baseline, Variability, Accelerations - Differential Diagnosis",
+    9,
+    5,
+    "CTG Interpretation — Baseline, Variability, Accelerations"
+  ],
+  [
+    10,
+    "CTG Interpretation — Baseline, Variability, Accelerations - Investigations & Lab Findings",
+    9,
+    5,
+    "CTG Interpretation — Baseline, Variability, Accelerations"
+  ],
+  [
+    10,
+    "CTG Interpretation — Baseline, Variability, Accelerations - Medical & Surgical Management",
+    9,
+    5,
+    "CTG Interpretation — Baseline, Variability, Accelerations"
+  ],
+  [
+    10,
+    "CTG Interpretation — Baseline, Variability, Accelerations - Complications & Prognosis",
+    9,
+    5,
+    "CTG Interpretation — Baseline, Variability, Accelerations"
+  ],
+  [
+    10,
+    "CTG Interpretation — Decelerations",
+    9,
+    9,
+    "CTG Interpretation — Baseline, Variability, Accelerations & Decelerations"
+  ],
+  [
+    10,
+    "CTG Interpretation — Decelerations - Etiology & Risk Factors",
+    9,
+    5,
+    "CTG Interpretation — Decelerations"
+  ],
+  [
+    10,
+    "CTG Interpretation — Decelerations - Pathophysiology",
+    9,
+    5,
+    "CTG Interpretation — Decelerations"
+  ],
+  [
+    10,
+    "CTG Interpretation — Decelerations - Clinical Presentation & Signs",
+    9,
+    5,
+    "CTG Interpretation — Decelerations"
+  ],
+  [
+    10,
+    "CTG Interpretation — Decelerations - Differential Diagnosis",
+    9,
+    5,
+    "CTG Interpretation — Decelerations"
+  ],
+  [
+    10,
+    "CTG Interpretation — Decelerations - Investigations & Lab Findings",
+    9,
+    5,
+    "CTG Interpretation — Decelerations"
+  ],
+  [
+    10,
+    "CTG Interpretation — Decelerations - Medical & Surgical Management",
+    9,
+    5,
+    "CTG Interpretation — Decelerations"
+  ],
+  [
+    10,
+    "CTG Interpretation — Decelerations - Complications & Prognosis",
+    9,
+    5,
+    "CTG Interpretation — Decelerations"
+  ],
+  [10, "BPP, Doppler & Amniocentesis — Indications & Interpretation", 9, 15, "Fetal Monitoring"],
+  [
+    10,
+    "BPP, Doppler & Amniocentesis — Indications",
+    9,
+    7,
+    "BPP, Doppler & Amniocentesis — Indications & Interpretation"
+  ],
+  [
+    10,
+    "BPP, Doppler & Amniocentesis — Indications - Etiology & Risk Factors",
+    9,
+    5,
+    "BPP, Doppler & Amniocentesis — Indications"
+  ],
+  [
+    10,
+    "BPP, Doppler & Amniocentesis — Indications - Pathophysiology",
+    9,
+    5,
+    "BPP, Doppler & Amniocentesis — Indications"
+  ],
+  [
+    10,
+    "BPP, Doppler & Amniocentesis — Indications - Clinical Presentation & Signs",
+    9,
+    5,
+    "BPP, Doppler & Amniocentesis — Indications"
+  ],
+  [
+    10,
+    "BPP, Doppler & Amniocentesis — Indications - Differential Diagnosis",
+    9,
+    5,
+    "BPP, Doppler & Amniocentesis — Indications"
+  ],
+  [
+    10,
+    "BPP, Doppler & Amniocentesis — Indications - Investigations & Lab Findings",
+    9,
+    5,
+    "BPP, Doppler & Amniocentesis — Indications"
+  ],
+  [
+    10,
+    "BPP, Doppler & Amniocentesis — Indications - Medical & Surgical Management",
+    9,
+    5,
+    "BPP, Doppler & Amniocentesis — Indications"
+  ],
+  [
+    10,
+    "BPP, Doppler & Amniocentesis — Indications - Complications & Prognosis",
+    9,
+    5,
+    "BPP, Doppler & Amniocentesis — Indications"
+  ],
+  [
+    10,
+    "BPP, Doppler & Amniocentesis — Interpretation",
+    9,
+    8,
+    "BPP, Doppler & Amniocentesis — Indications & Interpretation"
+  ],
+  [
+    10,
+    "BPP, Doppler & Amniocentesis — Interpretation - Etiology & Risk Factors",
+    9,
+    5,
+    "BPP, Doppler & Amniocentesis — Interpretation"
+  ],
+  [
+    10,
+    "BPP, Doppler & Amniocentesis — Interpretation - Pathophysiology",
+    9,
+    5,
+    "BPP, Doppler & Amniocentesis — Interpretation"
+  ],
+  [
+    10,
+    "BPP, Doppler & Amniocentesis — Interpretation - Clinical Presentation & Signs",
+    9,
+    5,
+    "BPP, Doppler & Amniocentesis — Interpretation"
+  ],
+  [
+    10,
+    "BPP, Doppler & Amniocentesis — Interpretation - Differential Diagnosis",
+    9,
+    5,
+    "BPP, Doppler & Amniocentesis — Interpretation"
+  ],
+  [
+    10,
+    "BPP, Doppler & Amniocentesis — Interpretation - Investigations & Lab Findings",
+    9,
+    5,
+    "BPP, Doppler & Amniocentesis — Interpretation"
+  ],
+  [
+    10,
+    "BPP, Doppler & Amniocentesis — Interpretation - Medical & Surgical Management",
+    9,
+    5,
+    "BPP, Doppler & Amniocentesis — Interpretation"
+  ],
+  [
+    10,
+    "BPP, Doppler & Amniocentesis — Interpretation - Complications & Prognosis",
+    9,
+    5,
+    "BPP, Doppler & Amniocentesis — Interpretation"
+  ],
+  [10, "Gynecology", 10, 60],
+  [10, "Menstrual Disorders (DUB, PCOS)", 10, 50, "Gynecology"],
+  [
+    10,
+    "DUB — PALM-COEIN Classification, Diagnosis & Medical Management",
+    10,
+    18,
+    "Menstrual Disorders (DUB, PCOS)"
+  ],
+  [
+    10,
+    "DUB — PALM-COEIN Classification, Diagnosis",
+    10,
+    9,
+    "DUB — PALM-COEIN Classification, Diagnosis & Medical Management"
+  ],
+  [
+    10,
+    "DUB — PALM-COEIN Classification, Diagnosis - Etiology & Risk Factors",
+    10,
+    5,
+    "DUB — PALM-COEIN Classification, Diagnosis"
+  ],
+  [
+    10,
+    "DUB — PALM-COEIN Classification, Diagnosis - Pathophysiology",
+    10,
+    5,
+    "DUB — PALM-COEIN Classification, Diagnosis"
+  ],
+  [
+    10,
+    "DUB — PALM-COEIN Classification, Diagnosis - Clinical Presentation & Signs",
+    10,
+    5,
+    "DUB — PALM-COEIN Classification, Diagnosis"
+  ],
+  [
+    10,
+    "DUB — PALM-COEIN Classification, Diagnosis - Differential Diagnosis",
+    10,
+    5,
+    "DUB — PALM-COEIN Classification, Diagnosis"
+  ],
+  [
+    10,
+    "DUB — PALM-COEIN Classification, Diagnosis - Investigations & Lab Findings",
+    10,
+    5,
+    "DUB — PALM-COEIN Classification, Diagnosis"
+  ],
+  [
+    10,
+    "DUB — PALM-COEIN Classification, Diagnosis - Medical & Surgical Management",
+    10,
+    5,
+    "DUB — PALM-COEIN Classification, Diagnosis"
+  ],
+  [
+    10,
+    "DUB — PALM-COEIN Classification, Diagnosis - Complications & Prognosis",
+    10,
+    5,
+    "DUB — PALM-COEIN Classification, Diagnosis"
+  ],
+  [
+    10,
+    "DUB — Medical Management",
+    10,
+    9,
+    "DUB — PALM-COEIN Classification, Diagnosis & Medical Management"
+  ],
+  [10, "DUB — Medical Management - Etiology & Risk Factors", 10, 5, "DUB — Medical Management"],
+  [10, "DUB — Medical Management - Pathophysiology", 10, 5, "DUB — Medical Management"],
+  [
+    10,
+    "DUB — Medical Management - Clinical Presentation & Signs",
+    10,
+    5,
+    "DUB — Medical Management"
+  ],
+  [10, "DUB — Medical Management - Differential Diagnosis", 10, 5, "DUB — Medical Management"],
+  [
+    10,
+    "DUB — Medical Management - Investigations & Lab Findings",
+    10,
+    5,
+    "DUB — Medical Management"
+  ],
+  [
+    10,
+    "DUB — Medical Management - Medical & Surgical Management",
+    10,
+    5,
+    "DUB — Medical Management"
+  ],
+  [10, "DUB — Medical Management - Complications & Prognosis", 10, 5, "DUB — Medical Management"],
+  [
+    10,
+    "PCOS — Rotterdam Criteria, Hormonal Profile & Management",
+    10,
+    18,
+    "Menstrual Disorders (DUB, PCOS)"
+  ],
+  [
+    10,
+    "PCOS — Rotterdam Criteria, Hormonal Profile",
+    10,
+    9,
+    "PCOS — Rotterdam Criteria, Hormonal Profile & Management"
+  ],
+  [
+    10,
+    "PCOS — Rotterdam Criteria, Hormonal Profile - Etiology & Risk Factors",
+    10,
+    5,
+    "PCOS — Rotterdam Criteria, Hormonal Profile"
+  ],
+  [
+    10,
+    "PCOS — Rotterdam Criteria, Hormonal Profile - Pathophysiology",
+    10,
+    5,
+    "PCOS — Rotterdam Criteria, Hormonal Profile"
+  ],
+  [
+    10,
+    "PCOS — Rotterdam Criteria, Hormonal Profile - Clinical Presentation & Signs",
+    10,
+    5,
+    "PCOS — Rotterdam Criteria, Hormonal Profile"
+  ],
+  [
+    10,
+    "PCOS — Rotterdam Criteria, Hormonal Profile - Differential Diagnosis",
+    10,
+    5,
+    "PCOS — Rotterdam Criteria, Hormonal Profile"
+  ],
+  [
+    10,
+    "PCOS — Rotterdam Criteria, Hormonal Profile - Investigations & Lab Findings",
+    10,
+    5,
+    "PCOS — Rotterdam Criteria, Hormonal Profile"
+  ],
+  [
+    10,
+    "PCOS — Rotterdam Criteria, Hormonal Profile - Medical & Surgical Management",
+    10,
+    5,
+    "PCOS — Rotterdam Criteria, Hormonal Profile"
+  ],
+  [
+    10,
+    "PCOS — Rotterdam Criteria, Hormonal Profile - Complications & Prognosis",
+    10,
+    5,
+    "PCOS — Rotterdam Criteria, Hormonal Profile"
+  ],
+  [10, "PCOS — Management", 10, 9, "PCOS — Rotterdam Criteria, Hormonal Profile & Management"],
+  [10, "PCOS — Management - Etiology & Risk Factors", 10, 5, "PCOS — Management"],
+  [10, "PCOS — Management - Pathophysiology", 10, 5, "PCOS — Management"],
+  [10, "PCOS — Management - Clinical Presentation & Signs", 10, 5, "PCOS — Management"],
+  [10, "PCOS — Management - Differential Diagnosis", 10, 5, "PCOS — Management"],
+  [10, "PCOS — Management - Investigations & Lab Findings", 10, 5, "PCOS — Management"],
+  [10, "PCOS — Management - Medical & Surgical Management", 10, 5, "PCOS — Management"],
+  [10, "PCOS — Management - Complications & Prognosis", 10, 5, "PCOS — Management"],
+  [
+    10,
+    "Dysmenorrhea, Endometriosis & Adenomyosis — Clinical Features & Treatment",
+    10,
+    15,
+    "Menstrual Disorders (DUB, PCOS)"
+  ],
+  [
+    10,
+    "Dysmenorrhea, Endometriosis & Adenomyosis — Clinical Features",
+    10,
+    7,
+    "Dysmenorrhea, Endometriosis & Adenomyosis — Clinical Features & Treatment"
+  ],
+  [
+    10,
+    "Dysmenorrhea, Endometriosis & Adenomyosis — Clinical Features - Etiology & Risk Factors",
+    10,
+    5,
+    "Dysmenorrhea, Endometriosis & Adenomyosis — Clinical Features"
+  ],
+  [
+    10,
+    "Dysmenorrhea, Endometriosis & Adenomyosis — Clinical Features - Pathophysiology",
+    10,
+    5,
+    "Dysmenorrhea, Endometriosis & Adenomyosis — Clinical Features"
+  ],
+  [
+    10,
+    "Dysmenorrhea, Endometriosis & Adenomyosis — Clinical Features - Clinical Presentation & Signs",
+    10,
+    5,
+    "Dysmenorrhea, Endometriosis & Adenomyosis — Clinical Features"
+  ],
+  [
+    10,
+    "Dysmenorrhea, Endometriosis & Adenomyosis — Clinical Features - Differential Diagnosis",
+    10,
+    5,
+    "Dysmenorrhea, Endometriosis & Adenomyosis — Clinical Features"
+  ],
+  [
+    10,
+    "Dysmenorrhea, Endometriosis & Adenomyosis — Clinical Features - Investigations & Lab Findings",
+    10,
+    5,
+    "Dysmenorrhea, Endometriosis & Adenomyosis — Clinical Features"
+  ],
+  [
+    10,
+    "Dysmenorrhea, Endometriosis & Adenomyosis — Clinical Features - Medical & Surgical Management",
+    10,
+    5,
+    "Dysmenorrhea, Endometriosis & Adenomyosis — Clinical Features"
+  ],
+  [
+    10,
+    "Dysmenorrhea, Endometriosis & Adenomyosis — Clinical Features - Complications & Prognosis",
+    10,
+    5,
+    "Dysmenorrhea, Endometriosis & Adenomyosis — Clinical Features"
+  ],
+  [
+    10,
+    "Dysmenorrhea, Endometriosis & Adenomyosis — Treatment",
+    10,
+    8,
+    "Dysmenorrhea, Endometriosis & Adenomyosis — Clinical Features & Treatment"
+  ],
+  [
+    10,
+    "Dysmenorrhea, Endometriosis & Adenomyosis — Treatment - Etiology & Risk Factors",
+    10,
+    5,
+    "Dysmenorrhea, Endometriosis & Adenomyosis — Treatment"
+  ],
+  [
+    10,
+    "Dysmenorrhea, Endometriosis & Adenomyosis — Treatment - Pathophysiology",
+    10,
+    5,
+    "Dysmenorrhea, Endometriosis & Adenomyosis — Treatment"
+  ],
+  [
+    10,
+    "Dysmenorrhea, Endometriosis & Adenomyosis — Treatment - Clinical Presentation & Signs",
+    10,
+    5,
+    "Dysmenorrhea, Endometriosis & Adenomyosis — Treatment"
+  ],
+  [
+    10,
+    "Dysmenorrhea, Endometriosis & Adenomyosis — Treatment - Differential Diagnosis",
+    10,
+    5,
+    "Dysmenorrhea, Endometriosis & Adenomyosis — Treatment"
+  ],
+  [
+    10,
+    "Dysmenorrhea, Endometriosis & Adenomyosis — Treatment - Investigations & Lab Findings",
+    10,
+    5,
+    "Dysmenorrhea, Endometriosis & Adenomyosis — Treatment"
+  ],
+  [
+    10,
+    "Dysmenorrhea, Endometriosis & Adenomyosis — Treatment - Medical & Surgical Management",
+    10,
+    5,
+    "Dysmenorrhea, Endometriosis & Adenomyosis — Treatment"
+  ],
+  [
+    10,
+    "Dysmenorrhea, Endometriosis & Adenomyosis — Treatment - Complications & Prognosis",
+    10,
+    5,
+    "Dysmenorrhea, Endometriosis & Adenomyosis — Treatment"
+  ],
+  [10, "Infertility & ART", 10, 50, "Gynecology"],
+  [
+    10,
+    "Infertility — Definition, Causes & Initial Investigation (Semen Analysis)",
+    10,
+    15,
+    "Infertility & ART"
+  ],
+  [
+    10,
+    "Infertility — Definition, Causes",
+    10,
+    7,
+    "Infertility — Definition, Causes & Initial Investigation (Semen Analysis)"
+  ],
+  [
+    10,
+    "Infertility — Definition, Causes - Etiology & Risk Factors",
+    10,
+    5,
+    "Infertility — Definition, Causes"
+  ],
+  [
+    10,
+    "Infertility — Definition, Causes - Pathophysiology",
+    10,
+    5,
+    "Infertility — Definition, Causes"
+  ],
+  [
+    10,
+    "Infertility — Definition, Causes - Clinical Presentation & Signs",
+    10,
+    5,
+    "Infertility — Definition, Causes"
+  ],
+  [
+    10,
+    "Infertility — Definition, Causes - Differential Diagnosis",
+    10,
+    5,
+    "Infertility — Definition, Causes"
+  ],
+  [
+    10,
+    "Infertility — Definition, Causes - Investigations & Lab Findings",
+    10,
+    5,
+    "Infertility — Definition, Causes"
+  ],
+  [
+    10,
+    "Infertility — Definition, Causes - Medical & Surgical Management",
+    10,
+    5,
+    "Infertility — Definition, Causes"
+  ],
+  [
+    10,
+    "Infertility — Definition, Causes - Complications & Prognosis",
+    10,
+    5,
+    "Infertility — Definition, Causes"
+  ],
+  [
+    10,
+    "Infertility — Initial Investigation (Semen Analysis)",
+    10,
+    8,
+    "Infertility — Definition, Causes & Initial Investigation (Semen Analysis)"
+  ],
+  [
+    10,
+    "Infertility — Initial Investigation (Semen Analysis) - Etiology & Risk Factors",
+    10,
+    5,
+    "Infertility — Initial Investigation (Semen Analysis)"
+  ],
+  [
+    10,
+    "Infertility — Initial Investigation (Semen Analysis) - Pathophysiology",
+    10,
+    5,
+    "Infertility — Initial Investigation (Semen Analysis)"
+  ],
+  [
+    10,
+    "Infertility — Initial Investigation (Semen Analysis) - Clinical Presentation & Signs",
+    10,
+    5,
+    "Infertility — Initial Investigation (Semen Analysis)"
+  ],
+  [
+    10,
+    "Infertility — Initial Investigation (Semen Analysis) - Differential Diagnosis",
+    10,
+    5,
+    "Infertility — Initial Investigation (Semen Analysis)"
+  ],
+  [
+    10,
+    "Infertility — Initial Investigation (Semen Analysis) - Investigations & Lab Findings",
+    10,
+    5,
+    "Infertility — Initial Investigation (Semen Analysis)"
+  ],
+  [
+    10,
+    "Infertility — Initial Investigation (Semen Analysis) - Medical & Surgical Management",
+    10,
+    5,
+    "Infertility — Initial Investigation (Semen Analysis)"
+  ],
+  [
+    10,
+    "Infertility — Initial Investigation (Semen Analysis) - Complications & Prognosis",
+    10,
+    5,
+    "Infertility — Initial Investigation (Semen Analysis)"
+  ],
+  [10, "Ovulation Induction — Clomiphene, Letrozole & Gonadotropins", 10, 15, "Infertility & ART"],
+  [
+    10,
+    "Ovulation Induction — Clomiphene, Letrozole",
+    10,
+    7,
+    "Ovulation Induction — Clomiphene, Letrozole & Gonadotropins"
+  ],
+  [
+    10,
+    "Ovulation Induction — Clomiphene, Letrozole - Etiology & Risk Factors",
+    10,
+    5,
+    "Ovulation Induction — Clomiphene, Letrozole"
+  ],
+  [
+    10,
+    "Ovulation Induction — Clomiphene, Letrozole - Pathophysiology",
+    10,
+    5,
+    "Ovulation Induction — Clomiphene, Letrozole"
+  ],
+  [
+    10,
+    "Ovulation Induction — Clomiphene, Letrozole - Clinical Presentation & Signs",
+    10,
+    5,
+    "Ovulation Induction — Clomiphene, Letrozole"
+  ],
+  [
+    10,
+    "Ovulation Induction — Clomiphene, Letrozole - Differential Diagnosis",
+    10,
+    5,
+    "Ovulation Induction — Clomiphene, Letrozole"
+  ],
+  [
+    10,
+    "Ovulation Induction — Clomiphene, Letrozole - Investigations & Lab Findings",
+    10,
+    5,
+    "Ovulation Induction — Clomiphene, Letrozole"
+  ],
+  [
+    10,
+    "Ovulation Induction — Clomiphene, Letrozole - Medical & Surgical Management",
+    10,
+    5,
+    "Ovulation Induction — Clomiphene, Letrozole"
+  ],
+  [
+    10,
+    "Ovulation Induction — Clomiphene, Letrozole - Complications & Prognosis",
+    10,
+    5,
+    "Ovulation Induction — Clomiphene, Letrozole"
+  ],
+  [
+    10,
+    "Ovulation Induction — Gonadotropins",
+    10,
+    8,
+    "Ovulation Induction — Clomiphene, Letrozole & Gonadotropins"
+  ],
+  [
+    10,
+    "Ovulation Induction — Gonadotropins - Etiology & Risk Factors",
+    10,
+    5,
+    "Ovulation Induction — Gonadotropins"
+  ],
+  [
+    10,
+    "Ovulation Induction — Gonadotropins - Pathophysiology",
+    10,
+    5,
+    "Ovulation Induction — Gonadotropins"
+  ],
+  [
+    10,
+    "Ovulation Induction — Gonadotropins - Clinical Presentation & Signs",
+    10,
+    5,
+    "Ovulation Induction — Gonadotropins"
+  ],
+  [
+    10,
+    "Ovulation Induction — Gonadotropins - Differential Diagnosis",
+    10,
+    5,
+    "Ovulation Induction — Gonadotropins"
+  ],
+  [
+    10,
+    "Ovulation Induction — Gonadotropins - Investigations & Lab Findings",
+    10,
+    5,
+    "Ovulation Induction — Gonadotropins"
+  ],
+  [
+    10,
+    "Ovulation Induction — Gonadotropins - Medical & Surgical Management",
+    10,
+    5,
+    "Ovulation Induction — Gonadotropins"
+  ],
+  [
+    10,
+    "Ovulation Induction — Gonadotropins - Complications & Prognosis",
+    10,
+    5,
+    "Ovulation Induction — Gonadotropins"
+  ],
+  [10, "ART — IUI, IVF, ICSI: Steps & Indications", 10, 18, "Infertility & ART"],
+  [10, "ART — IUI, IVF, ICSI: Steps", 10, 9, "ART — IUI, IVF, ICSI: Steps & Indications"],
+  [
+    10,
+    "ART — IUI, IVF, ICSI: Steps - Etiology & Risk Factors",
+    10,
+    5,
+    "ART — IUI, IVF, ICSI: Steps"
+  ],
+  [10, "ART — IUI, IVF, ICSI: Steps - Pathophysiology", 10, 5, "ART — IUI, IVF, ICSI: Steps"],
+  [
+    10,
+    "ART — IUI, IVF, ICSI: Steps - Clinical Presentation & Signs",
+    10,
+    5,
+    "ART — IUI, IVF, ICSI: Steps"
+  ],
+  [
+    10,
+    "ART — IUI, IVF, ICSI: Steps - Differential Diagnosis",
+    10,
+    5,
+    "ART — IUI, IVF, ICSI: Steps"
+  ],
+  [
+    10,
+    "ART — IUI, IVF, ICSI: Steps - Investigations & Lab Findings",
+    10,
+    5,
+    "ART — IUI, IVF, ICSI: Steps"
+  ],
+  [
+    10,
+    "ART — IUI, IVF, ICSI: Steps - Medical & Surgical Management",
+    10,
+    5,
+    "ART — IUI, IVF, ICSI: Steps"
+  ],
+  [
+    10,
+    "ART — IUI, IVF, ICSI: Steps - Complications & Prognosis",
+    10,
+    5,
+    "ART — IUI, IVF, ICSI: Steps"
+  ],
+  [10, "ART — Indications", 10, 9, "ART — IUI, IVF, ICSI: Steps & Indications"],
+  [10, "ART — Indications - Etiology & Risk Factors", 10, 5, "ART — Indications"],
+  [10, "ART — Indications - Pathophysiology", 10, 5, "ART — Indications"],
+  [10, "ART — Indications - Clinical Presentation & Signs", 10, 5, "ART — Indications"],
+  [10, "ART — Indications - Differential Diagnosis", 10, 5, "ART — Indications"],
+  [10, "ART — Indications - Investigations & Lab Findings", 10, 5, "ART — Indications"],
+  [10, "ART — Indications - Medical & Surgical Management", 10, 5, "ART — Indications"],
+  [10, "ART — Indications - Complications & Prognosis", 10, 5, "ART — Indications"],
+  [10, "Contraception", 10, 45, "Gynecology"],
+  [
+    10,
+    "OCP — Types, Mechanism, Non-contraceptive Benefits & Contraindications",
+    10,
+    18,
+    "Contraception"
+  ],
+  [
+    10,
+    "OCP — Types, Mechanism, Non-contraceptive Benefits",
+    10,
+    9,
+    "OCP — Types, Mechanism, Non-contraceptive Benefits & Contraindications"
+  ],
+  [
+    10,
+    "OCP — Types, Mechanism, Non-contraceptive Benefits - Etiology & Risk Factors",
+    10,
+    5,
+    "OCP — Types, Mechanism, Non-contraceptive Benefits"
+  ],
+  [
+    10,
+    "OCP — Types, Mechanism, Non-contraceptive Benefits - Pathophysiology",
+    10,
+    5,
+    "OCP — Types, Mechanism, Non-contraceptive Benefits"
+  ],
+  [
+    10,
+    "OCP — Types, Mechanism, Non-contraceptive Benefits - Clinical Presentation & Signs",
+    10,
+    5,
+    "OCP — Types, Mechanism, Non-contraceptive Benefits"
+  ],
+  [
+    10,
+    "OCP — Types, Mechanism, Non-contraceptive Benefits - Differential Diagnosis",
+    10,
+    5,
+    "OCP — Types, Mechanism, Non-contraceptive Benefits"
+  ],
+  [
+    10,
+    "OCP — Types, Mechanism, Non-contraceptive Benefits - Investigations & Lab Findings",
+    10,
+    5,
+    "OCP — Types, Mechanism, Non-contraceptive Benefits"
+  ],
+  [
+    10,
+    "OCP — Types, Mechanism, Non-contraceptive Benefits - Medical & Surgical Management",
+    10,
+    5,
+    "OCP — Types, Mechanism, Non-contraceptive Benefits"
+  ],
+  [
+    10,
+    "OCP — Types, Mechanism, Non-contraceptive Benefits - Complications & Prognosis",
+    10,
+    5,
+    "OCP — Types, Mechanism, Non-contraceptive Benefits"
+  ],
+  [
+    10,
+    "OCP — Contraindications",
+    10,
+    9,
+    "OCP — Types, Mechanism, Non-contraceptive Benefits & Contraindications"
+  ],
+  [10, "OCP — Contraindications - Etiology & Risk Factors", 10, 5, "OCP — Contraindications"],
+  [10, "OCP — Contraindications - Pathophysiology", 10, 5, "OCP — Contraindications"],
+  [10, "OCP — Contraindications - Clinical Presentation & Signs", 10, 5, "OCP — Contraindications"],
+  [10, "OCP — Contraindications - Differential Diagnosis", 10, 5, "OCP — Contraindications"],
+  [10, "OCP — Contraindications - Investigations & Lab Findings", 10, 5, "OCP — Contraindications"],
+  [10, "OCP — Contraindications - Medical & Surgical Management", 10, 5, "OCP — Contraindications"],
+  [10, "OCP — Contraindications - Complications & Prognosis", 10, 5, "OCP — Contraindications"],
+  [10, "IUCD — Cu-T 380A, Mirena: Mechanism, Insertion & Complications", 10, 15, "Contraception"],
+  [
+    10,
+    "IUCD — Cu-T 380A, Mirena: Mechanism, Insertion",
+    10,
+    7,
+    "IUCD — Cu-T 380A, Mirena: Mechanism, Insertion & Complications"
+  ],
+  [
+    10,
+    "IUCD — Cu-T 380A, Mirena: Mechanism, Insertion - Etiology & Risk Factors",
+    10,
+    5,
+    "IUCD — Cu-T 380A, Mirena: Mechanism, Insertion"
+  ],
+  [
+    10,
+    "IUCD — Cu-T 380A, Mirena: Mechanism, Insertion - Pathophysiology",
+    10,
+    5,
+    "IUCD — Cu-T 380A, Mirena: Mechanism, Insertion"
+  ],
+  [
+    10,
+    "IUCD — Cu-T 380A, Mirena: Mechanism, Insertion - Clinical Presentation & Signs",
+    10,
+    5,
+    "IUCD — Cu-T 380A, Mirena: Mechanism, Insertion"
+  ],
+  [
+    10,
+    "IUCD — Cu-T 380A, Mirena: Mechanism, Insertion - Differential Diagnosis",
+    10,
+    5,
+    "IUCD — Cu-T 380A, Mirena: Mechanism, Insertion"
+  ],
+  [
+    10,
+    "IUCD — Cu-T 380A, Mirena: Mechanism, Insertion - Investigations & Lab Findings",
+    10,
+    5,
+    "IUCD — Cu-T 380A, Mirena: Mechanism, Insertion"
+  ],
+  [
+    10,
+    "IUCD — Cu-T 380A, Mirena: Mechanism, Insertion - Medical & Surgical Management",
+    10,
+    5,
+    "IUCD — Cu-T 380A, Mirena: Mechanism, Insertion"
+  ],
+  [
+    10,
+    "IUCD — Cu-T 380A, Mirena: Mechanism, Insertion - Complications & Prognosis",
+    10,
+    5,
+    "IUCD — Cu-T 380A, Mirena: Mechanism, Insertion"
+  ],
+  [
+    10,
+    "IUCD — Complications",
+    10,
+    8,
+    "IUCD — Cu-T 380A, Mirena: Mechanism, Insertion & Complications"
+  ],
+  [10, "IUCD — Complications - Etiology & Risk Factors", 10, 5, "IUCD — Complications"],
+  [10, "IUCD — Complications - Pathophysiology", 10, 5, "IUCD — Complications"],
+  [10, "IUCD — Complications - Clinical Presentation & Signs", 10, 5, "IUCD — Complications"],
+  [10, "IUCD — Complications - Differential Diagnosis", 10, 5, "IUCD — Complications"],
+  [10, "IUCD — Complications - Investigations & Lab Findings", 10, 5, "IUCD — Complications"],
+  [10, "IUCD — Complications - Medical & Surgical Management", 10, 5, "IUCD — Complications"],
+  [10, "IUCD — Complications - Complications & Prognosis", 10, 5, "IUCD — Complications"],
+  [10, "Emergency Contraception, Barrier & Permanent Methods", 10, 12, "Contraception"],
+  [
+    10,
+    "Emergency Contraception, Barrier",
+    10,
+    6,
+    "Emergency Contraception, Barrier & Permanent Methods"
+  ],
+  [
+    10,
+    "Emergency Contraception, Barrier - Etiology & Risk Factors",
+    10,
+    5,
+    "Emergency Contraception, Barrier"
+  ],
+  [
+    10,
+    "Emergency Contraception, Barrier - Pathophysiology",
+    10,
+    5,
+    "Emergency Contraception, Barrier"
+  ],
+  [
+    10,
+    "Emergency Contraception, Barrier - Clinical Presentation & Signs",
+    10,
+    5,
+    "Emergency Contraception, Barrier"
+  ],
+  [
+    10,
+    "Emergency Contraception, Barrier - Differential Diagnosis",
+    10,
+    5,
+    "Emergency Contraception, Barrier"
+  ],
+  [
+    10,
+    "Emergency Contraception, Barrier - Investigations & Lab Findings",
+    10,
+    5,
+    "Emergency Contraception, Barrier"
+  ],
+  [
+    10,
+    "Emergency Contraception, Barrier - Medical & Surgical Management",
+    10,
+    5,
+    "Emergency Contraception, Barrier"
+  ],
+  [
+    10,
+    "Emergency Contraception, Barrier - Complications & Prognosis",
+    10,
+    5,
+    "Emergency Contraception, Barrier"
+  ],
+  [10, "Permanent Methods", 10, 6, "Emergency Contraception, Barrier & Permanent Methods"],
+  [10, "Permanent Methods - Etiology & Risk Factors", 10, 5, "Permanent Methods"],
+  [10, "Permanent Methods - Pathophysiology", 10, 5, "Permanent Methods"],
+  [10, "Permanent Methods - Clinical Presentation & Signs", 10, 5, "Permanent Methods"],
+  [10, "Permanent Methods - Differential Diagnosis", 10, 5, "Permanent Methods"],
+  [10, "Permanent Methods - Investigations & Lab Findings", 10, 5, "Permanent Methods"],
+  [10, "Permanent Methods - Medical & Surgical Management", 10, 5, "Permanent Methods"],
+  [10, "Permanent Methods - Complications & Prognosis", 10, 5, "Permanent Methods"],
+  [10, "Genital Prolapse", 9, 35, "Gynecology"],
+  [10, "Pelvic Organ Prolapse — POP-Q System, Grades & Surgical Repair", 9, 18, "Genital Prolapse"],
+  [
+    10,
+    "Pelvic Organ Prolapse — POP-Q System, Grades",
+    9,
+    9,
+    "Pelvic Organ Prolapse — POP-Q System, Grades & Surgical Repair"
+  ],
+  [
+    10,
+    "Pelvic Organ Prolapse — POP-Q System, Grades - Etiology & Risk Factors",
+    9,
+    5,
+    "Pelvic Organ Prolapse — POP-Q System, Grades"
+  ],
+  [
+    10,
+    "Pelvic Organ Prolapse — POP-Q System, Grades - Pathophysiology",
+    9,
+    5,
+    "Pelvic Organ Prolapse — POP-Q System, Grades"
+  ],
+  [
+    10,
+    "Pelvic Organ Prolapse — POP-Q System, Grades - Clinical Presentation & Signs",
+    9,
+    5,
+    "Pelvic Organ Prolapse — POP-Q System, Grades"
+  ],
+  [
+    10,
+    "Pelvic Organ Prolapse — POP-Q System, Grades - Differential Diagnosis",
+    9,
+    5,
+    "Pelvic Organ Prolapse — POP-Q System, Grades"
+  ],
+  [
+    10,
+    "Pelvic Organ Prolapse — POP-Q System, Grades - Investigations & Lab Findings",
+    9,
+    5,
+    "Pelvic Organ Prolapse — POP-Q System, Grades"
+  ],
+  [
+    10,
+    "Pelvic Organ Prolapse — POP-Q System, Grades - Medical & Surgical Management",
+    9,
+    5,
+    "Pelvic Organ Prolapse — POP-Q System, Grades"
+  ],
+  [
+    10,
+    "Pelvic Organ Prolapse — POP-Q System, Grades - Complications & Prognosis",
+    9,
+    5,
+    "Pelvic Organ Prolapse — POP-Q System, Grades"
+  ],
+  [
+    10,
+    "Pelvic Organ Prolapse — Surgical Repair",
+    9,
+    9,
+    "Pelvic Organ Prolapse — POP-Q System, Grades & Surgical Repair"
+  ],
+  [
+    10,
+    "Pelvic Organ Prolapse — Surgical Repair - Etiology & Risk Factors",
+    9,
+    5,
+    "Pelvic Organ Prolapse — Surgical Repair"
+  ],
+  [
+    10,
+    "Pelvic Organ Prolapse — Surgical Repair - Pathophysiology",
+    9,
+    5,
+    "Pelvic Organ Prolapse — Surgical Repair"
+  ],
+  [
+    10,
+    "Pelvic Organ Prolapse — Surgical Repair - Clinical Presentation & Signs",
+    9,
+    5,
+    "Pelvic Organ Prolapse — Surgical Repair"
+  ],
+  [
+    10,
+    "Pelvic Organ Prolapse — Surgical Repair - Differential Diagnosis",
+    9,
+    5,
+    "Pelvic Organ Prolapse — Surgical Repair"
+  ],
+  [
+    10,
+    "Pelvic Organ Prolapse — Surgical Repair - Investigations & Lab Findings",
+    9,
+    5,
+    "Pelvic Organ Prolapse — Surgical Repair"
+  ],
+  [
+    10,
+    "Pelvic Organ Prolapse — Surgical Repair - Medical & Surgical Management",
+    9,
+    5,
+    "Pelvic Organ Prolapse — Surgical Repair"
+  ],
+  [
+    10,
+    "Pelvic Organ Prolapse — Surgical Repair - Complications & Prognosis",
+    9,
+    5,
+    "Pelvic Organ Prolapse — Surgical Repair"
+  ],
+  [10, "Stress Urinary Incontinence vs OAB — Urodynamics & Treatment", 9, 15, "Genital Prolapse"],
+  [
+    10,
+    "Stress Urinary Incontinence vs OAB — Urodynamics",
+    9,
+    7,
+    "Stress Urinary Incontinence vs OAB — Urodynamics & Treatment"
+  ],
+  [
+    10,
+    "Stress Urinary Incontinence vs OAB — Urodynamics - Etiology & Risk Factors",
+    9,
+    5,
+    "Stress Urinary Incontinence vs OAB — Urodynamics"
+  ],
+  [
+    10,
+    "Stress Urinary Incontinence vs OAB — Urodynamics - Pathophysiology",
+    9,
+    5,
+    "Stress Urinary Incontinence vs OAB — Urodynamics"
+  ],
+  [
+    10,
+    "Stress Urinary Incontinence vs OAB — Urodynamics - Clinical Presentation & Signs",
+    9,
+    5,
+    "Stress Urinary Incontinence vs OAB — Urodynamics"
+  ],
+  [
+    10,
+    "Stress Urinary Incontinence vs OAB — Urodynamics - Differential Diagnosis",
+    9,
+    5,
+    "Stress Urinary Incontinence vs OAB — Urodynamics"
+  ],
+  [
+    10,
+    "Stress Urinary Incontinence vs OAB — Urodynamics - Investigations & Lab Findings",
+    9,
+    5,
+    "Stress Urinary Incontinence vs OAB — Urodynamics"
+  ],
+  [
+    10,
+    "Stress Urinary Incontinence vs OAB — Urodynamics - Medical & Surgical Management",
+    9,
+    5,
+    "Stress Urinary Incontinence vs OAB — Urodynamics"
+  ],
+  [
+    10,
+    "Stress Urinary Incontinence vs OAB — Urodynamics - Complications & Prognosis",
+    9,
+    5,
+    "Stress Urinary Incontinence vs OAB — Urodynamics"
+  ],
+  [
+    10,
+    "Stress Urinary Incontinence vs OAB — Treatment",
+    9,
+    8,
+    "Stress Urinary Incontinence vs OAB — Urodynamics & Treatment"
+  ],
+  [
+    10,
+    "Stress Urinary Incontinence vs OAB — Treatment - Etiology & Risk Factors",
+    9,
+    5,
+    "Stress Urinary Incontinence vs OAB — Treatment"
+  ],
+  [
+    10,
+    "Stress Urinary Incontinence vs OAB — Treatment - Pathophysiology",
+    9,
+    5,
+    "Stress Urinary Incontinence vs OAB — Treatment"
+  ],
+  [
+    10,
+    "Stress Urinary Incontinence vs OAB — Treatment - Clinical Presentation & Signs",
+    9,
+    5,
+    "Stress Urinary Incontinence vs OAB — Treatment"
+  ],
+  [
+    10,
+    "Stress Urinary Incontinence vs OAB — Treatment - Differential Diagnosis",
+    9,
+    5,
+    "Stress Urinary Incontinence vs OAB — Treatment"
+  ],
+  [
+    10,
+    "Stress Urinary Incontinence vs OAB — Treatment - Investigations & Lab Findings",
+    9,
+    5,
+    "Stress Urinary Incontinence vs OAB — Treatment"
+  ],
+  [
+    10,
+    "Stress Urinary Incontinence vs OAB — Treatment - Medical & Surgical Management",
+    9,
+    5,
+    "Stress Urinary Incontinence vs OAB — Treatment"
+  ],
+  [
+    10,
+    "Stress Urinary Incontinence vs OAB — Treatment - Complications & Prognosis",
+    9,
+    5,
+    "Stress Urinary Incontinence vs OAB — Treatment"
+  ],
+  [10, "Gynae-Oncology (Cervix, Uterus, Ovary)", 10, 60, "Gynecology"],
+  [
+    10,
+    "Cervical Cancer — CIN, HPV (16, 18), Pap Smear & FIGO Staging",
+    10,
+    18,
+    "Gynae-Oncology (Cervix, Uterus, Ovary)"
+  ],
+  [
+    10,
+    "Cervical Cancer — CIN, HPV (16, 18), Pap Smear",
+    10,
+    9,
+    "Cervical Cancer — CIN, HPV (16, 18), Pap Smear & FIGO Staging"
+  ],
+  [
+    10,
+    "Cervical Cancer — CIN, HPV (16, 18), Pap Smear - Etiology & Risk Factors",
+    10,
+    5,
+    "Cervical Cancer — CIN, HPV (16, 18), Pap Smear"
+  ],
+  [
+    10,
+    "Cervical Cancer — CIN, HPV (16, 18), Pap Smear - Pathophysiology",
+    10,
+    5,
+    "Cervical Cancer — CIN, HPV (16, 18), Pap Smear"
+  ],
+  [
+    10,
+    "Cervical Cancer — CIN, HPV (16, 18), Pap Smear - Clinical Presentation & Signs",
+    10,
+    5,
+    "Cervical Cancer — CIN, HPV (16, 18), Pap Smear"
+  ],
+  [
+    10,
+    "Cervical Cancer — CIN, HPV (16, 18), Pap Smear - Differential Diagnosis",
+    10,
+    5,
+    "Cervical Cancer — CIN, HPV (16, 18), Pap Smear"
+  ],
+  [
+    10,
+    "Cervical Cancer — CIN, HPV (16, 18), Pap Smear - Investigations & Lab Findings",
+    10,
+    5,
+    "Cervical Cancer — CIN, HPV (16, 18), Pap Smear"
+  ],
+  [
+    10,
+    "Cervical Cancer — CIN, HPV (16, 18), Pap Smear - Medical & Surgical Management",
+    10,
+    5,
+    "Cervical Cancer — CIN, HPV (16, 18), Pap Smear"
+  ],
+  [
+    10,
+    "Cervical Cancer — CIN, HPV (16, 18), Pap Smear - Complications & Prognosis",
+    10,
+    5,
+    "Cervical Cancer — CIN, HPV (16, 18), Pap Smear"
+  ],
+  [
+    10,
+    "Cervical Cancer — FIGO Staging",
+    10,
+    9,
+    "Cervical Cancer — CIN, HPV (16, 18), Pap Smear & FIGO Staging"
+  ],
+  [
+    10,
+    "Cervical Cancer — FIGO Staging - Etiology & Risk Factors",
+    10,
+    5,
+    "Cervical Cancer — FIGO Staging"
+  ],
+  [10, "Cervical Cancer — FIGO Staging - Pathophysiology", 10, 5, "Cervical Cancer — FIGO Staging"],
+  [
+    10,
+    "Cervical Cancer — FIGO Staging - Clinical Presentation & Signs",
+    10,
+    5,
+    "Cervical Cancer — FIGO Staging"
+  ],
+  [
+    10,
+    "Cervical Cancer — FIGO Staging - Differential Diagnosis",
+    10,
+    5,
+    "Cervical Cancer — FIGO Staging"
+  ],
+  [
+    10,
+    "Cervical Cancer — FIGO Staging - Investigations & Lab Findings",
+    10,
+    5,
+    "Cervical Cancer — FIGO Staging"
+  ],
+  [
+    10,
+    "Cervical Cancer — FIGO Staging - Medical & Surgical Management",
+    10,
+    5,
+    "Cervical Cancer — FIGO Staging"
+  ],
+  [
+    10,
+    "Cervical Cancer — FIGO Staging - Complications & Prognosis",
+    10,
+    5,
+    "Cervical Cancer — FIGO Staging"
+  ],
+  [
+    10,
+    "Endometrial Cancer — Post-menopausal Bleeding, Type I vs II & Staging",
+    10,
+    15,
+    "Gynae-Oncology (Cervix, Uterus, Ovary)"
+  ],
+  [
+    10,
+    "Endometrial Cancer — Post-menopausal Bleeding, Type I vs II",
+    10,
+    7,
+    "Endometrial Cancer — Post-menopausal Bleeding, Type I vs II & Staging"
+  ],
+  [
+    10,
+    "Endometrial Cancer — Post-menopausal Bleeding, Type I vs II - Etiology & Risk Factors",
+    10,
+    5,
+    "Endometrial Cancer — Post-menopausal Bleeding, Type I vs II"
+  ],
+  [
+    10,
+    "Endometrial Cancer — Post-menopausal Bleeding, Type I vs II - Pathophysiology",
+    10,
+    5,
+    "Endometrial Cancer — Post-menopausal Bleeding, Type I vs II"
+  ],
+  [
+    10,
+    "Endometrial Cancer — Post-menopausal Bleeding, Type I vs II - Clinical Presentation & Signs",
+    10,
+    5,
+    "Endometrial Cancer — Post-menopausal Bleeding, Type I vs II"
+  ],
+  [
+    10,
+    "Endometrial Cancer — Post-menopausal Bleeding, Type I vs II - Differential Diagnosis",
+    10,
+    5,
+    "Endometrial Cancer — Post-menopausal Bleeding, Type I vs II"
+  ],
+  [
+    10,
+    "Endometrial Cancer — Post-menopausal Bleeding, Type I vs II - Investigations & Lab Findings",
+    10,
+    5,
+    "Endometrial Cancer — Post-menopausal Bleeding, Type I vs II"
+  ],
+  [
+    10,
+    "Endometrial Cancer — Post-menopausal Bleeding, Type I vs II - Medical & Surgical Management",
+    10,
+    5,
+    "Endometrial Cancer — Post-menopausal Bleeding, Type I vs II"
+  ],
+  [
+    10,
+    "Endometrial Cancer — Post-menopausal Bleeding, Type I vs II - Complications & Prognosis",
+    10,
+    5,
+    "Endometrial Cancer — Post-menopausal Bleeding, Type I vs II"
+  ],
+  [
+    10,
+    "Endometrial Cancer — Staging",
+    10,
+    8,
+    "Endometrial Cancer — Post-menopausal Bleeding, Type I vs II & Staging"
+  ],
+  [
+    10,
+    "Endometrial Cancer — Staging - Etiology & Risk Factors",
+    10,
+    5,
+    "Endometrial Cancer — Staging"
+  ],
+  [10, "Endometrial Cancer — Staging - Pathophysiology", 10, 5, "Endometrial Cancer — Staging"],
+  [
+    10,
+    "Endometrial Cancer — Staging - Clinical Presentation & Signs",
+    10,
+    5,
+    "Endometrial Cancer — Staging"
+  ],
+  [
+    10,
+    "Endometrial Cancer — Staging - Differential Diagnosis",
+    10,
+    5,
+    "Endometrial Cancer — Staging"
+  ],
+  [
+    10,
+    "Endometrial Cancer — Staging - Investigations & Lab Findings",
+    10,
+    5,
+    "Endometrial Cancer — Staging"
+  ],
+  [
+    10,
+    "Endometrial Cancer — Staging - Medical & Surgical Management",
+    10,
+    5,
+    "Endometrial Cancer — Staging"
+  ],
+  [
+    10,
+    "Endometrial Cancer — Staging - Complications & Prognosis",
+    10,
+    5,
+    "Endometrial Cancer — Staging"
+  ],
+  [
+    10,
+    "Ovarian Tumors — Classification (Epithelial/GCT/Germ Cell), CA-125 & FIGO",
+    10,
+    18,
+    "Gynae-Oncology (Cervix, Uterus, Ovary)"
+  ],
+  [
+    10,
+    "Ovarian Tumors — Classification (Epithelial/GCT/Germ Cell), CA-125",
+    10,
+    9,
+    "Ovarian Tumors — Classification (Epithelial/GCT/Germ Cell), CA-125 & FIGO"
+  ],
+  [
+    10,
+    "Ovarian Tumors — Classification (Epithelial/GCT/Germ Cell), CA-125 - Etiology & Risk Factors",
+    10,
+    5,
+    "Ovarian Tumors — Classification (Epithelial/GCT/Germ Cell), CA-125"
+  ],
+  [
+    10,
+    "Ovarian Tumors — Classification (Epithelial/GCT/Germ Cell), CA-125 - Pathophysiology",
+    10,
+    5,
+    "Ovarian Tumors — Classification (Epithelial/GCT/Germ Cell), CA-125"
+  ],
+  [
+    10,
+    "Ovarian Tumors — Classification (Epithelial/GCT/Germ Cell), CA-125 - Clinical Presentation & Signs",
+    10,
+    5,
+    "Ovarian Tumors — Classification (Epithelial/GCT/Germ Cell), CA-125"
+  ],
+  [
+    10,
+    "Ovarian Tumors — Classification (Epithelial/GCT/Germ Cell), CA-125 - Differential Diagnosis",
+    10,
+    5,
+    "Ovarian Tumors — Classification (Epithelial/GCT/Germ Cell), CA-125"
+  ],
+  [
+    10,
+    "Ovarian Tumors — Classification (Epithelial/GCT/Germ Cell), CA-125 - Investigations & Lab Findings",
+    10,
+    5,
+    "Ovarian Tumors — Classification (Epithelial/GCT/Germ Cell), CA-125"
+  ],
+  [
+    10,
+    "Ovarian Tumors — Classification (Epithelial/GCT/Germ Cell), CA-125 - Medical & Surgical Management",
+    10,
+    5,
+    "Ovarian Tumors — Classification (Epithelial/GCT/Germ Cell), CA-125"
+  ],
+  [
+    10,
+    "Ovarian Tumors — Classification (Epithelial/GCT/Germ Cell), CA-125 - Complications & Prognosis",
+    10,
+    5,
+    "Ovarian Tumors — Classification (Epithelial/GCT/Germ Cell), CA-125"
+  ],
+  [
+    10,
+    "Ovarian Tumors — FIGO",
+    10,
+    9,
+    "Ovarian Tumors — Classification (Epithelial/GCT/Germ Cell), CA-125 & FIGO"
+  ],
+  [10, "Ovarian Tumors — FIGO - Etiology & Risk Factors", 10, 5, "Ovarian Tumors — FIGO"],
+  [10, "Ovarian Tumors — FIGO - Pathophysiology", 10, 5, "Ovarian Tumors — FIGO"],
+  [10, "Ovarian Tumors — FIGO - Clinical Presentation & Signs", 10, 5, "Ovarian Tumors — FIGO"],
+  [10, "Ovarian Tumors — FIGO - Differential Diagnosis", 10, 5, "Ovarian Tumors — FIGO"],
+  [10, "Ovarian Tumors — FIGO - Investigations & Lab Findings", 10, 5, "Ovarian Tumors — FIGO"],
+  [10, "Ovarian Tumors — FIGO - Medical & Surgical Management", 10, 5, "Ovarian Tumors — FIGO"],
+  [10, "Ovarian Tumors — FIGO - Complications & Prognosis", 10, 5, "Ovarian Tumors — FIGO"],
+  [
+    10,
+    "Gestational Trophoblastic Disease — Mole, Choriocarcinoma & β-hCG Monitoring",
+    10,
+    15,
+    "Gynae-Oncology (Cervix, Uterus, Ovary)"
+  ],
+  [
+    10,
+    "Gestational Trophoblastic Disease — Mole, Choriocarcinoma",
+    10,
+    7,
+    "Gestational Trophoblastic Disease — Mole, Choriocarcinoma & β-hCG Monitoring"
+  ],
+  [
+    10,
+    "Gestational Trophoblastic Disease — Mole, Choriocarcinoma - Etiology & Risk Factors",
+    10,
+    5,
+    "Gestational Trophoblastic Disease — Mole, Choriocarcinoma"
+  ],
+  [
+    10,
+    "Gestational Trophoblastic Disease — Mole, Choriocarcinoma - Pathophysiology",
+    10,
+    5,
+    "Gestational Trophoblastic Disease — Mole, Choriocarcinoma"
+  ],
+  [
+    10,
+    "Gestational Trophoblastic Disease — Mole, Choriocarcinoma - Clinical Presentation & Signs",
+    10,
+    5,
+    "Gestational Trophoblastic Disease — Mole, Choriocarcinoma"
+  ],
+  [
+    10,
+    "Gestational Trophoblastic Disease — Mole, Choriocarcinoma - Differential Diagnosis",
+    10,
+    5,
+    "Gestational Trophoblastic Disease — Mole, Choriocarcinoma"
+  ],
+  [
+    10,
+    "Gestational Trophoblastic Disease — Mole, Choriocarcinoma - Investigations & Lab Findings",
+    10,
+    5,
+    "Gestational Trophoblastic Disease — Mole, Choriocarcinoma"
+  ],
+  [
+    10,
+    "Gestational Trophoblastic Disease — Mole, Choriocarcinoma - Medical & Surgical Management",
+    10,
+    5,
+    "Gestational Trophoblastic Disease — Mole, Choriocarcinoma"
+  ],
+  [
+    10,
+    "Gestational Trophoblastic Disease — Mole, Choriocarcinoma - Complications & Prognosis",
+    10,
+    5,
+    "Gestational Trophoblastic Disease — Mole, Choriocarcinoma"
+  ],
+  [
+    10,
+    "Gestational Trophoblastic Disease — β-hCG Monitoring",
+    10,
+    8,
+    "Gestational Trophoblastic Disease — Mole, Choriocarcinoma & β-hCG Monitoring"
+  ],
+  [
+    10,
+    "Gestational Trophoblastic Disease — β-hCG Monitoring - Etiology & Risk Factors",
+    10,
+    5,
+    "Gestational Trophoblastic Disease — β-hCG Monitoring"
+  ],
+  [
+    10,
+    "Gestational Trophoblastic Disease — β-hCG Monitoring - Pathophysiology",
+    10,
+    5,
+    "Gestational Trophoblastic Disease — β-hCG Monitoring"
+  ],
+  [
+    10,
+    "Gestational Trophoblastic Disease — β-hCG Monitoring - Clinical Presentation & Signs",
+    10,
+    5,
+    "Gestational Trophoblastic Disease — β-hCG Monitoring"
+  ],
+  [
+    10,
+    "Gestational Trophoblastic Disease — β-hCG Monitoring - Differential Diagnosis",
+    10,
+    5,
+    "Gestational Trophoblastic Disease — β-hCG Monitoring"
+  ],
+  [
+    10,
+    "Gestational Trophoblastic Disease — β-hCG Monitoring - Investigations & Lab Findings",
+    10,
+    5,
+    "Gestational Trophoblastic Disease — β-hCG Monitoring"
+  ],
+  [
+    10,
+    "Gestational Trophoblastic Disease — β-hCG Monitoring - Medical & Surgical Management",
+    10,
+    5,
+    "Gestational Trophoblastic Disease — β-hCG Monitoring"
+  ],
+  [
+    10,
+    "Gestational Trophoblastic Disease — β-hCG Monitoring - Complications & Prognosis",
+    10,
+    5,
+    "Gestational Trophoblastic Disease — β-hCG Monitoring"
+  ]
 ]

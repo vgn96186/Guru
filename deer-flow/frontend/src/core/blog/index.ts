@@ -84,7 +84,7 @@ function parseTags(tags: unknown): string[] {
   }
 
   return tags.filter(
-    (tag): tag is string => typeof tag === "string" && tag.length > 0,
+    (tag): tag is string => typeof tag === "string" && tag.length > 0
   );
 }
 
@@ -99,7 +99,7 @@ function parseDate(value: string | undefined): number {
 
 function selectPreferredLanguage(
   languages: BlogLang[],
-  preferredLang?: BlogLang,
+  preferredLang?: BlogLang
 ): BlogLang | null {
   if (preferredLang && languages.includes(preferredLang)) {
     return preferredLang;
@@ -118,7 +118,7 @@ function selectPreferredLanguage(
 
 function collectLocalizedBlogPosts(
   items: PageMapItem[],
-  lang: BlogLang,
+  lang: BlogLang
 ): LocalizedBlogPost[] {
   const posts: LocalizedBlogPost[] = [];
 
@@ -166,7 +166,7 @@ function collectLocalizedBlogPosts(
 
 function mergePostsBySlug(
   posts: LocalizedBlogPost[],
-  preferredLang?: BlogLang,
+  preferredLang?: BlogLang
 ): BlogPost[] {
   const postsBySlug = new Map<string, LocalizedBlogPost[]>();
 
@@ -213,7 +213,7 @@ function createFolder(
   name: string,
   route: string,
   title: string,
-  children: PageMapItem[],
+  children: PageMapItem[]
 ): Folder {
   return {
     children,
@@ -258,17 +258,17 @@ function matchTags(tags: string[], slug: string): boolean {
 }
 
 export const getAllPosts = cache(async function getAllPosts(
-  preferredLang?: BlogLang,
+  preferredLang?: BlogLang
 ): Promise<BlogPost[]> {
   const localizedPageMaps = await Promise.all(
     BLOG_LANGS.map(async (lang) => ({
       items: await getPageMap(`/${lang}/posts`),
       lang,
-    })),
+    }))
   );
 
   const localizedPosts = localizedPageMaps.flatMap(({ items, lang }) =>
-    collectLocalizedBlogPosts(items, lang),
+    collectLocalizedBlogPosts(items, lang)
   );
 
   return mergePostsBySlug(localizedPosts, preferredLang);
@@ -278,7 +278,7 @@ export async function getBlogIndexData(
   preferredLang?: BlogLang,
   filters?: {
     tag?: string;
-  },
+  }
 ): Promise<BlogIndexData> {
   const posts = await getAllPosts(preferredLang);
   const tagFilter = filters?.tag;
@@ -302,7 +302,7 @@ export async function getBlogIndexData(
       count: tagPosts.length,
       name,
       posts: [...tagPosts].sort(
-        (a, b) => parseDate(b.metadata.date) - parseDate(a.metadata.date),
+        (a, b) => parseDate(b.metadata.date) - parseDate(a.metadata.date)
       ),
     }));
 
@@ -327,7 +327,7 @@ export async function getBlogIndexData(
       "recent_posts",
       "/blog/recent-posts",
       "Recent Posts",
-      recentPosts.map(createPostItem),
+      recentPosts.map(createPostItem)
     ),
   ];
 
@@ -343,8 +343,8 @@ export async function getBlogIndexData(
             title: `${tag.name} (${tag.count})`,
             route: `/blog/tags/${normalizeTagSlug(tag.name)}`,
           };
-        }),
-      ),
+        })
+      )
     );
   }
 

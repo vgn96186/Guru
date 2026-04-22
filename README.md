@@ -16,13 +16,14 @@ React Native (Expo) study app for medical students preparing for NEET‑PG and I
 ## Database Migrations & Backups
 
 **Important Note on Migrations:**
-When writing database migrations that use the "create new, copy, rename" pattern to alter tables, **always** start the script with `DROP TABLE IF EXISTS table_name_new;`. 
+When writing database migrations that use the "create new, copy, rename" pattern to alter tables, **always** start the script with `DROP TABLE IF EXISTS table_name_new;`.
 If an app crash or hot-reload interrupts a migration midway, the temporary table is left behind. Without the `DROP TABLE IF EXISTS` safeguard, the next app boot will crash with a `table already exists` error (e.g., `NativeDatabase.execAsync has been rejected`), which also prevents older `.guru` backups from being restored successfully.
 
 ## TypeScript Guidelines
 
 **Avoid `any`:**
-This project enforces strict TypeScript rules. Do **not** use the `any` type to bypass type checking. Using `any` defeats the purpose of TypeScript and can lead to runtime crashes. 
+This project enforces strict TypeScript rules. Do **not** use the `any` type to bypass type checking. Using `any` defeats the purpose of TypeScript and can lead to runtime crashes.
+
 - Always define proper interfaces or types for your data.
 - If the shape of the data is truly unpredictable (e.g., in a `catch (err)` block or when parsing external JSON), use the `unknown` type instead. `unknown` is safer because it forces you to perform type-checking (type narrowing) before you can interact with the variable.
 

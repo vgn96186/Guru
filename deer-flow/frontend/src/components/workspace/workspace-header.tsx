@@ -24,7 +24,7 @@ export function WorkspaceHeader({ className }: { className?: string }) {
       <div
         className={cn(
           "group/workspace-header flex h-12 flex-col justify-center",
-          className,
+          className
         )}
       >
         {state === "collapsed" ? (

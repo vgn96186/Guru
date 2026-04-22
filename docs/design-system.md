@@ -4,15 +4,15 @@ This is the whole system. If a pattern isn't here, ask before inventing.
 
 ## Tokens
 
-| Token family | Source | Notes |
-|---|---|---|
-| Colors | `src/theme/linearTheme.ts` · `colors` | 6 semantic roles (`brand`, `capture`, `success`, `warning`, `danger`, `neutral`) — see `.roles` |
-| Elevation | `src/theme/elevation.ts` | `e0` page · `e1` cards (default) · `e2` sheets/menus |
-| Spacing | `linearTheme.spacing` | `xs 4 · sm 8 · md 16 · lg 24 · xl 32` |
-| Density | `src/theme/density.ts` | `compact · comfortable (default) · spacious` |
-| Type | `linearTheme.typography` via `<LinearText variant>` | 7 variants; **never** hand-roll fontSize/weight |
-| Motion | `src/motion/presets.ts` | `motion.enter · motion.press · motion.pulseWarn` only |
-| Icons | `src/components/primitives/Icon.tsx` | outlined default, filled=selected; sizes 14 / 18 / 22 |
+| Token family | Source                                              | Notes                                                                                           |
+| ------------ | --------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| Colors       | `src/theme/linearTheme.ts` · `colors`               | 6 semantic roles (`brand`, `capture`, `success`, `warning`, `danger`, `neutral`) — see `.roles` |
+| Elevation    | `src/theme/elevation.ts`                            | `e0` page · `e1` cards (default) · `e2` sheets/menus                                            |
+| Spacing      | `linearTheme.spacing`                               | `xs 4 · sm 8 · md 16 · lg 24 · xl 32`                                                           |
+| Density      | `src/theme/density.ts`                              | `compact · comfortable (default) · spacious`                                                    |
+| Type         | `linearTheme.typography` via `<LinearText variant>` | 7 variants; **never** hand-roll fontSize/weight                                                 |
+| Motion       | `src/motion/presets.ts`                             | `motion.enter · motion.press · motion.pulseWarn` only                                           |
+| Icons        | `src/components/primitives/Icon.tsx`                | outlined default, filled=selected; sizes 14 / 18 / 22                                           |
 
 ## The three buttons
 

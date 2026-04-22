@@ -25,6 +25,7 @@ Drizzle has first-class **expo-sqlite** support and would work in this app. The 
 
 2. **Migration system**  
    You have 59+ versioned migrations and `PRAGMA user_version`. Drizzle Kit uses its own migration runner and SQL files. You’d either:
+
    - Keep running existing migrations on init, then use Drizzle only for **new** schema and queries, or
    - Export current schema into Drizzle, generate one “baseline” migration, and move fully to Drizzle migrations (one-time, non-trivial).
 

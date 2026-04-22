@@ -19,7 +19,7 @@ export async function enableSkill(skillName: string, enabled: boolean) {
       body: JSON.stringify({
         enabled,
       }),
-    },
+    }
   );
   return response.json();
 }
@@ -36,7 +36,7 @@ export interface InstallSkillResponse {
 }
 
 export async function installSkill(
-  request: InstallSkillRequest,
+  request: InstallSkillRequest
 ): Promise<InstallSkillResponse> {
   const response = await fetch(`${getBackendBaseURL()}/api/skills/install`, {
     method: "POST",

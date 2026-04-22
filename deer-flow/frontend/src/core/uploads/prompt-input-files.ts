@@ -6,7 +6,7 @@ export type PromptInputFilePart = FileUIPart & {
 };
 
 export async function promptInputFilePartToFile(
-  filePart: PromptInputFilePart,
+  filePart: PromptInputFilePart
 ): Promise<File | null> {
   if (filePart.file instanceof File) {
     const filename =
@@ -33,7 +33,7 @@ export async function promptInputFilePartToFile(
     const response = await fetch(filePart.url);
     if (!response.ok) {
       throw new Error(
-        `HTTP ${response.status} while fetching fallback file URL`,
+        `HTTP ${response.status} while fetching fallback file URL`
       );
     }
     const blob = await response.blob();

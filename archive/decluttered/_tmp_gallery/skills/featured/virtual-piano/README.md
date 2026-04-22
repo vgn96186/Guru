@@ -1,5 +1,4 @@
-Virtual Piano Skill
-========
+# Virtual Piano Skill
 
 allows Agent chat to create virtual piano keyboard
 

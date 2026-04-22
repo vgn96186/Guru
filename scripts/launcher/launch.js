@@ -136,7 +136,9 @@ async function main() {
 
   if (probe.ok && !probe.matchesExpectedBuild) {
     log(
-      `A stale launcher instance is running on port ${PORT} (build: ${probe.body?.launcherBuildId || 'unknown'}). Replacing it...`,
+      `A stale launcher instance is running on port ${PORT} (build: ${
+        probe.body?.launcherBuildId || 'unknown'
+      }). Replacing it...`,
     );
   }
 

@@ -17,6 +17,7 @@ The output adheres to McKinsey/BCG consulting voice standards. The report langua
 ## Data Authenticity Protocol
 
 **Strict Adherence Rule**: All data presented in the report and visualized in charts MUST be derived directly from the provided **Data Summary** or **External Search Findings**.
+
 - **NO Hallucinations**: Do not invent, estimate, or simulate data. If data is missing, state "Data not available" rather than fabricating numbers.
 - **Traceable Sources**: Every major claim and chart must be traceable back to the input data package.
 
@@ -51,12 +52,12 @@ Given a **research subject** (e.g., "Gen-Z Skincare Market Analysis", "NEV Indus
 
 ## Phase 1 Inputs
 
-| Input | Description | Required |
-|-------|-------------|----------|
-| **Research Subject** | The topic or question to be analyzed | Yes |
-| **Scope / Constraints** | Geographic scope, time range, industry segment, target audience, etc. | Optional |
-| **Specific Angles** | Any particular angles or hypotheses the user wants explored | Optional |
-| **Domain** | The analytical domain: market, finance, industry, brand, consumer, investment, etc. | Inferred |
+| Input                   | Description                                                                         | Required |
+| ----------------------- | ----------------------------------------------------------------------------------- | -------- |
+| **Research Subject**    | The topic or question to be analyzed                                                | Yes      |
+| **Scope / Constraints** | Geographic scope, time range, industry segment, target audience, etc.               | Optional |
+| **Specific Angles**     | Any particular angles or hypotheses the user wants explored                         | Optional |
+| **Domain**              | The analytical domain: market, finance, industry, brand, consumer, investment, etc. | Inferred |
 
 ## Phase 1 Workflow
 
@@ -66,15 +67,15 @@ Given a **research subject** (e.g., "Gen-Z Skincare Market Analysis", "NEV Indus
 - Identify the **analytical domain** (marketing, finance, industry, competitive, consumer, investment, macro, etc.)
 - Determine the **natural analytical dimensions** based on domain:
 
-| Domain | Typical Dimensions |
-|--------|--------------------|
-| Market Analysis | Market size, growth trends, market segmentation, growth drivers, competitive landscape, consumer profiling |
-| Brand Analysis | Brand positioning, market share, consumer perception, marketing strategy, competitor comparison |
-| Consumer Insights | Demographic profiling, purchase behavior, decision journey, pain points, scenario analysis |
-| Financial Analysis | Macro environment, industry trends, company fundamentals, financial metrics, valuation, risk assessment |
-| Industry Research | Value chain analysis, market size, competitive landscape, policy environment, technology trends, entry barriers |
-| Investment Due Diligence | Business model, financial health, management assessment, market opportunity, risk factors, exit pathways |
-| Competitive Intelligence | Competitor identification, strategic comparison, SWOT analysis, differentiated positioning, market dynamics |
+| Domain                   | Typical Dimensions                                                                                              |
+| ------------------------ | --------------------------------------------------------------------------------------------------------------- |
+| Market Analysis          | Market size, growth trends, market segmentation, growth drivers, competitive landscape, consumer profiling      |
+| Brand Analysis           | Brand positioning, market share, consumer perception, marketing strategy, competitor comparison                 |
+| Consumer Insights        | Demographic profiling, purchase behavior, decision journey, pain points, scenario analysis                      |
+| Financial Analysis       | Macro environment, industry trends, company fundamentals, financial metrics, valuation, risk assessment         |
+| Industry Research        | Value chain analysis, market size, competitive landscape, policy environment, technology trends, entry barriers |
+| Investment Due Diligence | Business model, financial health, management assessment, market opportunity, risk factors, exit pathways        |
+| Competitive Intelligence | Competitor identification, strategic comparison, SWOT analysis, differentiated positioning, market dynamics     |
 
 ### Step 1.2: Select Analysis Frameworks & Models
 
@@ -82,61 +83,61 @@ Based on the identified domain and research subject, select **one or more** prof
 
 #### Strategic & Environmental Analysis
 
-| Framework | Description | Best For |
-|-----------|-------------|----------|
-| **SWOT Analysis** | Strengths, Weaknesses, Opportunities, Threats | Brand assessment, competitive positioning, strategic planning |
-| **PEST / PESTEL Analysis** | Political, Economic, Social, Technological (+ Environmental, Legal) | Macro-environment scanning, market entry assessment, policy impact analysis |
-| **Porter's Five Forces** | Supplier bargaining power, buyer bargaining power, threat of new entrants, threat of substitutes, industry rivalry | Industry competitive landscape, entry barrier assessment, profit margin analysis |
-| **Porter's Diamond Model** | Factor conditions, demand conditions, related industries, firm strategy & structure | National/regional competitive advantage analysis |
-| **VRIO Analysis** | Value, Rarity, Imitability, Organization | Core competency assessment, resource advantage analysis |
+| Framework                  | Description                                                                                                        | Best For                                                                         |
+| -------------------------- | ------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------- |
+| **SWOT Analysis**          | Strengths, Weaknesses, Opportunities, Threats                                                                      | Brand assessment, competitive positioning, strategic planning                    |
+| **PEST / PESTEL Analysis** | Political, Economic, Social, Technological (+ Environmental, Legal)                                                | Macro-environment scanning, market entry assessment, policy impact analysis      |
+| **Porter's Five Forces**   | Supplier bargaining power, buyer bargaining power, threat of new entrants, threat of substitutes, industry rivalry | Industry competitive landscape, entry barrier assessment, profit margin analysis |
+| **Porter's Diamond Model** | Factor conditions, demand conditions, related industries, firm strategy & structure                                | National/regional competitive advantage analysis                                 |
+| **VRIO Analysis**          | Value, Rarity, Imitability, Organization                                                                           | Core competency assessment, resource advantage analysis                          |
 
 #### Market & Growth Analysis
 
-| Framework | Description | Best For |
-|-----------|-------------|----------|
-| **STP Analysis** | Segmentation, Targeting, Positioning | Market segmentation, target market selection, brand positioning |
-| **BCG Matrix (Growth-Share Matrix)** | Stars, Cash Cows, Question Marks, Dogs | Product portfolio management, resource allocation decisions |
-| **Ansoff Matrix** | Market penetration, market development, product development, diversification | Growth strategy selection |
-| **Product Life Cycle (PLC)** | Introduction, growth, maturity, decline | Product strategy formulation, market timing decisions |
-| **TAM-SAM-SOM** | Total / Serviceable / Obtainable Market | Market sizing, opportunity quantification |
-| **Technology Adoption Lifecycle** | Innovators → Early Adopters → Early Majority → Late Majority → Laggards | Emerging technology/category penetration analysis |
+| Framework                            | Description                                                                  | Best For                                                        |
+| ------------------------------------ | ---------------------------------------------------------------------------- | --------------------------------------------------------------- |
+| **STP Analysis**                     | Segmentation, Targeting, Positioning                                         | Market segmentation, target market selection, brand positioning |
+| **BCG Matrix (Growth-Share Matrix)** | Stars, Cash Cows, Question Marks, Dogs                                       | Product portfolio management, resource allocation decisions     |
+| **Ansoff Matrix**                    | Market penetration, market development, product development, diversification | Growth strategy selection                                       |
+| **Product Life Cycle (PLC)**         | Introduction, growth, maturity, decline                                      | Product strategy formulation, market timing decisions           |
+| **TAM-SAM-SOM**                      | Total / Serviceable / Obtainable Market                                      | Market sizing, opportunity quantification                       |
+| **Technology Adoption Lifecycle**    | Innovators → Early Adopters → Early Majority → Late Majority → Laggards      | Emerging technology/category penetration analysis               |
 
 #### Consumer & Behavioral Analysis
 
-| Framework | Description | Best For |
-|-----------|-------------|----------|
-| **Consumer Decision Journey** | Awareness → Consideration → Evaluation → Purchase → Loyalty | Consumer behavior path mapping, touchpoint optimization |
-| **AARRR Funnel (Pirate Metrics)** | Acquisition, Activation, Retention, Revenue, Referral | User growth analysis, conversion rate optimization |
-| **RFM Model** | Recency, Frequency, Monetary | Customer value segmentation, precision marketing |
-| **Maslow's Hierarchy of Needs** | Physiological → Safety → Social → Esteem → Self-actualization | Consumer psychology analysis, product value proposition |
-| **Jobs-to-be-Done (JTBD)** | The "job" a user needs to accomplish in a specific context | Demand insight, product innovation direction |
+| Framework                         | Description                                                   | Best For                                                |
+| --------------------------------- | ------------------------------------------------------------- | ------------------------------------------------------- |
+| **Consumer Decision Journey**     | Awareness → Consideration → Evaluation → Purchase → Loyalty   | Consumer behavior path mapping, touchpoint optimization |
+| **AARRR Funnel (Pirate Metrics)** | Acquisition, Activation, Retention, Revenue, Referral         | User growth analysis, conversion rate optimization      |
+| **RFM Model**                     | Recency, Frequency, Monetary                                  | Customer value segmentation, precision marketing        |
+| **Maslow's Hierarchy of Needs**   | Physiological → Safety → Social → Esteem → Self-actualization | Consumer psychology analysis, product value proposition |
+| **Jobs-to-be-Done (JTBD)**        | The "job" a user needs to accomplish in a specific context    | Demand insight, product innovation direction            |
 
 #### Financial & Valuation Analysis
 
-| Framework | Description | Best For |
-|-----------|-------------|----------|
-| **DuPont Analysis** | ROE = Net Profit Margin × Asset Turnover × Equity Multiplier | Profitability decomposition, financial health diagnosis |
-| **DCF (Discounted Cash Flow)** | Free cash flow discounting | Enterprise/project valuation |
-| **Comparable Company Analysis** | PE, PB, PS, EV/EBITDA multiples comparison | Relative valuation, peer benchmarking |
-| **EVA (Economic Value Added)** | After-tax operating profit - Cost of capital | Value creation capability assessment |
+| Framework                       | Description                                                  | Best For                                                |
+| ------------------------------- | ------------------------------------------------------------ | ------------------------------------------------------- |
+| **DuPont Analysis**             | ROE = Net Profit Margin × Asset Turnover × Equity Multiplier | Profitability decomposition, financial health diagnosis |
+| **DCF (Discounted Cash Flow)**  | Free cash flow discounting                                   | Enterprise/project valuation                            |
+| **Comparable Company Analysis** | PE, PB, PS, EV/EBITDA multiples comparison                   | Relative valuation, peer benchmarking                   |
+| **EVA (Economic Value Added)**  | After-tax operating profit - Cost of capital                 | Value creation capability assessment                    |
 
 #### Competitive & Strategic Positioning
 
-| Framework | Description | Best For |
-|-----------|-------------|----------|
-| **Benchmarking** | Key performance indicator item-by-item comparison | Competitor gap analysis, best practice identification |
-| **Strategic Group Mapping** | Cluster competitors along two key dimensions | Competitive landscape visualization, white-space identification |
-| **Value Chain Analysis** | Primary activities + support activities value decomposition | Cost advantage sources, differentiation opportunity identification |
-| **Blue Ocean Strategy** | Value curve, four-action framework (Eliminate-Reduce-Raise-Create) | Differentiated innovation, new market space creation |
-| **Perceptual Mapping** | Plot brand positions along two consumer-perceived dimensions | Brand positioning analysis, market gap discovery |
+| Framework                   | Description                                                        | Best For                                                           |
+| --------------------------- | ------------------------------------------------------------------ | ------------------------------------------------------------------ |
+| **Benchmarking**            | Key performance indicator item-by-item comparison                  | Competitor gap analysis, best practice identification              |
+| **Strategic Group Mapping** | Cluster competitors along two key dimensions                       | Competitive landscape visualization, white-space identification    |
+| **Value Chain Analysis**    | Primary activities + support activities value decomposition        | Cost advantage sources, differentiation opportunity identification |
+| **Blue Ocean Strategy**     | Value curve, four-action framework (Eliminate-Reduce-Raise-Create) | Differentiated innovation, new market space creation               |
+| **Perceptual Mapping**      | Plot brand positions along two consumer-perceived dimensions       | Brand positioning analysis, market gap discovery                   |
 
 #### Industry & Supply Chain Analysis
 
-| Framework | Description | Best For |
-|-----------|-------------|----------|
-| **Industry Value Chain** | Upstream → Midstream → Downstream decomposition | Industry structure understanding, profit distribution analysis |
-| **Gartner Hype Cycle** | Technology Trigger → Peak of Inflated Expectations → Trough of Disillusionment → Slope of Enlightenment → Plateau of Productivity | Emerging technology maturity assessment |
-| **GE-McKinsey Matrix** | Industry Attractiveness × Competitive Strength | Business portfolio prioritization, investment decisions |
+| Framework                | Description                                                                                                                       | Best For                                                       |
+| ------------------------ | --------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------- |
+| **Industry Value Chain** | Upstream → Midstream → Downstream decomposition                                                                                   | Industry structure understanding, profit distribution analysis |
+| **Gartner Hype Cycle**   | Technology Trigger → Peak of Inflated Expectations → Trough of Disillusionment → Slope of Enlightenment → Plateau of Productivity | Emerging technology maturity assessment                        |
+| **GE-McKinsey Matrix**   | Industry Attractiveness × Competitive Strength                                                                                    | Business portfolio prioritization, investment decisions        |
 
 #### Selection Principles
 
@@ -151,12 +152,12 @@ Based on the identified domain and research subject, select **one or more** prof
 ```markdown
 ## Framework Selection
 
-| Chapter | Selected Framework(s) | Application |
-|---------|----------------------|-------------|
-| Market Size & Growth Trends | TAM-SAM-SOM + Product Life Cycle | TAM-SAM-SOM to quantify market space, PLC to determine market stage |
+| Chapter                          | Selected Framework(s)                          | Application                                                                                              |
+| -------------------------------- | ---------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| Market Size & Growth Trends      | TAM-SAM-SOM + Product Life Cycle               | TAM-SAM-SOM to quantify market space, PLC to determine market stage                                      |
 | Competitive Landscape Assessment | Porter's Five Forces + Strategic Group Mapping | Five Forces to assess industry competition intensity, Group Mapping to visualize competitive positioning |
-| Consumer Profiling | RFM + Consumer Decision Journey | RFM to segment customer value, Decision Journey to identify key conversion nodes |
-| Brand Strategy Recommendations | SWOT + Blue Ocean Strategy | SWOT to summarize overall landscape, Blue Ocean to guide differentiation direction |
+| Consumer Profiling               | RFM + Consumer Decision Journey                | RFM to segment customer value, Decision Journey to identify key conversion nodes                         |
+| Brand Strategy Recommendations   | SWOT + Blue Ocean Strategy                     | SWOT to summarize overall landscape, Blue Ocean to guide differentiation direction                       |
 ```
 
 ### Step 1.3: Design Chapter Skeleton
@@ -174,6 +175,7 @@ Produce a hierarchical chapter structure. Each chapter must include:
 ## Analysis Framework
 
 ### Chapter 1: [Title]
+
 - **Analysis Objective**: [This chapter aims to...]
 - **Analysis Logic**: [Framework or reasoning chain used]
 - **Core Hypothesis**: [Hypotheses to validate]
@@ -181,6 +183,7 @@ Produce a hierarchical chapter structure. Each chapter must include:
 - **Visualization Plan**: (see Step 1.5)
 
 ### Chapter 2: [Title]
+
 ...
 ```
 
@@ -190,39 +193,39 @@ For each chapter, specify **exactly what data needs to be collected**. This is t
 
 Each data requirement entry must include:
 
-| Field | Description |
-|-------|-------------|
-| **Data Metric** | The specific metric or data point needed (e.g., "China skincare market size 2020-2025 (in billion CNY)") |
-| **Data Type** | Quantitative, Qualitative, or Mixed |
+| Field                 | Description                                                                                                                                       |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Data Metric**       | The specific metric or data point needed (e.g., "China skincare market size 2020-2025 (in billion CNY)")                                          |
+| **Data Type**         | Quantitative, Qualitative, or Mixed                                                                                                               |
 | **Suggested Sources** | Suggested source categories: Industry reports, financial statements, government statistics, social media, e-commerce platforms, survey data, news |
-| **Search Keywords** | Suggested search queries for data collection agents |
-| **Priority** | P0 (Required) / P1 (Important) / P2 (Supplementary) |
-| **Time Range** | The time period the data should cover |
+| **Search Keywords**   | Suggested search queries for data collection agents                                                                                               |
+| **Priority**          | P0 (Required) / P1 (Important) / P2 (Supplementary)                                                                                               |
+| **Time Range**        | The time period the data should cover                                                                                                             |
 
 #### Data Requirements Output Format (per chapter)
 
 ```markdown
 #### Data Requirements
 
-| # | Data Metric | Data Type | Suggested Sources | Search Keywords | Priority | Time Range |
-|---|-------------|-----------|-------------------|-----------------|----------|------------|
-| 1 | Market size (billion CNY) | Quantitative | Industry reports, government statistics | "China skincare market size 2024" | P0 | 2020-2025 |
-| 2 | CAGR | Quantitative | Industry reports | "skincare CAGR growth rate" | P0 | 2020-2025 |
-| 3 | Sub-category share | Quantitative | E-commerce platforms, industry reports | "skincare category share cream serum sunscreen" | P1 | Latest |
-| 4 | Policy & regulatory updates | Qualitative | Government announcements, news | "cosmetics regulation 2024" | P2 | Past 1 year |
+| #   | Data Metric                 | Data Type    | Suggested Sources                       | Search Keywords                                 | Priority | Time Range  |
+| --- | --------------------------- | ------------ | --------------------------------------- | ----------------------------------------------- | -------- | ----------- |
+| 1   | Market size (billion CNY)   | Quantitative | Industry reports, government statistics | "China skincare market size 2024"               | P0       | 2020-2025   |
+| 2   | CAGR                        | Quantitative | Industry reports                        | "skincare CAGR growth rate"                     | P0       | 2020-2025   |
+| 3   | Sub-category share          | Quantitative | E-commerce platforms, industry reports  | "skincare category share cream serum sunscreen" | P1       | Latest      |
+| 4   | Policy & regulatory updates | Qualitative  | Government announcements, news          | "cosmetics regulation 2024"                     | P2       | Past 1 year |
 ```
 
 ### Step 1.5: Define Visualization & Content Structure Per Chapter
 
 For each chapter, specify the **planned visualization** and **content structure** for the final report:
 
-| Field | Description |
-|-------|-------------|
-| **Visualization Type** | Chart type: Line chart, bar chart, pie chart, scatter plot, radar chart, heatmap, Sankey diagram, comparison table, etc. |
-| **Visualization Title** | Descriptive title for the chart |
-| **Visualization Data Mapping** | Which data indicators map to X/Y axes or segments |
-| **Comparison Table Design** | Column headers and comparison dimensions for the data contrast table |
-| **Argument Structure** | The planned "What → Why → So What" narrative outline |
+| Field                          | Description                                                                                                              |
+| ------------------------------ | ------------------------------------------------------------------------------------------------------------------------ |
+| **Visualization Type**         | Chart type: Line chart, bar chart, pie chart, scatter plot, radar chart, heatmap, Sankey diagram, comparison table, etc. |
+| **Visualization Title**        | Descriptive title for the chart                                                                                          |
+| **Visualization Data Mapping** | Which data indicators map to X/Y axes or segments                                                                        |
+| **Comparison Table Design**    | Column headers and comparison dimensions for the data contrast table                                                     |
+| **Argument Structure**         | The planned "What → Why → So What" narrative outline                                                                     |
 
 #### Visualization Plan Output Format (per chapter)
 
@@ -230,6 +233,7 @@ For each chapter, specify the **planned visualization** and **content structure*
 #### Visualization & Content Plan
 
 **Chart 1**: [Type] — [Title]
+
 - X-axis: [Dimension], Y-axis: [Metric]
 - Data source: Corresponds to Data Requirement #1, #2
 
@@ -238,6 +242,7 @@ For each chapter, specify the **planned visualization** and **content structure*
 |-----------|--------|--------|--------|
 
 **Argument Structure**:
+
 1. **Observation (What)**: [Surface phenomenon revealed by data]
 2. **Attribution (Why)**: [Driving factors or underlying causes]
 3. **Implication (So What)**: [Strategic implications or recommended actions]
@@ -251,6 +256,7 @@ Assemble all outputs into a single, structured **Analysis Framework Document**:
 # [Research Subject] Analysis Framework
 
 ## Research Overview
+
 - **Research Subject**: [...]
 - **Scope**: [Geography, time range, industry segment]
 - **Analysis Domain**: [Market / Finance / Industry / Brand / Consumer / ...]
@@ -259,31 +265,37 @@ Assemble all outputs into a single, structured **Analysis Framework Document**:
 ## Framework Selection
 
 | Chapter | Selected Framework(s) | Application |
-|---------|----------------------|-------------|
-| ... | ... | ... |
+| ------- | --------------------- | ----------- |
+| ...     | ...                   | ...         |
 
 ## Chapter Skeleton
 
 ### 1. [Chapter Title]
+
 - **Analysis Objective**: [...]
 - **Analysis Logic**: [...]
 - **Core Hypothesis**: [...]
 
 #### Data Requirements
-| # | Data Metric | Data Type | Suggested Sources | Search Keywords | Priority | Time Range |
-|---|-------------|-----------|-------------------|-----------------|----------|------------|
-| ... | ... | ... | ... | ... | ... | ... |
+
+| #   | Data Metric | Data Type | Suggested Sources | Search Keywords | Priority | Time Range |
+| --- | ----------- | --------- | ----------------- | --------------- | -------- | ---------- |
+| ... | ...         | ...       | ...               | ...             | ...      | ...        |
 
 #### Visualization & Content Plan
+
 [Chart plan + Comparison table design + Argument structure]
 
 ### 2. [Chapter Title]
+
 ...
 
 ### N. [Chapter Title]
+
 ...
 
 ## Data Collection Task List
+
 [Consolidate all P0/P1 data requirements across chapters into a structured task list for downstream data collection skills to execute]
 ```
 
@@ -327,12 +339,12 @@ Receive the completed **Analysis Framework** and **Data Package** from upstream,
 
 ## Phase 2 Inputs
 
-| Input | Description | Required |
-|-------|-------------|----------|
-| **Analysis Framework** | The framework document produced in Phase 1 | Yes |
-| **Data Summary** | Collected data organized per chapter from the data collection phase | Yes |
-| **Chart Files** | Local file paths for generated chart images. If not provided, will be generated in Step 2.3 using available visualization skills | Optional |
-| **External Search Findings** | URLs and summaries for inline citations | Optional |
+| Input                        | Description                                                                                                                      | Required |
+| ---------------------------- | -------------------------------------------------------------------------------------------------------------------------------- | -------- |
+| **Analysis Framework**       | The framework document produced in Phase 1                                                                                       | Yes      |
+| **Data Summary**             | Collected data organized per chapter from the data collection phase                                                              | Yes      |
+| **Chart Files**              | Local file paths for generated chart images. If not provided, will be generated in Step 2.3 using available visualization skills | Optional |
+| **External Search Findings** | URLs and summaries for inline citations                                                                                          | Optional |
 
 ## Phase 2 Workflow
 
@@ -370,16 +382,18 @@ Before writing the report, generate all planned charts from the Analysis Framewo
 
 1. **Extract Chart Tasks**: Parse all `Visualization & Content Plan` entries from the Analysis Framework to build a chart generation task list:
 
-| # | Chapter | Chart Type | Chart Title | Data Mapping | Data Source |
-|---|---------|------------|-------------|--------------|-------------|
-| 1 | 2.1 | Line chart | Market Size Trend 2020-2025 | X: Year, Y: Market Size (billion CNY) | Data Requirement #1, #2 |
-| 2 | 3.1 | Pie chart | Consumer Age Distribution | Segments: Age groups, Values: Share % | Data Requirement #5 |
-| ... | ... | ... | ... | ... | ... |
+| #   | Chapter | Chart Type | Chart Title                 | Data Mapping                          | Data Source             |
+| --- | ------- | ---------- | --------------------------- | ------------------------------------- | ----------------------- |
+| 1   | 2.1     | Line chart | Market Size Trend 2020-2025 | X: Year, Y: Market Size (billion CNY) | Data Requirement #1, #2 |
+| 2   | 3.1     | Pie chart  | Consumer Age Distribution   | Segments: Age groups, Values: Share % | Data Requirement #5     |
+| ... | ...     | ...        | ...                         | ...                                   | ...                     |
 
 2. **Prepare Chart Data**: For each chart task, extract the corresponding data points from the **Data Summary**.
+
    > **CRITICAL**: Use ONLY the numbers provided in the Data Summary. Do NOT invent or "smooth" data to make charts look better. If data points are missing, the chart must reflect that reality (e.g., broken line or missing bar), or the chart type must be adjusted.
 
 3. **Delegate to Visualization Skill**: Invoke the available visualization/charting skill (e.g., `data-analysis`) for each chart task with:
+
    - Chart type and title
    - Structured data
    - Axis labels and formatting preferences
@@ -389,10 +403,11 @@ Before writing the report, generate all planned charts from the Analysis Framewo
 
 ```markdown
 ## Generated Charts
-| # | Chapter | Chart Title | File Path |
-|---|---------|-------------|-----------|
-| 1 | 2.1 | Market Size Trend 2020-2025 | charts/chapter_2_1.png |
-| 2 | 3.1 | Consumer Age Distribution | charts/chapter_3_1.png |
+
+| #   | Chapter | Chart Title                 | File Path              |
+| --- | ------- | --------------------------- | ---------------------- |
+| 1   | 2.1     | Market Size Trend 2020-2025 | charts/chapter_2_1.png |
+| 2   | 3.1     | Consumer Age Distribution   | charts/chapter_3_1.png |
 ```
 
 5. **Validate**: Confirm all P0-priority charts have been generated. If any chart generation fails, note it and fall back to comparison tables for that sub-chapter.
@@ -407,9 +422,10 @@ For each sub-chapter, follow the **"Visual Anchor → Data Contrast → Integrat
 2. **Data Contrast Table**: Create a Markdown comparison table for key metrics
    > **Source Rule**: Every number in the table must come from the Data Summary. No hallucinations.
 3. **Integrated Narrative Analysis**: Write analytical text following "What → Why → So What"
-   > **Narrative Rule**: Narrative must explain the *provided* data. Do not make claims unsupported by the inputs.
+   > **Narrative Rule**: Narrative must explain the _provided_ data. Do not make claims unsupported by the inputs.
 
 Each sub-chapter must end with a robust analytical paragraph (min. 200 words) that:
+
 - Synthesizes conflicting or reinforcing data points
 - Reveals the underlying user tension or opportunity
 - Optionally ends with a punchy "One-Liner Truth" in a blockquote (`>`)
@@ -423,6 +439,7 @@ Abstract → 1. Introduction → 2...N. Body Chapters → N+1. Conclusion → N+
 ```
 
 Additionally verify:
+
 - All charts generated in Step 2.3 are embedded in the correct sub-chapters
 - Chart file paths in `![](path)` references are valid
 - Sub-chapters without charts have comparison tables as visual anchors
@@ -432,24 +449,27 @@ The report **MUST NOT** stop after the Conclusion — it **MUST** include Refere
 ## Formatting & Tone Standards
 
 ### Consulting Voice
+
 - **Tone**: McKinsey/BCG — Authoritative, Objective, Professional
 - **Language**: All headings and content in the language specified by `output_locale`
 - **Number Formatting**: Use English commas for thousands separators (`1,000` not `1，000`)
 - **Data emphasis**: **Bold** important viewpoints and key numbers
 
 ### Titling Constraints
+
 - **Numbering**: Use standard numbering (`1.`, `1.1`) directly followed by the title
 - **Forbidden Prefixes**: Do NOT use "Chapter", "Part", "Section" as prefixes
 - **Allowed Tone Words**: Analysis, Profiling, Overview, Insights, Assessment
 - **Forbidden Words**: "Decoding", "DNA", "Secrets", "Mindscape", "Solar System", "Unlocking"
 
 ### Sub-Chapter Conclusions
+
 - **Requirement**: End each sub-chapter with a robust analytical paragraph (min. 200 words).
 - **Narrative Flow**: This paragraph must look like a natural continuation of the text. It must synthesize the section's findings into a strategic judgment.
 - **Content Logic**:
-    1.  Synthesize the conflicting or reinforcing data points above.
-    2.  Reveal the *underlying* user tension or opportunity.
-    3.  Key Insight: **Optional**: Only if you have a concise, punchy "One-Liner Truth", place it at the very end using a **Blockquote** (`>`) to anchor the section.
+  1.  Synthesize the conflicting or reinforcing data points above.
+  2.  Reveal the _underlying_ user tension or opportunity.
+  3.  Key Insight: **Optional**: Only if you have a concise, punchy "One-Liner Truth", place it at the very end using a **Blockquote** (`>`) to anchor the section.
 
 ### Insight Depth (The "So What" Chain)
 
@@ -466,10 +486,12 @@ Every insight must connect **Data → User Psychology → Strategy Implication**
 ```
 
 ### References
+
 - **Inline**: Use markdown links for sources (e.g. `[Source Title](URL)`) when using External Search Findings
 - **References section**: Formatted strictly per **GB/T 7714-2015**
 
 ### Markdown Rules
+
 - **Immediate Start**: Begin directly with `# Report Title` — no introductory text
 - **No Separators**: Do NOT use horizontal rules (`---`)
 
@@ -479,33 +501,40 @@ Every insight must connect **Data → User Psychology → Strategy Implication**
 # [Report Title]
 
 ## Abstract
+
 [Executive summary with key takeaways]
 
 ## 1. Introduction
+
 [Background, objectives, methodology]
 
 ## 2. [Body Chapter Title]
+
 ### 2.1 [Sub-chapter Title]
+
 ![Chart Description](chart_file_path)
 
 | Metric | Brand A | Brand B |
-|--------|---------|--------|
-| ... | ... | ... |
+| ------ | ------- | ------- |
+| ...    | ...     | ...     |
 
 [Integrated narrative analysis: What → Why → So What, min. 200 words]
 
 > [Optional: One-liner strategic truth]
 
 ### 2.2 [Sub-chapter Title]
+
 ...
 
 ## N+1. Conclusion
+
 [Pure objective synthesis, NO bullet points, neutral tone]
 [Para 1: The fundamental nature of the group/market]
 [Para 2: Core tension or behavior pattern]
 [Final: One or two sentences stating the objective truth]
 
 ## N+2. References
+
 [1] Author. Title[EB/OL]. URL, Date.
 [2] ...
 ```
@@ -522,6 +551,7 @@ User provides: Research subject "Gen-Z Skincare Market Analysis"
 # Gen-Z Skincare Market Analysis Framework
 
 ## Research Overview
+
 - **Research Subject**: Gen-Z Skincare Market Deep Analysis
 - **Scope**: China market, 2020-2025, consumers aged 18-27
 - **Analysis Domain**: Market Analysis + Consumer Insights
@@ -533,27 +563,33 @@ User provides: Research subject "Gen-Z Skincare Market Analysis"
 ## Chapter Skeleton
 
 ### 1. Market Size & Growth Trends
+
 - **Analysis Objective**: Quantify Gen-Z skincare market size and identify growth drivers
 - **Analysis Logic**: Total market → Segmentation → Growth rate → Driver decomposition
 - **Core Hypothesis**: Gen-Z is becoming the core engine of skincare consumption growth
 
 #### Data Requirements
-| # | Data Metric | Data Type | Suggested Sources | Search Keywords | Priority | Time Range |
-|---|-------------|-----------|-------------------|-----------------|----------|------------|
-| 1 | China skincare market total size | Quantitative | Industry reports | "China skincare market size 2024 2025" | P0 | 2020-2025 |
-| 2 | Gen-Z skincare spending share | Quantitative | Industry reports, e-commerce platforms | "Gen-Z skincare spending share youth" | P0 | Latest |
+
+| #   | Data Metric                      | Data Type    | Suggested Sources                      | Search Keywords                        | Priority | Time Range |
+| --- | -------------------------------- | ------------ | -------------------------------------- | -------------------------------------- | -------- | ---------- |
+| 1   | China skincare market total size | Quantitative | Industry reports                       | "China skincare market size 2024 2025" | P0       | 2020-2025  |
+| 2   | Gen-Z skincare spending share    | Quantitative | Industry reports, e-commerce platforms | "Gen-Z skincare spending share youth"  | P0       | Latest     |
 
 #### Visualization & Content Plan
+
 **Chart 1**: Line chart — China Skincare Market Size Trend 2020-2025
 **Argument Structure**:
+
 1. What: Quantified status of market size and Gen-Z share
 2. Why: Consumption upgrade, ingredient-conscious consumers, social media driven
 3. So What: Brands should prioritize building youth-oriented product lines
 
 ### 2. Consumer Profiling & Behavioral Insights
+
 ...
 
 ## Data Collection Task List
+
 [Consolidated P0/P1 tasks]
 ```
 

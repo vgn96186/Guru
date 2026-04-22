@@ -152,7 +152,7 @@ export function getFileExtension(filepath: string) {
 }
 
 export function checkCodeFile(
-  filepath: string,
+  filepath: string
 ):
   | { isCodeFile: true; language: string }
   | { isCodeFile: false; language: null } {

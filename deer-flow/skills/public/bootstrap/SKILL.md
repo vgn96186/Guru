@@ -17,6 +17,7 @@ bootstrap/
 ```
 
 **Before your first response**, read both:
+
 1. `references/conversation-guide.md` — how to run each phase
 2. `templates/SOUL.template.md` — what you're building toward
 
@@ -32,12 +33,12 @@ bootstrap/
 
 The conversation has 4 phases. Each phase may span 1–3 rounds depending on how much the user shares. Skip or merge phases if the user volunteers information early.
 
-| Phase | Goal | Key Extractions |
-|-------|------|-----------------|
-| **1. Hello** | Language + first impression | Preferred language |
-| **2. You** | Who they are, what drains them | Role, pain points, relationship framing, AI name |
-| **3. Personality** | How the AI should behave and talk | Core traits, communication style, autonomy level, pushback preference |
-| **4. Depth** | Aspirations, blind spots, dealbreakers | Long-term vision, failure philosophy, boundaries |
+| Phase              | Goal                                   | Key Extractions                                                       |
+| ------------------ | -------------------------------------- | --------------------------------------------------------------------- |
+| **1. Hello**       | Language + first impression            | Preferred language                                                    |
+| **2. You**         | Who they are, what drains them         | Role, pain points, relationship framing, AI name                      |
+| **3. Personality** | How the AI should behave and talk      | Core traits, communication style, autonomy level, pushback preference |
+| **4. Depth**       | Aspirations, blind spots, dealbreakers | Long-term vision, failure philosophy, boundaries                      |
 
 Phase details and conversation strategies are in `references/conversation-guide.md`.
 
@@ -45,20 +46,20 @@ Phase details and conversation strategies are in `references/conversation-guide.
 
 Mentally track these fields as the conversation progresses. You need **all required fields** before generating.
 
-| Field | Required | Source Phase |
-|-------|----------|-------------|
-| Preferred language | ✅ | 1 |
-| User's name | ✅ | 2 |
-| User's role / context | ✅ | 2 |
-| AI name | ✅ | 2 |
-| Relationship framing | ✅ | 2 |
-| Core traits (3–5 behavioral rules) | ✅ | 3 |
-| Communication style | ✅ | 3 |
-| Pushback / honesty preference | ✅ | 3 |
-| Autonomy level | ✅ | 3 |
-| Failure philosophy | ✅ | 4 |
-| Long-term vision | nice-to-have | 4 |
-| Blind spots / boundaries | nice-to-have | 4 |
+| Field                              | Required     | Source Phase |
+| ---------------------------------- | ------------ | ------------ |
+| Preferred language                 | ✅           | 1            |
+| User's name                        | ✅           | 2            |
+| User's role / context              | ✅           | 2            |
+| AI name                            | ✅           | 2            |
+| Relationship framing               | ✅           | 2            |
+| Core traits (3–5 behavioral rules) | ✅           | 3            |
+| Communication style                | ✅           | 3            |
+| Pushback / honesty preference      | ✅           | 3            |
+| Autonomy level                     | ✅           | 3            |
+| Failure philosophy                 | ✅           | 4            |
+| Long-term vision                   | nice-to-have | 4            |
+| Blind spots / boundaries           | nice-to-have | 4            |
 
 If the user is direct and thorough, you can reach generation in 5 rounds. If they're exploratory, take up to 8. Never exceed 8 — if you're still missing fields, make your best inference and confirm.
 
@@ -78,6 +79,7 @@ Once you have enough information:
 6. After the tool returns successfully, confirm: "✅ [Name] is officially real."
 
 **Generation rules:**
+
 - The final SOUL.md **must always be written in English**, regardless of the user's preferred language or conversation language.
 - Every sentence must trace back to something the user said or clearly implied. No generic filler.
 - Core Traits are **behavioral rules**, not adjectives. Write "argue position, push back, speak truth not comfort" — not "honest and brave."

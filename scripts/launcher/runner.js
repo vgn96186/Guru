@@ -116,7 +116,9 @@ class Runner extends EventEmitter {
     this.foregroundTaskTimer = setTimeout(() => {
       if (this.foregroundTask && this.foregroundTask.name === taskName) {
         this.log(
-          `[timeout] ${taskName} exceeded ${Math.round(TASK_TIMEOUT_MS / 60_000)} min and was force-unlocked. You can run actions again.`,
+          `[timeout] ${taskName} exceeded ${Math.round(
+            TASK_TIMEOUT_MS / 60_000,
+          )} min and was force-unlocked. You can run actions again.`,
           'warning',
         );
         this.finishForegroundTask(taskName, {
@@ -190,7 +192,9 @@ class Runner extends EventEmitter {
         this.log(
           success
             ? `[ok] ${taskName} completed successfully.`
-            : `[fail] ${taskName} exited with code ${code ?? 'unknown'}${signal ? ` (${signal})` : ''}.`,
+            : `[fail] ${taskName} exited with code ${code ?? 'unknown'}${
+                signal ? ` (${signal})` : ''
+              }.`,
           success ? 'success' : 'error',
         );
         this.finishForegroundTask(taskName, {
@@ -249,7 +253,9 @@ class Runner extends EventEmitter {
       this.log(
         normalStop
           ? `[ok] ${taskName} stopped.`
-          : `[fail] ${taskName} exited with code ${code ?? 'unknown'}${signal ? ` (${signal})` : ''}.`,
+          : `[fail] ${taskName} exited with code ${code ?? 'unknown'}${
+              signal ? ` (${signal})` : ''
+            }.`,
         normalStop ? 'success' : 'error',
       );
 
@@ -343,7 +349,9 @@ class Runner extends EventEmitter {
       const timeoutId = setTimeout(() => {
         timedOut = true;
         this.log(
-          `[warning] ${taskName} timed out after ${Math.round(ADB_TIMEOUT_MS / 1000)}s. Clearing stale adb.exe processes...`,
+          `[warning] ${taskName} timed out after ${Math.round(
+            ADB_TIMEOUT_MS / 1000,
+          )}s. Clearing stale adb.exe processes...`,
           'warning',
         );
 
@@ -403,7 +411,9 @@ class Runner extends EventEmitter {
         this.log(
           success
             ? `[ok] ${taskName} completed successfully.`
-            : `[fail] ${taskName} exited with code ${code ?? 'unknown'}${signal ? ` (${signal})` : ''}.`,
+            : `[fail] ${taskName} exited with code ${code ?? 'unknown'}${
+                signal ? ` (${signal})` : ''
+              }.`,
           success ? 'success' : 'error',
         );
         this.finishForegroundTask(taskName, {

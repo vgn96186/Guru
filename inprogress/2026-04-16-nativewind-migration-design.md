@@ -32,6 +32,7 @@ Android-only, dark-mode-only, Expo SDK 54.
 - No NativeWind, Tailwind, Restyle, styled-components, Emotion, or Unistyles currently installed.
 
 **Visual pain points:**
+
 - Base `#000` on OLED produces smear / depth-loss.
 - Borders at `rgba(255,255,255,0.08)` disappear on dark surfaces.
 - Secondary text `#A0A0A5` is low-contrast on near-black.
@@ -41,6 +42,7 @@ Android-only, dark-mode-only, Expo SDK 54.
 ## 4. Target State
 
 ### 4.1 Tech Stack
+
 - `nativewind@^4` — Tailwind utility classes for RN via Metro transform.
 - `tailwindcss@^3.4` — peer.
 - `tailwind-variants` — variant-to-className mapper for primitives with `variant`/`tone` props.
@@ -50,12 +52,14 @@ Android-only, dark-mode-only, Expo SDK 54.
 ### 4.2 Architecture — Hybrid Primitives Strategy (C)
 
 Semantic primitives retained, internals rewritten:
+
 - `LinearText` — keeps `variant` × `tone` prop API, internals use `tailwind-variants`.
 - `LinearButton`, `LinearChipButton`, `LinearBadge`, `LinearIconButton`, `LinearTextInput`, `EmptyState` — same.
 - `BackIconButton`, `SettingsIconButton` — same.
 - `AppBottomSheet`, `AppFlashList` — same (light refactor to className).
 
 Pure-style primitives deleted; call sites migrated to raw className:
+
 - `LinearSurface` → `<View className="bg-surface rounded-lg border border-border">` at call sites.
 - `LinearDivider` → `<View className="h-px bg-border" />`.
 
@@ -69,13 +73,13 @@ Pure-style primitives deleted; call sites migrated to raw className:
 export const linearTheme = {
   colors: {
     // Base — hi-contrast mono
-    background: '#050506',        // near-black, not pure (OLED-smear fix)
-    surface: '#0B0B0E',           // raised glass base (pre-blur)
+    background: '#050506', // near-black, not pure (OLED-smear fix)
+    surface: '#0B0B0E', // raised glass base (pre-blur)
     surfaceElevated: '#121217',
-    border: 'rgba(255,255,255,0.14)',      // thicker visible borders
+    border: 'rgba(255,255,255,0.14)', // thicker visible borders
     borderStrong: 'rgba(255,255,255,0.28)',
-    textPrimary: '#FAFAFA',       // near-white (was #F2F2F2)
-    textSecondary: '#B8B8BD',     // bumped from #A0A0A5 (WCAG AA on black)
+    textPrimary: '#FAFAFA', // near-white (was #F2F2F2)
+    textSecondary: '#B8B8BD', // bumped from #A0A0A5 (WCAG AA on black)
     textMuted: '#7A7A80',
     textInverse: '#000000',
 
@@ -94,14 +98,16 @@ export const linearTheme = {
 
     // Glass overlays (LinearGradient on top of BlurView)
     glassTintStart: 'rgba(255,255,255,0.06)',
-    glassTintEnd:   'rgba(255,255,255,0.00)',
+    glassTintEnd: 'rgba(255,255,255,0.00)',
     glassPurpleStart: 'rgba(94,106,210,0.18)',
-    glassPurpleEnd:   'rgba(94,106,210,0.00)',
+    glassPurpleEnd: 'rgba(94,106,210,0.00)',
   },
   spacing: { xs: 4, sm: 8, md: 16, lg: 24, xl: 32, '2xl': 48 },
-  radius:  { sm: 8, md: 12, lg: 16, xl: 20, full: 9999 },
-  blur:    { subtle: 20, standard: 40, heavy: 80 },
-  typography: { /* unchanged — Inter 400..900 */ },
+  radius: { sm: 8, md: 12, lg: 16, xl: 20, full: 9999 },
+  blur: { subtle: 20, standard: 40, heavy: 80 },
+  typography: {
+    /* unchanged — Inter 400..900 */
+  },
 } as const;
 ```
 
@@ -110,6 +116,7 @@ export const linearTheme = {
 **Kept:** Inter font, purple `#5E6AD2` identity, gradient accents on CTAs/highlights, glass surfaces.
 
 **Changed:**
+
 - Pure `#000` background → `#050506`.
 - Borders `0.08` → `0.14` default, `0.28` for focused/pressed/highlighted.
 - Secondary text contrast bumped (`#A0A0A5` → `#B8B8BD`; `#F2F2F2` → `#FAFAFA`).
@@ -161,6 +168,7 @@ const button = tv({
 ```
 
 Consumers unchanged:
+
 ```tsx
 <LinearButton variant="primary" onPress={...}>Start</LinearButton>
 ```
@@ -215,16 +223,16 @@ Punishment / BedLock / Lockdown / Doomscroll Interceptor / BreakEnforcer re-skin
 
 ## 7. Risks & Mitigations
 
-| Risk | Mitigation |
-|---|---|
-| NativeWind v4 Metro transform incompat with Expo SDK 54 | Verified compatible (SDK 54 uses Metro ≥0.80). Fallback: runtime `interop` mode (~5% slower, works). |
-| Jest tests fail on `className` prop | `jest-expo` preset supports it. Audit any `StyleSheet` mocks in Phase 0. |
-| Detox references style objects | Audit confirms critical suite uses `testID` only. Safe. |
-| BlurView Android perf on mid-tier | Benchmark in Phase 3. Fall back to rgba overlay via `Platform.Version` check for low-end devices. |
-| Tailwind JIT purges used classes | Content globs cover all source roots. Lint rule: no dynamic className string concatenation (`className={\`bg-\${color}\`}` forbidden; use `tailwind-variants` instead). |
-| Merge conflicts during 5-week window | Phase-gated small PRs. Each phase lands in 1–3 days max. |
-| AI v2 code churn overlap | Phase 4 order places `GuruChatScreen`/`SessionScreen` last. |
-| Theme generator drift | `npm run theme:sync` in `prebuild`; CI check that generated config matches committed file. |
+| Risk                                                    | Mitigation                                                                                                                                                            |
+| ------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| NativeWind v4 Metro transform incompat with Expo SDK 54 | Verified compatible (SDK 54 uses Metro ≥0.80). Fallback: runtime `interop` mode (~5% slower, works).                                                                  |
+| Jest tests fail on `className` prop                     | `jest-expo` preset supports it. Audit any `StyleSheet` mocks in Phase 0.                                                                                              |
+| Detox references style objects                          | Audit confirms critical suite uses `testID` only. Safe.                                                                                                               |
+| BlurView Android perf on mid-tier                       | Benchmark in Phase 3. Fall back to rgba overlay via `Platform.Version` check for low-end devices.                                                                     |
+| Tailwind JIT purges used classes                        | Content globs cover all source roots. Lint rule: no dynamic className string concatenation (`className={\`bg-\${color}\`}`forbidden; use`tailwind-variants` instead). |
+| Merge conflicts during 5-week window                    | Phase-gated small PRs. Each phase lands in 1–3 days max.                                                                                                              |
+| AI v2 code churn overlap                                | Phase 4 order places `GuruChatScreen`/`SessionScreen` last.                                                                                                           |
+| Theme generator drift                                   | `npm run theme:sync` in `prebuild`; CI check that generated config matches committed file.                                                                            |
 
 ## 8. Rollback
 

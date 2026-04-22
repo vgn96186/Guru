@@ -65,10 +65,10 @@ python /mnt/skills/public/systematic-literature-review/scripts/arxiv_search.py \
 
 Use **2-3 core keywords** as the query, and use `--category` to narrow the field instead of stuffing field names into the query. Examples:
 
-| User says | Good query | Bad query |
-|---|---|---|
-| "diffusion models in computer vision" | `"diffusion models" --category cs.CV` | `"diffusion models in computer vision"` |
-| "transformer attention variants" | `"transformer attention"` | `"transformer attention variants in NLP"` |
+| User says                             | Good query                                 | Bad query                                                   |
+| ------------------------------------- | ------------------------------------------ | ----------------------------------------------------------- |
+| "diffusion models in computer vision" | `"diffusion models" --category cs.CV`      | `"diffusion models in computer vision"`                     |
+| "transformer attention variants"      | `"transformer attention"`                  | `"transformer attention variants in NLP"`                   |
 | "graph neural networks for molecules" | `"graph neural networks" --category cs.LG` | `"graph neural networks for molecular property prediction"` |
 
 The script prints a JSON array to stdout. Each paper has: `id`, `title`, `authors`, `abstract`, `published`, `updated`, `categories`, `pdf_url`, `abs_url`.
@@ -104,18 +104,18 @@ Split papers into batches of ~5, then for each batch, call the `task` tool with 
 
 **Round strategy — use this decision table, do not compute the split yourself**:
 
-| Paper count | Batches of ~5 papers | Rounds | Per-round subagent count |
-|---|---|---|---|
-| 1–5 | 1 batch | 1 round | 1 subagent |
-| 6–10 | 2 batches | 1 round | 2 subagents |
-| 11–15 | 3 batches | 1 round | 3 subagents |
-| 16–20 | 4 batches | 2 rounds | 3 + 1 |
-| 21–25 | 5 batches | 2 rounds | 3 + 2 |
-| 26–30 | 6 batches | 2 rounds | 3 + 3 |
-| 31–35 | 7 batches | 3 rounds | 3 + 3 + 1 |
-| 36–40 | 8 batches | 3 rounds | 3 + 3 + 2 |
-| 41–45 | 9 batches | 3 rounds | 3 + 3 + 3 |
-| 46–50 | 10 batches | 4 rounds | 3 + 3 + 3 + 1 |
+| Paper count | Batches of ~5 papers | Rounds   | Per-round subagent count |
+| ----------- | -------------------- | -------- | ------------------------ |
+| 1–5         | 1 batch              | 1 round  | 1 subagent               |
+| 6–10        | 2 batches            | 1 round  | 2 subagents              |
+| 11–15       | 3 batches            | 1 round  | 3 subagents              |
+| 16–20       | 4 batches            | 2 rounds | 3 + 1                    |
+| 21–25       | 5 batches            | 2 rounds | 3 + 2                    |
+| 26–30       | 6 batches            | 2 rounds | 3 + 3                    |
+| 31–35       | 7 batches            | 3 rounds | 3 + 3 + 1                |
+| 36–40       | 8 batches            | 3 rounds | 3 + 3 + 2                |
+| 41–45       | 9 batches            | 3 rounds | 3 + 3 + 3                |
+| 46–50       | 10 batches           | 4 rounds | 3 + 3 + 3 + 1            |
 
 **Never dispatch more than 3 subagents in the same turn.** When a row says "2 rounds (3 + 1)", that means: first turn dispatches 3 subagents in parallel, wait for all 3 to complete, then second turn dispatches 1 subagent. Rounds are strictly sequential at the main-agent level.
 
@@ -200,6 +200,7 @@ Do **not** dump the full 2000+ word report inline — per-paper annotations, ref
 User: "Do a systematic literature review of recent transformer attention variants, 20 papers, APA format."
 
 Your flow:
+
 1. Phase 1: confirm topic (transformer attention variants), scope (20 papers, default time window), format (APA). Ask **one** clarification only if something is missing (e.g. "Any particular time window, or should I default to the last 3 years?").
 2. Phase 2: `arxiv_search.py "transformer attention" --max-results 20 --sort-by relevance --start-date 2023-01-01`.
 3. Phase 3: 20 papers → round 1 = 3 subagents × 5 papers = 15 covered, round 2 = 1 subagent × 5 papers = 5 covered. Aggregate.
@@ -211,6 +212,7 @@ Your flow:
 User: "Survey a few papers on diffusion models for me."
 
 Your flow:
+
 1. Phase 1: "a few" is ambiguous. Ask one question: "How many papers would you like — 10, 20, or 30? And any citation format preference (APA is the default)?"
 2. User responds "10, BibTeX".
 3. Phase 2: `arxiv_search.py "diffusion models" --max-results 10 --category cs.CV`.

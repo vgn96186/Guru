@@ -153,7 +153,7 @@ export function MessageList({
             }
             const results: React.ReactNode[] = [];
             for (const message of group.messages.filter(
-              (message) => message.type === "ai",
+              (message) => message.type === "ai"
             )) {
               if (hasReasoning(message)) {
                 results.push(
@@ -161,7 +161,7 @@ export function MessageList({
                     key={"thinking-group-" + message.id}
                     messages={[message]}
                     isLoading={thread.isLoading}
-                  />,
+                  />
                 );
               }
               results.push(
@@ -170,7 +170,7 @@ export function MessageList({
                   className="text-muted-foreground pt-2 text-sm font-normal"
                 >
                   {t.subtasks.executing(tasks.size)}
-                </div>,
+                </div>
               );
               const taskIds = message.tool_calls
                 ?.filter((toolCall) => toolCall.name === "task")
@@ -181,7 +181,7 @@ export function MessageList({
                     key={"task-group-" + taskId}
                     taskId={taskId!}
                     isLoading={thread.isLoading}
-                  />,
+                  />
                 );
               }
             }

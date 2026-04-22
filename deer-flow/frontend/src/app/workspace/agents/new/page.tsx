@@ -73,7 +73,7 @@ async function getAgentWithRetry(agentName: string) {
 function getCreateAgentErrorMessage(
   error: unknown,
   networkErrorMessage: string,
-  fallbackMessage: string,
+  fallbackMessage: string
 ) {
   if (error instanceof TypeError && error.message === "Failed to fetch") {
     return networkErrorMessage;
@@ -179,8 +179,8 @@ export default function NewAgentPage() {
         getCreateAgentErrorMessage(
           err,
           t.agents.nameStepNetworkError,
-          t.agents.nameStepCheckError,
-        ),
+          t.agents.nameStepCheckError
+        )
       );
       return;
     } finally {
@@ -218,10 +218,10 @@ export default function NewAgentPage() {
       await sendMessage(
         threadId,
         { text: trimmed, files: [] },
-        { agent_name: agentName },
+        { agent_name: agentName }
       );
     },
-    [agentName, sendMessage, thread.isLoading, threadId],
+    [agentName, sendMessage, thread.isLoading, threadId]
   );
 
   const handleSaveAgent = useCallback(async () => {
@@ -241,7 +241,7 @@ export default function NewAgentPage() {
         threadId,
         { text: t.agents.saveCommandMessage, files: [] },
         { agent_name: agentName },
-        { additionalKwargs: { hide_from_ui: true } },
+        { additionalKwargs: { hide_from_ui: true } }
       );
       toast.success(t.agents.saveRequested);
     } catch (error) {
@@ -384,7 +384,7 @@ export default function NewAgentPage() {
                       <Button
                         onClick={() =>
                           router.push(
-                            `/workspace/agents/${agentName}/chats/new`,
+                            `/workspace/agents/${agentName}/chats/new`
                           )
                         }
                       >

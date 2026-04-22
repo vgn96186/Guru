@@ -214,7 +214,7 @@ export const ContextContentFooter = ({
     <div
       className={cn(
         "bg-secondary flex w-full items-center justify-between gap-3 p-3 text-xs",
-        className,
+        className
       )}
       {...props}
     >

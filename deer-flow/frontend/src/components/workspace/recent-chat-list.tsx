@@ -94,7 +94,7 @@ export function RecentChatList() {
         void router.push(nextThreadPath);
       }
     },
-    [agentNameFromPath, deleteThread, router, threadIdFromPath, threads],
+    [agentNameFromPath, deleteThread, router, threadIdFromPath, threads]
   );
 
   const handleRenameClick = useCallback(
@@ -103,7 +103,7 @@ export function RecentChatList() {
       setRenameValue(currentTitle);
       setRenameDialogOpen(true);
     },
-    [],
+    []
   );
 
   const handleRenameSubmit = useCallback(() => {
@@ -132,7 +132,7 @@ export function RecentChatList() {
         toast.error(t.clipboard.failedToCopyToClipboard);
       }
     },
-    [t],
+    [t]
   );
 
   const handleExport = useCallback(
@@ -140,7 +140,7 @@ export function RecentChatList() {
       try {
         const apiClient = getAPIClient();
         const state = await apiClient.threads.getState<AgentThreadState>(
-          thread.thread_id,
+          thread.thread_id
         );
         const messages = state.values?.messages ?? [];
         if (messages.length === 0) {
@@ -157,7 +157,7 @@ export function RecentChatList() {
         toast.error("Failed to export conversation");
       }
     },
-    [t],
+    [t]
   );
 
   if (threads.length === 0) {
@@ -209,7 +209,7 @@ export function RecentChatList() {
                                 onSelect={() =>
                                   handleRenameClick(
                                     thread.thread_id,
-                                    titleOfThread(thread),
+                                    titleOfThread(thread)
                                   )
                                 }
                               >

@@ -19,10 +19,12 @@
 ### Career Path
 
 1. **Co-founder & CTO of Escher Reality** (YC S17)
+
    - Startup building augmented reality SDK for game developers
    - Company acquired by Niantic (makers of Pokémon Go) in February 2018
 
 2. **Director of Engineering at Niantic**
+
    - Headed AR platform after acquisition
    - Responsible for scaling AR infrastructure to millions of users
 
@@ -64,11 +66,13 @@
 **Examples:**
 
 1. **Optimizely** (YC W10)
+
    - Built prototype in couple of days
    - JavaScript file on S3 for A/B testing
    - Manual execution via Chrome console
 
 2. **Escher Reality** (Diana's company)
+
    - Computer vision algorithms on phones
    - Demo completed in few weeks
    - Visual demo easier than explaining
@@ -91,11 +95,13 @@
 **Key Principles:**
 
 1. **Do Things That Don't Scale** (Paul Graham)
+
    - Manual onboarding (editing database directly)
    - Founders processing requests manually
    - Example: Stripe founders filling bank forms manually
 
 2. **Create 90/10 Solution** (Paul Buchheit)
+
    - Get 90% of value with 10% of effort
    - Restrict product to limited dimensions
    - Push features to post-launch
@@ -108,6 +114,7 @@
 **Examples:**
 
 1. **DoorDash** (originally Palo Alto Delivery)
+
    - Static HTML with PDF menus
    - Google Forms for orders
    - "Find My Friends" to track deliveries
@@ -115,6 +122,7 @@
    - Focused only on Palo Alto initially
 
 2. **WayUp** (YC 2015)
+
    - CTO JJ chose Django/Python over Ruby/Rails
    - Prioritized iteration speed over popular choice
    - Simple stack: Postgres, Python, Heroku
@@ -138,11 +146,13 @@
 **Key Principles:**
 
 1. **Quickly Iterate with Hard and Soft Data**
+
    - Set up simple analytics dashboard (Google Analytics, Amplitude, Mixpanel)
    - Keep talking to users
    - Marry data with user insights
 
 2. **Continuously Launch**
+
    - Example: Segment launched 5 times in one month
    - Each launch added features based on user feedback
    - Weekly launches to maintain momentum
@@ -155,12 +165,14 @@
 **Examples:**
 
 1. **WePay** (YC company)
+
    - Started as B2C payments (Venmo-like)
    - Analytics showed features unused
    - User interviews revealed GoFundMe needed API
    - Pivoted to API product
 
 2. **Pokémon Go Launch**
+
    - Massive scaling issues on day 1
    - Load balancer problems caused DDoS-like situation
    - Didn't kill the company (made $1B+ revenue)

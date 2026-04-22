@@ -44,6 +44,10 @@ export const BUNDLED_FAL_KEY = '';
 export const BUNDLED_BRAVE_SEARCH_KEY = '';
 export const BUNDLED_DEEPSEEK_KEY = '';
 export const BUNDLED_GITHUB_MODELS_PAT = '';
+export const BUNDLED_QWEN_KEY = '';
+export const BUNDLED_VERTEX_AI_PROJECT = process.env.EXPO_PUBLIC_VERTEX_AI_PROJECT || '';
+export const BUNDLED_VERTEX_AI_LOCATION = process.env.EXPO_PUBLIC_VERTEX_AI_LOCATION || '';
+export const BUNDLED_VERTEX_AI_TOKEN = process.env.EXPO_PUBLIC_VERTEX_AI_TOKEN || '';
 
 // G4F (gpt4free) OpenAI-compatible proxy URL. Deploy via deploy/g4f/README.md,
 // then set EXPO_PUBLIC_G4F_URL in .env. Empty = disabled.
@@ -358,3 +362,5 @@ export const MOCK_EXTERNAL_LECTURE_AUDIO_URL =
 
 /** Enable quiet dot-dither texture on empty states + e0 backgrounds (`EmptyState` mounts `Texture`). */
 export const FEATURE_TEXTURE = false;
+
+export const VERTEX_MODELS = ['gemini-2.5-pro', 'gemini-2.5-flash', 'gemini-2.0-flash'] as const;

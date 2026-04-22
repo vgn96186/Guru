@@ -1,10 +1,6 @@
 {
-    "platforms": [
-        "android"
-    ],
-    "android": {
-        "modules": [
-            "expo.modules.applauncher.AppLauncherModule"
-        ]
-    }
+  "platforms": ["android"],
+  "android": {
+    "modules": ["expo.modules.applauncher.AppLauncherModule"]
+  }
 }

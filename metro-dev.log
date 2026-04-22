@@ -1,7 +1,7 @@
-===== 2026-04-20T10:29:57.106Z metro start =====
+===== 2026-04-22T09:38:24.768Z metro start =====
 
 > neet_study@1.0.0 android:metro
-> npm run generate:bundled-env && cross-env NODE_ENV=development NODE_OPTIONS="--loader ./scripts/fix-esm-windows.mjs --no-warnings" expo start --dev-client --localhost --port 8081
+> npm run generate:bundled-env && cross-env BROWSER=none NODE_ENV=development NODE_OPTIONS="--loader ./scripts/fix-esm-windows.mjs --no-warnings" expo start --dev-client --localhost --port 8081
 
 
 > neet_study@1.0.0 generate:bundled-env
@@ -10,175 +10,1600 @@
 env: load .env
 env: export EXPO_PUBLIC_SENTRY_DSN
 Starting project at /Users/vishnugnair/Guru/debug
-[dotenv@17.3.1] injecting env (10) from .env -- tip: ⚙️  enable debug logging with { debug: true }
-[dotenv@17.3.1] injecting env (0) from .env -- tip: ⚙️  write to custom object with { processEnv: myObject }
-[dotenv@17.3.1] injecting env (0) from .env -- tip: ⚙️  suppress all logs with { quiet: true }
-Starting Metro Bundler
+[dotenv@17.3.1] injecting env (10) from .env -- tip: ⚡️ secrets for agents: https://dotenvx.com/as2
 [dotenv@17.3.1] injecting env (0) from .env -- tip: 🛡️ auth for agents: https://vestauth.com
-[dotenv@17.3.1] injecting env (0) from .env -- tip: ⚙️  specify custom .env file path with { path: '/custom/path/.env' }
+[dotenv@17.3.1] injecting env (0) from .env -- tip: 🤖 agentic secret storage: https://dotenvx.com/as2
+[dotenv@17.3.1] injecting env (0) from .env -- tip: 🛡️ auth for agents: https://vestauth.com
+Starting Metro Bundler
 [dotenv@17.3.1] injecting env (0) from .env -- tip: 🔐 prevent committing .env to code: https://dotenvx.com/precommit
-[dotenv@17.3.1] injecting env (0) from .env -- tip: 🔐 prevent building .env in docker: https://dotenvx.com/prebuild
+[dotenv@17.3.1] injecting env (0) from .env -- tip: ⚙️  write to custom object with { processEnv: myObject }
+[dotenv@17.3.1] injecting env (0) from .env -- tip: 🛡️ auth for agents: https://vestauth.com
+[dotenv@17.3.1] injecting env (0) from .env -- tip: 🛡️ auth for agents: https://vestauth.com
 Waiting on http://localhost:8081
 Logs for your project will appear below.
 [dotenv@17.3.1] injecting env (0) from .env -- tip: ⚙️  override existing env vars with { override: true }
-[dotenv@17.3.1] injecting env (0) from .env -- tip: ⚡️ secrets for agents: https://dotenvx.com/as2
-[dotenv@17.3.1] injecting env (0) from .env -- tip: ⚙️  write to custom object with { processEnv: myObject }
-Android ./index.ts ▓▓░░░░░░░░░░░░░░ 14.3% ( 58/220)
-Android ./index.ts ▓▓▓░░░░░░░░░░░░░ 22.6% (280/600)
-Android ./index.ts ▓▓▓▓▓░░░░░░░░░░░ 33.6% ( 579/1033)
-Android ./index.ts ▓▓▓▓▓▓▓░░░░░░░░░ 49.2% ( 936/1334)
-Android ./index.ts ▓▓▓▓▓▓▓▓▓░░░░░░░ 56.4% (1117/1487)
-Android ./index.ts ▓▓▓▓▓▓▓▓▓░░░░░░░ 59.2% (1210/1637)
-Android ./index.ts ▓▓▓▓▓▓▓▓▓░░░░░░░ 59.2% (1226/1679)
-Android ./index.ts ▓▓▓▓▓▓▓▓▓░░░░░░░ 59.7% (1361/1766)
-Android ./index.ts ▓▓▓▓▓▓▓▓▓▓░░░░░░ 67.1% (1665/2033)
-Android ./index.ts ▓▓▓▓▓▓▓▓▓▓▓░░░░░ 72.6% (1881/2208)
-Android ./index.ts ▓▓▓▓▓▓▓▓▓▓▓▓░░░░ 80.1% (2110/2397)
-Android ./index.ts ▓▓▓▓▓▓▓▓▓▓▓▓░░░░ 80.1% (2257/2522)
-Android ./index.ts ▓▓▓▓▓▓▓▓▓▓▓▓▓░░░ 81.4% (2448/2713)
-Android ./index.ts ▓▓▓▓▓▓▓▓▓▓▓▓▓▓░░ 92.3% (2700/2810)
-Android ./index.ts ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓░ 99.9% (2956/2956)
-Android Bundled 52730ms index.ts (2956 modules)
+[dotenv@17.3.1] injecting env (0) from .env -- tip: 🔐 prevent building .env in docker: https://dotenvx.com/prebuild
+Android ./index.ts ▓▓▓▓░░░░░░░░░░░░ 27.4% (250/602)
+Android ./index.ts ▓▓▓▓▓▓░░░░░░░░░░ 38.4% ( 698/1127)
+Android ./index.ts ▓▓▓▓▓▓▓▓░░░░░░░░ 55.4% (1206/1658)
+Android ./index.ts ▓▓▓▓▓▓▓▓▓░░░░░░░ 56.9% (1359/1802)
+Android ./index.ts ▓▓▓▓▓▓▓▓▓▓▓░░░░░ 73.9% (1950/2269)
+Android ./index.ts ▓▓▓▓▓▓▓▓▓▓▓▓░░░░ 81.2% (2293/2570)
+Android ./index.ts ▓▓▓▓▓▓▓▓▓▓▓▓▓░░░ 85.4% (2650/2868)
+Android Bundled 26861ms index.ts (3042 modules)
  WARN  [expo-av]: Expo AV has been deprecated and will be removed in SDK 54. Use the `expo-audio` and `expo-video` packages to replace the required functionality.
- LOG  GURU_HEALTH:launching
- LOG  GURU_HEALTH:bootstrap_started
-Android Bundled 484ms src/constants/syllabus/topics.ts (20 modules)
- LOG  [DB] Recovered missing column: user_profile.harassment_tone
- LOG  GURU_HEALTH:bootstrap_succeeded
- LOG  GURU_HEALTH:db_ready
- LOG  [DB] Pre-seeding 20 topic embeddings...
- LOG  GURU_HEALTH:route_ready:CheckIn
- LOG  GURU_HEALTH:ui_ready:CheckIn
- LOG  [DB_EVENT] Notifying: PROFILE_UPDATED
-Android Bundled 506ms src/services/ai/llmRouting.ts (766 modules)
- LOG  [Embedding] Jina embeddings unavailable (auth/quota). Semantic search falls back to text matching until a valid key or another provider is configured.
- LOG  [DB_EVENT] Notifying: PROGRESS_UPDATED
- LOG  [DB_EVENT] Notifying: PROFILE_UPDATED
- INFO  [BOOTSTRAP_TRACE] {"event": "bootstrap_check", "hasLocalModel": false, "hasLocalWhisper": false, "llmAllowed": true, "needsLlm": true, "needsWhisper": true}
- INFO  [BOOTSTRAP_TRACE] {"event": "download_prepare", "modelName": "ggml-large-v3-turbo.bin", "type": "whisper"}
- INFO  [BOOTSTRAP_TRACE] {"event": "download_start", "modelName": "ggml-large-v3-turbo.bin", "type": "whisper", "url": "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-large-v3-turbo.bin"}
- LOG  [AppBootstrap] Gemini Nano status: ERROR
-Android Bundled 493ms src/services/gdriveBackupService.ts (623 modules)
-Android Bundled 430ms modules/local-llm/index.ts (552 modules)
- WARN  [Notifications] AI generation failed, using smart fallbacks: [Error: [ErrorCode 606] AICore failed with error type 3-PREPARATION_ERROR and error code 606-FEATURE_NOT_FOUND: Feature 636 is not available.]
- WARN  "logo-youtube-outline" is not a valid icon name for family "ionicons"
-Android src/services/aiService.ts ░░░░░░░░░░░░░░░░  0.0% (0/1)
-Android Bundled 491ms src/services/aiService.ts (1011 modules)
- LOG  [AutoBackup] Running scheduled auto-backup...
- LOG  [DB_EVENT] Notifying: PROFILE_UPDATED
- WARN  "logo-youtube-outline" is not a valid icon name for family "ionicons"
- LOG  [AI_BOOT] provider validation: chatgpt=skip github_copilot=skip gitlab_duo=skip poe=skip groq=n/a qwen=skip github=n/a kilo=probe deepseek=n/a agentrouter=n/a gemini=n/a gemini_fallback=n/a openrouter=n/a cloudflare=n/a
- LOG  [AI_BOOT] kilo: ok (200) 3211ms — endpoint reachable; add Kilo API key in Settings to enable chat routing
- LOG  [DB_EVENT] Notifying: PROFILE_UPDATED
- WARN  "logo-youtube-outline" is not a valid icon name for family "ionicons"
- LOG  [AutoBackup] Auto-backup completed successfully.
- ERROR  [GuruChat] Failed to create v2 model: [Error: createGuruFallbackModel: no providers available. Save an API key or connect OAuth in Settings. (Kilo: startup probe can succeed without a key; routed chat/embeddings still need a stored Kilo API key. Gemini Nano may be available on supported Pixel/Samsung devices via AICore.)]
- ERROR  [ReferenceError: Property 'modelError' doesn't exist]
- LOG  GURU_HEALTH:render_error:Property 'modelError' doesn't exist
- ERROR  ErrorBoundary caught an error [ReferenceError: Property 'modelError' doesn't exist] 
-
-Code: GuruChatScreen.tsx
-[0m [90m 237 |[39m
- [90m 238 |[39m [36mfunction[39m [33mGuruChatScreenContent[39m() {
-[31m[1m>[22m[39m[90m 239 |[39m   [36mconst[39m navigation [33m=[39m useNavigation[33m<[39m[33mNav[39m[33m>[39m()[33m;[39m
- [90m     |[39m                                   [31m[1m^[22m[39m
- [90m 240 |[39m   [36mconst[39m route [33m=[39m useRoute[33m<[39m[33mScreenRoute[39m[33m>[39m()[33m;[39m
- [90m 241 |[39m   [36mconst[39m { width[33m:[39m viewportWidth } [33m=[39m useWindowDimensions()[33m;[39m
- [90m 242 |[39m   [36mconst[39m topicName [33m=[39m route[33m.[39mparams[33m?[39m[33m.[39mtopicName [33m?[39m[33m?[39m [32m'General Medicine'[39m[33m;[39m[0m
-Call Stack
-  GuruChatScreenContent (src/screens/GuruChatScreen.tsx:239:35)
-  constructor (src/components/ErrorBoundary.tsx:21:51)
-  TabNavigator (src/navigation/TabNavigator.tsx:61:35)
-  PersistentScreenBannerProvider (src/components/PersistentScreenBanner.tsx:34:58)
-  RootNavigator (src/navigation/RootNavigator.tsx:22:53)
-  AppContent (App.tsx:82:15)
-  constructor (src/components/ErrorBoundary.tsx:21:51)
-  AppShell (App.tsx:116:15)
-  App (App.tsx:212:55)
-[dotenv@17.3.1] injecting env (0) from .env -- tip: 🔐 prevent committing .env to code: https://dotenvx.com/precommit
-[dotenv@17.3.1] injecting env (0) from .env -- tip: 🤖 agentic secret storage: https://dotenvx.com/as2
-Android Bundled 150ms index.ts (1 module)
- WARN  [expo-av]: Expo AV has been deprecated and will be removed in SDK 54. Use the `expo-audio` and `expo-video` packages to replace the required functionality.
+ WARN  setLayoutAnimationEnabledExperimental is currently a no-op in the New Architecture.
  LOG  GURU_HEALTH:launching
  LOG  GURU_HEALTH:bootstrap_started
  LOG  GURU_HEALTH:bootstrap_succeeded
-Android Bundled 39ms src/services/ai/llmRouting.ts (1 module)
  LOG  GURU_HEALTH:db_ready
- LOG  [DB] Pre-seeding 20 topic embeddings...
  LOG  GURU_HEALTH:route_ready:Tabs
  LOG  GURU_HEALTH:ui_ready:Tabs
- WARN  "logo-youtube-outline" is not a valid icon name for family "ionicons"
- WARN  "logo-youtube-outline" is not a valid icon name for family "ionicons"
- INFO  [BOOTSTRAP_TRACE] {"event": "bootstrap_check", "hasLocalModel": false, "hasLocalWhisper": false, "llmAllowed": true, "needsLlm": true, "needsWhisper": true}
+ LOG  [DB] Pre-seeding 20 topic embeddings...
+Android Bundled 412ms src/services/ai/llmRouting.ts (1096 modules)
+ LOG  [Embedding] Jina embeddings unavailable (auth/quota). Semantic search falls back to text matching until a valid key or another provider is configured.
+ INFO  [BOOTSTRAP_TRACE] {"event": "bootstrap_check", "hasLocalModel": true, "hasLocalWhisper": false, "llmAllowed": true, "needsLlm": false, "needsWhisper": true}
  INFO  [BOOTSTRAP_TRACE] {"event": "download_prepare", "modelName": "ggml-large-v3-turbo.bin", "type": "whisper"}
  LOG  [AppBootstrap] Gemini Nano status: ERROR
- LOG  [Embedding] Jina embeddings unavailable (auth/quota). Semantic search falls back to text matching until a valid key or another provider is configured.
- WARN  "logo-youtube-outline" is not a valid icon name for family "ionicons"
- INFO  [BOOTSTRAP_TRACE] {"event": "download_interrupted_partial_detected", "modelName": "ggml-large-v3-turbo.bin", "partialUri": "file:///data/user/0/com.anonymous.gurustudy.dev/files/ggml-large-v3-turbo.bin.partial", "size": 647347836, "type": "whisper"}
- INFO  [BOOTSTRAP_TRACE] {"event": "download_prepare", "modelName": "gemma-4-E4B-it.litertlm", "type": "llm"}
- INFO  [BOOTSTRAP_TRACE] {"event": "download_start", "modelName": "gemma-4-E4B-it.litertlm", "type": "llm", "url": "https://huggingface.co/litert-community/gemma-4-E4B-it-litert-lm/resolve/main/gemma-4-E4B-it.litertlm"}
- ERROR  [GuruChat] Failed to create v2 model: [Error: createGuruFallbackModel: no providers available. Save an API key or connect OAuth in Settings. (Kilo: startup probe can succeed without a key; routed chat/embeddings still need a stored Kilo API key. Gemini Nano may be available on supported Pixel/Samsung devices via AICore.)]
- ERROR  [ReferenceError: Property 'modelError' doesn't exist]
- LOG  GURU_HEALTH:render_error:Property 'modelError' doesn't exist
- LOG  [AI_BOOT] provider validation: chatgpt=skip github_copilot=skip gitlab_duo=skip poe=skip groq=n/a qwen=skip github=n/a kilo=probe deepseek=n/a agentrouter=n/a gemini=n/a gemini_fallback=n/a openrouter=n/a cloudflare=n/a
- LOG  [AI_BOOT] kilo: ok (200) 1965ms — endpoint reachable; add Kilo API key in Settings to enable chat routing
-Android src/services/aiService.ts ░░░░░░░░░░░░░░░░  0.0% (0/1)
-Android Bundled 15842ms src/services/aiService.ts (1 module)
-Android src/services/aiService.ts ░░░░░░░░░░░░░░░░  0.0% (0/1)
-[dotenv@17.3.1] injecting env (0) from .env -- tip: 🤖 agentic secret storage: https://dotenvx.com/as2
- ERROR  ErrorBoundary caught an error [ReferenceError: Property 'modelError' doesn't exist] 
+ INFO  [BOOTSTRAP_TRACE] {"event": "download_interrupted_partial_detected", "modelName": "ggml-large-v3-turbo.bin", "partialUri": "file:///data/user/0/com.anonymous.gurustudy.dev/files/ggml-large-v3-turbo.bin.partial", "size": 156091621, "type": "whisper"}
+ ERROR  The action 'NAVIGATE' with payload {"name":"SamsungBatterySheet"} was not handled by any navigator.
 
-Code: GuruChatScreen.tsx
-[0m [90m 237 |[39m
- [90m 238 |[39m [36mfunction[39m [33mGuruChatScreenContent[39m() {
-[31m[1m>[22m[39m[90m 239 |[39m   [36mconst[39m navigation [33m=[39m useNavigation[33m<[39m[33mNav[39m[33m>[39m()[33m;[39m
- [90m     |[39m                                   [31m[1m^[22m[39m
- [90m 240 |[39m   [36mconst[39m route [33m=[39m useRoute[33m<[39m[33mScreenRoute[39m[33m>[39m()[33m;[39m
- [90m 241 |[39m   [36mconst[39m { width[33m:[39m viewportWidth } [33m=[39m useWindowDimensions()[33m;[39m
- [90m 242 |[39m   [36mconst[39m topicName [33m=[39m route[33m.[39mparams[33m?[39m[33m.[39mtopicName [33m?[39m[33m?[39m [32m'General Medicine'[39m[33m;[39m[0m
+Do you have a screen named 'SamsungBatterySheet'?
+
+If you're trying to navigate to a screen in a nested navigator, see https://reactnavigation.org/docs/nesting-navigators#navigating-to-a-screen-in-a-nested-navigator.
+
+If you're using conditional rendering, navigation will happen automatically and you shouldn't navigate manually, see.
+
+This is a development-only warning and won't be shown in production.
+Android src/services/aiService.ts ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Android Bundled 495ms src/services/aiService.ts (1470 modules)
+ LOG  [AI_BOOT] provider validation: chatgpt=skip github_copilot=skip gitlab_duo=skip poe=skip groq=n/a qwen=skip github=n/a kilo=probe deepseek=n/a agentrouter=n/a gemini=n/a gemini_fallback=n/a openrouter=n/a cloudflare=n/a
+ LOG  [AI_BOOT] kilo: ok (200) 4675ms — endpoint reachable; add Kilo API key in Settings to enable chat routing
+ ERROR  [TypeError: Cannot read property 'primary' of undefined]
+ LOG  GURU_HEALTH:render_error:Cannot read property 'primary' of undefined
+ ERROR  ErrorBoundary caught an error [TypeError: Cannot read property 'primary' of undefined] 
+
+Code: AiProvidersSection.tsx
+[0m [90m 176 |[39m     localLlmWarning[33m,[39m
+ [90m 177 |[39m     useNano[33m,[39m
+[31m[1m>[22m[39m[90m 178 |[39m   } [33m=[39m props[33m;[39m
+ [90m     |[39m            [31m[1m^[22m[39m
+ [90m 179 |[39m   [36mconst[39m hasValue [33m=[39m (value[33m:[39m string [33m|[39m [36mnull[39m [33m|[39m undefined) [33m=>[39m [33mBoolean[39m(value[33m?[39m[33m.[39mtrim())[33m;[39m
+ [90m 180 |[39m   [36mconst[39m readyProviderCount [33m=[39m [
+ [90m 181 |[39m     isChatGptEnabled(chatgptAccounts)[33m,[39m[0m
 Call Stack
-  GuruChatScreenContent (src/screens/GuruChatScreen.tsx:239:35)
-  constructor (src/components/ErrorBoundary.tsx:21:51)
+  AiProvidersSection (src/screens/settings/sections/AiProvidersSection.tsx:178:12)
+  SettingsScreen (src/screens/SettingsScreen.tsx:433:18)
   TabNavigator (src/navigation/TabNavigator.tsx:61:35)
   PersistentScreenBannerProvider (src/components/PersistentScreenBanner.tsx:34:58)
   RootNavigator (src/navigation/RootNavigator.tsx:22:53)
-  AppContent (App.tsx:82:15)
+  AppContent (App.tsx:83:15)
   constructor (src/components/ErrorBoundary.tsx:21:51)
-  AppShell (App.tsx:116:15)
-  App (App.tsx:212:55)
-[dotenv@17.3.1] injecting env (0) from .env -- tip: ⚙️  load multiple .env files with { path: ['.env.local', '.env'] }
+  AppShell (App.tsx:117:15)
+  App (App.tsx:213:55)
+ LOG  GURU_HEALTH:ui_ready:Tabs
+ ERROR  The action 'NAVIGATE' with payload {"name":"SamsungBatterySheet"} was not handled by any navigator.
+
+Do you have a screen named 'SamsungBatterySheet'?
+
+If you're trying to navigate to a screen in a nested navigator, see https://reactnavigation.org/docs/nesting-navigators#navigating-to-a-screen-in-a-nested-navigator.
+
+If you're using conditional rendering, navigation will happen automatically and you shouldn't navigate manually, see.
+
+This is a development-only warning and won't be shown in production.
+Android src/services/gdriveBackupService.ts ▓░░░░░░░░░░░░░░░ 10.9% ( 64/194)
+ LOG  [AI_BOOT] provider validation: chatgpt=skip github_copilot=skip gitlab_duo=skip poe=skip groq=n/a qwen=skip github=n/a kilo=probe deepseek=n/a agentrouter=n/a gemini=n/a gemini_fallback=n/a openrouter=n/a cloudflare=n/a
+ LOG  [AI_BOOT] kilo: ok (200) 4568ms — endpoint reachable; add Kilo API key in Settings to enable chat routing
+Android src/services/gdriveBackupService.ts ▓▓▓▓░░░░░░░░░░░░ 28.7% (181/338)
+Android src/services/gdriveBackupService.ts ▓▓▓▓▓▓▓▓░░░░░░░░ 54.3% (409/556)
+Android src/services/gdriveBackupService.ts ▓▓▓▓▓▓▓▓▓▓░░░░░░ 67.9% (543/659)
+Android src/services/gdriveBackupService.ts ▓▓▓▓▓▓▓▓▓▓▓░░░░░ 69.8% (558/668)
+Android src/services/gdriveBackupService.ts ▓▓▓▓▓▓▓▓▓▓▓░░░░░ 74.1% (619/719)
+Android src/services/gdriveBackupService.ts ▓▓▓▓▓▓▓▓▓▓▓▓▓░░░ 86.8% (696/751)
+Android src/services/gdriveBackupService.ts ▓▓▓▓▓▓▓▓▓▓▓▓▓▓░░ 90.4% (767/823)
+Android src/services/gdriveBackupService.ts ▓▓▓▓▓▓▓▓▓▓▓▓▓▓░░ 91.3% (822/867)
+Android src/services/gdriveBackupService.ts ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓░ 94.2% (858/889)
+Android src/services/gdriveBackupService.ts ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓░ 95.4% (889/954)
+Android src/services/gdriveBackupService.ts ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓░ 95.4% (918/978)
+Android src/services/gdriveBackupService.ts ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓░ 95.4% ( 942/1003)
+Android src/services/gdriveBackupService.ts ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓░ 95.4% ( 967/1040)
+ INFO  [AI_PARSE] received {"candidateCount": 1, "preview": "{ \"messages\": [ { \"title\": \"Guru's Morning Mandate, Doctor!\", \"body\": \"1% coverage is unacceptable for INI-CET in 10 days. Start with Cardiology Patho. Move beyond 'energetic' to…", "rawLength": 684}
+ INFO  [AI_PARSE] candidate 0 normalized keys: ["messages"]
+ INFO  [AI_PARSE] success {"candidateIndex": 0, "candidateLength": 684}
+Android src/services/gdriveBackupService.ts ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓░ 95.4% ( 998/1079)
+Android src/services/gdriveBackupService.ts ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓░ 95.4% (1023/1086)
+Android src/services/gdriveBackupService.ts ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓░ 95.4% (1091/1149)
+Android src/services/gdriveBackupService.ts ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓░ 96.0% (1228/1255)
+Android Bundled 64200ms src/services/gdriveBackupService.ts (1261 modules)
+ INFO  [AI_PARSE] received {"candidateCount": 1, "preview": "{ \"messages\": [ { \"title\": \"Guru's Morning Mandate, Doctor!\", \"body\": \"1% coverage is unacceptable for INI-CET in 10 days. Start with Cardiology Patho. Move beyond 'energetic' to…", "rawLength": 684}
+ INFO  [AI_PARSE] candidate 0 normalized keys: ["messages"]
+ INFO  [AI_PARSE] success {"candidateIndex": 0, "candidateLength": 684}
+ INFO  [AI_PARSE] received {"candidateCount": 1, "preview": "{ \"messages\": [ { \"title\": \"Guru's Morning Mandate, Doctor!\", \"body\": \"1% coverage is unacceptable for INI-CET in 10 days. Start with Cardiology Patho. Move beyond 'energetic' to…", "rawLength": 684}
+ INFO  [AI_PARSE] candidate 0 normalized keys: ["messages"]
+ INFO  [AI_PARSE] success {"candidateIndex": 0, "candidateLength": 684}
+ INFO  [AI_PARSE] received {"candidateCount": 1, "preview": "{ \"messages\": [ { \"title\": \"Guru's Morning Mandate, Doctor!\", \"body\": \"1% coverage is unacceptable for INI-CET in 10 days. Start with Cardiology Patho. Move beyond 'energetic' to…", "rawLength": 684}
+ INFO  [AI_PARSE] candidate 0 normalized keys: ["messages"]
+ INFO  [AI_PARSE] success {"candidateIndex": 0, "candidateLength": 684}
+ INFO  [AI_PARSE] received {"candidateCount": 1, "preview": "{ \"messages\": [ { \"title\": \"Guru's Morning Mandate, Doctor!\", \"body\": \"1% coverage is unacceptable for INI-CET in 10 days. Start with Cardiology Patho. Move beyond 'energetic' to…", "rawLength": 684}
+ INFO  [AI_PARSE] candidate 0 normalized keys: ["messages"]
+ INFO  [AI_PARSE] success {"candidateIndex": 0, "candidateLength": 684}
+ INFO  [AI_PARSE] received {"candidateCount": 1, "preview": "{ \"messages\": [ { \"title\": \"Guru's Morning Mandate, Doctor!\", \"body\": \"1% coverage is unacceptable for INI-CET in 10 days. Start with Cardiology Patho. Move beyond 'energetic' to…", "rawLength": 684}
+ INFO  [AI_PARSE] candidate 0 normalized keys: ["messages"]
+ INFO  [AI_PARSE] success {"candidateIndex": 0, "candidateLength": 684}
+[dotenv@17.3.1] injecting env (0) from .env -- tip: 🛡️ auth for agents: https://vestauth.com
+[dotenv@17.3.1] injecting env (0) from .env -- tip: 🔐 encrypt with Dotenvx: https://dotenvx.com
+Android Bundled 227ms index.ts (1 module)
+ WARN  [expo-av]: Expo AV has been deprecated and will be removed in SDK 54. Use the `expo-audio` and `expo-video` packages to replace the required functionality.
+ WARN  setLayoutAnimationEnabledExperimental is currently a no-op in the New Architecture.
+ LOG  GURU_HEALTH:launching
+ LOG  GURU_HEALTH:bootstrap_started
+ LOG  GURU_HEALTH:bootstrap_succeeded
+Android Bundled 107ms src/services/ai/llmRouting.ts (1 module)
+ LOG  GURU_HEALTH:db_ready
+ LOG  GURU_HEALTH:route_ready:Tabs
+ LOG  GURU_HEALTH:ui_ready:Tabs
+ LOG  [DB] Pre-seeding 20 topic embeddings...
+ INFO  [BOOTSTRAP_TRACE] {"event": "bootstrap_check", "hasLocalModel": true, "hasLocalWhisper": false, "llmAllowed": true, "needsLlm": false, "needsWhisper": true}
+ INFO  [BOOTSTRAP_TRACE] {"event": "download_prepare", "modelName": "ggml-large-v3-turbo.bin", "type": "whisper"}
+ LOG  [AppBootstrap] Gemini Nano status: ERROR
+ LOG  [Embedding] Jina embeddings unavailable (auth/quota). Semantic search falls back to text matching until a valid key or another provider is configured.
+ INFO  [BOOTSTRAP_TRACE] {"event": "download_interrupted_partial_detected", "modelName": "ggml-large-v3-turbo.bin", "partialUri": "file:///data/user/0/com.anonymous.gurustudy.dev/files/ggml-large-v3-turbo.bin.partial", "size": 156091621, "type": "whisper"}
+ WARN  [Home] Discarding stale plan: 1 invalid or parent topic IDs
+ ERROR  The action 'NAVIGATE' with payload {"name":"SamsungBatterySheet"} was not handled by any navigator.
+
+Do you have a screen named 'SamsungBatterySheet'?
+
+If you're trying to navigate to a screen in a nested navigator, see https://reactnavigation.org/docs/nesting-navigators#navigating-to-a-screen-in-a-nested-navigator.
+
+If you're using conditional rendering, navigation will happen automatically and you shouldn't navigate manually, see.
+
+This is a development-only warning and won't be shown in production.
+Android src/services/aiService.ts ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Android Bundled 124ms src/services/aiService.ts (1 module)
+ LOG  [AI_BOOT] provider validation: chatgpt=skip github_copilot=skip gitlab_duo=skip poe=skip groq=n/a qwen=skip github=n/a kilo=probe deepseek=n/a agentrouter=n/a gemini=n/a gemini_fallback=n/a openrouter=n/a cloudflare=n/a
+Android Bundled 111ms src/services/gdriveBackupService.ts (1 module)
+ LOG  [AI_BOOT] kilo: ok (200) 4776ms — endpoint reachable; add Kilo API key in Settings to enable chat routing
+ INFO  [AI_PARSE] received {"candidateCount": 1, "preview": "{ \"messages\": [ { \"title\": \"Guru's Morning Mandate, Doctor!\", \"body\": \"1% coverage is unacceptable for INI-CET in 10 days. Start with Cardiology Patho. Move beyond 'energetic' to…", "rawLength": 684}
+ INFO  [AI_PARSE] candidate 0 normalized keys: ["messages"]
+ INFO  [AI_PARSE] success {"candidateIndex": 0, "candidateLength": 684}
+ INFO  [AI_PARSE] received {"candidateCount": 1, "preview": "```json { \"messages\": [ { \"text\": \"Take a deep breath. Let's focus on that Brachial Plexus anatomy for a moment.\", \"trigger\": \"periodic\" }, { \"text\": \"Remember how complex the bra…", "rawLength": 876}
+ INFO  [AI_PARSE] candidate 0 normalized keys: ["messages"]
+ INFO  [AI_PARSE] success {"candidateIndex": 0, "candidateLength": 864}
+ INFO  [AI_PARSE] received {"candidateCount": 1, "preview": "{ \"type\": \"keypoints\", \"topicName\": \"Brachial Plexus — Roots, Trunks\", \"points\": [ \"**Roots** — Spinal nerve roots C5-T1 form the brachial plexus; C5 is most common root injury si…", "rawLength": 982}
+ INFO  [AI_PARSE] candidate 0 normalized keys: ["type", "topicName", "points", "memoryHook"]
+ INFO  [AI_PARSE] success {"candidateIndex": 0, "candidateLength": 982}
+ INFO  [AI_PARSE] received {"candidateCount": 1, "preview": "{ \"type\": \"quiz\", \"topicName\": \"Brachial Plexus — Roots, Trunks\", \"questions\": [ { \"question\": \"A 45-year-old male carpenter presents with progressive, unilateral weakness and par…", "rawLength": 9767}
+ WARN  [AI_PARSE] failed {"candidateCount": 1, "candidateLengths": [9767], "error": "JSON Parse error: Expect ':' after the key in JSON object"}
+ INFO  [AI_PARSE] received {"candidateCount": 1, "preview": "{ \"messages\": [ { \"title\": \"Guru's Morning Mandate, Doctor!\", \"body\": \"1% coverage is unacceptable for INI-CET in 10 days. Start with Cardiology Patho. Move beyond 'energetic' to…", "rawLength": 684}
+ INFO  [AI_PARSE] candidate 0 normalized keys: ["messages"]
+ INFO  [AI_PARSE] success {"candidateIndex": 0, "candidateLength": 684}
+ ERROR  SyntaxError: /Users/vishnugnair/Guru/debug/src/screens/SettingsScreen.tsx: Unexpected token (3233:0)
+
+  3231 |   },
+  3232 | });
+> 3233 |
+       | ^
+    at constructor (/Users/vishnugnair/Guru/debug/node_modules/@babel/parser/lib/index.js:365:19)
+    at TypeScriptParserMixin.raise (/Users/vishnugnair/Guru/debug/node_modules/@babel/parser/lib/index.js:6599:19)
+    at TypeScriptParserMixin.unexpected (/Users/vishnugnair/Guru/debug/node_modules/@babel/parser/lib/index.js:6619:16)
+    at TypeScriptParserMixin.parseExprAtom (/Users/vishnugnair/Guru/debug/node_modules/@babel/parser/lib/index.js:11442:22)
+    at TypeScriptParserMixin.parseExprAtom (/Users/vishnugnair/Guru/debug/node_modules/@babel/parser/lib/index.js:4764:20)
+    at TypeScriptParserMixin.parseExprSubscripts (/Users/vishnugnair/Guru/debug/node_modules/@babel/parser/lib/index.js:11081:23)
+    at TypeScriptParserMixin.parseUpdate (/Users/vishnugnair/Guru/debug/node_modules/@babel/parser/lib/index.js:11066:21)
+    at TypeScriptParserMixin.parseMaybeUnary (/Users/vishnugnair/Guru/debug/node_modules/@babel/parser/lib/index.js:11046:23)
+    at TypeScriptParserMixin.parseMaybeUnary (/Users/vishnugnair/Guru/debug/node_modules/@babel/parser/lib/index.js:9837:18)
+    at TypeScriptParserMixin.parseMaybeUnaryOrPrivate (/Users/vishnugnair/Guru/debug/node_modules/@babel/parser/lib/index.js:10899:61)
+    at TypeScriptParserMixin.parseExprOps (/Users/vishnugnair/Guru/debug/node_modules/@babel/parser/lib/index.js:10904:23)
+    at TypeScriptParserMixin.parseMaybeConditional (/Users/vishnugnair/Guru/debug/node_modules/@babel/parser/lib/index.js:10881:23)
+    at TypeScriptParserMixin.parseMaybeAssign (/Users/vishnugnair/Guru/debug/node_modules/@babel/parser/lib/index.js:10831:21)
+    at TypeScriptParserMixin.parseMaybeAssign (/Users/vishnugnair/Guru/debug/node_modules/@babel/parser/lib/index.js:9786:20)
+    at TypeScriptParserMixin.parseExpressionBase (/Users/vishnugnair/Guru/debug/node_modules/@babel/parser/lib/index.js:10784:23)
+    at /Users/vishnugnair/Guru/debug/node_modules/@babel/parser/lib/index.js:10780:39
+    at TypeScriptParserMixin.allowInAnd (/Users/vishnugnair/Guru/debug/node_modules/@babel/parser/lib/index.js:12421:16)
+    at TypeScriptParserMixin.parseExpression (/Users/vishnugnair/Guru/debug/node_modules/@babel/parser/lib/index.js:10780:17)
+    at TypeScriptParserMixin.parseStatementContent (/Users/vishnugnair/Guru/debug/node_modules/@babel/parser/lib/index.js:12895:23)
+    at TypeScriptParserMixin.parseStatementContent (/Users/vishnugnair/Guru/debug/node_modules/@babel/parser/lib/index.js:9508:18)
+    at TypeScriptParserMixin.parseStatementLike (/Users/vishnugnair/Guru/debug/node_modules/@babel/parser/lib/index.js:12767:17)
+    at TypeScriptParserMixin.parseStatementListItem (/Users/vishnugnair/Guru/debug/node_modules/@babel/parser/lib/index.js:12747:17)
+    at TypeScriptParserMixin.parseBlockOrModuleBlockBody (/Users/vishnugnair/Guru/debug/node_modules/@babel/parser/lib/index.js:13316:61)
+    at TypeScriptParserMixin.parseBlockBody (/Users/vishnugnair/Guru/debug/node_modules/@babel/parser/lib/index.js:13309:10)
+    at TypeScriptParserMixin.parseBlock (/Users/vishnugnair/Guru/debug/node_modules/@babel/parser/lib/index.js:13297:10)
+    at TypeScriptParserMixin.parseFunctionBody (/Users/vishnugnair/Guru/debug/node_modules/@babel/parser/lib/index.js:12100:24)
+    at TypeScriptParserMixin.parseFunctionBodyAndFinish (/Users/vishnugnair/Guru/debug/node_modules/@babel/parser/lib/index.js:12086:10)
+    at TypeScriptParserMixin.parseFunctionBodyAndFinish (/Users/vishnugnair/Guru/debug/node_modules/@babel/parser/lib/index.js:9172:18)
+    at /Users/vishnugnair/Guru/debug/node_modules/@babel/parser/lib/index.js:13445:12
+    at TypeScriptParserMixin.withSmartMixTopicForbiddingContext (/Users/vishnugnair/Guru/debug/node_modules/@babel/parser/lib/index.js:12403:14)
+    at TypeScriptParserMixin.parseFunction (/Users/vishnugnair/Guru/debug/node_modules/@babel/parser/lib/index.js:13444:10)
+    at TypeScriptParserMixin.parseExportDefaultExpression (/Users/vishnugnair/Guru/debug/node_modules/@babel/parser/lib/index.js:13907:19)
+    at TypeScriptParserMixin.parseExportDefaultExpression (/Users/vishnugnair/Guru/debug/node_modules/@babel/parser/lib/index.js:9402:18)
+    at TypeScriptParserMixin.parseExport (/Users/vishnugnair/Guru/debug/node_modules/@babel/parser/lib/index.js:13828:25)
+    at TypeScriptParserMixin.parseExport (/Users/vishnugnair/Guru/debug/node_modules/@babel/parser/lib/index.js:9385:20)
+    at TypeScriptParserMixin.parseStatementContent (/Users/vishnugnair/Guru/debug/node_modules/@babel/parser/lib/index.js:12878:27)
+    at TypeScriptParserMixin.parseStatementContent (/Users/vishnugnair/Guru/debug/node_modules/@babel/parser/lib/index.js:9508:18)
+    at TypeScriptParserMixin.parseStatementLike (/Users/vishnugnair/Guru/debug/node_modules/@babel/parser/lib/index.js:12767:17)
+    at TypeScriptParserMixin.parseModuleItem (/Users/vishnugnair/Guru/debug/node_modules/@babel/parser/lib/index.js:12744:17)
+    at TypeScriptParserMixin.parseBlockOrModuleBlockBody (/Users/vishnugnair/Guru/debug/node_modules/@babel/parser/lib/index.js:13316:36)
+    at TypeScriptParserMixin.parseBlockBody (/Users/vishnugnair/Guru/debug/node_modules/@babel/parser/lib/index.js:13309:10)
+    at TypeScriptParserMixin.parseProgram (/Users/vishnugnair/Guru/debug/node_modules/@babel/parser/lib/index.js:12622:10)
+    at TypeScriptParserMixin.parseTopLevel (/Users/vishnugnair/Guru/debug/node_modules/@babel/parser/lib/index.js:12612:25)
+    at TypeScriptParserMixin.parse (/Users/vishnugnair/Guru/debug/node_modules/@babel/parser/lib/index.js:14488:25)
+    at TypeScriptParserMixin.parse (/Users/vishnugnair/Guru/debug/node_modules/@babel/parser/lib/index.js:10126:18)
+    at parse (/Users/vishnugnair/Guru/debug/node_modules/@babel/parser/lib/index.js:14501:26)
+    at parser (/Users/vishnugnair/Guru/debug/node_modules/@babel/core/lib/parser/index.js:41:34)
+    at parser.next (<anonymous>)
+    at normalizeFile (/Users/vishnugnair/Guru/debug/node_modules/@babel/core/lib/transformation/normalize-file.js:64:37)
+    at normalizeFile.next (<anonymous>)
+ ERROR  [Error: TransformError SyntaxError: /Users/vishnugnair/Guru/debug/src/screens/SettingsScreen.tsx: Unexpected token (3233:0)
+
+[0m [90m 3231 |[39m   }[33m,[39m
+ [90m 3232 |[39m })[33m;[39m
+[31m[1m>[22m[39m[90m 3233 |[39m
+ [90m      |[39m [31m[1m^[22m[39m[0m]
+ ERROR  SyntaxError: /Users/vishnugnair/Guru/debug/src/screens/SettingsScreen.tsx: Unexpected token (3233:0)
+
+  3231 |   },
+  3232 | });
+> 3233 |
+       | ^
+    at constructor (/Users/vishnugnair/Guru/debug/node_modules/@babel/parser/lib/index.js:365:19)
+    at TypeScriptParserMixin.raise (/Users/vishnugnair/Guru/debug/node_modules/@babel/parser/lib/index.js:6599:19)
+    at TypeScriptParserMixin.unexpected (/Users/vishnugnair/Guru/debug/node_modules/@babel/parser/lib/index.js:6619:16)
+    at TypeScriptParserMixin.parseExprAtom (/Users/vishnugnair/Guru/debug/node_modules/@babel/parser/lib/index.js:11442:22)
+    at TypeScriptParserMixin.parseExprAtom (/Users/vishnugnair/Guru/debug/node_modules/@babel/parser/lib/index.js:4764:20)
+    at TypeScriptParserMixin.parseExprSubscripts (/Users/vishnugnair/Guru/debug/node_modules/@babel/parser/lib/index.js:11081:23)
+    at TypeScriptParserMixin.parseUpdate (/Users/vishnugnair/Guru/debug/node_modules/@babel/parser/lib/index.js:11066:21)
+    at TypeScriptParserMixin.parseMaybeUnary (/Users/vishnugnair/Guru/debug/node_modules/@babel/parser/lib/index.js:11046:23)
+    at TypeScriptParserMixin.parseMaybeUnary (/Users/vishnugnair/Guru/debug/node_modules/@babel/parser/lib/index.js:9837:18)
+    at TypeScriptParserMixin.parseMaybeUnaryOrPrivate (/Users/vishnugnair/Guru/debug/node_modules/@babel/parser/lib/index.js:10899:61)
+    at TypeScriptParserMixin.parseExprOps (/Users/vishnugnair/Guru/debug/node_modules/@babel/parser/lib/index.js:10904:23)
+    at TypeScriptParserMixin.parseMaybeConditional (/Users/vishnugnair/Guru/debug/node_modules/@babel/parser/lib/index.js:10881:23)
+    at TypeScriptParserMixin.parseMaybeAssign (/Users/vishnugnair/Guru/debug/node_modules/@babel/parser/lib/index.js:10831:21)
+    at TypeScriptParserMixin.parseMaybeAssign (/Users/vishnugnair/Guru/debug/node_modules/@babel/parser/lib/index.js:9786:20)
+    at TypeScriptParserMixin.parseExpressionBase (/Users/vishnugnair/Guru/debug/node_modules/@babel/parser/lib/index.js:10784:23)
+    at /Users/vishnugnair/Guru/debug/node_modules/@babel/parser/lib/index.js:10780:39
+    at TypeScriptParserMixin.allowInAnd (/Users/vishnugnair/Guru/debug/node_modules/@babel/parser/lib/index.js:12421:16)
+    at TypeScriptParserMixin.parseExpression (/Users/vishnugnair/Guru/debug/node_modules/@babel/parser/lib/index.js:10780:17)
+    at TypeScriptParserMixin.parseStatementContent (/Users/vishnugnair/Guru/debug/node_modules/@babel/parser/lib/index.js:12895:23)
+    at TypeScriptParserMixin.parseStatementContent (/Users/vishnugnair/Guru/debug/node_modules/@babel/parser/lib/index.js:9508:18)
+    at TypeScriptParserMixin.parseStatementLike (/Users/vishnugnair/Guru/debug/node_modules/@babel/parser/lib/index.js:12767:17)
+    at TypeScriptParserMixin.parseStatementListItem (/Users/vishnugnair/Guru/debug/node_modules/@babel/parser/lib/index.js:12747:17)
+    at TypeScriptParserMixin.parseBlockOrModuleBlockBody (/Users/vishnugnair/Guru/debug/node_modules/@babel/parser/lib/index.js:13316:61)
+    at TypeScriptParserMixin.parseBlockBody (/Users/vishnugnair/Guru/debug/node_modules/@babel/parser/lib/index.js:13309:10)
+    at TypeScriptParserMixin.parseBlock (/Users/vishnugnair/Guru/debug/node_modules/@babel/parser/lib/index.js:13297:10)
+    at TypeScriptParserMixin.parseFunctionBody (/Users/vishnugnair/Guru/debug/node_modules/@babel/parser/lib/index.js:12100:24)
+    at TypeScriptParserMixin.parseFunctionBodyAndFinish (/Users/vishnugnair/Guru/debug/node_modules/@babel/parser/lib/index.js:12086:10)
+    at TypeScriptParserMixin.parseFunctionBodyAndFinish (/Users/vishnugnair/Guru/debug/node_modules/@babel/parser/lib/index.js:9172:18)
+    at /Users/vishnugnair/Guru/debug/node_modules/@babel/parser/lib/index.js:13445:12
+    at TypeScriptParserMixin.withSmartMixTopicForbiddingContext (/Users/vishnugnair/Guru/debug/node_modules/@babel/parser/lib/index.js:12403:14)
+    at TypeScriptParserMixin.parseFunction (/Users/vishnugnair/Guru/debug/node_modules/@babel/parser/lib/index.js:13444:10)
+    at TypeScriptParserMixin.parseExportDefaultExpression (/Users/vishnugnair/Guru/debug/node_modules/@babel/parser/lib/index.js:13907:19)
+    at TypeScriptParserMixin.parseExportDefaultExpression (/Users/vishnugnair/Guru/debug/node_modules/@babel/parser/lib/index.js:9402:18)
+    at TypeScriptParserMixin.parseExport (/Users/vishnugnair/Guru/debug/node_modules/@babel/parser/lib/index.js:13828:25)
+    at TypeScriptParserMixin.parseExport (/Users/vishnugnair/Guru/debug/node_modules/@babel/parser/lib/index.js:9385:20)
+    at TypeScriptParserMixin.parseStatementContent (/Users/vishnugnair/Guru/debug/node_modules/@babel/parser/lib/index.js:12878:27)
+    at TypeScriptParserMixin.parseStatementContent (/Users/vishnugnair/Guru/debug/node_modules/@babel/parser/lib/index.js:9508:18)
+    at TypeScriptParserMixin.parseStatementLike (/Users/vishnugnair/Guru/debug/node_modules/@babel/parser/lib/index.js:12767:17)
+    at TypeScriptParserMixin.parseModuleItem (/Users/vishnugnair/Guru/debug/node_modules/@babel/parser/lib/index.js:12744:17)
+    at TypeScriptParserMixin.parseBlockOrModuleBlockBody (/Users/vishnugnair/Guru/debug/node_modules/@babel/parser/lib/index.js:13316:36)
+    at TypeScriptParserMixin.parseBlockBody (/Users/vishnugnair/Guru/debug/node_modules/@babel/parser/lib/index.js:13309:10)
+    at TypeScriptParserMixin.parseProgram (/Users/vishnugnair/Guru/debug/node_modules/@babel/parser/lib/index.js:12622:10)
+    at TypeScriptParserMixin.parseTopLevel (/Users/vishnugnair/Guru/debug/node_modules/@babel/parser/lib/index.js:12612:25)
+    at TypeScriptParserMixin.parse (/Users/vishnugnair/Guru/debug/node_modules/@babel/parser/lib/index.js:14488:25)
+    at TypeScriptParserMixin.parse (/Users/vishnugnair/Guru/debug/node_modules/@babel/parser/lib/index.js:10126:18)
+    at parse (/Users/vishnugnair/Guru/debug/node_modules/@babel/parser/lib/index.js:14501:26)
+    at parser (/Users/vishnugnair/Guru/debug/node_modules/@babel/core/lib/parser/index.js:41:34)
+    at parser.next (<anonymous>)
+    at normalizeFile (/Users/vishnugnair/Guru/debug/node_modules/@babel/core/lib/transformation/normalize-file.js:64:37)
+    at normalizeFile.next (<anonymous>)
+ ERROR  [Error: TransformError SyntaxError: /Users/vishnugnair/Guru/debug/src/screens/SettingsScreen.tsx: Unexpected token (3233:0)
+
+[0m [90m 3231 |[39m   }[33m,[39m
+ [90m 3232 |[39m })[33m;[39m
+[31m[1m>[22m[39m[90m 3233 |[39m
+ [90m      |[39m [31m[1m^[22m[39m[0m]
+Android ./index.ts ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Android Bundled 354ms index.ts (1 module)
+ WARN  [expo-av]: Expo AV has been deprecated and will be removed in SDK 54. Use the `expo-audio` and `expo-video` packages to replace the required functionality.
+ WARN  setLayoutAnimationEnabledExperimental is currently a no-op in the New Architecture.
+ LOG  GURU_HEALTH:launching
+ LOG  GURU_HEALTH:bootstrap_started
+ LOG  GURU_HEALTH:bootstrap_succeeded
+Android Bundled 113ms src/services/ai/llmRouting.ts (1 module)
+ LOG  GURU_HEALTH:db_ready
+ LOG  GURU_HEALTH:route_ready:Tabs
+ LOG  GURU_HEALTH:ui_ready:Tabs
+ LOG  [DB] Pre-seeding 20 topic embeddings...
+ INFO  [BOOTSTRAP_TRACE] {"event": "bootstrap_check", "hasLocalModel": true, "hasLocalWhisper": false, "llmAllowed": true, "needsLlm": false, "needsWhisper": true}
+ INFO  [BOOTSTRAP_TRACE] {"event": "download_prepare", "modelName": "ggml-large-v3-turbo.bin", "type": "whisper"}
+ LOG  [AppBootstrap] Gemini Nano status: ERROR
+ LOG  [Embedding] Jina embeddings unavailable (auth/quota). Semantic search falls back to text matching until a valid key or another provider is configured.
+ INFO  [BOOTSTRAP_TRACE] {"event": "download_interrupted_partial_detected", "modelName": "ggml-large-v3-turbo.bin", "partialUri": "file:///data/user/0/com.anonymous.gurustudy.dev/files/ggml-large-v3-turbo.bin.partial", "size": 156091621, "type": "whisper"}
+Android src/services/aiService.ts ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Android Bundled 104ms src/services/aiService.ts (1 module)
+ LOG  [AI_BOOT] provider validation: chatgpt=skip github_copilot=skip gitlab_duo=skip poe=skip groq=n/a qwen=skip github=n/a kilo=probe deepseek=n/a agentrouter=n/a gemini=n/a gemini_fallback=n/a openrouter=n/a cloudflare=n/a
+ LOG  [AI_BOOT] kilo: ok (200) 1809ms — endpoint reachable; add Kilo API key in Settings to enable chat routing
+Android src/services/gdriveBackupService.ts ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Android Bundled 91ms src/services/gdriveBackupService.ts (1 module)
+ LOG  [LectureReturnRecovery] Return gate evaluated {"appName": "Cerebellum", "logId": 1, "overlayActive": true, "recordingActive": true, "returnRequested": false, "showPrompt": true}
+ LOG  [LectureReturnRecovery] Recovery delayed because native session is still active {"logId": 1, "overlayActive": true, "recordingActive": true}
+ LOG  [LectureReturnRecovery] Return gate evaluated {"appName": "Cerebellum", "logId": 1, "overlayActive": true, "recordingActive": true, "returnRequested": true, "showPrompt": true}
+ LOG  [LectureReturnRecovery] Session detected {"appName": "Cerebellum", "dbRecordingPath": "/storage/emulated/0/Documents/Guru/Recordings/lecture_1776854485276.m4a", "launchedAt": 1776854485805, "logId": 1, "recordedElapsedMinutes": 1, "recordedElapsedSeconds": 16, "showPrompt": true, "wallClockMinutes": 1}
+ LOG  [LectureReturnRecovery] Native recorder stopped {"logId": 1, "recordingPath": "/storage/emulated/0/Documents/Guru/Recordings/lecture_1776854485276.m4a"}
+ LOG  [LectureReturnRecovery] Recording validation finished {"attemptsUsed": 1, "lastInfo": {"exists": true, "size": 180564}, "logId": 1, "recordingPath": "/storage/emulated/0/Documents/Guru/Recordings/lecture_1776854485276.m4a", "validated": true}
+ LOG  [LectureReturnRecovery] Audio duration check {"audioDurationMinutes": 1, "logId": 1, "recordedElapsedMinutes": 1, "recordingPath": "/storage/emulated/0/Documents/Guru/Recordings/lecture_1776854485276.m4a", "wallClockMinutes": 1}
+ LOG  [LectureReturnRecovery] Finalized recovered session {"appName": "Cerebellum", "finalDurationMinutes": 1, "logId": 1, "recordingPath": "/storage/emulated/0/Documents/Guru/Recordings/lecture_1776854485276.m4a", "showPrompt": true}
+ INFO  [AI_PARSE] received {"candidateCount": 1, "preview": "{ \"messages\": [ { \"title\": \"Guru's Morning Mandate, Doctor!\", \"body\": \"1% coverage is unacceptable for INI-CET in 10 days. Start with Cardiology Patho. Move beyond 'energetic' to…", "rawLength": 684}
+ INFO  [AI_PARSE] candidate 0 normalized keys: ["messages"]
+ INFO  [AI_PARSE] success {"candidateIndex": 0, "candidateLength": 684}
+Android ./index.ts ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Android Bundled 177ms index.ts (1 module)
+[dotenv@17.3.1] injecting env (0) from .env -- tip: ⚙️  override existing env vars with { override: true }
+[dotenv@17.3.1] injecting env (0) from .env -- tip: 🛠️  run anywhere with `dotenvx run -- yourcommand`
+Android Bundled 233ms index.ts (1 module)
+ WARN  [expo-av]: Expo AV has been deprecated and will be removed in SDK 54. Use the `expo-audio` and `expo-video` packages to replace the required functionality.
+ WARN  setLayoutAnimationEnabledExperimental is currently a no-op in the New Architecture.
+ LOG  GURU_HEALTH:launching
+ LOG  GURU_HEALTH:bootstrap_started
+ LOG  GURU_HEALTH:bootstrap_succeeded
+Android Bundled 62ms src/services/ai/llmRouting.ts (1 module)
+ LOG  GURU_HEALTH:db_ready
+ LOG  GURU_HEALTH:route_ready:Tabs
+ LOG  GURU_HEALTH:ui_ready:Tabs
+ LOG  [DB] Pre-seeding 20 topic embeddings...
+ INFO  [BOOTSTRAP_TRACE] {"event": "bootstrap_check", "hasLocalModel": true, "hasLocalWhisper": false, "llmAllowed": true, "needsLlm": false, "needsWhisper": true}
+ INFO  [BOOTSTRAP_TRACE] {"event": "download_prepare", "modelName": "ggml-large-v3-turbo.bin", "type": "whisper"}
+ LOG  [AppBootstrap] Gemini Nano status: ERROR
+ LOG  [Embedding] Jina embeddings unavailable (auth/quota). Semantic search falls back to text matching until a valid key or another provider is configured.
+ INFO  [BOOTSTRAP_TRACE] {"event": "download_interrupted_partial_detected", "modelName": "ggml-large-v3-turbo.bin", "partialUri": "file:///data/user/0/com.anonymous.gurustudy.dev/files/ggml-large-v3-turbo.bin.partial", "size": 156091621, "type": "whisper"}
+Android src/services/aiService.ts ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Android Bundled 92ms src/services/aiService.ts (1 module)
+ LOG  [AI_BOOT] provider validation: chatgpt=skip github_copilot=skip gitlab_duo=skip poe=skip groq=n/a qwen=skip github=n/a kilo=probe deepseek=n/a agentrouter=n/a gemini=n/a gemini_fallback=n/a openrouter=n/a cloudflare=n/a
+ LOG  [AI_BOOT] kilo: ok (200) 1574ms — endpoint reachable; add Kilo API key in Settings to enable chat routing
+Android ./index.ts ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Android Bundled 134ms index.ts (1 module)
+ WARN  [expo-av]: Expo AV has been deprecated and will be removed in SDK 54. Use the `expo-audio` and `expo-video` packages to replace the required functionality.
+ WARN  setLayoutAnimationEnabledExperimental is currently a no-op in the New Architecture.
+ LOG  GURU_HEALTH:launching
+ LOG  GURU_HEALTH:bootstrap_started
+ LOG  GURU_HEALTH:bootstrap_succeeded
+Android Bundled 65ms src/services/ai/llmRouting.ts (1 module)
+ LOG  GURU_HEALTH:db_ready
+ LOG  GURU_HEALTH:route_ready:Tabs
+ LOG  GURU_HEALTH:ui_ready:Tabs
+ LOG  [DB] Pre-seeding 20 topic embeddings...
+ INFO  [BOOTSTRAP_TRACE] {"event": "bootstrap_check", "hasLocalModel": true, "hasLocalWhisper": false, "llmAllowed": true, "needsLlm": false, "needsWhisper": true}
+ INFO  [BOOTSTRAP_TRACE] {"event": "download_prepare", "modelName": "ggml-large-v3-turbo.bin", "type": "whisper"}
+ LOG  [AppBootstrap] Gemini Nano status: ERROR
+Android Bundled 164ms index.ts (1 module)
+ WARN  [expo-av]: Expo AV has been deprecated and will be removed in SDK 54. Use the `expo-audio` and `expo-video` packages to replace the required functionality.
+ WARN  setLayoutAnimationEnabledExperimental is currently a no-op in the New Architecture.
+ LOG  GURU_HEALTH:launching
+ LOG  GURU_HEALTH:bootstrap_started
+ LOG  GURU_HEALTH:bootstrap_succeeded
+Android Bundled 67ms src/services/ai/llmRouting.ts (1 module)
+ LOG  GURU_HEALTH:db_ready
+ LOG  GURU_HEALTH:route_ready:Tabs
+ LOG  GURU_HEALTH:ui_ready:Tabs
+ LOG  [DB] Pre-seeding 20 topic embeddings...
+ INFO  [BOOTSTRAP_TRACE] {"event": "bootstrap_check", "hasLocalModel": true, "hasLocalWhisper": false, "llmAllowed": true, "needsLlm": false, "needsWhisper": true}
+ INFO  [BOOTSTRAP_TRACE] {"event": "download_prepare", "modelName": "ggml-large-v3-turbo.bin", "type": "whisper"}
+ LOG  [AppBootstrap] Gemini Nano status: ERROR
+ LOG  [Embedding] Jina embeddings unavailable (auth/quota). Semantic search falls back to text matching until a valid key or another provider is configured.
+ INFO  [BOOTSTRAP_TRACE] {"event": "download_interrupted_partial_detected", "modelName": "ggml-large-v3-turbo.bin", "partialUri": "file:///data/user/0/com.anonymous.gurustudy.dev/files/ggml-large-v3-turbo.bin.partial", "size": 156091621, "type": "whisper"}
+Android src/services/aiService.ts ░░░░░░░░░░░░░░░░  0.0% (0/1)
+ LOG  [AI_BOOT] provider validation: chatgpt=skip github_copilot=skip gitlab_duo=skip poe=skip groq=n/a qwen=skip github=n/a kilo=probe deepseek=n/a agentrouter=n/a gemini=n/a gemini_fallback=n/a openrouter=n/a cloudflare=n/a
+ LOG  [AI_BOOT] kilo: ok (200) 1508ms — endpoint reachable; add Kilo API key in Settings to enable chat routing
+Android Bundled 78ms src/services/aiService.ts (1 module)
+Android ./index.ts ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Android Bundled 239ms index.ts (1 module)
+ WARN  [expo-av]: Expo AV has been deprecated and will be removed in SDK 54. Use the `expo-audio` and `expo-video` packages to replace the required functionality.
+ WARN  setLayoutAnimationEnabledExperimental is currently a no-op in the New Architecture.
+ LOG  GURU_HEALTH:launching
+ LOG  GURU_HEALTH:bootstrap_started
+ LOG  GURU_HEALTH:bootstrap_succeeded
+Android Bundled 75ms src/services/ai/llmRouting.ts (1 module)
+ LOG  GURU_HEALTH:db_ready
+ LOG  GURU_HEALTH:route_ready:Tabs
+ LOG  GURU_HEALTH:ui_ready:Tabs
+ LOG  [DB] Pre-seeding 20 topic embeddings...
+Android ./index.ts ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Android Bundled 142ms index.ts (1 module)
+ WARN  [expo-av]: Expo AV has been deprecated and will be removed in SDK 54. Use the `expo-audio` and `expo-video` packages to replace the required functionality.
+ WARN  setLayoutAnimationEnabledExperimental is currently a no-op in the New Architecture.
+ LOG  GURU_HEALTH:launching
+ LOG  GURU_HEALTH:bootstrap_started
+ LOG  GURU_HEALTH:bootstrap_succeeded
+Android Bundled 67ms src/services/ai/llmRouting.ts (1 module)
+ LOG  GURU_HEALTH:db_ready
+ LOG  GURU_HEALTH:route_ready:Tabs
+ LOG  GURU_HEALTH:ui_ready:Tabs
+ LOG  [DB] Pre-seeding 20 topic embeddings...
+ INFO  [BOOTSTRAP_TRACE] {"event": "bootstrap_check", "hasLocalModel": true, "hasLocalWhisper": false, "llmAllowed": true, "needsLlm": false, "needsWhisper": true}
+ INFO  [BOOTSTRAP_TRACE] {"event": "download_prepare", "modelName": "ggml-large-v3-turbo.bin", "type": "whisper"}
+ LOG  [AppBootstrap] Gemini Nano status: ERROR
+Android ./index.ts ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Android Bundled 105ms index.ts (1 module)
+ WARN  [expo-av]: Expo AV has been deprecated and will be removed in SDK 54. Use the `expo-audio` and `expo-video` packages to replace the required functionality.
+ WARN  setLayoutAnimationEnabledExperimental is currently a no-op in the New Architecture.
+ LOG  GURU_HEALTH:launching
+ LOG  GURU_HEALTH:bootstrap_started
+ LOG  GURU_HEALTH:bootstrap_succeeded
+Android Bundled 70ms src/services/ai/llmRouting.ts (1 module)
+ LOG  GURU_HEALTH:db_ready
+ LOG  GURU_HEALTH:route_ready:Tabs
+ LOG  GURU_HEALTH:ui_ready:Tabs
+ LOG  [DB] Pre-seeding 20 topic embeddings...
+ INFO  [BOOTSTRAP_TRACE] {"event": "bootstrap_check", "hasLocalModel": true, "hasLocalWhisper": false, "llmAllowed": true, "needsLlm": false, "needsWhisper": true}
+ INFO  [BOOTSTRAP_TRACE] {"event": "download_prepare", "modelName": "ggml-large-v3-turbo.bin", "type": "whisper"}
+ LOG  [AppBootstrap] Gemini Nano status: ERROR
+ LOG  [Embedding] Jina embeddings unavailable (auth/quota). Semantic search falls back to text matching until a valid key or another provider is configured.
+Android Bundled 119ms index.ts (1 module)
+ WARN  [expo-av]: Expo AV has been deprecated and will be removed in SDK 54. Use the `expo-audio` and `expo-video` packages to replace the required functionality.
+ WARN  setLayoutAnimationEnabledExperimental is currently a no-op in the New Architecture.
+ LOG  GURU_HEALTH:launching
+ LOG  GURU_HEALTH:bootstrap_started
+ LOG  GURU_HEALTH:bootstrap_succeeded
+Android Bundled 110ms src/services/ai/llmRouting.ts (1 module)
+ LOG  GURU_HEALTH:db_ready
+ LOG  GURU_HEALTH:route_ready:Tabs
+ LOG  GURU_HEALTH:ui_ready:Tabs
+ LOG  [DB] Pre-seeding 20 topic embeddings...
+ INFO  [BOOTSTRAP_TRACE] {"event": "bootstrap_check", "hasLocalModel": true, "hasLocalWhisper": false, "llmAllowed": true, "needsLlm": false, "needsWhisper": true}
+ INFO  [BOOTSTRAP_TRACE] {"event": "download_prepare", "modelName": "ggml-large-v3-turbo.bin", "type": "whisper"}
+ LOG  [AppBootstrap] Gemini Nano status: ERROR
+ INFO  [BOOTSTRAP_TRACE] {"event": "download_interrupted_partial_detected", "modelName": "ggml-large-v3-turbo.bin", "partialUri": "file:///data/user/0/com.anonymous.gurustudy.dev/files/ggml-large-v3-turbo.bin.partial", "size": 156091621, "type": "whisper"}
+ LOG  [Embedding] Jina embeddings unavailable (auth/quota). Semantic search falls back to text matching until a valid key or another provider is configured.
+Android src/services/aiService.ts ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Android Bundled 268ms src/services/aiService.ts (1 module)
+ LOG  [AI_BOOT] provider validation: chatgpt=skip github_copilot=skip gitlab_duo=skip poe=skip groq=n/a qwen=skip github=n/a kilo=probe deepseek=n/a agentrouter=n/a gemini=n/a gemini_fallback=n/a openrouter=n/a cloudflare=n/a
+ LOG  [AI_BOOT] kilo: ok (200) 4416ms — endpoint reachable; add Kilo API key in Settings to enable chat routing
+Android ./index.ts ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Android Bundled 161ms index.ts (1 module)
+ WARN  [expo-av]: Expo AV has been deprecated and will be removed in SDK 54. Use the `expo-audio` and `expo-video` packages to replace the required functionality.
+ WARN  setLayoutAnimationEnabledExperimental is currently a no-op in the New Architecture.
+ LOG  GURU_HEALTH:launching
+ LOG  GURU_HEALTH:bootstrap_started
+ LOG  GURU_HEALTH:bootstrap_succeeded
+Android Bundled 66ms src/services/ai/llmRouting.ts (1 module)
+ LOG  GURU_HEALTH:db_ready
+ LOG  GURU_HEALTH:route_ready:Tabs
+ LOG  GURU_HEALTH:ui_ready:Tabs
+ LOG  [DB] Pre-seeding 20 topic embeddings...
+ INFO  [BOOTSTRAP_TRACE] {"event": "bootstrap_check", "hasLocalModel": true, "hasLocalWhisper": false, "llmAllowed": true, "needsLlm": false, "needsWhisper": true}
+ INFO  [BOOTSTRAP_TRACE] {"event": "download_prepare", "modelName": "ggml-large-v3-turbo.bin", "type": "whisper"}
+ LOG  [AppBootstrap] Gemini Nano status: ERROR
+ LOG  [Embedding] Jina embeddings unavailable (auth/quota). Semantic search falls back to text matching until a valid key or another provider is configured.
+ INFO  [BOOTSTRAP_TRACE] {"event": "download_interrupted_partial_detected", "modelName": "ggml-large-v3-turbo.bin", "partialUri": "file:///data/user/0/com.anonymous.gurustudy.dev/files/ggml-large-v3-turbo.bin.partial", "size": 156091621, "type": "whisper"}
+ LOG  [AI_BOOT] provider validation: chatgpt=skip github_copilot=skip gitlab_duo=skip poe=skip groq=n/a qwen=skip github=n/a kilo=probe deepseek=n/a agentrouter=n/a gemini=n/a gemini_fallback=n/a openrouter=n/a cloudflare=n/a
+ LOG  [AI_BOOT] kilo: ok (200) 1460ms — endpoint reachable; add Kilo API key in Settings to enable chat routing
+Android Bundled 70ms src/services/aiService.ts (1 module)
+Android ./index.ts ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Android Bundled 192ms index.ts (1 module)
+ WARN  [expo-av]: Expo AV has been deprecated and will be removed in SDK 54. Use the `expo-audio` and `expo-video` packages to replace the required functionality.
+ WARN  setLayoutAnimationEnabledExperimental is currently a no-op in the New Architecture.
+ LOG  GURU_HEALTH:launching
+ LOG  GURU_HEALTH:bootstrap_started
+ LOG  GURU_HEALTH:bootstrap_succeeded
+Android Bundled 122ms src/services/ai/llmRouting.ts (1 module)
+ LOG  GURU_HEALTH:db_ready
+ LOG  GURU_HEALTH:route_ready:Tabs
+ LOG  GURU_HEALTH:ui_ready:Tabs
+ LOG  [DB] Pre-seeding 20 topic embeddings...
+ INFO  [BOOTSTRAP_TRACE] {"event": "bootstrap_check", "hasLocalModel": true, "hasLocalWhisper": false, "llmAllowed": true, "needsLlm": false, "needsWhisper": true}
+ INFO  [BOOTSTRAP_TRACE] {"event": "download_prepare", "modelName": "ggml-large-v3-turbo.bin", "type": "whisper"}
+ LOG  [AppBootstrap] Gemini Nano status: ERROR
+ LOG  [Embedding] Jina embeddings unavailable (auth/quota). Semantic search falls back to text matching until a valid key or another provider is configured.
+ INFO  [BOOTSTRAP_TRACE] {"event": "download_interrupted_partial_detected", "modelName": "ggml-large-v3-turbo.bin", "partialUri": "file:///data/user/0/com.anonymous.gurustudy.dev/files/ggml-large-v3-turbo.bin.partial", "size": 156091621, "type": "whisper"}
+Android src/services/aiService.ts ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Android Bundled 124ms src/services/aiService.ts (1 module)
+ LOG  [AI_BOOT] provider validation: chatgpt=skip github_copilot=skip gitlab_duo=skip poe=skip groq=n/a qwen=skip github=n/a kilo=probe deepseek=n/a agentrouter=n/a gemini=n/a gemini_fallback=n/a openrouter=n/a cloudflare=n/a
+ LOG  [AI_BOOT] kilo: ok (200) 1810ms — endpoint reachable; add Kilo API key in Settings to enable chat routing
+Android src/services/gdriveBackupService.ts ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Android Bundled 57ms src/services/gdriveBackupService.ts (1 module)
 [dotenv@17.3.1] injecting env (0) from .env -- tip: ⚙️  suppress all logs with { quiet: true }
+[dotenv@17.3.1] injecting env (0) from .env -- tip: 🔐 prevent building .env in docker: https://dotenvx.com/prebuild
 Android Bundled 145ms index.ts (1 module)
  WARN  [expo-av]: Expo AV has been deprecated and will be removed in SDK 54. Use the `expo-audio` and `expo-video` packages to replace the required functionality.
+ WARN  setLayoutAnimationEnabledExperimental is currently a no-op in the New Architecture.
+ LOG  GURU_HEALTH:launching
+ LOG  GURU_HEALTH:bootstrap_started
+ LOG  GURU_HEALTH:bootstrap_succeeded
+Android Bundled 68ms src/services/ai/llmRouting.ts (1 module)
+ LOG  GURU_HEALTH:db_ready
+ LOG  GURU_HEALTH:route_ready:Tabs
+ LOG  GURU_HEALTH:ui_ready:Tabs
+ LOG  [DB] Pre-seeding 20 topic embeddings...
+ INFO  [BOOTSTRAP_TRACE] {"event": "bootstrap_check", "hasLocalModel": true, "hasLocalWhisper": false, "llmAllowed": true, "needsLlm": false, "needsWhisper": true}
+ INFO  [BOOTSTRAP_TRACE] {"event": "download_prepare", "modelName": "ggml-large-v3-turbo.bin", "type": "whisper"}
+ LOG  [AppBootstrap] Gemini Nano status: ERROR
+ LOG  [Embedding] Jina embeddings unavailable (auth/quota). Semantic search falls back to text matching until a valid key or another provider is configured.
+ INFO  [BOOTSTRAP_TRACE] {"event": "download_interrupted_partial_detected", "modelName": "ggml-large-v3-turbo.bin", "partialUri": "file:///data/user/0/com.anonymous.gurustudy.dev/files/ggml-large-v3-turbo.bin.partial", "size": 156091621, "type": "whisper"}
+Android src/services/aiService.ts ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Android Bundled 117ms src/services/aiService.ts (1 module)
+ LOG  [AI_BOOT] provider validation: chatgpt=skip github_copilot=skip gitlab_duo=skip poe=skip groq=n/a qwen=skip github=n/a kilo=probe deepseek=n/a agentrouter=n/a gemini=n/a gemini_fallback=n/a openrouter=n/a cloudflare=n/a
+ LOG  [AI_BOOT] kilo: ok (200) 4321ms — endpoint reachable; add Kilo API key in Settings to enable chat routing
+Android ./index.ts ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Android Bundled 161ms index.ts (1 module)
+ WARN  [expo-av]: Expo AV has been deprecated and will be removed in SDK 54. Use the `expo-audio` and `expo-video` packages to replace the required functionality.
+ WARN  setLayoutAnimationEnabledExperimental is currently a no-op in the New Architecture.
+ LOG  GURU_HEALTH:launching
+ LOG  GURU_HEALTH:bootstrap_started
+ LOG  GURU_HEALTH:bootstrap_succeeded
+Android Bundled 62ms src/services/ai/llmRouting.ts (1 module)
+ LOG  GURU_HEALTH:db_ready
+ LOG  GURU_HEALTH:route_ready:Tabs
+ LOG  GURU_HEALTH:ui_ready:Tabs
+ LOG  [DB] Pre-seeding 20 topic embeddings...
+ INFO  [BOOTSTRAP_TRACE] {"event": "bootstrap_check", "hasLocalModel": true, "hasLocalWhisper": false, "llmAllowed": true, "needsLlm": false, "needsWhisper": true}
+ INFO  [BOOTSTRAP_TRACE] {"event": "download_prepare", "modelName": "ggml-large-v3-turbo.bin", "type": "whisper"}
+ LOG  [AppBootstrap] Gemini Nano status: ERROR
+ LOG  [Embedding] Jina embeddings unavailable (auth/quota). Semantic search falls back to text matching until a valid key or another provider is configured.
+ INFO  [BOOTSTRAP_TRACE] {"event": "download_interrupted_partial_detected", "modelName": "ggml-large-v3-turbo.bin", "partialUri": "file:///data/user/0/com.anonymous.gurustudy.dev/files/ggml-large-v3-turbo.bin.partial", "size": 156091621, "type": "whisper"}
+Android src/services/aiService.ts ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Android Bundled 74ms src/services/aiService.ts (1 module)
+ LOG  [AI_BOOT] provider validation: chatgpt=skip github_copilot=skip gitlab_duo=skip poe=skip groq=n/a qwen=skip github=n/a kilo=probe deepseek=n/a agentrouter=n/a gemini=n/a gemini_fallback=n/a openrouter=n/a cloudflare=n/a
+ LOG  [AI_BOOT] kilo: ok (200) 1752ms — endpoint reachable; add Kilo API key in Settings to enable chat routing
+Android ./index.ts ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Android Bundled 106ms index.ts (1 module)
+ WARN  [expo-av]: Expo AV has been deprecated and will be removed in SDK 54. Use the `expo-audio` and `expo-video` packages to replace the required functionality.
+ WARN  setLayoutAnimationEnabledExperimental is currently a no-op in the New Architecture.
+ LOG  GURU_HEALTH:launching
+ LOG  GURU_HEALTH:bootstrap_started
+Android Bundled 81ms index.ts (1 module)
+[dotenv@17.3.1] injecting env (0) from .env -- tip: ⚡️ secrets for agents: https://dotenvx.com/as2
+[dotenv@17.3.1] injecting env (0) from .env -- tip: 🛡️ auth for agents: https://vestauth.com
+Android ./index.ts ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Android Bundled 22416ms index.ts (1 module)
+Android ./index.ts ░░░░░░░░░░░░░░░░  0.0% (0/1)
+ WARN  [expo-av]: Expo AV has been deprecated and will be removed in SDK 54. Use the `expo-audio` and `expo-video` packages to replace the required functionality.
+ WARN  setLayoutAnimationEnabledExperimental is currently a no-op in the New Architecture.
  LOG  GURU_HEALTH:launching
  LOG  GURU_HEALTH:bootstrap_started
  LOG  GURU_HEALTH:bootstrap_succeeded
  LOG  GURU_HEALTH:db_ready
- LOG  [DB] Pre-seeding 20 topic embeddings...
  LOG  GURU_HEALTH:route_ready:Tabs
  LOG  GURU_HEALTH:ui_ready:Tabs
- WARN  "logo-youtube-outline" is not a valid icon name for family "ionicons"
- WARN  "logo-youtube-outline" is not a valid icon name for family "ionicons"
-Android Bundled 1011ms src/services/ai/llmRouting.ts (1 module)
- INFO  [BOOTSTRAP_TRACE] {"event": "bootstrap_check", "hasLocalModel": false, "hasLocalWhisper": false, "llmAllowed": true, "needsLlm": true, "needsWhisper": true}
+ LOG  [DB] Pre-seeding 20 topic embeddings...
+Android Bundled 389ms src/services/ai/llmRouting.ts (1 module)
+ INFO  [BOOTSTRAP_TRACE] {"event": "bootstrap_check", "hasLocalModel": true, "hasLocalWhisper": false, "llmAllowed": true, "needsLlm": false, "needsWhisper": true}
  INFO  [BOOTSTRAP_TRACE] {"event": "download_prepare", "modelName": "ggml-large-v3-turbo.bin", "type": "whisper"}
- INFO  [BOOTSTRAP_TRACE] {"event": "download_finalize_existing_partial", "modelName": "ggml-large-v3-turbo.bin", "partialUri": "file:///data/user/0/com.anonymous.gurustudy.dev/files/ggml-large-v3-turbo.bin.partial", "size": 843431630, "type": "whisper"}
- INFO  [BOOTSTRAP_TRACE] {"event": "download_verifying", "targetUri": "file:///data/user/0/com.anonymous.gurustudy.dev/files/ggml-large-v3-turbo.bin", "type": "whisper"}
+ LOG  [Embedding] Jina embeddings unavailable (auth/quota). Semantic search falls back to text matching until a valid key or another provider is configured.
+ LOG  [AppBootstrap] Gemini Nano status: ERROR
+ INFO  [BOOTSTRAP_TRACE] {"event": "download_interrupted_partial_detected", "modelName": "ggml-large-v3-turbo.bin", "partialUri": "file:///data/user/0/com.anonymous.gurustudy.dev/files/ggml-large-v3-turbo.bin.partial", "size": 156091621, "type": "whisper"}
+Android src/services/aiService.ts ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Android Bundled 682ms src/services/aiService.ts (1 module)
+ LOG  [AI_BOOT] provider validation: chatgpt=skip github_copilot=skip gitlab_duo=skip poe=skip groq=n/a qwen=skip github=n/a kilo=probe deepseek=n/a agentrouter=n/a gemini=n/a gemini_fallback=n/a openrouter=n/a cloudflare=n/a
+ LOG  [AI_BOOT] kilo: ok (200) 4858ms — endpoint reachable; add Kilo API key in Settings to enable chat routing
+Android src/services/gdriveBackupService.ts ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Android Bundled 786ms src/services/gdriveBackupService.ts (1 module)
+ WARN  [toolRunner] accountabilityMessages failed — using fallback. [ReferenceError: Property 'schemaName' doesn't exist]
+ WARN  [Notifications] AI generation failed, using smart fallbacks: [ReferenceError: Property 'schemaName' doesn't exist]
+ WARN  [toolRunner] accountabilityMessages failed — using fallback. [ReferenceError: Property 'schemaName' doesn't exist]
+ WARN  [Notifications] AI generation failed, using smart fallbacks: [ReferenceError: Property 'schemaName' doesn't exist]
+Android ./index.ts ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Android Bundled 233ms index.ts (1 module)
+ WARN  [expo-av]: Expo AV has been deprecated and will be removed in SDK 54. Use the `expo-audio` and `expo-video` packages to replace the required functionality.
+ WARN  setLayoutAnimationEnabledExperimental is currently a no-op in the New Architecture.
+ LOG  GURU_HEALTH:launching
+ LOG  GURU_HEALTH:bootstrap_started
+ LOG  GURU_HEALTH:bootstrap_succeeded
+Android Bundled 48ms src/services/ai/llmRouting.ts (1 module)
+ LOG  GURU_HEALTH:db_ready
+ LOG  GURU_HEALTH:route_ready:Tabs
+ LOG  GURU_HEALTH:ui_ready:Tabs
+ LOG  [DB] Pre-seeding 20 topic embeddings...
+ INFO  [BOOTSTRAP_TRACE] {"event": "bootstrap_check", "hasLocalModel": true, "hasLocalWhisper": false, "llmAllowed": true, "needsLlm": false, "needsWhisper": true}
+ INFO  [BOOTSTRAP_TRACE] {"event": "download_prepare", "modelName": "ggml-large-v3-turbo.bin", "type": "whisper"}
  LOG  [AppBootstrap] Gemini Nano status: ERROR
  LOG  [Embedding] Jina embeddings unavailable (auth/quota). Semantic search falls back to text matching until a valid key or another provider is configured.
- WARN  "logo-youtube-outline" is not a valid icon name for family "ionicons"
- LOG  [DB_EVENT] Notifying: PROFILE_UPDATED
- INFO  [BOOTSTRAP_TRACE] {"event": "download_complete", "size": 843595470, "targetUri": "file:///data/user/0/com.anonymous.gurustudy.dev/files/ggml-large-v3-turbo.bin", "type": "whisper"}
- INFO  [BOOTSTRAP_TRACE] {"event": "download_prepare", "modelName": "gemma-4-E4B-it.litertlm", "type": "llm"}
- INFO  [BOOTSTRAP_TRACE] {"event": "download_interrupted_partial_detected", "modelName": "gemma-4-E4B-it.litertlm", "partialUri": "file:///data/user/0/com.anonymous.gurustudy.dev/files/gemma-4-E4B-it.litertlm.partial", "size": 102456810, "type": "llm"}
- WARN  "logo-youtube-outline" is not a valid icon name for family "ionicons"
-Android Bundled 81ms src/services/aiService.ts (1 module)
+ INFO  [BOOTSTRAP_TRACE] {"event": "download_interrupted_partial_detected", "modelName": "ggml-large-v3-turbo.bin", "partialUri": "file:///data/user/0/com.anonymous.gurustudy.dev/files/ggml-large-v3-turbo.bin.partial", "size": 156091621, "type": "whisper"}
+Android src/services/aiService.ts ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Android Bundled 125ms src/services/aiService.ts (1 module)
  LOG  [AI_BOOT] provider validation: chatgpt=skip github_copilot=skip gitlab_duo=skip poe=skip groq=n/a qwen=skip github=n/a kilo=probe deepseek=n/a agentrouter=n/a gemini=n/a gemini_fallback=n/a openrouter=n/a cloudflare=n/a
- LOG  [AI_BOOT] kilo: ok (200) 1697ms — endpoint reachable; add Kilo API key in Settings to enable chat routing
-Android Bundled 186ms modules/local-llm/index.ts (1 module)
- ERROR  [GuruChat] Failed to create v2 model: [Error: createGuruFallbackModel: no providers available. Save an API key or connect OAuth in Settings. (Kilo: startup probe can succeed without a key; routed chat/embeddings still need a stored Kilo API key. Gemini Nano may be available on supported Pixel/Samsung devices via AICore.)]
+ LOG  [AI_BOOT] kilo: ok (200) 6748ms — endpoint reachable; add Kilo API key in Settings to enable chat routing
+Android ./index.ts ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Android Bundled 64ms index.ts (1 module)
+ WARN  [expo-av]: Expo AV has been deprecated and will be removed in SDK 54. Use the `expo-audio` and `expo-video` packages to replace the required functionality.
+ WARN  setLayoutAnimationEnabledExperimental is currently a no-op in the New Architecture.
+ LOG  GURU_HEALTH:launching
+ LOG  GURU_HEALTH:bootstrap_started
+Android Bundled 67ms index.ts (1 module)
+Android ./index.ts ░░░░░░░░░░░░░░░░  0.0% (0/1)
+ WARN  [expo-av]: Expo AV has been deprecated and will be removed in SDK 54. Use the `expo-audio` and `expo-video` packages to replace the required functionality.
+ WARN  setLayoutAnimationEnabledExperimental is currently a no-op in the New Architecture.
+ LOG  GURU_HEALTH:launching
+ LOG  GURU_HEALTH:bootstrap_started
+ LOG  GURU_HEALTH:bootstrap_succeeded
+ LOG  GURU_HEALTH:db_ready
+Android Bundled 46ms src/services/ai/llmRouting.ts (1 module)
+ LOG  GURU_HEALTH:route_ready:Tabs
+ LOG  GURU_HEALTH:ui_ready:Tabs
+ LOG  [DB] Pre-seeding 20 topic embeddings...
+ INFO  [BOOTSTRAP_TRACE] {"event": "bootstrap_check", "hasLocalModel": true, "hasLocalWhisper": false, "llmAllowed": true, "needsLlm": false, "needsWhisper": true}
+ INFO  [BOOTSTRAP_TRACE] {"event": "download_prepare", "modelName": "ggml-large-v3-turbo.bin", "type": "whisper"}
+ LOG  [AppBootstrap] Gemini Nano status: ERROR
+ LOG  [Embedding] Jina embeddings unavailable (auth/quota). Semantic search falls back to text matching until a valid key or another provider is configured.
+ INFO  [BOOTSTRAP_TRACE] {"event": "download_interrupted_partial_detected", "modelName": "ggml-large-v3-turbo.bin", "partialUri": "file:///data/user/0/com.anonymous.gurustudy.dev/files/ggml-large-v3-turbo.bin.partial", "size": 156091621, "type": "whisper"}
+ WARN  [samsungPerf] init failed [TypeError: GuruAppLauncher.samsungPerfInit is not a function (it is undefined)]
+Android src/services/aiService.ts ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Android Bundled 60ms src/services/aiService.ts (1 module)
+ LOG  [AI_BOOT] provider validation: chatgpt=skip github_copilot=skip gitlab_duo=skip poe=skip groq=n/a qwen=skip github=n/a kilo=probe deepseek=n/a agentrouter=n/a gemini=n/a gemini_fallback=n/a openrouter=n/a cloudflare=n/a
+ LOG  [AI_BOOT] kilo: ok (200) 1764ms — endpoint reachable; add Kilo API key in Settings to enable chat routing
+Android Bundled 59ms index.ts (1 module)
+ WARN  [expo-av]: Expo AV has been deprecated and will be removed in SDK 54. Use the `expo-audio` and `expo-video` packages to replace the required functionality.
+ WARN  setLayoutAnimationEnabledExperimental is currently a no-op in the New Architecture.
+ LOG  GURU_HEALTH:launching
+ LOG  GURU_HEALTH:bootstrap_started
+ LOG  GURU_HEALTH:bootstrap_succeeded
+ LOG  GURU_HEALTH:db_ready
+Android Bundled 41ms src/services/ai/llmRouting.ts (1 module)
+ LOG  GURU_HEALTH:route_ready:Tabs
+ LOG  GURU_HEALTH:ui_ready:Tabs
+ LOG  [DB] Pre-seeding 20 topic embeddings...
+ INFO  [BOOTSTRAP_TRACE] {"event": "bootstrap_check", "hasLocalModel": true, "hasLocalWhisper": false, "llmAllowed": true, "needsLlm": false, "needsWhisper": true}
+ INFO  [BOOTSTRAP_TRACE] {"event": "download_prepare", "modelName": "ggml-large-v3-turbo.bin", "type": "whisper"}
+ LOG  [AppBootstrap] Gemini Nano status: ERROR
+ LOG  [Embedding] Jina embeddings unavailable (auth/quota). Semantic search falls back to text matching until a valid key or another provider is configured.
+ INFO  [BOOTSTRAP_TRACE] {"event": "download_interrupted_partial_detected", "modelName": "ggml-large-v3-turbo.bin", "partialUri": "file:///data/user/0/com.anonymous.gurustudy.dev/files/ggml-large-v3-turbo.bin.partial", "size": 156091621, "type": "whisper"}
+ WARN  [samsungPerf] init failed [TypeError: GuruAppLauncher.samsungPerfInit is not a function (it is undefined)]
+Android Bundled 99ms index.ts (1 module)
+ WARN  [expo-av]: Expo AV has been deprecated and will be removed in SDK 54. Use the `expo-audio` and `expo-video` packages to replace the required functionality.
+ WARN  setLayoutAnimationEnabledExperimental is currently a no-op in the New Architecture.
+ LOG  GURU_HEALTH:launching
+ LOG  GURU_HEALTH:bootstrap_started
+ LOG  GURU_HEALTH:bootstrap_succeeded
+Android Bundled 47ms src/services/ai/llmRouting.ts (1 module)
+ LOG  GURU_HEALTH:db_ready
+ LOG  GURU_HEALTH:route_ready:Tabs
+ LOG  GURU_HEALTH:ui_ready:Tabs
+ LOG  [DB] Pre-seeding 20 topic embeddings...
+ INFO  [BOOTSTRAP_TRACE] {"event": "bootstrap_check", "hasLocalModel": true, "hasLocalWhisper": false, "llmAllowed": true, "needsLlm": false, "needsWhisper": true}
+ INFO  [BOOTSTRAP_TRACE] {"event": "download_prepare", "modelName": "ggml-large-v3-turbo.bin", "type": "whisper"}
+ LOG  [AppBootstrap] Gemini Nano status: ERROR
+ LOG  [Embedding] Jina embeddings unavailable (auth/quota). Semantic search falls back to text matching until a valid key or another provider is configured.
+ INFO  [BOOTSTRAP_TRACE] {"event": "download_interrupted_partial_detected", "modelName": "ggml-large-v3-turbo.bin", "partialUri": "file:///data/user/0/com.anonymous.gurustudy.dev/files/ggml-large-v3-turbo.bin.partial", "size": 156091621, "type": "whisper"}
+ WARN  [samsungPerf] init failed [TypeError: GuruAppLauncher.samsungPerfInit is not a function (it is undefined)]
+Unable to resolve "../../samsungPerf" from "src/services/ai/v2/providers/localLlm.ts"
+[0m [90m 19 |[39m } [36mfrom[39m [32m'../spec'[39m[33m;[39m
+ [90m 20 |[39m [36mimport[39m { chatWithLocalNative } [36mfrom[39m [32m'../../llmRouting'[39m[33m;[39m
+[31m[1m>[22m[39m[90m 21 |[39m [36mimport[39m [33m*[39m [36mas[39m samsungPerf [36mfrom[39m [32m'../../samsungPerf'[39m[33m;[39m
+ [90m    |[39m                               [31m[1m^[22m[39m
+ [90m 22 |[39m [36mimport[39m type { [33mChatMessage[39m } [36mfrom[39m [32m'local-llm'[39m[33m;[39m
+ [90m 23 |[39m [36mimport[39m type { [33mMessage[39m [36mas[39m [33mLegacyMessage[39m } [36mfrom[39m [32m'../../types'[39m[33m;[39m
+ [90m 24 |[39m[0m
+
+Import stack (2000):
+
+ src/services/ai/v2/providers/localLlm.ts
+ | import "../../samsungPerf"
+
+ src/services/ai/v2/index.ts
+ | import "./providers/localLlm"
+
+ src/services/ai/index.ts
+ | import "./v2"
+
+ src/screens/SleepModeScreen.tsx
+ | import "../services/ai"
+
+ src/navigation/RootNavigator.tsx
+ | import "../screens/SleepModeScreen"
+
+ 
+ | import "./src/navigation/RootNavigator"
+
+ ERROR  [Error: UnableToResolveError Unable to resolve module ../../samsungPerf from /Users/vishnugnair/Guru/debug/src/services/ai/v2/providers/localLlm.ts: 
+
+None of these files exist:
+  * src/services/ai/samsungPerf(.android.ts|.native.ts|.ts|.android.tsx|.native.tsx|.tsx|.android.mjs|.native.mjs|.mjs|.android.js|.native.js|.js|.android.jsx|.native.jsx|.jsx|.android.json|.native.json|.json|.android.cjs|.native.cjs|.cjs|.android.scss|.native.scss|.scss|.android.sass|.native.sass|.sass|.android.css|.native.css|.css|.android.css|.native.css|.css)
+  * src/services/ai/samsungPerf
+[0m [90m 19 |[39m } [36mfrom[39m [32m'../spec'[39m[33m;[39m
+ [90m 20 |[39m [36mimport[39m { chatWithLocalNative } [36mfrom[39m [32m'../../llmRouting'[39m[33m;[39m
+[31m[1m>[22m[39m[90m 21 |[39m [36mimport[39m [33m*[39m [36mas[39m samsungPerf [36mfrom[39m [32m'../../samsungPerf'[39m[33m;[39m
+ [90m    |[39m                               [31m[1m^[22m[39m
+ [90m 22 |[39m [36mimport[39m type { [33mChatMessage[39m } [36mfrom[39m [32m'local-llm'[39m[33m;[39m
+ [90m 23 |[39m [36mimport[39m type { [33mMessage[39m [36mas[39m [33mLegacyMessage[39m } [36mfrom[39m [32m'../../types'[39m[33m;[39m
+ [90m 24 |[39m[0m]
+Android Bundling failed 1891ms src/services/aiService.ts (1 module)
+Unable to resolve "../../samsungPerf" from "src/services/ai/v2/providers/localLlm.ts"
+[0m [90m 19 |[39m } [36mfrom[39m [32m'../spec'[39m[33m;[39m
+ [90m 20 |[39m [36mimport[39m { chatWithLocalNative } [36mfrom[39m [32m'../../llmRouting'[39m[33m;[39m
+[31m[1m>[22m[39m[90m 21 |[39m [36mimport[39m [33m*[39m [36mas[39m samsungPerf [36mfrom[39m [32m'../../samsungPerf'[39m[33m;[39m
+ [90m    |[39m                               [31m[1m^[22m[39m
+ [90m 22 |[39m [36mimport[39m type { [33mChatMessage[39m } [36mfrom[39m [32m'local-llm'[39m[33m;[39m
+ [90m 23 |[39m [36mimport[39m type { [33mMessage[39m [36mas[39m [33mLegacyMessage[39m } [36mfrom[39m [32m'../../types'[39m[33m;[39m
+ [90m 24 |[39m[0m
+
+Import stack (2000):
+
+ src/services/ai/v2/providers/localLlm.ts
+ | import "../../samsungPerf"
+
+ src/services/ai/v2/index.ts
+ | import "./providers/localLlm"
+
+ src/services/ai/index.ts
+ | import "./v2"
+
+ src/screens/SleepModeScreen.tsx
+ | import "../services/ai"
+
+ src/navigation/RootNavigator.tsx
+ | import "../screens/SleepModeScreen"
+
+ 
+ | import "./src/navigation/RootNavigator"
+
+ LOG  [AI_BOOT] provider validation: chatgpt=skip github_copilot=skip gitlab_duo=skip poe=skip groq=n/a qwen=skip github=n/a kilo=probe deepseek=n/a agentrouter=n/a gemini=n/a gemini_fallback=n/a openrouter=n/a cloudflare=n/a
+ LOG  [AI_BOOT] kilo: ok (200) 2730ms — endpoint reachable; add Kilo API key in Settings to enable chat routing
+ WARN  [AIWarmup] Startup prefetch failed: [Error: Unable to resolve module ../../samsungPerf from /Users/vishnugnair/Guru/debug/src/services/ai/v2/providers/localLlm.ts: 
+
+None of these files exist:
+  * src/services/ai/samsungPerf(.android.ts|.native.ts|.ts|.android.tsx|.native.tsx|.tsx|.android.mjs|.native.mjs|.mjs|.android.js|.native.js|.js|.android.jsx|.native.jsx|.jsx|.android.json|.native.json|.json|.android.cjs|.native.cjs|.cjs|.android.scss|.native.scss|.scss|.android.sass|.native.sass|.sass|.android.css|.native.css|.css|.android.css|.native.css|.css)
+  * src/services/ai/samsungPerf
+[0m [90m 19 |[39m } [36mfrom[39m [32m'../spec'[39m[33m;[39m
+ [90m 20 |[39m [36mimport[39m { chatWithLocalNative } [36mfrom[39m [32m'../../llmRouting'[39m[33m;[39m
+[31m[1m>[22m[39m[90m 21 |[39m [36mimport[39m [33m*[39m [36mas[39m samsungPerf [36mfrom[39m [32m'../../samsungPerf'[39m[33m;[39m
+ [90m    |[39m                               [31m[1m^[22m[39m
+ [90m 22 |[39m [36mimport[39m type { [33mChatMessage[39m } [36mfrom[39m [32m'local-llm'[39m[33m;[39m
+ [90m 23 |[39m [36mimport[39m type { [33mMessage[39m [36mas[39m [33mLegacyMessage[39m } [36mfrom[39m [32m'../../types'[39m[33m;[39m
+ [90m 24 |[39m[0m]
+Unable to resolve "../../samsungPerf" from "src/services/ai/v2/providers/localLlm.ts"
+[0m [90m 19 |[39m } [36mfrom[39m [32m'../spec'[39m[33m;[39m
+ [90m 20 |[39m [36mimport[39m { chatWithLocalNative } [36mfrom[39m [32m'../../llmRouting'[39m[33m;[39m
+[31m[1m>[22m[39m[90m 21 |[39m [36mimport[39m [33m*[39m [36mas[39m samsungPerf [36mfrom[39m [32m'../../samsungPerf'[39m[33m;[39m
+ [90m    |[39m                               [31m[1m^[22m[39m
+ [90m 22 |[39m [36mimport[39m type { [33mChatMessage[39m } [36mfrom[39m [32m'local-llm'[39m[33m;[39m
+ [90m 23 |[39m [36mimport[39m type { [33mMessage[39m [36mas[39m [33mLegacyMessage[39m } [36mfrom[39m [32m'../../types'[39m[33m;[39m
+ [90m 24 |[39m[0m
+
+Import stack (2000):
+
+ src/services/ai/v2/providers/localLlm.ts
+ | import "../../samsungPerf"
+
+ src/services/ai/v2/index.ts
+ | import "./providers/localLlm"
+
+ src/services/ai/index.ts
+ | import "./v2"
+
+ src/screens/SleepModeScreen.tsx
+ | import "../services/ai"
+
+ src/navigation/RootNavigator.tsx
+ | import "../screens/SleepModeScreen"
+
+ 
+ | import "./src/navigation/RootNavigator"
+
+ ERROR  [Error: UnableToResolveError Unable to resolve module ../../samsungPerf from /Users/vishnugnair/Guru/debug/src/services/ai/v2/providers/localLlm.ts: 
+
+None of these files exist:
+  * src/services/ai/samsungPerf(.android.ts|.native.ts|.ts|.android.tsx|.native.tsx|.tsx|.android.mjs|.native.mjs|.mjs|.android.js|.native.js|.js|.android.jsx|.native.jsx|.jsx|.android.json|.native.json|.json|.android.cjs|.native.cjs|.cjs|.android.scss|.native.scss|.scss|.android.sass|.native.sass|.sass|.android.css|.native.css|.css|.android.css|.native.css|.css)
+  * src/services/ai/samsungPerf
+[0m [90m 19 |[39m } [36mfrom[39m [32m'../spec'[39m[33m;[39m
+ [90m 20 |[39m [36mimport[39m { chatWithLocalNative } [36mfrom[39m [32m'../../llmRouting'[39m[33m;[39m
+[31m[1m>[22m[39m[90m 21 |[39m [36mimport[39m [33m*[39m [36mas[39m samsungPerf [36mfrom[39m [32m'../../samsungPerf'[39m[33m;[39m
+ [90m    |[39m                               [31m[1m^[22m[39m
+ [90m 22 |[39m [36mimport[39m type { [33mChatMessage[39m } [36mfrom[39m [32m'local-llm'[39m[33m;[39m
+ [90m 23 |[39m [36mimport[39m type { [33mMessage[39m [36mas[39m [33mLegacyMessage[39m } [36mfrom[39m [32m'../../types'[39m[33m;[39m
+ [90m 24 |[39m[0m]
+Android ./index.ts ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Android Bundled 80ms index.ts (1 module)
+ WARN  [expo-av]: Expo AV has been deprecated and will be removed in SDK 54. Use the `expo-audio` and `expo-video` packages to replace the required functionality.
+ WARN  setLayoutAnimationEnabledExperimental is currently a no-op in the New Architecture.
+ LOG  GURU_HEALTH:launching
+ LOG  GURU_HEALTH:bootstrap_started
+ LOG  GURU_HEALTH:bootstrap_succeeded
+Android Bundled 43ms src/services/ai/llmRouting.ts (1 module)
+ LOG  GURU_HEALTH:db_ready
+ LOG  GURU_HEALTH:route_ready:Tabs
+ LOG  GURU_HEALTH:ui_ready:Tabs
+ LOG  [DB] Pre-seeding 20 topic embeddings...
+ LOG  [Embedding] Jina embeddings unavailable (auth/quota). Semantic search falls back to text matching until a valid key or another provider is configured.
+ INFO  [BOOTSTRAP_TRACE] {"event": "bootstrap_check", "hasLocalModel": true, "hasLocalWhisper": false, "llmAllowed": true, "needsLlm": false, "needsWhisper": true}
+ INFO  [BOOTSTRAP_TRACE] {"event": "download_prepare", "modelName": "ggml-large-v3-turbo.bin", "type": "whisper"}
+ LOG  [AppBootstrap] Gemini Nano status: ERROR
+ INFO  [BOOTSTRAP_TRACE] {"event": "download_interrupted_partial_detected", "modelName": "ggml-large-v3-turbo.bin", "partialUri": "file:///data/user/0/com.anonymous.gurustudy.dev/files/ggml-large-v3-turbo.bin.partial", "size": 156091621, "type": "whisper"}
+ WARN  [samsungPerf] init failed [TypeError: GuruAppLauncher.samsungPerfInit is not a function (it is undefined)]
+Android src/services/aiService.ts ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Android Bundled 48ms src/services/aiService.ts (1 module)
+ LOG  [AI_BOOT] provider validation: chatgpt=skip github_copilot=skip gitlab_duo=skip poe=skip groq=n/a qwen=skip github=n/a kilo=probe deepseek=n/a agentrouter=n/a gemini=n/a gemini_fallback=n/a openrouter=n/a cloudflare=n/a
+ LOG  [AI_BOOT] kilo: ok (200) 4233ms — endpoint reachable; add Kilo API key in Settings to enable chat routing
+Android Bundled 60ms index.ts (1 module)
+Android ./index.ts ░░░░░░░░░░░░░░░░  0.0% (0/1)
+ WARN  [expo-av]: Expo AV has been deprecated and will be removed in SDK 54. Use the `expo-audio` and `expo-video` packages to replace the required functionality.
+ WARN  setLayoutAnimationEnabledExperimental is currently a no-op in the New Architecture.
+ LOG  GURU_HEALTH:launching
+ LOG  GURU_HEALTH:bootstrap_started
+ LOG  GURU_HEALTH:bootstrap_succeeded
+Android Bundled 48ms src/services/ai/llmRouting.ts (1 module)
+ LOG  GURU_HEALTH:db_ready
+ LOG  GURU_HEALTH:route_ready:Tabs
+ LOG  GURU_HEALTH:ui_ready:Tabs
+ LOG  [DB] Pre-seeding 20 topic embeddings...
+ LOG  [Embedding] Jina embeddings unavailable (auth/quota). Semantic search falls back to text matching until a valid key or another provider is configured.
+ INFO  [BOOTSTRAP_TRACE] {"event": "bootstrap_check", "hasLocalModel": true, "hasLocalWhisper": false, "llmAllowed": true, "needsLlm": false, "needsWhisper": true}
+ INFO  [BOOTSTRAP_TRACE] {"event": "download_prepare", "modelName": "ggml-large-v3-turbo.bin", "type": "whisper"}
+ LOG  [AppBootstrap] Gemini Nano status: ERROR
+ INFO  [BOOTSTRAP_TRACE] {"event": "download_interrupted_partial_detected", "modelName": "ggml-large-v3-turbo.bin", "partialUri": "file:///data/user/0/com.anonymous.gurustudy.dev/files/ggml-large-v3-turbo.bin.partial", "size": 156091621, "type": "whisper"}
+ WARN  [samsungPerf] init failed [TypeError: GuruAppLauncher.samsungPerfInit is not a function (it is undefined)]
+Android src/services/aiService.ts ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Android Bundled 64ms src/services/aiService.ts (1 module)
+ LOG  [AI_BOOT] provider validation: chatgpt=skip github_copilot=skip gitlab_duo=skip poe=skip groq=n/a qwen=skip github=n/a kilo=probe deepseek=n/a agentrouter=n/a gemini=n/a gemini_fallback=n/a openrouter=n/a cloudflare=n/a
+ LOG  [AI_BOOT] kilo: ok (200) 1735ms — endpoint reachable; add Kilo API key in Settings to enable chat routing
+Android Bundled 95ms index.ts (1 module)
+ WARN  [expo-av]: Expo AV has been deprecated and will be removed in SDK 54. Use the `expo-audio` and `expo-video` packages to replace the required functionality.
+ WARN  setLayoutAnimationEnabledExperimental is currently a no-op in the New Architecture.
+ LOG  GURU_HEALTH:launching
+ LOG  GURU_HEALTH:bootstrap_started
+ LOG  GURU_HEALTH:bootstrap_succeeded
+Android Bundled 44ms src/services/ai/llmRouting.ts (1 module)
+ LOG  GURU_HEALTH:db_ready
+ LOG  GURU_HEALTH:route_ready:Tabs
+ LOG  GURU_HEALTH:ui_ready:Tabs
+ LOG  [DB] Pre-seeding 20 topic embeddings...
+ INFO  [BOOTSTRAP_TRACE] {"event": "bootstrap_check", "hasLocalModel": true, "hasLocalWhisper": false, "llmAllowed": true, "needsLlm": false, "needsWhisper": true}
+ INFO  [BOOTSTRAP_TRACE] {"event": "download_prepare", "modelName": "ggml-large-v3-turbo.bin", "type": "whisper"}
+ LOG  [AppBootstrap] Gemini Nano status: ERROR
+ LOG  [Embedding] Jina embeddings unavailable (auth/quota). Semantic search falls back to text matching until a valid key or another provider is configured.
+ INFO  [BOOTSTRAP_TRACE] {"event": "download_interrupted_partial_detected", "modelName": "ggml-large-v3-turbo.bin", "partialUri": "file:///data/user/0/com.anonymous.gurustudy.dev/files/ggml-large-v3-turbo.bin.partial", "size": 156091621, "type": "whisper"}
+ WARN  [samsungPerf] init failed [TypeError: GuruAppLauncher.samsungPerfInit is not a function (it is undefined)]
+Android Bundled 59ms index.ts (1 module)
+Android ./index.ts ░░░░░░░░░░░░░░░░  0.0% (0/1)
+ WARN  [expo-av]: Expo AV has been deprecated and will be removed in SDK 54. Use the `expo-audio` and `expo-video` packages to replace the required functionality.
+ WARN  setLayoutAnimationEnabledExperimental is currently a no-op in the New Architecture.
+ LOG  GURU_HEALTH:launching
+ LOG  GURU_HEALTH:bootstrap_started
+ LOG  GURU_HEALTH:bootstrap_succeeded
+Android Bundled 50ms src/services/ai/llmRouting.ts (1 module)
+ LOG  GURU_HEALTH:db_ready
+ LOG  GURU_HEALTH:route_ready:Tabs
+ LOG  GURU_HEALTH:ui_ready:Tabs
+ LOG  [DB] Pre-seeding 20 topic embeddings...
+ INFO  [BOOTSTRAP_TRACE] {"event": "bootstrap_check", "hasLocalModel": true, "hasLocalWhisper": false, "llmAllowed": true, "needsLlm": false, "needsWhisper": true}
+ INFO  [BOOTSTRAP_TRACE] {"event": "download_prepare", "modelName": "ggml-large-v3-turbo.bin", "type": "whisper"}
+ LOG  [AppBootstrap] Gemini Nano status: ERROR
+ LOG  [Embedding] Jina embeddings unavailable (auth/quota). Semantic search falls back to text matching until a valid key or another provider is configured.
+ INFO  [BOOTSTRAP_TRACE] {"event": "download_interrupted_partial_detected", "modelName": "ggml-large-v3-turbo.bin", "partialUri": "file:///data/user/0/com.anonymous.gurustudy.dev/files/ggml-large-v3-turbo.bin.partial", "size": 156091621, "type": "whisper"}
+ WARN  [samsungPerf] init failed [TypeError: GuruAppLauncher.samsungPerfInit is not a function (it is undefined)]
+ LOG  [AI_BOOT] provider validation: chatgpt=skip github_copilot=skip gitlab_duo=skip poe=skip groq=n/a qwen=skip github=n/a kilo=probe deepseek=n/a agentrouter=n/a gemini=n/a gemini_fallback=n/a openrouter=n/a cloudflare=n/a
+ LOG  [AI_BOOT] kilo: ok (200) 1279ms — endpoint reachable; add Kilo API key in Settings to enable chat routing
+Android Bundled 35ms src/services/aiService.ts (1 module)
+Android ./index.ts ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Android Bundled 61ms index.ts (1 module)
+ WARN  [expo-av]: Expo AV has been deprecated and will be removed in SDK 54. Use the `expo-audio` and `expo-video` packages to replace the required functionality.
+ WARN  setLayoutAnimationEnabledExperimental is currently a no-op in the New Architecture.
+ LOG  GURU_HEALTH:launching
+ LOG  GURU_HEALTH:bootstrap_started
+ LOG  GURU_HEALTH:bootstrap_succeeded
+Android Bundled 29ms src/services/ai/llmRouting.ts (1 module)
+ LOG  GURU_HEALTH:db_ready
+ LOG  GURU_HEALTH:route_ready:Tabs
+ LOG  GURU_HEALTH:ui_ready:Tabs
+ LOG  [DB] Pre-seeding 20 topic embeddings...
+ INFO  [BOOTSTRAP_TRACE] {"event": "bootstrap_check", "hasLocalModel": true, "hasLocalWhisper": false, "llmAllowed": true, "needsLlm": false, "needsWhisper": true}
+ INFO  [BOOTSTRAP_TRACE] {"event": "download_prepare", "modelName": "ggml-large-v3-turbo.bin", "type": "whisper"}
+ LOG  [AppBootstrap] Gemini Nano status: ERROR
+ LOG  [Embedding] Jina embeddings unavailable (auth/quota). Semantic search falls back to text matching until a valid key or another provider is configured.
+ INFO  [BOOTSTRAP_TRACE] {"event": "download_interrupted_partial_detected", "modelName": "ggml-large-v3-turbo.bin", "partialUri": "file:///data/user/0/com.anonymous.gurustudy.dev/files/ggml-large-v3-turbo.bin.partial", "size": 156091621, "type": "whisper"}
+ WARN  [samsungPerf] init failed [TypeError: GuruAppLauncher.samsungPerfInit is not a function (it is undefined)]
+Android src/services/aiService.ts ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Android Bundled 71ms src/services/aiService.ts (1 module)
+ LOG  [AI_BOOT] provider validation: chatgpt=skip github_copilot=skip gitlab_duo=skip poe=skip groq=n/a qwen=skip github=n/a kilo=probe deepseek=n/a agentrouter=n/a gemini=n/a gemini_fallback=n/a openrouter=n/a cloudflare=n/a
+ LOG  [AI_BOOT] kilo: ok (200) 1786ms — endpoint reachable; add Kilo API key in Settings to enable chat routing
+Android Bundled 66ms index.ts (1 module)
+ WARN  [expo-av]: Expo AV has been deprecated and will be removed in SDK 54. Use the `expo-audio` and `expo-video` packages to replace the required functionality.
+ WARN  setLayoutAnimationEnabledExperimental is currently a no-op in the New Architecture.
+ LOG  GURU_HEALTH:launching
+ LOG  GURU_HEALTH:bootstrap_started
+ LOG  GURU_HEALTH:bootstrap_succeeded
+Android Bundled 50ms src/services/ai/llmRouting.ts (1 module)
+ LOG  GURU_HEALTH:db_ready
+ LOG  GURU_HEALTH:route_ready:Tabs
+ LOG  GURU_HEALTH:ui_ready:Tabs
+ LOG  [DB] Pre-seeding 20 topic embeddings...
+ LOG  [Embedding] Jina embeddings unavailable (auth/quota). Semantic search falls back to text matching until a valid key or another provider is configured.
+ INFO  [BOOTSTRAP_TRACE] {"event": "bootstrap_check", "hasLocalModel": true, "hasLocalWhisper": false, "llmAllowed": true, "needsLlm": false, "needsWhisper": true}
+ INFO  [BOOTSTRAP_TRACE] {"event": "download_prepare", "modelName": "ggml-large-v3-turbo.bin", "type": "whisper"}
+ LOG  [AppBootstrap] Gemini Nano status: ERROR
+ INFO  [BOOTSTRAP_TRACE] {"event": "download_interrupted_partial_detected", "modelName": "ggml-large-v3-turbo.bin", "partialUri": "file:///data/user/0/com.anonymous.gurustudy.dev/files/ggml-large-v3-turbo.bin.partial", "size": 156091621, "type": "whisper"}
+ WARN  [samsungPerf] init failed [TypeError: GuruAppLauncher.samsungPerfInit is not a function (it is undefined)]
+Android Bundled 94ms index.ts (1 module)
+ WARN  [expo-av]: Expo AV has been deprecated and will be removed in SDK 54. Use the `expo-audio` and `expo-video` packages to replace the required functionality.
+ WARN  setLayoutAnimationEnabledExperimental is currently a no-op in the New Architecture.
+ LOG  GURU_HEALTH:launching
+ LOG  GURU_HEALTH:bootstrap_started
+ LOG  GURU_HEALTH:bootstrap_succeeded
+Android Bundled 24ms src/services/ai/llmRouting.ts (1 module)
+ LOG  GURU_HEALTH:db_ready
+ LOG  GURU_HEALTH:route_ready:Tabs
+ LOG  GURU_HEALTH:ui_ready:Tabs
+ LOG  [DB] Pre-seeding 20 topic embeddings...
+ LOG  [Embedding] Jina embeddings unavailable (auth/quota). Semantic search falls back to text matching until a valid key or another provider is configured.
+ INFO  [BOOTSTRAP_TRACE] {"event": "bootstrap_check", "hasLocalModel": true, "hasLocalWhisper": false, "llmAllowed": true, "needsLlm": false, "needsWhisper": true}
+ INFO  [BOOTSTRAP_TRACE] {"event": "download_prepare", "modelName": "ggml-large-v3-turbo.bin", "type": "whisper"}
+ LOG  [AppBootstrap] Gemini Nano status: ERROR
+ INFO  [BOOTSTRAP_TRACE] {"event": "download_interrupted_partial_detected", "modelName": "ggml-large-v3-turbo.bin", "partialUri": "file:///data/user/0/com.anonymous.gurustudy.dev/files/ggml-large-v3-turbo.bin.partial", "size": 156091621, "type": "whisper"}
+ WARN  [samsungPerf] init failed [TypeError: GuruAppLauncher.samsungPerfInit is not a function (it is undefined)]
+Android src/services/aiService.ts ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Android Bundled 107ms src/services/aiService.ts (1 module)
+ LOG  [AI_BOOT] provider validation: chatgpt=skip github_copilot=skip gitlab_duo=skip poe=skip groq=n/a qwen=skip github=n/a kilo=probe deepseek=n/a agentrouter=n/a gemini=n/a gemini_fallback=n/a openrouter=n/a cloudflare=n/a
+ LOG  [AI_BOOT] kilo: ok (200) 1724ms — endpoint reachable; add Kilo API key in Settings to enable chat routing
+Android ./index.ts ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Android Bundled 66ms index.ts (1 module)
+ WARN  [expo-av]: Expo AV has been deprecated and will be removed in SDK 54. Use the `expo-audio` and `expo-video` packages to replace the required functionality.
+ WARN  setLayoutAnimationEnabledExperimental is currently a no-op in the New Architecture.
+ LOG  GURU_HEALTH:launching
+ LOG  GURU_HEALTH:bootstrap_started
+ LOG  GURU_HEALTH:bootstrap_succeeded
+Android Bundled 37ms src/services/ai/llmRouting.ts (1 module)
+ LOG  GURU_HEALTH:db_ready
+ LOG  GURU_HEALTH:route_ready:Tabs
+ LOG  GURU_HEALTH:ui_ready:Tabs
+ LOG  [DB] Pre-seeding 20 topic embeddings...
+ LOG  [Embedding] Jina embeddings unavailable (auth/quota). Semantic search falls back to text matching until a valid key or another provider is configured.
+ INFO  [BOOTSTRAP_TRACE] {"event": "bootstrap_check", "hasLocalModel": true, "hasLocalWhisper": false, "llmAllowed": true, "needsLlm": false, "needsWhisper": true}
+ INFO  [BOOTSTRAP_TRACE] {"event": "download_prepare", "modelName": "ggml-large-v3-turbo.bin", "type": "whisper"}
+ LOG  [AppBootstrap] Gemini Nano status: ERROR
+ INFO  [BOOTSTRAP_TRACE] {"event": "download_interrupted_partial_detected", "modelName": "ggml-large-v3-turbo.bin", "partialUri": "file:///data/user/0/com.anonymous.gurustudy.dev/files/ggml-large-v3-turbo.bin.partial", "size": 156091621, "type": "whisper"}
+ WARN  [samsungPerf] init failed [TypeError: GuruAppLauncher.samsungPerfInit is not a function (it is undefined)]
+Android src/services/aiService.ts ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Android Bundled 71ms src/services/aiService.ts (1 module)
+ LOG  [AI_BOOT] provider validation: chatgpt=skip github_copilot=skip gitlab_duo=skip poe=skip groq=n/a qwen=skip github=n/a kilo=probe deepseek=n/a agentrouter=n/a gemini=n/a gemini_fallback=n/a openrouter=n/a cloudflare=n/a
+ LOG  [AI_BOOT] kilo: ok (200) 4280ms — endpoint reachable; add Kilo API key in Settings to enable chat routing
+Android src/services/gdriveBackupService.ts ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Android Bundled 189ms src/services/gdriveBackupService.ts (1 module)
+ WARN  [toolRunner] accountabilityMessages failed — using fallback. [ReferenceError: Property 'schemaName' doesn't exist]
+ WARN  [Notifications] AI generation failed, using smart fallbacks: [ReferenceError: Property 'schemaName' doesn't exist]
+ LOG  [GuruChat] Provider success: local/local-gemma-4-e4b
+ WARN  [Reanimated] Reading from `value` during component render. Please ensure that you don't access the `value` property nor use `get` method of a shared value while React is rendering a component.
+
+If you don't want to see this message, you can disable the `strict` mode. Refer to:
+https://docs.swmansion.com/react-native-reanimated/docs/debugging/logger-configuration for more details.
+ WARN  [Reanimated] Writing to `value` during component render. Please ensure that you don't access the `value` property nor use `set` method of a shared value while React is rendering a component.
+
+If you don't want to see this message, you can disable the `strict` mode. Refer to:
+https://docs.swmansion.com/react-native-reanimated/docs/debugging/logger-configuration for more details.
+ WARN  [Reanimated] Reading from `value` during component render. Please ensure that you don't access the `value` property nor use `get` method of a shared value while React is rendering a component.
+
+If you don't want to see this message, you can disable the `strict` mode. Refer to:
+https://docs.swmansion.com/react-native-reanimated/docs/debugging/logger-configuration for more details.
+ WARN  [Reanimated] Writing to `value` during component render. Please ensure that you don't access the `value` property nor use `set` method of a shared value while React is rendering a component.
+
+If you don't want to see this message, you can disable the `strict` mode. Refer to:
+https://docs.swmansion.com/react-native-reanimated/docs/debugging/logger-configuration for more details.
+ WARN  [Reanimated] Reading from `value` during component render. Please ensure that you don't access the `value` property nor use `get` method of a shared value while React is rendering a component.
+
+If you don't want to see this message, you can disable the `strict` mode. Refer to:
+https://docs.swmansion.com/react-native-reanimated/docs/debugging/logger-configuration for more details.
+ WARN  [Reanimated] Writing to `value` during component render. Please ensure that you don't access the `value` property nor use `set` method of a shared value while React is rendering a component.
+
+If you don't want to see this message, you can disable the `strict` mode. Refer to:
+https://docs.swmansion.com/react-native-reanimated/docs/debugging/logger-configuration for more details.
+ WARN  [Reanimated] Reading from `value` during component render. Please ensure that you don't access the `value` property nor use `get` method of a shared value while React is rendering a component.
+
+If you don't want to see this message, you can disable the `strict` mode. Refer to:
+https://docs.swmansion.com/react-native-reanimated/docs/debugging/logger-configuration for more details.
+ WARN  [Reanimated] Writing to `value` during component render. Please ensure that you don't access the `value` property nor use `set` method of a shared value while React is rendering a component.
+
+If you don't want to see this message, you can disable the `strict` mode. Refer to:
+https://docs.swmansion.com/react-native-reanimated/docs/debugging/logger-configuration for more details.
+ WARN  [Reanimated] Reading from `value` during component render. Please ensure that you don't access the `value` property nor use `get` method of a shared value while React is rendering a component.
+
+If you don't want to see this message, you can disable the `strict` mode. Refer to:
+https://docs.swmansion.com/react-native-reanimated/docs/debugging/logger-configuration for more details.
+ WARN  [Reanimated] Writing to `value` during component render. Please ensure that you don't access the `value` property nor use `set` method of a shared value while React is rendering a component.
+
+If you don't want to see this message, you can disable the `strict` mode. Refer to:
+https://docs.swmansion.com/react-native-reanimated/docs/debugging/logger-configuration for more details.
+ WARN  [Reanimated] Reading from `value` during component render. Please ensure that you don't access the `value` property nor use `get` method of a shared value while React is rendering a component.
+
+If you don't want to see this message, you can disable the `strict` mode. Refer to:
+https://docs.swmansion.com/react-native-reanimated/docs/debugging/logger-configuration for more details.
+ WARN  [Reanimated] Writing to `value` during component render. Please ensure that you don't access the `value` property nor use `set` method of a shared value while React is rendering a component.
+
+If you don't want to see this message, you can disable the `strict` mode. Refer to:
+https://docs.swmansion.com/react-native-reanimated/docs/debugging/logger-configuration for more details.
+ WARN  [Reanimated] Reading from `value` during component render. Please ensure that you don't access the `value` property nor use `get` method of a shared value while React is rendering a component.
+
+If you don't want to see this message, you can disable the `strict` mode. Refer to:
+https://docs.swmansion.com/react-native-reanimated/docs/debugging/logger-configuration for more details.
+ WARN  [Reanimated] Writing to `value` during component render. Please ensure that you don't access the `value` property nor use `set` method of a shared value while React is rendering a component.
+
+If you don't want to see this message, you can disable the `strict` mode. Refer to:
+https://docs.swmansion.com/react-native-reanimated/docs/debugging/logger-configuration for more details.
+ WARN  [Reanimated] Reading from `value` during component render. Please ensure that you don't access the `value` property nor use `get` method of a shared value while React is rendering a component.
+
+If you don't want to see this message, you can disable the `strict` mode. Refer to:
+https://docs.swmansion.com/react-native-reanimated/docs/debugging/logger-configuration for more details.
+ WARN  [Reanimated] Writing to `value` during component render. Please ensure that you don't access the `value` property nor use `set` method of a shared value while React is rendering a component.
+
+If you don't want to see this message, you can disable the `strict` mode. Refer to:
+https://docs.swmansion.com/react-native-reanimated/docs/debugging/logger-configuration for more details.
+ WARN  [Reanimated] Reading from `value` during component render. Please ensure that you don't access the `value` property nor use `get` method of a shared value while React is rendering a component.
+
+If you don't want to see this message, you can disable the `strict` mode. Refer to:
+https://docs.swmansion.com/react-native-reanimated/docs/debugging/logger-configuration for more details.
+ WARN  [Reanimated] Writing to `value` during component render. Please ensure that you don't access the `value` property nor use `set` method of a shared value while React is rendering a component.
+
+If you don't want to see this message, you can disable the `strict` mode. Refer to:
+https://docs.swmansion.com/react-native-reanimated/docs/debugging/logger-configuration for more details.
+ WARN  [Reanimated] Reading from `value` during component render. Please ensure that you don't access the `value` property nor use `get` method of a shared value while React is rendering a component.
+
+If you don't want to see this message, you can disable the `strict` mode. Refer to:
+https://docs.swmansion.com/react-native-reanimated/docs/debugging/logger-configuration for more details.
+ WARN  [Reanimated] Writing to `value` during component render. Please ensure that you don't access the `value` property nor use `set` method of a shared value while React is rendering a component.
+
+If you don't want to see this message, you can disable the `strict` mode. Refer to:
+https://docs.swmansion.com/react-native-reanimated/docs/debugging/logger-configuration for more details.
+ WARN  [Reanimated] Reading from `value` during component render. Please ensure that you don't access the `value` property nor use `get` method of a shared value while React is rendering a component.
+
+If you don't want to see this message, you can disable the `strict` mode. Refer to:
+https://docs.swmansion.com/react-native-reanimated/docs/debugging/logger-configuration for more details.
+ WARN  [Reanimated] Writing to `value` during component render. Please ensure that you don't access the `value` property nor use `set` method of a shared value while React is rendering a component.
+
+If you don't want to see this message, you can disable the `strict` mode. Refer to:
+https://docs.swmansion.com/react-native-reanimated/docs/debugging/logger-configuration for more details.
+ WARN  [Reanimated] Reading from `value` during component render. Please ensure that you don't access the `value` property nor use `get` method of a shared value while React is rendering a component.
+
+If you don't want to see this message, you can disable the `strict` mode. Refer to:
+https://docs.swmansion.com/react-native-reanimated/docs/debugging/logger-configuration for more details.
+ WARN  [Reanimated] Writing to `value` during component render. Please ensure that you don't access the `value` property nor use `set` method of a shared value while React is rendering a component.
+
+If you don't want to see this message, you can disable the `strict` mode. Refer to:
+https://docs.swmansion.com/react-native-reanimated/docs/debugging/logger-configuration for more details.
+ WARN  [Reanimated] Reading from `value` during component render. Please ensure that you don't access the `value` property nor use `get` method of a shared value while React is rendering a component.
+
+If you don't want to see this message, you can disable the `strict` mode. Refer to:
+https://docs.swmansion.com/react-native-reanimated/docs/debugging/logger-configuration for more details.
+ WARN  [Reanimated] Writing to `value` during component render. Please ensure that you don't access the `value` property nor use `set` method of a shared value while React is rendering a component.
+
+If you don't want to see this message, you can disable the `strict` mode. Refer to:
+https://docs.swmansion.com/react-native-reanimated/docs/debugging/logger-configuration for more details.
+ WARN  [Reanimated] Reading from `value` during component render. Please ensure that you don't access the `value` property nor use `get` method of a shared value while React is rendering a component.
+
+If you don't want to see this message, you can disable the `strict` mode. Refer to:
+https://docs.swmansion.com/react-native-reanimated/docs/debugging/logger-configuration for more details.
+ WARN  [Reanimated] Writing to `value` during component render. Please ensure that you don't access the `value` property nor use `set` method of a shared value while React is rendering a component.
+
+If you don't want to see this message, you can disable the `strict` mode. Refer to:
+https://docs.swmansion.com/react-native-reanimated/docs/debugging/logger-configuration for more details.
+ WARN  [Reanimated] Reading from `value` during component render. Please ensure that you don't access the `value` property nor use `get` method of a shared value while React is rendering a component.
+
+If you don't want to see this message, you can disable the `strict` mode. Refer to:
+https://docs.swmansion.com/react-native-reanimated/docs/debugging/logger-configuration for more details.
+ WARN  [Reanimated] Writing to `value` during component render. Please ensure that you don't access the `value` property nor use `set` method of a shared value while React is rendering a component.
+
+If you don't want to see this message, you can disable the `strict` mode. Refer to:
+https://docs.swmansion.com/react-native-reanimated/docs/debugging/logger-configuration for more details.
+ WARN  [Reanimated] Reading from `value` during component render. Please ensure that you don't access the `value` property nor use `get` method of a shared value while React is rendering a component.
+
+If you don't want to see this message, you can disable the `strict` mode. Refer to:
+https://docs.swmansion.com/react-native-reanimated/docs/debugging/logger-configuration for more details.
+ WARN  [Reanimated] Writing to `value` during component render. Please ensure that you don't access the `value` property nor use `set` method of a shared value while React is rendering a component.
+
+If you don't want to see this message, you can disable the `strict` mode. Refer to:
+https://docs.swmansion.com/react-native-reanimated/docs/debugging/logger-configuration for more details.
+ WARN  [Reanimated] Reading from `value` during component render. Please ensure that you don't access the `value` property nor use `get` method of a shared value while React is rendering a component.
+
+If you don't want to see this message, you can disable the `strict` mode. Refer to:
+https://docs.swmansion.com/react-native-reanimated/docs/debugging/logger-configuration for more details.
+ WARN  [Reanimated] Writing to `value` during component render. Please ensure that you don't access the `value` property nor use `set` method of a shared value while React is rendering a component.
+
+If you don't want to see this message, you can disable the `strict` mode. Refer to:
+https://docs.swmansion.com/react-native-reanimated/docs/debugging/logger-configuration for more details.
+ WARN  [Reanimated] Reading from `value` during component render. Please ensure that you don't access the `value` property nor use `get` method of a shared value while React is rendering a component.
+
+If you don't want to see this message, you can disable the `strict` mode. Refer to:
+https://docs.swmansion.com/react-native-reanimated/docs/debugging/logger-configuration for more details.
+ WARN  [Reanimated] Writing to `value` during component render. Please ensure that you don't access the `value` property nor use `set` method of a shared value while React is rendering a component.
+
+If you don't want to see this message, you can disable the `strict` mode. Refer to:
+https://docs.swmansion.com/react-native-reanimated/docs/debugging/logger-configuration for more details.
+ WARN  [Reanimated] Reading from `value` during component render. Please ensure that you don't access the `value` property nor use `get` method of a shared value while React is rendering a component.
+
+If you don't want to see this message, you can disable the `strict` mode. Refer to:
+https://docs.swmansion.com/react-native-reanimated/docs/debugging/logger-configuration for more details.
+ WARN  [Reanimated] Writing to `value` during component render. Please ensure that you don't access the `value` property nor use `set` method of a shared value while React is rendering a component.
+
+If you don't want to see this message, you can disable the `strict` mode. Refer to:
+https://docs.swmansion.com/react-native-reanimated/docs/debugging/logger-configuration for more details.
+ WARN  [Reanimated] Reading from `value` during component render. Please ensure that you don't access the `value` property nor use `get` method of a shared value while React is rendering a component.
+
+If you don't want to see this message, you can disable the `strict` mode. Refer to:
+https://docs.swmansion.com/react-native-reanimated/docs/debugging/logger-configuration for more details.
+ WARN  [Reanimated] Writing to `value` during component render. Please ensure that you don't access the `value` property nor use `set` method of a shared value while React is rendering a component.
+
+If you don't want to see this message, you can disable the `strict` mode. Refer to:
+https://docs.swmansion.com/react-native-reanimated/docs/debugging/logger-configuration for more details.
+ WARN  [Reanimated] Reading from `value` during component render. Please ensure that you don't access the `value` property nor use `get` method of a shared value while React is rendering a component.
+
+If you don't want to see this message, you can disable the `strict` mode. Refer to:
+https://docs.swmansion.com/react-native-reanimated/docs/debugging/logger-configuration for more details.
+ WARN  [Reanimated] Writing to `value` during component render. Please ensure that you don't access the `value` property nor use `set` method of a shared value while React is rendering a component.
+
+If you don't want to see this message, you can disable the `strict` mode. Refer to:
+https://docs.swmansion.com/react-native-reanimated/docs/debugging/logger-configuration for more details.
+ WARN  [Reanimated] Reading from `value` during component render. Please ensure that you don't access the `value` property nor use `get` method of a shared value while React is rendering a component.
+
+If you don't want to see this message, you can disable the `strict` mode. Refer to:
+https://docs.swmansion.com/react-native-reanimated/docs/debugging/logger-configuration for more details.
+ WARN  [Reanimated] Writing to `value` during component render. Please ensure that you don't access the `value` property nor use `set` method of a shared value while React is rendering a component.
+
+If you don't want to see this message, you can disable the `strict` mode. Refer to:
+https://docs.swmansion.com/react-native-reanimated/docs/debugging/logger-configuration for more details.
+Android ./index.ts ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Android Bundled 253ms index.ts (1 module)
+ WARN  [expo-av]: Expo AV has been deprecated and will be removed in SDK 54. Use the `expo-audio` and `expo-video` packages to replace the required functionality.
+ WARN  setLayoutAnimationEnabledExperimental is currently a no-op in the New Architecture.
+ LOG  GURU_HEALTH:launching
+ LOG  GURU_HEALTH:bootstrap_started
+ LOG  GURU_HEALTH:bootstrap_succeeded
+ LOG  GURU_HEALTH:db_ready
+Android Bundled 71ms src/services/ai/llmRouting.ts (1 module)
+ LOG  GURU_HEALTH:route_ready:Tabs
+ LOG  GURU_HEALTH:ui_ready:Tabs
+ LOG  [DB] Pre-seeding 20 topic embeddings...
+ INFO  [BOOTSTRAP_TRACE] {"event": "bootstrap_check", "hasLocalModel": true, "hasLocalWhisper": false, "llmAllowed": true, "needsLlm": false, "needsWhisper": true}
+ INFO  [BOOTSTRAP_TRACE] {"event": "download_prepare", "modelName": "ggml-large-v3-turbo.bin", "type": "whisper"}
+ LOG  [AppBootstrap] Gemini Nano status: ERROR
+ LOG  [Embedding] Jina embeddings unavailable (auth/quota). Semantic search falls back to text matching until a valid key or another provider is configured.
+ INFO  [BOOTSTRAP_TRACE] {"event": "download_interrupted_partial_detected", "modelName": "ggml-large-v3-turbo.bin", "partialUri": "file:///data/user/0/com.anonymous.gurustudy.dev/files/ggml-large-v3-turbo.bin.partial", "size": 156091621, "type": "whisper"}
+ WARN  [samsungPerf] init failed [TypeError: GuruAppLauncher.samsungPerfInit is not a function (it is undefined)]
+Android src/services/aiService.ts ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Android Bundled 67ms src/services/aiService.ts (1 module)
+ LOG  [AI_BOOT] provider validation: chatgpt=skip github_copilot=skip gitlab_duo=skip poe=skip groq=n/a qwen=skip github=n/a kilo=probe deepseek=n/a agentrouter=n/a gemini=n/a gemini_fallback=n/a openrouter=n/a cloudflare=n/a
+ LOG  [AI_BOOT] kilo: ok (200) 1825ms — endpoint reachable; add Kilo API key in Settings to enable chat routing
+[dotenv@17.3.1] injecting env (0) from .env -- tip: ⚙️  write to custom object with { processEnv: myObject }
+[dotenv@17.3.1] injecting env (0) from .env -- tip: ⚙️  override existing env vars with { override: true }
+Android Bundled 107ms index.ts (1 module)
+ WARN  [expo-av]: Expo AV has been deprecated and will be removed in SDK 54. Use the `expo-audio` and `expo-video` packages to replace the required functionality.
+ WARN  setLayoutAnimationEnabledExperimental is currently a no-op in the New Architecture.
+ LOG  GURU_HEALTH:launching
+ LOG  GURU_HEALTH:bootstrap_started
+ LOG  GURU_HEALTH:bootstrap_succeeded
+Android Bundled 54ms src/services/ai/llmRouting.ts (1 module)
+ LOG  GURU_HEALTH:db_ready
+ LOG  GURU_HEALTH:route_ready:Tabs
+ LOG  GURU_HEALTH:ui_ready:Tabs
+ LOG  [DB] Pre-seeding 20 topic embeddings...
+ INFO  [BOOTSTRAP_TRACE] {"event": "bootstrap_check", "hasLocalModel": true, "hasLocalWhisper": false, "llmAllowed": true, "needsLlm": false, "needsWhisper": true}
+ INFO  [BOOTSTRAP_TRACE] {"event": "download_prepare", "modelName": "ggml-large-v3-turbo.bin", "type": "whisper"}
+ LOG  [AppBootstrap] Gemini Nano status: ERROR
+ LOG  [Embedding] Jina embeddings unavailable (auth/quota). Semantic search falls back to text matching until a valid key or another provider is configured.
+ INFO  [BOOTSTRAP_TRACE] {"event": "download_interrupted_partial_detected", "modelName": "ggml-large-v3-turbo.bin", "partialUri": "file:///data/user/0/com.anonymous.gurustudy.dev/files/ggml-large-v3-turbo.bin.partial", "size": 156091621, "type": "whisper"}
+Android src/services/aiService.ts ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Android Bundled 37ms src/services/aiService.ts (1 module)
+ LOG  [AI_BOOT] provider validation: chatgpt=skip github_copilot=skip gitlab_duo=skip poe=skip groq=n/a qwen=skip github=n/a kilo=probe deepseek=n/a agentrouter=n/a gemini=n/a gemini_fallback=n/a openrouter=n/a cloudflare=n/a
+ LOG  [AI_BOOT] kilo: ok (200) 4243ms — endpoint reachable; add Kilo API key in Settings to enable chat routing
  WARN  [expo-notifications]: `shouldShowAlert` is deprecated. Specify `shouldShowBanner` and / or `shouldShowList` instead.
- WARN  [expo-notifications]: `shouldShowAlert` is deprecated. Specify `shouldShowBanner` and / or `shouldShowList` instead.
- WARN  Ignoring DevTools app debug target for 'com.anonymous.gurustudy.dev' with title 'com.anonymous.gurustudy.dev (SM-X820)' and 'nativePageReloads' capability set to 'false'. 
- INFO  Launching DevTools...
- LOG  [DB_EVENT] Notifying: PROFILE_UPDATED
+Android src/services/gdriveBackupService.ts ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Android Bundled 111ms src/services/gdriveBackupService.ts (1 module)
+ WARN  [toolRunner] accountabilityMessages failed — using fallback. [ReferenceError: Property 'schemaName' doesn't exist]
+ WARN  [Notifications] AI generation failed, using smart fallbacks: [ReferenceError: Property 'schemaName' doesn't exist]
+Android Bundled 85ms index.ts (1 module)
+ WARN  [expo-av]: Expo AV has been deprecated and will be removed in SDK 54. Use the `expo-audio` and `expo-video` packages to replace the required functionality.
+ WARN  setLayoutAnimationEnabledExperimental is currently a no-op in the New Architecture.
+ LOG  GURU_HEALTH:launching
+ LOG  GURU_HEALTH:bootstrap_started
+ LOG  GURU_HEALTH:bootstrap_succeeded
+Android Bundled 35ms src/services/ai/llmRouting.ts (1 module)
+ LOG  GURU_HEALTH:db_ready
+ LOG  GURU_HEALTH:route_ready:Tabs
+ LOG  GURU_HEALTH:ui_ready:Tabs
+ LOG  [DB] Pre-seeding 20 topic embeddings...
+ INFO  [BOOTSTRAP_TRACE] {"event": "bootstrap_check", "hasLocalModel": true, "hasLocalWhisper": false, "llmAllowed": true, "needsLlm": false, "needsWhisper": true}
+ INFO  [BOOTSTRAP_TRACE] {"event": "download_prepare", "modelName": "ggml-large-v3-turbo.bin", "type": "whisper"}
+ LOG  [AppBootstrap] Gemini Nano status: ERROR
+Android Bundled 81ms index.ts (1 module)
+ WARN  [expo-av]: Expo AV has been deprecated and will be removed in SDK 54. Use the `expo-audio` and `expo-video` packages to replace the required functionality.
+ WARN  setLayoutAnimationEnabledExperimental is currently a no-op in the New Architecture.
+ LOG  GURU_HEALTH:launching
+ LOG  GURU_HEALTH:bootstrap_started
+Android Bundled 76ms index.ts (1 module)
+ WARN  [expo-av]: Expo AV has been deprecated and will be removed in SDK 54. Use the `expo-audio` and `expo-video` packages to replace the required functionality.
+ WARN  setLayoutAnimationEnabledExperimental is currently a no-op in the New Architecture.
+ LOG  GURU_HEALTH:launching
+ LOG  GURU_HEALTH:bootstrap_started
+ LOG  GURU_HEALTH:bootstrap_succeeded
+Android Bundled 31ms src/services/ai/llmRouting.ts (1 module)
+ LOG  GURU_HEALTH:db_ready
+ LOG  GURU_HEALTH:route_ready:Tabs
+ LOG  GURU_HEALTH:ui_ready:Tabs
+ LOG  [DB] Pre-seeding 20 topic embeddings...
+ INFO  [BOOTSTRAP_TRACE] {"event": "bootstrap_check", "hasLocalModel": true, "hasLocalWhisper": false, "llmAllowed": true, "needsLlm": false, "needsWhisper": true}
+ INFO  [BOOTSTRAP_TRACE] {"event": "download_prepare", "modelName": "ggml-large-v3-turbo.bin", "type": "whisper"}
+ LOG  [AppBootstrap] Gemini Nano status: ERROR
+ LOG  [Embedding] Jina embeddings unavailable (auth/quota). Semantic search falls back to text matching until a valid key or another provider is configured.
+ INFO  [BOOTSTRAP_TRACE] {"event": "download_interrupted_partial_detected", "modelName": "ggml-large-v3-turbo.bin", "partialUri": "file:///data/user/0/com.anonymous.gurustudy.dev/files/ggml-large-v3-turbo.bin.partial", "size": 156091621, "type": "whisper"}
+Android src/services/aiService.ts ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Android Bundled 55ms src/services/aiService.ts (1 module)
+ LOG  [AI_BOOT] provider validation: chatgpt=skip github_copilot=skip gitlab_duo=skip poe=skip groq=n/a qwen=skip github=n/a kilo=probe deepseek=n/a agentrouter=n/a gemini=n/a gemini_fallback=n/a openrouter=n/a cloudflare=n/a
+ LOG  [AI_BOOT] kilo: ok (200) 4220ms — endpoint reachable; add Kilo API key in Settings to enable chat routing
+Android Bundled 33ms src/services/gdriveBackupService.ts (1 module)
+ WARN  [toolRunner] accountabilityMessages failed — using fallback. [ReferenceError: Property 'schemaName' doesn't exist]
+ WARN  [Notifications] AI generation failed, using smart fallbacks: [ReferenceError: Property 'schemaName' doesn't exist]
+Android ./index.ts ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Android Bundled 58ms index.ts (1 module)
+ WARN  [expo-av]: Expo AV has been deprecated and will be removed in SDK 54. Use the `expo-audio` and `expo-video` packages to replace the required functionality.
+ WARN  setLayoutAnimationEnabledExperimental is currently a no-op in the New Architecture.
+ LOG  GURU_HEALTH:launching
+ LOG  GURU_HEALTH:bootstrap_started
+ LOG  GURU_HEALTH:bootstrap_succeeded
+Android Bundled 32ms src/services/ai/llmRouting.ts (1 module)
+ LOG  GURU_HEALTH:db_ready
+ LOG  GURU_HEALTH:route_ready:Tabs
+ LOG  GURU_HEALTH:ui_ready:Tabs
+ LOG  [DB] Pre-seeding 20 topic embeddings...
+ INFO  [BOOTSTRAP_TRACE] {"event": "bootstrap_check", "hasLocalModel": true, "hasLocalWhisper": false, "llmAllowed": true, "needsLlm": false, "needsWhisper": true}
+ INFO  [BOOTSTRAP_TRACE] {"event": "download_prepare", "modelName": "ggml-large-v3-turbo.bin", "type": "whisper"}
+ LOG  [AppBootstrap] Gemini Nano status: ERROR
+ LOG  [Embedding] Jina embeddings unavailable (auth/quota). Semantic search falls back to text matching until a valid key or another provider is configured.
+Android Bundled 73ms index.ts (1 module)
+ WARN  [expo-av]: Expo AV has been deprecated and will be removed in SDK 54. Use the `expo-audio` and `expo-video` packages to replace the required functionality.
+ WARN  setLayoutAnimationEnabledExperimental is currently a no-op in the New Architecture.
+ LOG  GURU_HEALTH:launching
+ LOG  GURU_HEALTH:bootstrap_started
+ LOG  GURU_HEALTH:bootstrap_succeeded
+ LOG  GURU_HEALTH:db_ready
+Android Bundled 23ms src/services/ai/llmRouting.ts (1 module)
+ LOG  GURU_HEALTH:route_ready:Tabs
+ LOG  GURU_HEALTH:ui_ready:Tabs
+ LOG  [DB] Pre-seeding 20 topic embeddings...
+ INFO  [BOOTSTRAP_TRACE] {"event": "bootstrap_check", "hasLocalModel": true, "hasLocalWhisper": false, "llmAllowed": true, "needsLlm": false, "needsWhisper": true}
+ INFO  [BOOTSTRAP_TRACE] {"event": "download_prepare", "modelName": "ggml-large-v3-turbo.bin", "type": "whisper"}
+ LOG  [AppBootstrap] Gemini Nano status: ERROR
+ LOG  [Embedding] Jina embeddings unavailable (auth/quota). Semantic search falls back to text matching until a valid key or another provider is configured.
+ INFO  [BOOTSTRAP_TRACE] {"event": "download_interrupted_partial_detected", "modelName": "ggml-large-v3-turbo.bin", "partialUri": "file:///data/user/0/com.anonymous.gurustudy.dev/files/ggml-large-v3-turbo.bin.partial", "size": 156091621, "type": "whisper"}
+Android src/services/aiService.ts ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Android Bundled 44ms src/services/aiService.ts (1 module)
+ LOG  [AI_BOOT] provider validation: chatgpt=skip github_copilot=skip gitlab_duo=skip poe=skip groq=n/a qwen=skip github=n/a kilo=probe deepseek=n/a agentrouter=n/a gemini=n/a gemini_fallback=n/a openrouter=n/a cloudflare=n/a
+ LOG  [AI_BOOT] kilo: ok (200) 1815ms — endpoint reachable; add Kilo API key in Settings to enable chat routing
+Android Bundled 35ms src/services/gdriveBackupService.ts (1 module)
+ WARN  [toolRunner] accountabilityMessages failed — using fallback. [ReferenceError: Property 'schemaName' doesn't exist]
+ WARN  [Notifications] AI generation failed, using smart fallbacks: [ReferenceError: Property 'schemaName' doesn't exist]
+Android ./index.ts ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Android Bundled 89ms index.ts (1 module)
+ WARN  [expo-av]: Expo AV has been deprecated and will be removed in SDK 54. Use the `expo-audio` and `expo-video` packages to replace the required functionality.
+ WARN  setLayoutAnimationEnabledExperimental is currently a no-op in the New Architecture.
+ LOG  GURU_HEALTH:launching
+ LOG  GURU_HEALTH:bootstrap_started
+ LOG  GURU_HEALTH:bootstrap_succeeded
+Android Bundled 26ms src/services/ai/llmRouting.ts (1 module)
+ LOG  GURU_HEALTH:db_ready
+ LOG  GURU_HEALTH:route_ready:Tabs
+ LOG  GURU_HEALTH:ui_ready:Tabs
+ LOG  [DB] Pre-seeding 20 topic embeddings...
+ INFO  [BOOTSTRAP_TRACE] {"event": "bootstrap_check", "hasLocalModel": true, "hasLocalWhisper": false, "llmAllowed": true, "needsLlm": false, "needsWhisper": true}
+ INFO  [BOOTSTRAP_TRACE] {"event": "download_prepare", "modelName": "ggml-large-v3-turbo.bin", "type": "whisper"}
+ LOG  [AppBootstrap] Gemini Nano status: ERROR
+ LOG  [Embedding] Jina embeddings unavailable (auth/quota). Semantic search falls back to text matching until a valid key or another provider is configured.
+ INFO  [BOOTSTRAP_TRACE] {"event": "download_interrupted_partial_detected", "modelName": "ggml-large-v3-turbo.bin", "partialUri": "file:///data/user/0/com.anonymous.gurustudy.dev/files/ggml-large-v3-turbo.bin.partial", "size": 156091621, "type": "whisper"}
+Android src/services/aiService.ts ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Android Bundled 55ms src/services/aiService.ts (1 module)
+ LOG  [AI_BOOT] provider validation: chatgpt=skip github_copilot=skip gitlab_duo=skip poe=skip groq=n/a qwen=skip github=n/a kilo=probe deepseek=n/a agentrouter=n/a gemini=n/a gemini_fallback=n/a openrouter=n/a cloudflare=n/a
+ LOG  [AI_BOOT] kilo: ok (200) 2008ms — endpoint reachable; add Kilo API key in Settings to enable chat routing
+Android Bundled 36ms src/services/gdriveBackupService.ts (1 module)
+ WARN  [toolRunner] accountabilityMessages failed — using fallback. [ReferenceError: Property 'schemaName' doesn't exist]
+ WARN  [Notifications] AI generation failed, using smart fallbacks: [ReferenceError: Property 'schemaName' doesn't exist]
+ ERROR  [ReferenceError: Property 'linearTheme' doesn't exist]
+ LOG  GURU_HEALTH:render_error:Property 'linearTheme' doesn't exist
+Android Bundled 88ms index.ts (1 module)
+ WARN  [expo-av]: Expo AV has been deprecated and will be removed in SDK 54. Use the `expo-audio` and `expo-video` packages to replace the required functionality.
+ WARN  setLayoutAnimationEnabledExperimental is currently a no-op in the New Architecture.
+ LOG  GURU_HEALTH:launching
+ LOG  GURU_HEALTH:bootstrap_started
+ LOG  GURU_HEALTH:bootstrap_succeeded
+Android Bundled 19ms src/services/ai/llmRouting.ts (1 module)
+ LOG  GURU_HEALTH:db_ready
+ LOG  GURU_HEALTH:route_ready:Tabs
+ LOG  GURU_HEALTH:ui_ready:Tabs
+ LOG  [DB] Pre-seeding 20 topic embeddings...
+ INFO  [BOOTSTRAP_TRACE] {"event": "bootstrap_check", "hasLocalModel": true, "hasLocalWhisper": false, "llmAllowed": true, "needsLlm": false, "needsWhisper": true}
+ INFO  [BOOTSTRAP_TRACE] {"event": "download_prepare", "modelName": "ggml-large-v3-turbo.bin", "type": "whisper"}
+ LOG  [AppBootstrap] Gemini Nano status: ERROR
+ ERROR  ErrorBoundary caught an error [ReferenceError: Property 'linearTheme' doesn't exist] 
+
+Code: SettingsScreen.tsx
+[0m [90m 441 |[39m [36mexport[39m [36mdefault[39m [36mfunction[39m [33mSettingsScreen[39m() {
+ [90m 442 |[39m   [36mconst[39m navigation [33m=[39m
+[31m[1m>[22m[39m[90m 443 |[39m     useNavigation[33m<[39m
+ [90m     |[39m                  [31m[1m^[22m[39m
+ [90m 444 |[39m       [33mCompositeNavigationProp[39m[33m<[39m
+ [90m 445 |[39m         [33mNativeStackNavigationProp[39m[33m<[39m[33mMenuStackParamList[39m[33m,[39m [32m'Settings'[39m[33m>[39m[33m,[39m
+ [90m 446 |[39m         [33mNativeStackNavigationProp[39m[33m<[39m[33mRootStackParamList[39m[33m>[39m[0m
+Call Stack
+  SettingsScreen (src/screens/SettingsScreen.tsx:443:18)
+  TabNavigator (src/navigation/TabNavigator.tsx:61:35)
+  PersistentScreenBannerProvider (src/components/PersistentScreenBanner.tsx:34:58)
+  RootNavigator (src/navigation/RootNavigator.tsx:23:53)
+  AppContent (App.tsx:83:15)
+  constructor (src/components/ErrorBoundary.tsx:21:51)
+  AppShell (App.tsx:117:15)
+  App (App.tsx:213:55)
+ LOG  [Embedding] Jina embeddings unavailable (auth/quota). Semantic search falls back to text matching until a valid key or another provider is configured.
+ INFO  [BOOTSTRAP_TRACE] {"event": "download_interrupted_partial_detected", "modelName": "ggml-large-v3-turbo.bin", "partialUri": "file:///data/user/0/com.anonymous.gurustudy.dev/files/ggml-large-v3-turbo.bin.partial", "size": 156091621, "type": "whisper"}
+ ERROR  [ReferenceError: Property 'linearTheme' doesn't exist]
+ LOG  GURU_HEALTH:render_error:Property 'linearTheme' doesn't exist
+ ERROR  ErrorBoundary caught an error [ReferenceError: Property 'linearTheme' doesn't exist] 
+
+Code: SettingsScreen.tsx
+[0m [90m 441 |[39m [36mexport[39m [36mdefault[39m [36mfunction[39m [33mSettingsScreen[39m() {
+ [90m 442 |[39m   [36mconst[39m navigation [33m=[39m
+[31m[1m>[22m[39m[90m 443 |[39m     useNavigation[33m<[39m
+ [90m     |[39m                  [31m[1m^[22m[39m
+ [90m 444 |[39m       [33mCompositeNavigationProp[39m[33m<[39m
+ [90m 445 |[39m         [33mNativeStackNavigationProp[39m[33m<[39m[33mMenuStackParamList[39m[33m,[39m [32m'Settings'[39m[33m>[39m[33m,[39m
+ [90m 446 |[39m         [33mNativeStackNavigationProp[39m[33m<[39m[33mRootStackParamList[39m[33m>[39m[0m
+Call Stack
+  SettingsScreen (src/screens/SettingsScreen.tsx:443:18)
+  TabNavigator (src/navigation/TabNavigator.tsx:61:35)
+  PersistentScreenBannerProvider (src/components/PersistentScreenBanner.tsx:34:58)
+  RootNavigator (src/navigation/RootNavigator.tsx:23:53)
+  AppContent (App.tsx:83:15)
+  constructor (src/components/ErrorBoundary.tsx:21:51)
+  AppShell (App.tsx:117:15)
+  App (App.tsx:213:55)
+ LOG  [AI_BOOT] provider validation: chatgpt=skip github_copilot=skip gitlab_duo=skip poe=skip groq=n/a qwen=skip github=n/a kilo=probe deepseek=n/a agentrouter=n/a gemini=n/a gemini_fallback=n/a openrouter=n/a cloudflare=n/a
+ LOG  [AI_BOOT] kilo: ok (200) 11632ms — endpoint reachable; add Kilo API key in Settings to enable chat routing
+ LOG  GURU_HEALTH:ui_ready:Tabs
+Android ./index.ts ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Android Bundled 59ms index.ts (1 module)
+ WARN  [expo-av]: Expo AV has been deprecated and will be removed in SDK 54. Use the `expo-audio` and `expo-video` packages to replace the required functionality.
+ WARN  setLayoutAnimationEnabledExperimental is currently a no-op in the New Architecture.
+ LOG  GURU_HEALTH:launching
+ LOG  GURU_HEALTH:bootstrap_started
+ LOG  GURU_HEALTH:bootstrap_succeeded
+Android Bundled 20ms src/services/ai/llmRouting.ts (1 module)
+ LOG  GURU_HEALTH:db_ready
+ LOG  GURU_HEALTH:route_ready:Tabs
+ LOG  GURU_HEALTH:ui_ready:Tabs
+ LOG  [DB] Pre-seeding 20 topic embeddings...
+ INFO  [BOOTSTRAP_TRACE] {"event": "bootstrap_check", "hasLocalModel": true, "hasLocalWhisper": false, "llmAllowed": true, "needsLlm": false, "needsWhisper": true}
+ INFO  [BOOTSTRAP_TRACE] {"event": "download_prepare", "modelName": "ggml-large-v3-turbo.bin", "type": "whisper"}
+ LOG  [AppBootstrap] Gemini Nano status: ERROR
+ LOG  [Embedding] Jina embeddings unavailable (auth/quota). Semantic search falls back to text matching until a valid key or another provider is configured.
+ INFO  [BOOTSTRAP_TRACE] {"event": "download_interrupted_partial_detected", "modelName": "ggml-large-v3-turbo.bin", "partialUri": "file:///data/user/0/com.anonymous.gurustudy.dev/files/ggml-large-v3-turbo.bin.partial", "size": 156091621, "type": "whisper"}
+ WARN  setLayoutAnimationEnabledExperimental is currently a no-op in the New Architecture.
+Android Bundled 32ms src/services/aiService.ts (1 module)
+ LOG  [AI_BOOT] provider validation: chatgpt=skip github_copilot=skip gitlab_duo=skip poe=skip groq=n/a qwen=skip github=n/a kilo=probe deepseek=n/a agentrouter=n/a gemini=n/a gemini_fallback=n/a openrouter=n/a cloudflare=n/a
+ LOG  [AI_BOOT] kilo: ok (200) 11887ms — endpoint reachable; add Kilo API key in Settings to enable chat routing
+Android src/services/gdriveBackupService.ts ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Android Bundled 36ms src/services/gdriveBackupService.ts (1 module)
+ WARN  [toolRunner] accountabilityMessages failed — using fallback. [ReferenceError: Property 'schemaName' doesn't exist]
+ WARN  [Notifications] AI generation failed, using smart fallbacks: [ReferenceError: Property 'schemaName' doesn't exist]
+Android ./index.ts ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Android Bundled 91ms index.ts (1 module)
+ WARN  [expo-av]: Expo AV has been deprecated and will be removed in SDK 54. Use the `expo-audio` and `expo-video` packages to replace the required functionality.
+ WARN  setLayoutAnimationEnabledExperimental is currently a no-op in the New Architecture.
+ LOG  GURU_HEALTH:launching
+ LOG  GURU_HEALTH:bootstrap_started
+ LOG  GURU_HEALTH:bootstrap_succeeded
+Android Bundled 18ms src/services/ai/llmRouting.ts (1 module)
+ LOG  GURU_HEALTH:db_ready
+ LOG  GURU_HEALTH:route_ready:Tabs
+ LOG  GURU_HEALTH:ui_ready:Tabs
+Android Bundled 59ms index.ts (1 module)
+Android ./index.ts ░░░░░░░░░░░░░░░░  0.0% (0/1)
+ WARN  [expo-av]: Expo AV has been deprecated and will be removed in SDK 54. Use the `expo-audio` and `expo-video` packages to replace the required functionality.
+ WARN  setLayoutAnimationEnabledExperimental is currently a no-op in the New Architecture.
+ LOG  GURU_HEALTH:launching
+ LOG  GURU_HEALTH:bootstrap_started
+ LOG  GURU_HEALTH:bootstrap_succeeded
+Android Bundled 37ms src/services/ai/llmRouting.ts (1 module)
+ LOG  GURU_HEALTH:db_ready
+ LOG  GURU_HEALTH:route_ready:Tabs
+ LOG  GURU_HEALTH:ui_ready:Tabs
+ LOG  [DB] Pre-seeding 20 topic embeddings...
+ INFO  [BOOTSTRAP_TRACE] {"event": "bootstrap_check", "hasLocalModel": true, "hasLocalWhisper": false, "llmAllowed": true, "needsLlm": false, "needsWhisper": true}
+ INFO  [BOOTSTRAP_TRACE] {"event": "download_prepare", "modelName": "ggml-large-v3-turbo.bin", "type": "whisper"}
+ LOG  [AppBootstrap] Gemini Nano status: ERROR
+ LOG  [Embedding] Jina embeddings unavailable (auth/quota). Semantic search falls back to text matching until a valid key or another provider is configured.
+ INFO  [BOOTSTRAP_TRACE] {"event": "download_interrupted_partial_detected", "modelName": "ggml-large-v3-turbo.bin", "partialUri": "file:///data/user/0/com.anonymous.gurustudy.dev/files/ggml-large-v3-turbo.bin.partial", "size": 156091621, "type": "whisper"}
+Android src/services/aiService.ts ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Android Bundled 33ms src/services/aiService.ts (1 module)
+ LOG  [AI_BOOT] provider validation: chatgpt=skip github_copilot=skip gitlab_duo=skip poe=skip groq=n/a qwen=skip github=n/a kilo=probe deepseek=n/a agentrouter=n/a gemini=n/a gemini_fallback=n/a openrouter=n/a cloudflare=n/a
+ LOG  [AI_BOOT] kilo: ok (200) 4234ms — endpoint reachable; add Kilo API key in Settings to enable chat routing
+ ERROR  SyntaxError: /Users/vishnugnair/Guru/debug/src/screens/settings/components/SettingsPermissionRow.tsx: Expected corresponding JSX closing tag for <View>. (46:4)
+
+  44 |         </TouchableOpacity>
+  45 |       )}
+> 46 |     </GlassSurface>
+     |     ^
+  47 |   );
+  48 | }
+  49 |
+    at constructor (/Users/vishnugnair/Guru/debug/node_modules/@babel/parser/lib/index.js:365:19)
+    at TypeScriptParserMixin.raise (/Users/vishnugnair/Guru/debug/node_modules/@babel/parser/lib/index.js:6599:19)
+    at TypeScriptParserMixin.jsxParseElementAt (/Users/vishnugnair/Guru/debug/node_modules/@babel/parser/lib/index.js:4727:16)
+    at TypeScriptParserMixin.jsxParseElement (/Users/vishnugnair/Guru/debug/node_modules/@babel/parser/lib/index.js:4749:17)
+    at TypeScriptParserMixin.parseExprAtom (/Users/vishnugnair/Guru/debug/node_modules/@babel/parser/lib/index.js:4759:19)
+    at TypeScriptParserMixin.parseExprSubscripts (/Users/vishnugnair/Guru/debug/node_modules/@babel/parser/lib/index.js:11081:23)
+    at TypeScriptParserMixin.parseUpdate (/Users/vishnugnair/Guru/debug/node_modules/@babel/parser/lib/index.js:11066:21)
+    at TypeScriptParserMixin.parseMaybeUnary (/Users/vishnugnair/Guru/debug/node_modules/@babel/parser/lib/index.js:11046:23)
+    at TypeScriptParserMixin.parseMaybeUnary (/Users/vishnugnair/Guru/debug/node_modules/@babel/parser/lib/index.js:9837:18)
+    at TypeScriptParserMixin.parseMaybeUnaryOrPrivate (/Users/vishnugnair/Guru/debug/node_modules/@babel/parser/lib/index.js:10899:61)
+    at TypeScriptParserMixin.parseExprOps (/Users/vishnugnair/Guru/debug/node_modules/@babel/parser/lib/index.js:10904:23)
+    at TypeScriptParserMixin.parseMaybeConditional (/Users/vishnugnair/Guru/debug/node_modules/@babel/parser/lib/index.js:10881:23)
+    at TypeScriptParserMixin.parseMaybeAssign (/Users/vishnugnair/Guru/debug/node_modules/@babel/parser/lib/index.js:10831:21)
+    at /Users/vishnugnair/Guru/debug/node_modules/@babel/parser/lib/index.js:9775:39
+    at TypeScriptParserMixin.tryParse (/Users/vishnugnair/Guru/debug/node_modules/@babel/parser/lib/index.js:6907:20)
+    at TypeScriptParserMixin.parseMaybeAssign (/Users/vishnugnair/Guru/debug/node_modules/@babel/parser/lib/index.js:9775:18)
+    at /Users/vishnugnair/Guru/debug/node_modules/@babel/parser/lib/index.js:10800:39
+    at TypeScriptParserMixin.allowInAnd (/Users/vishnugnair/Guru/debug/node_modules/@babel/parser/lib/index.js:12426:12)
+    at TypeScriptParserMixin.parseMaybeAssignAllowIn (/Users/vishnugnair/Guru/debug/node_modules/@babel/parser/lib/index.js:10800:17)
+    at TypeScriptParserMixin.parseMaybeAssignAllowInOrVoidPattern (/Users/vishnugnair/Guru/debug/node_modules/@babel/parser/lib/index.js:12493:17)
+    at TypeScriptParserMixin.parseParenAndDistinguishExpression (/Users/vishnugnair/Guru/debug/node_modules/@babel/parser/lib/index.js:11675:28)
+    at TypeScriptParserMixin.parseExprAtom (/Users/vishnugnair/Guru/debug/node_modules/@babel/parser/lib/index.js:11331:23)
+    at TypeScriptParserMixin.parseExprAtom (/Users/vishnugnair/Guru/debug/node_modules/@babel/parser/lib/index.js:4764:20)
+    at TypeScriptParserMixin.parseExprSubscripts (/Users/vishnugnair/Guru/debug/node_modules/@babel/parser/lib/index.js:11081:23)
+    at TypeScriptParserMixin.parseUpdate (/Users/vishnugnair/Guru/debug/node_modules/@babel/parser/lib/index.js:11066:21)
+    at TypeScriptParserMixin.parseMaybeUnary (/Users/vishnugnair/Guru/debug/node_modules/@babel/parser/lib/index.js:11046:23)
+    at TypeScriptParserMixin.parseMaybeUnary (/Users/vishnugnair/Guru/debug/node_modules/@babel/parser/lib/index.js:9837:18)
+    at TypeScriptParserMixin.parseMaybeUnaryOrPrivate (/Users/vishnugnair/Guru/debug/node_modules/@babel/parser/lib/index.js:10899:61)
+    at TypeScriptParserMixin.parseExprOps (/Users/vishnugnair/Guru/debug/node_modules/@babel/parser/lib/index.js:10904:23)
+    at TypeScriptParserMixin.parseMaybeConditional (/Users/vishnugnair/Guru/debug/node_modules/@babel/parser/lib/index.js:10881:23)
+    at TypeScriptParserMixin.parseMaybeAssign (/Users/vishnugnair/Guru/debug/node_modules/@babel/parser/lib/index.js:10831:21)
+    at TypeScriptParserMixin.parseMaybeAssign (/Users/vishnugnair/Guru/debug/node_modules/@babel/parser/lib/index.js:9786:20)
+    at TypeScriptParserMixin.parseExpressionBase (/Users/vishnugnair/Guru/debug/node_modules/@babel/parser/lib/index.js:10784:23)
+    at /Users/vishnugnair/Guru/debug/node_modules/@babel/parser/lib/index.js:10780:39
+    at TypeScriptParserMixin.allowInAnd (/Users/vishnugnair/Guru/debug/node_modules/@babel/parser/lib/index.js:12421:16)
+    at TypeScriptParserMixin.parseExpression (/Users/vishnugnair/Guru/debug/node_modules/@babel/parser/lib/index.js:10780:17)
+    at TypeScriptParserMixin.parseReturnStatement (/Users/vishnugnair/Guru/debug/node_modules/@babel/parser/lib/index.js:13142:28)
+    at TypeScriptParserMixin.parseStatementContent (/Users/vishnugnair/Guru/debug/node_modules/@babel/parser/lib/index.js:12798:21)
+    at TypeScriptParserMixin.parseStatementContent (/Users/vishnugnair/Guru/debug/node_modules/@babel/parser/lib/index.js:9508:18)
+    at TypeScriptParserMixin.parseStatementLike (/Users/vishnugnair/Guru/debug/node_modules/@babel/parser/lib/index.js:12767:17)
+    at TypeScriptParserMixin.parseStatementListItem (/Users/vishnugnair/Guru/debug/node_modules/@babel/parser/lib/index.js:12747:17)
+    at TypeScriptParserMixin.parseBlockOrModuleBlockBody (/Users/vishnugnair/Guru/debug/node_modules/@babel/parser/lib/index.js:13316:61)
+    at TypeScriptParserMixin.parseBlockBody (/Users/vishnugnair/Guru/debug/node_modules/@babel/parser/lib/index.js:13309:10)
+    at TypeScriptParserMixin.parseBlock (/Users/vishnugnair/Guru/debug/node_modules/@babel/parser/lib/index.js:13297:10)
+    at TypeScriptParserMixin.parseFunctionBody (/Users/vishnugnair/Guru/debug/node_modules/@babel/parser/lib/index.js:12100:24)
+    at TypeScriptParserMixin.parseFunctionBodyAndFinish (/Users/vishnugnair/Guru/debug/node_modules/@babel/parser/lib/index.js:12086:10)
+    at TypeScriptParserMixin.parseFunctionBodyAndFinish (/Users/vishnugnair/Guru/debug/node_modules/@babel/parser/lib/index.js:9172:18)
+    at /Users/vishnugnair/Guru/debug/node_modules/@babel/parser/lib/index.js:13445:12
+    at TypeScriptParserMixin.withSmartMixTopicForbiddingContext (/Users/vishnugnair/Guru/debug/node_modules/@babel/parser/lib/index.js:12403:14)
+    at TypeScriptParserMixin.parseFunction (/Users/vishnugnair/Guru/debug/node_modules/@babel/parser/lib/index.js:13444:10)
+ ERROR  [Error: TransformError SyntaxError: /Users/vishnugnair/Guru/debug/src/screens/settings/components/SettingsPermissionRow.tsx: Expected corresponding JSX closing tag for <View>. (46:4)
+
+[0m [90m 44 |[39m         [33m<[39m[33m/[39m[33mTouchableOpacity[39m[33m>[39m
+ [90m 45 |[39m       )}
+[31m[1m>[22m[39m[90m 46 |[39m     [33m<[39m[33m/[39m[33mGlassSurface[39m[33m>[39m
+ [90m    |[39m     [31m[1m^[22m[39m
+ [90m 47 |[39m   )[33m;[39m
+ [90m 48 |[39m }
+ [90m 49 |[39m[0m]
+Android src/services/gdriveBackupService.ts ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Android Bundled 45ms src/services/gdriveBackupService.ts (1 module)
+ WARN  [toolRunner] accountabilityMessages failed — using fallback. [ReferenceError: Property 'schemaName' doesn't exist]
+ WARN  [Notifications] AI generation failed, using smart fallbacks: [ReferenceError: Property 'schemaName' doesn't exist]
+ WARN  [toolRunner] accountabilityMessages failed — using fallback. [ReferenceError: Property 'schemaName' doesn't exist]
+ WARN  [Notifications] AI generation failed, using smart fallbacks: [ReferenceError: Property 'schemaName' doesn't exist]
+ WARN  [toolRunner] accountabilityMessages failed — using fallback. [ReferenceError: Property 'schemaName' doesn't exist]
+ WARN  [Notifications] AI generation failed, using smart fallbacks: [ReferenceError: Property 'schemaName' doesn't exist]
+ WARN  [toolRunner] accountabilityMessages failed — using fallback. [ReferenceError: Property 'schemaName' doesn't exist]
+ WARN  [Notifications] AI generation failed, using smart fallbacks: [ReferenceError: Property 'schemaName' doesn't exist]
+ WARN  [toolRunner] accountabilityMessages failed — using fallback. [ReferenceError: Property 'schemaName' doesn't exist]
+ WARN  [Notifications] AI generation failed, using smart fallbacks: [ReferenceError: Property 'schemaName' doesn't exist]
+ WARN  [toolRunner] accountabilityMessages failed — using fallback. [ReferenceError: Property 'schemaName' doesn't exist]
+ WARN  [Notifications] AI generation failed, using smart fallbacks: [ReferenceError: Property 'schemaName' doesn't exist]
+ WARN  [toolRunner] accountabilityMessages failed — using fallback. [ReferenceError: Property 'schemaName' doesn't exist]
+ WARN  [Notifications] AI generation failed, using smart fallbacks: [ReferenceError: Property 'schemaName' doesn't exist]
+ WARN  [toolRunner] accountabilityMessages failed — using fallback. [ReferenceError: Property 'schemaName' doesn't exist]
+ WARN  [Notifications] AI generation failed, using smart fallbacks: [ReferenceError: Property 'schemaName' doesn't exist]
+Android ./index.ts ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Android Bundled 95ms index.ts (1 module)
+ WARN  [expo-av]: Expo AV has been deprecated and will be removed in SDK 54. Use the `expo-audio` and `expo-video` packages to replace the required functionality.
+ WARN  setLayoutAnimationEnabledExperimental is currently a no-op in the New Architecture.
+ LOG  GURU_HEALTH:launching
+ LOG  GURU_HEALTH:bootstrap_started
+ LOG  GURU_HEALTH:bootstrap_succeeded
+Android Bundled 26ms src/services/ai/llmRouting.ts (1 module)
+ LOG  GURU_HEALTH:db_ready
+ LOG  GURU_HEALTH:route_ready:Tabs
+ LOG  GURU_HEALTH:ui_ready:Tabs
+ LOG  [DB] Pre-seeding 20 topic embeddings...
+ INFO  [BOOTSTRAP_TRACE] {"event": "bootstrap_check", "hasLocalModel": true, "hasLocalWhisper": false, "llmAllowed": true, "needsLlm": false, "needsWhisper": true}
+ INFO  [BOOTSTRAP_TRACE] {"event": "download_prepare", "modelName": "ggml-large-v3-turbo.bin", "type": "whisper"}
+ LOG  [AppBootstrap] Gemini Nano status: ERROR
+ LOG  [Embedding] Jina embeddings unavailable (auth/quota). Semantic search falls back to text matching until a valid key or another provider is configured.
+ INFO  [BOOTSTRAP_TRACE] {"event": "download_interrupted_partial_detected", "modelName": "ggml-large-v3-turbo.bin", "partialUri": "file:///data/user/0/com.anonymous.gurustudy.dev/files/ggml-large-v3-turbo.bin.partial", "size": 156091621, "type": "whisper"}
+Android src/services/aiService.ts ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Android Bundled 30ms src/services/aiService.ts (1 module)
+Android src/services/gdriveBackupService.ts ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Android Bundled 31ms src/services/gdriveBackupService.ts (1 module)
+ WARN  [toolRunner] accountabilityMessages failed — using fallback. [ReferenceError: Property 'schemaName' doesn't exist]
+ WARN  [Notifications] AI generation failed, using smart fallbacks: [ReferenceError: Property 'schemaName' doesn't exist]
+ WARN  setLayoutAnimationEnabledExperimental is currently a no-op in the New Architecture.
+ LOG  [AI_BOOT] provider validation: chatgpt=skip github_copilot=skip gitlab_duo=skip poe=skip groq=n/a qwen=skip github=n/a kilo=probe deepseek=n/a agentrouter=n/a gemini=n/a gemini_fallback=n/a openrouter=n/a cloudflare=n/a
+ LOG  [AI_BOOT] kilo: ok (200) 11954ms — endpoint reachable; add Kilo API key in Settings to enable chat routing
+ WARN  setLayoutAnimationEnabledExperimental is currently a no-op in the New Architecture.
+ WARN  setLayoutAnimationEnabledExperimental is currently a no-op in the New Architecture.
+ WARN  setLayoutAnimationEnabledExperimental is currently a no-op in the New Architecture.
+ WARN  [toolRunner] accountabilityMessages failed — using fallback. [ReferenceError: Property 'schemaName' doesn't exist]
+ WARN  [Notifications] AI generation failed, using smart fallbacks: [ReferenceError: Property 'schemaName' doesn't exist]
+ WARN  [toolRunner] accountabilityMessages failed — using fallback. [ReferenceError: Property 'schemaName' doesn't exist]
+ WARN  [Notifications] AI generation failed, using smart fallbacks: [ReferenceError: Property 'schemaName' doesn't exist]
+ WARN  [Reanimated] Reading from `value` during component render. Please ensure that you don't access the `value` property nor use `get` method of a shared value while React is rendering a component.
+
+If you don't want to see this message, you can disable the `strict` mode. Refer to:
+https://docs.swmansion.com/react-native-reanimated/docs/debugging/logger-configuration for more details.
+ WARN  [Reanimated] Writing to `value` during component render. Please ensure that you don't access the `value` property nor use `set` method of a shared value while React is rendering a component.
+
+If you don't want to see this message, you can disable the `strict` mode. Refer to:
+https://docs.swmansion.com/react-native-reanimated/docs/debugging/logger-configuration for more details.
+ WARN  [Reanimated] Reading from `value` during component render. Please ensure that you don't access the `value` property nor use `get` method of a shared value while React is rendering a component.
+
+If you don't want to see this message, you can disable the `strict` mode. Refer to:
+https://docs.swmansion.com/react-native-reanimated/docs/debugging/logger-configuration for more details.
+ WARN  [Reanimated] Writing to `value` during component render. Please ensure that you don't access the `value` property nor use `set` method of a shared value while React is rendering a component.
+
+If you don't want to see this message, you can disable the `strict` mode. Refer to:
+https://docs.swmansion.com/react-native-reanimated/docs/debugging/logger-configuration for more details.
+ WARN  [Reanimated] Reading from `value` during component render. Please ensure that you don't access the `value` property nor use `get` method of a shared value while React is rendering a component.
+
+If you don't want to see this message, you can disable the `strict` mode. Refer to:
+https://docs.swmansion.com/react-native-reanimated/docs/debugging/logger-configuration for more details.
+ WARN  [Reanimated] Writing to `value` during component render. Please ensure that you don't access the `value` property nor use `set` method of a shared value while React is rendering a component.
+
+If you don't want to see this message, you can disable the `strict` mode. Refer to:
+https://docs.swmansion.com/react-native-reanimated/docs/debugging/logger-configuration for more details.
+ WARN  [Reanimated] Reading from `value` during component render. Please ensure that you don't access the `value` property nor use `get` method of a shared value while React is rendering a component.
+
+If you don't want to see this message, you can disable the `strict` mode. Refer to:
+https://docs.swmansion.com/react-native-reanimated/docs/debugging/logger-configuration for more details.
+ WARN  [Reanimated] Writing to `value` during component render. Please ensure that you don't access the `value` property nor use `set` method of a shared value while React is rendering a component.
+
+If you don't want to see this message, you can disable the `strict` mode. Refer to:
+https://docs.swmansion.com/react-native-reanimated/docs/debugging/logger-configuration for more details.
+Android Bundled 75ms index.ts (1 module)
+ WARN  [expo-av]: Expo AV has been deprecated and will be removed in SDK 54. Use the `expo-audio` and `expo-video` packages to replace the required functionality.
+ WARN  setLayoutAnimationEnabledExperimental is currently a no-op in the New Architecture.
+ LOG  GURU_HEALTH:launching
+ LOG  GURU_HEALTH:bootstrap_started
+ LOG  GURU_HEALTH:bootstrap_succeeded
+Android Bundled 44ms src/services/ai/llmRouting.ts (1 module)
+ LOG  GURU_HEALTH:db_ready
+ LOG  GURU_HEALTH:route_ready:Tabs
+ LOG  GURU_HEALTH:ui_ready:Tabs
+ LOG  [DB] Pre-seeding 20 topic embeddings...
+ INFO  [BOOTSTRAP_TRACE] {"event": "bootstrap_check", "hasLocalModel": true, "hasLocalWhisper": false, "llmAllowed": true, "needsLlm": false, "needsWhisper": true}
+ INFO  [BOOTSTRAP_TRACE] {"event": "download_prepare", "modelName": "ggml-large-v3-turbo.bin", "type": "whisper"}
+ LOG  [AppBootstrap] Gemini Nano status: ERROR
+ LOG  [Embedding] Jina embeddings unavailable (auth/quota). Semantic search falls back to text matching until a valid key or another provider is configured.
+ INFO  [BOOTSTRAP_TRACE] {"event": "download_interrupted_partial_detected", "modelName": "ggml-large-v3-turbo.bin", "partialUri": "file:///data/user/0/com.anonymous.gurustudy.dev/files/ggml-large-v3-turbo.bin.partial", "size": 156091621, "type": "whisper"}
+Android src/services/aiService.ts ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Android Bundled 50ms src/services/aiService.ts (1 module)
+ LOG  [AI_BOOT] provider validation: chatgpt=skip github_copilot=skip gitlab_duo=skip poe=skip groq=n/a qwen=skip github=n/a kilo=probe deepseek=n/a agentrouter=n/a gemini=n/a gemini_fallback=n/a openrouter=n/a cloudflare=n/a
+ LOG  [AI_BOOT] kilo: ok (200) 4369ms — endpoint reachable; add Kilo API key in Settings to enable chat routing
+Android src/services/gdriveBackupService.ts ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Android Bundled 32ms src/services/gdriveBackupService.ts (1 module)
+ WARN  [toolRunner] accountabilityMessages failed — using fallback. [ReferenceError: Property 'schemaName' doesn't exist]
+ WARN  [Notifications] AI generation failed, using smart fallbacks: [ReferenceError: Property 'schemaName' doesn't exist]
+Android ./index.ts ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Android Bundled 64ms index.ts (1 module)
+ WARN  [expo-av]: Expo AV has been deprecated and will be removed in SDK 54. Use the `expo-audio` and `expo-video` packages to replace the required functionality.
+ WARN  setLayoutAnimationEnabledExperimental is currently a no-op in the New Architecture.
+ LOG  GURU_HEALTH:launching
+ LOG  GURU_HEALTH:bootstrap_started
+ LOG  GURU_HEALTH:bootstrap_succeeded
+ LOG  GURU_HEALTH:db_ready
+Android Bundled 21ms src/services/ai/llmRouting.ts (1 module)
+ LOG  GURU_HEALTH:route_ready:Tabs
+ LOG  GURU_HEALTH:ui_ready:Tabs
+ LOG  [DB] Pre-seeding 20 topic embeddings...
+ INFO  [BOOTSTRAP_TRACE] {"event": "bootstrap_check", "hasLocalModel": true, "hasLocalWhisper": false, "llmAllowed": true, "needsLlm": false, "needsWhisper": true}
+ INFO  [BOOTSTRAP_TRACE] {"event": "download_prepare", "modelName": "ggml-large-v3-turbo.bin", "type": "whisper"}
+ LOG  [AppBootstrap] Gemini Nano status: ERROR
+ LOG  [Embedding] Jina embeddings unavailable (auth/quota). Semantic search falls back to text matching until a valid key or another provider is configured.
+ WARN  setLayoutAnimationEnabledExperimental is currently a no-op in the New Architecture.
+ INFO  [BOOTSTRAP_TRACE] {"event": "download_interrupted_partial_detected", "modelName": "ggml-large-v3-turbo.bin", "partialUri": "file:///data/user/0/com.anonymous.gurustudy.dev/files/ggml-large-v3-turbo.bin.partial", "size": 156091621, "type": "whisper"}
+Android src/services/aiService.ts ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Android Bundled 36ms src/services/aiService.ts (1 module)
+Android src/services/gdriveBackupService.ts ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Android Bundled 37ms src/services/gdriveBackupService.ts (1 module)
+ WARN  [toolRunner] accountabilityMessages failed — using fallback. [ReferenceError: Property 'schemaName' doesn't exist]
+ WARN  [Notifications] AI generation failed, using smart fallbacks: [ReferenceError: Property 'schemaName' doesn't exist]
+ LOG  [AI_BOOT] provider validation: chatgpt=skip github_copilot=skip gitlab_duo=skip poe=skip groq=n/a qwen=skip github=n/a kilo=probe deepseek=n/a agentrouter=n/a gemini=n/a gemini_fallback=n/a openrouter=n/a cloudflare=n/a
+ LOG  [AI_BOOT] kilo: ok (200) 12529ms — endpoint reachable; add Kilo API key in Settings to enable chat routing

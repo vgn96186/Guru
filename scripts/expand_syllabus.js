@@ -96,8 +96,12 @@ for (const parsed of parsedLines) {
 
       const subIndent = parsed.indent + '  ';
 
-      const line1 = `${subIndent}[${arr[0]}, '${name1.replace(/'/g, "\\'")}', ${arr[2]}, ${min1}, '${name.replace(/'/g, "\\'")}'],`;
-      const line2 = `${subIndent}[${arr[0]}, '${name2.replace(/'/g, "\\'")}', ${arr[2]}, ${min2}, '${name.replace(/'/g, "\\'")}'],`;
+      const line1 = `${subIndent}[${arr[0]}, '${name1.replace(/'/g, "\\'")}', ${
+        arr[2]
+      }, ${min1}, '${name.replace(/'/g, "\\'")}'],`;
+      const line2 = `${subIndent}[${arr[0]}, '${name2.replace(/'/g, "\\'")}', ${
+        arr[2]
+      }, ${min2}, '${name.replace(/'/g, "\\'")}'],`;
 
       newLines.push(line1);
       newLines.push(line2);

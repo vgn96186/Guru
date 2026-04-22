@@ -2,10 +2,10 @@
 id: open_and_navigate
 name: Open App and Do Something
 triggers:
-  - "open"
-  - "go to"
-  - "check"
-  - "navigate"
+  - 'open'
+  - 'go to'
+  - 'check'
+  - 'navigate'
 ---
 
 When the user wants to open an app and do something inside it:
@@ -16,6 +16,7 @@ When the user wants to open an app and do something inside it:
 4. **finish** → call finish(summary="[what you found or did]")
 
 Common app mappings:
+
 - "email" or "gmail" → open_app(package_name="com.google.android.gm")
 - "youtube" → open_app(package_name="com.google.android.youtube")
 - "chrome" or "browser" → open_app(package_name="com.android.chrome")

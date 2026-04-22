@@ -25,7 +25,7 @@ function formatToolCalls(message: Message): string {
 
 export function formatThreadAsMarkdown(
   thread: AgentThread,
-  messages: Message[],
+  messages: Message[]
 ): string {
   const title = titleOfThread(thread);
   const createdAt = thread.created_at
@@ -64,7 +64,7 @@ export function formatThreadAsMarkdown(
           "",
           reasoning,
           "",
-          "</details>",
+          "</details>"
         );
       }
 
@@ -85,7 +85,7 @@ export function formatThreadAsMarkdown(
 
 export function formatThreadAsJSON(
   thread: AgentThread,
-  messages: Message[],
+  messages: Message[]
 ): string {
   const exportData = {
     title: titleOfThread(thread),
@@ -111,7 +111,7 @@ function sanitizeFilename(name: string): string {
 export function downloadAsFile(
   content: string,
   filename: string,
-  mimeType: string,
+  mimeType: string
 ) {
   const blob = new Blob([content], { type: mimeType });
   const url = URL.createObjectURL(blob);
@@ -126,7 +126,7 @@ export function downloadAsFile(
 
 export function exportThreadAsMarkdown(
   thread: AgentThread,
-  messages: Message[],
+  messages: Message[]
 ) {
   const markdown = formatThreadAsMarkdown(thread, messages);
   const filename = `${sanitizeFilename(titleOfThread(thread))}.md`;

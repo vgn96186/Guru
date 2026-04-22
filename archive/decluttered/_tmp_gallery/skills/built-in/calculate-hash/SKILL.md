@@ -9,8 +9,8 @@ This skill calculates the hash of a given text.
 
 ## Examples
 
-* "Calculate hash of..."
-* "What is the hash of..."
+- "Calculate hash of..."
+- "What is the hash of..."
 
 ## Instructions
 

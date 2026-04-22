@@ -5,6 +5,7 @@ DeerFlow now supports Apple Container as the preferred container runtime on macO
 ## Overview
 
 Starting with this version, DeerFlow automatically detects and uses Apple Container on macOS when available, falling back to Docker when:
+
 - Apple Container is not installed
 - Running on non-macOS platforms
 
@@ -13,11 +14,13 @@ This provides better performance on Apple Silicon Macs while maintaining compati
 ## Benefits
 
 ### On Apple Silicon Macs with Apple Container:
+
 - **Better Performance**: Native ARM64 execution without Rosetta 2 translation
 - **Lower Resource Usage**: Lighter weight than Docker Desktop
 - **Native Integration**: Uses macOS Virtualization.framework
 
 ### Fallback to Docker:
+
 - Full backward compatibility
 - Works on all platforms (macOS, Linux, Windows)
 - No configuration changes needed
@@ -25,11 +28,13 @@ This provides better performance on Apple Silicon Macs while maintaining compati
 ## Requirements
 
 ### For Apple Container (macOS only):
+
 - macOS 15.0 or later
 - Apple Silicon (M1/M2/M3/M4)
 - Apple Container CLI installed
 
 ### Installation:
+
 ```bash
 # Download from GitHub releases
 # https://github.com/apple/container/releases
@@ -42,6 +47,7 @@ container system start
 ```
 
 ### For Docker (all platforms):
+
 - Docker Desktop or Docker Engine
 
 ## How It Works
@@ -51,6 +57,7 @@ container system start
 The `AioSandboxProvider` automatically detects the available container runtime:
 
 1. On macOS: Try `container --version`
+
    - Success → Use Apple Container
    - Failure → Fall back to Docker
 
@@ -61,6 +68,7 @@ The `AioSandboxProvider` automatically detects the available container runtime:
 Both runtimes use nearly identical command syntax:
 
 **Container Startup:**
+
 ```bash
 # Apple Container
 container run --rm -d -p 8080:8080 -v /host:/container -e KEY=value image
@@ -70,6 +78,7 @@ docker run --rm -d -p 8080:8080 -v /host:/container -e KEY=value image
 ```
 
 **Container Cleanup:**
+
 ```bash
 # Apple Container (with --rm flag)
 container stop <id>  # Auto-removes due to --rm
@@ -98,6 +107,7 @@ INFO:deerflow.community.aio_sandbox.aio_sandbox_provider:Starting sandbox contai
 ```
 
 Or for Docker:
+
 ```
 INFO:deerflow.community.aio_sandbox.aio_sandbox_provider:Apple Container not available, falling back to Docker
 INFO:deerflow.community.aio_sandbox.aio_sandbox_provider:Starting sandbox container using docker: ...
@@ -110,10 +120,11 @@ Both runtimes use OCI-compatible images. The default image works with both:
 ```yaml
 sandbox:
   use: deerflow.community.aio_sandbox:AioSandboxProvider
-  image: enterprise-public-cn-beijing.cr.volces.com/vefaas-public/all-in-one-sandbox:latest  # Default image
+  image: enterprise-public-cn-beijing.cr.volces.com/vefaas-public/all-in-one-sandbox:latest # Default image
 ```
 
 Make sure your images are available for the appropriate architecture:
+
 - ARM64 for Apple Container on Apple Silicon
 - AMD64 for Docker on Intel Macs
 - Multi-arch images work on both
@@ -130,6 +141,7 @@ make setup-sandbox
 ```
 
 This command will:
+
 1. Read the configured image from `config.yaml` (or use default)
 2. Detect available runtime (Apple Container or Docker)
 3. Pull the image with progress indication
@@ -154,6 +166,7 @@ The project includes a unified cleanup script that handles both runtimes:
 **Script:** `scripts/cleanup-containers.sh`
 
 **Usage:**
+
 ```bash
 # Clean up all DeerFlow sandbox containers
 ./scripts/cleanup-containers.sh deer-flow-sandbox
@@ -165,6 +178,7 @@ The project includes a unified cleanup script that handles both runtimes:
 **Makefile Integration:**
 
 All cleanup commands in `Makefile` automatically handle both runtimes:
+
 ```bash
 make stop   # Stops all services and cleans up containers
 make clean  # Full cleanup including logs
@@ -180,6 +194,7 @@ python test_container_runtime.py
 ```
 
 This will:
+
 1. Detect the available runtime
 2. Optionally start a test container
 3. Verify connectivity
@@ -190,12 +205,14 @@ This will:
 ### Apple Container not detected on macOS
 
 1. Check if installed:
+
    ```bash
    which container
    container --version
    ```
 
 2. Check if service is running:
+
    ```bash
    container system start
    ```
@@ -209,6 +226,7 @@ This will:
 ### Containers not cleaning up
 
 1. Manually check running containers:
+
    ```bash
    # Apple Container
    container list
@@ -226,10 +244,10 @@ This will:
 
 - Apple Container should be faster on Apple Silicon
 - If experiencing issues, you can force Docker by temporarily renaming the `container` command:
-   ```bash
-   # Temporary workaround - not recommended for permanent use
-   sudo mv /opt/homebrew/bin/container /opt/homebrew/bin/container.bak
-   ```
+  ```bash
+  # Temporary workaround - not recommended for permanent use
+  sudo mv /opt/homebrew/bin/container /opt/homebrew/bin/container.bak
+  ```
 
 ## References
 

@@ -8,7 +8,7 @@ import { Tooltip } from "./tooltip";
 export type AgentMode = "flash" | "thinking" | "pro" | "ultra";
 
 function getModeLabelKey(
-  mode: AgentMode,
+  mode: AgentMode
 ): keyof Pick<
   Translations["inputBox"],
   "flashMode" | "reasoningMode" | "proMode" | "ultraMode"
@@ -26,7 +26,7 @@ function getModeLabelKey(
 }
 
 function getModeDescriptionKey(
-  mode: AgentMode,
+  mode: AgentMode
 ): keyof Pick<
   Translations["inputBox"],
   | "flashModeDescription"

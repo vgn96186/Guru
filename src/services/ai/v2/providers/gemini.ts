@@ -26,11 +26,16 @@ export interface GeminiConfig {
   /** Override for the base URL (e.g. regional endpoint). */
   baseUrl?: string;
   fetch?: typeof fetch;
+  /** Set to true if routing to Vertex AI */
+  isVertex?: boolean;
+  /** Vertex AI Project ID */
+  vertexProject?: string;
+  /** Vertex AI Location */
+  vertexLocation?: string;
 }
 
 export function createGeminiModel(config: GeminiConfig): LanguageModelV2 {
   const doFetch = config.fetch ?? fetch;
-  const base = config.baseUrl ?? 'https://generativelanguage.googleapis.com/v1beta';
 
   const buildBody = (options: LanguageModelV2CallOptions): Record<string, unknown> => {
     const { systemInstruction, contents } = convertMessagesToGemini(options.prompt);
@@ -81,10 +86,20 @@ export function createGeminiModel(config: GeminiConfig): LanguageModelV2 {
   };
 
   const doPost = async (path: string, body: unknown, signal?: AbortSignal): Promise<Response> => {
-    const url = `${base}/models/${config.modelId}:${path}?key=${config.apiKey}`;
+    let url: string;
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+
+    if (config.isVertex && config.vertexProject && config.vertexLocation) {
+      url = `https://${config.vertexLocation}-aiplatform.googleapis.com/v1/projects/${config.vertexProject}/locations/${config.vertexLocation}/publishers/google/models/${config.modelId}:${path}`;
+      headers['Authorization'] = `Bearer ${config.apiKey}`;
+    } else {
+      const base = config.baseUrl ?? 'https://generativelanguage.googleapis.com/v1beta';
+      url = `${base}/models/${config.modelId}:${path}?key=${config.apiKey}`;
+    }
+
     return doFetch(url, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers,
       body: JSON.stringify(body),
       signal,
     });

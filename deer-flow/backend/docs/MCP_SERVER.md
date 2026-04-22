@@ -9,7 +9,6 @@ DeerFlow supports configurable MCP servers and skills to extend its capabilities
    # Copy example configuration
    cp extensions_config.example.json extensions_config.json
    ```
-   
 2. Enable the desired MCP servers or skills by setting `"enabled": true`.
 3. Configure each server’s command, arguments, and environment variables as needed.
 4. Restart the application to load and register MCP tools.
@@ -26,22 +25,22 @@ Example:
 
 ```json
 {
-   "mcpServers": {
-      "secure-http-server": {
-         "enabled": true,
-         "type": "http",
-         "url": "https://api.example.com/mcp",
-         "oauth": {
-            "enabled": true,
-            "token_url": "https://auth.example.com/oauth/token",
-            "grant_type": "client_credentials",
-            "client_id": "$MCP_OAUTH_CLIENT_ID",
-            "client_secret": "$MCP_OAUTH_CLIENT_SECRET",
-            "scope": "mcp.read",
-            "refresh_skew_seconds": 60
-         }
+  "mcpServers": {
+    "secure-http-server": {
+      "enabled": true,
+      "type": "http",
+      "url": "https://api.example.com/mcp",
+      "oauth": {
+        "enabled": true,
+        "token_url": "https://auth.example.com/oauth/token",
+        "grant_type": "client_credentials",
+        "client_id": "$MCP_OAUTH_CLIENT_ID",
+        "client_secret": "$MCP_OAUTH_CLIENT_SECRET",
+        "scope": "mcp.read",
+        "refresh_skew_seconds": 60
       }
-   }
+    }
+  }
 }
 ```
 

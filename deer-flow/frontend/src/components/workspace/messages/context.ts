@@ -9,7 +9,7 @@ export interface ThreadContextType {
 }
 
 export const ThreadContext = createContext<ThreadContextType | undefined>(
-  undefined,
+  undefined
 );
 
 export function useThread() {

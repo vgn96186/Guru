@@ -40,6 +40,7 @@ So you **cannot** initialize Drizzle with our existing `openDatabaseAsync` insta
 
 1. **Use a second connection for Drizzle:**  
    Call `openDatabaseSync('neet_study.db')` (or the same path we use for the async DB) and pass that into Drizzle. Same file, two connections. With WAL mode this is valid; SQLite allows multiple readers and one writer. You’d have:
+
    - Current code: `openDatabaseAsync` → all existing queries.
    - Drizzle: `openDatabaseSync` → only what you migrate to Drizzle (e.g. live queries).
 

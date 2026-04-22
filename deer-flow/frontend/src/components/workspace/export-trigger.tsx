@@ -46,7 +46,7 @@ export function ExportTrigger({ threadId }: { threadId: string }) {
       }
       toast.success(t.common.exportSuccess);
     },
-    [messages, thread.values, threadId, t],
+    [messages, thread.values, threadId, t]
   );
 
   if (messages.length === 0) {

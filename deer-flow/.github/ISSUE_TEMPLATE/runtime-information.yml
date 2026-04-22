@@ -1,6 +1,6 @@
 name: Runtime Information
 description: Report runtime/environment details to help reproduce an issue.
-title: "[runtime] "
+title: '[runtime] '
 labels:
   - needs-triage
 body:

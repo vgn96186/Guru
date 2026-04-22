@@ -50,10 +50,10 @@ export function MessageGroup({
 }) {
   const { t } = useI18n();
   const [showAbove, setShowAbove] = useState(
-    env.NEXT_PUBLIC_STATIC_WEBSITE_ONLY === "true",
+    env.NEXT_PUBLIC_STATIC_WEBSITE_ONLY === "true"
   );
   const [showLastThinking, setShowLastThinking] = useState(
-    env.NEXT_PUBLIC_STATIC_WEBSITE_ONLY === "true",
+    env.NEXT_PUBLIC_STATIC_WEBSITE_ONLY === "true"
   );
   const steps = useMemo(() => convertToSteps(messages), [messages]);
   const lastToolCallStep = useMemo(() => {
@@ -101,7 +101,7 @@ export function MessageGroup({
               <ChevronUp
                 className={cn(
                   "size-4 opacity-60 transition-transform duration-200",
-                  showAbove ? "rotate-180" : "",
+                  showAbove ? "rotate-180" : ""
                 )}
               />
             }
@@ -125,7 +125,7 @@ export function MessageGroup({
                 ></ChainOfThoughtStep>
               ) : (
                 <ToolCall key={step.id} {...step} isLoading={isLoading} />
-              ),
+              )
             )}
           {lastToolCallStep && (
             <FlipDisplay uniqueKey={lastToolCallStep.id ?? ""}>
@@ -157,7 +157,7 @@ export function MessageGroup({
                 <ChevronUp
                   className={cn(
                     "text-muted-foreground size-4",
-                    showLastThinking ? "" : "rotate-180",
+                    showLastThinking ? "" : "rotate-180"
                   )}
                 />
               </div>
@@ -339,7 +339,7 @@ function ToolCall({
     if (isLoading && isLast && autoOpen && autoSelect && path) {
       setTimeout(() => {
         const url = new URL(
-          `write-file:${path}?message_id=${messageId}&tool_call_id=${id}`,
+          `write-file:${path}?message_id=${messageId}&tool_call_id=${id}`
         ).toString();
         if (selectedArtifact === url) {
           return;
@@ -358,8 +358,8 @@ function ToolCall({
         onClick={() => {
           select(
             new URL(
-              `write-file:${path}?message_id=${messageId}&tool_call_id=${id}`,
-            ).toString(),
+              `write-file:${path}?message_id=${messageId}&tool_call_id=${id}`
+            ).toString()
           );
           setOpen(true);
         }}

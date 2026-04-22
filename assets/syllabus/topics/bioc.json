@@ -1,705 +1,3399 @@
 [
-  [3,"Molecular Biology",10,60],
-  [3,"DNA Replication & Repair",10,45,"Molecular Biology"],
-  [3,"DNA Structure & Replication — Enzymes & Steps",10,15,"DNA Replication & Repair"],
-  [3,"DNA Structure & Replication — Enzymes",10,7,"DNA Structure & Replication — Enzymes & Steps"],
-  [3,"DNA Structure & Replication — Enzymes - Structure & Properties",10,5,"DNA Structure & Replication — Enzymes"],
-  [3,"DNA Structure & Replication — Enzymes - Metabolic Pathways",10,5,"DNA Structure & Replication — Enzymes"],
-  [3,"DNA Structure & Replication — Enzymes - Enzymes & Regulation",10,5,"DNA Structure & Replication — Enzymes"],
-  [3,"DNA Structure & Replication — Enzymes - Clinical Biochemistry & Lab Tests",10,5,"DNA Structure & Replication — Enzymes"],
-  [3,"DNA Structure & Replication — Enzymes - Associated Inborn Errors / Disorders",10,5,"DNA Structure & Replication — Enzymes"],
-  [3,"DNA Structure & Replication — Steps",10,8,"DNA Structure & Replication — Enzymes & Steps"],
-  [3,"DNA Structure & Replication — Steps - Structure & Properties",10,5,"DNA Structure & Replication — Steps"],
-  [3,"DNA Structure & Replication — Steps - Metabolic Pathways",10,5,"DNA Structure & Replication — Steps"],
-  [3,"DNA Structure & Replication — Steps - Enzymes & Regulation",10,5,"DNA Structure & Replication — Steps"],
-  [3,"DNA Structure & Replication — Steps - Clinical Biochemistry & Lab Tests",10,5,"DNA Structure & Replication — Steps"],
-  [3,"DNA Structure & Replication — Steps - Associated Inborn Errors / Disorders",10,5,"DNA Structure & Replication — Steps"],
-  [3,"DNA Repair Mechanisms — BER, NER, MMR & DSB Repair",10,15,"DNA Replication & Repair"],
-  [3,"DNA Repair Mechanisms — BER, NER, MMR",10,7,"DNA Repair Mechanisms — BER, NER, MMR & DSB Repair"],
-  [3,"DNA Repair Mechanisms — BER, NER, MMR - Structure & Properties",10,5,"DNA Repair Mechanisms — BER, NER, MMR"],
-  [3,"DNA Repair Mechanisms — BER, NER, MMR - Metabolic Pathways",10,5,"DNA Repair Mechanisms — BER, NER, MMR"],
-  [3,"DNA Repair Mechanisms — BER, NER, MMR - Enzymes & Regulation",10,5,"DNA Repair Mechanisms — BER, NER, MMR"],
-  [3,"DNA Repair Mechanisms — BER, NER, MMR - Clinical Biochemistry & Lab Tests",10,5,"DNA Repair Mechanisms — BER, NER, MMR"],
-  [3,"DNA Repair Mechanisms — BER, NER, MMR - Associated Inborn Errors / Disorders",10,5,"DNA Repair Mechanisms — BER, NER, MMR"],
-  [3,"DNA Repair Mechanisms — DSB Repair",10,8,"DNA Repair Mechanisms — BER, NER, MMR & DSB Repair"],
-  [3,"DNA Repair Mechanisms — DSB Repair - Structure & Properties",10,5,"DNA Repair Mechanisms — DSB Repair"],
-  [3,"DNA Repair Mechanisms — DSB Repair - Metabolic Pathways",10,5,"DNA Repair Mechanisms — DSB Repair"],
-  [3,"DNA Repair Mechanisms — DSB Repair - Enzymes & Regulation",10,5,"DNA Repair Mechanisms — DSB Repair"],
-  [3,"DNA Repair Mechanisms — DSB Repair - Clinical Biochemistry & Lab Tests",10,5,"DNA Repair Mechanisms — DSB Repair"],
-  [3,"DNA Repair Mechanisms — DSB Repair - Associated Inborn Errors / Disorders",10,5,"DNA Repair Mechanisms — DSB Repair"],
-  [3,"Transcription & Translation",10,50,"Molecular Biology"],
-  [3,"Transcription — RNA Polymerases & Processing (5' Cap, PolyA)",10,15,"Transcription & Translation"],
-  [3,"Transcription — RNA Polymerases",10,7,"Transcription — RNA Polymerases & Processing (5' Cap, PolyA)"],
-  [3,"Transcription — RNA Polymerases - Structure & Properties",10,5,"Transcription — RNA Polymerases"],
-  [3,"Transcription — RNA Polymerases - Metabolic Pathways",10,5,"Transcription — RNA Polymerases"],
-  [3,"Transcription — RNA Polymerases - Enzymes & Regulation",10,5,"Transcription — RNA Polymerases"],
-  [3,"Transcription — RNA Polymerases - Clinical Biochemistry & Lab Tests",10,5,"Transcription — RNA Polymerases"],
-  [3,"Transcription — RNA Polymerases - Associated Inborn Errors / Disorders",10,5,"Transcription — RNA Polymerases"],
-  [3,"Transcription — Processing (5' Cap, PolyA)",10,8,"Transcription — RNA Polymerases & Processing (5' Cap, PolyA)"],
-  [3,"Transcription — Processing (5' Cap, PolyA) - Structure & Properties",10,5,"Transcription — Processing (5' Cap, PolyA)"],
-  [3,"Transcription — Processing (5' Cap, PolyA) - Metabolic Pathways",10,5,"Transcription — Processing (5' Cap, PolyA)"],
-  [3,"Transcription — Processing (5' Cap, PolyA) - Enzymes & Regulation",10,5,"Transcription — Processing (5' Cap, PolyA)"],
-  [3,"Transcription — Processing (5' Cap, PolyA) - Clinical Biochemistry & Lab Tests",10,5,"Transcription — Processing (5' Cap, PolyA)"],
-  [3,"Transcription — Processing (5' Cap, PolyA) - Associated Inborn Errors / Disorders",10,5,"Transcription — Processing (5' Cap, PolyA)"],
-  [3,"Translation — Ribosomes, tRNA Charging & Antibiotic Sites",10,18,"Transcription & Translation"],
-  [3,"Translation — Ribosomes, tRNA Charging",10,9,"Translation — Ribosomes, tRNA Charging & Antibiotic Sites"],
-  [3,"Translation — Ribosomes, tRNA Charging - Structure & Properties",10,5,"Translation — Ribosomes, tRNA Charging"],
-  [3,"Translation — Ribosomes, tRNA Charging - Metabolic Pathways",10,5,"Translation — Ribosomes, tRNA Charging"],
-  [3,"Translation — Ribosomes, tRNA Charging - Enzymes & Regulation",10,5,"Translation — Ribosomes, tRNA Charging"],
-  [3,"Translation — Ribosomes, tRNA Charging - Clinical Biochemistry & Lab Tests",10,5,"Translation — Ribosomes, tRNA Charging"],
-  [3,"Translation — Ribosomes, tRNA Charging - Associated Inborn Errors / Disorders",10,5,"Translation — Ribosomes, tRNA Charging"],
-  [3,"Translation — Antibiotic Sites",10,9,"Translation — Ribosomes, tRNA Charging & Antibiotic Sites"],
-  [3,"Translation — Antibiotic Sites - Structure & Properties",10,5,"Translation — Antibiotic Sites"],
-  [3,"Translation — Antibiotic Sites - Metabolic Pathways",10,5,"Translation — Antibiotic Sites"],
-  [3,"Translation — Antibiotic Sites - Enzymes & Regulation",10,5,"Translation — Antibiotic Sites"],
-  [3,"Translation — Antibiotic Sites - Clinical Biochemistry & Lab Tests",10,5,"Translation — Antibiotic Sites"],
-  [3,"Translation — Antibiotic Sites - Associated Inborn Errors / Disorders",10,5,"Translation — Antibiotic Sites"],
-  [3,"Gene Regulation & Mutations",9,40,"Molecular Biology"],
-  [3,"Gene Regulation — Lac Operon, Promoters & Enhancers",9,15,"Gene Regulation & Mutations"],
-  [3,"Gene Regulation — Lac Operon, Promoters",9,7,"Gene Regulation — Lac Operon, Promoters & Enhancers"],
-  [3,"Gene Regulation — Lac Operon, Promoters - Structure & Properties",9,5,"Gene Regulation — Lac Operon, Promoters"],
-  [3,"Gene Regulation — Lac Operon, Promoters - Metabolic Pathways",9,5,"Gene Regulation — Lac Operon, Promoters"],
-  [3,"Gene Regulation — Lac Operon, Promoters - Enzymes & Regulation",9,5,"Gene Regulation — Lac Operon, Promoters"],
-  [3,"Gene Regulation — Lac Operon, Promoters - Clinical Biochemistry & Lab Tests",9,5,"Gene Regulation — Lac Operon, Promoters"],
-  [3,"Gene Regulation — Lac Operon, Promoters - Associated Inborn Errors / Disorders",9,5,"Gene Regulation — Lac Operon, Promoters"],
-  [3,"Gene Regulation — Enhancers",9,8,"Gene Regulation — Lac Operon, Promoters & Enhancers"],
-  [3,"Gene Regulation — Enhancers - Structure & Properties",9,5,"Gene Regulation — Enhancers"],
-  [3,"Gene Regulation — Enhancers - Metabolic Pathways",9,5,"Gene Regulation — Enhancers"],
-  [3,"Gene Regulation — Enhancers - Enzymes & Regulation",9,5,"Gene Regulation — Enhancers"],
-  [3,"Gene Regulation — Enhancers - Clinical Biochemistry & Lab Tests",9,5,"Gene Regulation — Enhancers"],
-  [3,"Gene Regulation — Enhancers - Associated Inborn Errors / Disorders",9,5,"Gene Regulation — Enhancers"],
-  [3,"Mutations — Types, Causes & Consequences",9,15,"Gene Regulation & Mutations"],
-  [3,"Mutations — Types, Causes",9,7,"Mutations — Types, Causes & Consequences"],
-  [3,"Mutations — Types, Causes - Structure & Properties",9,5,"Mutations — Types, Causes"],
-  [3,"Mutations — Types, Causes - Metabolic Pathways",9,5,"Mutations — Types, Causes"],
-  [3,"Mutations — Types, Causes - Enzymes & Regulation",9,5,"Mutations — Types, Causes"],
-  [3,"Mutations — Types, Causes - Clinical Biochemistry & Lab Tests",9,5,"Mutations — Types, Causes"],
-  [3,"Mutations — Types, Causes - Associated Inborn Errors / Disorders",9,5,"Mutations — Types, Causes"],
-  [3,"Mutations — Consequences",9,8,"Mutations — Types, Causes & Consequences"],
-  [3,"Mutations — Consequences - Structure & Properties",9,5,"Mutations — Consequences"],
-  [3,"Mutations — Consequences - Metabolic Pathways",9,5,"Mutations — Consequences"],
-  [3,"Mutations — Consequences - Enzymes & Regulation",9,5,"Mutations — Consequences"],
-  [3,"Mutations — Consequences - Clinical Biochemistry & Lab Tests",9,5,"Mutations — Consequences"],
-  [3,"Mutations — Consequences - Associated Inborn Errors / Disorders",9,5,"Mutations — Consequences"],
-  [3,"Recombinant DNA Technology (PCR, Blotting)",10,50,"Molecular Biology"],
-  [3,"PCR — Steps, Variants (RT-PCR, Real-time) & Applications",10,15,"Recombinant DNA Technology (PCR, Blotting)"],
-  [3,"PCR — Steps, Variants (RT-PCR, Real-time)",10,7,"PCR — Steps, Variants (RT-PCR, Real-time) & Applications"],
-  [3,"PCR — Steps, Variants (RT-PCR, Real-time) - Structure & Properties",10,5,"PCR — Steps, Variants (RT-PCR, Real-time)"],
-  [3,"PCR — Steps, Variants (RT-PCR, Real-time) - Metabolic Pathways",10,5,"PCR — Steps, Variants (RT-PCR, Real-time)"],
-  [3,"PCR — Steps, Variants (RT-PCR, Real-time) - Enzymes & Regulation",10,5,"PCR — Steps, Variants (RT-PCR, Real-time)"],
-  [3,"PCR — Steps, Variants (RT-PCR, Real-time) - Clinical Biochemistry & Lab Tests",10,5,"PCR — Steps, Variants (RT-PCR, Real-time)"],
-  [3,"PCR — Steps, Variants (RT-PCR, Real-time) - Associated Inborn Errors / Disorders",10,5,"PCR — Steps, Variants (RT-PCR, Real-time)"],
-  [3,"PCR — Applications",10,8,"PCR — Steps, Variants (RT-PCR, Real-time) & Applications"],
-  [3,"PCR — Applications - Structure & Properties",10,5,"PCR — Applications"],
-  [3,"PCR — Applications - Metabolic Pathways",10,5,"PCR — Applications"],
-  [3,"PCR — Applications - Enzymes & Regulation",10,5,"PCR — Applications"],
-  [3,"PCR — Applications - Clinical Biochemistry & Lab Tests",10,5,"PCR — Applications"],
-  [3,"PCR — Applications - Associated Inborn Errors / Disorders",10,5,"PCR — Applications"],
-  [3,"Blotting Techniques — Southern, Northern, Western",10,15,"Recombinant DNA Technology (PCR, Blotting)"],
-  [3,"Blotting Techniques — Southern",10,7,"Blotting Techniques — Southern, Northern, Western"],
-  [3,"Blotting Techniques — Southern - Structure & Properties",10,5,"Blotting Techniques — Southern"],
-  [3,"Blotting Techniques — Southern - Metabolic Pathways",10,5,"Blotting Techniques — Southern"],
-  [3,"Blotting Techniques — Southern - Enzymes & Regulation",10,5,"Blotting Techniques — Southern"],
-  [3,"Blotting Techniques — Southern - Clinical Biochemistry & Lab Tests",10,5,"Blotting Techniques — Southern"],
-  [3,"Blotting Techniques — Southern - Associated Inborn Errors / Disorders",10,5,"Blotting Techniques — Southern"],
-  [3,"Blotting Techniques — Northern, Western",10,8,"Blotting Techniques — Southern, Northern, Western"],
-  [3,"Blotting Techniques — Northern, Western - Structure & Properties",10,5,"Blotting Techniques — Northern, Western"],
-  [3,"Blotting Techniques — Northern, Western - Metabolic Pathways",10,5,"Blotting Techniques — Northern, Western"],
-  [3,"Blotting Techniques — Northern, Western - Enzymes & Regulation",10,5,"Blotting Techniques — Northern, Western"],
-  [3,"Blotting Techniques — Northern, Western - Clinical Biochemistry & Lab Tests",10,5,"Blotting Techniques — Northern, Western"],
-  [3,"Blotting Techniques — Northern, Western - Associated Inborn Errors / Disorders",10,5,"Blotting Techniques — Northern, Western"],
-  [3,"Restriction Enzymes, Vectors & Cloning",10,12,"Recombinant DNA Technology (PCR, Blotting)"],
-  [3,"Restriction Enzymes, Vectors",10,6,"Restriction Enzymes, Vectors & Cloning"],
-  [3,"Restriction Enzymes, Vectors - Structure & Properties",10,5,"Restriction Enzymes, Vectors"],
-  [3,"Restriction Enzymes, Vectors - Metabolic Pathways",10,5,"Restriction Enzymes, Vectors"],
-  [3,"Restriction Enzymes, Vectors - Enzymes & Regulation",10,5,"Restriction Enzymes, Vectors"],
-  [3,"Restriction Enzymes, Vectors - Clinical Biochemistry & Lab Tests",10,5,"Restriction Enzymes, Vectors"],
-  [3,"Restriction Enzymes, Vectors - Associated Inborn Errors / Disorders",10,5,"Restriction Enzymes, Vectors"],
-  [3,"Cloning",10,6,"Restriction Enzymes, Vectors & Cloning"],
-  [3,"Cloning - Structure & Properties",10,5,"Cloning"],
-  [3,"Cloning - Metabolic Pathways",10,5,"Cloning"],
-  [3,"Cloning - Enzymes & Regulation",10,5,"Cloning"],
-  [3,"Cloning - Clinical Biochemistry & Lab Tests",10,5,"Cloning"],
-  [3,"Cloning - Associated Inborn Errors / Disorders",10,5,"Cloning"],
-  [3,"Metabolism of Carbohydrates",10,60],
-  [3,"Glycolysis & TCA Cycle",10,45,"Metabolism of Carbohydrates"],
-  [3,"Glycolysis — Steps, Enzymes & Regulation",10,15,"Glycolysis & TCA Cycle"],
-  [3,"Glycolysis — Steps, Enzymes",10,7,"Glycolysis — Steps, Enzymes & Regulation"],
-  [3,"Glycolysis — Steps, Enzymes - Structure & Properties",10,5,"Glycolysis — Steps, Enzymes"],
-  [3,"Glycolysis — Steps, Enzymes - Metabolic Pathways",10,5,"Glycolysis — Steps, Enzymes"],
-  [3,"Glycolysis — Steps, Enzymes - Enzymes & Regulation",10,5,"Glycolysis — Steps, Enzymes"],
-  [3,"Glycolysis — Steps, Enzymes - Clinical Biochemistry & Lab Tests",10,5,"Glycolysis — Steps, Enzymes"],
-  [3,"Glycolysis — Steps, Enzymes - Associated Inborn Errors / Disorders",10,5,"Glycolysis — Steps, Enzymes"],
-  [3,"Glycolysis — Regulation",10,8,"Glycolysis — Steps, Enzymes & Regulation"],
-  [3,"Glycolysis — Regulation - Structure & Properties",10,5,"Glycolysis — Regulation"],
-  [3,"Glycolysis — Regulation - Metabolic Pathways",10,5,"Glycolysis — Regulation"],
-  [3,"Glycolysis — Regulation - Enzymes & Regulation",10,5,"Glycolysis — Regulation"],
-  [3,"Glycolysis — Regulation - Clinical Biochemistry & Lab Tests",10,5,"Glycolysis — Regulation"],
-  [3,"Glycolysis — Regulation - Associated Inborn Errors / Disorders",10,5,"Glycolysis — Regulation"],
-  [3,"Pyruvate Dehydrogenase Complex & Entry to TCA",10,12,"Glycolysis & TCA Cycle"],
-  [3,"Pyruvate Dehydrogenase Complex",10,6,"Pyruvate Dehydrogenase Complex & Entry to TCA"],
-  [3,"Pyruvate Dehydrogenase Complex - Structure & Properties",10,5,"Pyruvate Dehydrogenase Complex"],
-  [3,"Pyruvate Dehydrogenase Complex - Metabolic Pathways",10,5,"Pyruvate Dehydrogenase Complex"],
-  [3,"Pyruvate Dehydrogenase Complex - Enzymes & Regulation",10,5,"Pyruvate Dehydrogenase Complex"],
-  [3,"Pyruvate Dehydrogenase Complex - Clinical Biochemistry & Lab Tests",10,5,"Pyruvate Dehydrogenase Complex"],
-  [3,"Pyruvate Dehydrogenase Complex - Associated Inborn Errors / Disorders",10,5,"Pyruvate Dehydrogenase Complex"],
-  [3,"Entry to TCA",10,6,"Pyruvate Dehydrogenase Complex & Entry to TCA"],
-  [3,"Entry to TCA - Structure & Properties",10,5,"Entry to TCA"],
-  [3,"Entry to TCA - Metabolic Pathways",10,5,"Entry to TCA"],
-  [3,"Entry to TCA - Enzymes & Regulation",10,5,"Entry to TCA"],
-  [3,"Entry to TCA - Clinical Biochemistry & Lab Tests",10,5,"Entry to TCA"],
-  [3,"Entry to TCA - Associated Inborn Errors / Disorders",10,5,"Entry to TCA"],
-  [3,"TCA Cycle — Steps, Energy Yield & Regulation",10,15,"Glycolysis & TCA Cycle"],
-  [3,"TCA Cycle — Steps, Energy Yield",10,7,"TCA Cycle — Steps, Energy Yield & Regulation"],
-  [3,"TCA Cycle — Steps, Energy Yield - Structure & Properties",10,5,"TCA Cycle — Steps, Energy Yield"],
-  [3,"TCA Cycle — Steps, Energy Yield - Metabolic Pathways",10,5,"TCA Cycle — Steps, Energy Yield"],
-  [3,"TCA Cycle — Steps, Energy Yield - Enzymes & Regulation",10,5,"TCA Cycle — Steps, Energy Yield"],
-  [3,"TCA Cycle — Steps, Energy Yield - Clinical Biochemistry & Lab Tests",10,5,"TCA Cycle — Steps, Energy Yield"],
-  [3,"TCA Cycle — Steps, Energy Yield - Associated Inborn Errors / Disorders",10,5,"TCA Cycle — Steps, Energy Yield"],
-  [3,"TCA Cycle — Regulation",10,8,"TCA Cycle — Steps, Energy Yield & Regulation"],
-  [3,"TCA Cycle — Regulation - Structure & Properties",10,5,"TCA Cycle — Regulation"],
-  [3,"TCA Cycle — Regulation - Metabolic Pathways",10,5,"TCA Cycle — Regulation"],
-  [3,"TCA Cycle — Regulation - Enzymes & Regulation",10,5,"TCA Cycle — Regulation"],
-  [3,"TCA Cycle — Regulation - Clinical Biochemistry & Lab Tests",10,5,"TCA Cycle — Regulation"],
-  [3,"TCA Cycle — Regulation - Associated Inborn Errors / Disorders",10,5,"TCA Cycle — Regulation"],
-  [3,"Gluconeogenesis & Glycogen Metabolism",10,45,"Metabolism of Carbohydrates"],
-  [3,"Gluconeogenesis — Substrates, Bypass Enzymes & Regulation",10,15,"Gluconeogenesis & Glycogen Metabolism"],
-  [3,"Gluconeogenesis — Substrates, Bypass Enzymes",10,7,"Gluconeogenesis — Substrates, Bypass Enzymes & Regulation"],
-  [3,"Gluconeogenesis — Substrates, Bypass Enzymes - Structure & Properties",10,5,"Gluconeogenesis — Substrates, Bypass Enzymes"],
-  [3,"Gluconeogenesis — Substrates, Bypass Enzymes - Metabolic Pathways",10,5,"Gluconeogenesis — Substrates, Bypass Enzymes"],
-  [3,"Gluconeogenesis — Substrates, Bypass Enzymes - Enzymes & Regulation",10,5,"Gluconeogenesis — Substrates, Bypass Enzymes"],
-  [3,"Gluconeogenesis — Substrates, Bypass Enzymes - Clinical Biochemistry & Lab Tests",10,5,"Gluconeogenesis — Substrates, Bypass Enzymes"],
-  [3,"Gluconeogenesis — Substrates, Bypass Enzymes - Associated Inborn Errors / Disorders",10,5,"Gluconeogenesis — Substrates, Bypass Enzymes"],
-  [3,"Gluconeogenesis — Regulation",10,8,"Gluconeogenesis — Substrates, Bypass Enzymes & Regulation"],
-  [3,"Gluconeogenesis — Regulation - Structure & Properties",10,5,"Gluconeogenesis — Regulation"],
-  [3,"Gluconeogenesis — Regulation - Metabolic Pathways",10,5,"Gluconeogenesis — Regulation"],
-  [3,"Gluconeogenesis — Regulation - Enzymes & Regulation",10,5,"Gluconeogenesis — Regulation"],
-  [3,"Gluconeogenesis — Regulation - Clinical Biochemistry & Lab Tests",10,5,"Gluconeogenesis — Regulation"],
-  [3,"Gluconeogenesis — Regulation - Associated Inborn Errors / Disorders",10,5,"Gluconeogenesis — Regulation"],
-  [3,"Glycogenesis & Glycogenolysis — Enzymes & Disorders",10,15,"Gluconeogenesis & Glycogen Metabolism"],
-  [3,"Glycogenesis & Glycogenolysis — Enzymes",10,7,"Glycogenesis & Glycogenolysis — Enzymes & Disorders"],
-  [3,"Glycogenesis & Glycogenolysis — Enzymes - Structure & Properties",10,5,"Glycogenesis & Glycogenolysis — Enzymes"],
-  [3,"Glycogenesis & Glycogenolysis — Enzymes - Metabolic Pathways",10,5,"Glycogenesis & Glycogenolysis — Enzymes"],
-  [3,"Glycogenesis & Glycogenolysis — Enzymes - Enzymes & Regulation",10,5,"Glycogenesis & Glycogenolysis — Enzymes"],
-  [3,"Glycogenesis & Glycogenolysis — Enzymes - Clinical Biochemistry & Lab Tests",10,5,"Glycogenesis & Glycogenolysis — Enzymes"],
-  [3,"Glycogenesis & Glycogenolysis — Enzymes - Associated Inborn Errors / Disorders",10,5,"Glycogenesis & Glycogenolysis — Enzymes"],
-  [3,"Glycogenesis & Glycogenolysis — Disorders",10,8,"Glycogenesis & Glycogenolysis — Enzymes & Disorders"],
-  [3,"Glycogenesis & Glycogenolysis — Disorders - Structure & Properties",10,5,"Glycogenesis & Glycogenolysis — Disorders"],
-  [3,"Glycogenesis & Glycogenolysis — Disorders - Metabolic Pathways",10,5,"Glycogenesis & Glycogenolysis — Disorders"],
-  [3,"Glycogenesis & Glycogenolysis — Disorders - Enzymes & Regulation",10,5,"Glycogenesis & Glycogenolysis — Disorders"],
-  [3,"Glycogenesis & Glycogenolysis — Disorders - Clinical Biochemistry & Lab Tests",10,5,"Glycogenesis & Glycogenolysis — Disorders"],
-  [3,"Glycogenesis & Glycogenolysis — Disorders - Associated Inborn Errors / Disorders",10,5,"Glycogenesis & Glycogenolysis — Disorders"],
-  [3,"Glycogen Storage Diseases (Von Gierke, Pompe, McArdle)",10,12,"Gluconeogenesis & Glycogen Metabolism"],
-  [3,"Glycogen Storage Diseases (Von Gierke",10,6,"Glycogen Storage Diseases (Von Gierke, Pompe, McArdle)"],
-  [3,"Glycogen Storage Diseases (Von Gierke - Structure & Properties",10,5,"Glycogen Storage Diseases (Von Gierke"],
-  [3,"Glycogen Storage Diseases (Von Gierke - Metabolic Pathways",10,5,"Glycogen Storage Diseases (Von Gierke"],
-  [3,"Glycogen Storage Diseases (Von Gierke - Enzymes & Regulation",10,5,"Glycogen Storage Diseases (Von Gierke"],
-  [3,"Glycogen Storage Diseases (Von Gierke - Clinical Biochemistry & Lab Tests",10,5,"Glycogen Storage Diseases (Von Gierke"],
-  [3,"Glycogen Storage Diseases (Von Gierke - Associated Inborn Errors / Disorders",10,5,"Glycogen Storage Diseases (Von Gierke"],
-  [3,"Pompe, McArdle)",10,6,"Glycogen Storage Diseases (Von Gierke, Pompe, McArdle)"],
-  [3,"Pompe, McArdle) - Structure & Properties",10,5,"Pompe, McArdle)"],
-  [3,"Pompe, McArdle) - Metabolic Pathways",10,5,"Pompe, McArdle)"],
-  [3,"Pompe, McArdle) - Enzymes & Regulation",10,5,"Pompe, McArdle)"],
-  [3,"Pompe, McArdle) - Clinical Biochemistry & Lab Tests",10,5,"Pompe, McArdle)"],
-  [3,"Pompe, McArdle) - Associated Inborn Errors / Disorders",10,5,"Pompe, McArdle)"],
-  [3,"HMP Shunt & Uronic Acid Pathway",9,35,"Metabolism of Carbohydrates"],
-  [3,"HMP Shunt — Steps, NADPH & G6PD Deficiency",9,18,"HMP Shunt & Uronic Acid Pathway"],
-  [3,"HMP Shunt — Steps, NADPH",9,9,"HMP Shunt — Steps, NADPH & G6PD Deficiency"],
-  [3,"HMP Shunt — Steps, NADPH - Structure & Properties",9,5,"HMP Shunt — Steps, NADPH"],
-  [3,"HMP Shunt — Steps, NADPH - Metabolic Pathways",9,5,"HMP Shunt — Steps, NADPH"],
-  [3,"HMP Shunt — Steps, NADPH - Enzymes & Regulation",9,5,"HMP Shunt — Steps, NADPH"],
-  [3,"HMP Shunt — Steps, NADPH - Clinical Biochemistry & Lab Tests",9,5,"HMP Shunt — Steps, NADPH"],
-  [3,"HMP Shunt — Steps, NADPH - Associated Inborn Errors / Disorders",9,5,"HMP Shunt — Steps, NADPH"],
-  [3,"HMP Shunt — G6PD Deficiency",9,9,"HMP Shunt — Steps, NADPH & G6PD Deficiency"],
-  [3,"HMP Shunt — G6PD Deficiency - Structure & Properties",9,5,"HMP Shunt — G6PD Deficiency"],
-  [3,"HMP Shunt — G6PD Deficiency - Metabolic Pathways",9,5,"HMP Shunt — G6PD Deficiency"],
-  [3,"HMP Shunt — G6PD Deficiency - Enzymes & Regulation",9,5,"HMP Shunt — G6PD Deficiency"],
-  [3,"HMP Shunt — G6PD Deficiency - Clinical Biochemistry & Lab Tests",9,5,"HMP Shunt — G6PD Deficiency"],
-  [3,"HMP Shunt — G6PD Deficiency - Associated Inborn Errors / Disorders",9,5,"HMP Shunt — G6PD Deficiency"],
-  [3,"Uronic Acid & Other Carbohydrate Pathways",9,12,"HMP Shunt & Uronic Acid Pathway"],
-  [3,"Uronic Acid",9,6,"Uronic Acid & Other Carbohydrate Pathways"],
-  [3,"Uronic Acid - Structure & Properties",9,5,"Uronic Acid"],
-  [3,"Uronic Acid - Metabolic Pathways",9,5,"Uronic Acid"],
-  [3,"Uronic Acid - Enzymes & Regulation",9,5,"Uronic Acid"],
-  [3,"Uronic Acid - Clinical Biochemistry & Lab Tests",9,5,"Uronic Acid"],
-  [3,"Uronic Acid - Associated Inborn Errors / Disorders",9,5,"Uronic Acid"],
-  [3,"Other Carbohydrate Pathways",9,6,"Uronic Acid & Other Carbohydrate Pathways"],
-  [3,"Other Carbohydrate Pathways - Structure & Properties",9,5,"Other Carbohydrate Pathways"],
-  [3,"Other Carbohydrate Pathways - Metabolic Pathways",9,5,"Other Carbohydrate Pathways"],
-  [3,"Other Carbohydrate Pathways - Enzymes & Regulation",9,5,"Other Carbohydrate Pathways"],
-  [3,"Other Carbohydrate Pathways - Clinical Biochemistry & Lab Tests",9,5,"Other Carbohydrate Pathways"],
-  [3,"Other Carbohydrate Pathways - Associated Inborn Errors / Disorders",9,5,"Other Carbohydrate Pathways"],
-  [3,"Metabolism of Lipids",10,60],
-  [3,"Fatty Acid Oxidation & Synthesis",10,45,"Metabolism of Lipids"],
-  [3,"β-Oxidation of Fatty Acids — Steps & Energy Yield",10,15,"Fatty Acid Oxidation & Synthesis"],
-  [3,"β-Oxidation of Fatty Acids — Steps",10,7,"β-Oxidation of Fatty Acids — Steps & Energy Yield"],
-  [3,"β-Oxidation of Fatty Acids — Steps - Structure & Properties",10,5,"β-Oxidation of Fatty Acids — Steps"],
-  [3,"β-Oxidation of Fatty Acids — Steps - Metabolic Pathways",10,5,"β-Oxidation of Fatty Acids — Steps"],
-  [3,"β-Oxidation of Fatty Acids — Steps - Enzymes & Regulation",10,5,"β-Oxidation of Fatty Acids — Steps"],
-  [3,"β-Oxidation of Fatty Acids — Steps - Clinical Biochemistry & Lab Tests",10,5,"β-Oxidation of Fatty Acids — Steps"],
-  [3,"β-Oxidation of Fatty Acids — Steps - Associated Inborn Errors / Disorders",10,5,"β-Oxidation of Fatty Acids — Steps"],
-  [3,"β-Oxidation of Fatty Acids — Energy Yield",10,8,"β-Oxidation of Fatty Acids — Steps & Energy Yield"],
-  [3,"β-Oxidation of Fatty Acids — Energy Yield - Structure & Properties",10,5,"β-Oxidation of Fatty Acids — Energy Yield"],
-  [3,"β-Oxidation of Fatty Acids — Energy Yield - Metabolic Pathways",10,5,"β-Oxidation of Fatty Acids — Energy Yield"],
-  [3,"β-Oxidation of Fatty Acids — Energy Yield - Enzymes & Regulation",10,5,"β-Oxidation of Fatty Acids — Energy Yield"],
-  [3,"β-Oxidation of Fatty Acids — Energy Yield - Clinical Biochemistry & Lab Tests",10,5,"β-Oxidation of Fatty Acids — Energy Yield"],
-  [3,"β-Oxidation of Fatty Acids — Energy Yield - Associated Inborn Errors / Disorders",10,5,"β-Oxidation of Fatty Acids — Energy Yield"],
-  [3,"Fatty Acid Synthesis — Steps, Enzymes & Regulation",10,15,"Fatty Acid Oxidation & Synthesis"],
-  [3,"Fatty Acid Synthesis — Steps, Enzymes",10,7,"Fatty Acid Synthesis — Steps, Enzymes & Regulation"],
-  [3,"Fatty Acid Synthesis — Steps, Enzymes - Structure & Properties",10,5,"Fatty Acid Synthesis — Steps, Enzymes"],
-  [3,"Fatty Acid Synthesis — Steps, Enzymes - Metabolic Pathways",10,5,"Fatty Acid Synthesis — Steps, Enzymes"],
-  [3,"Fatty Acid Synthesis — Steps, Enzymes - Enzymes & Regulation",10,5,"Fatty Acid Synthesis — Steps, Enzymes"],
-  [3,"Fatty Acid Synthesis — Steps, Enzymes - Clinical Biochemistry & Lab Tests",10,5,"Fatty Acid Synthesis — Steps, Enzymes"],
-  [3,"Fatty Acid Synthesis — Steps, Enzymes - Associated Inborn Errors / Disorders",10,5,"Fatty Acid Synthesis — Steps, Enzymes"],
-  [3,"Fatty Acid Synthesis — Regulation",10,8,"Fatty Acid Synthesis — Steps, Enzymes & Regulation"],
-  [3,"Fatty Acid Synthesis — Regulation - Structure & Properties",10,5,"Fatty Acid Synthesis — Regulation"],
-  [3,"Fatty Acid Synthesis — Regulation - Metabolic Pathways",10,5,"Fatty Acid Synthesis — Regulation"],
-  [3,"Fatty Acid Synthesis — Regulation - Enzymes & Regulation",10,5,"Fatty Acid Synthesis — Regulation"],
-  [3,"Fatty Acid Synthesis — Regulation - Clinical Biochemistry & Lab Tests",10,5,"Fatty Acid Synthesis — Regulation"],
-  [3,"Fatty Acid Synthesis — Regulation - Associated Inborn Errors / Disorders",10,5,"Fatty Acid Synthesis — Regulation"],
-  [3,"Odd-chain & Unsaturated FA Oxidation",10,12,"Fatty Acid Oxidation & Synthesis"],
-  [3,"Odd-chain",10,6,"Odd-chain & Unsaturated FA Oxidation"],
-  [3,"Odd-chain - Structure & Properties",10,5,"Odd-chain"],
-  [3,"Odd-chain - Metabolic Pathways",10,5,"Odd-chain"],
-  [3,"Odd-chain - Enzymes & Regulation",10,5,"Odd-chain"],
-  [3,"Odd-chain - Clinical Biochemistry & Lab Tests",10,5,"Odd-chain"],
-  [3,"Odd-chain - Associated Inborn Errors / Disorders",10,5,"Odd-chain"],
-  [3,"Unsaturated FA Oxidation",10,6,"Odd-chain & Unsaturated FA Oxidation"],
-  [3,"Unsaturated FA Oxidation - Structure & Properties",10,5,"Unsaturated FA Oxidation"],
-  [3,"Unsaturated FA Oxidation - Metabolic Pathways",10,5,"Unsaturated FA Oxidation"],
-  [3,"Unsaturated FA Oxidation - Enzymes & Regulation",10,5,"Unsaturated FA Oxidation"],
-  [3,"Unsaturated FA Oxidation - Clinical Biochemistry & Lab Tests",10,5,"Unsaturated FA Oxidation"],
-  [3,"Unsaturated FA Oxidation - Associated Inborn Errors / Disorders",10,5,"Unsaturated FA Oxidation"],
-  [3,"Cholesterol Metabolism & Bile Salts",9,40,"Metabolism of Lipids"],
-  [3,"Cholesterol Synthesis — HMG-CoA Reductase & Regulation",9,15,"Cholesterol Metabolism & Bile Salts"],
-  [3,"Cholesterol Synthesis — HMG-CoA Reductase",9,7,"Cholesterol Synthesis — HMG-CoA Reductase & Regulation"],
-  [3,"Cholesterol Synthesis — HMG-CoA Reductase - Structure & Properties",9,5,"Cholesterol Synthesis — HMG-CoA Reductase"],
-  [3,"Cholesterol Synthesis — HMG-CoA Reductase - Metabolic Pathways",9,5,"Cholesterol Synthesis — HMG-CoA Reductase"],
-  [3,"Cholesterol Synthesis — HMG-CoA Reductase - Enzymes & Regulation",9,5,"Cholesterol Synthesis — HMG-CoA Reductase"],
-  [3,"Cholesterol Synthesis — HMG-CoA Reductase - Clinical Biochemistry & Lab Tests",9,5,"Cholesterol Synthesis — HMG-CoA Reductase"],
-  [3,"Cholesterol Synthesis — HMG-CoA Reductase - Associated Inborn Errors / Disorders",9,5,"Cholesterol Synthesis — HMG-CoA Reductase"],
-  [3,"Cholesterol Synthesis — Regulation",9,8,"Cholesterol Synthesis — HMG-CoA Reductase & Regulation"],
-  [3,"Cholesterol Synthesis — Regulation - Structure & Properties",9,5,"Cholesterol Synthesis — Regulation"],
-  [3,"Cholesterol Synthesis — Regulation - Metabolic Pathways",9,5,"Cholesterol Synthesis — Regulation"],
-  [3,"Cholesterol Synthesis — Regulation - Enzymes & Regulation",9,5,"Cholesterol Synthesis — Regulation"],
-  [3,"Cholesterol Synthesis — Regulation - Clinical Biochemistry & Lab Tests",9,5,"Cholesterol Synthesis — Regulation"],
-  [3,"Cholesterol Synthesis — Regulation - Associated Inborn Errors / Disorders",9,5,"Cholesterol Synthesis — Regulation"],
-  [3,"Bile Acids — Synthesis, Conjugation & Enterohepatic Circulation",9,15,"Cholesterol Metabolism & Bile Salts"],
-  [3,"Bile Acids — Synthesis, Conjugation",9,7,"Bile Acids — Synthesis, Conjugation & Enterohepatic Circulation"],
-  [3,"Bile Acids — Synthesis, Conjugation - Structure & Properties",9,5,"Bile Acids — Synthesis, Conjugation"],
-  [3,"Bile Acids — Synthesis, Conjugation - Metabolic Pathways",9,5,"Bile Acids — Synthesis, Conjugation"],
-  [3,"Bile Acids — Synthesis, Conjugation - Enzymes & Regulation",9,5,"Bile Acids — Synthesis, Conjugation"],
-  [3,"Bile Acids — Synthesis, Conjugation - Clinical Biochemistry & Lab Tests",9,5,"Bile Acids — Synthesis, Conjugation"],
-  [3,"Bile Acids — Synthesis, Conjugation - Associated Inborn Errors / Disorders",9,5,"Bile Acids — Synthesis, Conjugation"],
-  [3,"Bile Acids — Enterohepatic Circulation",9,8,"Bile Acids — Synthesis, Conjugation & Enterohepatic Circulation"],
-  [3,"Bile Acids — Enterohepatic Circulation - Structure & Properties",9,5,"Bile Acids — Enterohepatic Circulation"],
-  [3,"Bile Acids — Enterohepatic Circulation - Metabolic Pathways",9,5,"Bile Acids — Enterohepatic Circulation"],
-  [3,"Bile Acids — Enterohepatic Circulation - Enzymes & Regulation",9,5,"Bile Acids — Enterohepatic Circulation"],
-  [3,"Bile Acids — Enterohepatic Circulation - Clinical Biochemistry & Lab Tests",9,5,"Bile Acids — Enterohepatic Circulation"],
-  [3,"Bile Acids — Enterohepatic Circulation - Associated Inborn Errors / Disorders",9,5,"Bile Acids — Enterohepatic Circulation"],
-  [3,"Lipoprotein Metabolism & Dyslipidemias",10,50,"Metabolism of Lipids"],
-  [3,"Lipoproteins — Structure, Types (CM, VLDL, LDL, HDL)",10,15,"Lipoprotein Metabolism & Dyslipidemias"],
-  [3,"Lipoproteins — Structure",10,7,"Lipoproteins — Structure, Types (CM, VLDL, LDL, HDL)"],
-  [3,"Lipoproteins — Structure - Structure & Properties",10,5,"Lipoproteins — Structure"],
-  [3,"Lipoproteins — Structure - Metabolic Pathways",10,5,"Lipoproteins — Structure"],
-  [3,"Lipoproteins — Structure - Enzymes & Regulation",10,5,"Lipoproteins — Structure"],
-  [3,"Lipoproteins — Structure - Clinical Biochemistry & Lab Tests",10,5,"Lipoproteins — Structure"],
-  [3,"Lipoproteins — Structure - Associated Inborn Errors / Disorders",10,5,"Lipoproteins — Structure"],
-  [3,"Lipoproteins — Types (CM, VLDL, LDL, HDL)",10,8,"Lipoproteins — Structure, Types (CM, VLDL, LDL, HDL)"],
-  [3,"Lipoproteins — Types (CM, VLDL, LDL, HDL) - Structure & Properties",10,5,"Lipoproteins — Types (CM, VLDL, LDL, HDL)"],
-  [3,"Lipoproteins — Types (CM, VLDL, LDL, HDL) - Metabolic Pathways",10,5,"Lipoproteins — Types (CM, VLDL, LDL, HDL)"],
-  [3,"Lipoproteins — Types (CM, VLDL, LDL, HDL) - Enzymes & Regulation",10,5,"Lipoproteins — Types (CM, VLDL, LDL, HDL)"],
-  [3,"Lipoproteins — Types (CM, VLDL, LDL, HDL) - Clinical Biochemistry & Lab Tests",10,5,"Lipoproteins — Types (CM, VLDL, LDL, HDL)"],
-  [3,"Lipoproteins — Types (CM, VLDL, LDL, HDL) - Associated Inborn Errors / Disorders",10,5,"Lipoproteins — Types (CM, VLDL, LDL, HDL)"],
-  [3,"Lipoprotein Metabolism — Exogenous & Endogenous Pathways",10,15,"Lipoprotein Metabolism & Dyslipidemias"],
-  [3,"Lipoprotein Metabolism — Exogenous",10,7,"Lipoprotein Metabolism — Exogenous & Endogenous Pathways"],
-  [3,"Lipoprotein Metabolism — Exogenous - Structure & Properties",10,5,"Lipoprotein Metabolism — Exogenous"],
-  [3,"Lipoprotein Metabolism — Exogenous - Metabolic Pathways",10,5,"Lipoprotein Metabolism — Exogenous"],
-  [3,"Lipoprotein Metabolism — Exogenous - Enzymes & Regulation",10,5,"Lipoprotein Metabolism — Exogenous"],
-  [3,"Lipoprotein Metabolism — Exogenous - Clinical Biochemistry & Lab Tests",10,5,"Lipoprotein Metabolism — Exogenous"],
-  [3,"Lipoprotein Metabolism — Exogenous - Associated Inborn Errors / Disorders",10,5,"Lipoprotein Metabolism — Exogenous"],
-  [3,"Lipoprotein Metabolism — Endogenous Pathways",10,8,"Lipoprotein Metabolism — Exogenous & Endogenous Pathways"],
-  [3,"Lipoprotein Metabolism — Endogenous Pathways - Structure & Properties",10,5,"Lipoprotein Metabolism — Endogenous Pathways"],
-  [3,"Lipoprotein Metabolism — Endogenous Pathways - Metabolic Pathways",10,5,"Lipoprotein Metabolism — Endogenous Pathways"],
-  [3,"Lipoprotein Metabolism — Endogenous Pathways - Enzymes & Regulation",10,5,"Lipoprotein Metabolism — Endogenous Pathways"],
-  [3,"Lipoprotein Metabolism — Endogenous Pathways - Clinical Biochemistry & Lab Tests",10,5,"Lipoprotein Metabolism — Endogenous Pathways"],
-  [3,"Lipoprotein Metabolism — Endogenous Pathways - Associated Inborn Errors / Disorders",10,5,"Lipoprotein Metabolism — Endogenous Pathways"],
-  [3,"Dyslipidemias — Fredrickson Classification & Familial Types",10,15,"Lipoprotein Metabolism & Dyslipidemias"],
-  [3,"Dyslipidemias — Fredrickson Classification",10,7,"Dyslipidemias — Fredrickson Classification & Familial Types"],
-  [3,"Dyslipidemias — Fredrickson Classification - Structure & Properties",10,5,"Dyslipidemias — Fredrickson Classification"],
-  [3,"Dyslipidemias — Fredrickson Classification - Metabolic Pathways",10,5,"Dyslipidemias — Fredrickson Classification"],
-  [3,"Dyslipidemias — Fredrickson Classification - Enzymes & Regulation",10,5,"Dyslipidemias — Fredrickson Classification"],
-  [3,"Dyslipidemias — Fredrickson Classification - Clinical Biochemistry & Lab Tests",10,5,"Dyslipidemias — Fredrickson Classification"],
-  [3,"Dyslipidemias — Fredrickson Classification - Associated Inborn Errors / Disorders",10,5,"Dyslipidemias — Fredrickson Classification"],
-  [3,"Dyslipidemias — Familial Types",10,8,"Dyslipidemias — Fredrickson Classification & Familial Types"],
-  [3,"Dyslipidemias — Familial Types - Structure & Properties",10,5,"Dyslipidemias — Familial Types"],
-  [3,"Dyslipidemias — Familial Types - Metabolic Pathways",10,5,"Dyslipidemias — Familial Types"],
-  [3,"Dyslipidemias — Familial Types - Enzymes & Regulation",10,5,"Dyslipidemias — Familial Types"],
-  [3,"Dyslipidemias — Familial Types - Clinical Biochemistry & Lab Tests",10,5,"Dyslipidemias — Familial Types"],
-  [3,"Dyslipidemias — Familial Types - Associated Inborn Errors / Disorders",10,5,"Dyslipidemias — Familial Types"],
-  [3,"Ketone Bodies",8,25,"Metabolism of Lipids"],
-  [3,"Ketogenesis — Synthesis, Utilization & Ketoacidosis",8,20,"Ketone Bodies"],
-  [3,"Ketogenesis — Synthesis, Utilization",8,10,"Ketogenesis — Synthesis, Utilization & Ketoacidosis"],
-  [3,"Ketogenesis — Synthesis, Utilization - Structure & Properties",8,5,"Ketogenesis — Synthesis, Utilization"],
-  [3,"Ketogenesis — Synthesis, Utilization - Metabolic Pathways",8,5,"Ketogenesis — Synthesis, Utilization"],
-  [3,"Ketogenesis — Synthesis, Utilization - Enzymes & Regulation",8,5,"Ketogenesis — Synthesis, Utilization"],
-  [3,"Ketogenesis — Synthesis, Utilization - Clinical Biochemistry & Lab Tests",8,5,"Ketogenesis — Synthesis, Utilization"],
-  [3,"Ketogenesis — Synthesis, Utilization - Associated Inborn Errors / Disorders",8,5,"Ketogenesis — Synthesis, Utilization"],
-  [3,"Ketogenesis — Ketoacidosis",8,10,"Ketogenesis — Synthesis, Utilization & Ketoacidosis"],
-  [3,"Ketogenesis — Ketoacidosis - Structure & Properties",8,5,"Ketogenesis — Ketoacidosis"],
-  [3,"Ketogenesis — Ketoacidosis - Metabolic Pathways",8,5,"Ketogenesis — Ketoacidosis"],
-  [3,"Ketogenesis — Ketoacidosis - Enzymes & Regulation",8,5,"Ketogenesis — Ketoacidosis"],
-  [3,"Ketogenesis — Ketoacidosis - Clinical Biochemistry & Lab Tests",8,5,"Ketogenesis — Ketoacidosis"],
-  [3,"Ketogenesis — Ketoacidosis - Associated Inborn Errors / Disorders",8,5,"Ketogenesis — Ketoacidosis"],
-  [3,"Metabolism of Proteins & Amino Acids",10,60],
-  [3,"Urea Cycle & Ammonia Transport",10,35,"Metabolism of Proteins & Amino Acids"],
-  [3,"Transamination, Deamination & Ammonia Transport",10,15,"Urea Cycle & Ammonia Transport"],
-  [3,"Transamination, Deamination",10,7,"Transamination, Deamination & Ammonia Transport"],
-  [3,"Transamination, Deamination - Structure & Properties",10,5,"Transamination, Deamination"],
-  [3,"Transamination, Deamination - Metabolic Pathways",10,5,"Transamination, Deamination"],
-  [3,"Transamination, Deamination - Enzymes & Regulation",10,5,"Transamination, Deamination"],
-  [3,"Transamination, Deamination - Clinical Biochemistry & Lab Tests",10,5,"Transamination, Deamination"],
-  [3,"Transamination, Deamination - Associated Inborn Errors / Disorders",10,5,"Transamination, Deamination"],
-  [3,"Ammonia Transport",10,8,"Transamination, Deamination & Ammonia Transport"],
-  [3,"Ammonia Transport - Structure & Properties",10,5,"Ammonia Transport"],
-  [3,"Ammonia Transport - Metabolic Pathways",10,5,"Ammonia Transport"],
-  [3,"Ammonia Transport - Enzymes & Regulation",10,5,"Ammonia Transport"],
-  [3,"Ammonia Transport - Clinical Biochemistry & Lab Tests",10,5,"Ammonia Transport"],
-  [3,"Ammonia Transport - Associated Inborn Errors / Disorders",10,5,"Ammonia Transport"],
-  [3,"Urea Cycle — Steps, Enzymes & Enzyme Deficiencies",10,18,"Urea Cycle & Ammonia Transport"],
-  [3,"Urea Cycle — Steps, Enzymes",10,9,"Urea Cycle — Steps, Enzymes & Enzyme Deficiencies"],
-  [3,"Urea Cycle — Steps, Enzymes - Structure & Properties",10,5,"Urea Cycle — Steps, Enzymes"],
-  [3,"Urea Cycle — Steps, Enzymes - Metabolic Pathways",10,5,"Urea Cycle — Steps, Enzymes"],
-  [3,"Urea Cycle — Steps, Enzymes - Enzymes & Regulation",10,5,"Urea Cycle — Steps, Enzymes"],
-  [3,"Urea Cycle — Steps, Enzymes - Clinical Biochemistry & Lab Tests",10,5,"Urea Cycle — Steps, Enzymes"],
-  [3,"Urea Cycle — Steps, Enzymes - Associated Inborn Errors / Disorders",10,5,"Urea Cycle — Steps, Enzymes"],
-  [3,"Urea Cycle — Enzyme Deficiencies",10,9,"Urea Cycle — Steps, Enzymes & Enzyme Deficiencies"],
-  [3,"Urea Cycle — Enzyme Deficiencies - Structure & Properties",10,5,"Urea Cycle — Enzyme Deficiencies"],
-  [3,"Urea Cycle — Enzyme Deficiencies - Metabolic Pathways",10,5,"Urea Cycle — Enzyme Deficiencies"],
-  [3,"Urea Cycle — Enzyme Deficiencies - Enzymes & Regulation",10,5,"Urea Cycle — Enzyme Deficiencies"],
-  [3,"Urea Cycle — Enzyme Deficiencies - Clinical Biochemistry & Lab Tests",10,5,"Urea Cycle — Enzyme Deficiencies"],
-  [3,"Urea Cycle — Enzyme Deficiencies - Associated Inborn Errors / Disorders",10,5,"Urea Cycle — Enzyme Deficiencies"],
-  [3,"Metabolism of Individual Amino Acids (Phe, Tyr, Trp)",10,50,"Metabolism of Proteins & Amino Acids"],
-  [3,"Phenylalanine & Tyrosine Metabolism — PKU, Alkaptonuria",10,18,"Metabolism of Individual Amino Acids (Phe, Tyr, Trp)"],
-  [3,"Phenylalanine & Tyrosine Metabolism — PKU",10,9,"Phenylalanine & Tyrosine Metabolism — PKU, Alkaptonuria"],
-  [3,"Phenylalanine & Tyrosine Metabolism — PKU - Structure & Properties",10,5,"Phenylalanine & Tyrosine Metabolism — PKU"],
-  [3,"Phenylalanine & Tyrosine Metabolism — PKU - Metabolic Pathways",10,5,"Phenylalanine & Tyrosine Metabolism — PKU"],
-  [3,"Phenylalanine & Tyrosine Metabolism — PKU - Enzymes & Regulation",10,5,"Phenylalanine & Tyrosine Metabolism — PKU"],
-  [3,"Phenylalanine & Tyrosine Metabolism — PKU - Clinical Biochemistry & Lab Tests",10,5,"Phenylalanine & Tyrosine Metabolism — PKU"],
-  [3,"Phenylalanine & Tyrosine Metabolism — PKU - Associated Inborn Errors / Disorders",10,5,"Phenylalanine & Tyrosine Metabolism — PKU"],
-  [3,"Phenylalanine & Tyrosine Metabolism — Alkaptonuria",10,9,"Phenylalanine & Tyrosine Metabolism — PKU, Alkaptonuria"],
-  [3,"Phenylalanine & Tyrosine Metabolism — Alkaptonuria - Structure & Properties",10,5,"Phenylalanine & Tyrosine Metabolism — Alkaptonuria"],
-  [3,"Phenylalanine & Tyrosine Metabolism — Alkaptonuria - Metabolic Pathways",10,5,"Phenylalanine & Tyrosine Metabolism — Alkaptonuria"],
-  [3,"Phenylalanine & Tyrosine Metabolism — Alkaptonuria - Enzymes & Regulation",10,5,"Phenylalanine & Tyrosine Metabolism — Alkaptonuria"],
-  [3,"Phenylalanine & Tyrosine Metabolism — Alkaptonuria - Clinical Biochemistry & Lab Tests",10,5,"Phenylalanine & Tyrosine Metabolism — Alkaptonuria"],
-  [3,"Phenylalanine & Tyrosine Metabolism — Alkaptonuria - Associated Inborn Errors / Disorders",10,5,"Phenylalanine & Tyrosine Metabolism — Alkaptonuria"],
-  [3,"Tryptophan, Histidine & Branched-Chain AA Metabolism",10,15,"Metabolism of Individual Amino Acids (Phe, Tyr, Trp)"],
-  [3,"Tryptophan, Histidine",10,7,"Tryptophan, Histidine & Branched-Chain AA Metabolism"],
-  [3,"Tryptophan, Histidine - Structure & Properties",10,5,"Tryptophan, Histidine"],
-  [3,"Tryptophan, Histidine - Metabolic Pathways",10,5,"Tryptophan, Histidine"],
-  [3,"Tryptophan, Histidine - Enzymes & Regulation",10,5,"Tryptophan, Histidine"],
-  [3,"Tryptophan, Histidine - Clinical Biochemistry & Lab Tests",10,5,"Tryptophan, Histidine"],
-  [3,"Tryptophan, Histidine - Associated Inborn Errors / Disorders",10,5,"Tryptophan, Histidine"],
-  [3,"Branched-Chain AA Metabolism",10,8,"Tryptophan, Histidine & Branched-Chain AA Metabolism"],
-  [3,"Branched-Chain AA Metabolism - Structure & Properties",10,5,"Branched-Chain AA Metabolism"],
-  [3,"Branched-Chain AA Metabolism - Metabolic Pathways",10,5,"Branched-Chain AA Metabolism"],
-  [3,"Branched-Chain AA Metabolism - Enzymes & Regulation",10,5,"Branched-Chain AA Metabolism"],
-  [3,"Branched-Chain AA Metabolism - Clinical Biochemistry & Lab Tests",10,5,"Branched-Chain AA Metabolism"],
-  [3,"Branched-Chain AA Metabolism - Associated Inborn Errors / Disorders",10,5,"Branched-Chain AA Metabolism"],
-  [3,"One-Carbon Metabolism — Folate, SAM & Homocysteine",10,15,"Metabolism of Individual Amino Acids (Phe, Tyr, Trp)"],
-  [3,"One-Carbon Metabolism — Folate, SAM",10,7,"One-Carbon Metabolism — Folate, SAM & Homocysteine"],
-  [3,"One-Carbon Metabolism — Folate, SAM - Structure & Properties",10,5,"One-Carbon Metabolism — Folate, SAM"],
-  [3,"One-Carbon Metabolism — Folate, SAM - Metabolic Pathways",10,5,"One-Carbon Metabolism — Folate, SAM"],
-  [3,"One-Carbon Metabolism — Folate, SAM - Enzymes & Regulation",10,5,"One-Carbon Metabolism — Folate, SAM"],
-  [3,"One-Carbon Metabolism — Folate, SAM - Clinical Biochemistry & Lab Tests",10,5,"One-Carbon Metabolism — Folate, SAM"],
-  [3,"One-Carbon Metabolism — Folate, SAM - Associated Inborn Errors / Disorders",10,5,"One-Carbon Metabolism — Folate, SAM"],
-  [3,"One-Carbon Metabolism — Homocysteine",10,8,"One-Carbon Metabolism — Folate, SAM & Homocysteine"],
-  [3,"One-Carbon Metabolism — Homocysteine - Structure & Properties",10,5,"One-Carbon Metabolism — Homocysteine"],
-  [3,"One-Carbon Metabolism — Homocysteine - Metabolic Pathways",10,5,"One-Carbon Metabolism — Homocysteine"],
-  [3,"One-Carbon Metabolism — Homocysteine - Enzymes & Regulation",10,5,"One-Carbon Metabolism — Homocysteine"],
-  [3,"One-Carbon Metabolism — Homocysteine - Clinical Biochemistry & Lab Tests",10,5,"One-Carbon Metabolism — Homocysteine"],
-  [3,"One-Carbon Metabolism — Homocysteine - Associated Inborn Errors / Disorders",10,5,"One-Carbon Metabolism — Homocysteine"],
-  [3,"Heme Metabolism (Synthesis & Porphyrias)",10,45,"Metabolism of Proteins & Amino Acids"],
-  [3,"Heme Synthesis — Steps, Enzymes & Key Sites",10,15,"Heme Metabolism (Synthesis & Porphyrias)"],
-  [3,"Heme Synthesis — Steps, Enzymes",10,7,"Heme Synthesis — Steps, Enzymes & Key Sites"],
-  [3,"Heme Synthesis — Steps, Enzymes - Structure & Properties",10,5,"Heme Synthesis — Steps, Enzymes"],
-  [3,"Heme Synthesis — Steps, Enzymes - Metabolic Pathways",10,5,"Heme Synthesis — Steps, Enzymes"],
-  [3,"Heme Synthesis — Steps, Enzymes - Enzymes & Regulation",10,5,"Heme Synthesis — Steps, Enzymes"],
-  [3,"Heme Synthesis — Steps, Enzymes - Clinical Biochemistry & Lab Tests",10,5,"Heme Synthesis — Steps, Enzymes"],
-  [3,"Heme Synthesis — Steps, Enzymes - Associated Inborn Errors / Disorders",10,5,"Heme Synthesis — Steps, Enzymes"],
-  [3,"Heme Synthesis — Key Sites",10,8,"Heme Synthesis — Steps, Enzymes & Key Sites"],
-  [3,"Heme Synthesis — Key Sites - Structure & Properties",10,5,"Heme Synthesis — Key Sites"],
-  [3,"Heme Synthesis — Key Sites - Metabolic Pathways",10,5,"Heme Synthesis — Key Sites"],
-  [3,"Heme Synthesis — Key Sites - Enzymes & Regulation",10,5,"Heme Synthesis — Key Sites"],
-  [3,"Heme Synthesis — Key Sites - Clinical Biochemistry & Lab Tests",10,5,"Heme Synthesis — Key Sites"],
-  [3,"Heme Synthesis — Key Sites - Associated Inborn Errors / Disorders",10,5,"Heme Synthesis — Key Sites"],
-  [3,"Porphyrias — AIP, PCT & Lead Poisoning",10,15,"Heme Metabolism (Synthesis & Porphyrias)"],
-  [3,"Porphyrias — AIP, PCT",10,7,"Porphyrias — AIP, PCT & Lead Poisoning"],
-  [3,"Porphyrias — AIP, PCT - Structure & Properties",10,5,"Porphyrias — AIP, PCT"],
-  [3,"Porphyrias — AIP, PCT - Metabolic Pathways",10,5,"Porphyrias — AIP, PCT"],
-  [3,"Porphyrias — AIP, PCT - Enzymes & Regulation",10,5,"Porphyrias — AIP, PCT"],
-  [3,"Porphyrias — AIP, PCT - Clinical Biochemistry & Lab Tests",10,5,"Porphyrias — AIP, PCT"],
-  [3,"Porphyrias — AIP, PCT - Associated Inborn Errors / Disorders",10,5,"Porphyrias — AIP, PCT"],
-  [3,"Porphyrias — Lead Poisoning",10,8,"Porphyrias — AIP, PCT & Lead Poisoning"],
-  [3,"Porphyrias — Lead Poisoning - Structure & Properties",10,5,"Porphyrias — Lead Poisoning"],
-  [3,"Porphyrias — Lead Poisoning - Metabolic Pathways",10,5,"Porphyrias — Lead Poisoning"],
-  [3,"Porphyrias — Lead Poisoning - Enzymes & Regulation",10,5,"Porphyrias — Lead Poisoning"],
-  [3,"Porphyrias — Lead Poisoning - Clinical Biochemistry & Lab Tests",10,5,"Porphyrias — Lead Poisoning"],
-  [3,"Porphyrias — Lead Poisoning - Associated Inborn Errors / Disorders",10,5,"Porphyrias — Lead Poisoning"],
-  [3,"Heme Catabolism — Bilirubin Metabolism & Jaundice",10,12,"Heme Metabolism (Synthesis & Porphyrias)"],
-  [3,"Heme Catabolism — Bilirubin Metabolism",10,6,"Heme Catabolism — Bilirubin Metabolism & Jaundice"],
-  [3,"Heme Catabolism — Bilirubin Metabolism - Structure & Properties",10,5,"Heme Catabolism — Bilirubin Metabolism"],
-  [3,"Heme Catabolism — Bilirubin Metabolism - Metabolic Pathways",10,5,"Heme Catabolism — Bilirubin Metabolism"],
-  [3,"Heme Catabolism — Bilirubin Metabolism - Enzymes & Regulation",10,5,"Heme Catabolism — Bilirubin Metabolism"],
-  [3,"Heme Catabolism — Bilirubin Metabolism - Clinical Biochemistry & Lab Tests",10,5,"Heme Catabolism — Bilirubin Metabolism"],
-  [3,"Heme Catabolism — Bilirubin Metabolism - Associated Inborn Errors / Disorders",10,5,"Heme Catabolism — Bilirubin Metabolism"],
-  [3,"Heme Catabolism — Jaundice",10,6,"Heme Catabolism — Bilirubin Metabolism & Jaundice"],
-  [3,"Heme Catabolism — Jaundice - Structure & Properties",10,5,"Heme Catabolism — Jaundice"],
-  [3,"Heme Catabolism — Jaundice - Metabolic Pathways",10,5,"Heme Catabolism — Jaundice"],
-  [3,"Heme Catabolism — Jaundice - Enzymes & Regulation",10,5,"Heme Catabolism — Jaundice"],
-  [3,"Heme Catabolism — Jaundice - Clinical Biochemistry & Lab Tests",10,5,"Heme Catabolism — Jaundice"],
-  [3,"Heme Catabolism — Jaundice - Associated Inborn Errors / Disorders",10,5,"Heme Catabolism — Jaundice"],
-  [3,"Enzymes",9,50],
-  [3,"Enzyme Kinetics (Km, Vmax)",10,40,"Enzymes"],
-  [3,"Michaelis-Menten Kinetics — Km, Vmax & Lineweaver-Burk",10,18,"Enzyme Kinetics (Km, Vmax)"],
-  [3,"Michaelis-Menten Kinetics — Km, Vmax",10,9,"Michaelis-Menten Kinetics — Km, Vmax & Lineweaver-Burk"],
-  [3,"Michaelis-Menten Kinetics — Km, Vmax - Structure & Properties",10,5,"Michaelis-Menten Kinetics — Km, Vmax"],
-  [3,"Michaelis-Menten Kinetics — Km, Vmax - Metabolic Pathways",10,5,"Michaelis-Menten Kinetics — Km, Vmax"],
-  [3,"Michaelis-Menten Kinetics — Km, Vmax - Enzymes & Regulation",10,5,"Michaelis-Menten Kinetics — Km, Vmax"],
-  [3,"Michaelis-Menten Kinetics — Km, Vmax - Clinical Biochemistry & Lab Tests",10,5,"Michaelis-Menten Kinetics — Km, Vmax"],
-  [3,"Michaelis-Menten Kinetics — Km, Vmax - Associated Inborn Errors / Disorders",10,5,"Michaelis-Menten Kinetics — Km, Vmax"],
-  [3,"Michaelis-Menten Kinetics — Lineweaver-Burk",10,9,"Michaelis-Menten Kinetics — Km, Vmax & Lineweaver-Burk"],
-  [3,"Michaelis-Menten Kinetics — Lineweaver-Burk - Structure & Properties",10,5,"Michaelis-Menten Kinetics — Lineweaver-Burk"],
-  [3,"Michaelis-Menten Kinetics — Lineweaver-Burk - Metabolic Pathways",10,5,"Michaelis-Menten Kinetics — Lineweaver-Burk"],
-  [3,"Michaelis-Menten Kinetics — Lineweaver-Burk - Enzymes & Regulation",10,5,"Michaelis-Menten Kinetics — Lineweaver-Burk"],
-  [3,"Michaelis-Menten Kinetics — Lineweaver-Burk - Clinical Biochemistry & Lab Tests",10,5,"Michaelis-Menten Kinetics — Lineweaver-Burk"],
-  [3,"Michaelis-Menten Kinetics — Lineweaver-Burk - Associated Inborn Errors / Disorders",10,5,"Michaelis-Menten Kinetics — Lineweaver-Burk"],
-  [3,"Enzyme Inhibition — Competitive, Non-competitive & Uncompetitive",10,15,"Enzyme Kinetics (Km, Vmax)"],
-  [3,"Enzyme Inhibition — Competitive, Non-competitive",10,7,"Enzyme Inhibition — Competitive, Non-competitive & Uncompetitive"],
-  [3,"Enzyme Inhibition — Competitive, Non-competitive - Structure & Properties",10,5,"Enzyme Inhibition — Competitive, Non-competitive"],
-  [3,"Enzyme Inhibition — Competitive, Non-competitive - Metabolic Pathways",10,5,"Enzyme Inhibition — Competitive, Non-competitive"],
-  [3,"Enzyme Inhibition — Competitive, Non-competitive - Enzymes & Regulation",10,5,"Enzyme Inhibition — Competitive, Non-competitive"],
-  [3,"Enzyme Inhibition — Competitive, Non-competitive - Clinical Biochemistry & Lab Tests",10,5,"Enzyme Inhibition — Competitive, Non-competitive"],
-  [3,"Enzyme Inhibition — Competitive, Non-competitive - Associated Inborn Errors / Disorders",10,5,"Enzyme Inhibition — Competitive, Non-competitive"],
-  [3,"Enzyme Inhibition — Uncompetitive",10,8,"Enzyme Inhibition — Competitive, Non-competitive & Uncompetitive"],
-  [3,"Enzyme Inhibition — Uncompetitive - Structure & Properties",10,5,"Enzyme Inhibition — Uncompetitive"],
-  [3,"Enzyme Inhibition — Uncompetitive - Metabolic Pathways",10,5,"Enzyme Inhibition — Uncompetitive"],
-  [3,"Enzyme Inhibition — Uncompetitive - Enzymes & Regulation",10,5,"Enzyme Inhibition — Uncompetitive"],
-  [3,"Enzyme Inhibition — Uncompetitive - Clinical Biochemistry & Lab Tests",10,5,"Enzyme Inhibition — Uncompetitive"],
-  [3,"Enzyme Inhibition — Uncompetitive - Associated Inborn Errors / Disorders",10,5,"Enzyme Inhibition — Uncompetitive"],
-  [3,"Inhibition & Regulation",9,35,"Enzymes"],
-  [3,"Allosteric Regulation, Covalent Modification & Isoenzymes",9,15,"Inhibition & Regulation"],
-  [3,"Allosteric Regulation, Covalent Modification",9,7,"Allosteric Regulation, Covalent Modification & Isoenzymes"],
-  [3,"Allosteric Regulation, Covalent Modification - Structure & Properties",9,5,"Allosteric Regulation, Covalent Modification"],
-  [3,"Allosteric Regulation, Covalent Modification - Metabolic Pathways",9,5,"Allosteric Regulation, Covalent Modification"],
-  [3,"Allosteric Regulation, Covalent Modification - Enzymes & Regulation",9,5,"Allosteric Regulation, Covalent Modification"],
-  [3,"Allosteric Regulation, Covalent Modification - Clinical Biochemistry & Lab Tests",9,5,"Allosteric Regulation, Covalent Modification"],
-  [3,"Allosteric Regulation, Covalent Modification - Associated Inborn Errors / Disorders",9,5,"Allosteric Regulation, Covalent Modification"],
-  [3,"Isoenzymes",9,8,"Allosteric Regulation, Covalent Modification & Isoenzymes"],
-  [3,"Isoenzymes - Structure & Properties",9,5,"Isoenzymes"],
-  [3,"Isoenzymes - Metabolic Pathways",9,5,"Isoenzymes"],
-  [3,"Isoenzymes - Enzymes & Regulation",9,5,"Isoenzymes"],
-  [3,"Isoenzymes - Clinical Biochemistry & Lab Tests",9,5,"Isoenzymes"],
-  [3,"Isoenzymes - Associated Inborn Errors / Disorders",9,5,"Isoenzymes"],
-  [3,"Clinically Important Enzymes (LDH, CK, AST, ALT)",9,15,"Inhibition & Regulation"],
-  [3,"Clinically Important Enzymes (LDH",9,7,"Clinically Important Enzymes (LDH, CK, AST, ALT)"],
-  [3,"Clinically Important Enzymes (LDH - Structure & Properties",9,5,"Clinically Important Enzymes (LDH"],
-  [3,"Clinically Important Enzymes (LDH - Metabolic Pathways",9,5,"Clinically Important Enzymes (LDH"],
-  [3,"Clinically Important Enzymes (LDH - Enzymes & Regulation",9,5,"Clinically Important Enzymes (LDH"],
-  [3,"Clinically Important Enzymes (LDH - Clinical Biochemistry & Lab Tests",9,5,"Clinically Important Enzymes (LDH"],
-  [3,"Clinically Important Enzymes (LDH - Associated Inborn Errors / Disorders",9,5,"Clinically Important Enzymes (LDH"],
-  [3,"CK, AST, ALT)",9,8,"Clinically Important Enzymes (LDH, CK, AST, ALT)"],
-  [3,"CK, AST, ALT) - Structure & Properties",9,5,"CK, AST, ALT)"],
-  [3,"CK, AST, ALT) - Metabolic Pathways",9,5,"CK, AST, ALT)"],
-  [3,"CK, AST, ALT) - Enzymes & Regulation",9,5,"CK, AST, ALT)"],
-  [3,"CK, AST, ALT) - Clinical Biochemistry & Lab Tests",9,5,"CK, AST, ALT)"],
-  [3,"CK, AST, ALT) - Associated Inborn Errors / Disorders",9,5,"CK, AST, ALT)"],
-  [3,"Biological Oxidation (ETC)",10,45],
-  [3,"Electron Transport Chain — Complexes I–IV",10,18,"Biological Oxidation (ETC)"],
-  [3,"Electron Transport Chain — Basics",10,9,"Electron Transport Chain — Complexes I–IV"],
-  [3,"Electron Transport Chain — Basics - Structure & Properties",10,5,"Electron Transport Chain — Basics"],
-  [3,"Electron Transport Chain — Basics - Metabolic Pathways",10,5,"Electron Transport Chain — Basics"],
-  [3,"Electron Transport Chain — Basics - Enzymes & Regulation",10,5,"Electron Transport Chain — Basics"],
-  [3,"Electron Transport Chain — Basics - Clinical Biochemistry & Lab Tests",10,5,"Electron Transport Chain — Basics"],
-  [3,"Electron Transport Chain — Basics - Associated Inborn Errors / Disorders",10,5,"Electron Transport Chain — Basics"],
-  [3,"Electron Transport Chain — Details",10,9,"Electron Transport Chain — Complexes I–IV"],
-  [3,"Electron Transport Chain — Details - Structure & Properties",10,5,"Electron Transport Chain — Details"],
-  [3,"Electron Transport Chain — Details - Metabolic Pathways",10,5,"Electron Transport Chain — Details"],
-  [3,"Electron Transport Chain — Details - Enzymes & Regulation",10,5,"Electron Transport Chain — Details"],
-  [3,"Electron Transport Chain — Details - Clinical Biochemistry & Lab Tests",10,5,"Electron Transport Chain — Details"],
-  [3,"Electron Transport Chain — Details - Associated Inborn Errors / Disorders",10,5,"Electron Transport Chain — Details"],
-  [3,"Oxidative Phosphorylation & ATP Synthesis (Complex V)",10,15,"Biological Oxidation (ETC)"],
-  [3,"Oxidative Phosphorylation",10,7,"Oxidative Phosphorylation & ATP Synthesis (Complex V)"],
-  [3,"Oxidative Phosphorylation - Structure & Properties",10,5,"Oxidative Phosphorylation"],
-  [3,"Oxidative Phosphorylation - Metabolic Pathways",10,5,"Oxidative Phosphorylation"],
-  [3,"Oxidative Phosphorylation - Enzymes & Regulation",10,5,"Oxidative Phosphorylation"],
-  [3,"Oxidative Phosphorylation - Clinical Biochemistry & Lab Tests",10,5,"Oxidative Phosphorylation"],
-  [3,"Oxidative Phosphorylation - Associated Inborn Errors / Disorders",10,5,"Oxidative Phosphorylation"],
-  [3,"ATP Synthesis (Complex V)",10,8,"Oxidative Phosphorylation & ATP Synthesis (Complex V)"],
-  [3,"ATP Synthesis (Complex V) - Structure & Properties",10,5,"ATP Synthesis (Complex V)"],
-  [3,"ATP Synthesis (Complex V) - Metabolic Pathways",10,5,"ATP Synthesis (Complex V)"],
-  [3,"ATP Synthesis (Complex V) - Enzymes & Regulation",10,5,"ATP Synthesis (Complex V)"],
-  [3,"ATP Synthesis (Complex V) - Clinical Biochemistry & Lab Tests",10,5,"ATP Synthesis (Complex V)"],
-  [3,"ATP Synthesis (Complex V) - Associated Inborn Errors / Disorders",10,5,"ATP Synthesis (Complex V)"],
-  [3,"ETC Inhibitors & Uncouplers",10,12,"Biological Oxidation (ETC)"],
-  [3,"ETC Inhibitors",10,6,"ETC Inhibitors & Uncouplers"],
-  [3,"ETC Inhibitors - Structure & Properties",10,5,"ETC Inhibitors"],
-  [3,"ETC Inhibitors - Metabolic Pathways",10,5,"ETC Inhibitors"],
-  [3,"ETC Inhibitors - Enzymes & Regulation",10,5,"ETC Inhibitors"],
-  [3,"ETC Inhibitors - Clinical Biochemistry & Lab Tests",10,5,"ETC Inhibitors"],
-  [3,"ETC Inhibitors - Associated Inborn Errors / Disorders",10,5,"ETC Inhibitors"],
-  [3,"Uncouplers",10,6,"ETC Inhibitors & Uncouplers"],
-  [3,"Uncouplers - Structure & Properties",10,5,"Uncouplers"],
-  [3,"Uncouplers - Metabolic Pathways",10,5,"Uncouplers"],
-  [3,"Uncouplers - Enzymes & Regulation",10,5,"Uncouplers"],
-  [3,"Uncouplers - Clinical Biochemistry & Lab Tests",10,5,"Uncouplers"],
-  [3,"Uncouplers - Associated Inborn Errors / Disorders",10,5,"Uncouplers"],
-  [3,"Vitamins & Minerals",9,60],
-  [3,"Fat-Soluble Vitamins (A, D, E, K)",10,45,"Vitamins & Minerals"],
-  [3,"Vitamin A — Forms, Functions, Deficiency & Toxicity",10,12,"Fat-Soluble Vitamins (A, D, E, K)"],
-  [3,"Vitamin A — Forms, Functions, Deficiency",10,6,"Vitamin A — Forms, Functions, Deficiency & Toxicity"],
-  [3,"Vitamin A — Forms, Functions, Deficiency - Structure & Properties",10,5,"Vitamin A — Forms, Functions, Deficiency"],
-  [3,"Vitamin A — Forms, Functions, Deficiency - Metabolic Pathways",10,5,"Vitamin A — Forms, Functions, Deficiency"],
-  [3,"Vitamin A — Forms, Functions, Deficiency - Enzymes & Regulation",10,5,"Vitamin A — Forms, Functions, Deficiency"],
-  [3,"Vitamin A — Forms, Functions, Deficiency - Clinical Biochemistry & Lab Tests",10,5,"Vitamin A — Forms, Functions, Deficiency"],
-  [3,"Vitamin A — Forms, Functions, Deficiency - Associated Inborn Errors / Disorders",10,5,"Vitamin A — Forms, Functions, Deficiency"],
-  [3,"Vitamin A — Toxicity",10,6,"Vitamin A — Forms, Functions, Deficiency & Toxicity"],
-  [3,"Vitamin A — Toxicity - Structure & Properties",10,5,"Vitamin A — Toxicity"],
-  [3,"Vitamin A — Toxicity - Metabolic Pathways",10,5,"Vitamin A — Toxicity"],
-  [3,"Vitamin A — Toxicity - Enzymes & Regulation",10,5,"Vitamin A — Toxicity"],
-  [3,"Vitamin A — Toxicity - Clinical Biochemistry & Lab Tests",10,5,"Vitamin A — Toxicity"],
-  [3,"Vitamin A — Toxicity - Associated Inborn Errors / Disorders",10,5,"Vitamin A — Toxicity"],
-  [3,"Vitamin D — Synthesis, Activation, Deficiency & Toxicity",10,15,"Fat-Soluble Vitamins (A, D, E, K)"],
-  [3,"Vitamin D — Synthesis, Activation, Deficiency",10,7,"Vitamin D — Synthesis, Activation, Deficiency & Toxicity"],
-  [3,"Vitamin D — Synthesis, Activation, Deficiency - Structure & Properties",10,5,"Vitamin D — Synthesis, Activation, Deficiency"],
-  [3,"Vitamin D — Synthesis, Activation, Deficiency - Metabolic Pathways",10,5,"Vitamin D — Synthesis, Activation, Deficiency"],
-  [3,"Vitamin D — Synthesis, Activation, Deficiency - Enzymes & Regulation",10,5,"Vitamin D — Synthesis, Activation, Deficiency"],
-  [3,"Vitamin D — Synthesis, Activation, Deficiency - Clinical Biochemistry & Lab Tests",10,5,"Vitamin D — Synthesis, Activation, Deficiency"],
-  [3,"Vitamin D — Synthesis, Activation, Deficiency - Associated Inborn Errors / Disorders",10,5,"Vitamin D — Synthesis, Activation, Deficiency"],
-  [3,"Vitamin D — Toxicity",10,8,"Vitamin D — Synthesis, Activation, Deficiency & Toxicity"],
-  [3,"Vitamin D — Toxicity - Structure & Properties",10,5,"Vitamin D — Toxicity"],
-  [3,"Vitamin D — Toxicity - Metabolic Pathways",10,5,"Vitamin D — Toxicity"],
-  [3,"Vitamin D — Toxicity - Enzymes & Regulation",10,5,"Vitamin D — Toxicity"],
-  [3,"Vitamin D — Toxicity - Clinical Biochemistry & Lab Tests",10,5,"Vitamin D — Toxicity"],
-  [3,"Vitamin D — Toxicity - Associated Inborn Errors / Disorders",10,5,"Vitamin D — Toxicity"],
-  [3,"Vitamins E & K — Functions, Deficiency & Antidotes",10,12,"Fat-Soluble Vitamins (A, D, E, K)"],
-  [3,"Vitamins E & K — Functions, Deficiency",10,6,"Vitamins E & K — Functions, Deficiency & Antidotes"],
-  [3,"Vitamins E & K — Functions, Deficiency - Structure & Properties",10,5,"Vitamins E & K — Functions, Deficiency"],
-  [3,"Vitamins E & K — Functions, Deficiency - Metabolic Pathways",10,5,"Vitamins E & K — Functions, Deficiency"],
-  [3,"Vitamins E & K — Functions, Deficiency - Enzymes & Regulation",10,5,"Vitamins E & K — Functions, Deficiency"],
-  [3,"Vitamins E & K — Functions, Deficiency - Clinical Biochemistry & Lab Tests",10,5,"Vitamins E & K — Functions, Deficiency"],
-  [3,"Vitamins E & K — Functions, Deficiency - Associated Inborn Errors / Disorders",10,5,"Vitamins E & K — Functions, Deficiency"],
-  [3,"Vitamins E & K — Antidotes",10,6,"Vitamins E & K — Functions, Deficiency & Antidotes"],
-  [3,"Vitamins E & K — Antidotes - Structure & Properties",10,5,"Vitamins E & K — Antidotes"],
-  [3,"Vitamins E & K — Antidotes - Metabolic Pathways",10,5,"Vitamins E & K — Antidotes"],
-  [3,"Vitamins E & K — Antidotes - Enzymes & Regulation",10,5,"Vitamins E & K — Antidotes"],
-  [3,"Vitamins E & K — Antidotes - Clinical Biochemistry & Lab Tests",10,5,"Vitamins E & K — Antidotes"],
-  [3,"Vitamins E & K — Antidotes - Associated Inborn Errors / Disorders",10,5,"Vitamins E & K — Antidotes"],
-  [3,"Water-Soluble Vitamins (B-complex, C)",10,50,"Vitamins & Minerals"],
-  [3,"Vitamin B1 (Thiamine) & B2 (Riboflavin) — Deficiency Syndromes",10,12,"Water-Soluble Vitamins (B-complex, C)"],
-  [3,"Vitamin B1 (Thiamine) & B2 (Riboflavin) — Basics",10,6,"Vitamin B1 (Thiamine) & B2 (Riboflavin) — Deficiency Syndromes"],
-  [3,"Vitamin B1 (Thiamine) & B2 (Riboflavin) — Basics - Structure & Properties",10,5,"Vitamin B1 (Thiamine) & B2 (Riboflavin) — Basics"],
-  [3,"Vitamin B1 (Thiamine) & B2 (Riboflavin) — Basics - Metabolic Pathways",10,5,"Vitamin B1 (Thiamine) & B2 (Riboflavin) — Basics"],
-  [3,"Vitamin B1 (Thiamine) & B2 (Riboflavin) — Basics - Enzymes & Regulation",10,5,"Vitamin B1 (Thiamine) & B2 (Riboflavin) — Basics"],
-  [3,"Vitamin B1 (Thiamine) & B2 (Riboflavin) — Basics - Clinical Biochemistry & Lab Tests",10,5,"Vitamin B1 (Thiamine) & B2 (Riboflavin) — Basics"],
-  [3,"Vitamin B1 (Thiamine) & B2 (Riboflavin) — Basics - Associated Inborn Errors / Disorders",10,5,"Vitamin B1 (Thiamine) & B2 (Riboflavin) — Basics"],
-  [3,"Vitamin B1 (Thiamine) & B2 (Riboflavin) — Details",10,6,"Vitamin B1 (Thiamine) & B2 (Riboflavin) — Deficiency Syndromes"],
-  [3,"Vitamin B1 (Thiamine) & B2 (Riboflavin) — Details - Structure & Properties",10,5,"Vitamin B1 (Thiamine) & B2 (Riboflavin) — Details"],
-  [3,"Vitamin B1 (Thiamine) & B2 (Riboflavin) — Details - Metabolic Pathways",10,5,"Vitamin B1 (Thiamine) & B2 (Riboflavin) — Details"],
-  [3,"Vitamin B1 (Thiamine) & B2 (Riboflavin) — Details - Enzymes & Regulation",10,5,"Vitamin B1 (Thiamine) & B2 (Riboflavin) — Details"],
-  [3,"Vitamin B1 (Thiamine) & B2 (Riboflavin) — Details - Clinical Biochemistry & Lab Tests",10,5,"Vitamin B1 (Thiamine) & B2 (Riboflavin) — Details"],
-  [3,"Vitamin B1 (Thiamine) & B2 (Riboflavin) — Details - Associated Inborn Errors / Disorders",10,5,"Vitamin B1 (Thiamine) & B2 (Riboflavin) — Details"],
-  [3,"Niacin (B3), Pantothenate (B5) & Biotin (B7)",10,12,"Water-Soluble Vitamins (B-complex, C)"],
-  [3,"Niacin (B3), Pantothenate (B5)",10,6,"Niacin (B3), Pantothenate (B5) & Biotin (B7)"],
-  [3,"Niacin (B3), Pantothenate (B5) - Structure & Properties",10,5,"Niacin (B3), Pantothenate (B5)"],
-  [3,"Niacin (B3), Pantothenate (B5) - Metabolic Pathways",10,5,"Niacin (B3), Pantothenate (B5)"],
-  [3,"Niacin (B3), Pantothenate (B5) - Enzymes & Regulation",10,5,"Niacin (B3), Pantothenate (B5)"],
-  [3,"Niacin (B3), Pantothenate (B5) - Clinical Biochemistry & Lab Tests",10,5,"Niacin (B3), Pantothenate (B5)"],
-  [3,"Niacin (B3), Pantothenate (B5) - Associated Inborn Errors / Disorders",10,5,"Niacin (B3), Pantothenate (B5)"],
-  [3,"Biotin (B7)",10,6,"Niacin (B3), Pantothenate (B5) & Biotin (B7)"],
-  [3,"Biotin (B7) - Structure & Properties",10,5,"Biotin (B7)"],
-  [3,"Biotin (B7) - Metabolic Pathways",10,5,"Biotin (B7)"],
-  [3,"Biotin (B7) - Enzymes & Regulation",10,5,"Biotin (B7)"],
-  [3,"Biotin (B7) - Clinical Biochemistry & Lab Tests",10,5,"Biotin (B7)"],
-  [3,"Biotin (B7) - Associated Inborn Errors / Disorders",10,5,"Biotin (B7)"],
-  [3,"Pyridoxine (B6), Folate (B9) & B12 — Neural Tube & Anemia",10,15,"Water-Soluble Vitamins (B-complex, C)"],
-  [3,"Pyridoxine (B6), Folate (B9) & B12 — Neural Tube",10,7,"Pyridoxine (B6), Folate (B9) & B12 — Neural Tube & Anemia"],
-  [3,"Pyridoxine (B6), Folate (B9) & B12 — Neural Tube - Structure & Properties",10,5,"Pyridoxine (B6), Folate (B9) & B12 — Neural Tube"],
-  [3,"Pyridoxine (B6), Folate (B9) & B12 — Neural Tube - Metabolic Pathways",10,5,"Pyridoxine (B6), Folate (B9) & B12 — Neural Tube"],
-  [3,"Pyridoxine (B6), Folate (B9) & B12 — Neural Tube - Enzymes & Regulation",10,5,"Pyridoxine (B6), Folate (B9) & B12 — Neural Tube"],
-  [3,"Pyridoxine (B6), Folate (B9) & B12 — Neural Tube - Clinical Biochemistry & Lab Tests",10,5,"Pyridoxine (B6), Folate (B9) & B12 — Neural Tube"],
-  [3,"Pyridoxine (B6), Folate (B9) & B12 — Neural Tube - Associated Inborn Errors / Disorders",10,5,"Pyridoxine (B6), Folate (B9) & B12 — Neural Tube"],
-  [3,"Pyridoxine (B6), Folate (B9) & B12 — Anemia",10,8,"Pyridoxine (B6), Folate (B9) & B12 — Neural Tube & Anemia"],
-  [3,"Pyridoxine (B6), Folate (B9) & B12 — Anemia - Structure & Properties",10,5,"Pyridoxine (B6), Folate (B9) & B12 — Anemia"],
-  [3,"Pyridoxine (B6), Folate (B9) & B12 — Anemia - Metabolic Pathways",10,5,"Pyridoxine (B6), Folate (B9) & B12 — Anemia"],
-  [3,"Pyridoxine (B6), Folate (B9) & B12 — Anemia - Enzymes & Regulation",10,5,"Pyridoxine (B6), Folate (B9) & B12 — Anemia"],
-  [3,"Pyridoxine (B6), Folate (B9) & B12 — Anemia - Clinical Biochemistry & Lab Tests",10,5,"Pyridoxine (B6), Folate (B9) & B12 — Anemia"],
-  [3,"Pyridoxine (B6), Folate (B9) & B12 — Anemia - Associated Inborn Errors / Disorders",10,5,"Pyridoxine (B6), Folate (B9) & B12 — Anemia"],
-  [3,"Vitamin C — Scurvy, Collagen & Antioxidant Role",10,10,"Water-Soluble Vitamins (B-complex, C)"],
-  [3,"Vitamin C — Scurvy, Collagen",10,5,"Vitamin C — Scurvy, Collagen & Antioxidant Role"],
-  [3,"Vitamin C — Scurvy, Collagen - Structure & Properties",10,5,"Vitamin C — Scurvy, Collagen"],
-  [3,"Vitamin C — Scurvy, Collagen - Metabolic Pathways",10,5,"Vitamin C — Scurvy, Collagen"],
-  [3,"Vitamin C — Scurvy, Collagen - Enzymes & Regulation",10,5,"Vitamin C — Scurvy, Collagen"],
-  [3,"Vitamin C — Scurvy, Collagen - Clinical Biochemistry & Lab Tests",10,5,"Vitamin C — Scurvy, Collagen"],
-  [3,"Vitamin C — Scurvy, Collagen - Associated Inborn Errors / Disorders",10,5,"Vitamin C — Scurvy, Collagen"],
-  [3,"Vitamin C — Antioxidant Role",10,5,"Vitamin C — Scurvy, Collagen & Antioxidant Role"],
-  [3,"Vitamin C — Antioxidant Role - Structure & Properties",10,5,"Vitamin C — Antioxidant Role"],
-  [3,"Vitamin C — Antioxidant Role - Metabolic Pathways",10,5,"Vitamin C — Antioxidant Role"],
-  [3,"Vitamin C — Antioxidant Role - Enzymes & Regulation",10,5,"Vitamin C — Antioxidant Role"],
-  [3,"Vitamin C — Antioxidant Role - Clinical Biochemistry & Lab Tests",10,5,"Vitamin C — Antioxidant Role"],
-  [3,"Vitamin C — Antioxidant Role - Associated Inborn Errors / Disorders",10,5,"Vitamin C — Antioxidant Role"],
-  [3,"Major Minerals (Ca, P, Mg)",9,35,"Vitamins & Minerals"],
-  [3,"Calcium & Phosphorus — Regulation & Disorders",9,18,"Major Minerals (Ca, P, Mg)"],
-  [3,"Calcium & Phosphorus — Regulation",9,9,"Calcium & Phosphorus — Regulation & Disorders"],
-  [3,"Calcium & Phosphorus — Regulation - Structure & Properties",9,5,"Calcium & Phosphorus — Regulation"],
-  [3,"Calcium & Phosphorus — Regulation - Metabolic Pathways",9,5,"Calcium & Phosphorus — Regulation"],
-  [3,"Calcium & Phosphorus — Regulation - Enzymes & Regulation",9,5,"Calcium & Phosphorus — Regulation"],
-  [3,"Calcium & Phosphorus — Regulation - Clinical Biochemistry & Lab Tests",9,5,"Calcium & Phosphorus — Regulation"],
-  [3,"Calcium & Phosphorus — Regulation - Associated Inborn Errors / Disorders",9,5,"Calcium & Phosphorus — Regulation"],
-  [3,"Calcium & Phosphorus — Disorders",9,9,"Calcium & Phosphorus — Regulation & Disorders"],
-  [3,"Calcium & Phosphorus — Disorders - Structure & Properties",9,5,"Calcium & Phosphorus — Disorders"],
-  [3,"Calcium & Phosphorus — Disorders - Metabolic Pathways",9,5,"Calcium & Phosphorus — Disorders"],
-  [3,"Calcium & Phosphorus — Disorders - Enzymes & Regulation",9,5,"Calcium & Phosphorus — Disorders"],
-  [3,"Calcium & Phosphorus — Disorders - Clinical Biochemistry & Lab Tests",9,5,"Calcium & Phosphorus — Disorders"],
-  [3,"Calcium & Phosphorus — Disorders - Associated Inborn Errors / Disorders",9,5,"Calcium & Phosphorus — Disorders"],
-  [3,"Magnesium, Iron & Zinc — Metabolism & Deficiency",9,15,"Major Minerals (Ca, P, Mg)"],
-  [3,"Magnesium, Iron & Zinc — Metabolism",9,7,"Magnesium, Iron & Zinc — Metabolism & Deficiency"],
-  [3,"Magnesium, Iron & Zinc — Metabolism - Structure & Properties",9,5,"Magnesium, Iron & Zinc — Metabolism"],
-  [3,"Magnesium, Iron & Zinc — Metabolism - Metabolic Pathways",9,5,"Magnesium, Iron & Zinc — Metabolism"],
-  [3,"Magnesium, Iron & Zinc — Metabolism - Enzymes & Regulation",9,5,"Magnesium, Iron & Zinc — Metabolism"],
-  [3,"Magnesium, Iron & Zinc — Metabolism - Clinical Biochemistry & Lab Tests",9,5,"Magnesium, Iron & Zinc — Metabolism"],
-  [3,"Magnesium, Iron & Zinc — Metabolism - Associated Inborn Errors / Disorders",9,5,"Magnesium, Iron & Zinc — Metabolism"],
-  [3,"Magnesium, Iron & Zinc — Deficiency",9,8,"Magnesium, Iron & Zinc — Metabolism & Deficiency"],
-  [3,"Magnesium, Iron & Zinc — Deficiency - Structure & Properties",9,5,"Magnesium, Iron & Zinc — Deficiency"],
-  [3,"Magnesium, Iron & Zinc — Deficiency - Metabolic Pathways",9,5,"Magnesium, Iron & Zinc — Deficiency"],
-  [3,"Magnesium, Iron & Zinc — Deficiency - Enzymes & Regulation",9,5,"Magnesium, Iron & Zinc — Deficiency"],
-  [3,"Magnesium, Iron & Zinc — Deficiency - Clinical Biochemistry & Lab Tests",9,5,"Magnesium, Iron & Zinc — Deficiency"],
-  [3,"Magnesium, Iron & Zinc — Deficiency - Associated Inborn Errors / Disorders",9,5,"Magnesium, Iron & Zinc — Deficiency"],
-  [3,"Trace Elements",8,30,"Vitamins & Minerals"],
-  [3,"Iron Metabolism — Absorption, Storage & Deficiency Anemia",8,15,"Trace Elements"],
-  [3,"Iron Metabolism — Absorption, Storage",8,7,"Iron Metabolism — Absorption, Storage & Deficiency Anemia"],
-  [3,"Iron Metabolism — Absorption, Storage - Structure & Properties",8,5,"Iron Metabolism — Absorption, Storage"],
-  [3,"Iron Metabolism — Absorption, Storage - Metabolic Pathways",8,5,"Iron Metabolism — Absorption, Storage"],
-  [3,"Iron Metabolism — Absorption, Storage - Enzymes & Regulation",8,5,"Iron Metabolism — Absorption, Storage"],
-  [3,"Iron Metabolism — Absorption, Storage - Clinical Biochemistry & Lab Tests",8,5,"Iron Metabolism — Absorption, Storage"],
-  [3,"Iron Metabolism — Absorption, Storage - Associated Inborn Errors / Disorders",8,5,"Iron Metabolism — Absorption, Storage"],
-  [3,"Iron Metabolism — Deficiency Anemia",8,8,"Iron Metabolism — Absorption, Storage & Deficiency Anemia"],
-  [3,"Iron Metabolism — Deficiency Anemia - Structure & Properties",8,5,"Iron Metabolism — Deficiency Anemia"],
-  [3,"Iron Metabolism — Deficiency Anemia - Metabolic Pathways",8,5,"Iron Metabolism — Deficiency Anemia"],
-  [3,"Iron Metabolism — Deficiency Anemia - Enzymes & Regulation",8,5,"Iron Metabolism — Deficiency Anemia"],
-  [3,"Iron Metabolism — Deficiency Anemia - Clinical Biochemistry & Lab Tests",8,5,"Iron Metabolism — Deficiency Anemia"],
-  [3,"Iron Metabolism — Deficiency Anemia - Associated Inborn Errors / Disorders",8,5,"Iron Metabolism — Deficiency Anemia"],
-  [3,"Copper, Selenium & Other Trace Elements",8,12,"Trace Elements"],
-  [3,"Copper, Selenium",8,6,"Copper, Selenium & Other Trace Elements"],
-  [3,"Copper, Selenium - Structure & Properties",8,5,"Copper, Selenium"],
-  [3,"Copper, Selenium - Metabolic Pathways",8,5,"Copper, Selenium"],
-  [3,"Copper, Selenium - Enzymes & Regulation",8,5,"Copper, Selenium"],
-  [3,"Copper, Selenium - Clinical Biochemistry & Lab Tests",8,5,"Copper, Selenium"],
-  [3,"Copper, Selenium - Associated Inborn Errors / Disorders",8,5,"Copper, Selenium"],
-  [3,"Other Trace Elements",8,6,"Copper, Selenium & Other Trace Elements"],
-  [3,"Other Trace Elements - Structure & Properties",8,5,"Other Trace Elements"],
-  [3,"Other Trace Elements - Metabolic Pathways",8,5,"Other Trace Elements"],
-  [3,"Other Trace Elements - Enzymes & Regulation",8,5,"Other Trace Elements"],
-  [3,"Other Trace Elements - Clinical Biochemistry & Lab Tests",8,5,"Other Trace Elements"],
-  [3,"Other Trace Elements - Associated Inborn Errors / Disorders",8,5,"Other Trace Elements"]
+  [3, "Molecular Biology", 10, 60],
+  [3, "DNA Replication & Repair", 10, 45, "Molecular Biology"],
+  [3, "DNA Structure & Replication — Enzymes & Steps", 10, 15, "DNA Replication & Repair"],
+  [
+    3,
+    "DNA Structure & Replication — Enzymes",
+    10,
+    7,
+    "DNA Structure & Replication — Enzymes & Steps"
+  ],
+  [
+    3,
+    "DNA Structure & Replication — Enzymes - Structure & Properties",
+    10,
+    5,
+    "DNA Structure & Replication — Enzymes"
+  ],
+  [
+    3,
+    "DNA Structure & Replication — Enzymes - Metabolic Pathways",
+    10,
+    5,
+    "DNA Structure & Replication — Enzymes"
+  ],
+  [
+    3,
+    "DNA Structure & Replication — Enzymes - Enzymes & Regulation",
+    10,
+    5,
+    "DNA Structure & Replication — Enzymes"
+  ],
+  [
+    3,
+    "DNA Structure & Replication — Enzymes - Clinical Biochemistry & Lab Tests",
+    10,
+    5,
+    "DNA Structure & Replication — Enzymes"
+  ],
+  [
+    3,
+    "DNA Structure & Replication — Enzymes - Associated Inborn Errors / Disorders",
+    10,
+    5,
+    "DNA Structure & Replication — Enzymes"
+  ],
+  [
+    3,
+    "DNA Structure & Replication — Steps",
+    10,
+    8,
+    "DNA Structure & Replication — Enzymes & Steps"
+  ],
+  [
+    3,
+    "DNA Structure & Replication — Steps - Structure & Properties",
+    10,
+    5,
+    "DNA Structure & Replication — Steps"
+  ],
+  [
+    3,
+    "DNA Structure & Replication — Steps - Metabolic Pathways",
+    10,
+    5,
+    "DNA Structure & Replication — Steps"
+  ],
+  [
+    3,
+    "DNA Structure & Replication — Steps - Enzymes & Regulation",
+    10,
+    5,
+    "DNA Structure & Replication — Steps"
+  ],
+  [
+    3,
+    "DNA Structure & Replication — Steps - Clinical Biochemistry & Lab Tests",
+    10,
+    5,
+    "DNA Structure & Replication — Steps"
+  ],
+  [
+    3,
+    "DNA Structure & Replication — Steps - Associated Inborn Errors / Disorders",
+    10,
+    5,
+    "DNA Structure & Replication — Steps"
+  ],
+  [3, "DNA Repair Mechanisms — BER, NER, MMR & DSB Repair", 10, 15, "DNA Replication & Repair"],
+  [
+    3,
+    "DNA Repair Mechanisms — BER, NER, MMR",
+    10,
+    7,
+    "DNA Repair Mechanisms — BER, NER, MMR & DSB Repair"
+  ],
+  [
+    3,
+    "DNA Repair Mechanisms — BER, NER, MMR - Structure & Properties",
+    10,
+    5,
+    "DNA Repair Mechanisms — BER, NER, MMR"
+  ],
+  [
+    3,
+    "DNA Repair Mechanisms — BER, NER, MMR - Metabolic Pathways",
+    10,
+    5,
+    "DNA Repair Mechanisms — BER, NER, MMR"
+  ],
+  [
+    3,
+    "DNA Repair Mechanisms — BER, NER, MMR - Enzymes & Regulation",
+    10,
+    5,
+    "DNA Repair Mechanisms — BER, NER, MMR"
+  ],
+  [
+    3,
+    "DNA Repair Mechanisms — BER, NER, MMR - Clinical Biochemistry & Lab Tests",
+    10,
+    5,
+    "DNA Repair Mechanisms — BER, NER, MMR"
+  ],
+  [
+    3,
+    "DNA Repair Mechanisms — BER, NER, MMR - Associated Inborn Errors / Disorders",
+    10,
+    5,
+    "DNA Repair Mechanisms — BER, NER, MMR"
+  ],
+  [
+    3,
+    "DNA Repair Mechanisms — DSB Repair",
+    10,
+    8,
+    "DNA Repair Mechanisms — BER, NER, MMR & DSB Repair"
+  ],
+  [
+    3,
+    "DNA Repair Mechanisms — DSB Repair - Structure & Properties",
+    10,
+    5,
+    "DNA Repair Mechanisms — DSB Repair"
+  ],
+  [
+    3,
+    "DNA Repair Mechanisms — DSB Repair - Metabolic Pathways",
+    10,
+    5,
+    "DNA Repair Mechanisms — DSB Repair"
+  ],
+  [
+    3,
+    "DNA Repair Mechanisms — DSB Repair - Enzymes & Regulation",
+    10,
+    5,
+    "DNA Repair Mechanisms — DSB Repair"
+  ],
+  [
+    3,
+    "DNA Repair Mechanisms — DSB Repair - Clinical Biochemistry & Lab Tests",
+    10,
+    5,
+    "DNA Repair Mechanisms — DSB Repair"
+  ],
+  [
+    3,
+    "DNA Repair Mechanisms — DSB Repair - Associated Inborn Errors / Disorders",
+    10,
+    5,
+    "DNA Repair Mechanisms — DSB Repair"
+  ],
+  [3, "Transcription & Translation", 10, 50, "Molecular Biology"],
+  [
+    3,
+    "Transcription — RNA Polymerases & Processing (5' Cap, PolyA)",
+    10,
+    15,
+    "Transcription & Translation"
+  ],
+  [
+    3,
+    "Transcription — RNA Polymerases",
+    10,
+    7,
+    "Transcription — RNA Polymerases & Processing (5' Cap, PolyA)"
+  ],
+  [
+    3,
+    "Transcription — RNA Polymerases - Structure & Properties",
+    10,
+    5,
+    "Transcription — RNA Polymerases"
+  ],
+  [
+    3,
+    "Transcription — RNA Polymerases - Metabolic Pathways",
+    10,
+    5,
+    "Transcription — RNA Polymerases"
+  ],
+  [
+    3,
+    "Transcription — RNA Polymerases - Enzymes & Regulation",
+    10,
+    5,
+    "Transcription — RNA Polymerases"
+  ],
+  [
+    3,
+    "Transcription — RNA Polymerases - Clinical Biochemistry & Lab Tests",
+    10,
+    5,
+    "Transcription — RNA Polymerases"
+  ],
+  [
+    3,
+    "Transcription — RNA Polymerases - Associated Inborn Errors / Disorders",
+    10,
+    5,
+    "Transcription — RNA Polymerases"
+  ],
+  [
+    3,
+    "Transcription — Processing (5' Cap, PolyA)",
+    10,
+    8,
+    "Transcription — RNA Polymerases & Processing (5' Cap, PolyA)"
+  ],
+  [
+    3,
+    "Transcription — Processing (5' Cap, PolyA) - Structure & Properties",
+    10,
+    5,
+    "Transcription — Processing (5' Cap, PolyA)"
+  ],
+  [
+    3,
+    "Transcription — Processing (5' Cap, PolyA) - Metabolic Pathways",
+    10,
+    5,
+    "Transcription — Processing (5' Cap, PolyA)"
+  ],
+  [
+    3,
+    "Transcription — Processing (5' Cap, PolyA) - Enzymes & Regulation",
+    10,
+    5,
+    "Transcription — Processing (5' Cap, PolyA)"
+  ],
+  [
+    3,
+    "Transcription — Processing (5' Cap, PolyA) - Clinical Biochemistry & Lab Tests",
+    10,
+    5,
+    "Transcription — Processing (5' Cap, PolyA)"
+  ],
+  [
+    3,
+    "Transcription — Processing (5' Cap, PolyA) - Associated Inborn Errors / Disorders",
+    10,
+    5,
+    "Transcription — Processing (5' Cap, PolyA)"
+  ],
+  [
+    3,
+    "Translation — Ribosomes, tRNA Charging & Antibiotic Sites",
+    10,
+    18,
+    "Transcription & Translation"
+  ],
+  [
+    3,
+    "Translation — Ribosomes, tRNA Charging",
+    10,
+    9,
+    "Translation — Ribosomes, tRNA Charging & Antibiotic Sites"
+  ],
+  [
+    3,
+    "Translation — Ribosomes, tRNA Charging - Structure & Properties",
+    10,
+    5,
+    "Translation — Ribosomes, tRNA Charging"
+  ],
+  [
+    3,
+    "Translation — Ribosomes, tRNA Charging - Metabolic Pathways",
+    10,
+    5,
+    "Translation — Ribosomes, tRNA Charging"
+  ],
+  [
+    3,
+    "Translation — Ribosomes, tRNA Charging - Enzymes & Regulation",
+    10,
+    5,
+    "Translation — Ribosomes, tRNA Charging"
+  ],
+  [
+    3,
+    "Translation — Ribosomes, tRNA Charging - Clinical Biochemistry & Lab Tests",
+    10,
+    5,
+    "Translation — Ribosomes, tRNA Charging"
+  ],
+  [
+    3,
+    "Translation — Ribosomes, tRNA Charging - Associated Inborn Errors / Disorders",
+    10,
+    5,
+    "Translation — Ribosomes, tRNA Charging"
+  ],
+  [
+    3,
+    "Translation — Antibiotic Sites",
+    10,
+    9,
+    "Translation — Ribosomes, tRNA Charging & Antibiotic Sites"
+  ],
+  [
+    3,
+    "Translation — Antibiotic Sites - Structure & Properties",
+    10,
+    5,
+    "Translation — Antibiotic Sites"
+  ],
+  [
+    3,
+    "Translation — Antibiotic Sites - Metabolic Pathways",
+    10,
+    5,
+    "Translation — Antibiotic Sites"
+  ],
+  [
+    3,
+    "Translation — Antibiotic Sites - Enzymes & Regulation",
+    10,
+    5,
+    "Translation — Antibiotic Sites"
+  ],
+  [
+    3,
+    "Translation — Antibiotic Sites - Clinical Biochemistry & Lab Tests",
+    10,
+    5,
+    "Translation — Antibiotic Sites"
+  ],
+  [
+    3,
+    "Translation — Antibiotic Sites - Associated Inborn Errors / Disorders",
+    10,
+    5,
+    "Translation — Antibiotic Sites"
+  ],
+  [3, "Gene Regulation & Mutations", 9, 40, "Molecular Biology"],
+  [3, "Gene Regulation — Lac Operon, Promoters & Enhancers", 9, 15, "Gene Regulation & Mutations"],
+  [
+    3,
+    "Gene Regulation — Lac Operon, Promoters",
+    9,
+    7,
+    "Gene Regulation — Lac Operon, Promoters & Enhancers"
+  ],
+  [
+    3,
+    "Gene Regulation — Lac Operon, Promoters - Structure & Properties",
+    9,
+    5,
+    "Gene Regulation — Lac Operon, Promoters"
+  ],
+  [
+    3,
+    "Gene Regulation — Lac Operon, Promoters - Metabolic Pathways",
+    9,
+    5,
+    "Gene Regulation — Lac Operon, Promoters"
+  ],
+  [
+    3,
+    "Gene Regulation — Lac Operon, Promoters - Enzymes & Regulation",
+    9,
+    5,
+    "Gene Regulation — Lac Operon, Promoters"
+  ],
+  [
+    3,
+    "Gene Regulation — Lac Operon, Promoters - Clinical Biochemistry & Lab Tests",
+    9,
+    5,
+    "Gene Regulation — Lac Operon, Promoters"
+  ],
+  [
+    3,
+    "Gene Regulation — Lac Operon, Promoters - Associated Inborn Errors / Disorders",
+    9,
+    5,
+    "Gene Regulation — Lac Operon, Promoters"
+  ],
+  [3, "Gene Regulation — Enhancers", 9, 8, "Gene Regulation — Lac Operon, Promoters & Enhancers"],
+  [3, "Gene Regulation — Enhancers - Structure & Properties", 9, 5, "Gene Regulation — Enhancers"],
+  [3, "Gene Regulation — Enhancers - Metabolic Pathways", 9, 5, "Gene Regulation — Enhancers"],
+  [3, "Gene Regulation — Enhancers - Enzymes & Regulation", 9, 5, "Gene Regulation — Enhancers"],
+  [
+    3,
+    "Gene Regulation — Enhancers - Clinical Biochemistry & Lab Tests",
+    9,
+    5,
+    "Gene Regulation — Enhancers"
+  ],
+  [
+    3,
+    "Gene Regulation — Enhancers - Associated Inborn Errors / Disorders",
+    9,
+    5,
+    "Gene Regulation — Enhancers"
+  ],
+  [3, "Mutations — Types, Causes & Consequences", 9, 15, "Gene Regulation & Mutations"],
+  [3, "Mutations — Types, Causes", 9, 7, "Mutations — Types, Causes & Consequences"],
+  [3, "Mutations — Types, Causes - Structure & Properties", 9, 5, "Mutations — Types, Causes"],
+  [3, "Mutations — Types, Causes - Metabolic Pathways", 9, 5, "Mutations — Types, Causes"],
+  [3, "Mutations — Types, Causes - Enzymes & Regulation", 9, 5, "Mutations — Types, Causes"],
+  [
+    3,
+    "Mutations — Types, Causes - Clinical Biochemistry & Lab Tests",
+    9,
+    5,
+    "Mutations — Types, Causes"
+  ],
+  [
+    3,
+    "Mutations — Types, Causes - Associated Inborn Errors / Disorders",
+    9,
+    5,
+    "Mutations — Types, Causes"
+  ],
+  [3, "Mutations — Consequences", 9, 8, "Mutations — Types, Causes & Consequences"],
+  [3, "Mutations — Consequences - Structure & Properties", 9, 5, "Mutations — Consequences"],
+  [3, "Mutations — Consequences - Metabolic Pathways", 9, 5, "Mutations — Consequences"],
+  [3, "Mutations — Consequences - Enzymes & Regulation", 9, 5, "Mutations — Consequences"],
+  [
+    3,
+    "Mutations — Consequences - Clinical Biochemistry & Lab Tests",
+    9,
+    5,
+    "Mutations — Consequences"
+  ],
+  [
+    3,
+    "Mutations — Consequences - Associated Inborn Errors / Disorders",
+    9,
+    5,
+    "Mutations — Consequences"
+  ],
+  [3, "Recombinant DNA Technology (PCR, Blotting)", 10, 50, "Molecular Biology"],
+  [
+    3,
+    "PCR — Steps, Variants (RT-PCR, Real-time) & Applications",
+    10,
+    15,
+    "Recombinant DNA Technology (PCR, Blotting)"
+  ],
+  [
+    3,
+    "PCR — Steps, Variants (RT-PCR, Real-time)",
+    10,
+    7,
+    "PCR — Steps, Variants (RT-PCR, Real-time) & Applications"
+  ],
+  [
+    3,
+    "PCR — Steps, Variants (RT-PCR, Real-time) - Structure & Properties",
+    10,
+    5,
+    "PCR — Steps, Variants (RT-PCR, Real-time)"
+  ],
+  [
+    3,
+    "PCR — Steps, Variants (RT-PCR, Real-time) - Metabolic Pathways",
+    10,
+    5,
+    "PCR — Steps, Variants (RT-PCR, Real-time)"
+  ],
+  [
+    3,
+    "PCR — Steps, Variants (RT-PCR, Real-time) - Enzymes & Regulation",
+    10,
+    5,
+    "PCR — Steps, Variants (RT-PCR, Real-time)"
+  ],
+  [
+    3,
+    "PCR — Steps, Variants (RT-PCR, Real-time) - Clinical Biochemistry & Lab Tests",
+    10,
+    5,
+    "PCR — Steps, Variants (RT-PCR, Real-time)"
+  ],
+  [
+    3,
+    "PCR — Steps, Variants (RT-PCR, Real-time) - Associated Inborn Errors / Disorders",
+    10,
+    5,
+    "PCR — Steps, Variants (RT-PCR, Real-time)"
+  ],
+  [3, "PCR — Applications", 10, 8, "PCR — Steps, Variants (RT-PCR, Real-time) & Applications"],
+  [3, "PCR — Applications - Structure & Properties", 10, 5, "PCR — Applications"],
+  [3, "PCR — Applications - Metabolic Pathways", 10, 5, "PCR — Applications"],
+  [3, "PCR — Applications - Enzymes & Regulation", 10, 5, "PCR — Applications"],
+  [3, "PCR — Applications - Clinical Biochemistry & Lab Tests", 10, 5, "PCR — Applications"],
+  [3, "PCR — Applications - Associated Inborn Errors / Disorders", 10, 5, "PCR — Applications"],
+  [
+    3,
+    "Blotting Techniques — Southern, Northern, Western",
+    10,
+    15,
+    "Recombinant DNA Technology (PCR, Blotting)"
+  ],
+  [3, "Blotting Techniques — Southern", 10, 7, "Blotting Techniques — Southern, Northern, Western"],
+  [
+    3,
+    "Blotting Techniques — Southern - Structure & Properties",
+    10,
+    5,
+    "Blotting Techniques — Southern"
+  ],
+  [
+    3,
+    "Blotting Techniques — Southern - Metabolic Pathways",
+    10,
+    5,
+    "Blotting Techniques — Southern"
+  ],
+  [
+    3,
+    "Blotting Techniques — Southern - Enzymes & Regulation",
+    10,
+    5,
+    "Blotting Techniques — Southern"
+  ],
+  [
+    3,
+    "Blotting Techniques — Southern - Clinical Biochemistry & Lab Tests",
+    10,
+    5,
+    "Blotting Techniques — Southern"
+  ],
+  [
+    3,
+    "Blotting Techniques — Southern - Associated Inborn Errors / Disorders",
+    10,
+    5,
+    "Blotting Techniques — Southern"
+  ],
+  [
+    3,
+    "Blotting Techniques — Northern, Western",
+    10,
+    8,
+    "Blotting Techniques — Southern, Northern, Western"
+  ],
+  [
+    3,
+    "Blotting Techniques — Northern, Western - Structure & Properties",
+    10,
+    5,
+    "Blotting Techniques — Northern, Western"
+  ],
+  [
+    3,
+    "Blotting Techniques — Northern, Western - Metabolic Pathways",
+    10,
+    5,
+    "Blotting Techniques — Northern, Western"
+  ],
+  [
+    3,
+    "Blotting Techniques — Northern, Western - Enzymes & Regulation",
+    10,
+    5,
+    "Blotting Techniques — Northern, Western"
+  ],
+  [
+    3,
+    "Blotting Techniques — Northern, Western - Clinical Biochemistry & Lab Tests",
+    10,
+    5,
+    "Blotting Techniques — Northern, Western"
+  ],
+  [
+    3,
+    "Blotting Techniques — Northern, Western - Associated Inborn Errors / Disorders",
+    10,
+    5,
+    "Blotting Techniques — Northern, Western"
+  ],
+  [
+    3,
+    "Restriction Enzymes, Vectors & Cloning",
+    10,
+    12,
+    "Recombinant DNA Technology (PCR, Blotting)"
+  ],
+  [3, "Restriction Enzymes, Vectors", 10, 6, "Restriction Enzymes, Vectors & Cloning"],
+  [
+    3,
+    "Restriction Enzymes, Vectors - Structure & Properties",
+    10,
+    5,
+    "Restriction Enzymes, Vectors"
+  ],
+  [3, "Restriction Enzymes, Vectors - Metabolic Pathways", 10, 5, "Restriction Enzymes, Vectors"],
+  [3, "Restriction Enzymes, Vectors - Enzymes & Regulation", 10, 5, "Restriction Enzymes, Vectors"],
+  [
+    3,
+    "Restriction Enzymes, Vectors - Clinical Biochemistry & Lab Tests",
+    10,
+    5,
+    "Restriction Enzymes, Vectors"
+  ],
+  [
+    3,
+    "Restriction Enzymes, Vectors - Associated Inborn Errors / Disorders",
+    10,
+    5,
+    "Restriction Enzymes, Vectors"
+  ],
+  [3, "Cloning", 10, 6, "Restriction Enzymes, Vectors & Cloning"],
+  [3, "Cloning - Structure & Properties", 10, 5, "Cloning"],
+  [3, "Cloning - Metabolic Pathways", 10, 5, "Cloning"],
+  [3, "Cloning - Enzymes & Regulation", 10, 5, "Cloning"],
+  [3, "Cloning - Clinical Biochemistry & Lab Tests", 10, 5, "Cloning"],
+  [3, "Cloning - Associated Inborn Errors / Disorders", 10, 5, "Cloning"],
+  [3, "Metabolism of Carbohydrates", 10, 60],
+  [3, "Glycolysis & TCA Cycle", 10, 45, "Metabolism of Carbohydrates"],
+  [3, "Glycolysis — Steps, Enzymes & Regulation", 10, 15, "Glycolysis & TCA Cycle"],
+  [3, "Glycolysis — Steps, Enzymes", 10, 7, "Glycolysis — Steps, Enzymes & Regulation"],
+  [3, "Glycolysis — Steps, Enzymes - Structure & Properties", 10, 5, "Glycolysis — Steps, Enzymes"],
+  [3, "Glycolysis — Steps, Enzymes - Metabolic Pathways", 10, 5, "Glycolysis — Steps, Enzymes"],
+  [3, "Glycolysis — Steps, Enzymes - Enzymes & Regulation", 10, 5, "Glycolysis — Steps, Enzymes"],
+  [
+    3,
+    "Glycolysis — Steps, Enzymes - Clinical Biochemistry & Lab Tests",
+    10,
+    5,
+    "Glycolysis — Steps, Enzymes"
+  ],
+  [
+    3,
+    "Glycolysis — Steps, Enzymes - Associated Inborn Errors / Disorders",
+    10,
+    5,
+    "Glycolysis — Steps, Enzymes"
+  ],
+  [3, "Glycolysis — Regulation", 10, 8, "Glycolysis — Steps, Enzymes & Regulation"],
+  [3, "Glycolysis — Regulation - Structure & Properties", 10, 5, "Glycolysis — Regulation"],
+  [3, "Glycolysis — Regulation - Metabolic Pathways", 10, 5, "Glycolysis — Regulation"],
+  [3, "Glycolysis — Regulation - Enzymes & Regulation", 10, 5, "Glycolysis — Regulation"],
+  [
+    3,
+    "Glycolysis — Regulation - Clinical Biochemistry & Lab Tests",
+    10,
+    5,
+    "Glycolysis — Regulation"
+  ],
+  [
+    3,
+    "Glycolysis — Regulation - Associated Inborn Errors / Disorders",
+    10,
+    5,
+    "Glycolysis — Regulation"
+  ],
+  [3, "Pyruvate Dehydrogenase Complex & Entry to TCA", 10, 12, "Glycolysis & TCA Cycle"],
+  [3, "Pyruvate Dehydrogenase Complex", 10, 6, "Pyruvate Dehydrogenase Complex & Entry to TCA"],
+  [
+    3,
+    "Pyruvate Dehydrogenase Complex - Structure & Properties",
+    10,
+    5,
+    "Pyruvate Dehydrogenase Complex"
+  ],
+  [
+    3,
+    "Pyruvate Dehydrogenase Complex - Metabolic Pathways",
+    10,
+    5,
+    "Pyruvate Dehydrogenase Complex"
+  ],
+  [
+    3,
+    "Pyruvate Dehydrogenase Complex - Enzymes & Regulation",
+    10,
+    5,
+    "Pyruvate Dehydrogenase Complex"
+  ],
+  [
+    3,
+    "Pyruvate Dehydrogenase Complex - Clinical Biochemistry & Lab Tests",
+    10,
+    5,
+    "Pyruvate Dehydrogenase Complex"
+  ],
+  [
+    3,
+    "Pyruvate Dehydrogenase Complex - Associated Inborn Errors / Disorders",
+    10,
+    5,
+    "Pyruvate Dehydrogenase Complex"
+  ],
+  [3, "Entry to TCA", 10, 6, "Pyruvate Dehydrogenase Complex & Entry to TCA"],
+  [3, "Entry to TCA - Structure & Properties", 10, 5, "Entry to TCA"],
+  [3, "Entry to TCA - Metabolic Pathways", 10, 5, "Entry to TCA"],
+  [3, "Entry to TCA - Enzymes & Regulation", 10, 5, "Entry to TCA"],
+  [3, "Entry to TCA - Clinical Biochemistry & Lab Tests", 10, 5, "Entry to TCA"],
+  [3, "Entry to TCA - Associated Inborn Errors / Disorders", 10, 5, "Entry to TCA"],
+  [3, "TCA Cycle — Steps, Energy Yield & Regulation", 10, 15, "Glycolysis & TCA Cycle"],
+  [3, "TCA Cycle — Steps, Energy Yield", 10, 7, "TCA Cycle — Steps, Energy Yield & Regulation"],
+  [
+    3,
+    "TCA Cycle — Steps, Energy Yield - Structure & Properties",
+    10,
+    5,
+    "TCA Cycle — Steps, Energy Yield"
+  ],
+  [
+    3,
+    "TCA Cycle — Steps, Energy Yield - Metabolic Pathways",
+    10,
+    5,
+    "TCA Cycle — Steps, Energy Yield"
+  ],
+  [
+    3,
+    "TCA Cycle — Steps, Energy Yield - Enzymes & Regulation",
+    10,
+    5,
+    "TCA Cycle — Steps, Energy Yield"
+  ],
+  [
+    3,
+    "TCA Cycle — Steps, Energy Yield - Clinical Biochemistry & Lab Tests",
+    10,
+    5,
+    "TCA Cycle — Steps, Energy Yield"
+  ],
+  [
+    3,
+    "TCA Cycle — Steps, Energy Yield - Associated Inborn Errors / Disorders",
+    10,
+    5,
+    "TCA Cycle — Steps, Energy Yield"
+  ],
+  [3, "TCA Cycle — Regulation", 10, 8, "TCA Cycle — Steps, Energy Yield & Regulation"],
+  [3, "TCA Cycle — Regulation - Structure & Properties", 10, 5, "TCA Cycle — Regulation"],
+  [3, "TCA Cycle — Regulation - Metabolic Pathways", 10, 5, "TCA Cycle — Regulation"],
+  [3, "TCA Cycle — Regulation - Enzymes & Regulation", 10, 5, "TCA Cycle — Regulation"],
+  [
+    3,
+    "TCA Cycle — Regulation - Clinical Biochemistry & Lab Tests",
+    10,
+    5,
+    "TCA Cycle — Regulation"
+  ],
+  [
+    3,
+    "TCA Cycle — Regulation - Associated Inborn Errors / Disorders",
+    10,
+    5,
+    "TCA Cycle — Regulation"
+  ],
+  [3, "Gluconeogenesis & Glycogen Metabolism", 10, 45, "Metabolism of Carbohydrates"],
+  [
+    3,
+    "Gluconeogenesis — Substrates, Bypass Enzymes & Regulation",
+    10,
+    15,
+    "Gluconeogenesis & Glycogen Metabolism"
+  ],
+  [
+    3,
+    "Gluconeogenesis — Substrates, Bypass Enzymes",
+    10,
+    7,
+    "Gluconeogenesis — Substrates, Bypass Enzymes & Regulation"
+  ],
+  [
+    3,
+    "Gluconeogenesis — Substrates, Bypass Enzymes - Structure & Properties",
+    10,
+    5,
+    "Gluconeogenesis — Substrates, Bypass Enzymes"
+  ],
+  [
+    3,
+    "Gluconeogenesis — Substrates, Bypass Enzymes - Metabolic Pathways",
+    10,
+    5,
+    "Gluconeogenesis — Substrates, Bypass Enzymes"
+  ],
+  [
+    3,
+    "Gluconeogenesis — Substrates, Bypass Enzymes - Enzymes & Regulation",
+    10,
+    5,
+    "Gluconeogenesis — Substrates, Bypass Enzymes"
+  ],
+  [
+    3,
+    "Gluconeogenesis — Substrates, Bypass Enzymes - Clinical Biochemistry & Lab Tests",
+    10,
+    5,
+    "Gluconeogenesis — Substrates, Bypass Enzymes"
+  ],
+  [
+    3,
+    "Gluconeogenesis — Substrates, Bypass Enzymes - Associated Inborn Errors / Disorders",
+    10,
+    5,
+    "Gluconeogenesis — Substrates, Bypass Enzymes"
+  ],
+  [
+    3,
+    "Gluconeogenesis — Regulation",
+    10,
+    8,
+    "Gluconeogenesis — Substrates, Bypass Enzymes & Regulation"
+  ],
+  [
+    3,
+    "Gluconeogenesis — Regulation - Structure & Properties",
+    10,
+    5,
+    "Gluconeogenesis — Regulation"
+  ],
+  [3, "Gluconeogenesis — Regulation - Metabolic Pathways", 10, 5, "Gluconeogenesis — Regulation"],
+  [3, "Gluconeogenesis — Regulation - Enzymes & Regulation", 10, 5, "Gluconeogenesis — Regulation"],
+  [
+    3,
+    "Gluconeogenesis — Regulation - Clinical Biochemistry & Lab Tests",
+    10,
+    5,
+    "Gluconeogenesis — Regulation"
+  ],
+  [
+    3,
+    "Gluconeogenesis — Regulation - Associated Inborn Errors / Disorders",
+    10,
+    5,
+    "Gluconeogenesis — Regulation"
+  ],
+  [
+    3,
+    "Glycogenesis & Glycogenolysis — Enzymes & Disorders",
+    10,
+    15,
+    "Gluconeogenesis & Glycogen Metabolism"
+  ],
+  [
+    3,
+    "Glycogenesis & Glycogenolysis — Enzymes",
+    10,
+    7,
+    "Glycogenesis & Glycogenolysis — Enzymes & Disorders"
+  ],
+  [
+    3,
+    "Glycogenesis & Glycogenolysis — Enzymes - Structure & Properties",
+    10,
+    5,
+    "Glycogenesis & Glycogenolysis — Enzymes"
+  ],
+  [
+    3,
+    "Glycogenesis & Glycogenolysis — Enzymes - Metabolic Pathways",
+    10,
+    5,
+    "Glycogenesis & Glycogenolysis — Enzymes"
+  ],
+  [
+    3,
+    "Glycogenesis & Glycogenolysis — Enzymes - Enzymes & Regulation",
+    10,
+    5,
+    "Glycogenesis & Glycogenolysis — Enzymes"
+  ],
+  [
+    3,
+    "Glycogenesis & Glycogenolysis — Enzymes - Clinical Biochemistry & Lab Tests",
+    10,
+    5,
+    "Glycogenesis & Glycogenolysis — Enzymes"
+  ],
+  [
+    3,
+    "Glycogenesis & Glycogenolysis — Enzymes - Associated Inborn Errors / Disorders",
+    10,
+    5,
+    "Glycogenesis & Glycogenolysis — Enzymes"
+  ],
+  [
+    3,
+    "Glycogenesis & Glycogenolysis — Disorders",
+    10,
+    8,
+    "Glycogenesis & Glycogenolysis — Enzymes & Disorders"
+  ],
+  [
+    3,
+    "Glycogenesis & Glycogenolysis — Disorders - Structure & Properties",
+    10,
+    5,
+    "Glycogenesis & Glycogenolysis — Disorders"
+  ],
+  [
+    3,
+    "Glycogenesis & Glycogenolysis — Disorders - Metabolic Pathways",
+    10,
+    5,
+    "Glycogenesis & Glycogenolysis — Disorders"
+  ],
+  [
+    3,
+    "Glycogenesis & Glycogenolysis — Disorders - Enzymes & Regulation",
+    10,
+    5,
+    "Glycogenesis & Glycogenolysis — Disorders"
+  ],
+  [
+    3,
+    "Glycogenesis & Glycogenolysis — Disorders - Clinical Biochemistry & Lab Tests",
+    10,
+    5,
+    "Glycogenesis & Glycogenolysis — Disorders"
+  ],
+  [
+    3,
+    "Glycogenesis & Glycogenolysis — Disorders - Associated Inborn Errors / Disorders",
+    10,
+    5,
+    "Glycogenesis & Glycogenolysis — Disorders"
+  ],
+  [
+    3,
+    "Glycogen Storage Diseases (Von Gierke, Pompe, McArdle)",
+    10,
+    12,
+    "Gluconeogenesis & Glycogen Metabolism"
+  ],
+  [
+    3,
+    "Glycogen Storage Diseases (Von Gierke",
+    10,
+    6,
+    "Glycogen Storage Diseases (Von Gierke, Pompe, McArdle)"
+  ],
+  [
+    3,
+    "Glycogen Storage Diseases (Von Gierke - Structure & Properties",
+    10,
+    5,
+    "Glycogen Storage Diseases (Von Gierke"
+  ],
+  [
+    3,
+    "Glycogen Storage Diseases (Von Gierke - Metabolic Pathways",
+    10,
+    5,
+    "Glycogen Storage Diseases (Von Gierke"
+  ],
+  [
+    3,
+    "Glycogen Storage Diseases (Von Gierke - Enzymes & Regulation",
+    10,
+    5,
+    "Glycogen Storage Diseases (Von Gierke"
+  ],
+  [
+    3,
+    "Glycogen Storage Diseases (Von Gierke - Clinical Biochemistry & Lab Tests",
+    10,
+    5,
+    "Glycogen Storage Diseases (Von Gierke"
+  ],
+  [
+    3,
+    "Glycogen Storage Diseases (Von Gierke - Associated Inborn Errors / Disorders",
+    10,
+    5,
+    "Glycogen Storage Diseases (Von Gierke"
+  ],
+  [3, "Pompe, McArdle)", 10, 6, "Glycogen Storage Diseases (Von Gierke, Pompe, McArdle)"],
+  [3, "Pompe, McArdle) - Structure & Properties", 10, 5, "Pompe, McArdle)"],
+  [3, "Pompe, McArdle) - Metabolic Pathways", 10, 5, "Pompe, McArdle)"],
+  [3, "Pompe, McArdle) - Enzymes & Regulation", 10, 5, "Pompe, McArdle)"],
+  [3, "Pompe, McArdle) - Clinical Biochemistry & Lab Tests", 10, 5, "Pompe, McArdle)"],
+  [3, "Pompe, McArdle) - Associated Inborn Errors / Disorders", 10, 5, "Pompe, McArdle)"],
+  [3, "HMP Shunt & Uronic Acid Pathway", 9, 35, "Metabolism of Carbohydrates"],
+  [3, "HMP Shunt — Steps, NADPH & G6PD Deficiency", 9, 18, "HMP Shunt & Uronic Acid Pathway"],
+  [3, "HMP Shunt — Steps, NADPH", 9, 9, "HMP Shunt — Steps, NADPH & G6PD Deficiency"],
+  [3, "HMP Shunt — Steps, NADPH - Structure & Properties", 9, 5, "HMP Shunt — Steps, NADPH"],
+  [3, "HMP Shunt — Steps, NADPH - Metabolic Pathways", 9, 5, "HMP Shunt — Steps, NADPH"],
+  [3, "HMP Shunt — Steps, NADPH - Enzymes & Regulation", 9, 5, "HMP Shunt — Steps, NADPH"],
+  [
+    3,
+    "HMP Shunt — Steps, NADPH - Clinical Biochemistry & Lab Tests",
+    9,
+    5,
+    "HMP Shunt — Steps, NADPH"
+  ],
+  [
+    3,
+    "HMP Shunt — Steps, NADPH - Associated Inborn Errors / Disorders",
+    9,
+    5,
+    "HMP Shunt — Steps, NADPH"
+  ],
+  [3, "HMP Shunt — G6PD Deficiency", 9, 9, "HMP Shunt — Steps, NADPH & G6PD Deficiency"],
+  [3, "HMP Shunt — G6PD Deficiency - Structure & Properties", 9, 5, "HMP Shunt — G6PD Deficiency"],
+  [3, "HMP Shunt — G6PD Deficiency - Metabolic Pathways", 9, 5, "HMP Shunt — G6PD Deficiency"],
+  [3, "HMP Shunt — G6PD Deficiency - Enzymes & Regulation", 9, 5, "HMP Shunt — G6PD Deficiency"],
+  [
+    3,
+    "HMP Shunt — G6PD Deficiency - Clinical Biochemistry & Lab Tests",
+    9,
+    5,
+    "HMP Shunt — G6PD Deficiency"
+  ],
+  [
+    3,
+    "HMP Shunt — G6PD Deficiency - Associated Inborn Errors / Disorders",
+    9,
+    5,
+    "HMP Shunt — G6PD Deficiency"
+  ],
+  [3, "Uronic Acid & Other Carbohydrate Pathways", 9, 12, "HMP Shunt & Uronic Acid Pathway"],
+  [3, "Uronic Acid", 9, 6, "Uronic Acid & Other Carbohydrate Pathways"],
+  [3, "Uronic Acid - Structure & Properties", 9, 5, "Uronic Acid"],
+  [3, "Uronic Acid - Metabolic Pathways", 9, 5, "Uronic Acid"],
+  [3, "Uronic Acid - Enzymes & Regulation", 9, 5, "Uronic Acid"],
+  [3, "Uronic Acid - Clinical Biochemistry & Lab Tests", 9, 5, "Uronic Acid"],
+  [3, "Uronic Acid - Associated Inborn Errors / Disorders", 9, 5, "Uronic Acid"],
+  [3, "Other Carbohydrate Pathways", 9, 6, "Uronic Acid & Other Carbohydrate Pathways"],
+  [3, "Other Carbohydrate Pathways - Structure & Properties", 9, 5, "Other Carbohydrate Pathways"],
+  [3, "Other Carbohydrate Pathways - Metabolic Pathways", 9, 5, "Other Carbohydrate Pathways"],
+  [3, "Other Carbohydrate Pathways - Enzymes & Regulation", 9, 5, "Other Carbohydrate Pathways"],
+  [
+    3,
+    "Other Carbohydrate Pathways - Clinical Biochemistry & Lab Tests",
+    9,
+    5,
+    "Other Carbohydrate Pathways"
+  ],
+  [
+    3,
+    "Other Carbohydrate Pathways - Associated Inborn Errors / Disorders",
+    9,
+    5,
+    "Other Carbohydrate Pathways"
+  ],
+  [3, "Metabolism of Lipids", 10, 60],
+  [3, "Fatty Acid Oxidation & Synthesis", 10, 45, "Metabolism of Lipids"],
+  [
+    3,
+    "β-Oxidation of Fatty Acids — Steps & Energy Yield",
+    10,
+    15,
+    "Fatty Acid Oxidation & Synthesis"
+  ],
+  [
+    3,
+    "β-Oxidation of Fatty Acids — Steps",
+    10,
+    7,
+    "β-Oxidation of Fatty Acids — Steps & Energy Yield"
+  ],
+  [
+    3,
+    "β-Oxidation of Fatty Acids — Steps - Structure & Properties",
+    10,
+    5,
+    "β-Oxidation of Fatty Acids — Steps"
+  ],
+  [
+    3,
+    "β-Oxidation of Fatty Acids — Steps - Metabolic Pathways",
+    10,
+    5,
+    "β-Oxidation of Fatty Acids — Steps"
+  ],
+  [
+    3,
+    "β-Oxidation of Fatty Acids — Steps - Enzymes & Regulation",
+    10,
+    5,
+    "β-Oxidation of Fatty Acids — Steps"
+  ],
+  [
+    3,
+    "β-Oxidation of Fatty Acids — Steps - Clinical Biochemistry & Lab Tests",
+    10,
+    5,
+    "β-Oxidation of Fatty Acids — Steps"
+  ],
+  [
+    3,
+    "β-Oxidation of Fatty Acids — Steps - Associated Inborn Errors / Disorders",
+    10,
+    5,
+    "β-Oxidation of Fatty Acids — Steps"
+  ],
+  [
+    3,
+    "β-Oxidation of Fatty Acids — Energy Yield",
+    10,
+    8,
+    "β-Oxidation of Fatty Acids — Steps & Energy Yield"
+  ],
+  [
+    3,
+    "β-Oxidation of Fatty Acids — Energy Yield - Structure & Properties",
+    10,
+    5,
+    "β-Oxidation of Fatty Acids — Energy Yield"
+  ],
+  [
+    3,
+    "β-Oxidation of Fatty Acids — Energy Yield - Metabolic Pathways",
+    10,
+    5,
+    "β-Oxidation of Fatty Acids — Energy Yield"
+  ],
+  [
+    3,
+    "β-Oxidation of Fatty Acids — Energy Yield - Enzymes & Regulation",
+    10,
+    5,
+    "β-Oxidation of Fatty Acids — Energy Yield"
+  ],
+  [
+    3,
+    "β-Oxidation of Fatty Acids — Energy Yield - Clinical Biochemistry & Lab Tests",
+    10,
+    5,
+    "β-Oxidation of Fatty Acids — Energy Yield"
+  ],
+  [
+    3,
+    "β-Oxidation of Fatty Acids — Energy Yield - Associated Inborn Errors / Disorders",
+    10,
+    5,
+    "β-Oxidation of Fatty Acids — Energy Yield"
+  ],
+  [
+    3,
+    "Fatty Acid Synthesis — Steps, Enzymes & Regulation",
+    10,
+    15,
+    "Fatty Acid Oxidation & Synthesis"
+  ],
+  [
+    3,
+    "Fatty Acid Synthesis — Steps, Enzymes",
+    10,
+    7,
+    "Fatty Acid Synthesis — Steps, Enzymes & Regulation"
+  ],
+  [
+    3,
+    "Fatty Acid Synthesis — Steps, Enzymes - Structure & Properties",
+    10,
+    5,
+    "Fatty Acid Synthesis — Steps, Enzymes"
+  ],
+  [
+    3,
+    "Fatty Acid Synthesis — Steps, Enzymes - Metabolic Pathways",
+    10,
+    5,
+    "Fatty Acid Synthesis — Steps, Enzymes"
+  ],
+  [
+    3,
+    "Fatty Acid Synthesis — Steps, Enzymes - Enzymes & Regulation",
+    10,
+    5,
+    "Fatty Acid Synthesis — Steps, Enzymes"
+  ],
+  [
+    3,
+    "Fatty Acid Synthesis — Steps, Enzymes - Clinical Biochemistry & Lab Tests",
+    10,
+    5,
+    "Fatty Acid Synthesis — Steps, Enzymes"
+  ],
+  [
+    3,
+    "Fatty Acid Synthesis — Steps, Enzymes - Associated Inborn Errors / Disorders",
+    10,
+    5,
+    "Fatty Acid Synthesis — Steps, Enzymes"
+  ],
+  [
+    3,
+    "Fatty Acid Synthesis — Regulation",
+    10,
+    8,
+    "Fatty Acid Synthesis — Steps, Enzymes & Regulation"
+  ],
+  [
+    3,
+    "Fatty Acid Synthesis — Regulation - Structure & Properties",
+    10,
+    5,
+    "Fatty Acid Synthesis — Regulation"
+  ],
+  [
+    3,
+    "Fatty Acid Synthesis — Regulation - Metabolic Pathways",
+    10,
+    5,
+    "Fatty Acid Synthesis — Regulation"
+  ],
+  [
+    3,
+    "Fatty Acid Synthesis — Regulation - Enzymes & Regulation",
+    10,
+    5,
+    "Fatty Acid Synthesis — Regulation"
+  ],
+  [
+    3,
+    "Fatty Acid Synthesis — Regulation - Clinical Biochemistry & Lab Tests",
+    10,
+    5,
+    "Fatty Acid Synthesis — Regulation"
+  ],
+  [
+    3,
+    "Fatty Acid Synthesis — Regulation - Associated Inborn Errors / Disorders",
+    10,
+    5,
+    "Fatty Acid Synthesis — Regulation"
+  ],
+  [3, "Odd-chain & Unsaturated FA Oxidation", 10, 12, "Fatty Acid Oxidation & Synthesis"],
+  [3, "Odd-chain", 10, 6, "Odd-chain & Unsaturated FA Oxidation"],
+  [3, "Odd-chain - Structure & Properties", 10, 5, "Odd-chain"],
+  [3, "Odd-chain - Metabolic Pathways", 10, 5, "Odd-chain"],
+  [3, "Odd-chain - Enzymes & Regulation", 10, 5, "Odd-chain"],
+  [3, "Odd-chain - Clinical Biochemistry & Lab Tests", 10, 5, "Odd-chain"],
+  [3, "Odd-chain - Associated Inborn Errors / Disorders", 10, 5, "Odd-chain"],
+  [3, "Unsaturated FA Oxidation", 10, 6, "Odd-chain & Unsaturated FA Oxidation"],
+  [3, "Unsaturated FA Oxidation - Structure & Properties", 10, 5, "Unsaturated FA Oxidation"],
+  [3, "Unsaturated FA Oxidation - Metabolic Pathways", 10, 5, "Unsaturated FA Oxidation"],
+  [3, "Unsaturated FA Oxidation - Enzymes & Regulation", 10, 5, "Unsaturated FA Oxidation"],
+  [
+    3,
+    "Unsaturated FA Oxidation - Clinical Biochemistry & Lab Tests",
+    10,
+    5,
+    "Unsaturated FA Oxidation"
+  ],
+  [
+    3,
+    "Unsaturated FA Oxidation - Associated Inborn Errors / Disorders",
+    10,
+    5,
+    "Unsaturated FA Oxidation"
+  ],
+  [3, "Cholesterol Metabolism & Bile Salts", 9, 40, "Metabolism of Lipids"],
+  [
+    3,
+    "Cholesterol Synthesis — HMG-CoA Reductase & Regulation",
+    9,
+    15,
+    "Cholesterol Metabolism & Bile Salts"
+  ],
+  [
+    3,
+    "Cholesterol Synthesis — HMG-CoA Reductase",
+    9,
+    7,
+    "Cholesterol Synthesis — HMG-CoA Reductase & Regulation"
+  ],
+  [
+    3,
+    "Cholesterol Synthesis — HMG-CoA Reductase - Structure & Properties",
+    9,
+    5,
+    "Cholesterol Synthesis — HMG-CoA Reductase"
+  ],
+  [
+    3,
+    "Cholesterol Synthesis — HMG-CoA Reductase - Metabolic Pathways",
+    9,
+    5,
+    "Cholesterol Synthesis — HMG-CoA Reductase"
+  ],
+  [
+    3,
+    "Cholesterol Synthesis — HMG-CoA Reductase - Enzymes & Regulation",
+    9,
+    5,
+    "Cholesterol Synthesis — HMG-CoA Reductase"
+  ],
+  [
+    3,
+    "Cholesterol Synthesis — HMG-CoA Reductase - Clinical Biochemistry & Lab Tests",
+    9,
+    5,
+    "Cholesterol Synthesis — HMG-CoA Reductase"
+  ],
+  [
+    3,
+    "Cholesterol Synthesis — HMG-CoA Reductase - Associated Inborn Errors / Disorders",
+    9,
+    5,
+    "Cholesterol Synthesis — HMG-CoA Reductase"
+  ],
+  [
+    3,
+    "Cholesterol Synthesis — Regulation",
+    9,
+    8,
+    "Cholesterol Synthesis — HMG-CoA Reductase & Regulation"
+  ],
+  [
+    3,
+    "Cholesterol Synthesis — Regulation - Structure & Properties",
+    9,
+    5,
+    "Cholesterol Synthesis — Regulation"
+  ],
+  [
+    3,
+    "Cholesterol Synthesis — Regulation - Metabolic Pathways",
+    9,
+    5,
+    "Cholesterol Synthesis — Regulation"
+  ],
+  [
+    3,
+    "Cholesterol Synthesis — Regulation - Enzymes & Regulation",
+    9,
+    5,
+    "Cholesterol Synthesis — Regulation"
+  ],
+  [
+    3,
+    "Cholesterol Synthesis — Regulation - Clinical Biochemistry & Lab Tests",
+    9,
+    5,
+    "Cholesterol Synthesis — Regulation"
+  ],
+  [
+    3,
+    "Cholesterol Synthesis — Regulation - Associated Inborn Errors / Disorders",
+    9,
+    5,
+    "Cholesterol Synthesis — Regulation"
+  ],
+  [
+    3,
+    "Bile Acids — Synthesis, Conjugation & Enterohepatic Circulation",
+    9,
+    15,
+    "Cholesterol Metabolism & Bile Salts"
+  ],
+  [
+    3,
+    "Bile Acids — Synthesis, Conjugation",
+    9,
+    7,
+    "Bile Acids — Synthesis, Conjugation & Enterohepatic Circulation"
+  ],
+  [
+    3,
+    "Bile Acids — Synthesis, Conjugation - Structure & Properties",
+    9,
+    5,
+    "Bile Acids — Synthesis, Conjugation"
+  ],
+  [
+    3,
+    "Bile Acids — Synthesis, Conjugation - Metabolic Pathways",
+    9,
+    5,
+    "Bile Acids — Synthesis, Conjugation"
+  ],
+  [
+    3,
+    "Bile Acids — Synthesis, Conjugation - Enzymes & Regulation",
+    9,
+    5,
+    "Bile Acids — Synthesis, Conjugation"
+  ],
+  [
+    3,
+    "Bile Acids — Synthesis, Conjugation - Clinical Biochemistry & Lab Tests",
+    9,
+    5,
+    "Bile Acids — Synthesis, Conjugation"
+  ],
+  [
+    3,
+    "Bile Acids — Synthesis, Conjugation - Associated Inborn Errors / Disorders",
+    9,
+    5,
+    "Bile Acids — Synthesis, Conjugation"
+  ],
+  [
+    3,
+    "Bile Acids — Enterohepatic Circulation",
+    9,
+    8,
+    "Bile Acids — Synthesis, Conjugation & Enterohepatic Circulation"
+  ],
+  [
+    3,
+    "Bile Acids — Enterohepatic Circulation - Structure & Properties",
+    9,
+    5,
+    "Bile Acids — Enterohepatic Circulation"
+  ],
+  [
+    3,
+    "Bile Acids — Enterohepatic Circulation - Metabolic Pathways",
+    9,
+    5,
+    "Bile Acids — Enterohepatic Circulation"
+  ],
+  [
+    3,
+    "Bile Acids — Enterohepatic Circulation - Enzymes & Regulation",
+    9,
+    5,
+    "Bile Acids — Enterohepatic Circulation"
+  ],
+  [
+    3,
+    "Bile Acids — Enterohepatic Circulation - Clinical Biochemistry & Lab Tests",
+    9,
+    5,
+    "Bile Acids — Enterohepatic Circulation"
+  ],
+  [
+    3,
+    "Bile Acids — Enterohepatic Circulation - Associated Inborn Errors / Disorders",
+    9,
+    5,
+    "Bile Acids — Enterohepatic Circulation"
+  ],
+  [3, "Lipoprotein Metabolism & Dyslipidemias", 10, 50, "Metabolism of Lipids"],
+  [
+    3,
+    "Lipoproteins — Structure, Types (CM, VLDL, LDL, HDL)",
+    10,
+    15,
+    "Lipoprotein Metabolism & Dyslipidemias"
+  ],
+  [3, "Lipoproteins — Structure", 10, 7, "Lipoproteins — Structure, Types (CM, VLDL, LDL, HDL)"],
+  [3, "Lipoproteins — Structure - Structure & Properties", 10, 5, "Lipoproteins — Structure"],
+  [3, "Lipoproteins — Structure - Metabolic Pathways", 10, 5, "Lipoproteins — Structure"],
+  [3, "Lipoproteins — Structure - Enzymes & Regulation", 10, 5, "Lipoproteins — Structure"],
+  [
+    3,
+    "Lipoproteins — Structure - Clinical Biochemistry & Lab Tests",
+    10,
+    5,
+    "Lipoproteins — Structure"
+  ],
+  [
+    3,
+    "Lipoproteins — Structure - Associated Inborn Errors / Disorders",
+    10,
+    5,
+    "Lipoproteins — Structure"
+  ],
+  [
+    3,
+    "Lipoproteins — Types (CM, VLDL, LDL, HDL)",
+    10,
+    8,
+    "Lipoproteins — Structure, Types (CM, VLDL, LDL, HDL)"
+  ],
+  [
+    3,
+    "Lipoproteins — Types (CM, VLDL, LDL, HDL) - Structure & Properties",
+    10,
+    5,
+    "Lipoproteins — Types (CM, VLDL, LDL, HDL)"
+  ],
+  [
+    3,
+    "Lipoproteins — Types (CM, VLDL, LDL, HDL) - Metabolic Pathways",
+    10,
+    5,
+    "Lipoproteins — Types (CM, VLDL, LDL, HDL)"
+  ],
+  [
+    3,
+    "Lipoproteins — Types (CM, VLDL, LDL, HDL) - Enzymes & Regulation",
+    10,
+    5,
+    "Lipoproteins — Types (CM, VLDL, LDL, HDL)"
+  ],
+  [
+    3,
+    "Lipoproteins — Types (CM, VLDL, LDL, HDL) - Clinical Biochemistry & Lab Tests",
+    10,
+    5,
+    "Lipoproteins — Types (CM, VLDL, LDL, HDL)"
+  ],
+  [
+    3,
+    "Lipoproteins — Types (CM, VLDL, LDL, HDL) - Associated Inborn Errors / Disorders",
+    10,
+    5,
+    "Lipoproteins — Types (CM, VLDL, LDL, HDL)"
+  ],
+  [
+    3,
+    "Lipoprotein Metabolism — Exogenous & Endogenous Pathways",
+    10,
+    15,
+    "Lipoprotein Metabolism & Dyslipidemias"
+  ],
+  [
+    3,
+    "Lipoprotein Metabolism — Exogenous",
+    10,
+    7,
+    "Lipoprotein Metabolism — Exogenous & Endogenous Pathways"
+  ],
+  [
+    3,
+    "Lipoprotein Metabolism — Exogenous - Structure & Properties",
+    10,
+    5,
+    "Lipoprotein Metabolism — Exogenous"
+  ],
+  [
+    3,
+    "Lipoprotein Metabolism — Exogenous - Metabolic Pathways",
+    10,
+    5,
+    "Lipoprotein Metabolism — Exogenous"
+  ],
+  [
+    3,
+    "Lipoprotein Metabolism — Exogenous - Enzymes & Regulation",
+    10,
+    5,
+    "Lipoprotein Metabolism — Exogenous"
+  ],
+  [
+    3,
+    "Lipoprotein Metabolism — Exogenous - Clinical Biochemistry & Lab Tests",
+    10,
+    5,
+    "Lipoprotein Metabolism — Exogenous"
+  ],
+  [
+    3,
+    "Lipoprotein Metabolism — Exogenous - Associated Inborn Errors / Disorders",
+    10,
+    5,
+    "Lipoprotein Metabolism — Exogenous"
+  ],
+  [
+    3,
+    "Lipoprotein Metabolism — Endogenous Pathways",
+    10,
+    8,
+    "Lipoprotein Metabolism — Exogenous & Endogenous Pathways"
+  ],
+  [
+    3,
+    "Lipoprotein Metabolism — Endogenous Pathways - Structure & Properties",
+    10,
+    5,
+    "Lipoprotein Metabolism — Endogenous Pathways"
+  ],
+  [
+    3,
+    "Lipoprotein Metabolism — Endogenous Pathways - Metabolic Pathways",
+    10,
+    5,
+    "Lipoprotein Metabolism — Endogenous Pathways"
+  ],
+  [
+    3,
+    "Lipoprotein Metabolism — Endogenous Pathways - Enzymes & Regulation",
+    10,
+    5,
+    "Lipoprotein Metabolism — Endogenous Pathways"
+  ],
+  [
+    3,
+    "Lipoprotein Metabolism — Endogenous Pathways - Clinical Biochemistry & Lab Tests",
+    10,
+    5,
+    "Lipoprotein Metabolism — Endogenous Pathways"
+  ],
+  [
+    3,
+    "Lipoprotein Metabolism — Endogenous Pathways - Associated Inborn Errors / Disorders",
+    10,
+    5,
+    "Lipoprotein Metabolism — Endogenous Pathways"
+  ],
+  [
+    3,
+    "Dyslipidemias — Fredrickson Classification & Familial Types",
+    10,
+    15,
+    "Lipoprotein Metabolism & Dyslipidemias"
+  ],
+  [
+    3,
+    "Dyslipidemias — Fredrickson Classification",
+    10,
+    7,
+    "Dyslipidemias — Fredrickson Classification & Familial Types"
+  ],
+  [
+    3,
+    "Dyslipidemias — Fredrickson Classification - Structure & Properties",
+    10,
+    5,
+    "Dyslipidemias — Fredrickson Classification"
+  ],
+  [
+    3,
+    "Dyslipidemias — Fredrickson Classification - Metabolic Pathways",
+    10,
+    5,
+    "Dyslipidemias — Fredrickson Classification"
+  ],
+  [
+    3,
+    "Dyslipidemias — Fredrickson Classification - Enzymes & Regulation",
+    10,
+    5,
+    "Dyslipidemias — Fredrickson Classification"
+  ],
+  [
+    3,
+    "Dyslipidemias — Fredrickson Classification - Clinical Biochemistry & Lab Tests",
+    10,
+    5,
+    "Dyslipidemias — Fredrickson Classification"
+  ],
+  [
+    3,
+    "Dyslipidemias — Fredrickson Classification - Associated Inborn Errors / Disorders",
+    10,
+    5,
+    "Dyslipidemias — Fredrickson Classification"
+  ],
+  [
+    3,
+    "Dyslipidemias — Familial Types",
+    10,
+    8,
+    "Dyslipidemias — Fredrickson Classification & Familial Types"
+  ],
+  [
+    3,
+    "Dyslipidemias — Familial Types - Structure & Properties",
+    10,
+    5,
+    "Dyslipidemias — Familial Types"
+  ],
+  [
+    3,
+    "Dyslipidemias — Familial Types - Metabolic Pathways",
+    10,
+    5,
+    "Dyslipidemias — Familial Types"
+  ],
+  [
+    3,
+    "Dyslipidemias — Familial Types - Enzymes & Regulation",
+    10,
+    5,
+    "Dyslipidemias — Familial Types"
+  ],
+  [
+    3,
+    "Dyslipidemias — Familial Types - Clinical Biochemistry & Lab Tests",
+    10,
+    5,
+    "Dyslipidemias — Familial Types"
+  ],
+  [
+    3,
+    "Dyslipidemias — Familial Types - Associated Inborn Errors / Disorders",
+    10,
+    5,
+    "Dyslipidemias — Familial Types"
+  ],
+  [3, "Ketone Bodies", 8, 25, "Metabolism of Lipids"],
+  [3, "Ketogenesis — Synthesis, Utilization & Ketoacidosis", 8, 20, "Ketone Bodies"],
+  [
+    3,
+    "Ketogenesis — Synthesis, Utilization",
+    8,
+    10,
+    "Ketogenesis — Synthesis, Utilization & Ketoacidosis"
+  ],
+  [
+    3,
+    "Ketogenesis — Synthesis, Utilization - Structure & Properties",
+    8,
+    5,
+    "Ketogenesis — Synthesis, Utilization"
+  ],
+  [
+    3,
+    "Ketogenesis — Synthesis, Utilization - Metabolic Pathways",
+    8,
+    5,
+    "Ketogenesis — Synthesis, Utilization"
+  ],
+  [
+    3,
+    "Ketogenesis — Synthesis, Utilization - Enzymes & Regulation",
+    8,
+    5,
+    "Ketogenesis — Synthesis, Utilization"
+  ],
+  [
+    3,
+    "Ketogenesis — Synthesis, Utilization - Clinical Biochemistry & Lab Tests",
+    8,
+    5,
+    "Ketogenesis — Synthesis, Utilization"
+  ],
+  [
+    3,
+    "Ketogenesis — Synthesis, Utilization - Associated Inborn Errors / Disorders",
+    8,
+    5,
+    "Ketogenesis — Synthesis, Utilization"
+  ],
+  [3, "Ketogenesis — Ketoacidosis", 8, 10, "Ketogenesis — Synthesis, Utilization & Ketoacidosis"],
+  [3, "Ketogenesis — Ketoacidosis - Structure & Properties", 8, 5, "Ketogenesis — Ketoacidosis"],
+  [3, "Ketogenesis — Ketoacidosis - Metabolic Pathways", 8, 5, "Ketogenesis — Ketoacidosis"],
+  [3, "Ketogenesis — Ketoacidosis - Enzymes & Regulation", 8, 5, "Ketogenesis — Ketoacidosis"],
+  [
+    3,
+    "Ketogenesis — Ketoacidosis - Clinical Biochemistry & Lab Tests",
+    8,
+    5,
+    "Ketogenesis — Ketoacidosis"
+  ],
+  [
+    3,
+    "Ketogenesis — Ketoacidosis - Associated Inborn Errors / Disorders",
+    8,
+    5,
+    "Ketogenesis — Ketoacidosis"
+  ],
+  [3, "Metabolism of Proteins & Amino Acids", 10, 60],
+  [3, "Urea Cycle & Ammonia Transport", 10, 35, "Metabolism of Proteins & Amino Acids"],
+  [3, "Transamination, Deamination & Ammonia Transport", 10, 15, "Urea Cycle & Ammonia Transport"],
+  [3, "Transamination, Deamination", 10, 7, "Transamination, Deamination & Ammonia Transport"],
+  [3, "Transamination, Deamination - Structure & Properties", 10, 5, "Transamination, Deamination"],
+  [3, "Transamination, Deamination - Metabolic Pathways", 10, 5, "Transamination, Deamination"],
+  [3, "Transamination, Deamination - Enzymes & Regulation", 10, 5, "Transamination, Deamination"],
+  [
+    3,
+    "Transamination, Deamination - Clinical Biochemistry & Lab Tests",
+    10,
+    5,
+    "Transamination, Deamination"
+  ],
+  [
+    3,
+    "Transamination, Deamination - Associated Inborn Errors / Disorders",
+    10,
+    5,
+    "Transamination, Deamination"
+  ],
+  [3, "Ammonia Transport", 10, 8, "Transamination, Deamination & Ammonia Transport"],
+  [3, "Ammonia Transport - Structure & Properties", 10, 5, "Ammonia Transport"],
+  [3, "Ammonia Transport - Metabolic Pathways", 10, 5, "Ammonia Transport"],
+  [3, "Ammonia Transport - Enzymes & Regulation", 10, 5, "Ammonia Transport"],
+  [3, "Ammonia Transport - Clinical Biochemistry & Lab Tests", 10, 5, "Ammonia Transport"],
+  [3, "Ammonia Transport - Associated Inborn Errors / Disorders", 10, 5, "Ammonia Transport"],
+  [
+    3,
+    "Urea Cycle — Steps, Enzymes & Enzyme Deficiencies",
+    10,
+    18,
+    "Urea Cycle & Ammonia Transport"
+  ],
+  [3, "Urea Cycle — Steps, Enzymes", 10, 9, "Urea Cycle — Steps, Enzymes & Enzyme Deficiencies"],
+  [3, "Urea Cycle — Steps, Enzymes - Structure & Properties", 10, 5, "Urea Cycle — Steps, Enzymes"],
+  [3, "Urea Cycle — Steps, Enzymes - Metabolic Pathways", 10, 5, "Urea Cycle — Steps, Enzymes"],
+  [3, "Urea Cycle — Steps, Enzymes - Enzymes & Regulation", 10, 5, "Urea Cycle — Steps, Enzymes"],
+  [
+    3,
+    "Urea Cycle — Steps, Enzymes - Clinical Biochemistry & Lab Tests",
+    10,
+    5,
+    "Urea Cycle — Steps, Enzymes"
+  ],
+  [
+    3,
+    "Urea Cycle — Steps, Enzymes - Associated Inborn Errors / Disorders",
+    10,
+    5,
+    "Urea Cycle — Steps, Enzymes"
+  ],
+  [
+    3,
+    "Urea Cycle — Enzyme Deficiencies",
+    10,
+    9,
+    "Urea Cycle — Steps, Enzymes & Enzyme Deficiencies"
+  ],
+  [
+    3,
+    "Urea Cycle — Enzyme Deficiencies - Structure & Properties",
+    10,
+    5,
+    "Urea Cycle — Enzyme Deficiencies"
+  ],
+  [
+    3,
+    "Urea Cycle — Enzyme Deficiencies - Metabolic Pathways",
+    10,
+    5,
+    "Urea Cycle — Enzyme Deficiencies"
+  ],
+  [
+    3,
+    "Urea Cycle — Enzyme Deficiencies - Enzymes & Regulation",
+    10,
+    5,
+    "Urea Cycle — Enzyme Deficiencies"
+  ],
+  [
+    3,
+    "Urea Cycle — Enzyme Deficiencies - Clinical Biochemistry & Lab Tests",
+    10,
+    5,
+    "Urea Cycle — Enzyme Deficiencies"
+  ],
+  [
+    3,
+    "Urea Cycle — Enzyme Deficiencies - Associated Inborn Errors / Disorders",
+    10,
+    5,
+    "Urea Cycle — Enzyme Deficiencies"
+  ],
+  [
+    3,
+    "Metabolism of Individual Amino Acids (Phe, Tyr, Trp)",
+    10,
+    50,
+    "Metabolism of Proteins & Amino Acids"
+  ],
+  [
+    3,
+    "Phenylalanine & Tyrosine Metabolism — PKU, Alkaptonuria",
+    10,
+    18,
+    "Metabolism of Individual Amino Acids (Phe, Tyr, Trp)"
+  ],
+  [
+    3,
+    "Phenylalanine & Tyrosine Metabolism — PKU",
+    10,
+    9,
+    "Phenylalanine & Tyrosine Metabolism — PKU, Alkaptonuria"
+  ],
+  [
+    3,
+    "Phenylalanine & Tyrosine Metabolism — PKU - Structure & Properties",
+    10,
+    5,
+    "Phenylalanine & Tyrosine Metabolism — PKU"
+  ],
+  [
+    3,
+    "Phenylalanine & Tyrosine Metabolism — PKU - Metabolic Pathways",
+    10,
+    5,
+    "Phenylalanine & Tyrosine Metabolism — PKU"
+  ],
+  [
+    3,
+    "Phenylalanine & Tyrosine Metabolism — PKU - Enzymes & Regulation",
+    10,
+    5,
+    "Phenylalanine & Tyrosine Metabolism — PKU"
+  ],
+  [
+    3,
+    "Phenylalanine & Tyrosine Metabolism — PKU - Clinical Biochemistry & Lab Tests",
+    10,
+    5,
+    "Phenylalanine & Tyrosine Metabolism — PKU"
+  ],
+  [
+    3,
+    "Phenylalanine & Tyrosine Metabolism — PKU - Associated Inborn Errors / Disorders",
+    10,
+    5,
+    "Phenylalanine & Tyrosine Metabolism — PKU"
+  ],
+  [
+    3,
+    "Phenylalanine & Tyrosine Metabolism — Alkaptonuria",
+    10,
+    9,
+    "Phenylalanine & Tyrosine Metabolism — PKU, Alkaptonuria"
+  ],
+  [
+    3,
+    "Phenylalanine & Tyrosine Metabolism — Alkaptonuria - Structure & Properties",
+    10,
+    5,
+    "Phenylalanine & Tyrosine Metabolism — Alkaptonuria"
+  ],
+  [
+    3,
+    "Phenylalanine & Tyrosine Metabolism — Alkaptonuria - Metabolic Pathways",
+    10,
+    5,
+    "Phenylalanine & Tyrosine Metabolism — Alkaptonuria"
+  ],
+  [
+    3,
+    "Phenylalanine & Tyrosine Metabolism — Alkaptonuria - Enzymes & Regulation",
+    10,
+    5,
+    "Phenylalanine & Tyrosine Metabolism — Alkaptonuria"
+  ],
+  [
+    3,
+    "Phenylalanine & Tyrosine Metabolism — Alkaptonuria - Clinical Biochemistry & Lab Tests",
+    10,
+    5,
+    "Phenylalanine & Tyrosine Metabolism — Alkaptonuria"
+  ],
+  [
+    3,
+    "Phenylalanine & Tyrosine Metabolism — Alkaptonuria - Associated Inborn Errors / Disorders",
+    10,
+    5,
+    "Phenylalanine & Tyrosine Metabolism — Alkaptonuria"
+  ],
+  [
+    3,
+    "Tryptophan, Histidine & Branched-Chain AA Metabolism",
+    10,
+    15,
+    "Metabolism of Individual Amino Acids (Phe, Tyr, Trp)"
+  ],
+  [3, "Tryptophan, Histidine", 10, 7, "Tryptophan, Histidine & Branched-Chain AA Metabolism"],
+  [3, "Tryptophan, Histidine - Structure & Properties", 10, 5, "Tryptophan, Histidine"],
+  [3, "Tryptophan, Histidine - Metabolic Pathways", 10, 5, "Tryptophan, Histidine"],
+  [3, "Tryptophan, Histidine - Enzymes & Regulation", 10, 5, "Tryptophan, Histidine"],
+  [3, "Tryptophan, Histidine - Clinical Biochemistry & Lab Tests", 10, 5, "Tryptophan, Histidine"],
+  [
+    3,
+    "Tryptophan, Histidine - Associated Inborn Errors / Disorders",
+    10,
+    5,
+    "Tryptophan, Histidine"
+  ],
+  [
+    3,
+    "Branched-Chain AA Metabolism",
+    10,
+    8,
+    "Tryptophan, Histidine & Branched-Chain AA Metabolism"
+  ],
+  [
+    3,
+    "Branched-Chain AA Metabolism - Structure & Properties",
+    10,
+    5,
+    "Branched-Chain AA Metabolism"
+  ],
+  [3, "Branched-Chain AA Metabolism - Metabolic Pathways", 10, 5, "Branched-Chain AA Metabolism"],
+  [3, "Branched-Chain AA Metabolism - Enzymes & Regulation", 10, 5, "Branched-Chain AA Metabolism"],
+  [
+    3,
+    "Branched-Chain AA Metabolism - Clinical Biochemistry & Lab Tests",
+    10,
+    5,
+    "Branched-Chain AA Metabolism"
+  ],
+  [
+    3,
+    "Branched-Chain AA Metabolism - Associated Inborn Errors / Disorders",
+    10,
+    5,
+    "Branched-Chain AA Metabolism"
+  ],
+  [
+    3,
+    "One-Carbon Metabolism — Folate, SAM & Homocysteine",
+    10,
+    15,
+    "Metabolism of Individual Amino Acids (Phe, Tyr, Trp)"
+  ],
+  [
+    3,
+    "One-Carbon Metabolism — Folate, SAM",
+    10,
+    7,
+    "One-Carbon Metabolism — Folate, SAM & Homocysteine"
+  ],
+  [
+    3,
+    "One-Carbon Metabolism — Folate, SAM - Structure & Properties",
+    10,
+    5,
+    "One-Carbon Metabolism — Folate, SAM"
+  ],
+  [
+    3,
+    "One-Carbon Metabolism — Folate, SAM - Metabolic Pathways",
+    10,
+    5,
+    "One-Carbon Metabolism — Folate, SAM"
+  ],
+  [
+    3,
+    "One-Carbon Metabolism — Folate, SAM - Enzymes & Regulation",
+    10,
+    5,
+    "One-Carbon Metabolism — Folate, SAM"
+  ],
+  [
+    3,
+    "One-Carbon Metabolism — Folate, SAM - Clinical Biochemistry & Lab Tests",
+    10,
+    5,
+    "One-Carbon Metabolism — Folate, SAM"
+  ],
+  [
+    3,
+    "One-Carbon Metabolism — Folate, SAM - Associated Inborn Errors / Disorders",
+    10,
+    5,
+    "One-Carbon Metabolism — Folate, SAM"
+  ],
+  [
+    3,
+    "One-Carbon Metabolism — Homocysteine",
+    10,
+    8,
+    "One-Carbon Metabolism — Folate, SAM & Homocysteine"
+  ],
+  [
+    3,
+    "One-Carbon Metabolism — Homocysteine - Structure & Properties",
+    10,
+    5,
+    "One-Carbon Metabolism — Homocysteine"
+  ],
+  [
+    3,
+    "One-Carbon Metabolism — Homocysteine - Metabolic Pathways",
+    10,
+    5,
+    "One-Carbon Metabolism — Homocysteine"
+  ],
+  [
+    3,
+    "One-Carbon Metabolism — Homocysteine - Enzymes & Regulation",
+    10,
+    5,
+    "One-Carbon Metabolism — Homocysteine"
+  ],
+  [
+    3,
+    "One-Carbon Metabolism — Homocysteine - Clinical Biochemistry & Lab Tests",
+    10,
+    5,
+    "One-Carbon Metabolism — Homocysteine"
+  ],
+  [
+    3,
+    "One-Carbon Metabolism — Homocysteine - Associated Inborn Errors / Disorders",
+    10,
+    5,
+    "One-Carbon Metabolism — Homocysteine"
+  ],
+  [3, "Heme Metabolism (Synthesis & Porphyrias)", 10, 45, "Metabolism of Proteins & Amino Acids"],
+  [
+    3,
+    "Heme Synthesis — Steps, Enzymes & Key Sites",
+    10,
+    15,
+    "Heme Metabolism (Synthesis & Porphyrias)"
+  ],
+  [3, "Heme Synthesis — Steps, Enzymes", 10, 7, "Heme Synthesis — Steps, Enzymes & Key Sites"],
+  [
+    3,
+    "Heme Synthesis — Steps, Enzymes - Structure & Properties",
+    10,
+    5,
+    "Heme Synthesis — Steps, Enzymes"
+  ],
+  [
+    3,
+    "Heme Synthesis — Steps, Enzymes - Metabolic Pathways",
+    10,
+    5,
+    "Heme Synthesis — Steps, Enzymes"
+  ],
+  [
+    3,
+    "Heme Synthesis — Steps, Enzymes - Enzymes & Regulation",
+    10,
+    5,
+    "Heme Synthesis — Steps, Enzymes"
+  ],
+  [
+    3,
+    "Heme Synthesis — Steps, Enzymes - Clinical Biochemistry & Lab Tests",
+    10,
+    5,
+    "Heme Synthesis — Steps, Enzymes"
+  ],
+  [
+    3,
+    "Heme Synthesis — Steps, Enzymes - Associated Inborn Errors / Disorders",
+    10,
+    5,
+    "Heme Synthesis — Steps, Enzymes"
+  ],
+  [3, "Heme Synthesis — Key Sites", 10, 8, "Heme Synthesis — Steps, Enzymes & Key Sites"],
+  [3, "Heme Synthesis — Key Sites - Structure & Properties", 10, 5, "Heme Synthesis — Key Sites"],
+  [3, "Heme Synthesis — Key Sites - Metabolic Pathways", 10, 5, "Heme Synthesis — Key Sites"],
+  [3, "Heme Synthesis — Key Sites - Enzymes & Regulation", 10, 5, "Heme Synthesis — Key Sites"],
+  [
+    3,
+    "Heme Synthesis — Key Sites - Clinical Biochemistry & Lab Tests",
+    10,
+    5,
+    "Heme Synthesis — Key Sites"
+  ],
+  [
+    3,
+    "Heme Synthesis — Key Sites - Associated Inborn Errors / Disorders",
+    10,
+    5,
+    "Heme Synthesis — Key Sites"
+  ],
+  [3, "Porphyrias — AIP, PCT & Lead Poisoning", 10, 15, "Heme Metabolism (Synthesis & Porphyrias)"],
+  [3, "Porphyrias — AIP, PCT", 10, 7, "Porphyrias — AIP, PCT & Lead Poisoning"],
+  [3, "Porphyrias — AIP, PCT - Structure & Properties", 10, 5, "Porphyrias — AIP, PCT"],
+  [3, "Porphyrias — AIP, PCT - Metabolic Pathways", 10, 5, "Porphyrias — AIP, PCT"],
+  [3, "Porphyrias — AIP, PCT - Enzymes & Regulation", 10, 5, "Porphyrias — AIP, PCT"],
+  [3, "Porphyrias — AIP, PCT - Clinical Biochemistry & Lab Tests", 10, 5, "Porphyrias — AIP, PCT"],
+  [
+    3,
+    "Porphyrias — AIP, PCT - Associated Inborn Errors / Disorders",
+    10,
+    5,
+    "Porphyrias — AIP, PCT"
+  ],
+  [3, "Porphyrias — Lead Poisoning", 10, 8, "Porphyrias — AIP, PCT & Lead Poisoning"],
+  [3, "Porphyrias — Lead Poisoning - Structure & Properties", 10, 5, "Porphyrias — Lead Poisoning"],
+  [3, "Porphyrias — Lead Poisoning - Metabolic Pathways", 10, 5, "Porphyrias — Lead Poisoning"],
+  [3, "Porphyrias — Lead Poisoning - Enzymes & Regulation", 10, 5, "Porphyrias — Lead Poisoning"],
+  [
+    3,
+    "Porphyrias — Lead Poisoning - Clinical Biochemistry & Lab Tests",
+    10,
+    5,
+    "Porphyrias — Lead Poisoning"
+  ],
+  [
+    3,
+    "Porphyrias — Lead Poisoning - Associated Inborn Errors / Disorders",
+    10,
+    5,
+    "Porphyrias — Lead Poisoning"
+  ],
+  [
+    3,
+    "Heme Catabolism — Bilirubin Metabolism & Jaundice",
+    10,
+    12,
+    "Heme Metabolism (Synthesis & Porphyrias)"
+  ],
+  [
+    3,
+    "Heme Catabolism — Bilirubin Metabolism",
+    10,
+    6,
+    "Heme Catabolism — Bilirubin Metabolism & Jaundice"
+  ],
+  [
+    3,
+    "Heme Catabolism — Bilirubin Metabolism - Structure & Properties",
+    10,
+    5,
+    "Heme Catabolism — Bilirubin Metabolism"
+  ],
+  [
+    3,
+    "Heme Catabolism — Bilirubin Metabolism - Metabolic Pathways",
+    10,
+    5,
+    "Heme Catabolism — Bilirubin Metabolism"
+  ],
+  [
+    3,
+    "Heme Catabolism — Bilirubin Metabolism - Enzymes & Regulation",
+    10,
+    5,
+    "Heme Catabolism — Bilirubin Metabolism"
+  ],
+  [
+    3,
+    "Heme Catabolism — Bilirubin Metabolism - Clinical Biochemistry & Lab Tests",
+    10,
+    5,
+    "Heme Catabolism — Bilirubin Metabolism"
+  ],
+  [
+    3,
+    "Heme Catabolism — Bilirubin Metabolism - Associated Inborn Errors / Disorders",
+    10,
+    5,
+    "Heme Catabolism — Bilirubin Metabolism"
+  ],
+  [3, "Heme Catabolism — Jaundice", 10, 6, "Heme Catabolism — Bilirubin Metabolism & Jaundice"],
+  [3, "Heme Catabolism — Jaundice - Structure & Properties", 10, 5, "Heme Catabolism — Jaundice"],
+  [3, "Heme Catabolism — Jaundice - Metabolic Pathways", 10, 5, "Heme Catabolism — Jaundice"],
+  [3, "Heme Catabolism — Jaundice - Enzymes & Regulation", 10, 5, "Heme Catabolism — Jaundice"],
+  [
+    3,
+    "Heme Catabolism — Jaundice - Clinical Biochemistry & Lab Tests",
+    10,
+    5,
+    "Heme Catabolism — Jaundice"
+  ],
+  [
+    3,
+    "Heme Catabolism — Jaundice - Associated Inborn Errors / Disorders",
+    10,
+    5,
+    "Heme Catabolism — Jaundice"
+  ],
+  [3, "Enzymes", 9, 50],
+  [3, "Enzyme Kinetics (Km, Vmax)", 10, 40, "Enzymes"],
+  [
+    3,
+    "Michaelis-Menten Kinetics — Km, Vmax & Lineweaver-Burk",
+    10,
+    18,
+    "Enzyme Kinetics (Km, Vmax)"
+  ],
+  [
+    3,
+    "Michaelis-Menten Kinetics — Km, Vmax",
+    10,
+    9,
+    "Michaelis-Menten Kinetics — Km, Vmax & Lineweaver-Burk"
+  ],
+  [
+    3,
+    "Michaelis-Menten Kinetics — Km, Vmax - Structure & Properties",
+    10,
+    5,
+    "Michaelis-Menten Kinetics — Km, Vmax"
+  ],
+  [
+    3,
+    "Michaelis-Menten Kinetics — Km, Vmax - Metabolic Pathways",
+    10,
+    5,
+    "Michaelis-Menten Kinetics — Km, Vmax"
+  ],
+  [
+    3,
+    "Michaelis-Menten Kinetics — Km, Vmax - Enzymes & Regulation",
+    10,
+    5,
+    "Michaelis-Menten Kinetics — Km, Vmax"
+  ],
+  [
+    3,
+    "Michaelis-Menten Kinetics — Km, Vmax - Clinical Biochemistry & Lab Tests",
+    10,
+    5,
+    "Michaelis-Menten Kinetics — Km, Vmax"
+  ],
+  [
+    3,
+    "Michaelis-Menten Kinetics — Km, Vmax - Associated Inborn Errors / Disorders",
+    10,
+    5,
+    "Michaelis-Menten Kinetics — Km, Vmax"
+  ],
+  [
+    3,
+    "Michaelis-Menten Kinetics — Lineweaver-Burk",
+    10,
+    9,
+    "Michaelis-Menten Kinetics — Km, Vmax & Lineweaver-Burk"
+  ],
+  [
+    3,
+    "Michaelis-Menten Kinetics — Lineweaver-Burk - Structure & Properties",
+    10,
+    5,
+    "Michaelis-Menten Kinetics — Lineweaver-Burk"
+  ],
+  [
+    3,
+    "Michaelis-Menten Kinetics — Lineweaver-Burk - Metabolic Pathways",
+    10,
+    5,
+    "Michaelis-Menten Kinetics — Lineweaver-Burk"
+  ],
+  [
+    3,
+    "Michaelis-Menten Kinetics — Lineweaver-Burk - Enzymes & Regulation",
+    10,
+    5,
+    "Michaelis-Menten Kinetics — Lineweaver-Burk"
+  ],
+  [
+    3,
+    "Michaelis-Menten Kinetics — Lineweaver-Burk - Clinical Biochemistry & Lab Tests",
+    10,
+    5,
+    "Michaelis-Menten Kinetics — Lineweaver-Burk"
+  ],
+  [
+    3,
+    "Michaelis-Menten Kinetics — Lineweaver-Burk - Associated Inborn Errors / Disorders",
+    10,
+    5,
+    "Michaelis-Menten Kinetics — Lineweaver-Burk"
+  ],
+  [
+    3,
+    "Enzyme Inhibition — Competitive, Non-competitive & Uncompetitive",
+    10,
+    15,
+    "Enzyme Kinetics (Km, Vmax)"
+  ],
+  [
+    3,
+    "Enzyme Inhibition — Competitive, Non-competitive",
+    10,
+    7,
+    "Enzyme Inhibition — Competitive, Non-competitive & Uncompetitive"
+  ],
+  [
+    3,
+    "Enzyme Inhibition — Competitive, Non-competitive - Structure & Properties",
+    10,
+    5,
+    "Enzyme Inhibition — Competitive, Non-competitive"
+  ],
+  [
+    3,
+    "Enzyme Inhibition — Competitive, Non-competitive - Metabolic Pathways",
+    10,
+    5,
+    "Enzyme Inhibition — Competitive, Non-competitive"
+  ],
+  [
+    3,
+    "Enzyme Inhibition — Competitive, Non-competitive - Enzymes & Regulation",
+    10,
+    5,
+    "Enzyme Inhibition — Competitive, Non-competitive"
+  ],
+  [
+    3,
+    "Enzyme Inhibition — Competitive, Non-competitive - Clinical Biochemistry & Lab Tests",
+    10,
+    5,
+    "Enzyme Inhibition — Competitive, Non-competitive"
+  ],
+  [
+    3,
+    "Enzyme Inhibition — Competitive, Non-competitive - Associated Inborn Errors / Disorders",
+    10,
+    5,
+    "Enzyme Inhibition — Competitive, Non-competitive"
+  ],
+  [
+    3,
+    "Enzyme Inhibition — Uncompetitive",
+    10,
+    8,
+    "Enzyme Inhibition — Competitive, Non-competitive & Uncompetitive"
+  ],
+  [
+    3,
+    "Enzyme Inhibition — Uncompetitive - Structure & Properties",
+    10,
+    5,
+    "Enzyme Inhibition — Uncompetitive"
+  ],
+  [
+    3,
+    "Enzyme Inhibition — Uncompetitive - Metabolic Pathways",
+    10,
+    5,
+    "Enzyme Inhibition — Uncompetitive"
+  ],
+  [
+    3,
+    "Enzyme Inhibition — Uncompetitive - Enzymes & Regulation",
+    10,
+    5,
+    "Enzyme Inhibition — Uncompetitive"
+  ],
+  [
+    3,
+    "Enzyme Inhibition — Uncompetitive - Clinical Biochemistry & Lab Tests",
+    10,
+    5,
+    "Enzyme Inhibition — Uncompetitive"
+  ],
+  [
+    3,
+    "Enzyme Inhibition — Uncompetitive - Associated Inborn Errors / Disorders",
+    10,
+    5,
+    "Enzyme Inhibition — Uncompetitive"
+  ],
+  [3, "Inhibition & Regulation", 9, 35, "Enzymes"],
+  [
+    3,
+    "Allosteric Regulation, Covalent Modification & Isoenzymes",
+    9,
+    15,
+    "Inhibition & Regulation"
+  ],
+  [
+    3,
+    "Allosteric Regulation, Covalent Modification",
+    9,
+    7,
+    "Allosteric Regulation, Covalent Modification & Isoenzymes"
+  ],
+  [
+    3,
+    "Allosteric Regulation, Covalent Modification - Structure & Properties",
+    9,
+    5,
+    "Allosteric Regulation, Covalent Modification"
+  ],
+  [
+    3,
+    "Allosteric Regulation, Covalent Modification - Metabolic Pathways",
+    9,
+    5,
+    "Allosteric Regulation, Covalent Modification"
+  ],
+  [
+    3,
+    "Allosteric Regulation, Covalent Modification - Enzymes & Regulation",
+    9,
+    5,
+    "Allosteric Regulation, Covalent Modification"
+  ],
+  [
+    3,
+    "Allosteric Regulation, Covalent Modification - Clinical Biochemistry & Lab Tests",
+    9,
+    5,
+    "Allosteric Regulation, Covalent Modification"
+  ],
+  [
+    3,
+    "Allosteric Regulation, Covalent Modification - Associated Inborn Errors / Disorders",
+    9,
+    5,
+    "Allosteric Regulation, Covalent Modification"
+  ],
+  [3, "Isoenzymes", 9, 8, "Allosteric Regulation, Covalent Modification & Isoenzymes"],
+  [3, "Isoenzymes - Structure & Properties", 9, 5, "Isoenzymes"],
+  [3, "Isoenzymes - Metabolic Pathways", 9, 5, "Isoenzymes"],
+  [3, "Isoenzymes - Enzymes & Regulation", 9, 5, "Isoenzymes"],
+  [3, "Isoenzymes - Clinical Biochemistry & Lab Tests", 9, 5, "Isoenzymes"],
+  [3, "Isoenzymes - Associated Inborn Errors / Disorders", 9, 5, "Isoenzymes"],
+  [3, "Clinically Important Enzymes (LDH, CK, AST, ALT)", 9, 15, "Inhibition & Regulation"],
+  [
+    3,
+    "Clinically Important Enzymes (LDH",
+    9,
+    7,
+    "Clinically Important Enzymes (LDH, CK, AST, ALT)"
+  ],
+  [
+    3,
+    "Clinically Important Enzymes (LDH - Structure & Properties",
+    9,
+    5,
+    "Clinically Important Enzymes (LDH"
+  ],
+  [
+    3,
+    "Clinically Important Enzymes (LDH - Metabolic Pathways",
+    9,
+    5,
+    "Clinically Important Enzymes (LDH"
+  ],
+  [
+    3,
+    "Clinically Important Enzymes (LDH - Enzymes & Regulation",
+    9,
+    5,
+    "Clinically Important Enzymes (LDH"
+  ],
+  [
+    3,
+    "Clinically Important Enzymes (LDH - Clinical Biochemistry & Lab Tests",
+    9,
+    5,
+    "Clinically Important Enzymes (LDH"
+  ],
+  [
+    3,
+    "Clinically Important Enzymes (LDH - Associated Inborn Errors / Disorders",
+    9,
+    5,
+    "Clinically Important Enzymes (LDH"
+  ],
+  [3, "CK, AST, ALT)", 9, 8, "Clinically Important Enzymes (LDH, CK, AST, ALT)"],
+  [3, "CK, AST, ALT) - Structure & Properties", 9, 5, "CK, AST, ALT)"],
+  [3, "CK, AST, ALT) - Metabolic Pathways", 9, 5, "CK, AST, ALT)"],
+  [3, "CK, AST, ALT) - Enzymes & Regulation", 9, 5, "CK, AST, ALT)"],
+  [3, "CK, AST, ALT) - Clinical Biochemistry & Lab Tests", 9, 5, "CK, AST, ALT)"],
+  [3, "CK, AST, ALT) - Associated Inborn Errors / Disorders", 9, 5, "CK, AST, ALT)"],
+  [3, "Biological Oxidation (ETC)", 10, 45],
+  [3, "Electron Transport Chain — Complexes I–IV", 10, 18, "Biological Oxidation (ETC)"],
+  [3, "Electron Transport Chain — Basics", 10, 9, "Electron Transport Chain — Complexes I–IV"],
+  [
+    3,
+    "Electron Transport Chain — Basics - Structure & Properties",
+    10,
+    5,
+    "Electron Transport Chain — Basics"
+  ],
+  [
+    3,
+    "Electron Transport Chain — Basics - Metabolic Pathways",
+    10,
+    5,
+    "Electron Transport Chain — Basics"
+  ],
+  [
+    3,
+    "Electron Transport Chain — Basics - Enzymes & Regulation",
+    10,
+    5,
+    "Electron Transport Chain — Basics"
+  ],
+  [
+    3,
+    "Electron Transport Chain — Basics - Clinical Biochemistry & Lab Tests",
+    10,
+    5,
+    "Electron Transport Chain — Basics"
+  ],
+  [
+    3,
+    "Electron Transport Chain — Basics - Associated Inborn Errors / Disorders",
+    10,
+    5,
+    "Electron Transport Chain — Basics"
+  ],
+  [3, "Electron Transport Chain — Details", 10, 9, "Electron Transport Chain — Complexes I–IV"],
+  [
+    3,
+    "Electron Transport Chain — Details - Structure & Properties",
+    10,
+    5,
+    "Electron Transport Chain — Details"
+  ],
+  [
+    3,
+    "Electron Transport Chain — Details - Metabolic Pathways",
+    10,
+    5,
+    "Electron Transport Chain — Details"
+  ],
+  [
+    3,
+    "Electron Transport Chain — Details - Enzymes & Regulation",
+    10,
+    5,
+    "Electron Transport Chain — Details"
+  ],
+  [
+    3,
+    "Electron Transport Chain — Details - Clinical Biochemistry & Lab Tests",
+    10,
+    5,
+    "Electron Transport Chain — Details"
+  ],
+  [
+    3,
+    "Electron Transport Chain — Details - Associated Inborn Errors / Disorders",
+    10,
+    5,
+    "Electron Transport Chain — Details"
+  ],
+  [
+    3,
+    "Oxidative Phosphorylation & ATP Synthesis (Complex V)",
+    10,
+    15,
+    "Biological Oxidation (ETC)"
+  ],
+  [3, "Oxidative Phosphorylation", 10, 7, "Oxidative Phosphorylation & ATP Synthesis (Complex V)"],
+  [3, "Oxidative Phosphorylation - Structure & Properties", 10, 5, "Oxidative Phosphorylation"],
+  [3, "Oxidative Phosphorylation - Metabolic Pathways", 10, 5, "Oxidative Phosphorylation"],
+  [3, "Oxidative Phosphorylation - Enzymes & Regulation", 10, 5, "Oxidative Phosphorylation"],
+  [
+    3,
+    "Oxidative Phosphorylation - Clinical Biochemistry & Lab Tests",
+    10,
+    5,
+    "Oxidative Phosphorylation"
+  ],
+  [
+    3,
+    "Oxidative Phosphorylation - Associated Inborn Errors / Disorders",
+    10,
+    5,
+    "Oxidative Phosphorylation"
+  ],
+  [3, "ATP Synthesis (Complex V)", 10, 8, "Oxidative Phosphorylation & ATP Synthesis (Complex V)"],
+  [3, "ATP Synthesis (Complex V) - Structure & Properties", 10, 5, "ATP Synthesis (Complex V)"],
+  [3, "ATP Synthesis (Complex V) - Metabolic Pathways", 10, 5, "ATP Synthesis (Complex V)"],
+  [3, "ATP Synthesis (Complex V) - Enzymes & Regulation", 10, 5, "ATP Synthesis (Complex V)"],
+  [
+    3,
+    "ATP Synthesis (Complex V) - Clinical Biochemistry & Lab Tests",
+    10,
+    5,
+    "ATP Synthesis (Complex V)"
+  ],
+  [
+    3,
+    "ATP Synthesis (Complex V) - Associated Inborn Errors / Disorders",
+    10,
+    5,
+    "ATP Synthesis (Complex V)"
+  ],
+  [3, "ETC Inhibitors & Uncouplers", 10, 12, "Biological Oxidation (ETC)"],
+  [3, "ETC Inhibitors", 10, 6, "ETC Inhibitors & Uncouplers"],
+  [3, "ETC Inhibitors - Structure & Properties", 10, 5, "ETC Inhibitors"],
+  [3, "ETC Inhibitors - Metabolic Pathways", 10, 5, "ETC Inhibitors"],
+  [3, "ETC Inhibitors - Enzymes & Regulation", 10, 5, "ETC Inhibitors"],
+  [3, "ETC Inhibitors - Clinical Biochemistry & Lab Tests", 10, 5, "ETC Inhibitors"],
+  [3, "ETC Inhibitors - Associated Inborn Errors / Disorders", 10, 5, "ETC Inhibitors"],
+  [3, "Uncouplers", 10, 6, "ETC Inhibitors & Uncouplers"],
+  [3, "Uncouplers - Structure & Properties", 10, 5, "Uncouplers"],
+  [3, "Uncouplers - Metabolic Pathways", 10, 5, "Uncouplers"],
+  [3, "Uncouplers - Enzymes & Regulation", 10, 5, "Uncouplers"],
+  [3, "Uncouplers - Clinical Biochemistry & Lab Tests", 10, 5, "Uncouplers"],
+  [3, "Uncouplers - Associated Inborn Errors / Disorders", 10, 5, "Uncouplers"],
+  [3, "Vitamins & Minerals", 9, 60],
+  [3, "Fat-Soluble Vitamins (A, D, E, K)", 10, 45, "Vitamins & Minerals"],
+  [
+    3,
+    "Vitamin A — Forms, Functions, Deficiency & Toxicity",
+    10,
+    12,
+    "Fat-Soluble Vitamins (A, D, E, K)"
+  ],
+  [
+    3,
+    "Vitamin A — Forms, Functions, Deficiency",
+    10,
+    6,
+    "Vitamin A — Forms, Functions, Deficiency & Toxicity"
+  ],
+  [
+    3,
+    "Vitamin A — Forms, Functions, Deficiency - Structure & Properties",
+    10,
+    5,
+    "Vitamin A — Forms, Functions, Deficiency"
+  ],
+  [
+    3,
+    "Vitamin A — Forms, Functions, Deficiency - Metabolic Pathways",
+    10,
+    5,
+    "Vitamin A — Forms, Functions, Deficiency"
+  ],
+  [
+    3,
+    "Vitamin A — Forms, Functions, Deficiency - Enzymes & Regulation",
+    10,
+    5,
+    "Vitamin A — Forms, Functions, Deficiency"
+  ],
+  [
+    3,
+    "Vitamin A — Forms, Functions, Deficiency - Clinical Biochemistry & Lab Tests",
+    10,
+    5,
+    "Vitamin A — Forms, Functions, Deficiency"
+  ],
+  [
+    3,
+    "Vitamin A — Forms, Functions, Deficiency - Associated Inborn Errors / Disorders",
+    10,
+    5,
+    "Vitamin A — Forms, Functions, Deficiency"
+  ],
+  [3, "Vitamin A — Toxicity", 10, 6, "Vitamin A — Forms, Functions, Deficiency & Toxicity"],
+  [3, "Vitamin A — Toxicity - Structure & Properties", 10, 5, "Vitamin A — Toxicity"],
+  [3, "Vitamin A — Toxicity - Metabolic Pathways", 10, 5, "Vitamin A — Toxicity"],
+  [3, "Vitamin A — Toxicity - Enzymes & Regulation", 10, 5, "Vitamin A — Toxicity"],
+  [3, "Vitamin A — Toxicity - Clinical Biochemistry & Lab Tests", 10, 5, "Vitamin A — Toxicity"],
+  [3, "Vitamin A — Toxicity - Associated Inborn Errors / Disorders", 10, 5, "Vitamin A — Toxicity"],
+  [
+    3,
+    "Vitamin D — Synthesis, Activation, Deficiency & Toxicity",
+    10,
+    15,
+    "Fat-Soluble Vitamins (A, D, E, K)"
+  ],
+  [
+    3,
+    "Vitamin D — Synthesis, Activation, Deficiency",
+    10,
+    7,
+    "Vitamin D — Synthesis, Activation, Deficiency & Toxicity"
+  ],
+  [
+    3,
+    "Vitamin D — Synthesis, Activation, Deficiency - Structure & Properties",
+    10,
+    5,
+    "Vitamin D — Synthesis, Activation, Deficiency"
+  ],
+  [
+    3,
+    "Vitamin D — Synthesis, Activation, Deficiency - Metabolic Pathways",
+    10,
+    5,
+    "Vitamin D — Synthesis, Activation, Deficiency"
+  ],
+  [
+    3,
+    "Vitamin D — Synthesis, Activation, Deficiency - Enzymes & Regulation",
+    10,
+    5,
+    "Vitamin D — Synthesis, Activation, Deficiency"
+  ],
+  [
+    3,
+    "Vitamin D — Synthesis, Activation, Deficiency - Clinical Biochemistry & Lab Tests",
+    10,
+    5,
+    "Vitamin D — Synthesis, Activation, Deficiency"
+  ],
+  [
+    3,
+    "Vitamin D — Synthesis, Activation, Deficiency - Associated Inborn Errors / Disorders",
+    10,
+    5,
+    "Vitamin D — Synthesis, Activation, Deficiency"
+  ],
+  [3, "Vitamin D — Toxicity", 10, 8, "Vitamin D — Synthesis, Activation, Deficiency & Toxicity"],
+  [3, "Vitamin D — Toxicity - Structure & Properties", 10, 5, "Vitamin D — Toxicity"],
+  [3, "Vitamin D — Toxicity - Metabolic Pathways", 10, 5, "Vitamin D — Toxicity"],
+  [3, "Vitamin D — Toxicity - Enzymes & Regulation", 10, 5, "Vitamin D — Toxicity"],
+  [3, "Vitamin D — Toxicity - Clinical Biochemistry & Lab Tests", 10, 5, "Vitamin D — Toxicity"],
+  [3, "Vitamin D — Toxicity - Associated Inborn Errors / Disorders", 10, 5, "Vitamin D — Toxicity"],
+  [
+    3,
+    "Vitamins E & K — Functions, Deficiency & Antidotes",
+    10,
+    12,
+    "Fat-Soluble Vitamins (A, D, E, K)"
+  ],
+  [
+    3,
+    "Vitamins E & K — Functions, Deficiency",
+    10,
+    6,
+    "Vitamins E & K — Functions, Deficiency & Antidotes"
+  ],
+  [
+    3,
+    "Vitamins E & K — Functions, Deficiency - Structure & Properties",
+    10,
+    5,
+    "Vitamins E & K — Functions, Deficiency"
+  ],
+  [
+    3,
+    "Vitamins E & K — Functions, Deficiency - Metabolic Pathways",
+    10,
+    5,
+    "Vitamins E & K — Functions, Deficiency"
+  ],
+  [
+    3,
+    "Vitamins E & K — Functions, Deficiency - Enzymes & Regulation",
+    10,
+    5,
+    "Vitamins E & K — Functions, Deficiency"
+  ],
+  [
+    3,
+    "Vitamins E & K — Functions, Deficiency - Clinical Biochemistry & Lab Tests",
+    10,
+    5,
+    "Vitamins E & K — Functions, Deficiency"
+  ],
+  [
+    3,
+    "Vitamins E & K — Functions, Deficiency - Associated Inborn Errors / Disorders",
+    10,
+    5,
+    "Vitamins E & K — Functions, Deficiency"
+  ],
+  [3, "Vitamins E & K — Antidotes", 10, 6, "Vitamins E & K — Functions, Deficiency & Antidotes"],
+  [3, "Vitamins E & K — Antidotes - Structure & Properties", 10, 5, "Vitamins E & K — Antidotes"],
+  [3, "Vitamins E & K — Antidotes - Metabolic Pathways", 10, 5, "Vitamins E & K — Antidotes"],
+  [3, "Vitamins E & K — Antidotes - Enzymes & Regulation", 10, 5, "Vitamins E & K — Antidotes"],
+  [
+    3,
+    "Vitamins E & K — Antidotes - Clinical Biochemistry & Lab Tests",
+    10,
+    5,
+    "Vitamins E & K — Antidotes"
+  ],
+  [
+    3,
+    "Vitamins E & K — Antidotes - Associated Inborn Errors / Disorders",
+    10,
+    5,
+    "Vitamins E & K — Antidotes"
+  ],
+  [3, "Water-Soluble Vitamins (B-complex, C)", 10, 50, "Vitamins & Minerals"],
+  [
+    3,
+    "Vitamin B1 (Thiamine) & B2 (Riboflavin) — Deficiency Syndromes",
+    10,
+    12,
+    "Water-Soluble Vitamins (B-complex, C)"
+  ],
+  [
+    3,
+    "Vitamin B1 (Thiamine) & B2 (Riboflavin) — Basics",
+    10,
+    6,
+    "Vitamin B1 (Thiamine) & B2 (Riboflavin) — Deficiency Syndromes"
+  ],
+  [
+    3,
+    "Vitamin B1 (Thiamine) & B2 (Riboflavin) — Basics - Structure & Properties",
+    10,
+    5,
+    "Vitamin B1 (Thiamine) & B2 (Riboflavin) — Basics"
+  ],
+  [
+    3,
+    "Vitamin B1 (Thiamine) & B2 (Riboflavin) — Basics - Metabolic Pathways",
+    10,
+    5,
+    "Vitamin B1 (Thiamine) & B2 (Riboflavin) — Basics"
+  ],
+  [
+    3,
+    "Vitamin B1 (Thiamine) & B2 (Riboflavin) — Basics - Enzymes & Regulation",
+    10,
+    5,
+    "Vitamin B1 (Thiamine) & B2 (Riboflavin) — Basics"
+  ],
+  [
+    3,
+    "Vitamin B1 (Thiamine) & B2 (Riboflavin) — Basics - Clinical Biochemistry & Lab Tests",
+    10,
+    5,
+    "Vitamin B1 (Thiamine) & B2 (Riboflavin) — Basics"
+  ],
+  [
+    3,
+    "Vitamin B1 (Thiamine) & B2 (Riboflavin) — Basics - Associated Inborn Errors / Disorders",
+    10,
+    5,
+    "Vitamin B1 (Thiamine) & B2 (Riboflavin) — Basics"
+  ],
+  [
+    3,
+    "Vitamin B1 (Thiamine) & B2 (Riboflavin) — Details",
+    10,
+    6,
+    "Vitamin B1 (Thiamine) & B2 (Riboflavin) — Deficiency Syndromes"
+  ],
+  [
+    3,
+    "Vitamin B1 (Thiamine) & B2 (Riboflavin) — Details - Structure & Properties",
+    10,
+    5,
+    "Vitamin B1 (Thiamine) & B2 (Riboflavin) — Details"
+  ],
+  [
+    3,
+    "Vitamin B1 (Thiamine) & B2 (Riboflavin) — Details - Metabolic Pathways",
+    10,
+    5,
+    "Vitamin B1 (Thiamine) & B2 (Riboflavin) — Details"
+  ],
+  [
+    3,
+    "Vitamin B1 (Thiamine) & B2 (Riboflavin) — Details - Enzymes & Regulation",
+    10,
+    5,
+    "Vitamin B1 (Thiamine) & B2 (Riboflavin) — Details"
+  ],
+  [
+    3,
+    "Vitamin B1 (Thiamine) & B2 (Riboflavin) — Details - Clinical Biochemistry & Lab Tests",
+    10,
+    5,
+    "Vitamin B1 (Thiamine) & B2 (Riboflavin) — Details"
+  ],
+  [
+    3,
+    "Vitamin B1 (Thiamine) & B2 (Riboflavin) — Details - Associated Inborn Errors / Disorders",
+    10,
+    5,
+    "Vitamin B1 (Thiamine) & B2 (Riboflavin) — Details"
+  ],
+  [
+    3,
+    "Niacin (B3), Pantothenate (B5) & Biotin (B7)",
+    10,
+    12,
+    "Water-Soluble Vitamins (B-complex, C)"
+  ],
+  [3, "Niacin (B3), Pantothenate (B5)", 10, 6, "Niacin (B3), Pantothenate (B5) & Biotin (B7)"],
+  [
+    3,
+    "Niacin (B3), Pantothenate (B5) - Structure & Properties",
+    10,
+    5,
+    "Niacin (B3), Pantothenate (B5)"
+  ],
+  [
+    3,
+    "Niacin (B3), Pantothenate (B5) - Metabolic Pathways",
+    10,
+    5,
+    "Niacin (B3), Pantothenate (B5)"
+  ],
+  [
+    3,
+    "Niacin (B3), Pantothenate (B5) - Enzymes & Regulation",
+    10,
+    5,
+    "Niacin (B3), Pantothenate (B5)"
+  ],
+  [
+    3,
+    "Niacin (B3), Pantothenate (B5) - Clinical Biochemistry & Lab Tests",
+    10,
+    5,
+    "Niacin (B3), Pantothenate (B5)"
+  ],
+  [
+    3,
+    "Niacin (B3), Pantothenate (B5) - Associated Inborn Errors / Disorders",
+    10,
+    5,
+    "Niacin (B3), Pantothenate (B5)"
+  ],
+  [3, "Biotin (B7)", 10, 6, "Niacin (B3), Pantothenate (B5) & Biotin (B7)"],
+  [3, "Biotin (B7) - Structure & Properties", 10, 5, "Biotin (B7)"],
+  [3, "Biotin (B7) - Metabolic Pathways", 10, 5, "Biotin (B7)"],
+  [3, "Biotin (B7) - Enzymes & Regulation", 10, 5, "Biotin (B7)"],
+  [3, "Biotin (B7) - Clinical Biochemistry & Lab Tests", 10, 5, "Biotin (B7)"],
+  [3, "Biotin (B7) - Associated Inborn Errors / Disorders", 10, 5, "Biotin (B7)"],
+  [
+    3,
+    "Pyridoxine (B6), Folate (B9) & B12 — Neural Tube & Anemia",
+    10,
+    15,
+    "Water-Soluble Vitamins (B-complex, C)"
+  ],
+  [
+    3,
+    "Pyridoxine (B6), Folate (B9) & B12 — Neural Tube",
+    10,
+    7,
+    "Pyridoxine (B6), Folate (B9) & B12 — Neural Tube & Anemia"
+  ],
+  [
+    3,
+    "Pyridoxine (B6), Folate (B9) & B12 — Neural Tube - Structure & Properties",
+    10,
+    5,
+    "Pyridoxine (B6), Folate (B9) & B12 — Neural Tube"
+  ],
+  [
+    3,
+    "Pyridoxine (B6), Folate (B9) & B12 — Neural Tube - Metabolic Pathways",
+    10,
+    5,
+    "Pyridoxine (B6), Folate (B9) & B12 — Neural Tube"
+  ],
+  [
+    3,
+    "Pyridoxine (B6), Folate (B9) & B12 — Neural Tube - Enzymes & Regulation",
+    10,
+    5,
+    "Pyridoxine (B6), Folate (B9) & B12 — Neural Tube"
+  ],
+  [
+    3,
+    "Pyridoxine (B6), Folate (B9) & B12 — Neural Tube - Clinical Biochemistry & Lab Tests",
+    10,
+    5,
+    "Pyridoxine (B6), Folate (B9) & B12 — Neural Tube"
+  ],
+  [
+    3,
+    "Pyridoxine (B6), Folate (B9) & B12 — Neural Tube - Associated Inborn Errors / Disorders",
+    10,
+    5,
+    "Pyridoxine (B6), Folate (B9) & B12 — Neural Tube"
+  ],
+  [
+    3,
+    "Pyridoxine (B6), Folate (B9) & B12 — Anemia",
+    10,
+    8,
+    "Pyridoxine (B6), Folate (B9) & B12 — Neural Tube & Anemia"
+  ],
+  [
+    3,
+    "Pyridoxine (B6), Folate (B9) & B12 — Anemia - Structure & Properties",
+    10,
+    5,
+    "Pyridoxine (B6), Folate (B9) & B12 — Anemia"
+  ],
+  [
+    3,
+    "Pyridoxine (B6), Folate (B9) & B12 — Anemia - Metabolic Pathways",
+    10,
+    5,
+    "Pyridoxine (B6), Folate (B9) & B12 — Anemia"
+  ],
+  [
+    3,
+    "Pyridoxine (B6), Folate (B9) & B12 — Anemia - Enzymes & Regulation",
+    10,
+    5,
+    "Pyridoxine (B6), Folate (B9) & B12 — Anemia"
+  ],
+  [
+    3,
+    "Pyridoxine (B6), Folate (B9) & B12 — Anemia - Clinical Biochemistry & Lab Tests",
+    10,
+    5,
+    "Pyridoxine (B6), Folate (B9) & B12 — Anemia"
+  ],
+  [
+    3,
+    "Pyridoxine (B6), Folate (B9) & B12 — Anemia - Associated Inborn Errors / Disorders",
+    10,
+    5,
+    "Pyridoxine (B6), Folate (B9) & B12 — Anemia"
+  ],
+  [
+    3,
+    "Vitamin C — Scurvy, Collagen & Antioxidant Role",
+    10,
+    10,
+    "Water-Soluble Vitamins (B-complex, C)"
+  ],
+  [3, "Vitamin C — Scurvy, Collagen", 10, 5, "Vitamin C — Scurvy, Collagen & Antioxidant Role"],
+  [
+    3,
+    "Vitamin C — Scurvy, Collagen - Structure & Properties",
+    10,
+    5,
+    "Vitamin C — Scurvy, Collagen"
+  ],
+  [3, "Vitamin C — Scurvy, Collagen - Metabolic Pathways", 10, 5, "Vitamin C — Scurvy, Collagen"],
+  [3, "Vitamin C — Scurvy, Collagen - Enzymes & Regulation", 10, 5, "Vitamin C — Scurvy, Collagen"],
+  [
+    3,
+    "Vitamin C — Scurvy, Collagen - Clinical Biochemistry & Lab Tests",
+    10,
+    5,
+    "Vitamin C — Scurvy, Collagen"
+  ],
+  [
+    3,
+    "Vitamin C — Scurvy, Collagen - Associated Inborn Errors / Disorders",
+    10,
+    5,
+    "Vitamin C — Scurvy, Collagen"
+  ],
+  [3, "Vitamin C — Antioxidant Role", 10, 5, "Vitamin C — Scurvy, Collagen & Antioxidant Role"],
+  [
+    3,
+    "Vitamin C — Antioxidant Role - Structure & Properties",
+    10,
+    5,
+    "Vitamin C — Antioxidant Role"
+  ],
+  [3, "Vitamin C — Antioxidant Role - Metabolic Pathways", 10, 5, "Vitamin C — Antioxidant Role"],
+  [3, "Vitamin C — Antioxidant Role - Enzymes & Regulation", 10, 5, "Vitamin C — Antioxidant Role"],
+  [
+    3,
+    "Vitamin C — Antioxidant Role - Clinical Biochemistry & Lab Tests",
+    10,
+    5,
+    "Vitamin C — Antioxidant Role"
+  ],
+  [
+    3,
+    "Vitamin C — Antioxidant Role - Associated Inborn Errors / Disorders",
+    10,
+    5,
+    "Vitamin C — Antioxidant Role"
+  ],
+  [3, "Major Minerals (Ca, P, Mg)", 9, 35, "Vitamins & Minerals"],
+  [3, "Calcium & Phosphorus — Regulation & Disorders", 9, 18, "Major Minerals (Ca, P, Mg)"],
+  [3, "Calcium & Phosphorus — Regulation", 9, 9, "Calcium & Phosphorus — Regulation & Disorders"],
+  [
+    3,
+    "Calcium & Phosphorus — Regulation - Structure & Properties",
+    9,
+    5,
+    "Calcium & Phosphorus — Regulation"
+  ],
+  [
+    3,
+    "Calcium & Phosphorus — Regulation - Metabolic Pathways",
+    9,
+    5,
+    "Calcium & Phosphorus — Regulation"
+  ],
+  [
+    3,
+    "Calcium & Phosphorus — Regulation - Enzymes & Regulation",
+    9,
+    5,
+    "Calcium & Phosphorus — Regulation"
+  ],
+  [
+    3,
+    "Calcium & Phosphorus — Regulation - Clinical Biochemistry & Lab Tests",
+    9,
+    5,
+    "Calcium & Phosphorus — Regulation"
+  ],
+  [
+    3,
+    "Calcium & Phosphorus — Regulation - Associated Inborn Errors / Disorders",
+    9,
+    5,
+    "Calcium & Phosphorus — Regulation"
+  ],
+  [3, "Calcium & Phosphorus — Disorders", 9, 9, "Calcium & Phosphorus — Regulation & Disorders"],
+  [
+    3,
+    "Calcium & Phosphorus — Disorders - Structure & Properties",
+    9,
+    5,
+    "Calcium & Phosphorus — Disorders"
+  ],
+  [
+    3,
+    "Calcium & Phosphorus — Disorders - Metabolic Pathways",
+    9,
+    5,
+    "Calcium & Phosphorus — Disorders"
+  ],
+  [
+    3,
+    "Calcium & Phosphorus — Disorders - Enzymes & Regulation",
+    9,
+    5,
+    "Calcium & Phosphorus — Disorders"
+  ],
+  [
+    3,
+    "Calcium & Phosphorus — Disorders - Clinical Biochemistry & Lab Tests",
+    9,
+    5,
+    "Calcium & Phosphorus — Disorders"
+  ],
+  [
+    3,
+    "Calcium & Phosphorus — Disorders - Associated Inborn Errors / Disorders",
+    9,
+    5,
+    "Calcium & Phosphorus — Disorders"
+  ],
+  [3, "Magnesium, Iron & Zinc — Metabolism & Deficiency", 9, 15, "Major Minerals (Ca, P, Mg)"],
+  [
+    3,
+    "Magnesium, Iron & Zinc — Metabolism",
+    9,
+    7,
+    "Magnesium, Iron & Zinc — Metabolism & Deficiency"
+  ],
+  [
+    3,
+    "Magnesium, Iron & Zinc — Metabolism - Structure & Properties",
+    9,
+    5,
+    "Magnesium, Iron & Zinc — Metabolism"
+  ],
+  [
+    3,
+    "Magnesium, Iron & Zinc — Metabolism - Metabolic Pathways",
+    9,
+    5,
+    "Magnesium, Iron & Zinc — Metabolism"
+  ],
+  [
+    3,
+    "Magnesium, Iron & Zinc — Metabolism - Enzymes & Regulation",
+    9,
+    5,
+    "Magnesium, Iron & Zinc — Metabolism"
+  ],
+  [
+    3,
+    "Magnesium, Iron & Zinc — Metabolism - Clinical Biochemistry & Lab Tests",
+    9,
+    5,
+    "Magnesium, Iron & Zinc — Metabolism"
+  ],
+  [
+    3,
+    "Magnesium, Iron & Zinc — Metabolism - Associated Inborn Errors / Disorders",
+    9,
+    5,
+    "Magnesium, Iron & Zinc — Metabolism"
+  ],
+  [
+    3,
+    "Magnesium, Iron & Zinc — Deficiency",
+    9,
+    8,
+    "Magnesium, Iron & Zinc — Metabolism & Deficiency"
+  ],
+  [
+    3,
+    "Magnesium, Iron & Zinc — Deficiency - Structure & Properties",
+    9,
+    5,
+    "Magnesium, Iron & Zinc — Deficiency"
+  ],
+  [
+    3,
+    "Magnesium, Iron & Zinc — Deficiency - Metabolic Pathways",
+    9,
+    5,
+    "Magnesium, Iron & Zinc — Deficiency"
+  ],
+  [
+    3,
+    "Magnesium, Iron & Zinc — Deficiency - Enzymes & Regulation",
+    9,
+    5,
+    "Magnesium, Iron & Zinc — Deficiency"
+  ],
+  [
+    3,
+    "Magnesium, Iron & Zinc — Deficiency - Clinical Biochemistry & Lab Tests",
+    9,
+    5,
+    "Magnesium, Iron & Zinc — Deficiency"
+  ],
+  [
+    3,
+    "Magnesium, Iron & Zinc — Deficiency - Associated Inborn Errors / Disorders",
+    9,
+    5,
+    "Magnesium, Iron & Zinc — Deficiency"
+  ],
+  [3, "Trace Elements", 8, 30, "Vitamins & Minerals"],
+  [3, "Iron Metabolism — Absorption, Storage & Deficiency Anemia", 8, 15, "Trace Elements"],
+  [
+    3,
+    "Iron Metabolism — Absorption, Storage",
+    8,
+    7,
+    "Iron Metabolism — Absorption, Storage & Deficiency Anemia"
+  ],
+  [
+    3,
+    "Iron Metabolism — Absorption, Storage - Structure & Properties",
+    8,
+    5,
+    "Iron Metabolism — Absorption, Storage"
+  ],
+  [
+    3,
+    "Iron Metabolism — Absorption, Storage - Metabolic Pathways",
+    8,
+    5,
+    "Iron Metabolism — Absorption, Storage"
+  ],
+  [
+    3,
+    "Iron Metabolism — Absorption, Storage - Enzymes & Regulation",
+    8,
+    5,
+    "Iron Metabolism — Absorption, Storage"
+  ],
+  [
+    3,
+    "Iron Metabolism — Absorption, Storage - Clinical Biochemistry & Lab Tests",
+    8,
+    5,
+    "Iron Metabolism — Absorption, Storage"
+  ],
+  [
+    3,
+    "Iron Metabolism — Absorption, Storage - Associated Inborn Errors / Disorders",
+    8,
+    5,
+    "Iron Metabolism — Absorption, Storage"
+  ],
+  [
+    3,
+    "Iron Metabolism — Deficiency Anemia",
+    8,
+    8,
+    "Iron Metabolism — Absorption, Storage & Deficiency Anemia"
+  ],
+  [
+    3,
+    "Iron Metabolism — Deficiency Anemia - Structure & Properties",
+    8,
+    5,
+    "Iron Metabolism — Deficiency Anemia"
+  ],
+  [
+    3,
+    "Iron Metabolism — Deficiency Anemia - Metabolic Pathways",
+    8,
+    5,
+    "Iron Metabolism — Deficiency Anemia"
+  ],
+  [
+    3,
+    "Iron Metabolism — Deficiency Anemia - Enzymes & Regulation",
+    8,
+    5,
+    "Iron Metabolism — Deficiency Anemia"
+  ],
+  [
+    3,
+    "Iron Metabolism — Deficiency Anemia - Clinical Biochemistry & Lab Tests",
+    8,
+    5,
+    "Iron Metabolism — Deficiency Anemia"
+  ],
+  [
+    3,
+    "Iron Metabolism — Deficiency Anemia - Associated Inborn Errors / Disorders",
+    8,
+    5,
+    "Iron Metabolism — Deficiency Anemia"
+  ],
+  [3, "Copper, Selenium & Other Trace Elements", 8, 12, "Trace Elements"],
+  [3, "Copper, Selenium", 8, 6, "Copper, Selenium & Other Trace Elements"],
+  [3, "Copper, Selenium - Structure & Properties", 8, 5, "Copper, Selenium"],
+  [3, "Copper, Selenium - Metabolic Pathways", 8, 5, "Copper, Selenium"],
+  [3, "Copper, Selenium - Enzymes & Regulation", 8, 5, "Copper, Selenium"],
+  [3, "Copper, Selenium - Clinical Biochemistry & Lab Tests", 8, 5, "Copper, Selenium"],
+  [3, "Copper, Selenium - Associated Inborn Errors / Disorders", 8, 5, "Copper, Selenium"],
+  [3, "Other Trace Elements", 8, 6, "Copper, Selenium & Other Trace Elements"],
+  [3, "Other Trace Elements - Structure & Properties", 8, 5, "Other Trace Elements"],
+  [3, "Other Trace Elements - Metabolic Pathways", 8, 5, "Other Trace Elements"],
+  [3, "Other Trace Elements - Enzymes & Regulation", 8, 5, "Other Trace Elements"],
+  [3, "Other Trace Elements - Clinical Biochemistry & Lab Tests", 8, 5, "Other Trace Elements"],
+  [3, "Other Trace Elements - Associated Inborn Errors / Disorders", 8, 5, "Other Trace Elements"]
 ]

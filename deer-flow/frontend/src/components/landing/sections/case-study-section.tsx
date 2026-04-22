@@ -70,7 +70,7 @@ export function CaseStudySection({ className }: { className?: string }) {
                 className={cn(
                   "flex h-full w-full translate-y-[calc(100%-60px)] flex-col items-center",
                   "transition-all duration-300",
-                  "group-hover/card:translate-y-[calc(100%-128px)]",
+                  "group-hover/card:translate-y-[calc(100%-128px)]"
                 )}
               >
                 <div

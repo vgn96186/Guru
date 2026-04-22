@@ -1,260 +1,1640 @@
 [
-  [17,"General Radiology",9,40],
-  [17,"X-ray & Radiation Physics",8,35,"General Radiology"],
-  [17,"X-ray Physics — kV, mAs, Film-Screen, CR & DR Systems",8,15,"X-ray & Radiation Physics"],
-  [17,"X-ray Physics — kV, mAs, Film-Screen, CR",8,7,"X-ray Physics — kV, mAs, Film-Screen, CR & DR Systems"],
-  [17,"X-ray Physics — kV, mAs, Film-Screen, CR - Basic Principles & Physics",8,5,"X-ray Physics — kV, mAs, Film-Screen, CR"],
-  [17,"X-ray Physics — kV, mAs, Film-Screen, CR - Indications & Patient Selection",8,5,"X-ray Physics — kV, mAs, Film-Screen, CR"],
-  [17,"X-ray Physics — kV, mAs, Film-Screen, CR - Technique & Procedure",8,5,"X-ray Physics — kV, mAs, Film-Screen, CR"],
-  [17,"X-ray Physics — kV, mAs, Film-Screen, CR - Interpretation of Results",8,5,"X-ray Physics — kV, mAs, Film-Screen, CR"],
-  [17,"X-ray Physics — kV, mAs, Film-Screen, CR - Complications & Management",8,5,"X-ray Physics — kV, mAs, Film-Screen, CR"],
-  [17,"X-ray Physics — DR Systems",8,8,"X-ray Physics — kV, mAs, Film-Screen, CR & DR Systems"],
-  [17,"X-ray Physics — DR Systems - Basic Principles & Physics",8,5,"X-ray Physics — DR Systems"],
-  [17,"X-ray Physics — DR Systems - Indications & Patient Selection",8,5,"X-ray Physics — DR Systems"],
-  [17,"X-ray Physics — DR Systems - Technique & Procedure",8,5,"X-ray Physics — DR Systems"],
-  [17,"X-ray Physics — DR Systems - Interpretation of Results",8,5,"X-ray Physics — DR Systems"],
-  [17,"X-ray Physics — DR Systems - Complications & Management",8,5,"X-ray Physics — DR Systems"],
-  [17,"Radiation Protection — Units (Gy, Sv), ALARA & Film Badge",8,12,"X-ray & Radiation Physics"],
-  [17,"Radiation Protection — Units (Gy, Sv), ALARA",8,6,"Radiation Protection — Units (Gy, Sv), ALARA & Film Badge"],
-  [17,"Radiation Protection — Units (Gy, Sv), ALARA - Basic Principles & Physics",8,5,"Radiation Protection — Units (Gy, Sv), ALARA"],
-  [17,"Radiation Protection — Units (Gy, Sv), ALARA - Indications & Patient Selection",8,5,"Radiation Protection — Units (Gy, Sv), ALARA"],
-  [17,"Radiation Protection — Units (Gy, Sv), ALARA - Technique & Procedure",8,5,"Radiation Protection — Units (Gy, Sv), ALARA"],
-  [17,"Radiation Protection — Units (Gy, Sv), ALARA - Interpretation of Results",8,5,"Radiation Protection — Units (Gy, Sv), ALARA"],
-  [17,"Radiation Protection — Units (Gy, Sv), ALARA - Complications & Management",8,5,"Radiation Protection — Units (Gy, Sv), ALARA"],
-  [17,"Radiation Protection — Film Badge",8,6,"Radiation Protection — Units (Gy, Sv), ALARA & Film Badge"],
-  [17,"Radiation Protection — Film Badge - Basic Principles & Physics",8,5,"Radiation Protection — Film Badge"],
-  [17,"Radiation Protection — Film Badge - Indications & Patient Selection",8,5,"Radiation Protection — Film Badge"],
-  [17,"Radiation Protection — Film Badge - Technique & Procedure",8,5,"Radiation Protection — Film Badge"],
-  [17,"Radiation Protection — Film Badge - Interpretation of Results",8,5,"Radiation Protection — Film Badge"],
-  [17,"Radiation Protection — Film Badge - Complications & Management",8,5,"Radiation Protection — Film Badge"],
-  [17,"CT & MRI Basics",9,35,"General Radiology"],
-  [17,"CT — Hounsfield Units, Window Settings & Reconstruction (Spiral/HRCT)",9,15,"CT & MRI Basics"],
-  [17,"CT — Hounsfield Units, Window Settings",9,7,"CT — Hounsfield Units, Window Settings & Reconstruction (Spiral/HRCT)"],
-  [17,"CT — Hounsfield Units, Window Settings - Basic Principles & Physics",9,5,"CT — Hounsfield Units, Window Settings"],
-  [17,"CT — Hounsfield Units, Window Settings - Indications & Patient Selection",9,5,"CT — Hounsfield Units, Window Settings"],
-  [17,"CT — Hounsfield Units, Window Settings - Technique & Procedure",9,5,"CT — Hounsfield Units, Window Settings"],
-  [17,"CT — Hounsfield Units, Window Settings - Interpretation of Results",9,5,"CT — Hounsfield Units, Window Settings"],
-  [17,"CT — Hounsfield Units, Window Settings - Complications & Management",9,5,"CT — Hounsfield Units, Window Settings"],
-  [17,"CT — Reconstruction (Spiral/HRCT)",9,8,"CT — Hounsfield Units, Window Settings & Reconstruction (Spiral/HRCT)"],
-  [17,"CT — Reconstruction (Spiral/HRCT) - Basic Principles & Physics",9,5,"CT — Reconstruction (Spiral/HRCT)"],
-  [17,"CT — Reconstruction (Spiral/HRCT) - Indications & Patient Selection",9,5,"CT — Reconstruction (Spiral/HRCT)"],
-  [17,"CT — Reconstruction (Spiral/HRCT) - Technique & Procedure",9,5,"CT — Reconstruction (Spiral/HRCT)"],
-  [17,"CT — Reconstruction (Spiral/HRCT) - Interpretation of Results",9,5,"CT — Reconstruction (Spiral/HRCT)"],
-  [17,"CT — Reconstruction (Spiral/HRCT) - Complications & Management",9,5,"CT — Reconstruction (Spiral/HRCT)"],
-  [17,"MRI — T1 vs T2 Sequences, Gadolinium & Contraindications (Pacemaker)",9,18,"CT & MRI Basics"],
-  [17,"MRI — T1 vs T2 Sequences, Gadolinium",9,9,"MRI — T1 vs T2 Sequences, Gadolinium & Contraindications (Pacemaker)"],
-  [17,"MRI — T1 vs T2 Sequences, Gadolinium - Basic Principles & Physics",9,5,"MRI — T1 vs T2 Sequences, Gadolinium"],
-  [17,"MRI — T1 vs T2 Sequences, Gadolinium - Indications & Patient Selection",9,5,"MRI — T1 vs T2 Sequences, Gadolinium"],
-  [17,"MRI — T1 vs T2 Sequences, Gadolinium - Technique & Procedure",9,5,"MRI — T1 vs T2 Sequences, Gadolinium"],
-  [17,"MRI — T1 vs T2 Sequences, Gadolinium - Interpretation of Results",9,5,"MRI — T1 vs T2 Sequences, Gadolinium"],
-  [17,"MRI — T1 vs T2 Sequences, Gadolinium - Complications & Management",9,5,"MRI — T1 vs T2 Sequences, Gadolinium"],
-  [17,"MRI — Contraindications (Pacemaker)",9,9,"MRI — T1 vs T2 Sequences, Gadolinium & Contraindications (Pacemaker)"],
-  [17,"MRI — Contraindications (Pacemaker) - Basic Principles & Physics",9,5,"MRI — Contraindications (Pacemaker)"],
-  [17,"MRI — Contraindications (Pacemaker) - Indications & Patient Selection",9,5,"MRI — Contraindications (Pacemaker)"],
-  [17,"MRI — Contraindications (Pacemaker) - Technique & Procedure",9,5,"MRI — Contraindications (Pacemaker)"],
-  [17,"MRI — Contraindications (Pacemaker) - Interpretation of Results",9,5,"MRI — Contraindications (Pacemaker)"],
-  [17,"MRI — Contraindications (Pacemaker) - Complications & Management",9,5,"MRI — Contraindications (Pacemaker)"],
-  [17,"USG & Doppler",8,30,"General Radiology"],
-  [17,"USG Physics — Frequency, Transducers & Artifacts (Shadowing, Enhancement)",8,15,"USG & Doppler"],
-  [17,"USG Physics — Frequency, Transducers",8,7,"USG Physics — Frequency, Transducers & Artifacts (Shadowing, Enhancement)"],
-  [17,"USG Physics — Frequency, Transducers - Basic Principles & Physics",8,5,"USG Physics — Frequency, Transducers"],
-  [17,"USG Physics — Frequency, Transducers - Indications & Patient Selection",8,5,"USG Physics — Frequency, Transducers"],
-  [17,"USG Physics — Frequency, Transducers - Technique & Procedure",8,5,"USG Physics — Frequency, Transducers"],
-  [17,"USG Physics — Frequency, Transducers - Interpretation of Results",8,5,"USG Physics — Frequency, Transducers"],
-  [17,"USG Physics — Frequency, Transducers - Complications & Management",8,5,"USG Physics — Frequency, Transducers"],
-  [17,"USG Physics — Artifacts (Shadowing, Enhancement)",8,8,"USG Physics — Frequency, Transducers & Artifacts (Shadowing, Enhancement)"],
-  [17,"USG Physics — Artifacts (Shadowing, Enhancement) - Basic Principles & Physics",8,5,"USG Physics — Artifacts (Shadowing, Enhancement)"],
-  [17,"USG Physics — Artifacts (Shadowing, Enhancement) - Indications & Patient Selection",8,5,"USG Physics — Artifacts (Shadowing, Enhancement)"],
-  [17,"USG Physics — Artifacts (Shadowing, Enhancement) - Technique & Procedure",8,5,"USG Physics — Artifacts (Shadowing, Enhancement)"],
-  [17,"USG Physics — Artifacts (Shadowing, Enhancement) - Interpretation of Results",8,5,"USG Physics — Artifacts (Shadowing, Enhancement)"],
-  [17,"USG Physics — Artifacts (Shadowing, Enhancement) - Complications & Management",8,5,"USG Physics — Artifacts (Shadowing, Enhancement)"],
-  [17,"Doppler USG — Color Doppler, RI & Clinical Uses (DVT, Renal Artery)",8,12,"USG & Doppler"],
-  [17,"Doppler USG — Color Doppler, RI",8,6,"Doppler USG — Color Doppler, RI & Clinical Uses (DVT, Renal Artery)"],
-  [17,"Doppler USG — Color Doppler, RI - Basic Principles & Physics",8,5,"Doppler USG — Color Doppler, RI"],
-  [17,"Doppler USG — Color Doppler, RI - Indications & Patient Selection",8,5,"Doppler USG — Color Doppler, RI"],
-  [17,"Doppler USG — Color Doppler, RI - Technique & Procedure",8,5,"Doppler USG — Color Doppler, RI"],
-  [17,"Doppler USG — Color Doppler, RI - Interpretation of Results",8,5,"Doppler USG — Color Doppler, RI"],
-  [17,"Doppler USG — Color Doppler, RI - Complications & Management",8,5,"Doppler USG — Color Doppler, RI"],
-  [17,"Doppler USG — Clinical Uses (DVT, Renal Artery)",8,6,"Doppler USG — Color Doppler, RI & Clinical Uses (DVT, Renal Artery)"],
-  [17,"Doppler USG — Clinical Uses (DVT, Renal Artery) - Basic Principles & Physics",8,5,"Doppler USG — Clinical Uses (DVT, Renal Artery)"],
-  [17,"Doppler USG — Clinical Uses (DVT, Renal Artery) - Indications & Patient Selection",8,5,"Doppler USG — Clinical Uses (DVT, Renal Artery)"],
-  [17,"Doppler USG — Clinical Uses (DVT, Renal Artery) - Technique & Procedure",8,5,"Doppler USG — Clinical Uses (DVT, Renal Artery)"],
-  [17,"Doppler USG — Clinical Uses (DVT, Renal Artery) - Interpretation of Results",8,5,"Doppler USG — Clinical Uses (DVT, Renal Artery)"],
-  [17,"Doppler USG — Clinical Uses (DVT, Renal Artery) - Complications & Management",8,5,"Doppler USG — Clinical Uses (DVT, Renal Artery)"],
-  [17,"Contrast Media",9,30,"General Radiology"],
-  [17,"Iodinated Contrast — Ionic vs Non-ionic, CIN & Premedication",9,15,"Contrast Media"],
-  [17,"Iodinated Contrast — Ionic vs Non-ionic, CIN",9,7,"Iodinated Contrast — Ionic vs Non-ionic, CIN & Premedication"],
-  [17,"Iodinated Contrast — Ionic vs Non-ionic, CIN - Basic Principles & Physics",9,5,"Iodinated Contrast — Ionic vs Non-ionic, CIN"],
-  [17,"Iodinated Contrast — Ionic vs Non-ionic, CIN - Indications & Patient Selection",9,5,"Iodinated Contrast — Ionic vs Non-ionic, CIN"],
-  [17,"Iodinated Contrast — Ionic vs Non-ionic, CIN - Technique & Procedure",9,5,"Iodinated Contrast — Ionic vs Non-ionic, CIN"],
-  [17,"Iodinated Contrast — Ionic vs Non-ionic, CIN - Interpretation of Results",9,5,"Iodinated Contrast — Ionic vs Non-ionic, CIN"],
-  [17,"Iodinated Contrast — Ionic vs Non-ionic, CIN - Complications & Management",9,5,"Iodinated Contrast — Ionic vs Non-ionic, CIN"],
-  [17,"Iodinated Contrast — Premedication",9,8,"Iodinated Contrast — Ionic vs Non-ionic, CIN & Premedication"],
-  [17,"Iodinated Contrast — Premedication - Basic Principles & Physics",9,5,"Iodinated Contrast — Premedication"],
-  [17,"Iodinated Contrast — Premedication - Indications & Patient Selection",9,5,"Iodinated Contrast — Premedication"],
-  [17,"Iodinated Contrast — Premedication - Technique & Procedure",9,5,"Iodinated Contrast — Premedication"],
-  [17,"Iodinated Contrast — Premedication - Interpretation of Results",9,5,"Iodinated Contrast — Premedication"],
-  [17,"Iodinated Contrast — Premedication - Complications & Management",9,5,"Iodinated Contrast — Premedication"],
-  [17,"MRI Contrast (Gadolinium) & NSF Risk; Barium Studies & Complications",9,12,"Contrast Media"],
-  [17,"MRI Contrast (Gadolinium)",9,6,"MRI Contrast (Gadolinium) & NSF Risk; Barium Studies & Complications"],
-  [17,"MRI Contrast (Gadolinium) - Basic Principles & Physics",9,5,"MRI Contrast (Gadolinium)"],
-  [17,"MRI Contrast (Gadolinium) - Indications & Patient Selection",9,5,"MRI Contrast (Gadolinium)"],
-  [17,"MRI Contrast (Gadolinium) - Technique & Procedure",9,5,"MRI Contrast (Gadolinium)"],
-  [17,"MRI Contrast (Gadolinium) - Interpretation of Results",9,5,"MRI Contrast (Gadolinium)"],
-  [17,"MRI Contrast (Gadolinium) - Complications & Management",9,5,"MRI Contrast (Gadolinium)"],
-  [17,"NSF Risk; Barium Studies & Complications",9,6,"MRI Contrast (Gadolinium) & NSF Risk; Barium Studies & Complications"],
-  [17,"NSF Risk; Barium Studies & Complications - Basic Principles & Physics",9,5,"NSF Risk; Barium Studies & Complications"],
-  [17,"NSF Risk; Barium Studies & Complications - Indications & Patient Selection",9,5,"NSF Risk; Barium Studies & Complications"],
-  [17,"NSF Risk; Barium Studies & Complications - Technique & Procedure",9,5,"NSF Risk; Barium Studies & Complications"],
-  [17,"NSF Risk; Barium Studies & Complications - Interpretation of Results",9,5,"NSF Risk; Barium Studies & Complications"],
-  [17,"NSF Risk; Barium Studies & Complications - Complications & Management",9,5,"NSF Risk; Barium Studies & Complications"],
-  [17,"Systemic Radiology",9,50],
-  [17,"Chest Radiology",10,45,"Systemic Radiology"],
-  [17,"Chest X-ray Interpretation — Systematic Approach: ABC (Airway, Bones, Cardiac, Diaphragm, Everything)",10,18,"Chest Radiology"],
-  [17,"Chest X-ray Interpretation — Systematic Approach: ABC (Airway",10,9,"Chest X-ray Interpretation — Systematic Approach: ABC (Airway, Bones, Cardiac, Diaphragm, Everything)"],
-  [17,"Chest X-ray Interpretation — Systematic Approach: ABC (Airway - Basic Principles & Physics",10,5,"Chest X-ray Interpretation — Systematic Approach: ABC (Airway"],
-  [17,"Chest X-ray Interpretation — Systematic Approach: ABC (Airway - Indications & Patient Selection",10,5,"Chest X-ray Interpretation — Systematic Approach: ABC (Airway"],
-  [17,"Chest X-ray Interpretation — Systematic Approach: ABC (Airway - Technique & Procedure",10,5,"Chest X-ray Interpretation — Systematic Approach: ABC (Airway"],
-  [17,"Chest X-ray Interpretation — Systematic Approach: ABC (Airway - Interpretation of Results",10,5,"Chest X-ray Interpretation — Systematic Approach: ABC (Airway"],
-  [17,"Chest X-ray Interpretation — Systematic Approach: ABC (Airway - Complications & Management",10,5,"Chest X-ray Interpretation — Systematic Approach: ABC (Airway"],
-  [17,"Chest X-ray Interpretation — Bones, Cardiac, Diaphragm, Everything)",10,9,"Chest X-ray Interpretation — Systematic Approach: ABC (Airway, Bones, Cardiac, Diaphragm, Everything)"],
-  [17,"Chest X-ray Interpretation — Bones, Cardiac, Diaphragm, Everything) - Basic Principles & Physics",10,5,"Chest X-ray Interpretation — Bones, Cardiac, Diaphragm, Everything)"],
-  [17,"Chest X-ray Interpretation — Bones, Cardiac, Diaphragm, Everything) - Indications & Patient Selection",10,5,"Chest X-ray Interpretation — Bones, Cardiac, Diaphragm, Everything)"],
-  [17,"Chest X-ray Interpretation — Bones, Cardiac, Diaphragm, Everything) - Technique & Procedure",10,5,"Chest X-ray Interpretation — Bones, Cardiac, Diaphragm, Everything)"],
-  [17,"Chest X-ray Interpretation — Bones, Cardiac, Diaphragm, Everything) - Interpretation of Results",10,5,"Chest X-ray Interpretation — Bones, Cardiac, Diaphragm, Everything)"],
-  [17,"Chest X-ray Interpretation — Bones, Cardiac, Diaphragm, Everything) - Complications & Management",10,5,"Chest X-ray Interpretation — Bones, Cardiac, Diaphragm, Everything)"],
-  [17,"Pulmonary Patterns — Consolidation, Interstitial, Mass & Air Bronchogram",10,15,"Chest Radiology"],
-  [17,"Pulmonary Patterns — Consolidation, Interstitial, Mass",10,7,"Pulmonary Patterns — Consolidation, Interstitial, Mass & Air Bronchogram"],
-  [17,"Pulmonary Patterns — Consolidation, Interstitial, Mass - Basic Principles & Physics",10,5,"Pulmonary Patterns — Consolidation, Interstitial, Mass"],
-  [17,"Pulmonary Patterns — Consolidation, Interstitial, Mass - Indications & Patient Selection",10,5,"Pulmonary Patterns — Consolidation, Interstitial, Mass"],
-  [17,"Pulmonary Patterns — Consolidation, Interstitial, Mass - Technique & Procedure",10,5,"Pulmonary Patterns — Consolidation, Interstitial, Mass"],
-  [17,"Pulmonary Patterns — Consolidation, Interstitial, Mass - Interpretation of Results",10,5,"Pulmonary Patterns — Consolidation, Interstitial, Mass"],
-  [17,"Pulmonary Patterns — Consolidation, Interstitial, Mass - Complications & Management",10,5,"Pulmonary Patterns — Consolidation, Interstitial, Mass"],
-  [17,"Pulmonary Patterns — Air Bronchogram",10,8,"Pulmonary Patterns — Consolidation, Interstitial, Mass & Air Bronchogram"],
-  [17,"Pulmonary Patterns — Air Bronchogram - Basic Principles & Physics",10,5,"Pulmonary Patterns — Air Bronchogram"],
-  [17,"Pulmonary Patterns — Air Bronchogram - Indications & Patient Selection",10,5,"Pulmonary Patterns — Air Bronchogram"],
-  [17,"Pulmonary Patterns — Air Bronchogram - Technique & Procedure",10,5,"Pulmonary Patterns — Air Bronchogram"],
-  [17,"Pulmonary Patterns — Air Bronchogram - Interpretation of Results",10,5,"Pulmonary Patterns — Air Bronchogram"],
-  [17,"Pulmonary Patterns — Air Bronchogram - Complications & Management",10,5,"Pulmonary Patterns — Air Bronchogram"],
-  [17,"Mediastinal Masses — Anterior (4T's), Middle & Posterior Compartments",10,12,"Chest Radiology"],
-  [17,"Mediastinal Masses — Anterior (4T's), Middle",10,6,"Mediastinal Masses — Anterior (4T's), Middle & Posterior Compartments"],
-  [17,"Mediastinal Masses — Anterior (4T's), Middle - Basic Principles & Physics",10,5,"Mediastinal Masses — Anterior (4T's), Middle"],
-  [17,"Mediastinal Masses — Anterior (4T's), Middle - Indications & Patient Selection",10,5,"Mediastinal Masses — Anterior (4T's), Middle"],
-  [17,"Mediastinal Masses — Anterior (4T's), Middle - Technique & Procedure",10,5,"Mediastinal Masses — Anterior (4T's), Middle"],
-  [17,"Mediastinal Masses — Anterior (4T's), Middle - Interpretation of Results",10,5,"Mediastinal Masses — Anterior (4T's), Middle"],
-  [17,"Mediastinal Masses — Anterior (4T's), Middle - Complications & Management",10,5,"Mediastinal Masses — Anterior (4T's), Middle"],
-  [17,"Mediastinal Masses — Posterior Compartments",10,6,"Mediastinal Masses — Anterior (4T's), Middle & Posterior Compartments"],
-  [17,"Mediastinal Masses — Posterior Compartments - Basic Principles & Physics",10,5,"Mediastinal Masses — Posterior Compartments"],
-  [17,"Mediastinal Masses — Posterior Compartments - Indications & Patient Selection",10,5,"Mediastinal Masses — Posterior Compartments"],
-  [17,"Mediastinal Masses — Posterior Compartments - Technique & Procedure",10,5,"Mediastinal Masses — Posterior Compartments"],
-  [17,"Mediastinal Masses — Posterior Compartments - Interpretation of Results",10,5,"Mediastinal Masses — Posterior Compartments"],
-  [17,"Mediastinal Masses — Posterior Compartments - Complications & Management",10,5,"Mediastinal Masses — Posterior Compartments"],
-  [17,"GIT & Abdominal Radiology",9,40,"Systemic Radiology"],
-  [17,"Barium Studies — Barium Swallow, Meal, Follow-through & Enema Findings",9,18,"GIT & Abdominal Radiology"],
-  [17,"Barium Studies — Barium Swallow, Meal, Follow-through",9,9,"Barium Studies — Barium Swallow, Meal, Follow-through & Enema Findings"],
-  [17,"Barium Studies — Barium Swallow, Meal, Follow-through - Basic Principles & Physics",9,5,"Barium Studies — Barium Swallow, Meal, Follow-through"],
-  [17,"Barium Studies — Barium Swallow, Meal, Follow-through - Indications & Patient Selection",9,5,"Barium Studies — Barium Swallow, Meal, Follow-through"],
-  [17,"Barium Studies — Barium Swallow, Meal, Follow-through - Technique & Procedure",9,5,"Barium Studies — Barium Swallow, Meal, Follow-through"],
-  [17,"Barium Studies — Barium Swallow, Meal, Follow-through - Interpretation of Results",9,5,"Barium Studies — Barium Swallow, Meal, Follow-through"],
-  [17,"Barium Studies — Barium Swallow, Meal, Follow-through - Complications & Management",9,5,"Barium Studies — Barium Swallow, Meal, Follow-through"],
-  [17,"Barium Studies — Enema Findings",9,9,"Barium Studies — Barium Swallow, Meal, Follow-through & Enema Findings"],
-  [17,"Barium Studies — Enema Findings - Basic Principles & Physics",9,5,"Barium Studies — Enema Findings"],
-  [17,"Barium Studies — Enema Findings - Indications & Patient Selection",9,5,"Barium Studies — Enema Findings"],
-  [17,"Barium Studies — Enema Findings - Technique & Procedure",9,5,"Barium Studies — Enema Findings"],
-  [17,"Barium Studies — Enema Findings - Interpretation of Results",9,5,"Barium Studies — Enema Findings"],
-  [17,"Barium Studies — Enema Findings - Complications & Management",9,5,"Barium Studies — Enema Findings"],
-  [17,"Abdominal X-ray — Air under Diaphragm, Calcifications & Bowel Gas Pattern",9,15,"GIT & Abdominal Radiology"],
-  [17,"Abdominal X-ray — Air under Diaphragm, Calcifications",9,7,"Abdominal X-ray — Air under Diaphragm, Calcifications & Bowel Gas Pattern"],
-  [17,"Abdominal X-ray — Air under Diaphragm, Calcifications - Basic Principles & Physics",9,5,"Abdominal X-ray — Air under Diaphragm, Calcifications"],
-  [17,"Abdominal X-ray — Air under Diaphragm, Calcifications - Indications & Patient Selection",9,5,"Abdominal X-ray — Air under Diaphragm, Calcifications"],
-  [17,"Abdominal X-ray — Air under Diaphragm, Calcifications - Technique & Procedure",9,5,"Abdominal X-ray — Air under Diaphragm, Calcifications"],
-  [17,"Abdominal X-ray — Air under Diaphragm, Calcifications - Interpretation of Results",9,5,"Abdominal X-ray — Air under Diaphragm, Calcifications"],
-  [17,"Abdominal X-ray — Air under Diaphragm, Calcifications - Complications & Management",9,5,"Abdominal X-ray — Air under Diaphragm, Calcifications"],
-  [17,"Abdominal X-ray — Bowel Gas Pattern",9,8,"Abdominal X-ray — Air under Diaphragm, Calcifications & Bowel Gas Pattern"],
-  [17,"Abdominal X-ray — Bowel Gas Pattern - Basic Principles & Physics",9,5,"Abdominal X-ray — Bowel Gas Pattern"],
-  [17,"Abdominal X-ray — Bowel Gas Pattern - Indications & Patient Selection",9,5,"Abdominal X-ray — Bowel Gas Pattern"],
-  [17,"Abdominal X-ray — Bowel Gas Pattern - Technique & Procedure",9,5,"Abdominal X-ray — Bowel Gas Pattern"],
-  [17,"Abdominal X-ray — Bowel Gas Pattern - Interpretation of Results",9,5,"Abdominal X-ray — Bowel Gas Pattern"],
-  [17,"Abdominal X-ray — Bowel Gas Pattern - Complications & Management",9,5,"Abdominal X-ray — Bowel Gas Pattern"],
-  [17,"Musculoskeletal Radiology",9,35,"Systemic Radiology"],
-  [17,"Bone Tumors on X-ray — Codman's Triangle, Onion Peel & Geographic Lysis",9,15,"Musculoskeletal Radiology"],
-  [17,"Bone Tumors on X-ray — Codman's Triangle, Onion Peel",9,7,"Bone Tumors on X-ray — Codman's Triangle, Onion Peel & Geographic Lysis"],
-  [17,"Bone Tumors on X-ray — Codman's Triangle, Onion Peel - Basic Principles & Physics",9,5,"Bone Tumors on X-ray — Codman's Triangle, Onion Peel"],
-  [17,"Bone Tumors on X-ray — Codman's Triangle, Onion Peel - Indications & Patient Selection",9,5,"Bone Tumors on X-ray — Codman's Triangle, Onion Peel"],
-  [17,"Bone Tumors on X-ray — Codman's Triangle, Onion Peel - Technique & Procedure",9,5,"Bone Tumors on X-ray — Codman's Triangle, Onion Peel"],
-  [17,"Bone Tumors on X-ray — Codman's Triangle, Onion Peel - Interpretation of Results",9,5,"Bone Tumors on X-ray — Codman's Triangle, Onion Peel"],
-  [17,"Bone Tumors on X-ray — Codman's Triangle, Onion Peel - Complications & Management",9,5,"Bone Tumors on X-ray — Codman's Triangle, Onion Peel"],
-  [17,"Bone Tumors on X-ray — Geographic Lysis",9,8,"Bone Tumors on X-ray — Codman's Triangle, Onion Peel & Geographic Lysis"],
-  [17,"Bone Tumors on X-ray — Geographic Lysis - Basic Principles & Physics",9,5,"Bone Tumors on X-ray — Geographic Lysis"],
-  [17,"Bone Tumors on X-ray — Geographic Lysis - Indications & Patient Selection",9,5,"Bone Tumors on X-ray — Geographic Lysis"],
-  [17,"Bone Tumors on X-ray — Geographic Lysis - Technique & Procedure",9,5,"Bone Tumors on X-ray — Geographic Lysis"],
-  [17,"Bone Tumors on X-ray — Geographic Lysis - Interpretation of Results",9,5,"Bone Tumors on X-ray — Geographic Lysis"],
-  [17,"Bone Tumors on X-ray — Geographic Lysis - Complications & Management",9,5,"Bone Tumors on X-ray — Geographic Lysis"],
-  [17,"Arthritis Radiology — Erosions (RA), Joint Space Narrowing (OA) & Periostitis (PsA)",9,15,"Musculoskeletal Radiology"],
-  [17,"Arthritis Radiology — Erosions (RA), Joint Space Narrowing (OA)",9,7,"Arthritis Radiology — Erosions (RA), Joint Space Narrowing (OA) & Periostitis (PsA)"],
-  [17,"Arthritis Radiology — Erosions (RA), Joint Space Narrowing (OA) - Basic Principles & Physics",9,5,"Arthritis Radiology — Erosions (RA), Joint Space Narrowing (OA)"],
-  [17,"Arthritis Radiology — Erosions (RA), Joint Space Narrowing (OA) - Indications & Patient Selection",9,5,"Arthritis Radiology — Erosions (RA), Joint Space Narrowing (OA)"],
-  [17,"Arthritis Radiology — Erosions (RA), Joint Space Narrowing (OA) - Technique & Procedure",9,5,"Arthritis Radiology — Erosions (RA), Joint Space Narrowing (OA)"],
-  [17,"Arthritis Radiology — Erosions (RA), Joint Space Narrowing (OA) - Interpretation of Results",9,5,"Arthritis Radiology — Erosions (RA), Joint Space Narrowing (OA)"],
-  [17,"Arthritis Radiology — Erosions (RA), Joint Space Narrowing (OA) - Complications & Management",9,5,"Arthritis Radiology — Erosions (RA), Joint Space Narrowing (OA)"],
-  [17,"Arthritis Radiology — Periostitis (PsA)",9,8,"Arthritis Radiology — Erosions (RA), Joint Space Narrowing (OA) & Periostitis (PsA)"],
-  [17,"Arthritis Radiology — Periostitis (PsA) - Basic Principles & Physics",9,5,"Arthritis Radiology — Periostitis (PsA)"],
-  [17,"Arthritis Radiology — Periostitis (PsA) - Indications & Patient Selection",9,5,"Arthritis Radiology — Periostitis (PsA)"],
-  [17,"Arthritis Radiology — Periostitis (PsA) - Technique & Procedure",9,5,"Arthritis Radiology — Periostitis (PsA)"],
-  [17,"Arthritis Radiology — Periostitis (PsA) - Interpretation of Results",9,5,"Arthritis Radiology — Periostitis (PsA)"],
-  [17,"Arthritis Radiology — Periostitis (PsA) - Complications & Management",9,5,"Arthritis Radiology — Periostitis (PsA)"],
-  [17,"Neuroradiology",9,40,"Systemic Radiology"],
-  [17,"Brain CT — Acute Stroke (Hyper/Hypodense), Hemorrhage & Herniation",9,18,"Neuroradiology"],
-  [17,"Brain CT — Acute Stroke (Hyper/Hypodense), Hemorrhage",9,9,"Brain CT — Acute Stroke (Hyper/Hypodense), Hemorrhage & Herniation"],
-  [17,"Brain CT — Acute Stroke (Hyper/Hypodense), Hemorrhage - Basic Principles & Physics",9,5,"Brain CT — Acute Stroke (Hyper/Hypodense), Hemorrhage"],
-  [17,"Brain CT — Acute Stroke (Hyper/Hypodense), Hemorrhage - Indications & Patient Selection",9,5,"Brain CT — Acute Stroke (Hyper/Hypodense), Hemorrhage"],
-  [17,"Brain CT — Acute Stroke (Hyper/Hypodense), Hemorrhage - Technique & Procedure",9,5,"Brain CT — Acute Stroke (Hyper/Hypodense), Hemorrhage"],
-  [17,"Brain CT — Acute Stroke (Hyper/Hypodense), Hemorrhage - Interpretation of Results",9,5,"Brain CT — Acute Stroke (Hyper/Hypodense), Hemorrhage"],
-  [17,"Brain CT — Acute Stroke (Hyper/Hypodense), Hemorrhage - Complications & Management",9,5,"Brain CT — Acute Stroke (Hyper/Hypodense), Hemorrhage"],
-  [17,"Brain CT — Herniation",9,9,"Brain CT — Acute Stroke (Hyper/Hypodense), Hemorrhage & Herniation"],
-  [17,"Brain CT — Herniation - Basic Principles & Physics",9,5,"Brain CT — Herniation"],
-  [17,"Brain CT — Herniation - Indications & Patient Selection",9,5,"Brain CT — Herniation"],
-  [17,"Brain CT — Herniation - Technique & Procedure",9,5,"Brain CT — Herniation"],
-  [17,"Brain CT — Herniation - Interpretation of Results",9,5,"Brain CT — Herniation"],
-  [17,"Brain CT — Herniation - Complications & Management",9,5,"Brain CT — Herniation"],
-  [17,"Brain MRI — DWI for Ischemia, FLAIR for MS Plaques & Ring Enhancement",9,18,"Neuroradiology"],
-  [17,"Brain MRI — DWI for Ischemia, FLAIR for MS Plaques",9,9,"Brain MRI — DWI for Ischemia, FLAIR for MS Plaques & Ring Enhancement"],
-  [17,"Brain MRI — DWI for Ischemia, FLAIR for MS Plaques - Basic Principles & Physics",9,5,"Brain MRI — DWI for Ischemia, FLAIR for MS Plaques"],
-  [17,"Brain MRI — DWI for Ischemia, FLAIR for MS Plaques - Indications & Patient Selection",9,5,"Brain MRI — DWI for Ischemia, FLAIR for MS Plaques"],
-  [17,"Brain MRI — DWI for Ischemia, FLAIR for MS Plaques - Technique & Procedure",9,5,"Brain MRI — DWI for Ischemia, FLAIR for MS Plaques"],
-  [17,"Brain MRI — DWI for Ischemia, FLAIR for MS Plaques - Interpretation of Results",9,5,"Brain MRI — DWI for Ischemia, FLAIR for MS Plaques"],
-  [17,"Brain MRI — DWI for Ischemia, FLAIR for MS Plaques - Complications & Management",9,5,"Brain MRI — DWI for Ischemia, FLAIR for MS Plaques"],
-  [17,"Brain MRI — Ring Enhancement",9,9,"Brain MRI — DWI for Ischemia, FLAIR for MS Plaques & Ring Enhancement"],
-  [17,"Brain MRI — Ring Enhancement - Basic Principles & Physics",9,5,"Brain MRI — Ring Enhancement"],
-  [17,"Brain MRI — Ring Enhancement - Indications & Patient Selection",9,5,"Brain MRI — Ring Enhancement"],
-  [17,"Brain MRI — Ring Enhancement - Technique & Procedure",9,5,"Brain MRI — Ring Enhancement"],
-  [17,"Brain MRI — Ring Enhancement - Interpretation of Results",9,5,"Brain MRI — Ring Enhancement"],
-  [17,"Brain MRI — Ring Enhancement - Complications & Management",9,5,"Brain MRI — Ring Enhancement"],
-  [17,"Radiotherapy & Nuclear Medicine",8,40],
-  [17,"Radiotherapy — External Beam (EBRT), Brachytherapy & Fractionation",8,18,"Radiotherapy & Nuclear Medicine"],
-  [17,"Radiotherapy — External Beam (EBRT), Brachytherapy",8,9,"Radiotherapy — External Beam (EBRT), Brachytherapy & Fractionation"],
-  [17,"Radiotherapy — External Beam (EBRT), Brachytherapy - Basic Principles & Physics",8,5,"Radiotherapy — External Beam (EBRT), Brachytherapy"],
-  [17,"Radiotherapy — External Beam (EBRT), Brachytherapy - Indications & Patient Selection",8,5,"Radiotherapy — External Beam (EBRT), Brachytherapy"],
-  [17,"Radiotherapy — External Beam (EBRT), Brachytherapy - Technique & Procedure",8,5,"Radiotherapy — External Beam (EBRT), Brachytherapy"],
-  [17,"Radiotherapy — External Beam (EBRT), Brachytherapy - Interpretation of Results",8,5,"Radiotherapy — External Beam (EBRT), Brachytherapy"],
-  [17,"Radiotherapy — External Beam (EBRT), Brachytherapy - Complications & Management",8,5,"Radiotherapy — External Beam (EBRT), Brachytherapy"],
-  [17,"Radiotherapy — Fractionation",8,9,"Radiotherapy — External Beam (EBRT), Brachytherapy & Fractionation"],
-  [17,"Radiotherapy — Fractionation - Basic Principles & Physics",8,5,"Radiotherapy — Fractionation"],
-  [17,"Radiotherapy — Fractionation - Indications & Patient Selection",8,5,"Radiotherapy — Fractionation"],
-  [17,"Radiotherapy — Fractionation - Technique & Procedure",8,5,"Radiotherapy — Fractionation"],
-  [17,"Radiotherapy — Fractionation - Interpretation of Results",8,5,"Radiotherapy — Fractionation"],
-  [17,"Radiotherapy — Fractionation - Complications & Management",8,5,"Radiotherapy — Fractionation"],
-  [17,"Nuclear Medicine — Thyroid Scan (TC99m), Bone Scan & PET-CT",8,18,"Radiotherapy & Nuclear Medicine"],
-  [17,"Nuclear Medicine — Thyroid Scan (TC99m), Bone Scan",8,9,"Nuclear Medicine — Thyroid Scan (TC99m), Bone Scan & PET-CT"],
-  [17,"Nuclear Medicine — Thyroid Scan (TC99m), Bone Scan - Basic Principles & Physics",8,5,"Nuclear Medicine — Thyroid Scan (TC99m), Bone Scan"],
-  [17,"Nuclear Medicine — Thyroid Scan (TC99m), Bone Scan - Indications & Patient Selection",8,5,"Nuclear Medicine — Thyroid Scan (TC99m), Bone Scan"],
-  [17,"Nuclear Medicine — Thyroid Scan (TC99m), Bone Scan - Technique & Procedure",8,5,"Nuclear Medicine — Thyroid Scan (TC99m), Bone Scan"],
-  [17,"Nuclear Medicine — Thyroid Scan (TC99m), Bone Scan - Interpretation of Results",8,5,"Nuclear Medicine — Thyroid Scan (TC99m), Bone Scan"],
-  [17,"Nuclear Medicine — Thyroid Scan (TC99m), Bone Scan - Complications & Management",8,5,"Nuclear Medicine — Thyroid Scan (TC99m), Bone Scan"],
-  [17,"Nuclear Medicine — PET-CT",8,9,"Nuclear Medicine — Thyroid Scan (TC99m), Bone Scan & PET-CT"],
-  [17,"Nuclear Medicine — PET-CT - Basic Principles & Physics",8,5,"Nuclear Medicine — PET-CT"],
-  [17,"Nuclear Medicine — PET-CT - Indications & Patient Selection",8,5,"Nuclear Medicine — PET-CT"],
-  [17,"Nuclear Medicine — PET-CT - Technique & Procedure",8,5,"Nuclear Medicine — PET-CT"],
-  [17,"Nuclear Medicine — PET-CT - Interpretation of Results",8,5,"Nuclear Medicine — PET-CT"],
-  [17,"Nuclear Medicine — PET-CT - Complications & Management",8,5,"Nuclear Medicine — PET-CT"]
+  [17, "General Radiology", 9, 40],
+  [17, "X-ray & Radiation Physics", 8, 35, "General Radiology"],
+  [17, "X-ray Physics — kV, mAs, Film-Screen, CR & DR Systems", 8, 15, "X-ray & Radiation Physics"],
+  [
+    17,
+    "X-ray Physics — kV, mAs, Film-Screen, CR",
+    8,
+    7,
+    "X-ray Physics — kV, mAs, Film-Screen, CR & DR Systems"
+  ],
+  [
+    17,
+    "X-ray Physics — kV, mAs, Film-Screen, CR - Basic Principles & Physics",
+    8,
+    5,
+    "X-ray Physics — kV, mAs, Film-Screen, CR"
+  ],
+  [
+    17,
+    "X-ray Physics — kV, mAs, Film-Screen, CR - Indications & Patient Selection",
+    8,
+    5,
+    "X-ray Physics — kV, mAs, Film-Screen, CR"
+  ],
+  [
+    17,
+    "X-ray Physics — kV, mAs, Film-Screen, CR - Technique & Procedure",
+    8,
+    5,
+    "X-ray Physics — kV, mAs, Film-Screen, CR"
+  ],
+  [
+    17,
+    "X-ray Physics — kV, mAs, Film-Screen, CR - Interpretation of Results",
+    8,
+    5,
+    "X-ray Physics — kV, mAs, Film-Screen, CR"
+  ],
+  [
+    17,
+    "X-ray Physics — kV, mAs, Film-Screen, CR - Complications & Management",
+    8,
+    5,
+    "X-ray Physics — kV, mAs, Film-Screen, CR"
+  ],
+  [17, "X-ray Physics — DR Systems", 8, 8, "X-ray Physics — kV, mAs, Film-Screen, CR & DR Systems"],
+  [
+    17,
+    "X-ray Physics — DR Systems - Basic Principles & Physics",
+    8,
+    5,
+    "X-ray Physics — DR Systems"
+  ],
+  [
+    17,
+    "X-ray Physics — DR Systems - Indications & Patient Selection",
+    8,
+    5,
+    "X-ray Physics — DR Systems"
+  ],
+  [17, "X-ray Physics — DR Systems - Technique & Procedure", 8, 5, "X-ray Physics — DR Systems"],
+  [
+    17,
+    "X-ray Physics — DR Systems - Interpretation of Results",
+    8,
+    5,
+    "X-ray Physics — DR Systems"
+  ],
+  [
+    17,
+    "X-ray Physics — DR Systems - Complications & Management",
+    8,
+    5,
+    "X-ray Physics — DR Systems"
+  ],
+  [
+    17,
+    "Radiation Protection — Units (Gy, Sv), ALARA & Film Badge",
+    8,
+    12,
+    "X-ray & Radiation Physics"
+  ],
+  [
+    17,
+    "Radiation Protection — Units (Gy, Sv), ALARA",
+    8,
+    6,
+    "Radiation Protection — Units (Gy, Sv), ALARA & Film Badge"
+  ],
+  [
+    17,
+    "Radiation Protection — Units (Gy, Sv), ALARA - Basic Principles & Physics",
+    8,
+    5,
+    "Radiation Protection — Units (Gy, Sv), ALARA"
+  ],
+  [
+    17,
+    "Radiation Protection — Units (Gy, Sv), ALARA - Indications & Patient Selection",
+    8,
+    5,
+    "Radiation Protection — Units (Gy, Sv), ALARA"
+  ],
+  [
+    17,
+    "Radiation Protection — Units (Gy, Sv), ALARA - Technique & Procedure",
+    8,
+    5,
+    "Radiation Protection — Units (Gy, Sv), ALARA"
+  ],
+  [
+    17,
+    "Radiation Protection — Units (Gy, Sv), ALARA - Interpretation of Results",
+    8,
+    5,
+    "Radiation Protection — Units (Gy, Sv), ALARA"
+  ],
+  [
+    17,
+    "Radiation Protection — Units (Gy, Sv), ALARA - Complications & Management",
+    8,
+    5,
+    "Radiation Protection — Units (Gy, Sv), ALARA"
+  ],
+  [
+    17,
+    "Radiation Protection — Film Badge",
+    8,
+    6,
+    "Radiation Protection — Units (Gy, Sv), ALARA & Film Badge"
+  ],
+  [
+    17,
+    "Radiation Protection — Film Badge - Basic Principles & Physics",
+    8,
+    5,
+    "Radiation Protection — Film Badge"
+  ],
+  [
+    17,
+    "Radiation Protection — Film Badge - Indications & Patient Selection",
+    8,
+    5,
+    "Radiation Protection — Film Badge"
+  ],
+  [
+    17,
+    "Radiation Protection — Film Badge - Technique & Procedure",
+    8,
+    5,
+    "Radiation Protection — Film Badge"
+  ],
+  [
+    17,
+    "Radiation Protection — Film Badge - Interpretation of Results",
+    8,
+    5,
+    "Radiation Protection — Film Badge"
+  ],
+  [
+    17,
+    "Radiation Protection — Film Badge - Complications & Management",
+    8,
+    5,
+    "Radiation Protection — Film Badge"
+  ],
+  [17, "CT & MRI Basics", 9, 35, "General Radiology"],
+  [
+    17,
+    "CT — Hounsfield Units, Window Settings & Reconstruction (Spiral/HRCT)",
+    9,
+    15,
+    "CT & MRI Basics"
+  ],
+  [
+    17,
+    "CT — Hounsfield Units, Window Settings",
+    9,
+    7,
+    "CT — Hounsfield Units, Window Settings & Reconstruction (Spiral/HRCT)"
+  ],
+  [
+    17,
+    "CT — Hounsfield Units, Window Settings - Basic Principles & Physics",
+    9,
+    5,
+    "CT — Hounsfield Units, Window Settings"
+  ],
+  [
+    17,
+    "CT — Hounsfield Units, Window Settings - Indications & Patient Selection",
+    9,
+    5,
+    "CT — Hounsfield Units, Window Settings"
+  ],
+  [
+    17,
+    "CT — Hounsfield Units, Window Settings - Technique & Procedure",
+    9,
+    5,
+    "CT — Hounsfield Units, Window Settings"
+  ],
+  [
+    17,
+    "CT — Hounsfield Units, Window Settings - Interpretation of Results",
+    9,
+    5,
+    "CT — Hounsfield Units, Window Settings"
+  ],
+  [
+    17,
+    "CT — Hounsfield Units, Window Settings - Complications & Management",
+    9,
+    5,
+    "CT — Hounsfield Units, Window Settings"
+  ],
+  [
+    17,
+    "CT — Reconstruction (Spiral/HRCT)",
+    9,
+    8,
+    "CT — Hounsfield Units, Window Settings & Reconstruction (Spiral/HRCT)"
+  ],
+  [
+    17,
+    "CT — Reconstruction (Spiral/HRCT) - Basic Principles & Physics",
+    9,
+    5,
+    "CT — Reconstruction (Spiral/HRCT)"
+  ],
+  [
+    17,
+    "CT — Reconstruction (Spiral/HRCT) - Indications & Patient Selection",
+    9,
+    5,
+    "CT — Reconstruction (Spiral/HRCT)"
+  ],
+  [
+    17,
+    "CT — Reconstruction (Spiral/HRCT) - Technique & Procedure",
+    9,
+    5,
+    "CT — Reconstruction (Spiral/HRCT)"
+  ],
+  [
+    17,
+    "CT — Reconstruction (Spiral/HRCT) - Interpretation of Results",
+    9,
+    5,
+    "CT — Reconstruction (Spiral/HRCT)"
+  ],
+  [
+    17,
+    "CT — Reconstruction (Spiral/HRCT) - Complications & Management",
+    9,
+    5,
+    "CT — Reconstruction (Spiral/HRCT)"
+  ],
+  [
+    17,
+    "MRI — T1 vs T2 Sequences, Gadolinium & Contraindications (Pacemaker)",
+    9,
+    18,
+    "CT & MRI Basics"
+  ],
+  [
+    17,
+    "MRI — T1 vs T2 Sequences, Gadolinium",
+    9,
+    9,
+    "MRI — T1 vs T2 Sequences, Gadolinium & Contraindications (Pacemaker)"
+  ],
+  [
+    17,
+    "MRI — T1 vs T2 Sequences, Gadolinium - Basic Principles & Physics",
+    9,
+    5,
+    "MRI — T1 vs T2 Sequences, Gadolinium"
+  ],
+  [
+    17,
+    "MRI — T1 vs T2 Sequences, Gadolinium - Indications & Patient Selection",
+    9,
+    5,
+    "MRI — T1 vs T2 Sequences, Gadolinium"
+  ],
+  [
+    17,
+    "MRI — T1 vs T2 Sequences, Gadolinium - Technique & Procedure",
+    9,
+    5,
+    "MRI — T1 vs T2 Sequences, Gadolinium"
+  ],
+  [
+    17,
+    "MRI — T1 vs T2 Sequences, Gadolinium - Interpretation of Results",
+    9,
+    5,
+    "MRI — T1 vs T2 Sequences, Gadolinium"
+  ],
+  [
+    17,
+    "MRI — T1 vs T2 Sequences, Gadolinium - Complications & Management",
+    9,
+    5,
+    "MRI — T1 vs T2 Sequences, Gadolinium"
+  ],
+  [
+    17,
+    "MRI — Contraindications (Pacemaker)",
+    9,
+    9,
+    "MRI — T1 vs T2 Sequences, Gadolinium & Contraindications (Pacemaker)"
+  ],
+  [
+    17,
+    "MRI — Contraindications (Pacemaker) - Basic Principles & Physics",
+    9,
+    5,
+    "MRI — Contraindications (Pacemaker)"
+  ],
+  [
+    17,
+    "MRI — Contraindications (Pacemaker) - Indications & Patient Selection",
+    9,
+    5,
+    "MRI — Contraindications (Pacemaker)"
+  ],
+  [
+    17,
+    "MRI — Contraindications (Pacemaker) - Technique & Procedure",
+    9,
+    5,
+    "MRI — Contraindications (Pacemaker)"
+  ],
+  [
+    17,
+    "MRI — Contraindications (Pacemaker) - Interpretation of Results",
+    9,
+    5,
+    "MRI — Contraindications (Pacemaker)"
+  ],
+  [
+    17,
+    "MRI — Contraindications (Pacemaker) - Complications & Management",
+    9,
+    5,
+    "MRI — Contraindications (Pacemaker)"
+  ],
+  [17, "USG & Doppler", 8, 30, "General Radiology"],
+  [
+    17,
+    "USG Physics — Frequency, Transducers & Artifacts (Shadowing, Enhancement)",
+    8,
+    15,
+    "USG & Doppler"
+  ],
+  [
+    17,
+    "USG Physics — Frequency, Transducers",
+    8,
+    7,
+    "USG Physics — Frequency, Transducers & Artifacts (Shadowing, Enhancement)"
+  ],
+  [
+    17,
+    "USG Physics — Frequency, Transducers - Basic Principles & Physics",
+    8,
+    5,
+    "USG Physics — Frequency, Transducers"
+  ],
+  [
+    17,
+    "USG Physics — Frequency, Transducers - Indications & Patient Selection",
+    8,
+    5,
+    "USG Physics — Frequency, Transducers"
+  ],
+  [
+    17,
+    "USG Physics — Frequency, Transducers - Technique & Procedure",
+    8,
+    5,
+    "USG Physics — Frequency, Transducers"
+  ],
+  [
+    17,
+    "USG Physics — Frequency, Transducers - Interpretation of Results",
+    8,
+    5,
+    "USG Physics — Frequency, Transducers"
+  ],
+  [
+    17,
+    "USG Physics — Frequency, Transducers - Complications & Management",
+    8,
+    5,
+    "USG Physics — Frequency, Transducers"
+  ],
+  [
+    17,
+    "USG Physics — Artifacts (Shadowing, Enhancement)",
+    8,
+    8,
+    "USG Physics — Frequency, Transducers & Artifacts (Shadowing, Enhancement)"
+  ],
+  [
+    17,
+    "USG Physics — Artifacts (Shadowing, Enhancement) - Basic Principles & Physics",
+    8,
+    5,
+    "USG Physics — Artifacts (Shadowing, Enhancement)"
+  ],
+  [
+    17,
+    "USG Physics — Artifacts (Shadowing, Enhancement) - Indications & Patient Selection",
+    8,
+    5,
+    "USG Physics — Artifacts (Shadowing, Enhancement)"
+  ],
+  [
+    17,
+    "USG Physics — Artifacts (Shadowing, Enhancement) - Technique & Procedure",
+    8,
+    5,
+    "USG Physics — Artifacts (Shadowing, Enhancement)"
+  ],
+  [
+    17,
+    "USG Physics — Artifacts (Shadowing, Enhancement) - Interpretation of Results",
+    8,
+    5,
+    "USG Physics — Artifacts (Shadowing, Enhancement)"
+  ],
+  [
+    17,
+    "USG Physics — Artifacts (Shadowing, Enhancement) - Complications & Management",
+    8,
+    5,
+    "USG Physics — Artifacts (Shadowing, Enhancement)"
+  ],
+  [
+    17,
+    "Doppler USG — Color Doppler, RI & Clinical Uses (DVT, Renal Artery)",
+    8,
+    12,
+    "USG & Doppler"
+  ],
+  [
+    17,
+    "Doppler USG — Color Doppler, RI",
+    8,
+    6,
+    "Doppler USG — Color Doppler, RI & Clinical Uses (DVT, Renal Artery)"
+  ],
+  [
+    17,
+    "Doppler USG — Color Doppler, RI - Basic Principles & Physics",
+    8,
+    5,
+    "Doppler USG — Color Doppler, RI"
+  ],
+  [
+    17,
+    "Doppler USG — Color Doppler, RI - Indications & Patient Selection",
+    8,
+    5,
+    "Doppler USG — Color Doppler, RI"
+  ],
+  [
+    17,
+    "Doppler USG — Color Doppler, RI - Technique & Procedure",
+    8,
+    5,
+    "Doppler USG — Color Doppler, RI"
+  ],
+  [
+    17,
+    "Doppler USG — Color Doppler, RI - Interpretation of Results",
+    8,
+    5,
+    "Doppler USG — Color Doppler, RI"
+  ],
+  [
+    17,
+    "Doppler USG — Color Doppler, RI - Complications & Management",
+    8,
+    5,
+    "Doppler USG — Color Doppler, RI"
+  ],
+  [
+    17,
+    "Doppler USG — Clinical Uses (DVT, Renal Artery)",
+    8,
+    6,
+    "Doppler USG — Color Doppler, RI & Clinical Uses (DVT, Renal Artery)"
+  ],
+  [
+    17,
+    "Doppler USG — Clinical Uses (DVT, Renal Artery) - Basic Principles & Physics",
+    8,
+    5,
+    "Doppler USG — Clinical Uses (DVT, Renal Artery)"
+  ],
+  [
+    17,
+    "Doppler USG — Clinical Uses (DVT, Renal Artery) - Indications & Patient Selection",
+    8,
+    5,
+    "Doppler USG — Clinical Uses (DVT, Renal Artery)"
+  ],
+  [
+    17,
+    "Doppler USG — Clinical Uses (DVT, Renal Artery) - Technique & Procedure",
+    8,
+    5,
+    "Doppler USG — Clinical Uses (DVT, Renal Artery)"
+  ],
+  [
+    17,
+    "Doppler USG — Clinical Uses (DVT, Renal Artery) - Interpretation of Results",
+    8,
+    5,
+    "Doppler USG — Clinical Uses (DVT, Renal Artery)"
+  ],
+  [
+    17,
+    "Doppler USG — Clinical Uses (DVT, Renal Artery) - Complications & Management",
+    8,
+    5,
+    "Doppler USG — Clinical Uses (DVT, Renal Artery)"
+  ],
+  [17, "Contrast Media", 9, 30, "General Radiology"],
+  [17, "Iodinated Contrast — Ionic vs Non-ionic, CIN & Premedication", 9, 15, "Contrast Media"],
+  [
+    17,
+    "Iodinated Contrast — Ionic vs Non-ionic, CIN",
+    9,
+    7,
+    "Iodinated Contrast — Ionic vs Non-ionic, CIN & Premedication"
+  ],
+  [
+    17,
+    "Iodinated Contrast — Ionic vs Non-ionic, CIN - Basic Principles & Physics",
+    9,
+    5,
+    "Iodinated Contrast — Ionic vs Non-ionic, CIN"
+  ],
+  [
+    17,
+    "Iodinated Contrast — Ionic vs Non-ionic, CIN - Indications & Patient Selection",
+    9,
+    5,
+    "Iodinated Contrast — Ionic vs Non-ionic, CIN"
+  ],
+  [
+    17,
+    "Iodinated Contrast — Ionic vs Non-ionic, CIN - Technique & Procedure",
+    9,
+    5,
+    "Iodinated Contrast — Ionic vs Non-ionic, CIN"
+  ],
+  [
+    17,
+    "Iodinated Contrast — Ionic vs Non-ionic, CIN - Interpretation of Results",
+    9,
+    5,
+    "Iodinated Contrast — Ionic vs Non-ionic, CIN"
+  ],
+  [
+    17,
+    "Iodinated Contrast — Ionic vs Non-ionic, CIN - Complications & Management",
+    9,
+    5,
+    "Iodinated Contrast — Ionic vs Non-ionic, CIN"
+  ],
+  [
+    17,
+    "Iodinated Contrast — Premedication",
+    9,
+    8,
+    "Iodinated Contrast — Ionic vs Non-ionic, CIN & Premedication"
+  ],
+  [
+    17,
+    "Iodinated Contrast — Premedication - Basic Principles & Physics",
+    9,
+    5,
+    "Iodinated Contrast — Premedication"
+  ],
+  [
+    17,
+    "Iodinated Contrast — Premedication - Indications & Patient Selection",
+    9,
+    5,
+    "Iodinated Contrast — Premedication"
+  ],
+  [
+    17,
+    "Iodinated Contrast — Premedication - Technique & Procedure",
+    9,
+    5,
+    "Iodinated Contrast — Premedication"
+  ],
+  [
+    17,
+    "Iodinated Contrast — Premedication - Interpretation of Results",
+    9,
+    5,
+    "Iodinated Contrast — Premedication"
+  ],
+  [
+    17,
+    "Iodinated Contrast — Premedication - Complications & Management",
+    9,
+    5,
+    "Iodinated Contrast — Premedication"
+  ],
+  [
+    17,
+    "MRI Contrast (Gadolinium) & NSF Risk; Barium Studies & Complications",
+    9,
+    12,
+    "Contrast Media"
+  ],
+  [
+    17,
+    "MRI Contrast (Gadolinium)",
+    9,
+    6,
+    "MRI Contrast (Gadolinium) & NSF Risk; Barium Studies & Complications"
+  ],
+  [17, "MRI Contrast (Gadolinium) - Basic Principles & Physics", 9, 5, "MRI Contrast (Gadolinium)"],
+  [
+    17,
+    "MRI Contrast (Gadolinium) - Indications & Patient Selection",
+    9,
+    5,
+    "MRI Contrast (Gadolinium)"
+  ],
+  [17, "MRI Contrast (Gadolinium) - Technique & Procedure", 9, 5, "MRI Contrast (Gadolinium)"],
+  [17, "MRI Contrast (Gadolinium) - Interpretation of Results", 9, 5, "MRI Contrast (Gadolinium)"],
+  [17, "MRI Contrast (Gadolinium) - Complications & Management", 9, 5, "MRI Contrast (Gadolinium)"],
+  [
+    17,
+    "NSF Risk; Barium Studies & Complications",
+    9,
+    6,
+    "MRI Contrast (Gadolinium) & NSF Risk; Barium Studies & Complications"
+  ],
+  [
+    17,
+    "NSF Risk; Barium Studies & Complications - Basic Principles & Physics",
+    9,
+    5,
+    "NSF Risk; Barium Studies & Complications"
+  ],
+  [
+    17,
+    "NSF Risk; Barium Studies & Complications - Indications & Patient Selection",
+    9,
+    5,
+    "NSF Risk; Barium Studies & Complications"
+  ],
+  [
+    17,
+    "NSF Risk; Barium Studies & Complications - Technique & Procedure",
+    9,
+    5,
+    "NSF Risk; Barium Studies & Complications"
+  ],
+  [
+    17,
+    "NSF Risk; Barium Studies & Complications - Interpretation of Results",
+    9,
+    5,
+    "NSF Risk; Barium Studies & Complications"
+  ],
+  [
+    17,
+    "NSF Risk; Barium Studies & Complications - Complications & Management",
+    9,
+    5,
+    "NSF Risk; Barium Studies & Complications"
+  ],
+  [17, "Systemic Radiology", 9, 50],
+  [17, "Chest Radiology", 10, 45, "Systemic Radiology"],
+  [
+    17,
+    "Chest X-ray Interpretation — Systematic Approach: ABC (Airway, Bones, Cardiac, Diaphragm, Everything)",
+    10,
+    18,
+    "Chest Radiology"
+  ],
+  [
+    17,
+    "Chest X-ray Interpretation — Systematic Approach: ABC (Airway",
+    10,
+    9,
+    "Chest X-ray Interpretation — Systematic Approach: ABC (Airway, Bones, Cardiac, Diaphragm, Everything)"
+  ],
+  [
+    17,
+    "Chest X-ray Interpretation — Systematic Approach: ABC (Airway - Basic Principles & Physics",
+    10,
+    5,
+    "Chest X-ray Interpretation — Systematic Approach: ABC (Airway"
+  ],
+  [
+    17,
+    "Chest X-ray Interpretation — Systematic Approach: ABC (Airway - Indications & Patient Selection",
+    10,
+    5,
+    "Chest X-ray Interpretation — Systematic Approach: ABC (Airway"
+  ],
+  [
+    17,
+    "Chest X-ray Interpretation — Systematic Approach: ABC (Airway - Technique & Procedure",
+    10,
+    5,
+    "Chest X-ray Interpretation — Systematic Approach: ABC (Airway"
+  ],
+  [
+    17,
+    "Chest X-ray Interpretation — Systematic Approach: ABC (Airway - Interpretation of Results",
+    10,
+    5,
+    "Chest X-ray Interpretation — Systematic Approach: ABC (Airway"
+  ],
+  [
+    17,
+    "Chest X-ray Interpretation — Systematic Approach: ABC (Airway - Complications & Management",
+    10,
+    5,
+    "Chest X-ray Interpretation — Systematic Approach: ABC (Airway"
+  ],
+  [
+    17,
+    "Chest X-ray Interpretation — Bones, Cardiac, Diaphragm, Everything)",
+    10,
+    9,
+    "Chest X-ray Interpretation — Systematic Approach: ABC (Airway, Bones, Cardiac, Diaphragm, Everything)"
+  ],
+  [
+    17,
+    "Chest X-ray Interpretation — Bones, Cardiac, Diaphragm, Everything) - Basic Principles & Physics",
+    10,
+    5,
+    "Chest X-ray Interpretation — Bones, Cardiac, Diaphragm, Everything)"
+  ],
+  [
+    17,
+    "Chest X-ray Interpretation — Bones, Cardiac, Diaphragm, Everything) - Indications & Patient Selection",
+    10,
+    5,
+    "Chest X-ray Interpretation — Bones, Cardiac, Diaphragm, Everything)"
+  ],
+  [
+    17,
+    "Chest X-ray Interpretation — Bones, Cardiac, Diaphragm, Everything) - Technique & Procedure",
+    10,
+    5,
+    "Chest X-ray Interpretation — Bones, Cardiac, Diaphragm, Everything)"
+  ],
+  [
+    17,
+    "Chest X-ray Interpretation — Bones, Cardiac, Diaphragm, Everything) - Interpretation of Results",
+    10,
+    5,
+    "Chest X-ray Interpretation — Bones, Cardiac, Diaphragm, Everything)"
+  ],
+  [
+    17,
+    "Chest X-ray Interpretation — Bones, Cardiac, Diaphragm, Everything) - Complications & Management",
+    10,
+    5,
+    "Chest X-ray Interpretation — Bones, Cardiac, Diaphragm, Everything)"
+  ],
+  [
+    17,
+    "Pulmonary Patterns — Consolidation, Interstitial, Mass & Air Bronchogram",
+    10,
+    15,
+    "Chest Radiology"
+  ],
+  [
+    17,
+    "Pulmonary Patterns — Consolidation, Interstitial, Mass",
+    10,
+    7,
+    "Pulmonary Patterns — Consolidation, Interstitial, Mass & Air Bronchogram"
+  ],
+  [
+    17,
+    "Pulmonary Patterns — Consolidation, Interstitial, Mass - Basic Principles & Physics",
+    10,
+    5,
+    "Pulmonary Patterns — Consolidation, Interstitial, Mass"
+  ],
+  [
+    17,
+    "Pulmonary Patterns — Consolidation, Interstitial, Mass - Indications & Patient Selection",
+    10,
+    5,
+    "Pulmonary Patterns — Consolidation, Interstitial, Mass"
+  ],
+  [
+    17,
+    "Pulmonary Patterns — Consolidation, Interstitial, Mass - Technique & Procedure",
+    10,
+    5,
+    "Pulmonary Patterns — Consolidation, Interstitial, Mass"
+  ],
+  [
+    17,
+    "Pulmonary Patterns — Consolidation, Interstitial, Mass - Interpretation of Results",
+    10,
+    5,
+    "Pulmonary Patterns — Consolidation, Interstitial, Mass"
+  ],
+  [
+    17,
+    "Pulmonary Patterns — Consolidation, Interstitial, Mass - Complications & Management",
+    10,
+    5,
+    "Pulmonary Patterns — Consolidation, Interstitial, Mass"
+  ],
+  [
+    17,
+    "Pulmonary Patterns — Air Bronchogram",
+    10,
+    8,
+    "Pulmonary Patterns — Consolidation, Interstitial, Mass & Air Bronchogram"
+  ],
+  [
+    17,
+    "Pulmonary Patterns — Air Bronchogram - Basic Principles & Physics",
+    10,
+    5,
+    "Pulmonary Patterns — Air Bronchogram"
+  ],
+  [
+    17,
+    "Pulmonary Patterns — Air Bronchogram - Indications & Patient Selection",
+    10,
+    5,
+    "Pulmonary Patterns — Air Bronchogram"
+  ],
+  [
+    17,
+    "Pulmonary Patterns — Air Bronchogram - Technique & Procedure",
+    10,
+    5,
+    "Pulmonary Patterns — Air Bronchogram"
+  ],
+  [
+    17,
+    "Pulmonary Patterns — Air Bronchogram - Interpretation of Results",
+    10,
+    5,
+    "Pulmonary Patterns — Air Bronchogram"
+  ],
+  [
+    17,
+    "Pulmonary Patterns — Air Bronchogram - Complications & Management",
+    10,
+    5,
+    "Pulmonary Patterns — Air Bronchogram"
+  ],
+  [
+    17,
+    "Mediastinal Masses — Anterior (4T's), Middle & Posterior Compartments",
+    10,
+    12,
+    "Chest Radiology"
+  ],
+  [
+    17,
+    "Mediastinal Masses — Anterior (4T's), Middle",
+    10,
+    6,
+    "Mediastinal Masses — Anterior (4T's), Middle & Posterior Compartments"
+  ],
+  [
+    17,
+    "Mediastinal Masses — Anterior (4T's), Middle - Basic Principles & Physics",
+    10,
+    5,
+    "Mediastinal Masses — Anterior (4T's), Middle"
+  ],
+  [
+    17,
+    "Mediastinal Masses — Anterior (4T's), Middle - Indications & Patient Selection",
+    10,
+    5,
+    "Mediastinal Masses — Anterior (4T's), Middle"
+  ],
+  [
+    17,
+    "Mediastinal Masses — Anterior (4T's), Middle - Technique & Procedure",
+    10,
+    5,
+    "Mediastinal Masses — Anterior (4T's), Middle"
+  ],
+  [
+    17,
+    "Mediastinal Masses — Anterior (4T's), Middle - Interpretation of Results",
+    10,
+    5,
+    "Mediastinal Masses — Anterior (4T's), Middle"
+  ],
+  [
+    17,
+    "Mediastinal Masses — Anterior (4T's), Middle - Complications & Management",
+    10,
+    5,
+    "Mediastinal Masses — Anterior (4T's), Middle"
+  ],
+  [
+    17,
+    "Mediastinal Masses — Posterior Compartments",
+    10,
+    6,
+    "Mediastinal Masses — Anterior (4T's), Middle & Posterior Compartments"
+  ],
+  [
+    17,
+    "Mediastinal Masses — Posterior Compartments - Basic Principles & Physics",
+    10,
+    5,
+    "Mediastinal Masses — Posterior Compartments"
+  ],
+  [
+    17,
+    "Mediastinal Masses — Posterior Compartments - Indications & Patient Selection",
+    10,
+    5,
+    "Mediastinal Masses — Posterior Compartments"
+  ],
+  [
+    17,
+    "Mediastinal Masses — Posterior Compartments - Technique & Procedure",
+    10,
+    5,
+    "Mediastinal Masses — Posterior Compartments"
+  ],
+  [
+    17,
+    "Mediastinal Masses — Posterior Compartments - Interpretation of Results",
+    10,
+    5,
+    "Mediastinal Masses — Posterior Compartments"
+  ],
+  [
+    17,
+    "Mediastinal Masses — Posterior Compartments - Complications & Management",
+    10,
+    5,
+    "Mediastinal Masses — Posterior Compartments"
+  ],
+  [17, "GIT & Abdominal Radiology", 9, 40, "Systemic Radiology"],
+  [
+    17,
+    "Barium Studies — Barium Swallow, Meal, Follow-through & Enema Findings",
+    9,
+    18,
+    "GIT & Abdominal Radiology"
+  ],
+  [
+    17,
+    "Barium Studies — Barium Swallow, Meal, Follow-through",
+    9,
+    9,
+    "Barium Studies — Barium Swallow, Meal, Follow-through & Enema Findings"
+  ],
+  [
+    17,
+    "Barium Studies — Barium Swallow, Meal, Follow-through - Basic Principles & Physics",
+    9,
+    5,
+    "Barium Studies — Barium Swallow, Meal, Follow-through"
+  ],
+  [
+    17,
+    "Barium Studies — Barium Swallow, Meal, Follow-through - Indications & Patient Selection",
+    9,
+    5,
+    "Barium Studies — Barium Swallow, Meal, Follow-through"
+  ],
+  [
+    17,
+    "Barium Studies — Barium Swallow, Meal, Follow-through - Technique & Procedure",
+    9,
+    5,
+    "Barium Studies — Barium Swallow, Meal, Follow-through"
+  ],
+  [
+    17,
+    "Barium Studies — Barium Swallow, Meal, Follow-through - Interpretation of Results",
+    9,
+    5,
+    "Barium Studies — Barium Swallow, Meal, Follow-through"
+  ],
+  [
+    17,
+    "Barium Studies — Barium Swallow, Meal, Follow-through - Complications & Management",
+    9,
+    5,
+    "Barium Studies — Barium Swallow, Meal, Follow-through"
+  ],
+  [
+    17,
+    "Barium Studies — Enema Findings",
+    9,
+    9,
+    "Barium Studies — Barium Swallow, Meal, Follow-through & Enema Findings"
+  ],
+  [
+    17,
+    "Barium Studies — Enema Findings - Basic Principles & Physics",
+    9,
+    5,
+    "Barium Studies — Enema Findings"
+  ],
+  [
+    17,
+    "Barium Studies — Enema Findings - Indications & Patient Selection",
+    9,
+    5,
+    "Barium Studies — Enema Findings"
+  ],
+  [
+    17,
+    "Barium Studies — Enema Findings - Technique & Procedure",
+    9,
+    5,
+    "Barium Studies — Enema Findings"
+  ],
+  [
+    17,
+    "Barium Studies — Enema Findings - Interpretation of Results",
+    9,
+    5,
+    "Barium Studies — Enema Findings"
+  ],
+  [
+    17,
+    "Barium Studies — Enema Findings - Complications & Management",
+    9,
+    5,
+    "Barium Studies — Enema Findings"
+  ],
+  [
+    17,
+    "Abdominal X-ray — Air under Diaphragm, Calcifications & Bowel Gas Pattern",
+    9,
+    15,
+    "GIT & Abdominal Radiology"
+  ],
+  [
+    17,
+    "Abdominal X-ray — Air under Diaphragm, Calcifications",
+    9,
+    7,
+    "Abdominal X-ray — Air under Diaphragm, Calcifications & Bowel Gas Pattern"
+  ],
+  [
+    17,
+    "Abdominal X-ray — Air under Diaphragm, Calcifications - Basic Principles & Physics",
+    9,
+    5,
+    "Abdominal X-ray — Air under Diaphragm, Calcifications"
+  ],
+  [
+    17,
+    "Abdominal X-ray — Air under Diaphragm, Calcifications - Indications & Patient Selection",
+    9,
+    5,
+    "Abdominal X-ray — Air under Diaphragm, Calcifications"
+  ],
+  [
+    17,
+    "Abdominal X-ray — Air under Diaphragm, Calcifications - Technique & Procedure",
+    9,
+    5,
+    "Abdominal X-ray — Air under Diaphragm, Calcifications"
+  ],
+  [
+    17,
+    "Abdominal X-ray — Air under Diaphragm, Calcifications - Interpretation of Results",
+    9,
+    5,
+    "Abdominal X-ray — Air under Diaphragm, Calcifications"
+  ],
+  [
+    17,
+    "Abdominal X-ray — Air under Diaphragm, Calcifications - Complications & Management",
+    9,
+    5,
+    "Abdominal X-ray — Air under Diaphragm, Calcifications"
+  ],
+  [
+    17,
+    "Abdominal X-ray — Bowel Gas Pattern",
+    9,
+    8,
+    "Abdominal X-ray — Air under Diaphragm, Calcifications & Bowel Gas Pattern"
+  ],
+  [
+    17,
+    "Abdominal X-ray — Bowel Gas Pattern - Basic Principles & Physics",
+    9,
+    5,
+    "Abdominal X-ray — Bowel Gas Pattern"
+  ],
+  [
+    17,
+    "Abdominal X-ray — Bowel Gas Pattern - Indications & Patient Selection",
+    9,
+    5,
+    "Abdominal X-ray — Bowel Gas Pattern"
+  ],
+  [
+    17,
+    "Abdominal X-ray — Bowel Gas Pattern - Technique & Procedure",
+    9,
+    5,
+    "Abdominal X-ray — Bowel Gas Pattern"
+  ],
+  [
+    17,
+    "Abdominal X-ray — Bowel Gas Pattern - Interpretation of Results",
+    9,
+    5,
+    "Abdominal X-ray — Bowel Gas Pattern"
+  ],
+  [
+    17,
+    "Abdominal X-ray — Bowel Gas Pattern - Complications & Management",
+    9,
+    5,
+    "Abdominal X-ray — Bowel Gas Pattern"
+  ],
+  [17, "Musculoskeletal Radiology", 9, 35, "Systemic Radiology"],
+  [
+    17,
+    "Bone Tumors on X-ray — Codman's Triangle, Onion Peel & Geographic Lysis",
+    9,
+    15,
+    "Musculoskeletal Radiology"
+  ],
+  [
+    17,
+    "Bone Tumors on X-ray — Codman's Triangle, Onion Peel",
+    9,
+    7,
+    "Bone Tumors on X-ray — Codman's Triangle, Onion Peel & Geographic Lysis"
+  ],
+  [
+    17,
+    "Bone Tumors on X-ray — Codman's Triangle, Onion Peel - Basic Principles & Physics",
+    9,
+    5,
+    "Bone Tumors on X-ray — Codman's Triangle, Onion Peel"
+  ],
+  [
+    17,
+    "Bone Tumors on X-ray — Codman's Triangle, Onion Peel - Indications & Patient Selection",
+    9,
+    5,
+    "Bone Tumors on X-ray — Codman's Triangle, Onion Peel"
+  ],
+  [
+    17,
+    "Bone Tumors on X-ray — Codman's Triangle, Onion Peel - Technique & Procedure",
+    9,
+    5,
+    "Bone Tumors on X-ray — Codman's Triangle, Onion Peel"
+  ],
+  [
+    17,
+    "Bone Tumors on X-ray — Codman's Triangle, Onion Peel - Interpretation of Results",
+    9,
+    5,
+    "Bone Tumors on X-ray — Codman's Triangle, Onion Peel"
+  ],
+  [
+    17,
+    "Bone Tumors on X-ray — Codman's Triangle, Onion Peel - Complications & Management",
+    9,
+    5,
+    "Bone Tumors on X-ray — Codman's Triangle, Onion Peel"
+  ],
+  [
+    17,
+    "Bone Tumors on X-ray — Geographic Lysis",
+    9,
+    8,
+    "Bone Tumors on X-ray — Codman's Triangle, Onion Peel & Geographic Lysis"
+  ],
+  [
+    17,
+    "Bone Tumors on X-ray — Geographic Lysis - Basic Principles & Physics",
+    9,
+    5,
+    "Bone Tumors on X-ray — Geographic Lysis"
+  ],
+  [
+    17,
+    "Bone Tumors on X-ray — Geographic Lysis - Indications & Patient Selection",
+    9,
+    5,
+    "Bone Tumors on X-ray — Geographic Lysis"
+  ],
+  [
+    17,
+    "Bone Tumors on X-ray — Geographic Lysis - Technique & Procedure",
+    9,
+    5,
+    "Bone Tumors on X-ray — Geographic Lysis"
+  ],
+  [
+    17,
+    "Bone Tumors on X-ray — Geographic Lysis - Interpretation of Results",
+    9,
+    5,
+    "Bone Tumors on X-ray — Geographic Lysis"
+  ],
+  [
+    17,
+    "Bone Tumors on X-ray — Geographic Lysis - Complications & Management",
+    9,
+    5,
+    "Bone Tumors on X-ray — Geographic Lysis"
+  ],
+  [
+    17,
+    "Arthritis Radiology — Erosions (RA), Joint Space Narrowing (OA) & Periostitis (PsA)",
+    9,
+    15,
+    "Musculoskeletal Radiology"
+  ],
+  [
+    17,
+    "Arthritis Radiology — Erosions (RA), Joint Space Narrowing (OA)",
+    9,
+    7,
+    "Arthritis Radiology — Erosions (RA), Joint Space Narrowing (OA) & Periostitis (PsA)"
+  ],
+  [
+    17,
+    "Arthritis Radiology — Erosions (RA), Joint Space Narrowing (OA) - Basic Principles & Physics",
+    9,
+    5,
+    "Arthritis Radiology — Erosions (RA), Joint Space Narrowing (OA)"
+  ],
+  [
+    17,
+    "Arthritis Radiology — Erosions (RA), Joint Space Narrowing (OA) - Indications & Patient Selection",
+    9,
+    5,
+    "Arthritis Radiology — Erosions (RA), Joint Space Narrowing (OA)"
+  ],
+  [
+    17,
+    "Arthritis Radiology — Erosions (RA), Joint Space Narrowing (OA) - Technique & Procedure",
+    9,
+    5,
+    "Arthritis Radiology — Erosions (RA), Joint Space Narrowing (OA)"
+  ],
+  [
+    17,
+    "Arthritis Radiology — Erosions (RA), Joint Space Narrowing (OA) - Interpretation of Results",
+    9,
+    5,
+    "Arthritis Radiology — Erosions (RA), Joint Space Narrowing (OA)"
+  ],
+  [
+    17,
+    "Arthritis Radiology — Erosions (RA), Joint Space Narrowing (OA) - Complications & Management",
+    9,
+    5,
+    "Arthritis Radiology — Erosions (RA), Joint Space Narrowing (OA)"
+  ],
+  [
+    17,
+    "Arthritis Radiology — Periostitis (PsA)",
+    9,
+    8,
+    "Arthritis Radiology — Erosions (RA), Joint Space Narrowing (OA) & Periostitis (PsA)"
+  ],
+  [
+    17,
+    "Arthritis Radiology — Periostitis (PsA) - Basic Principles & Physics",
+    9,
+    5,
+    "Arthritis Radiology — Periostitis (PsA)"
+  ],
+  [
+    17,
+    "Arthritis Radiology — Periostitis (PsA) - Indications & Patient Selection",
+    9,
+    5,
+    "Arthritis Radiology — Periostitis (PsA)"
+  ],
+  [
+    17,
+    "Arthritis Radiology — Periostitis (PsA) - Technique & Procedure",
+    9,
+    5,
+    "Arthritis Radiology — Periostitis (PsA)"
+  ],
+  [
+    17,
+    "Arthritis Radiology — Periostitis (PsA) - Interpretation of Results",
+    9,
+    5,
+    "Arthritis Radiology — Periostitis (PsA)"
+  ],
+  [
+    17,
+    "Arthritis Radiology — Periostitis (PsA) - Complications & Management",
+    9,
+    5,
+    "Arthritis Radiology — Periostitis (PsA)"
+  ],
+  [17, "Neuroradiology", 9, 40, "Systemic Radiology"],
+  [
+    17,
+    "Brain CT — Acute Stroke (Hyper/Hypodense), Hemorrhage & Herniation",
+    9,
+    18,
+    "Neuroradiology"
+  ],
+  [
+    17,
+    "Brain CT — Acute Stroke (Hyper/Hypodense), Hemorrhage",
+    9,
+    9,
+    "Brain CT — Acute Stroke (Hyper/Hypodense), Hemorrhage & Herniation"
+  ],
+  [
+    17,
+    "Brain CT — Acute Stroke (Hyper/Hypodense), Hemorrhage - Basic Principles & Physics",
+    9,
+    5,
+    "Brain CT — Acute Stroke (Hyper/Hypodense), Hemorrhage"
+  ],
+  [
+    17,
+    "Brain CT — Acute Stroke (Hyper/Hypodense), Hemorrhage - Indications & Patient Selection",
+    9,
+    5,
+    "Brain CT — Acute Stroke (Hyper/Hypodense), Hemorrhage"
+  ],
+  [
+    17,
+    "Brain CT — Acute Stroke (Hyper/Hypodense), Hemorrhage - Technique & Procedure",
+    9,
+    5,
+    "Brain CT — Acute Stroke (Hyper/Hypodense), Hemorrhage"
+  ],
+  [
+    17,
+    "Brain CT — Acute Stroke (Hyper/Hypodense), Hemorrhage - Interpretation of Results",
+    9,
+    5,
+    "Brain CT — Acute Stroke (Hyper/Hypodense), Hemorrhage"
+  ],
+  [
+    17,
+    "Brain CT — Acute Stroke (Hyper/Hypodense), Hemorrhage - Complications & Management",
+    9,
+    5,
+    "Brain CT — Acute Stroke (Hyper/Hypodense), Hemorrhage"
+  ],
+  [
+    17,
+    "Brain CT — Herniation",
+    9,
+    9,
+    "Brain CT — Acute Stroke (Hyper/Hypodense), Hemorrhage & Herniation"
+  ],
+  [17, "Brain CT — Herniation - Basic Principles & Physics", 9, 5, "Brain CT — Herniation"],
+  [17, "Brain CT — Herniation - Indications & Patient Selection", 9, 5, "Brain CT — Herniation"],
+  [17, "Brain CT — Herniation - Technique & Procedure", 9, 5, "Brain CT — Herniation"],
+  [17, "Brain CT — Herniation - Interpretation of Results", 9, 5, "Brain CT — Herniation"],
+  [17, "Brain CT — Herniation - Complications & Management", 9, 5, "Brain CT — Herniation"],
+  [
+    17,
+    "Brain MRI — DWI for Ischemia, FLAIR for MS Plaques & Ring Enhancement",
+    9,
+    18,
+    "Neuroradiology"
+  ],
+  [
+    17,
+    "Brain MRI — DWI for Ischemia, FLAIR for MS Plaques",
+    9,
+    9,
+    "Brain MRI — DWI for Ischemia, FLAIR for MS Plaques & Ring Enhancement"
+  ],
+  [
+    17,
+    "Brain MRI — DWI for Ischemia, FLAIR for MS Plaques - Basic Principles & Physics",
+    9,
+    5,
+    "Brain MRI — DWI for Ischemia, FLAIR for MS Plaques"
+  ],
+  [
+    17,
+    "Brain MRI — DWI for Ischemia, FLAIR for MS Plaques - Indications & Patient Selection",
+    9,
+    5,
+    "Brain MRI — DWI for Ischemia, FLAIR for MS Plaques"
+  ],
+  [
+    17,
+    "Brain MRI — DWI for Ischemia, FLAIR for MS Plaques - Technique & Procedure",
+    9,
+    5,
+    "Brain MRI — DWI for Ischemia, FLAIR for MS Plaques"
+  ],
+  [
+    17,
+    "Brain MRI — DWI for Ischemia, FLAIR for MS Plaques - Interpretation of Results",
+    9,
+    5,
+    "Brain MRI — DWI for Ischemia, FLAIR for MS Plaques"
+  ],
+  [
+    17,
+    "Brain MRI — DWI for Ischemia, FLAIR for MS Plaques - Complications & Management",
+    9,
+    5,
+    "Brain MRI — DWI for Ischemia, FLAIR for MS Plaques"
+  ],
+  [
+    17,
+    "Brain MRI — Ring Enhancement",
+    9,
+    9,
+    "Brain MRI — DWI for Ischemia, FLAIR for MS Plaques & Ring Enhancement"
+  ],
+  [
+    17,
+    "Brain MRI — Ring Enhancement - Basic Principles & Physics",
+    9,
+    5,
+    "Brain MRI — Ring Enhancement"
+  ],
+  [
+    17,
+    "Brain MRI — Ring Enhancement - Indications & Patient Selection",
+    9,
+    5,
+    "Brain MRI — Ring Enhancement"
+  ],
+  [
+    17,
+    "Brain MRI — Ring Enhancement - Technique & Procedure",
+    9,
+    5,
+    "Brain MRI — Ring Enhancement"
+  ],
+  [
+    17,
+    "Brain MRI — Ring Enhancement - Interpretation of Results",
+    9,
+    5,
+    "Brain MRI — Ring Enhancement"
+  ],
+  [
+    17,
+    "Brain MRI — Ring Enhancement - Complications & Management",
+    9,
+    5,
+    "Brain MRI — Ring Enhancement"
+  ],
+  [17, "Radiotherapy & Nuclear Medicine", 8, 40],
+  [
+    17,
+    "Radiotherapy — External Beam (EBRT), Brachytherapy & Fractionation",
+    8,
+    18,
+    "Radiotherapy & Nuclear Medicine"
+  ],
+  [
+    17,
+    "Radiotherapy — External Beam (EBRT), Brachytherapy",
+    8,
+    9,
+    "Radiotherapy — External Beam (EBRT), Brachytherapy & Fractionation"
+  ],
+  [
+    17,
+    "Radiotherapy — External Beam (EBRT), Brachytherapy - Basic Principles & Physics",
+    8,
+    5,
+    "Radiotherapy — External Beam (EBRT), Brachytherapy"
+  ],
+  [
+    17,
+    "Radiotherapy — External Beam (EBRT), Brachytherapy - Indications & Patient Selection",
+    8,
+    5,
+    "Radiotherapy — External Beam (EBRT), Brachytherapy"
+  ],
+  [
+    17,
+    "Radiotherapy — External Beam (EBRT), Brachytherapy - Technique & Procedure",
+    8,
+    5,
+    "Radiotherapy — External Beam (EBRT), Brachytherapy"
+  ],
+  [
+    17,
+    "Radiotherapy — External Beam (EBRT), Brachytherapy - Interpretation of Results",
+    8,
+    5,
+    "Radiotherapy — External Beam (EBRT), Brachytherapy"
+  ],
+  [
+    17,
+    "Radiotherapy — External Beam (EBRT), Brachytherapy - Complications & Management",
+    8,
+    5,
+    "Radiotherapy — External Beam (EBRT), Brachytherapy"
+  ],
+  [
+    17,
+    "Radiotherapy — Fractionation",
+    8,
+    9,
+    "Radiotherapy — External Beam (EBRT), Brachytherapy & Fractionation"
+  ],
+  [
+    17,
+    "Radiotherapy — Fractionation - Basic Principles & Physics",
+    8,
+    5,
+    "Radiotherapy — Fractionation"
+  ],
+  [
+    17,
+    "Radiotherapy — Fractionation - Indications & Patient Selection",
+    8,
+    5,
+    "Radiotherapy — Fractionation"
+  ],
+  [
+    17,
+    "Radiotherapy — Fractionation - Technique & Procedure",
+    8,
+    5,
+    "Radiotherapy — Fractionation"
+  ],
+  [
+    17,
+    "Radiotherapy — Fractionation - Interpretation of Results",
+    8,
+    5,
+    "Radiotherapy — Fractionation"
+  ],
+  [
+    17,
+    "Radiotherapy — Fractionation - Complications & Management",
+    8,
+    5,
+    "Radiotherapy — Fractionation"
+  ],
+  [
+    17,
+    "Nuclear Medicine — Thyroid Scan (TC99m), Bone Scan & PET-CT",
+    8,
+    18,
+    "Radiotherapy & Nuclear Medicine"
+  ],
+  [
+    17,
+    "Nuclear Medicine — Thyroid Scan (TC99m), Bone Scan",
+    8,
+    9,
+    "Nuclear Medicine — Thyroid Scan (TC99m), Bone Scan & PET-CT"
+  ],
+  [
+    17,
+    "Nuclear Medicine — Thyroid Scan (TC99m), Bone Scan - Basic Principles & Physics",
+    8,
+    5,
+    "Nuclear Medicine — Thyroid Scan (TC99m), Bone Scan"
+  ],
+  [
+    17,
+    "Nuclear Medicine — Thyroid Scan (TC99m), Bone Scan - Indications & Patient Selection",
+    8,
+    5,
+    "Nuclear Medicine — Thyroid Scan (TC99m), Bone Scan"
+  ],
+  [
+    17,
+    "Nuclear Medicine — Thyroid Scan (TC99m), Bone Scan - Technique & Procedure",
+    8,
+    5,
+    "Nuclear Medicine — Thyroid Scan (TC99m), Bone Scan"
+  ],
+  [
+    17,
+    "Nuclear Medicine — Thyroid Scan (TC99m), Bone Scan - Interpretation of Results",
+    8,
+    5,
+    "Nuclear Medicine — Thyroid Scan (TC99m), Bone Scan"
+  ],
+  [
+    17,
+    "Nuclear Medicine — Thyroid Scan (TC99m), Bone Scan - Complications & Management",
+    8,
+    5,
+    "Nuclear Medicine — Thyroid Scan (TC99m), Bone Scan"
+  ],
+  [
+    17,
+    "Nuclear Medicine — PET-CT",
+    8,
+    9,
+    "Nuclear Medicine — Thyroid Scan (TC99m), Bone Scan & PET-CT"
+  ],
+  [17, "Nuclear Medicine — PET-CT - Basic Principles & Physics", 8, 5, "Nuclear Medicine — PET-CT"],
+  [
+    17,
+    "Nuclear Medicine — PET-CT - Indications & Patient Selection",
+    8,
+    5,
+    "Nuclear Medicine — PET-CT"
+  ],
+  [17, "Nuclear Medicine — PET-CT - Technique & Procedure", 8, 5, "Nuclear Medicine — PET-CT"],
+  [17, "Nuclear Medicine — PET-CT - Interpretation of Results", 8, 5, "Nuclear Medicine — PET-CT"],
+  [17, "Nuclear Medicine — PET-CT - Complications & Management", 8, 5, "Nuclear Medicine — PET-CT"]
 ]

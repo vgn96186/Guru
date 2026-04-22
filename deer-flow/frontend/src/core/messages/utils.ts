@@ -8,15 +8,19 @@ interface GenericMessageGroup<T = string> {
 
 interface HumanMessageGroup extends GenericMessageGroup<"human"> {}
 
-interface AssistantProcessingGroup extends GenericMessageGroup<"assistant:processing"> {}
+interface AssistantProcessingGroup
+  extends GenericMessageGroup<"assistant:processing"> {}
 
 interface AssistantMessageGroup extends GenericMessageGroup<"assistant"> {}
 
-interface AssistantPresentFilesGroup extends GenericMessageGroup<"assistant:present-files"> {}
+interface AssistantPresentFilesGroup
+  extends GenericMessageGroup<"assistant:present-files"> {}
 
-interface AssistantClarificationGroup extends GenericMessageGroup<"assistant:clarification"> {}
+interface AssistantClarificationGroup
+  extends GenericMessageGroup<"assistant:clarification"> {}
 
-interface AssistantSubagentGroup extends GenericMessageGroup<"assistant:subagent"> {}
+interface AssistantSubagentGroup
+  extends GenericMessageGroup<"assistant:subagent"> {}
 
 type MessageGroup =
   | HumanMessageGroup
@@ -28,7 +32,7 @@ type MessageGroup =
 
 export function groupMessages<T>(
   messages: Message[],
-  mapper: (group: MessageGroup) => T,
+  mapper: (group: MessageGroup) => T
 ): T[] {
   if (messages.length === 0) {
     return [];
@@ -82,7 +86,7 @@ export function groupMessages<T>(
         } else {
           console.error(
             "Unexpected tool message outside a processing group",
-            message,
+            message
           );
         }
       }
@@ -232,7 +236,7 @@ export function extractURLFromImageURLContent(
     | string
     | {
         url: string;
-      },
+      }
 ) {
   if (typeof content === "string") {
     return content;

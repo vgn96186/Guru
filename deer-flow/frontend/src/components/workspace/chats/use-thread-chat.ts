@@ -15,7 +15,7 @@ export function useThreadChat() {
   });
 
   const [isNewThread, setIsNewThread] = useState(
-    () => threadIdFromPath === "new",
+    () => threadIdFromPath === "new"
   );
 
   useEffect(() => {

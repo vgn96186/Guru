@@ -27,9 +27,9 @@ jobs:
           branch: main
           allowlist: bot*
 
-          sign-comment: "I have read the CLA and I agree"
+          sign-comment: 'I have read the CLA and I agree'
 
-          signed-comment-emoji: ":white_check_mark:"
+          signed-comment-emoji: ':white_check_mark:'
 
           custom-notsigned-prcomment: |
             Thank you for your contribution to PokeClaw!

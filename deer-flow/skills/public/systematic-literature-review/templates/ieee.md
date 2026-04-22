@@ -93,10 +93,11 @@ This review surveyed <N> arXiv papers retrieved on <YYYY-MM-DD> using the query 
 **Research question**: <1 sentence>
 **Methodology**: <1-2 sentences>
 **Key findings**:
+
 - <bullet>
 - <bullet>
 - <bullet>
-**Limitations**: <1-2 sentences>
+  **Limitations**: <1-2 sentences>
 
 ### [2] <Next paper>
 

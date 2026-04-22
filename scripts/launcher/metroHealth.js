@@ -125,7 +125,9 @@ async function waitForMetroReady(options = {}) {
       if (sawNewCompletion) {
         if (onLog) {
           onLog(
-            `Metro is ready and bundle completed${snapshot.latestCompletionLine ? `: ${snapshot.latestCompletionLine}` : '.'}`,
+            `Metro is ready and bundle completed${
+              snapshot.latestCompletionLine ? `: ${snapshot.latestCompletionLine}` : '.'
+            }`,
           );
         }
         return { ok: true };

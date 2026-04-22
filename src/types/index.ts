@@ -238,6 +238,12 @@ export interface UserProfile {
   gdriveLastSyncAt?: string | null;
   /** Device ID written by the last auto-backup (for cross-device detection). */
   lastBackupDeviceId?: string;
+  /** Vertex AI project ID */
+  vertexAiProject?: string;
+  /** Vertex AI location (e.g. us-central1) */
+  vertexAiLocation?: string;
+  /** Vertex AI access token / credentials */
+  vertexAiToken?: string;
   /** ISO date (YYYY-MM-DD) when the user's DBMCI One live batch started. */
   dbmciClassStartDate?: string | null;
   /** ISO date (YYYY-MM-DD) when the user's BTR (Back to Roots) revision batch started. */
@@ -268,13 +274,15 @@ export type ProviderId =
   | 'github_copilot'
   | 'gitlab_duo'
   | 'poe'
-  | 'qwen';
+  | 'qwen'
+  | 'vertex';
 
 export const DEFAULT_PROVIDER_ORDER: ProviderId[] = [
   'chatgpt',
   'github_copilot',
   'gitlab_duo',
   'poe',
+  'vertex',
   'openrouter',
   'groq',
   'qwen',
@@ -300,6 +308,7 @@ export const NON_STUDY_PROVIDER_ORDER: ProviderId[] = [
   'gemini',
   'gemini_fallback',
   'openrouter',
+  'vertex',
   'cloudflare',
 ];
 
@@ -318,6 +327,7 @@ export const PROVIDER_DISPLAY_NAMES: Record<ProviderId, string> = {
   openrouter: 'OpenRouter',
   cloudflare: 'Cloudflare',
   qwen: 'Qwen (Free OAuth)',
+  vertex: 'Vertex AI',
 };
 
 // AI Content shapes

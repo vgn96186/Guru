@@ -152,8 +152,8 @@ fun StreakFlame(streak: Int) {
             Canvas(Modifier.size(30.dp).graphicsLayer { scaleX = flameScale; scaleY = flameScale }) {
                 val path = androidx.compose.ui.graphics.Path().apply {
                     moveTo(size.width / 2, 0f)
-                    quadraticBezierTo(size.width * 0.8f, size.height * 0.4f, size.width * 0.5f, size.height)
-                    quadraticBezierTo(size.width * 0.2f, size.height * 0.4f, size.width * 0.5f, 0f)
+                    quadraticTo(size.width * 0.8f, size.height * 0.4f, size.width * 0.5f, size.height)
+                    quadraticTo(size.width * 0.2f, size.height * 0.4f, size.width * 0.5f, 0f)
                 }
                 drawPath(path, Color(0xFFFB923C))
             }

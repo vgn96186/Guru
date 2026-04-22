@@ -2,13 +2,10 @@ import React from 'react';
 import {
   ActivityIndicator,
   Pressable,
-  StyleSheet,
   View,
   type PressableProps,
-  type StyleProp,
-  type ViewStyle,
 } from 'react-native';
-import { linearTheme } from '../../theme/linearTheme';
+import { tv } from 'tailwind-variants';
 
 export type LinearIconButtonVariant =
   | 'ghost'
@@ -18,16 +15,55 @@ export type LinearIconButtonVariant =
 export type LinearIconButtonSize = 'sm' | 'md' | 'lg';
 export type LinearIconButtonShape = 'rounded' | 'round';
 
-interface LinearIconButtonProps extends Omit<PressableProps, 'style'> {
+const spinnerColorMap: Record<LinearIconButtonVariant, string> = {
+  ghost: '#7A7A80',
+  secondary: '#FAFAFA',
+  accent: '#FAFAFA',
+  danger: '#FAFAFA',
+};
+
+interface LinearIconButtonProps extends Omit<PressableProps, 'style' | 'className'> {
   children?: React.ReactNode;
   variant?: LinearIconButtonVariant;
   size?: LinearIconButtonSize;
   shape?: LinearIconButtonShape;
   loading?: boolean;
   spinnerColor?: string;
-  style?: StyleProp<ViewStyle>;
-  contentStyle?: StyleProp<ViewStyle>;
+  className?: string;
+  /** @deprecated Use className instead */
+  style?: PressableProps['style'];
+  contentClassName?: string;
 }
+
+const iconButtonVariants = tv({
+  base: 'items-center justify-center border',
+  variants: {
+    variant: {
+      ghost: 'bg-white/[0.02] border-transparent',
+      secondary: 'bg-card border-border',
+      accent: 'bg-accent border-accent/[0.67]',
+      danger: 'bg-error border-error/[0.67]',
+    },
+    size: {
+      sm: 'w-8 h-8',
+      md: 'w-9 h-9',
+      lg: 'w-11 h-11',
+    },
+    shape: {
+      rounded: 'rounded-xl',
+      round: 'rounded-full',
+    },
+    disabled: {
+      true: 'opacity-[0.55]',
+    },
+  },
+  defaultVariants: {
+    variant: 'secondary',
+    size: 'md',
+    shape: 'rounded',
+    disabled: false,
+  },
+});
 
 export default function LinearIconButton({
   children,
@@ -35,14 +71,16 @@ export default function LinearIconButton({
   size = 'md',
   shape = 'rounded',
   loading = false,
-  spinnerColor = variant === 'accent' ? linearTheme.colors.textInverse : linearTheme.colors.accent,
+  spinnerColor,
   disabled,
+  className,
   style,
-  contentStyle,
+  contentClassName,
   accessibilityState,
   ...props
 }: LinearIconButtonProps) {
   const resolvedDisabled = disabled || loading;
+  const finalSpinnerColor = spinnerColor ?? spinnerColorMap[variant];
 
   return (
     <Pressable
@@ -54,77 +92,22 @@ export default function LinearIconButton({
         disabled: resolvedDisabled,
         busy: loading || accessibilityState?.busy,
       }}
+      className={iconButtonVariants({
+        variant,
+        size,
+        shape,
+        disabled: resolvedDisabled,
+        className,
+      })}
       style={({ pressed }) => [
-        styles.base,
-        sizeStyles[size],
-        shape === 'round' ? styles.shapeRound : styles.shapeRounded,
-        variantStyles[variant],
-        pressed && styles.pressed,
-        resolvedDisabled && styles.disabled,
-        style,
+        { opacity: pressed ? 0.88 : 1 },
+        typeof style === 'function' ? style({ pressed }) : style,
       ]}
     >
-      <View style={[styles.content, contentStyle]}>
-        {loading ? <ActivityIndicator size="small" color={spinnerColor} /> : children}
+      <View className={`items-center justify-center ${contentClassName ?? ''}`}>
+        {loading ? <ActivityIndicator size="small" color={finalSpinnerColor} /> : children}
       </View>
     </Pressable>
   );
 }
 
-const styles = StyleSheet.create({
-  base: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-  },
-  content: {
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  shapeRounded: {
-    borderRadius: linearTheme.radius.md,
-  },
-  shapeRound: {
-    borderRadius: linearTheme.radius.full,
-  },
-  pressed: {
-    opacity: linearTheme.alpha.pressed,
-  },
-  disabled: {
-    opacity: linearTheme.alpha.disabled,
-  },
-});
-
-const sizeStyles = StyleSheet.create({
-  sm: {
-    width: 32,
-    height: 32,
-  },
-  md: {
-    width: 36,
-    height: 36,
-  },
-  lg: {
-    width: 44,
-    height: 44,
-  },
-});
-
-const variantStyles = StyleSheet.create({
-  ghost: {
-    backgroundColor: 'rgba(255,255,255,0.02)',
-    borderColor: 'transparent',
-  },
-  secondary: {
-    backgroundColor: linearTheme.colors.card,
-    borderColor: linearTheme.colors.border,
-  },
-  accent: {
-    backgroundColor: linearTheme.colors.accent,
-    borderColor: `${linearTheme.colors.accent}AA`,
-  },
-  danger: {
-    backgroundColor: linearTheme.colors.error,
-    borderColor: `${linearTheme.colors.error}AA`,
-  },
-});

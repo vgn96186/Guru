@@ -184,13 +184,7 @@ describe('ADHD UX Audit: Home Screen Cognitive Load', () => {
     await element(by.id('tools-library-header')).tap();
 
     // Count what appears
-    const toolItems = [
-      'Notes Search',
-      'Brain Dump',
-      'Manual Log',
-      'Flagged Cards',
-      'Lecture Mode',
-    ];
+    const toolItems = ['Notes Search', 'Brain Dump', 'Manual Log', 'Flagged Cards', 'Lecture Mode'];
 
     let visibleTools = 0;
     for (const tool of toolItems) {
@@ -507,7 +501,7 @@ describe('ADHD UX Audit: Distraction Recovery', () => {
 
     // Simulate backgrounding
     await device.sendToHome();
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    await new Promise((resolve) => setTimeout(resolve, 2000));
     await device.launchApp({ newInstance: false });
 
     // Are we still on the same screen?

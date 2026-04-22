@@ -4,28 +4,28 @@ This directory contains detailed documentation for the DeerFlow backend.
 
 ## Quick Links
 
-| Document | Description |
-|----------|-------------|
-| [ARCHITECTURE.md](ARCHITECTURE.md) | System architecture overview |
-| [API.md](API.md) | Complete API reference |
-| [CONFIGURATION.md](CONFIGURATION.md) | Configuration options |
-| [SETUP.md](SETUP.md) | Quick setup guide |
+| Document                             | Description                  |
+| ------------------------------------ | ---------------------------- |
+| [ARCHITECTURE.md](ARCHITECTURE.md)   | System architecture overview |
+| [API.md](API.md)                     | Complete API reference       |
+| [CONFIGURATION.md](CONFIGURATION.md) | Configuration options        |
+| [SETUP.md](SETUP.md)                 | Quick setup guide            |
 
 ## Feature Documentation
 
-| Document | Description |
-|----------|-------------|
-| [STREAMING.md](STREAMING.md) | Token-level streaming design: Gateway vs DeerFlowClient paths, `stream_mode` semantics, per-id dedup |
-| [FILE_UPLOAD.md](FILE_UPLOAD.md) | File upload functionality |
-| [PATH_EXAMPLES.md](PATH_EXAMPLES.md) | Path types and usage examples |
-| [summarization.md](summarization.md) | Context summarization feature |
-| [plan_mode_usage.md](plan_mode_usage.md) | Plan mode with TodoList |
-| [AUTO_TITLE_GENERATION.md](AUTO_TITLE_GENERATION.md) | Automatic title generation |
+| Document                                             | Description                                                                                          |
+| ---------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| [STREAMING.md](STREAMING.md)                         | Token-level streaming design: Gateway vs DeerFlowClient paths, `stream_mode` semantics, per-id dedup |
+| [FILE_UPLOAD.md](FILE_UPLOAD.md)                     | File upload functionality                                                                            |
+| [PATH_EXAMPLES.md](PATH_EXAMPLES.md)                 | Path types and usage examples                                                                        |
+| [summarization.md](summarization.md)                 | Context summarization feature                                                                        |
+| [plan_mode_usage.md](plan_mode_usage.md)             | Plan mode with TodoList                                                                              |
+| [AUTO_TITLE_GENERATION.md](AUTO_TITLE_GENERATION.md) | Automatic title generation                                                                           |
 
 ## Development
 
-| Document | Description |
-|----------|-------------|
+| Document           | Description                       |
+| ------------------ | --------------------------------- |
 | [TODO.md](TODO.md) | Planned features and known issues |
 
 ## Getting Started

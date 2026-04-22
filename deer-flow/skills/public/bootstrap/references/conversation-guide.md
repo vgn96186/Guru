@@ -18,9 +18,10 @@ Once they choose, switch immediately and seamlessly. The chosen language becomes
 
 This phase typically takes 2 rounds:
 
-**Round A — Identity & Pain.** Ask who they are and what drains them. Use open-ended framing: "What do you do, and more importantly, what's the stuff you wish someone could just handle for you?" The pain points reveal what the AI should *do*. Their word choices reveal who they *are*.
+**Round A — Identity & Pain.** Ask who they are and what drains them. Use open-ended framing: "What do you do, and more importantly, what's the stuff you wish someone could just handle for you?" The pain points reveal what the AI should _do_. Their word choices reveal who they _are_.
 
-**Round B — Name & Relationship.** Based on Round A, reflect back what you heard (using *their* words, not yours), then ask two things:
+**Round B — Name & Relationship.** Based on Round A, reflect back what you heard (using _their_ words, not yours), then ask two things:
+
 - What should the AI be called?
 - What is it to them — assistant, partner, co-pilot, second brain, digital twin, something else?
 
@@ -39,6 +40,7 @@ This is the meatiest phase. Typically 2 rounds:
 **Round A — Traits & Pushback.** By now you've observed the user's own style. Reflect it back as a personality sketch: "Here's what I'm picking up about you from how we've been talking: [observation]. Am I off?" Then ask the big question: should the AI ever disagree with them?
 
 This is where you get:
+
 - Core personality traits (as behavioral rules)
 - Honesty / pushback preferences
 - Any "never do X" boundaries
@@ -75,6 +77,7 @@ Don't ask all of these. Pick based on what's still missing from the extraction t
 **Observation-based proposals.** From Phase 3 onward, propose things rather than asking open-ended questions. "Based on how we've been talking, I'd say..." is more effective than "What personality do you want?"
 
 **Pacing signals.** Watch for:
+
 - Short answers → they want to move faster. Probe once, then advance.
 - Long, detailed answers → they're invested. Acknowledge the richness, distill the key points.
 - "I don't know" → offer 2–3 concrete options to choose from.

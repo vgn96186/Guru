@@ -23,16 +23,17 @@ Configure the LLM models available to the agent:
 
 ```yaml
 models:
-  - name: gpt-4                    # Internal identifier
-    display_name: GPT-4            # Human-readable name
-    use: langchain_openai:ChatOpenAI  # LangChain class path
-    model: gpt-4                   # Model identifier for API
-    api_key: $OPENAI_API_KEY       # API key (use env var)
-    max_tokens: 4096               # Max tokens per request
-    temperature: 0.7               # Sampling temperature
+  - name: gpt-4 # Internal identifier
+    display_name: GPT-4 # Human-readable name
+    use: langchain_openai:ChatOpenAI # LangChain class path
+    model: gpt-4 # Model identifier for API
+    api_key: $OPENAI_API_KEY # API key (use env var)
+    max_tokens: 4096 # Max tokens per request
+    temperature: 0.7 # Sampling temperature
 ```
 
 **Supported Providers**:
+
 - OpenAI (`langchain_openai:ChatOpenAI`)
 - Anthropic (`langchain_anthropic:ChatAnthropic`)
 - DeepSeek (`langchain_deepseek:ChatDeepSeek`)
@@ -60,6 +61,7 @@ models:
 ```
 
 **Auth behavior for CLI-backed providers**:
+
 - `CodexChatModel` loads Codex CLI auth from `~/.codex/auth.json`
 - The Codex Responses endpoint currently rejects `max_tokens` and `max_output_tokens`, so `CodexChatModel` does not expose a request-level token cap
 - `ClaudeChatModel` accepts `CLAUDE_CODE_OAUTH_TOKEN`, `ANTHROPIC_AUTH_TOKEN`, `CLAUDE_CODE_OAUTH_TOKEN_FILE_DESCRIPTOR`, `CLAUDE_CODE_CREDENTIALS_PATH`, or plaintext `~/.claude/.credentials.json`
@@ -101,7 +103,7 @@ models:
     api_key: $MINIMAX_API_KEY
     base_url: https://api.minimax.io/v1
     max_tokens: 4096
-    temperature: 1.0  # MiniMax requires temperature in (0.0, 1.0]
+    temperature: 1.0 # MiniMax requires temperature in (0.0, 1.0]
     supports_vision: true
 
   - name: minimax-m2.5-highspeed
@@ -111,7 +113,7 @@ models:
     api_key: $MINIMAX_API_KEY
     base_url: https://api.minimax.io/v1
     max_tokens: 4096
-    temperature: 1.0  # MiniMax requires temperature in (0.0, 1.0]
+    temperature: 1.0 # MiniMax requires temperature in (0.0, 1.0]
     supports_vision: true
   - name: openrouter-gemini-2.5-flash
     display_name: Gemini 2.5 Flash (OpenRouter)
@@ -138,21 +140,21 @@ models:
 
 **Gemini with thinking via OpenAI-compatible gateway**:
 
-When routing Gemini through an OpenAI-compatible proxy (Vertex AI OpenAI compat endpoint, AI Studio, or third-party gateways) with thinking enabled, the API attaches a `thought_signature` to each tool-call object returned in the response.  Every subsequent request that replays those assistant messages **must** echo those signatures back on the tool-call entries or the API returns:
+When routing Gemini through an OpenAI-compatible proxy (Vertex AI OpenAI compat endpoint, AI Studio, or third-party gateways) with thinking enabled, the API attaches a `thought_signature` to each tool-call object returned in the response. Every subsequent request that replays those assistant messages **must** echo those signatures back on the tool-call entries or the API returns:
 
 ```
 HTTP 400 INVALID_ARGUMENT: function call `<tool>` in the N. content block is
 missing a `thought_signature`.
 ```
 
-Standard `langchain_openai:ChatOpenAI` silently drops `thought_signature` when serialising messages.  Use `deerflow.models.patched_openai:PatchedChatOpenAI` instead — it re-injects the tool-call signatures (sourced from `AIMessage.additional_kwargs["tool_calls"]`) into every outgoing payload:
+Standard `langchain_openai:ChatOpenAI` silently drops `thought_signature` when serialising messages. Use `deerflow.models.patched_openai:PatchedChatOpenAI` instead — it re-injects the tool-call signatures (sourced from `AIMessage.additional_kwargs["tool_calls"]`) into every outgoing payload:
 
 ```yaml
 models:
   - name: gemini-2.5-pro-thinking
     display_name: Gemini 2.5 Pro (Thinking)
     use: deerflow.models.patched_openai:PatchedChatOpenAI
-    model: google/gemini-2.5-pro-preview   # model name as expected by your gateway
+    model: google/gemini-2.5-pro-preview # model name as expected by your gateway
     api_key: $GEMINI_API_KEY
     base_url: https://<your-openai-compat-gateway>/v1
     max_tokens: 16384
@@ -172,10 +174,10 @@ Organize tools into logical groups:
 
 ```yaml
 tool_groups:
-  - name: web          # Web browsing and search
-  - name: file:read    # Read-only file operations
-  - name: file:write   # Write file operations
-  - name: bash         # Shell command execution
+  - name: web # Web browsing and search
+  - name: file:read # Read-only file operations
+  - name: file:write # Write file operations
+  - name: bash # Shell command execution
 ```
 
 ### Tools
@@ -192,6 +194,7 @@ tools:
 ```
 
 **Built-in Tools**:
+
 - `web_search` - Search the web (DuckDuckGo, Tavily, Exa, InfoQuest, Firecrawl)
 - `web_fetch` - Fetch web pages (Jina AI, Exa, InfoQuest, Firecrawl)
 - `ls` - List directory contents
@@ -205,16 +208,18 @@ tools:
 DeerFlow supports multiple sandbox execution modes. Configure your preferred mode in `config.yaml`:
 
 **Local Execution** (runs sandbox code directly on the host machine):
+
 ```yaml
 sandbox:
-   use: deerflow.sandbox.local:LocalSandboxProvider # Local execution
-   allow_host_bash: false # default; host bash is disabled unless explicitly re-enabled
+  use: deerflow.sandbox.local:LocalSandboxProvider # Local execution
+  allow_host_bash: false # default; host bash is disabled unless explicitly re-enabled
 ```
 
 **Docker Execution** (runs sandbox code in isolated Docker containers):
+
 ```yaml
 sandbox:
-   use: deerflow.community.aio_sandbox:AioSandboxProvider # Docker-based sandbox
+  use: deerflow.community.aio_sandbox:AioSandboxProvider # Docker-based sandbox
 ```
 
 **Docker Execution with Kubernetes** (runs sandbox code in Kubernetes pods via provisioner service):
@@ -223,8 +228,8 @@ This mode runs each sandbox in an isolated Kubernetes Pod on your **host machine
 
 ```yaml
 sandbox:
-   use: deerflow.community.aio_sandbox:AioSandboxProvider
-   provisioner_url: http://provisioner:8002
+  use: deerflow.community.aio_sandbox:AioSandboxProvider
+  provisioner_url: http://provisioner:8002
 ```
 
 When using Docker development (`make docker-start`), DeerFlow starts the `provisioner` service only if this provisioner mode is configured. In local or plain Docker sandbox modes, `provisioner` is skipped.
@@ -234,6 +239,7 @@ See [Provisioner Setup Guide](../../docker/provisioner/README.md) for detailed c
 Choose between local execution or Docker-based isolation:
 
 **Option 1: Local Sandbox** (default, simpler setup):
+
 ```yaml
 sandbox:
   use: deerflow.sandbox.local:LocalSandboxProvider
@@ -243,6 +249,7 @@ sandbox:
 `allow_host_bash` is intentionally `false` by default. DeerFlow's local sandbox is a host-side convenience mode, not a secure shell isolation boundary. If you need `bash`, prefer `AioSandboxProvider`. Only set `allow_host_bash: true` for fully trusted single-user local workflows.
 
 **Option 2: Docker Sandbox** (isolated, more secure):
+
 ```yaml
 sandbox:
   use: deerflow.community.aio_sandbox:AioSandboxProvider
@@ -273,6 +280,7 @@ skills:
 ```
 
 **How Skills Work**:
+
 - Skills are stored in `deer-flow/skills/{public,custom}/`
 - Each skill has a `SKILL.md` file with metadata
 - Skills are automatically discovered and loaded
@@ -280,6 +288,7 @@ skills:
 
 **Per-Agent Skill Filtering**:
 Custom agents can restrict which skills they load by defining a `skills` field in their `config.yaml` (located at `workspace/agents/<agent_name>/config.yaml`):
+
 - **Omitted or `null`**: Loads all globally enabled skills (default fallback).
 - **`[]` (empty list)**: Disables all skills for this specific agent.
 - **`["skill-name"]`**: Loads only the explicitly specified skills.
@@ -293,7 +302,7 @@ title:
   enabled: true
   max_words: 6
   max_chars: 60
-  model_name: null  # Use first model in list
+  model_name: null # Use first model in list
 ```
 
 ### GitHub API Token (Optional for GitHub Deep Research Skill)
@@ -301,6 +310,7 @@ title:
 The default GitHub API rate limits are quite restrictive. For frequent project research, we recommend configuring a personal access token (PAT) with read-only permissions.
 
 **Configuration Steps**:
+
 1. Uncomment the `GITHUB_TOKEN` line in the `.env` file and add your personal access token
 2. Restart the DeerFlow service to apply changes
 
@@ -310,10 +320,11 @@ DeerFlow supports environment variable substitution using the `$` prefix:
 
 ```yaml
 models:
-  - api_key: $OPENAI_API_KEY  # Reads from environment
+  - api_key: $OPENAI_API_KEY # Reads from environment
 ```
 
 **Common Environment Variables**:
+
 - `OPENAI_API_KEY` - OpenAI API key
 - `ANTHROPIC_API_KEY` - Anthropic API key
 - `DEEPSEEK_API_KEY` - DeepSeek API key
@@ -346,20 +357,24 @@ DeerFlow searches for configuration in this order:
 ## Troubleshooting
 
 ### "Config file not found"
+
 - Ensure `config.yaml` exists in the **project root** directory (`deer-flow/config.yaml`)
 - The backend searches parent directory by default, so root location is preferred
 - Alternatively, set `DEER_FLOW_CONFIG_PATH` environment variable to custom location
 
 ### "Invalid API key"
+
 - Verify environment variables are set correctly
 - Check that `$` prefix is used for env var references
 
 ### "Skills not loading"
+
 - Check that `deer-flow/skills/` directory exists
 - Verify skills have valid `SKILL.md` files
 - Check `skills.path` configuration if using custom path
 
 ### "Docker sandbox fails to start"
+
 - Ensure Docker is running
 - Check port 8080 (or configured port) is available
 - Verify Docker image is accessible

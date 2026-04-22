@@ -7,7 +7,7 @@ const BACKEND_UNAVAILABLE_STATUSES = new Set([502, 503, 504]);
 export class AgentNameCheckError extends Error {
   constructor(
     message: string,
-    public readonly reason: "backend_unreachable" | "request_failed",
+    public readonly reason: "backend_unreachable" | "request_failed"
   ) {
     super(message);
     this.name = "AgentNameCheckError";
@@ -42,7 +42,7 @@ export async function createAgent(request: CreateAgentRequest): Promise<Agent> {
 
 export async function updateAgent(
   name: string,
-  request: UpdateAgentRequest,
+  request: UpdateAgentRequest
 ): Promise<Agent> {
   const res = await fetch(`${getBackendBaseURL()}/api/agents/${name}`, {
     method: "PUT",
@@ -64,17 +64,17 @@ export async function deleteAgent(name: string): Promise<void> {
 }
 
 export async function checkAgentName(
-  name: string,
+  name: string
 ): Promise<{ available: boolean; name: string }> {
   let res: Response;
   try {
     res = await fetch(
-      `${getBackendBaseURL()}/api/agents/check?name=${encodeURIComponent(name)}`,
+      `${getBackendBaseURL()}/api/agents/check?name=${encodeURIComponent(name)}`
     );
   } catch {
     throw new AgentNameCheckError(
       "Could not reach the DeerFlow backend.",
-      "backend_unreachable",
+      "backend_unreachable"
     );
   }
 
@@ -83,12 +83,12 @@ export async function checkAgentName(
     if (BACKEND_UNAVAILABLE_STATUSES.has(res.status)) {
       throw new AgentNameCheckError(
         "Could not reach the DeerFlow backend.",
-        "backend_unreachable",
+        "backend_unreachable"
       );
     }
     throw new AgentNameCheckError(
       err.detail ?? `Failed to check agent name: ${res.statusText}`,
-      "request_failed",
+      "request_failed"
     );
   }
   return res.json() as Promise<{ available: boolean; name: string }>;

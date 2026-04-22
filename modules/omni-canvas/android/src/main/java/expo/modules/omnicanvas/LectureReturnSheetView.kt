@@ -109,7 +109,7 @@ fun LectureReturnSheetContent(
                 ) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         CircularProgressIndicator(
-                            progress = data.progressPercent / 100f,
+                            progress = { data.progressPercent / 100f },
                             color = theme.accent,
                             trackColor = theme.surface
                         )

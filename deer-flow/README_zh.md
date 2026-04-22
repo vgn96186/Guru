@@ -7,14 +7,14 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
 
 <a href="https://trendshift.io/repositories/14699" target="_blank"><img src="https://trendshift.io/api/badge/repositories/14699" alt="bytedance%2Fdeer-flow | Trendshift" style="width: 250px; height: 55px;" width="250" height="55"/></a>
+
 > 2026 年 2 月 28 日，DeerFlow 2 发布后登上 GitHub Trending 第 1 名。非常感谢社区的支持，这是大家一起做到的。
 
 DeerFlow（**D**eep **E**xploration and **E**fficient **R**esearch **Flow**）是一个开源的 **super agent harness**。它把 **sub-agents**、**memory** 和 **sandbox** 组织在一起，再配合可扩展的 **skills**，让 agent 可以完成几乎任何事情。
 
 https://github.com/user-attachments/assets/a8bcadc4-e040-4cf2-8fda-dd768b999c18
 
-> [!NOTE]
-> **DeerFlow 2.0 是一次彻底重写。** 它和 v1 没有共用代码。如果你要找的是最初的 Deep Research 框架，可以前往 [`1.x` 分支](https://github.com/bytedance/deer-flow/tree/main-1.x)。那里仍然欢迎贡献；当前的主要开发已经转向 2.0。
+> [!NOTE] > **DeerFlow 2.0 是一次彻底重写。** 它和 v1 没有共用代码。如果你要找的是最初的 Deep Research 框架，可以前往 [`1.x` 分支](https://github.com/bytedance/deer-flow/tree/main-1.x)。那里仍然欢迎贡献；当前的主要开发已经转向 2.0。
 
 ## 官网
 
@@ -103,19 +103,19 @@ https://github.com/user-attachments/assets/a8bcadc4-e040-4cf2-8fda-dd768b999c18
 
    ```yaml
    models:
-     - name: gpt-4                       # 内部标识
-       display_name: GPT-4               # 展示名称
-       use: langchain_openai:ChatOpenAI  # LangChain 类路径
-       model: gpt-4                      # API 使用的模型标识
-       api_key: $OPENAI_API_KEY          # API key（推荐使用环境变量）
-       max_tokens: 4096                  # 单次请求最大 tokens
-       temperature: 0.7                  # 采样温度
+     - name: gpt-4 # 内部标识
+       display_name: GPT-4 # 展示名称
+       use: langchain_openai:ChatOpenAI # LangChain 类路径
+       model: gpt-4 # API 使用的模型标识
+       api_key: $OPENAI_API_KEY # API key（推荐使用环境变量）
+       max_tokens: 4096 # 单次请求最大 tokens
+       temperature: 0.7 # 采样温度
 
      - name: openrouter-gemini-2.5-flash
        display_name: Gemini 2.5 Flash (OpenRouter)
        use: langchain_openai:ChatOpenAI
        model: google/gemini-2.5-flash-preview
-       api_key: $OPENAI_API_KEY          # 这里 OpenRouter 依然沿用 OpenAI 兼容字段名
+       api_key: $OPENAI_API_KEY # 这里 OpenRouter 依然沿用 OpenAI 兼容字段名
        base_url: https://openrouter.ai/api/v1
    ```
 
@@ -127,27 +127,27 @@ https://github.com/user-attachments/assets/a8bcadc4-e040-4cf2-8fda-dd768b999c18
 
 - 方式 A：编辑项目根目录下的 `.env` 文件（推荐）
 
-   ```bash
-   TAVILY_API_KEY=your-tavily-api-key
-   OPENAI_API_KEY=your-openai-api-key
-   # 如果配置使用的是 langchain_openai:ChatOpenAI + base_url，OpenRouter 也会读取 OPENAI_API_KEY
-   # 其他 provider 的 key 按需补充
-   INFOQUEST_API_KEY=your-infoquest-api-key
-   ```
+  ```bash
+  TAVILY_API_KEY=your-tavily-api-key
+  OPENAI_API_KEY=your-openai-api-key
+  # 如果配置使用的是 langchain_openai:ChatOpenAI + base_url，OpenRouter 也会读取 OPENAI_API_KEY
+  # 其他 provider 的 key 按需补充
+  INFOQUEST_API_KEY=your-infoquest-api-key
+  ```
 
 - 方式 B：在 shell 中导出环境变量
 
-   ```bash
-   export OPENAI_API_KEY=your-openai-api-key
-   ```
+  ```bash
+  export OPENAI_API_KEY=your-openai-api-key
+  ```
 
 - 方式 C：直接编辑 `config.yaml`（不建议用于生产环境）
 
-   ```yaml
-   models:
-     - name: gpt-4
-       api_key: your-actual-api-key-here  # 替换为真实 key
-   ```
+  ```yaml
+  models:
+    - name: gpt-4
+      api_key: your-actual-api-key-here # 替换为真实 key
+  ```
 
 ### 运行应用
 
@@ -155,11 +155,11 @@ https://github.com/user-attachments/assets/a8bcadc4-e040-4cf2-8fda-dd768b999c18
 
 可以先按下面的资源档位来选择 DeerFlow 的运行方式：
 
-| 部署场景 | 起步配置 | 推荐配置 | 说明 |
-|---------|-----------|------------|-------|
-| 本地体验 / `make dev` | 4 vCPU、8 GB 内存、20 GB SSD 可用空间 | 8 vCPU、16 GB 内存 | 适合单个开发者或单个轻量会话，且模型走外部 API。`2 核 / 4 GB` 通常跑不稳。 |
-| Docker 开发 / `make docker-start` | 4 vCPU、8 GB 内存、25 GB SSD 可用空间 | 8 vCPU、16 GB 内存 | 镜像构建、源码挂载和 sandbox 容器都会比纯本地模式更吃资源。 |
-| 长期运行服务 / `make up` | 8 vCPU、16 GB 内存、40 GB SSD 可用空间 | 16 vCPU、32 GB 内存 | 更适合共享环境、多 agent 任务、报告生成或更重的 sandbox 负载。 |
+| 部署场景                          | 起步配置                               | 推荐配置            | 说明                                                                       |
+| --------------------------------- | -------------------------------------- | ------------------- | -------------------------------------------------------------------------- |
+| 本地体验 / `make dev`             | 4 vCPU、8 GB 内存、20 GB SSD 可用空间  | 8 vCPU、16 GB 内存  | 适合单个开发者或单个轻量会话，且模型走外部 API。`2 核 / 4 GB` 通常跑不稳。 |
+| Docker 开发 / `make docker-start` | 4 vCPU、8 GB 内存、25 GB SSD 可用空间  | 8 vCPU、16 GB 内存  | 镜像构建、源码挂载和 sandbox 容器都会比纯本地模式更吃资源。                |
+| 长期运行服务 / `make up`          | 8 vCPU、16 GB 内存、40 GB SSD 可用空间 | 16 vCPU、32 GB 内存 | 更适合共享环境、多 agent 任务、报告生成或更重的 sandbox 负载。             |
 
 - 上面的配置只覆盖 DeerFlow 本身；如果你还要本机部署本地大模型，请单独为模型服务预留资源。
 - 持续运行的服务更推荐使用 Linux + Docker。macOS 和 Windows 更适合作为开发机或体验环境。
@@ -198,22 +198,26 @@ make down   # 停止并移除容器
 在 Windows 上，请使用 Git Bash 运行本地开发流程。基于 bash 的服务脚本不支持直接在原生 `cmd.exe` 或 PowerShell 中执行，且 WSL 也不保证可用，因为部分脚本依赖 Git for Windows 的 `cygpath` 等工具。
 
 1. **检查依赖环境**：
+
    ```bash
    make check  # 校验 Node.js 22+、pnpm、uv、nginx
    ```
 
 2. **安装依赖**：
+
    ```bash
    make install  # 安装 backend + frontend 依赖
    ```
 
 3. **（可选）预拉取 sandbox 镜像**：
+
    ```bash
    # 如果使用 Docker / Container sandbox，建议先执行
    make setup-sandbox
    ```
 
 4. **启动服务**：
+
    ```bash
    make dev
    ```
@@ -221,9 +225,11 @@ make down   # 停止并移除容器
 5. **访问地址**：http://localhost:2026
 
 ### 进阶配置
+
 #### Sandbox 模式
 
 DeerFlow 支持多种 sandbox 执行方式：
+
 - **本地执行**（直接在宿主机上运行 sandbox 代码）
 - **Docker 执行**（在隔离的 Docker 容器里运行 sandbox 代码）
 - **Docker + Kubernetes 执行**（通过 provisioner 服务在 Kubernetes Pod 中运行 sandbox 代码）
@@ -242,12 +248,12 @@ DeerFlow 支持可配置的 MCP Server 和 skills，用来扩展能力。
 
 DeerFlow 支持从即时通讯应用接收任务。只要配置完成，对应渠道会自动启动，而且都不需要公网 IP。
 
-| 渠道 | 传输方式 | 上手难度 |
-|---------|-----------|------------|
-| Telegram | Bot API（long-polling） | 简单 |
-| Slack | Socket Mode | 中等 |
-| Feishu / Lark | WebSocket | 中等 |
-| 企业微信智能机器人 | WebSocket | 中等 |
+| 渠道               | 传输方式                | 上手难度 |
+| ------------------ | ----------------------- | -------- |
+| Telegram           | Bot API（long-polling） | 简单     |
+| Slack              | Socket Mode             | 中等     |
+| Feishu / Lark      | WebSocket               | 中等     |
+| 企业微信智能机器人 | WebSocket               | 中等     |
 
 **`config.yaml` 中的配置示例：**
 
@@ -260,7 +266,7 @@ channels:
 
   # 可选：所有移动端渠道共用的全局 session 默认值
   session:
-    assistant_id: lead_agent  # 也可以填自定义 agent 名；渠道层会自动转换为 lead_agent + agent_name
+    assistant_id: lead_agent # 也可以填自定义 agent 名；渠道层会自动转换为 lead_agent + agent_name
     config:
       recursion_limit: 100
     context:
@@ -282,22 +288,22 @@ channels:
 
   slack:
     enabled: true
-    bot_token: $SLACK_BOT_TOKEN     # xoxb-...
-    app_token: $SLACK_APP_TOKEN     # xapp-...（Socket Mode）
-    allowed_users: []               # 留空表示允许所有人
+    bot_token: $SLACK_BOT_TOKEN # xoxb-...
+    app_token: $SLACK_APP_TOKEN # xapp-...（Socket Mode）
+    allowed_users: [] # 留空表示允许所有人
 
   telegram:
     enabled: true
     bot_token: $TELEGRAM_BOT_TOKEN
-    allowed_users: []               # 留空表示允许所有人
+    allowed_users: [] # 留空表示允许所有人
 
     # 可选：按渠道 / 按用户单独覆盖 session 配置
     session:
-      assistant_id: mobile-agent  # 这里同样支持自定义 agent 名
+      assistant_id: mobile-agent # 这里同样支持自定义 agent 名
       context:
         thinking_enabled: false
       users:
-        "123456789":
+        '123456789':
           assistant_id: vip-agent
           config:
             recursion_limit: 150
@@ -307,6 +313,7 @@ channels:
 ```
 
 说明：
+
 - `assistant_id: lead_agent` 会直接调用默认的 LangGraph assistant。
 - 如果 `assistant_id` 填的是自定义 agent 名，DeerFlow 仍然会走 `lead_agent`，同时把该值注入为 `agent_name`，这样 IM 渠道也会生效对应 agent 的 SOUL 和配置。
 
@@ -361,13 +368,13 @@ WECOM_BOT_SECRET=your_bot_secret
 
 渠道连接完成后，你可以直接在聊天窗口里和 DeerFlow 交互：
 
-| 命令 | 说明 |
-|---------|-------------|
-| `/new` | 开启新对话 |
+| 命令      | 说明                 |
+| --------- | -------------------- |
+| `/new`    | 开启新对话           |
 | `/status` | 查看当前 thread 信息 |
-| `/models` | 列出可用模型 |
-| `/memory` | 查看 memory |
-| `/help` | 查看帮助 |
+| `/models` | 列出可用模型         |
+| `/memory` | 查看 memory          |
+| `/help`   | 查看帮助             |
 
 > 没有命令前缀的消息会被当作普通聊天处理。DeerFlow 会自动创建 thread，并以对话方式回复。
 
@@ -440,6 +447,7 @@ npx skills add https://github.com/bytedance/deer-flow --skill claude-to-deerflow
 然后确认 DeerFlow 已经启动（默认地址是 `http://localhost:2026`），在 Claude Code 里使用 `/claude-to-deerflow` 命令即可。
 
 **你可以做的事情包括：**
+
 - 给 DeerFlow 发送消息，并接收流式响应
 - 选择执行模式：flash（更快）、standard、pro（规划模式）、ultra（sub-agents 模式）
 - 检查 DeerFlow 健康状态，列出 models / skills / agents

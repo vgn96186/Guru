@@ -74,6 +74,6 @@ export function useUploadFilesOnSubmit(threadId: string) {
       const result = await uploadMutation.mutateAsync(files);
       return result.files;
     },
-    [uploadMutation],
+    [uploadMutation]
   );
 }

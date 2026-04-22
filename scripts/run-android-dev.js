@@ -146,7 +146,9 @@ function ensureDevice() {
       const match = devices.find((d) => d.serial === REQUESTED_DEVICE_SERIAL);
       if (!match) {
         fail(
-          `Requested device "${REQUESTED_DEVICE_SERIAL}" not found. Available: ${devices.map((d) => d.serial).join(', ')}`,
+          `Requested device "${REQUESTED_DEVICE_SERIAL}" not found. Available: ${devices
+            .map((d) => d.serial)
+            .join(', ')}`,
         );
       }
       activeDeviceSerial = match.serial;
@@ -154,7 +156,9 @@ function ensureDevice() {
       activeDeviceSerial = devices[0].serial;
       if (devices.length > 1) {
         log(
-          `Multiple devices: ${devices.map((d) => d.serial).join(', ')}. Using ${activeDeviceSerial}. Set GURU_ANDROID_SERIAL to override.`,
+          `Multiple devices: ${devices
+            .map((d) => d.serial)
+            .join(', ')}. Using ${activeDeviceSerial}. Set GURU_ANDROID_SERIAL to override.`,
         );
       }
     }
@@ -291,7 +295,9 @@ function installApp() {
   if (archArg) {
     gradleArgs.push(`-PreactNativeArchitectures=${archArg}`);
     log(
-      `Native libs: -PreactNativeArchitectures=${archArg}${envArch ? ' (from GURU_REACT_NATIVE_ARCHITECTURES)' : deviceAbi ? ' (from device)' : ''}`,
+      `Native libs: -PreactNativeArchitectures=${archArg}${
+        envArch ? ' (from GURU_REACT_NATIVE_ARCHITECTURES)' : deviceAbi ? ' (from device)' : ''
+      }`,
     );
   } else {
     log(

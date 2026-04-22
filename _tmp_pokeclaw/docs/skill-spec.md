@@ -47,8 +47,8 @@ One sentence summary.
 2. If any required information is unclear, ask the user.
 3. [Action step with inline error handling if critical]
 4. [Action step]
-...
-N. Confirm completion to the user.
+   ...
+   N. Confirm completion to the user.
 
 ## Example
 
@@ -108,24 +108,24 @@ Skill:
 
 ## Valid Tool Identifiers
 
-| Tool | Description |
-|------|-------------|
-| `open_app` | Launch an app by name |
-| `tap` | Tap a screen coordinate or element |
-| `type_text` | Enter text into the focused field |
-| `find_element` | Find a UI element by description |
-| `scroll` | Scroll in a direction |
-| `swipe` | Swipe gesture |
-| `send_message` | Full messaging flow |
-| `auto_reply` | Enable auto-reply monitoring |
-| `send_reply` | Reply to a notification |
-| `read_notification` | Read incoming notifications |
-| `set_monitor` | Start monitoring for notifications |
-| `list_skills` | Return list of installed skills |
-| `press_back` | Press the back button |
-| `screenshot` | Capture current screen |
-| `get_screen_info` | Read current UI tree |
-| `finish` | Signal task completion |
+| Tool                | Description                        |
+| ------------------- | ---------------------------------- |
+| `open_app`          | Launch an app by name              |
+| `tap`               | Tap a screen coordinate or element |
+| `type_text`         | Enter text into the focused field  |
+| `find_element`      | Find a UI element by description   |
+| `scroll`            | Scroll in a direction              |
+| `swipe`             | Swipe gesture                      |
+| `send_message`      | Full messaging flow                |
+| `auto_reply`        | Enable auto-reply monitoring       |
+| `send_reply`        | Reply to a notification            |
+| `read_notification` | Read incoming notifications        |
+| `set_monitor`       | Start monitoring for notifications |
+| `list_skills`       | Return list of installed skills    |
+| `press_back`        | Press the back button              |
+| `screenshot`        | Capture current screen             |
+| `get_screen_info`   | Read current UI tree               |
+| `finish`            | Signal task completion             |
 
 ## Example Skills
 
@@ -258,8 +258,9 @@ Tell the user what skills are available.
 User: "What can you do?"
 → list_skills()
 → "Here's what I can help with:
-   - Send Message: text someone on WhatsApp, Telegram, etc.
-   - Monitor Reply: auto-reply to incoming messages
-   - Open App: launch any app
-   Want to try any of these?"
+
+- Send Message: text someone on WhatsApp, Telegram, etc.
+- Monitor Reply: auto-reply to incoming messages
+- Open App: launch any app
+  Want to try any of these?"
 ```

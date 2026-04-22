@@ -91,7 +91,7 @@ export function PostTags({
   }
 
   const validTags = tags.filter(
-    (tag): tag is string => typeof tag === "string" && tag.length > 0,
+    (tag): tag is string => typeof tag === "string" && tag.length > 0
   );
 
   if (validTags.length === 0) {

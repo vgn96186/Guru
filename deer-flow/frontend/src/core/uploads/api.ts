@@ -31,7 +31,7 @@ export interface ListFilesResponse {
 
 async function readErrorDetail(
   response: Response,
-  fallback: string,
+  fallback: string
 ): Promise<string> {
   const error = await response.json().catch(() => ({ detail: fallback }));
   return error.detail ?? fallback;
@@ -42,7 +42,7 @@ async function readErrorDetail(
  */
 export async function uploadFiles(
   threadId: string,
-  files: File[],
+  files: File[]
 ): Promise<UploadResponse> {
   const formData = new FormData();
 
@@ -55,7 +55,7 @@ export async function uploadFiles(
     {
       method: "POST",
       body: formData,
-    },
+    }
   );
 
   if (!response.ok) {
@@ -69,15 +69,15 @@ export async function uploadFiles(
  * List all uploaded files for a thread
  */
 export async function listUploadedFiles(
-  threadId: string,
+  threadId: string
 ): Promise<ListFilesResponse> {
   const response = await fetch(
-    `${getBackendBaseURL()}/api/threads/${threadId}/uploads/list`,
+    `${getBackendBaseURL()}/api/threads/${threadId}/uploads/list`
   );
 
   if (!response.ok) {
     throw new Error(
-      await readErrorDetail(response, "Failed to list uploaded files"),
+      await readErrorDetail(response, "Failed to list uploaded files")
     );
   }
 
@@ -89,13 +89,13 @@ export async function listUploadedFiles(
  */
 export async function deleteUploadedFile(
   threadId: string,
-  filename: string,
+  filename: string
 ): Promise<{ success: boolean; message: string }> {
   const response = await fetch(
     `${getBackendBaseURL()}/api/threads/${threadId}/uploads/${filename}`,
     {
       method: "DELETE",
-    },
+    }
   );
 
   if (!response.ok) {

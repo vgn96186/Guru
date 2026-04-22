@@ -10,10 +10,12 @@ This skill guides the Agent through DeerFlow's full end-to-end smoke test workfl
 ## Deployment Mode Selection
 
 This skill supports two deployment modes:
+
 - **Local installation mode** (recommended, especially when network issues occur) - Run all services directly on the local machine
 - **Docker mode** - Run all services inside Docker containers
 
 **Selection strategy**:
+
 - If the user explicitly asks for Docker mode, use Docker
 - If network issues occur (such as slow image pulls), automatically switch to local mode
 - Default to local mode whenever possible
@@ -51,10 +53,12 @@ smoke-test/
 ### Phase 2: Deployment Mode Selection and Environment Check
 
 **Choose deployment mode**:
+
 - Ask for user preference, or choose automatically based on network conditions
 - Default to local installation mode
 
 **Local mode environment check**:
+
 1. **Check Node.js version** - Requires 22+
 2. **Check pnpm** - Package manager
 3. **Check uv** - Python package manager
@@ -62,6 +66,7 @@ smoke-test/
 5. **Check required ports** - Confirm that ports 2026, 3000, 8001, and 2024 are not occupied
 
 **Docker mode environment check** (if Docker is selected):
+
 1. **Check whether Docker is installed** - Run `docker --version`
 2. **Check Docker daemon status** - Run `docker info`
 3. **Check Docker Compose availability** - Run `docker compose version`
@@ -79,6 +84,7 @@ smoke-test/
 ### Phase 4: Deployment Execution
 
 **Local mode deployment**:
+
 1. **Check dependencies** - Run `make check`
 2. **Install dependencies** - Run `make install`
 3. **(Optional) Pre-pull the sandbox image** - If needed, run `make setup-sandbox`
@@ -86,6 +92,7 @@ smoke-test/
 5. **Wait for startup** - Give all services enough time to start completely (90-120 seconds recommended)
 
 **Docker mode deployment** (if Docker is selected):
+
 1. **Initialize Docker environment** - Run `make docker-init`
 2. **Start Docker services** - Run `make docker-start`
 3. **Wait for startup** - Give all containers enough time to start completely (60 seconds recommended)
@@ -93,6 +100,7 @@ smoke-test/
 ### Phase 5: Service Health Check
 
 **Local mode health check**:
+
 1. **Check process status** - Confirm that LangGraph, Gateway, Frontend, and Nginx processes are all running
 2. **Check frontend service** - Visit `http://localhost:2026` and verify that the page loads
 3. **Check API Gateway** - Verify the `http://localhost:2026/health` endpoint
@@ -100,6 +108,7 @@ smoke-test/
 5. **Frontend route smoke check** - Run `bash .agent/skills/smoke-test/scripts/frontend_check.sh` to verify key routes under `/workspace`
 
 **Docker mode health check** (when using Docker):
+
 1. **Check container status** - Run `docker ps` and confirm that all containers are running
 2. **Check frontend service** - Visit `http://localhost:2026` and verify that the page loads
 3. **Check API Gateway** - Verify the `http://localhost:2026/health` endpoint
@@ -134,6 +143,7 @@ smoke-test/
 ## Known Acceptable Warnings
 
 The following warnings can appear during smoke testing and do not block a successful result:
+
 - Feishu/Lark SSL errors in Gateway logs (certificate verification failure) can be ignored if that channel is not enabled
 - Warnings in LangGraph logs about missing methods in the custom checkpointer, such as `adelete_for_runs` or `aprune`, do not affect the core functionality
 
@@ -148,6 +158,7 @@ Use the following tools during execution:
 ## Success Criteria
 
 Smoke test pass criteria (local mode):
+
 - [x] Latest code is pulled successfully
 - [x] Local environment check passes (Node.js 22+, pnpm, uv, nginx)
 - [x] Configuration files are set up correctly
@@ -161,6 +172,7 @@ Smoke test pass criteria (local mode):
 - [x] Test report is generated completely
 
 Smoke test pass criteria (Docker mode):
+
 - [x] Latest code is pulled successfully
 - [x] Docker environment check passes
 - [x] Configuration files are set up correctly
@@ -175,6 +187,7 @@ Smoke test pass criteria (Docker mode):
 ## Read Reference Files
 
 Before starting execution, read the following reference files:
+
 1. `references/SOP.md` - Detailed step-by-step operating instructions
 2. `references/troubleshooting.md` - Common issues and solutions
 3. `templates/report.local.template.md` - Local mode test report template

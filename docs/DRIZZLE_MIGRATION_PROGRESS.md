@@ -107,7 +107,7 @@ All of the above have corresponding `*.unit.test.ts` coverage files.
 - That evidence is now stronger than before because both:
   - [src/db/testing/drizzleSchemaParity.unit.test.ts](/Users/vishnugnair/Guru/debug/src/db/testing/drizzleSchemaParity.unit.test.ts)
   - [src/db/drizzleQueryParity.db.test.ts](/Users/vishnugnair/Guru/debug/src/db/drizzleQueryParity.db.test.ts)
-  are passing against the current codebase.
+    are passing against the current codebase.
 
 ### 2. Legacy query contracts do not always match the real SQLite schema
 

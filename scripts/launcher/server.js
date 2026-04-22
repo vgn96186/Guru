@@ -190,7 +190,9 @@ function checkApkStaleness(apkPath) {
       const apkAge = Math.round((Date.now() - apkTime) / 60000);
       return {
         stale: true,
-        message: `Debug APK is ${apkAge} min old but native source has changed since (${path.basename(newestFile || 'unknown')}). You should rebuild with "Build Debug APK" to avoid crashes.`,
+        message: `Debug APK is ${apkAge} min old but native source has changed since (${path.basename(
+          newestFile || 'unknown',
+        )}). You should rebuild with "Build Debug APK" to avoid crashes.`,
       };
     }
 
@@ -315,8 +317,8 @@ async function getPublicStatus() {
       detail: !apkExists
         ? 'No debug APK found. Click "Build Debug APK" or run Doctor.'
         : staleness.stale
-          ? staleness.message
-          : 'APK is up to date.',
+        ? staleness.message
+        : 'APK is up to date.',
     },
   };
 }
@@ -885,8 +887,7 @@ function buildActions() {
             [path.join(ROOT, 'scripts', 'adb-install-dev-apk.js')],
             { shell: false },
           );
-          canOpen =
-            Boolean(forced) && isGuruDevClientInstalled(adbCmd, picked.serial);
+          canOpen = Boolean(forced) && isGuruDevClientInstalled(adbCmd, picked.serial);
           if (installDev && forced && !canOpen) {
             runner.log(
               '[doctor] Forced install finished but the dev package is still missing on the target device. Check GURU_ANDROID_SERIAL if multiple devices are connected.',
@@ -1065,15 +1066,17 @@ async function handleAPI(req, res, url) {
     // Stream ADB logcat output
     const { spawn } = require('child_process');
     const { resolveAdbCommand } = require('../android-tooling');
-    
+
     // Get query parameters
     const level = url.searchParams.get('level') || 'V';
     const packageName = url.searchParams.get('package') || GURU_DEBUG_PACKAGE;
     const follow = url.searchParams.get('follow') !== 'false'; // default true
-    
+
     const validLevels = ['V', 'D', 'I', 'W', 'E', 'S'];
     if (!validLevels.includes(level)) {
-      sendJson(res, 400, { error: `Invalid level: ${level}. Must be one of ${validLevels.join(', ')}` });
+      sendJson(res, 400, {
+        error: `Invalid level: ${level}. Must be one of ${validLevels.join(', ')}`,
+      });
       return;
     }
 
@@ -1091,7 +1094,7 @@ async function handleAPI(req, res, url) {
       'Content-Type': 'text/plain; charset=utf-8',
       'Transfer-Encoding': 'chunked',
       'Cache-Control': 'no-cache',
-      'Connection': 'keep-alive',
+      Connection: 'keep-alive',
     });
 
     // Construct logcat command
@@ -1102,12 +1105,12 @@ async function handleAPI(req, res, url) {
     logcatArgs.push(`${packageName}:${level}`, `ReactNativeJS:${level}`, '*:S');
 
     const logcat = spawn(adbCmd, logcatArgs);
-    
+
     // Pipe output to response
     logcat.stdout.on('data', (chunk) => {
       res.write(chunk);
     });
-    
+
     logcat.stderr.on('data', (chunk) => {
       res.write(chunk);
     });
@@ -1343,6 +1346,8 @@ server.on('error', (error) => {
 
 const reclaim = freeListeningPort(PORT);
 console.log(
-  `[launcher] Port ${PORT} reclaim: ${reclaim.reclaimed ? 'cleared previous listener(s)' : reclaim.detail || 'ok'}`,
+  `[launcher] Port ${PORT} reclaim: ${
+    reclaim.reclaimed ? 'cleared previous listener(s)' : reclaim.detail || 'ok'
+  }`,
 );
 beginListen();

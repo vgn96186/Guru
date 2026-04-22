@@ -7,10 +7,12 @@ Use this template when converting technical documentation, API guides, or develo
 When the user wants to convert technical content to a podcast, help them structure the input:
 
 1. **Simplify Code Examples**: Replace code snippets with plain language descriptions
+
    - Instead of showing actual code, describe what the code does
    - Focus on concepts rather than syntax
 
 2. **Remove Complex Notation**:
+
    - Mathematical formulas should be explained in words
    - API endpoints described by function rather than URL paths
    - Configuration examples summarized as settings descriptions
@@ -23,19 +25,21 @@ When the user wants to convert technical content to a podcast, help them structu
 ## Example Transformation
 
 ### Original Technical Content:
+
 ```markdown
 # Using the API
 
 POST /api/v1/users
 {
-  "name": "John",
-  "email": "john@example.com"
+"name": "John",
+"email": "john@example.com"
 }
 
 Response: 201 Created
 ```
 
 ### Podcast-Ready Content:
+
 ```markdown
 # Creating Users with the API
 

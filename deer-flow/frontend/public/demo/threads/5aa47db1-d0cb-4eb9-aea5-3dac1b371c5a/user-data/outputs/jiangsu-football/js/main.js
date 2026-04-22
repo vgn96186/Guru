@@ -158,22 +158,30 @@ function renderTeams() {
     const standing = leagueData.standings.find((s) => s.teamId === team.id);
 
     teamCard.innerHTML = `
-            <div class="team-card-logo" style="background: linear-gradient(135deg, ${team.colors[0]} 0%, ${team.colors[1]} 100%);">
+            <div class="team-card-logo" style="background: linear-gradient(135deg, ${
+              team.colors[0]
+            } 0%, ${team.colors[1]} 100%);">
                 ${team.shortName}
             </div>
             <h3 class="team-card-name">${team.name}</h3>
             <div class="team-card-city">${team.city}</div>
             <div class="team-card-stats">
                 <div class="team-stat">
-                    <div class="team-stat-value">${standing ? standing.rank : "-"}</div>
+                    <div class="team-stat-value">${
+                      standing ? standing.rank : "-"
+                    }</div>
                     <div class="team-stat-label">排名</div>
                 </div>
                 <div class="team-stat">
-                    <div class="team-stat-value">${standing ? standing.points : "0"}</div>
+                    <div class="team-stat-value">${
+                      standing ? standing.points : "0"
+                    }</div>
                     <div class="team-stat-label">积分</div>
                 </div>
                 <div class="team-stat">
-                    <div class="team-stat-value">${standing ? standing.goalDifference : "0"}</div>
+                    <div class="team-stat-value">${
+                      standing ? standing.goalDifference : "0"
+                    }</div>
                     <div class="team-stat-label">净胜球</div>
                 </div>
             </div>
@@ -214,7 +222,9 @@ function renderStandings() {
             <td>${standing.rank}</td>
             <td>
                 <div style="display: flex; align-items: center; gap: 0.5rem;">
-                    <div class="team-logo-small" style="width: 24px; height: 24px; border-radius: 50%; background: linear-gradient(135deg, ${team.colors[0]} 0%, ${team.colors[1]} 100%);"></div>
+                    <div class="team-logo-small" style="width: 24px; height: 24px; border-radius: 50%; background: linear-gradient(135deg, ${
+                      team.colors[0]
+                    } 0%, ${team.colors[1]} 100%);"></div>
                     ${team.name}
                 </div>
             </td>
@@ -224,7 +234,9 @@ function renderStandings() {
             <td>${standing.lost}</td>
             <td>${standing.goalsFor}</td>
             <td>${standing.goalsAgainst}</td>
-            <td>${standing.goalDifference > 0 ? "+" : ""}${standing.goalDifference}</td>
+            <td>${standing.goalDifference > 0 ? "+" : ""}${
+      standing.goalDifference
+    }</td>
             <td><strong>${standing.points}</strong></td>
         `;
 
@@ -305,11 +317,15 @@ function renderFixtures() {
                 <div class="fixture-teams">
                     <div class="fixture-team home">
                         <div class="fixture-team-name">${homeTeam.name}</div>
-                        <div class="fixture-team-logo" style="background: linear-gradient(135deg, ${homeTeam.colors[0]} 0%, ${homeTeam.colors[1]} 100%);"></div>
+                        <div class="fixture-team-logo" style="background: linear-gradient(135deg, ${
+                          homeTeam.colors[0]
+                        } 0%, ${homeTeam.colors[1]} 100%);"></div>
                     </div>
                     <div class="fixture-vs">VS</div>
                     <div class="fixture-team away">
-                        <div class="fixture-team-logo" style="background: linear-gradient(135deg, ${awayTeam.colors[0]} 0%, ${awayTeam.colors[1]} 100%);"></div>
+                        <div class="fixture-team-logo" style="background: linear-gradient(135deg, ${
+                          awayTeam.colors[0]
+                        } 0%, ${awayTeam.colors[1]} 100%);"></div>
                         <div class="fixture-team-name">${awayTeam.name}</div>
                     </div>
                 </div>
@@ -417,7 +433,7 @@ function renderTeamStats() {
       const team = getTeamById(standing.teamId);
       const goalsPerGame = (standing.goalsFor / standing.played).toFixed(2);
       const concededPerGame = (standing.goalsAgainst / standing.played).toFixed(
-        2,
+        2
       );
 
       return {
@@ -456,12 +472,14 @@ function renderTeamStats() {
                         <td class="stats-player">${stat.team}</td>
                         <td class="stats-value">${stat.goalsFor}</td>
                         <td class="stats-value">${stat.goalsAgainst}</td>
-                        <td class="stats-value">${stat.goalDifference > 0 ? "+" : ""}${stat.goalDifference}</td>
+                        <td class="stats-value">${
+                          stat.goalDifference > 0 ? "+" : ""
+                        }${stat.goalDifference}</td>
                         <td class="stats-value">${stat.goalsPerGame}</td>
                         <td class="stats-value">${stat.concededPerGame}</td>
                         <td class="stats-value">${stat.cleanSheets}</td>
                     </tr>
-                `,
+                `
                   )
                   .join("")}
             </tbody>
@@ -489,7 +507,9 @@ function renderNews() {
     });
 
     newsCard.innerHTML = `
-            <div class="news-card-image" style="background: linear-gradient(135deg, ${newsItem.imageColor} 0%, ${darkenColor(newsItem.imageColor, 20)} 100%);"></div>
+            <div class="news-card-image" style="background: linear-gradient(135deg, ${
+              newsItem.imageColor
+            } 0%, ${darkenColor(newsItem.imageColor, 20)} 100%);"></div>
             <div class="news-card-content">
                 <span class="news-card-category">${newsItem.category}</span>
                 <h3 class="news-card-title">${newsItem.title}</h3>

@@ -55,6 +55,7 @@
 **位置**: 第 152-166 行
 
 **代码**:
+
 ```python
 @staticmethod
 def get_skill_key(skill_name: str, skill_category: str) -> str:
@@ -75,7 +76,8 @@ def get_skill_key(skill_name: str, skill_category: str) -> str:
 
 **作用**: 生成组合键，格式为 `{category}:{name}`
 
-**影响**: 
+**影响**:
+
 - 新增方法，不影响现有代码
 - 被 `is_skill_enabled()` 和 API 路由使用
 
@@ -86,6 +88,7 @@ def get_skill_key(skill_name: str, skill_category: str) -> str:
 **位置**: 第 168-195 行
 
 **修改前**:
+
 ```python
 def is_skill_enabled(self, skill_name: str, skill_category: str) -> bool:
     skill_config = self.skills.get(skill_name)
@@ -95,6 +98,7 @@ def is_skill_enabled(self, skill_name: str, skill_category: str) -> bool:
 ```
 
 **修改后**:
+
 ```python
 def is_skill_enabled(self, skill_name: str, skill_category: str) -> bool:
     """Check if a skill is enabled.
@@ -127,11 +131,13 @@ def is_skill_enabled(self, skill_name: str, skill_category: str) -> bool:
 ```
 
 **改动说明**:
+
 - 优先检查新格式键 `{category}:{name}`
 - 向后兼容：如果新格式不存在，检查旧格式（仅 public 类别）
 - 保持默认行为：未配置时默认启用
 
 **影响**:
+
 - ✅ 向后兼容：旧配置仍可正常工作
 - ✅ 新配置使用组合键，避免冲突
 - ✅ 不影响现有调用方
@@ -145,6 +151,7 @@ def is_skill_enabled(self, skill_name: str, skill_category: str) -> bool:
 **位置**: 第 54-86 行
 
 **修改前**:
+
 ```python
 skills = []
 
@@ -158,6 +165,7 @@ for category in ["public", "custom"]:
 ```
 
 **修改后**:
+
 ```python
 skills = []
 category_skill_names = {}  # Track skill names per category to detect duplicates
@@ -189,11 +197,13 @@ for category in ["public", "custom"]:
 ```
 
 **改动说明**:
+
 - 为每个类别维护技能名称字典
 - 检测到重复时抛出 `ValueError`，包含详细路径信息
 - 确保每个类别内技能名称唯一
 
 **影响**:
+
 - ✅ 防止配置冲突
 - ✅ 清晰的错误提示
 - ⚠️ 如果存在重复，加载会失败（这是预期行为）
@@ -207,20 +217,21 @@ for category in ["public", "custom"]:
 **位置**: 第 136-173 行
 
 **代码**:
+
 ```python
 def _find_skill_by_name(
     skills: list[Skill], skill_name: str, category: str | None = None
 ) -> Skill:
     """Find a skill by name, optionally filtered by category.
-    
+
     Args:
         skills: List of all skills
         skill_name: Name of the skill to find
         category: Optional category filter
-        
+
     Returns:
         The found Skill object
-        
+
     Raises:
         HTTPException: If skill not found or multiple skills require category
     """
@@ -232,7 +243,7 @@ def _find_skill_by_name(
                 detail=f"Skill '{skill_name}' with category '{category}' not found"
             )
         return skill
-    
+
     # If no category provided, check if there are multiple skills with the same name
     matching_skills = [s for s in skills if s.name == skill_name]
     if len(matching_skills) == 0:
@@ -248,12 +259,14 @@ def _find_skill_by_name(
     return matching_skills[0]
 ```
 
-**作用**: 
+**作用**:
+
 - 统一技能查找逻辑
 - 支持可选的 category 过滤
 - 自动检测同名冲突并提示
 
 **影响**:
+
 - ✅ 减少代码重复（约 30 行）
 - ✅ 统一错误处理逻辑
 
@@ -264,6 +277,7 @@ def _find_skill_by_name(
 **位置**: 第 196-260 行
 
 **修改前**:
+
 ```python
 @router.get("/skills/{skill_name}", ...)
 async def get_skill(skill_name: str) -> SkillResponse:
@@ -275,6 +289,7 @@ async def get_skill(skill_name: str) -> SkillResponse:
 ```
 
 **修改后**:
+
 ```python
 @router.get(
     "/skills/{skill_name}",
@@ -300,11 +315,13 @@ async def get_skill(skill_name: str, category: str | None = None) -> SkillRespon
 ```
 
 **改动说明**:
+
 - 添加可选的 `category` 查询参数
 - 使用 `_find_skill_by_name()` 统一查找逻辑
 - 添加 `ValueError` 处理（重复检查错误）
 
 **API 变更**:
+
 - ✅ 向后兼容：`category` 参数可选
 - ✅ 如果只有一个同名技能，自动匹配
 - ✅ 如果有多个同名技能，要求提供 `category`
@@ -316,6 +333,7 @@ async def get_skill(skill_name: str, category: str | None = None) -> SkillRespon
 **位置**: 第 267-388 行
 
 **修改前**:
+
 ```python
 @router.put("/skills/{skill_name}", ...)
 async def update_skill(skill_name: str, request: SkillUpdateRequest) -> SkillResponse:
@@ -323,12 +341,13 @@ async def update_skill(skill_name: str, request: SkillUpdateRequest) -> SkillRes
     skill = next((s for s in skills if s.name == skill_name), None)
     if skill is None:
         raise HTTPException(status_code=404, detail=f"Skill '{skill_name}' not found")
-    
+
     extensions_config.skills[skill_name] = SkillStateConfig(enabled=request.enabled)
     # ... 保存配置 ...
 ```
 
 **修改后**:
+
 ```python
 @router.put(
     "/skills/{skill_name}",
@@ -392,12 +411,14 @@ async def update_skill(skill_name: str, request: SkillUpdateRequest, category: s
 ```
 
 **改动说明**:
+
 - 添加可选的 `category` 查询参数
 - 使用 `_find_skill_by_name()` 查找技能
 - **关键改动**: 使用组合键 `ExtensionsConfig.get_skill_key()` 存储配置
 - 添加 `ValueError` 处理
 
 **API 变更**:
+
 - ✅ 向后兼容：`category` 参数可选
 - ✅ 配置存储使用新格式键
 
@@ -408,6 +429,7 @@ async def update_skill(skill_name: str, request: SkillUpdateRequest, category: s
 **位置**: 第 392-529 行
 
 **修改前**:
+
 ```python
 # Check if skill already exists
 target_dir = custom_skills_dir / skill_name
@@ -416,6 +438,7 @@ if target_dir.exists():
 ```
 
 **修改后**:
+
 ```python
 # Check if skill directory already exists
 target_dir = custom_skills_dir / skill_name
@@ -447,11 +470,13 @@ except ValueError as e:
 ```
 
 **改动说明**:
+
 - 检查目录是否存在（原有逻辑）
 - **新增**: 检查 custom 类别中是否已有同名技能（即使目录名不同）
 - 添加 `ValueError` 处理
 
 **影响**:
+
 - ✅ 防止安装同名技能
 - ✅ 清晰的错误提示
 
@@ -464,39 +489,34 @@ except ValueError as e:
 **位置**: 第 11-30 行
 
 **修改前**:
+
 ```typescript
 export async function enableSkill(skillName: string, enabled: boolean) {
-  const response = await fetch(
-    `${getBackendBaseURL()}/api/skills/${skillName}`,
-    {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        enabled,
-      }),
+  const response = await fetch(`${getBackendBaseURL()}/api/skills/${skillName}`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
     },
-  );
+    body: JSON.stringify({
+      enabled,
+    }),
+  });
   return response.json();
 }
 ```
 
 **修改后**:
+
 ```typescript
-export async function enableSkill(
-  skillName: string,
-  enabled: boolean,
-  category: string,
-) {
+export async function enableSkill(skillName: string, enabled: boolean, category: string) {
   const baseURL = getBackendBaseURL();
   const skillNameEncoded = encodeURIComponent(skillName);
   const categoryEncoded = encodeURIComponent(category);
   const url = `${baseURL}/api/skills/${skillNameEncoded}?category=${categoryEncoded}`;
   const response = await fetch(url, {
-    method: "PUT",
+    method: 'PUT',
     headers: {
-      "Content-Type": "application/json",
+      'Content-Type': 'application/json',
     },
     body: JSON.stringify({
       enabled,
@@ -507,11 +527,13 @@ export async function enableSkill(
 ```
 
 **改动说明**:
+
 - 添加 `category` 参数
 - URL 编码 skillName 和 category
 - 将 category 作为查询参数传递
 
 **影响**:
+
 - ✅ 必须传递 category（前端已有该信息）
 - ✅ URL 编码确保特殊字符正确处理
 
@@ -524,27 +546,23 @@ export async function enableSkill(
 **位置**: 第 15-33 行
 
 **修改前**:
+
 ```typescript
 export function useEnableSkill() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({
-      skillName,
-      enabled,
-    }: {
-      skillName: string;
-      enabled: boolean;
-    }) => {
+    mutationFn: async ({ skillName, enabled }: { skillName: string; enabled: boolean }) => {
       await enableSkill(skillName, enabled);
     },
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ["skills"] });
+      void queryClient.invalidateQueries({ queryKey: ['skills'] });
     },
   });
 }
 ```
 
 **修改后**:
+
 ```typescript
 export function useEnableSkill() {
   const queryClient = useQueryClient();
@@ -561,17 +579,19 @@ export function useEnableSkill() {
       await enableSkill(skillName, enabled, category);
     },
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ["skills"] });
+      void queryClient.invalidateQueries({ queryKey: ['skills'] });
     },
   });
 }
 ```
 
 **改动说明**:
+
 - 添加 `category` 参数到类型定义
 - 传递 `category` 给 `enableSkill()` API 调用
 
 **影响**:
+
 - ✅ 类型安全
 - ✅ 必须传递 category
 
@@ -584,50 +604,52 @@ export function useEnableSkill() {
 **位置**: 第 92-119 行
 
 **修改前**:
+
 ```typescript
-{filteredSkills.length > 0 &&
-  filteredSkills.map((skill) => (
-    <Item className="w-full" variant="outline" key={skill.name}>
-      {/* ... */}
-      <Switch
-        checked={skill.enabled}
-        onCheckedChange={(checked) =>
-          enableSkill({ skillName: skill.name, enabled: checked })
-        }
-      />
-    </Item>
-  ))}
+{
+  filteredSkills.length > 0 &&
+    filteredSkills.map((skill) => (
+      <Item className="w-full" variant="outline" key={skill.name}>
+        {/* ... */}
+        <Switch
+          checked={skill.enabled}
+          onCheckedChange={(checked) => enableSkill({ skillName: skill.name, enabled: checked })}
+        />
+      </Item>
+    ));
+}
 ```
 
 **修改后**:
+
 ```typescript
-{filteredSkills.length > 0 &&
-  filteredSkills.map((skill) => (
-    <Item
-      className="w-full"
-      variant="outline"
-      key={`${skill.category}:${skill.name}`}
-    >
-      {/* ... */}
-      <Switch
-        checked={skill.enabled}
-        onCheckedChange={(checked) =>
-          enableSkill({
-            skillName: skill.name,
-            enabled: checked,
-            category: skill.category,
-          })
-        }
-      />
-    </Item>
-  ))}
+{
+  filteredSkills.length > 0 &&
+    filteredSkills.map((skill) => (
+      <Item className="w-full" variant="outline" key={`${skill.category}:${skill.name}`}>
+        {/* ... */}
+        <Switch
+          checked={skill.enabled}
+          onCheckedChange={(checked) =>
+            enableSkill({
+              skillName: skill.name,
+              enabled: checked,
+              category: skill.category,
+            })
+          }
+        />
+      </Item>
+    ));
+}
 ```
 
 **改动说明**:
+
 - **关键改动**: React key 从 `skill.name` 改为 `${skill.category}:${skill.name}`
 - 传递 `category` 给 `enableSkill()`
 
 **影响**:
+
 - ✅ 确保 React key 唯一性（避免同名技能冲突）
 - ✅ 正确传递 category 信息
 
@@ -675,13 +697,16 @@ export function useEnableSkill() {
 ### GET /api/skills/{skill_name}
 
 **新增查询参数**:
+
 - `category` (可选): `public` 或 `custom`
 
 **行为变更**:
+
 - 如果只有一个同名技能，自动匹配（向后兼容）
 - 如果有多个同名技能，必须提供 `category` 参数
 
 **示例**:
+
 ```bash
 # 单个技能（向后兼容）
 GET /api/skills/my-skill
@@ -694,14 +719,17 @@ GET /api/skills/my-skill?category=custom
 ### PUT /api/skills/{skill_name}
 
 **新增查询参数**:
+
 - `category` (可选): `public` 或 `custom`
 
 **行为变更**:
+
 - 配置存储使用新格式键 `{category}:{name}`
 - 如果只有一个同名技能，自动匹配（向后兼容）
 - 如果有多个同名技能，必须提供 `category` 参数
 
 **示例**:
+
 ```bash
 # 更新 public 技能
 PUT /api/skills/my-skill?category=public
@@ -771,10 +799,12 @@ Body: { "enabled": false }
 **当前状态**: 同名技能冲突问题已识别但**暂时保留**，后续版本修复
 
 **问题表现**:
+
 - 如果 public 和 custom 目录下存在同名技能，虽然配置已使用组合键区分，但前端 UI 可能仍会出现混淆
 - 用户可能无法清楚区分哪个是 public，哪个是 custom
 
 **影响范围**:
+
 - 用户体验：可能无法清楚区分同名技能
 - 功能：技能状态可以独立控制（已修复）
 - 数据：配置正确存储（已修复）
@@ -794,12 +824,14 @@ Body: { "enabled": false }
 ### 后端回滚
 
 1. **恢复配置读取逻辑**:
+
    ```python
    # 恢复为仅使用 skill_name
    skill_config = self.skills.get(skill_name)
    ```
 
 2. **恢复 API 端点**:
+
    - 移除 `category` 参数
    - 恢复原有的查找逻辑
 
@@ -809,9 +841,10 @@ Body: { "enabled": false }
 ### 前端回滚
 
 1. **恢复 API 调用**:
+
    ```typescript
    // 移除 category 参数
-   export async function enableSkill(skillName: string, enabled: boolean)
+   export async function enableSkill(skillName: string, enabled: boolean);
    ```
 
 2. **恢复组件**:
@@ -830,16 +863,18 @@ Body: { "enabled": false }
 ### 改动统计
 
 - **后端文件**: 3 个文件修改
+
   - `backend/packages/harness/deerflow/config/extensions_config.py`: +1 方法，修改 1 方法
   - `backend/packages/harness/deerflow/skills/loader.py`: +重复检查逻辑
   - `backend/app/gateway/routers/skills.py`: +1 辅助函数，修改 3 个端点
 
 - **前端文件**: 3 个文件修改
+
   - `frontend/src/core/skills/api.ts`: 修改 1 个函数
   - `frontend/src/core/skills/hooks.ts`: 修改 1 个 hook
   - `frontend/src/components/workspace/settings/skill-settings-page.tsx`: 修改组件
 
-- **代码行数**: 
+- **代码行数**:
   - 新增: ~80 行
   - 修改: ~30 行
   - 删除: ~0 行（向后兼容）

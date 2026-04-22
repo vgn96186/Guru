@@ -14,12 +14,14 @@ This skill provides a systematic methodology for conducting thorough web researc
 **Always load this skill when:**
 
 ### Research Questions
+
 - User asks "what is X", "explain X", "research X", "investigate X"
 - User wants to understand a concept, technology, or topic in depth
 - The question requires current, comprehensive information from multiple sources
 - A single web search would be insufficient to answer properly
 
 ### Content Generation (Pre-research)
+
 - Creating presentations (PPT/slides)
 - Creating frontend designs or UI mockups
 - Writing articles, reports, or documentation
@@ -41,6 +43,7 @@ Start with broad searches to understand the landscape:
 3. **Map the Territory**: Note different perspectives, stakeholders, or viewpoints that exist
 
 Example:
+
 ```
 Topic: "AI in healthcare"
 Initial searches:
@@ -67,6 +70,7 @@ For each important dimension identified, conduct targeted research:
 4. **Follow References**: When sources mention other important resources, search for those too
 
 Example:
+
 ```
 Dimension: "Diagnostic AI in radiology"
 Targeted searches:
@@ -84,14 +88,14 @@ Then fetch and read:
 
 Ensure comprehensive coverage by seeking diverse information types:
 
-| Information Type | Purpose | Example Searches |
-|-----------------|---------|------------------|
-| **Facts & Data** | Concrete evidence | "statistics", "data", "numbers", "market size" |
-| **Examples & Cases** | Real-world applications | "case study", "example", "implementation" |
-| **Expert Opinions** | Authority perspectives | "expert analysis", "interview", "commentary" |
-| **Trends & Predictions** | Future direction | "trends 2024", "forecast", "future of" |
-| **Comparisons** | Context and alternatives | "vs", "comparison", "alternatives" |
-| **Challenges & Criticisms** | Balanced view | "challenges", "limitations", "criticism" |
+| Information Type            | Purpose                  | Example Searches                               |
+| --------------------------- | ------------------------ | ---------------------------------------------- |
+| **Facts & Data**            | Concrete evidence        | "statistics", "data", "numbers", "market size" |
+| **Examples & Cases**        | Real-world applications  | "case study", "example", "implementation"      |
+| **Expert Opinions**         | Authority perspectives   | "expert analysis", "interview", "commentary"   |
+| **Trends & Predictions**    | Future direction         | "trends 2024", "forecast", "future of"         |
+| **Comparisons**             | Context and alternatives | "vs", "comparison", "alternatives"             |
+| **Challenges & Criticisms** | Balanced view            | "challenges", "limitations", "criticism"       |
 
 ### Phase 4: Synthesis Check
 
@@ -136,14 +140,15 @@ Before proceeding to content generation, verify:
 
 `<current_date>` gives you the full date: year, month, day, and weekday (e.g. `2026-02-28, Saturday`). Use the right level of precision depending on what the user is asking:
 
-| User intent | Temporal precision needed | Example query |
-|---|---|---|
-| "today / this morning / just released" | **Month + Day** | `"tech news February 28 2026"` |
-| "this week" | **Week range** | `"technology releases week of Feb 24 2026"` |
-| "recently / latest / new" | **Month** | `"AI breakthroughs February 2026"` |
-| "this year / trends" | **Year** | `"software trends 2026"` |
+| User intent                            | Temporal precision needed | Example query                               |
+| -------------------------------------- | ------------------------- | ------------------------------------------- |
+| "today / this morning / just released" | **Month + Day**           | `"tech news February 28 2026"`              |
+| "this week"                            | **Week range**            | `"technology releases week of Feb 24 2026"` |
+| "recently / latest / new"              | **Month**                 | `"AI breakthroughs February 2026"`          |
+| "this year / trends"                   | **Year**                  | `"software trends 2026"`                    |
 
 **Rules:**
+
 - When the user asks about "today" or "just released", use **month + day + year** in your search queries to get same-day results
 - Never drop to year-only when day-level precision is needed — `"tech news 2026"` will NOT surface today's news
 - Try multiple phrasings: numeric form (`2026-02-28`), written form (`February 28 2026`), and relative terms (`today`, `this week`) across different queries
@@ -154,6 +159,7 @@ Before proceeding to content generation, verify:
 ### When to Use web_fetch
 
 Use `web_fetch` to read full content when:
+
 - A search result looks highly relevant and authoritative
 - You need detailed information beyond the snippet
 - The source contains data, case studies, or expert analysis
@@ -162,6 +168,7 @@ Use `web_fetch` to read full content when:
 ### Iterative Refinement
 
 Research is iterative. After initial searches:
+
 1. Review what you've learned
 2. Identify gaps in your understanding
 3. Formulate new, more targeted queries
@@ -170,6 +177,7 @@ Research is iterative. After initial searches:
 ## Quality Bar
 
 Your research is sufficient when you can confidently answer:
+
 - What are the key facts and data points?
 - What are 2-3 concrete real-world examples?
 - What do experts say about this topic?
@@ -189,6 +197,7 @@ Your research is sufficient when you can confidently answer:
 ## Output
 
 After completing research, you should have:
+
 1. A comprehensive understanding of the topic from multiple angles
 2. Specific facts, data points, and statistics
 3. Real-world examples and case studies

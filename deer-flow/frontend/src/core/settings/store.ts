@@ -13,7 +13,7 @@ type Listener = () => void;
 
 export type LocalSettingsSetter = <K extends keyof LocalSettings>(
   key: K,
-  value: Partial<LocalSettings[K]>,
+  value: Partial<LocalSettings[K]>
 ) => void;
 
 const listeners = new Set<Listener>();
@@ -50,7 +50,7 @@ function ensureStorageListenerRegistered() {
 function mergeSettingsSection<K extends keyof LocalSettings>(
   settings: LocalSettings,
   key: K,
-  value: Partial<LocalSettings[K]>,
+  value: Partial<LocalSettings[K]>
 ): LocalSettings {
   return {
     ...settings,
@@ -127,7 +127,7 @@ export const updateLocalSettings: LocalSettingsSetter = (key, value) => {
 export function updateThreadSettings<K extends keyof LocalSettings>(
   threadId: string,
   key: K,
-  value: Partial<LocalSettings[K]>,
+  value: Partial<LocalSettings[K]>
 ) {
   ensureBaseSettingsLoaded();
   ensureStorageListenerRegistered();

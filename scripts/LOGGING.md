@@ -16,6 +16,7 @@ The system now provides two complementary approaches for capturing runtime logs:
 A TypeScript service that intercepts console methods and global error handlers to capture logs in memory.
 
 #### Features:
+
 - Intercepts `console.log`, `console.info`, `console.warn`, `console.error`, `console.debug`
 - Captures global JavaScript errors (`window.onerror`)
 - Captures unhandled promise rejections (`window.onunhandledrejection`)
@@ -49,6 +50,7 @@ loggingService.clearLogs();
 ```
 
 #### Automatic Initialization:
+
 The service automatically initializes in development mode (`__DEV__ === true`) with a 1-second delay to avoid interfering with app startup.
 
 ### 2. Enhanced Gurulauncher API
@@ -62,11 +64,13 @@ The Gurulauncher server (`scripts/launcher/server.js`) now includes a new endpoi
 Streams ADB logcat output with filtering for the Guru app and ReactNativeJS logs.
 
 ##### Query Parameters:
+
 - `level` (optional): Log level - `V` (verbose), `D` (debug), `I` (info), `W` (warn), `E` (error), `S` (silent). Default: `V`
 - `package` (optional): Android package name. Default: Guru debug package
 - `follow` (optional): `true` to stream continuously, `false` to dump and exit. Default: `true`
 
 ##### Examples:
+
 ```bash
 # Stream all logs continuously
 curl http://localhost:3100/api/logs
@@ -79,9 +83,11 @@ curl http://localhost:3100/api/logs?follow=false
 ```
 
 ##### Browser Access:
+
 Open `http://localhost:3100/api/logs` in a browser to see real-time log streaming.
 
 #### Integration with Existing Launcher UI:
+
 The launcher already has an "Android Logs" action in the UI that runs `adb logcat -d -t 200`. The new API endpoint provides a streaming alternative.
 
 ### 3. Existing `fetchLogs.js` Script
@@ -96,12 +102,14 @@ node scripts/fetchLogs.js --level E
 ## How It Works
 
 ### JavaScript Log Capture
+
 1. When the logging service initializes, it replaces console methods with wrappers
 2. Each console call is captured and stored with timestamp, level, message, and optional data
 3. Global error handlers capture uncaught errors and promise rejections
 4. Logs are stored in memory with circular buffer behavior to prevent memory leaks
 
 ### Android Log Streaming
+
 1. The `/api/logs` endpoint spawns an `adb logcat` process
 2. Filters are applied to show only relevant logs:
    - App package logs (e.g., `com.guru.debug`)
@@ -119,16 +127,19 @@ node scripts/fetchLogs.js --level E
 ## Testing
 
 ### TypeScript Compilation
+
 ```bash
 npx tsc --noEmit --skipLibCheck src/services/loggingService.ts
 ```
 
 ### Server Syntax Check
+
 ```bash
 node -c scripts/launcher/server.js
 ```
 
 ### Manual Testing
+
 1. Start the Gurulauncher: `node scripts/launcher/launch.js`
 2. Open `http://localhost:3100/api/logs` in a browser
 3. Run the Guru app on an Android device/emulator
@@ -157,21 +168,25 @@ node -c scripts/launcher/server.js
 ## Troubleshooting
 
 ### No logs appearing
+
 - Ensure Android device is connected and authorized for USB debugging
 - Check that the app is running (not crashed)
 - Verify package name matches the installed app
 
 ### ADB not found
+
 - Install Android SDK Platform Tools
 - Add `adb` to your PATH
 - Restart terminal/launcher
 
 ### ReactNativeJS logs not appearing
+
 - Ensure app is running in development mode
 - Check that Metro bundler is running
 - Restart the app if logs don't appear after initial launch
 
 ### Memory usage concerns
+
 - Circular buffer limits logs to 1000 entries
 - In production, persistence is disabled
 - Logs are automatically pruned when buffer is full

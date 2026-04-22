@@ -4,32 +4,32 @@ appId: com.anonymous.gurustudy
 
 - extendedWaitUntil:
     visible:
-      id: "quick-start-btn"
+      id: 'quick-start-btn'
     timeout: 30000
 - tapOn:
-    id: "quick-start-btn"
+    id: 'quick-start-btn'
 
 - scrollUntilVisible:
     element:
-      id: "tools-library-header"
+      id: 'tools-library-header'
     direction: DOWN
     timeout: 20000
 - tapOn:
-    id: "tools-library-header"
+    id: 'tools-library-header'
 
 - scrollUntilVisible:
     element:
-      id: "lecture-mode-btn"
+      id: 'lecture-mode-btn'
     direction: DOWN
     timeout: 20000
 - tapOn:
-    id: "lecture-mode-btn"
+    id: 'lecture-mode-btn'
 
 - extendedWaitUntil:
     visible:
-      id: "auto-scribe-btn"
+      id: 'auto-scribe-btn'
     timeout: 15000
 - tapOn:
-    id: "auto-scribe-btn"
+    id: 'auto-scribe-btn'
 
-- assertNotVisible: "Transcription Required"
+- assertNotVisible: 'Transcription Required'

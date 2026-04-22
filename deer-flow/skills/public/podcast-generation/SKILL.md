@@ -33,12 +33,13 @@ When a user requests podcast generation, identify:
 Generate a structured JSON script file in `/mnt/user-data/workspace/` with naming pattern: `{descriptive-name}-script.json`
 
 The JSON structure:
+
 ```json
 {
   "locale": "en",
   "lines": [
-    {"speaker": "male", "paragraph": "dialogue text"},
-    {"speaker": "female", "paragraph": "dialogue text"}
+    { "speaker": "male", "paragraph": "dialogue text" },
+    { "speaker": "female", "paragraph": "dialogue text" }
   ]
 }
 ```
@@ -46,6 +47,7 @@ The JSON structure:
 ### Step 3: Execute Generation
 
 Call the Python script:
+
 ```bash
 python /mnt/skills/public/podcast-generation/scripts/generate.py \
   --script-file /mnt/user-data/workspace/script-file.json \
@@ -60,6 +62,7 @@ Parameters:
 - `--transcript-file`: Absolute path to output transcript markdown file (optional, but recommended)
 
 > [!IMPORTANT]
+>
 > - Execute the script in one complete call. Do NOT split the workflow into separate steps.
 > - The script handles all TTS API calls and audio generation internally.
 > - Do NOT read the Python file, just call it with the parameters.
@@ -74,14 +77,18 @@ The script JSON file must follow this structure:
   "title": "The History of Artificial Intelligence",
   "locale": "en",
   "lines": [
-    {"speaker": "male", "paragraph": "Hello Deer! Welcome back to another episode."},
-    {"speaker": "female", "paragraph": "Hey everyone! Today we have an exciting topic to discuss."},
-    {"speaker": "male", "paragraph": "That's right! We're going to talk about..."}
+    { "speaker": "male", "paragraph": "Hello Deer! Welcome back to another episode." },
+    {
+      "speaker": "female",
+      "paragraph": "Hey everyone! Today we have an exciting topic to discuss."
+    },
+    { "speaker": "male", "paragraph": "That's right! We're going to talk about..." }
   ]
 }
 ```
 
 Fields:
+
 - `title`: Title of the podcast episode (optional, used as heading in transcript)
 - `locale`: Language code - "en" for English or "zh" for Chinese
 - `lines`: Array of dialogue lines
@@ -93,17 +100,20 @@ Fields:
 When creating the script JSON, follow these guidelines:
 
 ### Format Requirements
+
 - Only two hosts: male and female, alternating naturally
 - Target runtime: approximately 10 minutes of dialogue (around 40-60 lines)
 - Start with the male host saying a greeting that includes "Hello Deer"
 
 ### Tone & Style
+
 - Natural, conversational dialogue - like two friends chatting
 - Use casual expressions and conversational transitions
 - Avoid overly formal language or academic tone
 - Include reactions, follow-up questions, and natural interjections
 
 ### Content Guidelines
+
 - Frequent back-and-forth between hosts
 - Keep sentences short and easy to follow when spoken
 - Plain text only - no markdown formatting in the output
@@ -117,23 +127,43 @@ When creating the script JSON, follow these guidelines:
 User request: "Generate a podcast about the history of artificial intelligence"
 
 Step 1: Create script file `/mnt/user-data/workspace/ai-history-script.json`:
+
 ```json
 {
   "title": "The History of Artificial Intelligence",
   "locale": "en",
   "lines": [
-    {"speaker": "male", "paragraph": "Hello Deer! Welcome back to another fascinating episode. Today we're diving into something that's literally shaping our future - the history of artificial intelligence."},
-    {"speaker": "female", "paragraph": "Oh, I love this topic! You know, AI feels so modern, but it actually has roots going back over seventy years."},
-    {"speaker": "male", "paragraph": "Exactly! It all started back in the 1950s. The term artificial intelligence was actually coined by John McCarthy in 1956 at a famous conference at Dartmouth."},
-    {"speaker": "female", "paragraph": "Wait, so they were already thinking about machines that could think back then? That's incredible!"},
-    {"speaker": "male", "paragraph": "Right? The early pioneers were so optimistic. They thought we'd have human-level AI within a generation."},
-    {"speaker": "female", "paragraph": "But things didn't quite work out that way, did they?"},
-    {"speaker": "male", "paragraph": "No, not at all. The 1970s brought what's called the first AI winter..."}
+    {
+      "speaker": "male",
+      "paragraph": "Hello Deer! Welcome back to another fascinating episode. Today we're diving into something that's literally shaping our future - the history of artificial intelligence."
+    },
+    {
+      "speaker": "female",
+      "paragraph": "Oh, I love this topic! You know, AI feels so modern, but it actually has roots going back over seventy years."
+    },
+    {
+      "speaker": "male",
+      "paragraph": "Exactly! It all started back in the 1950s. The term artificial intelligence was actually coined by John McCarthy in 1956 at a famous conference at Dartmouth."
+    },
+    {
+      "speaker": "female",
+      "paragraph": "Wait, so they were already thinking about machines that could think back then? That's incredible!"
+    },
+    {
+      "speaker": "male",
+      "paragraph": "Right? The early pioneers were so optimistic. They thought we'd have human-level AI within a generation."
+    },
+    { "speaker": "female", "paragraph": "But things didn't quite work out that way, did they?" },
+    {
+      "speaker": "male",
+      "paragraph": "No, not at all. The 1970s brought what's called the first AI winter..."
+    }
   ]
 }
 ```
 
 Step 2: Execute generation:
+
 ```bash
 python /mnt/skills/public/podcast-generation/scripts/generate.py \
   --script-file /mnt/user-data/workspace/ai-history-script.json \
@@ -142,6 +172,7 @@ python /mnt/skills/public/podcast-generation/scripts/generate.py \
 ```
 
 This will generate:
+
 - `ai-history-podcast.mp3`: The audio podcast file
 - `ai-history-transcript.md`: A readable markdown transcript of the podcast
 
@@ -154,6 +185,7 @@ Read the following template file only when matching the user request.
 ## Output Format
 
 The generated podcast follows the "Hello Deer" format:
+
 - Two hosts: one male, one female
 - Natural conversational dialogue
 - Starts with "Hello Deer" greeting
@@ -172,6 +204,7 @@ After generation:
 ## Requirements
 
 The following environment variables must be set:
+
 - `VOLCENGINE_TTS_APPID`: Volcengine TTS application ID
 - `VOLCENGINE_TTS_ACCESS_TOKEN`: Volcengine TTS access token
 - `VOLCENGINE_TTS_CLUSTER`: Volcengine TTS cluster (optional, defaults to "volcano_tts")

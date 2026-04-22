@@ -4,30 +4,30 @@ appId: com.anonymous.gurustudy
     clearState: true
 
 # Tap on the Expo dev server URL to actually load the JS bundle
-- tapOn: "http://.*:8081"
+- tapOn: 'http://.*:8081'
 
 # Expo Dev Client always shows a "Continue" overlay on fresh installation/clearState
 - extendedWaitUntil:
-    visible: "Continue"
+    visible: 'Continue'
     timeout: 30000
-- tapOn: "Continue"
+- tapOn: 'Continue'
 
 # App initial route is CheckIn when not checked in
 - extendedWaitUntil:
-    visible: "How are you feeling right now?"
+    visible: 'How are you feeling right now?'
     timeout: 15000
-- assertVisible: "(?i).*energetic.*"
+- assertVisible: '(?i).*energetic.*'
 
 # Tap 'Good' - The label in MOOD_LABELS is 'Good'
-- tapOn: "Good"
+- tapOn: 'Good'
 
 # The app animates to the next step "time"
 - assertVisible: "How much time do you have \\*right now\\*\\?"
 
 # Tap Solid Block (60 mins)
-- tapOn: "Solid Block"
+- tapOn: 'Solid Block'
 
 # Now we should be on HomeScreen (Dashboard)
-- assertVisible: "Welcome back, Doctor"
-- assertVisible: "Level"
+- assertVisible: 'Welcome back, Doctor'
+- assertVisible: 'Level'
 - assertVisible: "Today's Agenda"

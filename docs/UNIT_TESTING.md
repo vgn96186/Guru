@@ -4,10 +4,10 @@ See **`docs/TESTING_STRATEGY.md`** for the full model (Jest logic allowlist + De
 
 ## Commands
 
-| Command | Description |
-|--------|-------------|
-| `npm run test:unit` | Run all `*.unit.test.ts(x)` files under `src/` |
-| `npm run test:unit:coverage` | Full-tree Istanbul report → `coverage/` (informational) |
+| Command                            | Description                                                                                  |
+| ---------------------------------- | -------------------------------------------------------------------------------------------- |
+| `npm run test:unit`                | Run all `*.unit.test.ts(x)` files under `src/`                                               |
+| `npm run test:unit:coverage`       | Full-tree Istanbul report → `coverage/` (informational)                                      |
 | `npm run test:unit:coverage:logic` | **CI gate**: coverage + thresholds on **logic allowlist** only (`jest.unit.logic.config.js`) |
 
 ## Conventions

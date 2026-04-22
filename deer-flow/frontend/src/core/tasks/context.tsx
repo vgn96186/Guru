@@ -27,7 +27,7 @@ export function useSubtaskContext() {
   const context = useContext(SubtaskContext);
   if (context === undefined) {
     throw new Error(
-      "useSubtaskContext must be used within a SubtaskContext.Provider",
+      "useSubtaskContext must be used within a SubtaskContext.Provider"
     );
   }
   return context;
@@ -47,7 +47,7 @@ export function useUpdateSubtask() {
         setTasks({ ...tasks });
       }
     },
-    [tasks, setTasks],
+    [tasks, setTasks]
   );
   return updateSubtask;
 }

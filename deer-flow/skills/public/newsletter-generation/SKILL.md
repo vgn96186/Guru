@@ -41,21 +41,22 @@ The output is a complete, ready-to-publish newsletter in Markdown format, suitab
 
 Identify the key parameters:
 
-| Parameter | Description | Default |
-|-----------|-------------|---------|
-| **Topic(s)** | Primary subject area(s) to cover | Required |
-| **Format** | Daily digest, weekly roundup, deep-dive, or industry briefing | Weekly roundup |
-| **Target Audience** | Technical, executive, general, or niche community | General |
-| **Tone** | Professional, conversational, witty, or analytical | Conversational-professional |
-| **Length** | Short (5-min read), medium (10-min), long (15-min+) | Medium |
-| **Sections** | Number and type of content sections | 4-6 sections |
-| **Frequency Context** | One-time or part of a recurring series | One-time |
+| Parameter             | Description                                                   | Default                     |
+| --------------------- | ------------------------------------------------------------- | --------------------------- |
+| **Topic(s)**          | Primary subject area(s) to cover                              | Required                    |
+| **Format**            | Daily digest, weekly roundup, deep-dive, or industry briefing | Weekly roundup              |
+| **Target Audience**   | Technical, executive, general, or niche community             | General                     |
+| **Tone**              | Professional, conversational, witty, or analytical            | Conversational-professional |
+| **Length**            | Short (5-min read), medium (10-min), long (15-min+)           | Medium                      |
+| **Sections**          | Number and type of content sections                           | 4-6 sections                |
+| **Frequency Context** | One-time or part of a recurring series                        | One-time                    |
 
 #### Step 1.2: Define Newsletter Structure
 
 Based on the format, select the appropriate structure:
 
 **Daily Digest Structure**:
+
 ```
 1. Top Story (1 item, detailed)
 2. Quick Hits (3-5 items, brief)
@@ -64,6 +65,7 @@ Based on the format, select the appropriate structure:
 ```
 
 **Weekly Roundup Structure**:
+
 ```
 1. Editor's Note / Intro
 2. Top Stories (2-3 items, detailed)
@@ -74,6 +76,7 @@ Based on the format, select the appropriate structure:
 ```
 
 **Deep-Dive Structure**:
+
 ```
 1. Introduction & Context
 2. Background / Why It Matters
@@ -84,6 +87,7 @@ Based on the format, select the appropriate structure:
 ```
 
 **Industry Briefing Structure**:
+
 ```
 1. Executive Summary
 2. Market Developments
@@ -130,14 +134,14 @@ Conduct thorough research using web search. **The quality of the newsletter depe
 
 Evaluate each source and curate the best content:
 
-| Criterion | Priority |
-|-----------|----------|
-| **Recency** | Prefer content from the last 7-30 days |
-| **Authority** | Prioritize primary sources, official announcements, established publications |
-| **Uniqueness** | Select stories that offer fresh perspective or are underreported |
-| **Relevance** | Every item must clearly connect to the newsletter's stated topic(s) |
-| **Actionability** | Prefer content readers can act on (tools, insights, strategies) |
-| **Diversity** | Mix of news, analysis, data, and practical resources |
+| Criterion         | Priority                                                                     |
+| ----------------- | ---------------------------------------------------------------------------- |
+| **Recency**       | Prefer content from the last 7-30 days                                       |
+| **Authority**     | Prioritize primary sources, official announcements, established publications |
+| **Uniqueness**    | Select stories that offer fresh perspective or are underreported             |
+| **Relevance**     | Every item must clearly connect to the newsletter's stated topic(s)          |
+| **Actionability** | Prefer content readers can act on (tools, insights, strategies)              |
+| **Diversity**     | Mix of news, analysis, data, and practical resources                         |
 
 #### Step 2.3: Deep Content Extraction
 
@@ -158,7 +162,7 @@ Every newsletter starts with a consistent header:
 ```markdown
 # [Newsletter Name]
 
-*[Tagline or description] — [Date]*
+_[Tagline or description] — [Date]_
 
 ---
 
@@ -168,6 +172,7 @@ Every newsletter starts with a consistent header:
 #### Step 3.2: Section Writing Guidelines
 
 **Top Stories / Featured Items**:
+
 - **Headline**: Compelling, clear, benefit-oriented (not clickbait)
 - **Hook**: Opening sentence that makes the reader care (1-2 sentences)
 - **Body**: Key facts and context (2-4 paragraphs)
@@ -175,33 +180,35 @@ Every newsletter starts with a consistent header:
 - **Source link**: Always attribute and link to the original source
 
 **Quick Bites / Brief Items**:
+
 - **Format**: Bold headline + 2-3 sentence summary + source link
 - **Focus**: One key takeaway per item
 - **Efficiency**: Readers should get the essential insight without clicking through
 
 **Analysis / Commentary Sections**:
+
 - **Voice**: The newsletter's unique perspective on trends or developments
 - **Structure**: Observation → Context → Implication → (Optional) Actionable takeaway
 - **Evidence**: Every claim backed by data or sourced information
 
 #### Step 3.3: Writing Standards
 
-| Principle | Implementation |
-|-----------|---------------|
-| **Scannable** | Use headers, bold text, bullet points, and short paragraphs |
-| **Engaging** | Lead with the most interesting angle, not chronological order |
-| **Concise** | Every sentence earns its place — cut filler ruthlessly |
-| **Accurate** | Every fact is sourced, every number is verified |
-| **Attributive** | Always credit original sources with inline links |
-| **Human** | Write like a knowledgeable friend, not a press release |
+| Principle       | Implementation                                                |
+| --------------- | ------------------------------------------------------------- |
+| **Scannable**   | Use headers, bold text, bullet points, and short paragraphs   |
+| **Engaging**    | Lead with the most interesting angle, not chronological order |
+| **Concise**     | Every sentence earns its place — cut filler ruthlessly        |
+| **Accurate**    | Every fact is sourced, every number is verified               |
+| **Attributive** | Always credit original sources with inline links              |
+| **Human**       | Write like a knowledgeable friend, not a press release        |
 
 **Tone Calibration by Audience**:
 
-| Audience | Tone | Example |
-|----------|------|---------|
-| **Technical** | Precise, no jargon explanations, assumed expertise | "The new API supports gRPC streaming with backpressure handling via flow control windows." |
-| **Executive** | Impact-focused, bottom-line, strategic | "This acquisition gives Company X a 40% market share in the enterprise segment, directly threatening Incumbent Y's pricing power." |
-| **General** | Accessible, analogies, explains concepts | "Think of it like a universal translator for data — it lets any app talk to any database without learning a new language." |
+| Audience      | Tone                                               | Example                                                                                                                            |
+| ------------- | -------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| **Technical** | Precise, no jargon explanations, assumed expertise | "The new API supports gRPC streaming with backpressure handling via flow control windows."                                         |
+| **Executive** | Impact-focused, bottom-line, strategic             | "This acquisition gives Company X a 40% market share in the enterprise segment, directly threatening Incumbent Y's pricing power." |
+| **General**   | Accessible, analogies, explains concepts           | "Think of it like a universal translator for data — it lets any app talk to any database without learning a new language."         |
 
 ### Phase 4: Assembly & Polish
 
@@ -216,11 +223,11 @@ Every newsletter ends with:
 ```markdown
 ---
 
-*[Newsletter Name] is [description of what it is].*
-*[How to subscribe/share/give feedback]*
+_[Newsletter Name] is [description of what it is]._
+_[How to subscribe/share/give feedback]_
 
-*Sources: All links are provided inline. This newsletter curates and summarizes
-publicly available information with original commentary.*
+_Sources: All links are provided inline. This newsletter curates and summarizes
+publicly available information with original commentary._
 ```
 
 #### Step 4.3: Quality Checklist
@@ -244,7 +251,7 @@ Before finalizing, verify:
 ```markdown
 # [Newsletter Name]
 
-*[Tagline] — [Full date, e.g., April 4, 2026]*
+_[Tagline] — [Full date, e.g., April 4, 2026]_
 
 ---
 
@@ -294,30 +301,34 @@ Before finalizing, verify:
 
 ---
 
-*[Newsletter Name] curates the most important [topic] news and analysis.*
-*Found this useful? Share it with a colleague.*
+_[Newsletter Name] curates the most important [topic] news and analysis._
+_Found this useful? Share it with a colleague._
 
-*All sources are linked inline. Views and commentary are original.*
+_All sources are linked inline. Views and commentary are original._
 ```
 
 ## Adaptation Examples
 
 ### Technology Newsletter
+
 - Emoji usage: ✅ Moderate (section headers)
 - Sections: Top Stories, Deep Dive, Quick Bites, Open Source Spotlight, Dev Tools
 - Tone: Technical-conversational
 
 ### Business/Finance Newsletter
+
 - Emoji usage: ❌ Minimal to none
 - Sections: Market Overview, Deal Flow, Company News, Data Corner, Outlook
 - Tone: Professional-analytical
 
 ### Industry-Specific Newsletter
+
 - Emoji usage: Moderate
 - Sections: Regulatory Updates, Market Data, Innovation Watch, People Moves, Events
 - Tone: Expert-authoritative
 
 ### Creative/Marketing Newsletter
+
 - Emoji usage: ✅ Liberal
 - Sections: Campaign Spotlight, Trend Watch, Viral This Week, Tools We Love, Inspiration
 - Tone: Enthusiastic-professional

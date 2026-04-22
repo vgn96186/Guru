@@ -1,440 +1,2840 @@
 [
-  [12,"Traumatology",10,60],
-  [12,"Fracture Healing & Complications",10,40,"Traumatology"],
-  [12,"Fracture Healing — Stages, Direct vs Indirect & Factors Affecting",10,18,"Fracture Healing & Complications"],
-  [12,"Fracture Healing — Stages, Direct vs Indirect",10,9,"Fracture Healing — Stages, Direct vs Indirect & Factors Affecting"],
-  [12,"Fracture Healing — Stages, Direct vs Indirect - Etiology & Risk Factors",10,5,"Fracture Healing — Stages, Direct vs Indirect"],
-  [12,"Fracture Healing — Stages, Direct vs Indirect - Pathophysiology",10,5,"Fracture Healing — Stages, Direct vs Indirect"],
-  [12,"Fracture Healing — Stages, Direct vs Indirect - Clinical Presentation & Signs",10,5,"Fracture Healing — Stages, Direct vs Indirect"],
-  [12,"Fracture Healing — Stages, Direct vs Indirect - Differential Diagnosis",10,5,"Fracture Healing — Stages, Direct vs Indirect"],
-  [12,"Fracture Healing — Stages, Direct vs Indirect - Investigations & Lab Findings",10,5,"Fracture Healing — Stages, Direct vs Indirect"],
-  [12,"Fracture Healing — Stages, Direct vs Indirect - Medical & Surgical Management",10,5,"Fracture Healing — Stages, Direct vs Indirect"],
-  [12,"Fracture Healing — Stages, Direct vs Indirect - Complications & Prognosis",10,5,"Fracture Healing — Stages, Direct vs Indirect"],
-  [12,"Fracture Healing — Factors Affecting",10,9,"Fracture Healing — Stages, Direct vs Indirect & Factors Affecting"],
-  [12,"Fracture Healing — Factors Affecting - Etiology & Risk Factors",10,5,"Fracture Healing — Factors Affecting"],
-  [12,"Fracture Healing — Factors Affecting - Pathophysiology",10,5,"Fracture Healing — Factors Affecting"],
-  [12,"Fracture Healing — Factors Affecting - Clinical Presentation & Signs",10,5,"Fracture Healing — Factors Affecting"],
-  [12,"Fracture Healing — Factors Affecting - Differential Diagnosis",10,5,"Fracture Healing — Factors Affecting"],
-  [12,"Fracture Healing — Factors Affecting - Investigations & Lab Findings",10,5,"Fracture Healing — Factors Affecting"],
-  [12,"Fracture Healing — Factors Affecting - Medical & Surgical Management",10,5,"Fracture Healing — Factors Affecting"],
-  [12,"Fracture Healing — Factors Affecting - Complications & Prognosis",10,5,"Fracture Healing — Factors Affecting"],
-  [12,"Fracture Complications — Compartment Syndrome, Fat Embolism & Non-union",10,18,"Fracture Healing & Complications"],
-  [12,"Fracture Complications — Compartment Syndrome, Fat Embolism",10,9,"Fracture Complications — Compartment Syndrome, Fat Embolism & Non-union"],
-  [12,"Fracture Complications — Compartment Syndrome, Fat Embolism - Etiology & Risk Factors",10,5,"Fracture Complications — Compartment Syndrome, Fat Embolism"],
-  [12,"Fracture Complications — Compartment Syndrome, Fat Embolism - Pathophysiology",10,5,"Fracture Complications — Compartment Syndrome, Fat Embolism"],
-  [12,"Fracture Complications — Compartment Syndrome, Fat Embolism - Clinical Presentation & Signs",10,5,"Fracture Complications — Compartment Syndrome, Fat Embolism"],
-  [12,"Fracture Complications — Compartment Syndrome, Fat Embolism - Differential Diagnosis",10,5,"Fracture Complications — Compartment Syndrome, Fat Embolism"],
-  [12,"Fracture Complications — Compartment Syndrome, Fat Embolism - Investigations & Lab Findings",10,5,"Fracture Complications — Compartment Syndrome, Fat Embolism"],
-  [12,"Fracture Complications — Compartment Syndrome, Fat Embolism - Medical & Surgical Management",10,5,"Fracture Complications — Compartment Syndrome, Fat Embolism"],
-  [12,"Fracture Complications — Compartment Syndrome, Fat Embolism - Complications & Prognosis",10,5,"Fracture Complications — Compartment Syndrome, Fat Embolism"],
-  [12,"Fracture Complications — Non-union",10,9,"Fracture Complications — Compartment Syndrome, Fat Embolism & Non-union"],
-  [12,"Fracture Complications — Non-union - Etiology & Risk Factors",10,5,"Fracture Complications — Non-union"],
-  [12,"Fracture Complications — Non-union - Pathophysiology",10,5,"Fracture Complications — Non-union"],
-  [12,"Fracture Complications — Non-union - Clinical Presentation & Signs",10,5,"Fracture Complications — Non-union"],
-  [12,"Fracture Complications — Non-union - Differential Diagnosis",10,5,"Fracture Complications — Non-union"],
-  [12,"Fracture Complications — Non-union - Investigations & Lab Findings",10,5,"Fracture Complications — Non-union"],
-  [12,"Fracture Complications — Non-union - Medical & Surgical Management",10,5,"Fracture Complications — Non-union"],
-  [12,"Fracture Complications — Non-union - Complications & Prognosis",10,5,"Fracture Complications — Non-union"],
-  [12,"Upper Limb Fractures & Dislocations",10,50,"Traumatology"],
-  [12,"Clavicle, Scapula & Shoulder Dislocation — Anterior (Most Common) & Reduction",10,15,"Upper Limb Fractures & Dislocations"],
-  [12,"Clavicle, Scapula & Shoulder Dislocation — Anterior (Most Common)",10,7,"Clavicle, Scapula & Shoulder Dislocation — Anterior (Most Common) & Reduction"],
-  [12,"Clavicle, Scapula & Shoulder Dislocation — Anterior (Most Common) - Etiology & Risk Factors",10,5,"Clavicle, Scapula & Shoulder Dislocation — Anterior (Most Common)"],
-  [12,"Clavicle, Scapula & Shoulder Dislocation — Anterior (Most Common) - Pathophysiology",10,5,"Clavicle, Scapula & Shoulder Dislocation — Anterior (Most Common)"],
-  [12,"Clavicle, Scapula & Shoulder Dislocation — Anterior (Most Common) - Clinical Presentation & Signs",10,5,"Clavicle, Scapula & Shoulder Dislocation — Anterior (Most Common)"],
-  [12,"Clavicle, Scapula & Shoulder Dislocation — Anterior (Most Common) - Differential Diagnosis",10,5,"Clavicle, Scapula & Shoulder Dislocation — Anterior (Most Common)"],
-  [12,"Clavicle, Scapula & Shoulder Dislocation — Anterior (Most Common) - Investigations & Lab Findings",10,5,"Clavicle, Scapula & Shoulder Dislocation — Anterior (Most Common)"],
-  [12,"Clavicle, Scapula & Shoulder Dislocation — Anterior (Most Common) - Medical & Surgical Management",10,5,"Clavicle, Scapula & Shoulder Dislocation — Anterior (Most Common)"],
-  [12,"Clavicle, Scapula & Shoulder Dislocation — Anterior (Most Common) - Complications & Prognosis",10,5,"Clavicle, Scapula & Shoulder Dislocation — Anterior (Most Common)"],
-  [12,"Clavicle, Scapula & Shoulder Dislocation — Reduction",10,8,"Clavicle, Scapula & Shoulder Dislocation — Anterior (Most Common) & Reduction"],
-  [12,"Clavicle, Scapula & Shoulder Dislocation — Reduction - Etiology & Risk Factors",10,5,"Clavicle, Scapula & Shoulder Dislocation — Reduction"],
-  [12,"Clavicle, Scapula & Shoulder Dislocation — Reduction - Pathophysiology",10,5,"Clavicle, Scapula & Shoulder Dislocation — Reduction"],
-  [12,"Clavicle, Scapula & Shoulder Dislocation — Reduction - Clinical Presentation & Signs",10,5,"Clavicle, Scapula & Shoulder Dislocation — Reduction"],
-  [12,"Clavicle, Scapula & Shoulder Dislocation — Reduction - Differential Diagnosis",10,5,"Clavicle, Scapula & Shoulder Dislocation — Reduction"],
-  [12,"Clavicle, Scapula & Shoulder Dislocation — Reduction - Investigations & Lab Findings",10,5,"Clavicle, Scapula & Shoulder Dislocation — Reduction"],
-  [12,"Clavicle, Scapula & Shoulder Dislocation — Reduction - Medical & Surgical Management",10,5,"Clavicle, Scapula & Shoulder Dislocation — Reduction"],
-  [12,"Clavicle, Scapula & Shoulder Dislocation — Reduction - Complications & Prognosis",10,5,"Clavicle, Scapula & Shoulder Dislocation — Reduction"],
-  [12,"Colles' vs Smith's vs Barton's Fracture — Features & Management",10,18,"Upper Limb Fractures & Dislocations"],
-  [12,"Colles' vs Smith's vs Barton's Fracture — Features",10,9,"Colles' vs Smith's vs Barton's Fracture — Features & Management"],
-  [12,"Colles' vs Smith's vs Barton's Fracture — Features - Etiology & Risk Factors",10,5,"Colles' vs Smith's vs Barton's Fracture — Features"],
-  [12,"Colles' vs Smith's vs Barton's Fracture — Features - Pathophysiology",10,5,"Colles' vs Smith's vs Barton's Fracture — Features"],
-  [12,"Colles' vs Smith's vs Barton's Fracture — Features - Clinical Presentation & Signs",10,5,"Colles' vs Smith's vs Barton's Fracture — Features"],
-  [12,"Colles' vs Smith's vs Barton's Fracture — Features - Differential Diagnosis",10,5,"Colles' vs Smith's vs Barton's Fracture — Features"],
-  [12,"Colles' vs Smith's vs Barton's Fracture — Features - Investigations & Lab Findings",10,5,"Colles' vs Smith's vs Barton's Fracture — Features"],
-  [12,"Colles' vs Smith's vs Barton's Fracture — Features - Medical & Surgical Management",10,5,"Colles' vs Smith's vs Barton's Fracture — Features"],
-  [12,"Colles' vs Smith's vs Barton's Fracture — Features - Complications & Prognosis",10,5,"Colles' vs Smith's vs Barton's Fracture — Features"],
-  [12,"Colles' vs Smith's vs Barton's Fracture — Management",10,9,"Colles' vs Smith's vs Barton's Fracture — Features & Management"],
-  [12,"Colles' vs Smith's vs Barton's Fracture — Management - Etiology & Risk Factors",10,5,"Colles' vs Smith's vs Barton's Fracture — Management"],
-  [12,"Colles' vs Smith's vs Barton's Fracture — Management - Pathophysiology",10,5,"Colles' vs Smith's vs Barton's Fracture — Management"],
-  [12,"Colles' vs Smith's vs Barton's Fracture — Management - Clinical Presentation & Signs",10,5,"Colles' vs Smith's vs Barton's Fracture — Management"],
-  [12,"Colles' vs Smith's vs Barton's Fracture — Management - Differential Diagnosis",10,5,"Colles' vs Smith's vs Barton's Fracture — Management"],
-  [12,"Colles' vs Smith's vs Barton's Fracture — Management - Investigations & Lab Findings",10,5,"Colles' vs Smith's vs Barton's Fracture — Management"],
-  [12,"Colles' vs Smith's vs Barton's Fracture — Management - Medical & Surgical Management",10,5,"Colles' vs Smith's vs Barton's Fracture — Management"],
-  [12,"Colles' vs Smith's vs Barton's Fracture — Management - Complications & Prognosis",10,5,"Colles' vs Smith's vs Barton's Fracture — Management"],
-  [12,"Supracondylar Fracture of Humerus — Type II/III, Anterior Interosseous Nerve & Reduction",10,15,"Upper Limb Fractures & Dislocations"],
-  [12,"Supracondylar Fracture of Humerus — Type II/III, Anterior Interosseous Nerve",10,7,"Supracondylar Fracture of Humerus — Type II/III, Anterior Interosseous Nerve & Reduction"],
-  [12,"Supracondylar Fracture of Humerus — Type II/III, Anterior Interosseous Nerve - Etiology & Risk Factors",10,5,"Supracondylar Fracture of Humerus — Type II/III, Anterior Interosseous Nerve"],
-  [12,"Supracondylar Fracture of Humerus — Type II/III, Anterior Interosseous Nerve - Pathophysiology",10,5,"Supracondylar Fracture of Humerus — Type II/III, Anterior Interosseous Nerve"],
-  [12,"Supracondylar Fracture of Humerus — Type II/III, Anterior Interosseous Nerve - Clinical Presentation & Signs",10,5,"Supracondylar Fracture of Humerus — Type II/III, Anterior Interosseous Nerve"],
-  [12,"Supracondylar Fracture of Humerus — Type II/III, Anterior Interosseous Nerve - Differential Diagnosis",10,5,"Supracondylar Fracture of Humerus — Type II/III, Anterior Interosseous Nerve"],
-  [12,"Supracondylar Fracture of Humerus — Type II/III, Anterior Interosseous Nerve - Investigations & Lab Findings",10,5,"Supracondylar Fracture of Humerus — Type II/III, Anterior Interosseous Nerve"],
-  [12,"Supracondylar Fracture of Humerus — Type II/III, Anterior Interosseous Nerve - Medical & Surgical Management",10,5,"Supracondylar Fracture of Humerus — Type II/III, Anterior Interosseous Nerve"],
-  [12,"Supracondylar Fracture of Humerus — Type II/III, Anterior Interosseous Nerve - Complications & Prognosis",10,5,"Supracondylar Fracture of Humerus — Type II/III, Anterior Interosseous Nerve"],
-  [12,"Supracondylar Fracture of Humerus — Reduction",10,8,"Supracondylar Fracture of Humerus — Type II/III, Anterior Interosseous Nerve & Reduction"],
-  [12,"Supracondylar Fracture of Humerus — Reduction - Etiology & Risk Factors",10,5,"Supracondylar Fracture of Humerus — Reduction"],
-  [12,"Supracondylar Fracture of Humerus — Reduction - Pathophysiology",10,5,"Supracondylar Fracture of Humerus — Reduction"],
-  [12,"Supracondylar Fracture of Humerus — Reduction - Clinical Presentation & Signs",10,5,"Supracondylar Fracture of Humerus — Reduction"],
-  [12,"Supracondylar Fracture of Humerus — Reduction - Differential Diagnosis",10,5,"Supracondylar Fracture of Humerus — Reduction"],
-  [12,"Supracondylar Fracture of Humerus — Reduction - Investigations & Lab Findings",10,5,"Supracondylar Fracture of Humerus — Reduction"],
-  [12,"Supracondylar Fracture of Humerus — Reduction - Medical & Surgical Management",10,5,"Supracondylar Fracture of Humerus — Reduction"],
-  [12,"Supracondylar Fracture of Humerus — Reduction - Complications & Prognosis",10,5,"Supracondylar Fracture of Humerus — Reduction"],
-  [12,"Lower Limb Fractures & Dislocations",10,50,"Traumatology"],
-  [12,"NOF Fracture — Garden's Classification, Blood Supply & Garden's Alignment",10,18,"Lower Limb Fractures & Dislocations"],
-  [12,"NOF Fracture — Garden's Classification, Blood Supply",10,9,"NOF Fracture — Garden's Classification, Blood Supply & Garden's Alignment"],
-  [12,"NOF Fracture — Garden's Classification, Blood Supply - Etiology & Risk Factors",10,5,"NOF Fracture — Garden's Classification, Blood Supply"],
-  [12,"NOF Fracture — Garden's Classification, Blood Supply - Pathophysiology",10,5,"NOF Fracture — Garden's Classification, Blood Supply"],
-  [12,"NOF Fracture — Garden's Classification, Blood Supply - Clinical Presentation & Signs",10,5,"NOF Fracture — Garden's Classification, Blood Supply"],
-  [12,"NOF Fracture — Garden's Classification, Blood Supply - Differential Diagnosis",10,5,"NOF Fracture — Garden's Classification, Blood Supply"],
-  [12,"NOF Fracture — Garden's Classification, Blood Supply - Investigations & Lab Findings",10,5,"NOF Fracture — Garden's Classification, Blood Supply"],
-  [12,"NOF Fracture — Garden's Classification, Blood Supply - Medical & Surgical Management",10,5,"NOF Fracture — Garden's Classification, Blood Supply"],
-  [12,"NOF Fracture — Garden's Classification, Blood Supply - Complications & Prognosis",10,5,"NOF Fracture — Garden's Classification, Blood Supply"],
-  [12,"NOF Fracture — Garden's Alignment",10,9,"NOF Fracture — Garden's Classification, Blood Supply & Garden's Alignment"],
-  [12,"NOF Fracture — Garden's Alignment - Etiology & Risk Factors",10,5,"NOF Fracture — Garden's Alignment"],
-  [12,"NOF Fracture — Garden's Alignment - Pathophysiology",10,5,"NOF Fracture — Garden's Alignment"],
-  [12,"NOF Fracture — Garden's Alignment - Clinical Presentation & Signs",10,5,"NOF Fracture — Garden's Alignment"],
-  [12,"NOF Fracture — Garden's Alignment - Differential Diagnosis",10,5,"NOF Fracture — Garden's Alignment"],
-  [12,"NOF Fracture — Garden's Alignment - Investigations & Lab Findings",10,5,"NOF Fracture — Garden's Alignment"],
-  [12,"NOF Fracture — Garden's Alignment - Medical & Surgical Management",10,5,"NOF Fracture — Garden's Alignment"],
-  [12,"NOF Fracture — Garden's Alignment - Complications & Prognosis",10,5,"NOF Fracture — Garden's Alignment"],
-  [12,"Intertrochanteric vs NOF Fracture — DHS vs Hemiarthroplasty",10,15,"Lower Limb Fractures & Dislocations"],
-  [12,"Intertrochanteric vs NOF Fracture — Basics",10,7,"Intertrochanteric vs NOF Fracture — DHS vs Hemiarthroplasty"],
-  [12,"Intertrochanteric vs NOF Fracture — Basics - Etiology & Risk Factors",10,5,"Intertrochanteric vs NOF Fracture — Basics"],
-  [12,"Intertrochanteric vs NOF Fracture — Basics - Pathophysiology",10,5,"Intertrochanteric vs NOF Fracture — Basics"],
-  [12,"Intertrochanteric vs NOF Fracture — Basics - Clinical Presentation & Signs",10,5,"Intertrochanteric vs NOF Fracture — Basics"],
-  [12,"Intertrochanteric vs NOF Fracture — Basics - Differential Diagnosis",10,5,"Intertrochanteric vs NOF Fracture — Basics"],
-  [12,"Intertrochanteric vs NOF Fracture — Basics - Investigations & Lab Findings",10,5,"Intertrochanteric vs NOF Fracture — Basics"],
-  [12,"Intertrochanteric vs NOF Fracture — Basics - Medical & Surgical Management",10,5,"Intertrochanteric vs NOF Fracture — Basics"],
-  [12,"Intertrochanteric vs NOF Fracture — Basics - Complications & Prognosis",10,5,"Intertrochanteric vs NOF Fracture — Basics"],
-  [12,"Intertrochanteric vs NOF Fracture — Details",10,8,"Intertrochanteric vs NOF Fracture — DHS vs Hemiarthroplasty"],
-  [12,"Intertrochanteric vs NOF Fracture — Details - Etiology & Risk Factors",10,5,"Intertrochanteric vs NOF Fracture — Details"],
-  [12,"Intertrochanteric vs NOF Fracture — Details - Pathophysiology",10,5,"Intertrochanteric vs NOF Fracture — Details"],
-  [12,"Intertrochanteric vs NOF Fracture — Details - Clinical Presentation & Signs",10,5,"Intertrochanteric vs NOF Fracture — Details"],
-  [12,"Intertrochanteric vs NOF Fracture — Details - Differential Diagnosis",10,5,"Intertrochanteric vs NOF Fracture — Details"],
-  [12,"Intertrochanteric vs NOF Fracture — Details - Investigations & Lab Findings",10,5,"Intertrochanteric vs NOF Fracture — Details"],
-  [12,"Intertrochanteric vs NOF Fracture — Details - Medical & Surgical Management",10,5,"Intertrochanteric vs NOF Fracture — Details"],
-  [12,"Intertrochanteric vs NOF Fracture — Details - Complications & Prognosis",10,5,"Intertrochanteric vs NOF Fracture — Details"],
-  [12,"Tibial Fractures & Patella — Compartment Syndrome & Management",10,15,"Lower Limb Fractures & Dislocations"],
-  [12,"Tibial Fractures & Patella — Compartment Syndrome",10,7,"Tibial Fractures & Patella — Compartment Syndrome & Management"],
-  [12,"Tibial Fractures & Patella — Compartment Syndrome - Etiology & Risk Factors",10,5,"Tibial Fractures & Patella — Compartment Syndrome"],
-  [12,"Tibial Fractures & Patella — Compartment Syndrome - Pathophysiology",10,5,"Tibial Fractures & Patella — Compartment Syndrome"],
-  [12,"Tibial Fractures & Patella — Compartment Syndrome - Clinical Presentation & Signs",10,5,"Tibial Fractures & Patella — Compartment Syndrome"],
-  [12,"Tibial Fractures & Patella — Compartment Syndrome - Differential Diagnosis",10,5,"Tibial Fractures & Patella — Compartment Syndrome"],
-  [12,"Tibial Fractures & Patella — Compartment Syndrome - Investigations & Lab Findings",10,5,"Tibial Fractures & Patella — Compartment Syndrome"],
-  [12,"Tibial Fractures & Patella — Compartment Syndrome - Medical & Surgical Management",10,5,"Tibial Fractures & Patella — Compartment Syndrome"],
-  [12,"Tibial Fractures & Patella — Compartment Syndrome - Complications & Prognosis",10,5,"Tibial Fractures & Patella — Compartment Syndrome"],
-  [12,"Tibial Fractures & Patella — Management",10,8,"Tibial Fractures & Patella — Compartment Syndrome & Management"],
-  [12,"Tibial Fractures & Patella — Management - Etiology & Risk Factors",10,5,"Tibial Fractures & Patella — Management"],
-  [12,"Tibial Fractures & Patella — Management - Pathophysiology",10,5,"Tibial Fractures & Patella — Management"],
-  [12,"Tibial Fractures & Patella — Management - Clinical Presentation & Signs",10,5,"Tibial Fractures & Patella — Management"],
-  [12,"Tibial Fractures & Patella — Management - Differential Diagnosis",10,5,"Tibial Fractures & Patella — Management"],
-  [12,"Tibial Fractures & Patella — Management - Investigations & Lab Findings",10,5,"Tibial Fractures & Patella — Management"],
-  [12,"Tibial Fractures & Patella — Management - Medical & Surgical Management",10,5,"Tibial Fractures & Patella — Management"],
-  [12,"Tibial Fractures & Patella — Management - Complications & Prognosis",10,5,"Tibial Fractures & Patella — Management"],
-  [12,"Spine & Pelvis Trauma",10,45,"Traumatology"],
-  [12,"Spinal Injury — ASIA Grading, C-spine Immobilization & Methylprednisolone",10,18,"Spine & Pelvis Trauma"],
-  [12,"Spinal Injury — ASIA Grading, C-spine Immobilization",10,9,"Spinal Injury — ASIA Grading, C-spine Immobilization & Methylprednisolone"],
-  [12,"Spinal Injury — ASIA Grading, C-spine Immobilization - Etiology & Risk Factors",10,5,"Spinal Injury — ASIA Grading, C-spine Immobilization"],
-  [12,"Spinal Injury — ASIA Grading, C-spine Immobilization - Pathophysiology",10,5,"Spinal Injury — ASIA Grading, C-spine Immobilization"],
-  [12,"Spinal Injury — ASIA Grading, C-spine Immobilization - Clinical Presentation & Signs",10,5,"Spinal Injury — ASIA Grading, C-spine Immobilization"],
-  [12,"Spinal Injury — ASIA Grading, C-spine Immobilization - Differential Diagnosis",10,5,"Spinal Injury — ASIA Grading, C-spine Immobilization"],
-  [12,"Spinal Injury — ASIA Grading, C-spine Immobilization - Investigations & Lab Findings",10,5,"Spinal Injury — ASIA Grading, C-spine Immobilization"],
-  [12,"Spinal Injury — ASIA Grading, C-spine Immobilization - Medical & Surgical Management",10,5,"Spinal Injury — ASIA Grading, C-spine Immobilization"],
-  [12,"Spinal Injury — ASIA Grading, C-spine Immobilization - Complications & Prognosis",10,5,"Spinal Injury — ASIA Grading, C-spine Immobilization"],
-  [12,"Spinal Injury — Methylprednisolone",10,9,"Spinal Injury — ASIA Grading, C-spine Immobilization & Methylprednisolone"],
-  [12,"Spinal Injury — Methylprednisolone - Etiology & Risk Factors",10,5,"Spinal Injury — Methylprednisolone"],
-  [12,"Spinal Injury — Methylprednisolone - Pathophysiology",10,5,"Spinal Injury — Methylprednisolone"],
-  [12,"Spinal Injury — Methylprednisolone - Clinical Presentation & Signs",10,5,"Spinal Injury — Methylprednisolone"],
-  [12,"Spinal Injury — Methylprednisolone - Differential Diagnosis",10,5,"Spinal Injury — Methylprednisolone"],
-  [12,"Spinal Injury — Methylprednisolone - Investigations & Lab Findings",10,5,"Spinal Injury — Methylprednisolone"],
-  [12,"Spinal Injury — Methylprednisolone - Medical & Surgical Management",10,5,"Spinal Injury — Methylprednisolone"],
-  [12,"Spinal Injury — Methylprednisolone - Complications & Prognosis",10,5,"Spinal Injury — Methylprednisolone"],
-  [12,"Pelvic Fractures — Open Book, Tile Classification & Hemorrhage Control",10,15,"Spine & Pelvis Trauma"],
-  [12,"Pelvic Fractures — Open Book, Tile Classification",10,7,"Pelvic Fractures — Open Book, Tile Classification & Hemorrhage Control"],
-  [12,"Pelvic Fractures — Open Book, Tile Classification - Etiology & Risk Factors",10,5,"Pelvic Fractures — Open Book, Tile Classification"],
-  [12,"Pelvic Fractures — Open Book, Tile Classification - Pathophysiology",10,5,"Pelvic Fractures — Open Book, Tile Classification"],
-  [12,"Pelvic Fractures — Open Book, Tile Classification - Clinical Presentation & Signs",10,5,"Pelvic Fractures — Open Book, Tile Classification"],
-  [12,"Pelvic Fractures — Open Book, Tile Classification - Differential Diagnosis",10,5,"Pelvic Fractures — Open Book, Tile Classification"],
-  [12,"Pelvic Fractures — Open Book, Tile Classification - Investigations & Lab Findings",10,5,"Pelvic Fractures — Open Book, Tile Classification"],
-  [12,"Pelvic Fractures — Open Book, Tile Classification - Medical & Surgical Management",10,5,"Pelvic Fractures — Open Book, Tile Classification"],
-  [12,"Pelvic Fractures — Open Book, Tile Classification - Complications & Prognosis",10,5,"Pelvic Fractures — Open Book, Tile Classification"],
-  [12,"Pelvic Fractures — Hemorrhage Control",10,8,"Pelvic Fractures — Open Book, Tile Classification & Hemorrhage Control"],
-  [12,"Pelvic Fractures — Hemorrhage Control - Etiology & Risk Factors",10,5,"Pelvic Fractures — Hemorrhage Control"],
-  [12,"Pelvic Fractures — Hemorrhage Control - Pathophysiology",10,5,"Pelvic Fractures — Hemorrhage Control"],
-  [12,"Pelvic Fractures — Hemorrhage Control - Clinical Presentation & Signs",10,5,"Pelvic Fractures — Hemorrhage Control"],
-  [12,"Pelvic Fractures — Hemorrhage Control - Differential Diagnosis",10,5,"Pelvic Fractures — Hemorrhage Control"],
-  [12,"Pelvic Fractures — Hemorrhage Control - Investigations & Lab Findings",10,5,"Pelvic Fractures — Hemorrhage Control"],
-  [12,"Pelvic Fractures — Hemorrhage Control - Medical & Surgical Management",10,5,"Pelvic Fractures — Hemorrhage Control"],
-  [12,"Pelvic Fractures — Hemorrhage Control - Complications & Prognosis",10,5,"Pelvic Fractures — Hemorrhage Control"],
-  [12,"Peripheral Nerve Injuries",9,35,"Traumatology"],
-  [12,"Nerve Injury Classification — Neurapraxia, Axonotmesis & Neurotmesis (Seddon/Sunderland)",9,18,"Peripheral Nerve Injuries"],
-  [12,"Nerve Injury Classification — Neurapraxia, Axonotmesis",9,9,"Nerve Injury Classification — Neurapraxia, Axonotmesis & Neurotmesis (Seddon/Sunderland)"],
-  [12,"Nerve Injury Classification — Neurapraxia, Axonotmesis - Etiology & Risk Factors",9,5,"Nerve Injury Classification — Neurapraxia, Axonotmesis"],
-  [12,"Nerve Injury Classification — Neurapraxia, Axonotmesis - Pathophysiology",9,5,"Nerve Injury Classification — Neurapraxia, Axonotmesis"],
-  [12,"Nerve Injury Classification — Neurapraxia, Axonotmesis - Clinical Presentation & Signs",9,5,"Nerve Injury Classification — Neurapraxia, Axonotmesis"],
-  [12,"Nerve Injury Classification — Neurapraxia, Axonotmesis - Differential Diagnosis",9,5,"Nerve Injury Classification — Neurapraxia, Axonotmesis"],
-  [12,"Nerve Injury Classification — Neurapraxia, Axonotmesis - Investigations & Lab Findings",9,5,"Nerve Injury Classification — Neurapraxia, Axonotmesis"],
-  [12,"Nerve Injury Classification — Neurapraxia, Axonotmesis - Medical & Surgical Management",9,5,"Nerve Injury Classification — Neurapraxia, Axonotmesis"],
-  [12,"Nerve Injury Classification — Neurapraxia, Axonotmesis - Complications & Prognosis",9,5,"Nerve Injury Classification — Neurapraxia, Axonotmesis"],
-  [12,"Nerve Injury Classification — Neurotmesis (Seddon/Sunderland)",9,9,"Nerve Injury Classification — Neurapraxia, Axonotmesis & Neurotmesis (Seddon/Sunderland)"],
-  [12,"Nerve Injury Classification — Neurotmesis (Seddon/Sunderland) - Etiology & Risk Factors",9,5,"Nerve Injury Classification — Neurotmesis (Seddon/Sunderland)"],
-  [12,"Nerve Injury Classification — Neurotmesis (Seddon/Sunderland) - Pathophysiology",9,5,"Nerve Injury Classification — Neurotmesis (Seddon/Sunderland)"],
-  [12,"Nerve Injury Classification — Neurotmesis (Seddon/Sunderland) - Clinical Presentation & Signs",9,5,"Nerve Injury Classification — Neurotmesis (Seddon/Sunderland)"],
-  [12,"Nerve Injury Classification — Neurotmesis (Seddon/Sunderland) - Differential Diagnosis",9,5,"Nerve Injury Classification — Neurotmesis (Seddon/Sunderland)"],
-  [12,"Nerve Injury Classification — Neurotmesis (Seddon/Sunderland) - Investigations & Lab Findings",9,5,"Nerve Injury Classification — Neurotmesis (Seddon/Sunderland)"],
-  [12,"Nerve Injury Classification — Neurotmesis (Seddon/Sunderland) - Medical & Surgical Management",9,5,"Nerve Injury Classification — Neurotmesis (Seddon/Sunderland)"],
-  [12,"Nerve Injury Classification — Neurotmesis (Seddon/Sunderland) - Complications & Prognosis",9,5,"Nerve Injury Classification — Neurotmesis (Seddon/Sunderland)"],
-  [12,"Common Nerve Injury Patterns — Saturday Night Palsy, Claw Hand & Foot Drop",9,15,"Peripheral Nerve Injuries"],
-  [12,"Common Nerve Injury Patterns — Saturday Night Palsy, Claw Hand",9,7,"Common Nerve Injury Patterns — Saturday Night Palsy, Claw Hand & Foot Drop"],
-  [12,"Common Nerve Injury Patterns — Saturday Night Palsy, Claw Hand - Etiology & Risk Factors",9,5,"Common Nerve Injury Patterns — Saturday Night Palsy, Claw Hand"],
-  [12,"Common Nerve Injury Patterns — Saturday Night Palsy, Claw Hand - Pathophysiology",9,5,"Common Nerve Injury Patterns — Saturday Night Palsy, Claw Hand"],
-  [12,"Common Nerve Injury Patterns — Saturday Night Palsy, Claw Hand - Clinical Presentation & Signs",9,5,"Common Nerve Injury Patterns — Saturday Night Palsy, Claw Hand"],
-  [12,"Common Nerve Injury Patterns — Saturday Night Palsy, Claw Hand - Differential Diagnosis",9,5,"Common Nerve Injury Patterns — Saturday Night Palsy, Claw Hand"],
-  [12,"Common Nerve Injury Patterns — Saturday Night Palsy, Claw Hand - Investigations & Lab Findings",9,5,"Common Nerve Injury Patterns — Saturday Night Palsy, Claw Hand"],
-  [12,"Common Nerve Injury Patterns — Saturday Night Palsy, Claw Hand - Medical & Surgical Management",9,5,"Common Nerve Injury Patterns — Saturday Night Palsy, Claw Hand"],
-  [12,"Common Nerve Injury Patterns — Saturday Night Palsy, Claw Hand - Complications & Prognosis",9,5,"Common Nerve Injury Patterns — Saturday Night Palsy, Claw Hand"],
-  [12,"Common Nerve Injury Patterns — Foot Drop",9,8,"Common Nerve Injury Patterns — Saturday Night Palsy, Claw Hand & Foot Drop"],
-  [12,"Common Nerve Injury Patterns — Foot Drop - Etiology & Risk Factors",9,5,"Common Nerve Injury Patterns — Foot Drop"],
-  [12,"Common Nerve Injury Patterns — Foot Drop - Pathophysiology",9,5,"Common Nerve Injury Patterns — Foot Drop"],
-  [12,"Common Nerve Injury Patterns — Foot Drop - Clinical Presentation & Signs",9,5,"Common Nerve Injury Patterns — Foot Drop"],
-  [12,"Common Nerve Injury Patterns — Foot Drop - Differential Diagnosis",9,5,"Common Nerve Injury Patterns — Foot Drop"],
-  [12,"Common Nerve Injury Patterns — Foot Drop - Investigations & Lab Findings",9,5,"Common Nerve Injury Patterns — Foot Drop"],
-  [12,"Common Nerve Injury Patterns — Foot Drop - Medical & Surgical Management",9,5,"Common Nerve Injury Patterns — Foot Drop"],
-  [12,"Common Nerve Injury Patterns — Foot Drop - Complications & Prognosis",9,5,"Common Nerve Injury Patterns — Foot Drop"],
-  [12,"Orthopedic Diseases",9,60],
-  [12,"Bone Infections (Osteomyelitis, TB)",10,50,"Orthopedic Diseases"],
-  [12,"Acute Osteomyelitis — Haematogenous (Children), Bacteria & Management",10,18,"Bone Infections (Osteomyelitis, TB)"],
-  [12,"Acute Osteomyelitis — Haematogenous (Children), Bacteria",10,9,"Acute Osteomyelitis — Haematogenous (Children), Bacteria & Management"],
-  [12,"Acute Osteomyelitis — Haematogenous (Children), Bacteria - Etiology & Risk Factors",10,5,"Acute Osteomyelitis — Haematogenous (Children), Bacteria"],
-  [12,"Acute Osteomyelitis — Haematogenous (Children), Bacteria - Pathophysiology",10,5,"Acute Osteomyelitis — Haematogenous (Children), Bacteria"],
-  [12,"Acute Osteomyelitis — Haematogenous (Children), Bacteria - Clinical Presentation & Signs",10,5,"Acute Osteomyelitis — Haematogenous (Children), Bacteria"],
-  [12,"Acute Osteomyelitis — Haematogenous (Children), Bacteria - Differential Diagnosis",10,5,"Acute Osteomyelitis — Haematogenous (Children), Bacteria"],
-  [12,"Acute Osteomyelitis — Haematogenous (Children), Bacteria - Investigations & Lab Findings",10,5,"Acute Osteomyelitis — Haematogenous (Children), Bacteria"],
-  [12,"Acute Osteomyelitis — Haematogenous (Children), Bacteria - Medical & Surgical Management",10,5,"Acute Osteomyelitis — Haematogenous (Children), Bacteria"],
-  [12,"Acute Osteomyelitis — Haematogenous (Children), Bacteria - Complications & Prognosis",10,5,"Acute Osteomyelitis — Haematogenous (Children), Bacteria"],
-  [12,"Acute Osteomyelitis — Management",10,9,"Acute Osteomyelitis — Haematogenous (Children), Bacteria & Management"],
-  [12,"Acute Osteomyelitis — Management - Etiology & Risk Factors",10,5,"Acute Osteomyelitis — Management"],
-  [12,"Acute Osteomyelitis — Management - Pathophysiology",10,5,"Acute Osteomyelitis — Management"],
-  [12,"Acute Osteomyelitis — Management - Clinical Presentation & Signs",10,5,"Acute Osteomyelitis — Management"],
-  [12,"Acute Osteomyelitis — Management - Differential Diagnosis",10,5,"Acute Osteomyelitis — Management"],
-  [12,"Acute Osteomyelitis — Management - Investigations & Lab Findings",10,5,"Acute Osteomyelitis — Management"],
-  [12,"Acute Osteomyelitis — Management - Medical & Surgical Management",10,5,"Acute Osteomyelitis — Management"],
-  [12,"Acute Osteomyelitis — Management - Complications & Prognosis",10,5,"Acute Osteomyelitis — Management"],
-  [12,"Chronic Osteomyelitis — Involucrum, Sequestrum, Cloaca & Sinus",10,15,"Bone Infections (Osteomyelitis, TB)"],
-  [12,"Chronic Osteomyelitis — Involucrum, Sequestrum, Cloaca",10,7,"Chronic Osteomyelitis — Involucrum, Sequestrum, Cloaca & Sinus"],
-  [12,"Chronic Osteomyelitis — Involucrum, Sequestrum, Cloaca - Etiology & Risk Factors",10,5,"Chronic Osteomyelitis — Involucrum, Sequestrum, Cloaca"],
-  [12,"Chronic Osteomyelitis — Involucrum, Sequestrum, Cloaca - Pathophysiology",10,5,"Chronic Osteomyelitis — Involucrum, Sequestrum, Cloaca"],
-  [12,"Chronic Osteomyelitis — Involucrum, Sequestrum, Cloaca - Clinical Presentation & Signs",10,5,"Chronic Osteomyelitis — Involucrum, Sequestrum, Cloaca"],
-  [12,"Chronic Osteomyelitis — Involucrum, Sequestrum, Cloaca - Differential Diagnosis",10,5,"Chronic Osteomyelitis — Involucrum, Sequestrum, Cloaca"],
-  [12,"Chronic Osteomyelitis — Involucrum, Sequestrum, Cloaca - Investigations & Lab Findings",10,5,"Chronic Osteomyelitis — Involucrum, Sequestrum, Cloaca"],
-  [12,"Chronic Osteomyelitis — Involucrum, Sequestrum, Cloaca - Medical & Surgical Management",10,5,"Chronic Osteomyelitis — Involucrum, Sequestrum, Cloaca"],
-  [12,"Chronic Osteomyelitis — Involucrum, Sequestrum, Cloaca - Complications & Prognosis",10,5,"Chronic Osteomyelitis — Involucrum, Sequestrum, Cloaca"],
-  [12,"Chronic Osteomyelitis — Sinus",10,8,"Chronic Osteomyelitis — Involucrum, Sequestrum, Cloaca & Sinus"],
-  [12,"Chronic Osteomyelitis — Sinus - Etiology & Risk Factors",10,5,"Chronic Osteomyelitis — Sinus"],
-  [12,"Chronic Osteomyelitis — Sinus - Pathophysiology",10,5,"Chronic Osteomyelitis — Sinus"],
-  [12,"Chronic Osteomyelitis — Sinus - Clinical Presentation & Signs",10,5,"Chronic Osteomyelitis — Sinus"],
-  [12,"Chronic Osteomyelitis — Sinus - Differential Diagnosis",10,5,"Chronic Osteomyelitis — Sinus"],
-  [12,"Chronic Osteomyelitis — Sinus - Investigations & Lab Findings",10,5,"Chronic Osteomyelitis — Sinus"],
-  [12,"Chronic Osteomyelitis — Sinus - Medical & Surgical Management",10,5,"Chronic Osteomyelitis — Sinus"],
-  [12,"Chronic Osteomyelitis — Sinus - Complications & Prognosis",10,5,"Chronic Osteomyelitis — Sinus"],
-  [12,"Skeletal TB — Pott's Spine: Gibbus, Cold Abscess & Paradoxical Worsening",10,15,"Bone Infections (Osteomyelitis, TB)"],
-  [12,"Skeletal TB — Pott's Spine: Gibbus, Cold Abscess",10,7,"Skeletal TB — Pott's Spine: Gibbus, Cold Abscess & Paradoxical Worsening"],
-  [12,"Skeletal TB — Pott's Spine: Gibbus, Cold Abscess - Etiology & Risk Factors",10,5,"Skeletal TB — Pott's Spine: Gibbus, Cold Abscess"],
-  [12,"Skeletal TB — Pott's Spine: Gibbus, Cold Abscess - Pathophysiology",10,5,"Skeletal TB — Pott's Spine: Gibbus, Cold Abscess"],
-  [12,"Skeletal TB — Pott's Spine: Gibbus, Cold Abscess - Clinical Presentation & Signs",10,5,"Skeletal TB — Pott's Spine: Gibbus, Cold Abscess"],
-  [12,"Skeletal TB — Pott's Spine: Gibbus, Cold Abscess - Differential Diagnosis",10,5,"Skeletal TB — Pott's Spine: Gibbus, Cold Abscess"],
-  [12,"Skeletal TB — Pott's Spine: Gibbus, Cold Abscess - Investigations & Lab Findings",10,5,"Skeletal TB — Pott's Spine: Gibbus, Cold Abscess"],
-  [12,"Skeletal TB — Pott's Spine: Gibbus, Cold Abscess - Medical & Surgical Management",10,5,"Skeletal TB — Pott's Spine: Gibbus, Cold Abscess"],
-  [12,"Skeletal TB — Pott's Spine: Gibbus, Cold Abscess - Complications & Prognosis",10,5,"Skeletal TB — Pott's Spine: Gibbus, Cold Abscess"],
-  [12,"Skeletal TB — Paradoxical Worsening",10,8,"Skeletal TB — Pott's Spine: Gibbus, Cold Abscess & Paradoxical Worsening"],
-  [12,"Skeletal TB — Paradoxical Worsening - Etiology & Risk Factors",10,5,"Skeletal TB — Paradoxical Worsening"],
-  [12,"Skeletal TB — Paradoxical Worsening - Pathophysiology",10,5,"Skeletal TB — Paradoxical Worsening"],
-  [12,"Skeletal TB — Paradoxical Worsening - Clinical Presentation & Signs",10,5,"Skeletal TB — Paradoxical Worsening"],
-  [12,"Skeletal TB — Paradoxical Worsening - Differential Diagnosis",10,5,"Skeletal TB — Paradoxical Worsening"],
-  [12,"Skeletal TB — Paradoxical Worsening - Investigations & Lab Findings",10,5,"Skeletal TB — Paradoxical Worsening"],
-  [12,"Skeletal TB — Paradoxical Worsening - Medical & Surgical Management",10,5,"Skeletal TB — Paradoxical Worsening"],
-  [12,"Skeletal TB — Paradoxical Worsening - Complications & Prognosis",10,5,"Skeletal TB — Paradoxical Worsening"],
-  [12,"Bone Tumors",10,45,"Orthopedic Diseases"],
-  [12,"Benign Bone Tumors — Osteochondroma, Giant Cell, Enchondroma & Features",10,15,"Bone Tumors"],
-  [12,"Benign Bone Tumors — Osteochondroma, Giant Cell, Enchondroma",10,7,"Benign Bone Tumors — Osteochondroma, Giant Cell, Enchondroma & Features"],
-  [12,"Benign Bone Tumors — Osteochondroma, Giant Cell, Enchondroma - Etiology & Risk Factors",10,5,"Benign Bone Tumors — Osteochondroma, Giant Cell, Enchondroma"],
-  [12,"Benign Bone Tumors — Osteochondroma, Giant Cell, Enchondroma - Pathophysiology",10,5,"Benign Bone Tumors — Osteochondroma, Giant Cell, Enchondroma"],
-  [12,"Benign Bone Tumors — Osteochondroma, Giant Cell, Enchondroma - Clinical Presentation & Signs",10,5,"Benign Bone Tumors — Osteochondroma, Giant Cell, Enchondroma"],
-  [12,"Benign Bone Tumors — Osteochondroma, Giant Cell, Enchondroma - Differential Diagnosis",10,5,"Benign Bone Tumors — Osteochondroma, Giant Cell, Enchondroma"],
-  [12,"Benign Bone Tumors — Osteochondroma, Giant Cell, Enchondroma - Investigations & Lab Findings",10,5,"Benign Bone Tumors — Osteochondroma, Giant Cell, Enchondroma"],
-  [12,"Benign Bone Tumors — Osteochondroma, Giant Cell, Enchondroma - Medical & Surgical Management",10,5,"Benign Bone Tumors — Osteochondroma, Giant Cell, Enchondroma"],
-  [12,"Benign Bone Tumors — Osteochondroma, Giant Cell, Enchondroma - Complications & Prognosis",10,5,"Benign Bone Tumors — Osteochondroma, Giant Cell, Enchondroma"],
-  [12,"Benign Bone Tumors — Features",10,8,"Benign Bone Tumors — Osteochondroma, Giant Cell, Enchondroma & Features"],
-  [12,"Benign Bone Tumors — Features - Etiology & Risk Factors",10,5,"Benign Bone Tumors — Features"],
-  [12,"Benign Bone Tumors — Features - Pathophysiology",10,5,"Benign Bone Tumors — Features"],
-  [12,"Benign Bone Tumors — Features - Clinical Presentation & Signs",10,5,"Benign Bone Tumors — Features"],
-  [12,"Benign Bone Tumors — Features - Differential Diagnosis",10,5,"Benign Bone Tumors — Features"],
-  [12,"Benign Bone Tumors — Features - Investigations & Lab Findings",10,5,"Benign Bone Tumors — Features"],
-  [12,"Benign Bone Tumors — Features - Medical & Surgical Management",10,5,"Benign Bone Tumors — Features"],
-  [12,"Benign Bone Tumors — Features - Complications & Prognosis",10,5,"Benign Bone Tumors — Features"],
-  [12,"Malignant Bone Tumors — Osteosarcoma (Codman's Triangle), Ewing's (Onion Peel) & Mets",10,18,"Bone Tumors"],
-  [12,"Malignant Bone Tumors — Osteosarcoma (Codman's Triangle), Ewing's (Onion Peel)",10,9,"Malignant Bone Tumors — Osteosarcoma (Codman's Triangle), Ewing's (Onion Peel) & Mets"],
-  [12,"Malignant Bone Tumors — Osteosarcoma (Codman's Triangle), Ewing's (Onion Peel) - Etiology & Risk Factors",10,5,"Malignant Bone Tumors — Osteosarcoma (Codman's Triangle), Ewing's (Onion Peel)"],
-  [12,"Malignant Bone Tumors — Osteosarcoma (Codman's Triangle), Ewing's (Onion Peel) - Pathophysiology",10,5,"Malignant Bone Tumors — Osteosarcoma (Codman's Triangle), Ewing's (Onion Peel)"],
-  [12,"Malignant Bone Tumors — Osteosarcoma (Codman's Triangle), Ewing's (Onion Peel) - Clinical Presentation & Signs",10,5,"Malignant Bone Tumors — Osteosarcoma (Codman's Triangle), Ewing's (Onion Peel)"],
-  [12,"Malignant Bone Tumors — Osteosarcoma (Codman's Triangle), Ewing's (Onion Peel) - Differential Diagnosis",10,5,"Malignant Bone Tumors — Osteosarcoma (Codman's Triangle), Ewing's (Onion Peel)"],
-  [12,"Malignant Bone Tumors — Osteosarcoma (Codman's Triangle), Ewing's (Onion Peel) - Investigations & Lab Findings",10,5,"Malignant Bone Tumors — Osteosarcoma (Codman's Triangle), Ewing's (Onion Peel)"],
-  [12,"Malignant Bone Tumors — Osteosarcoma (Codman's Triangle), Ewing's (Onion Peel) - Medical & Surgical Management",10,5,"Malignant Bone Tumors — Osteosarcoma (Codman's Triangle), Ewing's (Onion Peel)"],
-  [12,"Malignant Bone Tumors — Osteosarcoma (Codman's Triangle), Ewing's (Onion Peel) - Complications & Prognosis",10,5,"Malignant Bone Tumors — Osteosarcoma (Codman's Triangle), Ewing's (Onion Peel)"],
-  [12,"Malignant Bone Tumors — Mets",10,9,"Malignant Bone Tumors — Osteosarcoma (Codman's Triangle), Ewing's (Onion Peel) & Mets"],
-  [12,"Malignant Bone Tumors — Mets - Etiology & Risk Factors",10,5,"Malignant Bone Tumors — Mets"],
-  [12,"Malignant Bone Tumors — Mets - Pathophysiology",10,5,"Malignant Bone Tumors — Mets"],
-  [12,"Malignant Bone Tumors — Mets - Clinical Presentation & Signs",10,5,"Malignant Bone Tumors — Mets"],
-  [12,"Malignant Bone Tumors — Mets - Differential Diagnosis",10,5,"Malignant Bone Tumors — Mets"],
-  [12,"Malignant Bone Tumors — Mets - Investigations & Lab Findings",10,5,"Malignant Bone Tumors — Mets"],
-  [12,"Malignant Bone Tumors — Mets - Medical & Surgical Management",10,5,"Malignant Bone Tumors — Mets"],
-  [12,"Malignant Bone Tumors — Mets - Complications & Prognosis",10,5,"Malignant Bone Tumors — Mets"],
-  [12,"Metabolic Bone Diseases (Rickets, Osteoporosis)",9,40,"Orthopedic Diseases"],
-  [12,"Rickets vs Osteomalacia — Vitamin D, X-ray Changes & Treatment",9,18,"Metabolic Bone Diseases (Rickets, Osteoporosis)"],
-  [12,"Rickets vs Osteomalacia — Vitamin D, X-ray Changes",9,9,"Rickets vs Osteomalacia — Vitamin D, X-ray Changes & Treatment"],
-  [12,"Rickets vs Osteomalacia — Vitamin D, X-ray Changes - Etiology & Risk Factors",9,5,"Rickets vs Osteomalacia — Vitamin D, X-ray Changes"],
-  [12,"Rickets vs Osteomalacia — Vitamin D, X-ray Changes - Pathophysiology",9,5,"Rickets vs Osteomalacia — Vitamin D, X-ray Changes"],
-  [12,"Rickets vs Osteomalacia — Vitamin D, X-ray Changes - Clinical Presentation & Signs",9,5,"Rickets vs Osteomalacia — Vitamin D, X-ray Changes"],
-  [12,"Rickets vs Osteomalacia — Vitamin D, X-ray Changes - Differential Diagnosis",9,5,"Rickets vs Osteomalacia — Vitamin D, X-ray Changes"],
-  [12,"Rickets vs Osteomalacia — Vitamin D, X-ray Changes - Investigations & Lab Findings",9,5,"Rickets vs Osteomalacia — Vitamin D, X-ray Changes"],
-  [12,"Rickets vs Osteomalacia — Vitamin D, X-ray Changes - Medical & Surgical Management",9,5,"Rickets vs Osteomalacia — Vitamin D, X-ray Changes"],
-  [12,"Rickets vs Osteomalacia — Vitamin D, X-ray Changes - Complications & Prognosis",9,5,"Rickets vs Osteomalacia — Vitamin D, X-ray Changes"],
-  [12,"Rickets vs Osteomalacia — Treatment",9,9,"Rickets vs Osteomalacia — Vitamin D, X-ray Changes & Treatment"],
-  [12,"Rickets vs Osteomalacia — Treatment - Etiology & Risk Factors",9,5,"Rickets vs Osteomalacia — Treatment"],
-  [12,"Rickets vs Osteomalacia — Treatment - Pathophysiology",9,5,"Rickets vs Osteomalacia — Treatment"],
-  [12,"Rickets vs Osteomalacia — Treatment - Clinical Presentation & Signs",9,5,"Rickets vs Osteomalacia — Treatment"],
-  [12,"Rickets vs Osteomalacia — Treatment - Differential Diagnosis",9,5,"Rickets vs Osteomalacia — Treatment"],
-  [12,"Rickets vs Osteomalacia — Treatment - Investigations & Lab Findings",9,5,"Rickets vs Osteomalacia — Treatment"],
-  [12,"Rickets vs Osteomalacia — Treatment - Medical & Surgical Management",9,5,"Rickets vs Osteomalacia — Treatment"],
-  [12,"Rickets vs Osteomalacia — Treatment - Complications & Prognosis",9,5,"Rickets vs Osteomalacia — Treatment"],
-  [12,"Osteoporosis — T-score, DEXA, Bisphosphonates & FRAX Tool",9,18,"Metabolic Bone Diseases (Rickets, Osteoporosis)"],
-  [12,"Osteoporosis — T-score, DEXA, Bisphosphonates",9,9,"Osteoporosis — T-score, DEXA, Bisphosphonates & FRAX Tool"],
-  [12,"Osteoporosis — T-score, DEXA, Bisphosphonates - Etiology & Risk Factors",9,5,"Osteoporosis — T-score, DEXA, Bisphosphonates"],
-  [12,"Osteoporosis — T-score, DEXA, Bisphosphonates - Pathophysiology",9,5,"Osteoporosis — T-score, DEXA, Bisphosphonates"],
-  [12,"Osteoporosis — T-score, DEXA, Bisphosphonates - Clinical Presentation & Signs",9,5,"Osteoporosis — T-score, DEXA, Bisphosphonates"],
-  [12,"Osteoporosis — T-score, DEXA, Bisphosphonates - Differential Diagnosis",9,5,"Osteoporosis — T-score, DEXA, Bisphosphonates"],
-  [12,"Osteoporosis — T-score, DEXA, Bisphosphonates - Investigations & Lab Findings",9,5,"Osteoporosis — T-score, DEXA, Bisphosphonates"],
-  [12,"Osteoporosis — T-score, DEXA, Bisphosphonates - Medical & Surgical Management",9,5,"Osteoporosis — T-score, DEXA, Bisphosphonates"],
-  [12,"Osteoporosis — T-score, DEXA, Bisphosphonates - Complications & Prognosis",9,5,"Osteoporosis — T-score, DEXA, Bisphosphonates"],
-  [12,"Osteoporosis — FRAX Tool",9,9,"Osteoporosis — T-score, DEXA, Bisphosphonates & FRAX Tool"],
-  [12,"Osteoporosis — FRAX Tool - Etiology & Risk Factors",9,5,"Osteoporosis — FRAX Tool"],
-  [12,"Osteoporosis — FRAX Tool - Pathophysiology",9,5,"Osteoporosis — FRAX Tool"],
-  [12,"Osteoporosis — FRAX Tool - Clinical Presentation & Signs",9,5,"Osteoporosis — FRAX Tool"],
-  [12,"Osteoporosis — FRAX Tool - Differential Diagnosis",9,5,"Osteoporosis — FRAX Tool"],
-  [12,"Osteoporosis — FRAX Tool - Investigations & Lab Findings",9,5,"Osteoporosis — FRAX Tool"],
-  [12,"Osteoporosis — FRAX Tool - Medical & Surgical Management",9,5,"Osteoporosis — FRAX Tool"],
-  [12,"Osteoporosis — FRAX Tool - Complications & Prognosis",9,5,"Osteoporosis — FRAX Tool"],
-  [12,"Arthritis (OA, RA, Gout)",9,40,"Orthopedic Diseases"],
-  [12,"Osteoarthritis — Pathology, Heberden's Nodes, X-ray Changes & THR/TKR",9,18,"Arthritis (OA, RA, Gout)"],
-  [12,"Osteoarthritis — Pathology, Heberden's Nodes, X-ray Changes",9,9,"Osteoarthritis — Pathology, Heberden's Nodes, X-ray Changes & THR/TKR"],
-  [12,"Osteoarthritis — Pathology, Heberden's Nodes, X-ray Changes - Etiology & Risk Factors",9,5,"Osteoarthritis — Pathology, Heberden's Nodes, X-ray Changes"],
-  [12,"Osteoarthritis — Pathology, Heberden's Nodes, X-ray Changes - Pathophysiology",9,5,"Osteoarthritis — Pathology, Heberden's Nodes, X-ray Changes"],
-  [12,"Osteoarthritis — Pathology, Heberden's Nodes, X-ray Changes - Clinical Presentation & Signs",9,5,"Osteoarthritis — Pathology, Heberden's Nodes, X-ray Changes"],
-  [12,"Osteoarthritis — Pathology, Heberden's Nodes, X-ray Changes - Differential Diagnosis",9,5,"Osteoarthritis — Pathology, Heberden's Nodes, X-ray Changes"],
-  [12,"Osteoarthritis — Pathology, Heberden's Nodes, X-ray Changes - Investigations & Lab Findings",9,5,"Osteoarthritis — Pathology, Heberden's Nodes, X-ray Changes"],
-  [12,"Osteoarthritis — Pathology, Heberden's Nodes, X-ray Changes - Medical & Surgical Management",9,5,"Osteoarthritis — Pathology, Heberden's Nodes, X-ray Changes"],
-  [12,"Osteoarthritis — Pathology, Heberden's Nodes, X-ray Changes - Complications & Prognosis",9,5,"Osteoarthritis — Pathology, Heberden's Nodes, X-ray Changes"],
-  [12,"Osteoarthritis — THR/TKR",9,9,"Osteoarthritis — Pathology, Heberden's Nodes, X-ray Changes & THR/TKR"],
-  [12,"Osteoarthritis — THR/TKR - Etiology & Risk Factors",9,5,"Osteoarthritis — THR/TKR"],
-  [12,"Osteoarthritis — THR/TKR - Pathophysiology",9,5,"Osteoarthritis — THR/TKR"],
-  [12,"Osteoarthritis — THR/TKR - Clinical Presentation & Signs",9,5,"Osteoarthritis — THR/TKR"],
-  [12,"Osteoarthritis — THR/TKR - Differential Diagnosis",9,5,"Osteoarthritis — THR/TKR"],
-  [12,"Osteoarthritis — THR/TKR - Investigations & Lab Findings",9,5,"Osteoarthritis — THR/TKR"],
-  [12,"Osteoarthritis — THR/TKR - Medical & Surgical Management",9,5,"Osteoarthritis — THR/TKR"],
-  [12,"Osteoarthritis — THR/TKR - Complications & Prognosis",9,5,"Osteoarthritis — THR/TKR"],
-  [12,"Gout — Urate Crystals (CPPD vs MSU), Tophi, Allopurinol & Colchicine",9,18,"Arthritis (OA, RA, Gout)"],
-  [12,"Gout — Urate Crystals (CPPD vs MSU), Tophi, Allopurinol",9,9,"Gout — Urate Crystals (CPPD vs MSU), Tophi, Allopurinol & Colchicine"],
-  [12,"Gout — Urate Crystals (CPPD vs MSU), Tophi, Allopurinol - Etiology & Risk Factors",9,5,"Gout — Urate Crystals (CPPD vs MSU), Tophi, Allopurinol"],
-  [12,"Gout — Urate Crystals (CPPD vs MSU), Tophi, Allopurinol - Pathophysiology",9,5,"Gout — Urate Crystals (CPPD vs MSU), Tophi, Allopurinol"],
-  [12,"Gout — Urate Crystals (CPPD vs MSU), Tophi, Allopurinol - Clinical Presentation & Signs",9,5,"Gout — Urate Crystals (CPPD vs MSU), Tophi, Allopurinol"],
-  [12,"Gout — Urate Crystals (CPPD vs MSU), Tophi, Allopurinol - Differential Diagnosis",9,5,"Gout — Urate Crystals (CPPD vs MSU), Tophi, Allopurinol"],
-  [12,"Gout — Urate Crystals (CPPD vs MSU), Tophi, Allopurinol - Investigations & Lab Findings",9,5,"Gout — Urate Crystals (CPPD vs MSU), Tophi, Allopurinol"],
-  [12,"Gout — Urate Crystals (CPPD vs MSU), Tophi, Allopurinol - Medical & Surgical Management",9,5,"Gout — Urate Crystals (CPPD vs MSU), Tophi, Allopurinol"],
-  [12,"Gout — Urate Crystals (CPPD vs MSU), Tophi, Allopurinol - Complications & Prognosis",9,5,"Gout — Urate Crystals (CPPD vs MSU), Tophi, Allopurinol"],
-  [12,"Gout — Colchicine",9,9,"Gout — Urate Crystals (CPPD vs MSU), Tophi, Allopurinol & Colchicine"],
-  [12,"Gout — Colchicine - Etiology & Risk Factors",9,5,"Gout — Colchicine"],
-  [12,"Gout — Colchicine - Pathophysiology",9,5,"Gout — Colchicine"],
-  [12,"Gout — Colchicine - Clinical Presentation & Signs",9,5,"Gout — Colchicine"],
-  [12,"Gout — Colchicine - Differential Diagnosis",9,5,"Gout — Colchicine"],
-  [12,"Gout — Colchicine - Investigations & Lab Findings",9,5,"Gout — Colchicine"],
-  [12,"Gout — Colchicine - Medical & Surgical Management",9,5,"Gout — Colchicine"],
-  [12,"Gout — Colchicine - Complications & Prognosis",9,5,"Gout — Colchicine"],
-  [12,"Congenital Anomalies (CTEV, DDH)",9,35,"Orthopedic Diseases"],
-  [12,"CTEV (Club Foot) — CAVE Deformity, Ponseti Method & Pirani Score",9,18,"Congenital Anomalies (CTEV, DDH)"],
-  [12,"CTEV (Club Foot) — CAVE Deformity, Ponseti Method",9,9,"CTEV (Club Foot) — CAVE Deformity, Ponseti Method & Pirani Score"],
-  [12,"CTEV (Club Foot) — CAVE Deformity, Ponseti Method - Etiology & Risk Factors",9,5,"CTEV (Club Foot) — CAVE Deformity, Ponseti Method"],
-  [12,"CTEV (Club Foot) — CAVE Deformity, Ponseti Method - Pathophysiology",9,5,"CTEV (Club Foot) — CAVE Deformity, Ponseti Method"],
-  [12,"CTEV (Club Foot) — CAVE Deformity, Ponseti Method - Clinical Presentation & Signs",9,5,"CTEV (Club Foot) — CAVE Deformity, Ponseti Method"],
-  [12,"CTEV (Club Foot) — CAVE Deformity, Ponseti Method - Differential Diagnosis",9,5,"CTEV (Club Foot) — CAVE Deformity, Ponseti Method"],
-  [12,"CTEV (Club Foot) — CAVE Deformity, Ponseti Method - Investigations & Lab Findings",9,5,"CTEV (Club Foot) — CAVE Deformity, Ponseti Method"],
-  [12,"CTEV (Club Foot) — CAVE Deformity, Ponseti Method - Medical & Surgical Management",9,5,"CTEV (Club Foot) — CAVE Deformity, Ponseti Method"],
-  [12,"CTEV (Club Foot) — CAVE Deformity, Ponseti Method - Complications & Prognosis",9,5,"CTEV (Club Foot) — CAVE Deformity, Ponseti Method"],
-  [12,"CTEV (Club Foot) — Pirani Score",9,9,"CTEV (Club Foot) — CAVE Deformity, Ponseti Method & Pirani Score"],
-  [12,"CTEV (Club Foot) — Pirani Score - Etiology & Risk Factors",9,5,"CTEV (Club Foot) — Pirani Score"],
-  [12,"CTEV (Club Foot) — Pirani Score - Pathophysiology",9,5,"CTEV (Club Foot) — Pirani Score"],
-  [12,"CTEV (Club Foot) — Pirani Score - Clinical Presentation & Signs",9,5,"CTEV (Club Foot) — Pirani Score"],
-  [12,"CTEV (Club Foot) — Pirani Score - Differential Diagnosis",9,5,"CTEV (Club Foot) — Pirani Score"],
-  [12,"CTEV (Club Foot) — Pirani Score - Investigations & Lab Findings",9,5,"CTEV (Club Foot) — Pirani Score"],
-  [12,"CTEV (Club Foot) — Pirani Score - Medical & Surgical Management",9,5,"CTEV (Club Foot) — Pirani Score"],
-  [12,"CTEV (Club Foot) — Pirani Score - Complications & Prognosis",9,5,"CTEV (Club Foot) — Pirani Score"],
-  [12,"DDH — Barlow's, Ortolani's Tests, Ultrasound & Pavlik Harness",9,15,"Congenital Anomalies (CTEV, DDH)"],
-  [12,"DDH — Barlow's, Ortolani's Tests, Ultrasound",9,7,"DDH — Barlow's, Ortolani's Tests, Ultrasound & Pavlik Harness"],
-  [12,"DDH — Barlow's, Ortolani's Tests, Ultrasound - Etiology & Risk Factors",9,5,"DDH — Barlow's, Ortolani's Tests, Ultrasound"],
-  [12,"DDH — Barlow's, Ortolani's Tests, Ultrasound - Pathophysiology",9,5,"DDH — Barlow's, Ortolani's Tests, Ultrasound"],
-  [12,"DDH — Barlow's, Ortolani's Tests, Ultrasound - Clinical Presentation & Signs",9,5,"DDH — Barlow's, Ortolani's Tests, Ultrasound"],
-  [12,"DDH — Barlow's, Ortolani's Tests, Ultrasound - Differential Diagnosis",9,5,"DDH — Barlow's, Ortolani's Tests, Ultrasound"],
-  [12,"DDH — Barlow's, Ortolani's Tests, Ultrasound - Investigations & Lab Findings",9,5,"DDH — Barlow's, Ortolani's Tests, Ultrasound"],
-  [12,"DDH — Barlow's, Ortolani's Tests, Ultrasound - Medical & Surgical Management",9,5,"DDH — Barlow's, Ortolani's Tests, Ultrasound"],
-  [12,"DDH — Barlow's, Ortolani's Tests, Ultrasound - Complications & Prognosis",9,5,"DDH — Barlow's, Ortolani's Tests, Ultrasound"],
-  [12,"DDH — Pavlik Harness",9,8,"DDH — Barlow's, Ortolani's Tests, Ultrasound & Pavlik Harness"],
-  [12,"DDH — Pavlik Harness - Etiology & Risk Factors",9,5,"DDH — Pavlik Harness"],
-  [12,"DDH — Pavlik Harness - Pathophysiology",9,5,"DDH — Pavlik Harness"],
-  [12,"DDH — Pavlik Harness - Clinical Presentation & Signs",9,5,"DDH — Pavlik Harness"],
-  [12,"DDH — Pavlik Harness - Differential Diagnosis",9,5,"DDH — Pavlik Harness"],
-  [12,"DDH — Pavlik Harness - Investigations & Lab Findings",9,5,"DDH — Pavlik Harness"],
-  [12,"DDH — Pavlik Harness - Medical & Surgical Management",9,5,"DDH — Pavlik Harness"],
-  [12,"DDH — Pavlik Harness - Complications & Prognosis",9,5,"DDH — Pavlik Harness"],
-  [12,"Avascular Necrosis & Osteochondritis",8,30,"Orthopedic Diseases"],
-  [12,"AVN of Femoral Head — Risk Factors, Ficat Staging & Core Decompression",8,15,"Avascular Necrosis & Osteochondritis"],
-  [12,"AVN of Femoral Head — Risk Factors, Ficat Staging",8,7,"AVN of Femoral Head — Risk Factors, Ficat Staging & Core Decompression"],
-  [12,"AVN of Femoral Head — Risk Factors, Ficat Staging - Etiology & Risk Factors",8,5,"AVN of Femoral Head — Risk Factors, Ficat Staging"],
-  [12,"AVN of Femoral Head — Risk Factors, Ficat Staging - Pathophysiology",8,5,"AVN of Femoral Head — Risk Factors, Ficat Staging"],
-  [12,"AVN of Femoral Head — Risk Factors, Ficat Staging - Clinical Presentation & Signs",8,5,"AVN of Femoral Head — Risk Factors, Ficat Staging"],
-  [12,"AVN of Femoral Head — Risk Factors, Ficat Staging - Differential Diagnosis",8,5,"AVN of Femoral Head — Risk Factors, Ficat Staging"],
-  [12,"AVN of Femoral Head — Risk Factors, Ficat Staging - Investigations & Lab Findings",8,5,"AVN of Femoral Head — Risk Factors, Ficat Staging"],
-  [12,"AVN of Femoral Head — Risk Factors, Ficat Staging - Medical & Surgical Management",8,5,"AVN of Femoral Head — Risk Factors, Ficat Staging"],
-  [12,"AVN of Femoral Head — Risk Factors, Ficat Staging - Complications & Prognosis",8,5,"AVN of Femoral Head — Risk Factors, Ficat Staging"],
-  [12,"AVN of Femoral Head — Core Decompression",8,8,"AVN of Femoral Head — Risk Factors, Ficat Staging & Core Decompression"],
-  [12,"AVN of Femoral Head — Core Decompression - Etiology & Risk Factors",8,5,"AVN of Femoral Head — Core Decompression"],
-  [12,"AVN of Femoral Head — Core Decompression - Pathophysiology",8,5,"AVN of Femoral Head — Core Decompression"],
-  [12,"AVN of Femoral Head — Core Decompression - Clinical Presentation & Signs",8,5,"AVN of Femoral Head — Core Decompression"],
-  [12,"AVN of Femoral Head — Core Decompression - Differential Diagnosis",8,5,"AVN of Femoral Head — Core Decompression"],
-  [12,"AVN of Femoral Head — Core Decompression - Investigations & Lab Findings",8,5,"AVN of Femoral Head — Core Decompression"],
-  [12,"AVN of Femoral Head — Core Decompression - Medical & Surgical Management",8,5,"AVN of Femoral Head — Core Decompression"],
-  [12,"AVN of Femoral Head — Core Decompression - Complications & Prognosis",8,5,"AVN of Femoral Head — Core Decompression"],
-  [12,"Perthes Disease, OSD & Sever's Disease — Age, Location & Management",8,15,"Avascular Necrosis & Osteochondritis"],
-  [12,"Perthes Disease, OSD & Sever's Disease — Age, Location",8,7,"Perthes Disease, OSD & Sever's Disease — Age, Location & Management"],
-  [12,"Perthes Disease, OSD & Sever's Disease — Age, Location - Etiology & Risk Factors",8,5,"Perthes Disease, OSD & Sever's Disease — Age, Location"],
-  [12,"Perthes Disease, OSD & Sever's Disease — Age, Location - Pathophysiology",8,5,"Perthes Disease, OSD & Sever's Disease — Age, Location"],
-  [12,"Perthes Disease, OSD & Sever's Disease — Age, Location - Clinical Presentation & Signs",8,5,"Perthes Disease, OSD & Sever's Disease — Age, Location"],
-  [12,"Perthes Disease, OSD & Sever's Disease — Age, Location - Differential Diagnosis",8,5,"Perthes Disease, OSD & Sever's Disease — Age, Location"],
-  [12,"Perthes Disease, OSD & Sever's Disease — Age, Location - Investigations & Lab Findings",8,5,"Perthes Disease, OSD & Sever's Disease — Age, Location"],
-  [12,"Perthes Disease, OSD & Sever's Disease — Age, Location - Medical & Surgical Management",8,5,"Perthes Disease, OSD & Sever's Disease — Age, Location"],
-  [12,"Perthes Disease, OSD & Sever's Disease — Age, Location - Complications & Prognosis",8,5,"Perthes Disease, OSD & Sever's Disease — Age, Location"],
-  [12,"Perthes Disease, OSD & Sever's Disease — Management",8,8,"Perthes Disease, OSD & Sever's Disease — Age, Location & Management"],
-  [12,"Perthes Disease, OSD & Sever's Disease — Management - Etiology & Risk Factors",8,5,"Perthes Disease, OSD & Sever's Disease — Management"],
-  [12,"Perthes Disease, OSD & Sever's Disease — Management - Pathophysiology",8,5,"Perthes Disease, OSD & Sever's Disease — Management"],
-  [12,"Perthes Disease, OSD & Sever's Disease — Management - Clinical Presentation & Signs",8,5,"Perthes Disease, OSD & Sever's Disease — Management"],
-  [12,"Perthes Disease, OSD & Sever's Disease — Management - Differential Diagnosis",8,5,"Perthes Disease, OSD & Sever's Disease — Management"],
-  [12,"Perthes Disease, OSD & Sever's Disease — Management - Investigations & Lab Findings",8,5,"Perthes Disease, OSD & Sever's Disease — Management"],
-  [12,"Perthes Disease, OSD & Sever's Disease — Management - Medical & Surgical Management",8,5,"Perthes Disease, OSD & Sever's Disease — Management"],
-  [12,"Perthes Disease, OSD & Sever's Disease — Management - Complications & Prognosis",8,5,"Perthes Disease, OSD & Sever's Disease — Management"]
+  [12, "Traumatology", 10, 60],
+  [12, "Fracture Healing & Complications", 10, 40, "Traumatology"],
+  [
+    12,
+    "Fracture Healing — Stages, Direct vs Indirect & Factors Affecting",
+    10,
+    18,
+    "Fracture Healing & Complications"
+  ],
+  [
+    12,
+    "Fracture Healing — Stages, Direct vs Indirect",
+    10,
+    9,
+    "Fracture Healing — Stages, Direct vs Indirect & Factors Affecting"
+  ],
+  [
+    12,
+    "Fracture Healing — Stages, Direct vs Indirect - Etiology & Risk Factors",
+    10,
+    5,
+    "Fracture Healing — Stages, Direct vs Indirect"
+  ],
+  [
+    12,
+    "Fracture Healing — Stages, Direct vs Indirect - Pathophysiology",
+    10,
+    5,
+    "Fracture Healing — Stages, Direct vs Indirect"
+  ],
+  [
+    12,
+    "Fracture Healing — Stages, Direct vs Indirect - Clinical Presentation & Signs",
+    10,
+    5,
+    "Fracture Healing — Stages, Direct vs Indirect"
+  ],
+  [
+    12,
+    "Fracture Healing — Stages, Direct vs Indirect - Differential Diagnosis",
+    10,
+    5,
+    "Fracture Healing — Stages, Direct vs Indirect"
+  ],
+  [
+    12,
+    "Fracture Healing — Stages, Direct vs Indirect - Investigations & Lab Findings",
+    10,
+    5,
+    "Fracture Healing — Stages, Direct vs Indirect"
+  ],
+  [
+    12,
+    "Fracture Healing — Stages, Direct vs Indirect - Medical & Surgical Management",
+    10,
+    5,
+    "Fracture Healing — Stages, Direct vs Indirect"
+  ],
+  [
+    12,
+    "Fracture Healing — Stages, Direct vs Indirect - Complications & Prognosis",
+    10,
+    5,
+    "Fracture Healing — Stages, Direct vs Indirect"
+  ],
+  [
+    12,
+    "Fracture Healing — Factors Affecting",
+    10,
+    9,
+    "Fracture Healing — Stages, Direct vs Indirect & Factors Affecting"
+  ],
+  [
+    12,
+    "Fracture Healing — Factors Affecting - Etiology & Risk Factors",
+    10,
+    5,
+    "Fracture Healing — Factors Affecting"
+  ],
+  [
+    12,
+    "Fracture Healing — Factors Affecting - Pathophysiology",
+    10,
+    5,
+    "Fracture Healing — Factors Affecting"
+  ],
+  [
+    12,
+    "Fracture Healing — Factors Affecting - Clinical Presentation & Signs",
+    10,
+    5,
+    "Fracture Healing — Factors Affecting"
+  ],
+  [
+    12,
+    "Fracture Healing — Factors Affecting - Differential Diagnosis",
+    10,
+    5,
+    "Fracture Healing — Factors Affecting"
+  ],
+  [
+    12,
+    "Fracture Healing — Factors Affecting - Investigations & Lab Findings",
+    10,
+    5,
+    "Fracture Healing — Factors Affecting"
+  ],
+  [
+    12,
+    "Fracture Healing — Factors Affecting - Medical & Surgical Management",
+    10,
+    5,
+    "Fracture Healing — Factors Affecting"
+  ],
+  [
+    12,
+    "Fracture Healing — Factors Affecting - Complications & Prognosis",
+    10,
+    5,
+    "Fracture Healing — Factors Affecting"
+  ],
+  [
+    12,
+    "Fracture Complications — Compartment Syndrome, Fat Embolism & Non-union",
+    10,
+    18,
+    "Fracture Healing & Complications"
+  ],
+  [
+    12,
+    "Fracture Complications — Compartment Syndrome, Fat Embolism",
+    10,
+    9,
+    "Fracture Complications — Compartment Syndrome, Fat Embolism & Non-union"
+  ],
+  [
+    12,
+    "Fracture Complications — Compartment Syndrome, Fat Embolism - Etiology & Risk Factors",
+    10,
+    5,
+    "Fracture Complications — Compartment Syndrome, Fat Embolism"
+  ],
+  [
+    12,
+    "Fracture Complications — Compartment Syndrome, Fat Embolism - Pathophysiology",
+    10,
+    5,
+    "Fracture Complications — Compartment Syndrome, Fat Embolism"
+  ],
+  [
+    12,
+    "Fracture Complications — Compartment Syndrome, Fat Embolism - Clinical Presentation & Signs",
+    10,
+    5,
+    "Fracture Complications — Compartment Syndrome, Fat Embolism"
+  ],
+  [
+    12,
+    "Fracture Complications — Compartment Syndrome, Fat Embolism - Differential Diagnosis",
+    10,
+    5,
+    "Fracture Complications — Compartment Syndrome, Fat Embolism"
+  ],
+  [
+    12,
+    "Fracture Complications — Compartment Syndrome, Fat Embolism - Investigations & Lab Findings",
+    10,
+    5,
+    "Fracture Complications — Compartment Syndrome, Fat Embolism"
+  ],
+  [
+    12,
+    "Fracture Complications — Compartment Syndrome, Fat Embolism - Medical & Surgical Management",
+    10,
+    5,
+    "Fracture Complications — Compartment Syndrome, Fat Embolism"
+  ],
+  [
+    12,
+    "Fracture Complications — Compartment Syndrome, Fat Embolism - Complications & Prognosis",
+    10,
+    5,
+    "Fracture Complications — Compartment Syndrome, Fat Embolism"
+  ],
+  [
+    12,
+    "Fracture Complications — Non-union",
+    10,
+    9,
+    "Fracture Complications — Compartment Syndrome, Fat Embolism & Non-union"
+  ],
+  [
+    12,
+    "Fracture Complications — Non-union - Etiology & Risk Factors",
+    10,
+    5,
+    "Fracture Complications — Non-union"
+  ],
+  [
+    12,
+    "Fracture Complications — Non-union - Pathophysiology",
+    10,
+    5,
+    "Fracture Complications — Non-union"
+  ],
+  [
+    12,
+    "Fracture Complications — Non-union - Clinical Presentation & Signs",
+    10,
+    5,
+    "Fracture Complications — Non-union"
+  ],
+  [
+    12,
+    "Fracture Complications — Non-union - Differential Diagnosis",
+    10,
+    5,
+    "Fracture Complications — Non-union"
+  ],
+  [
+    12,
+    "Fracture Complications — Non-union - Investigations & Lab Findings",
+    10,
+    5,
+    "Fracture Complications — Non-union"
+  ],
+  [
+    12,
+    "Fracture Complications — Non-union - Medical & Surgical Management",
+    10,
+    5,
+    "Fracture Complications — Non-union"
+  ],
+  [
+    12,
+    "Fracture Complications — Non-union - Complications & Prognosis",
+    10,
+    5,
+    "Fracture Complications — Non-union"
+  ],
+  [12, "Upper Limb Fractures & Dislocations", 10, 50, "Traumatology"],
+  [
+    12,
+    "Clavicle, Scapula & Shoulder Dislocation — Anterior (Most Common) & Reduction",
+    10,
+    15,
+    "Upper Limb Fractures & Dislocations"
+  ],
+  [
+    12,
+    "Clavicle, Scapula & Shoulder Dislocation — Anterior (Most Common)",
+    10,
+    7,
+    "Clavicle, Scapula & Shoulder Dislocation — Anterior (Most Common) & Reduction"
+  ],
+  [
+    12,
+    "Clavicle, Scapula & Shoulder Dislocation — Anterior (Most Common) - Etiology & Risk Factors",
+    10,
+    5,
+    "Clavicle, Scapula & Shoulder Dislocation — Anterior (Most Common)"
+  ],
+  [
+    12,
+    "Clavicle, Scapula & Shoulder Dislocation — Anterior (Most Common) - Pathophysiology",
+    10,
+    5,
+    "Clavicle, Scapula & Shoulder Dislocation — Anterior (Most Common)"
+  ],
+  [
+    12,
+    "Clavicle, Scapula & Shoulder Dislocation — Anterior (Most Common) - Clinical Presentation & Signs",
+    10,
+    5,
+    "Clavicle, Scapula & Shoulder Dislocation — Anterior (Most Common)"
+  ],
+  [
+    12,
+    "Clavicle, Scapula & Shoulder Dislocation — Anterior (Most Common) - Differential Diagnosis",
+    10,
+    5,
+    "Clavicle, Scapula & Shoulder Dislocation — Anterior (Most Common)"
+  ],
+  [
+    12,
+    "Clavicle, Scapula & Shoulder Dislocation — Anterior (Most Common) - Investigations & Lab Findings",
+    10,
+    5,
+    "Clavicle, Scapula & Shoulder Dislocation — Anterior (Most Common)"
+  ],
+  [
+    12,
+    "Clavicle, Scapula & Shoulder Dislocation — Anterior (Most Common) - Medical & Surgical Management",
+    10,
+    5,
+    "Clavicle, Scapula & Shoulder Dislocation — Anterior (Most Common)"
+  ],
+  [
+    12,
+    "Clavicle, Scapula & Shoulder Dislocation — Anterior (Most Common) - Complications & Prognosis",
+    10,
+    5,
+    "Clavicle, Scapula & Shoulder Dislocation — Anterior (Most Common)"
+  ],
+  [
+    12,
+    "Clavicle, Scapula & Shoulder Dislocation — Reduction",
+    10,
+    8,
+    "Clavicle, Scapula & Shoulder Dislocation — Anterior (Most Common) & Reduction"
+  ],
+  [
+    12,
+    "Clavicle, Scapula & Shoulder Dislocation — Reduction - Etiology & Risk Factors",
+    10,
+    5,
+    "Clavicle, Scapula & Shoulder Dislocation — Reduction"
+  ],
+  [
+    12,
+    "Clavicle, Scapula & Shoulder Dislocation — Reduction - Pathophysiology",
+    10,
+    5,
+    "Clavicle, Scapula & Shoulder Dislocation — Reduction"
+  ],
+  [
+    12,
+    "Clavicle, Scapula & Shoulder Dislocation — Reduction - Clinical Presentation & Signs",
+    10,
+    5,
+    "Clavicle, Scapula & Shoulder Dislocation — Reduction"
+  ],
+  [
+    12,
+    "Clavicle, Scapula & Shoulder Dislocation — Reduction - Differential Diagnosis",
+    10,
+    5,
+    "Clavicle, Scapula & Shoulder Dislocation — Reduction"
+  ],
+  [
+    12,
+    "Clavicle, Scapula & Shoulder Dislocation — Reduction - Investigations & Lab Findings",
+    10,
+    5,
+    "Clavicle, Scapula & Shoulder Dislocation — Reduction"
+  ],
+  [
+    12,
+    "Clavicle, Scapula & Shoulder Dislocation — Reduction - Medical & Surgical Management",
+    10,
+    5,
+    "Clavicle, Scapula & Shoulder Dislocation — Reduction"
+  ],
+  [
+    12,
+    "Clavicle, Scapula & Shoulder Dislocation — Reduction - Complications & Prognosis",
+    10,
+    5,
+    "Clavicle, Scapula & Shoulder Dislocation — Reduction"
+  ],
+  [
+    12,
+    "Colles' vs Smith's vs Barton's Fracture — Features & Management",
+    10,
+    18,
+    "Upper Limb Fractures & Dislocations"
+  ],
+  [
+    12,
+    "Colles' vs Smith's vs Barton's Fracture — Features",
+    10,
+    9,
+    "Colles' vs Smith's vs Barton's Fracture — Features & Management"
+  ],
+  [
+    12,
+    "Colles' vs Smith's vs Barton's Fracture — Features - Etiology & Risk Factors",
+    10,
+    5,
+    "Colles' vs Smith's vs Barton's Fracture — Features"
+  ],
+  [
+    12,
+    "Colles' vs Smith's vs Barton's Fracture — Features - Pathophysiology",
+    10,
+    5,
+    "Colles' vs Smith's vs Barton's Fracture — Features"
+  ],
+  [
+    12,
+    "Colles' vs Smith's vs Barton's Fracture — Features - Clinical Presentation & Signs",
+    10,
+    5,
+    "Colles' vs Smith's vs Barton's Fracture — Features"
+  ],
+  [
+    12,
+    "Colles' vs Smith's vs Barton's Fracture — Features - Differential Diagnosis",
+    10,
+    5,
+    "Colles' vs Smith's vs Barton's Fracture — Features"
+  ],
+  [
+    12,
+    "Colles' vs Smith's vs Barton's Fracture — Features - Investigations & Lab Findings",
+    10,
+    5,
+    "Colles' vs Smith's vs Barton's Fracture — Features"
+  ],
+  [
+    12,
+    "Colles' vs Smith's vs Barton's Fracture — Features - Medical & Surgical Management",
+    10,
+    5,
+    "Colles' vs Smith's vs Barton's Fracture — Features"
+  ],
+  [
+    12,
+    "Colles' vs Smith's vs Barton's Fracture — Features - Complications & Prognosis",
+    10,
+    5,
+    "Colles' vs Smith's vs Barton's Fracture — Features"
+  ],
+  [
+    12,
+    "Colles' vs Smith's vs Barton's Fracture — Management",
+    10,
+    9,
+    "Colles' vs Smith's vs Barton's Fracture — Features & Management"
+  ],
+  [
+    12,
+    "Colles' vs Smith's vs Barton's Fracture — Management - Etiology & Risk Factors",
+    10,
+    5,
+    "Colles' vs Smith's vs Barton's Fracture — Management"
+  ],
+  [
+    12,
+    "Colles' vs Smith's vs Barton's Fracture — Management - Pathophysiology",
+    10,
+    5,
+    "Colles' vs Smith's vs Barton's Fracture — Management"
+  ],
+  [
+    12,
+    "Colles' vs Smith's vs Barton's Fracture — Management - Clinical Presentation & Signs",
+    10,
+    5,
+    "Colles' vs Smith's vs Barton's Fracture — Management"
+  ],
+  [
+    12,
+    "Colles' vs Smith's vs Barton's Fracture — Management - Differential Diagnosis",
+    10,
+    5,
+    "Colles' vs Smith's vs Barton's Fracture — Management"
+  ],
+  [
+    12,
+    "Colles' vs Smith's vs Barton's Fracture — Management - Investigations & Lab Findings",
+    10,
+    5,
+    "Colles' vs Smith's vs Barton's Fracture — Management"
+  ],
+  [
+    12,
+    "Colles' vs Smith's vs Barton's Fracture — Management - Medical & Surgical Management",
+    10,
+    5,
+    "Colles' vs Smith's vs Barton's Fracture — Management"
+  ],
+  [
+    12,
+    "Colles' vs Smith's vs Barton's Fracture — Management - Complications & Prognosis",
+    10,
+    5,
+    "Colles' vs Smith's vs Barton's Fracture — Management"
+  ],
+  [
+    12,
+    "Supracondylar Fracture of Humerus — Type II/III, Anterior Interosseous Nerve & Reduction",
+    10,
+    15,
+    "Upper Limb Fractures & Dislocations"
+  ],
+  [
+    12,
+    "Supracondylar Fracture of Humerus — Type II/III, Anterior Interosseous Nerve",
+    10,
+    7,
+    "Supracondylar Fracture of Humerus — Type II/III, Anterior Interosseous Nerve & Reduction"
+  ],
+  [
+    12,
+    "Supracondylar Fracture of Humerus — Type II/III, Anterior Interosseous Nerve - Etiology & Risk Factors",
+    10,
+    5,
+    "Supracondylar Fracture of Humerus — Type II/III, Anterior Interosseous Nerve"
+  ],
+  [
+    12,
+    "Supracondylar Fracture of Humerus — Type II/III, Anterior Interosseous Nerve - Pathophysiology",
+    10,
+    5,
+    "Supracondylar Fracture of Humerus — Type II/III, Anterior Interosseous Nerve"
+  ],
+  [
+    12,
+    "Supracondylar Fracture of Humerus — Type II/III, Anterior Interosseous Nerve - Clinical Presentation & Signs",
+    10,
+    5,
+    "Supracondylar Fracture of Humerus — Type II/III, Anterior Interosseous Nerve"
+  ],
+  [
+    12,
+    "Supracondylar Fracture of Humerus — Type II/III, Anterior Interosseous Nerve - Differential Diagnosis",
+    10,
+    5,
+    "Supracondylar Fracture of Humerus — Type II/III, Anterior Interosseous Nerve"
+  ],
+  [
+    12,
+    "Supracondylar Fracture of Humerus — Type II/III, Anterior Interosseous Nerve - Investigations & Lab Findings",
+    10,
+    5,
+    "Supracondylar Fracture of Humerus — Type II/III, Anterior Interosseous Nerve"
+  ],
+  [
+    12,
+    "Supracondylar Fracture of Humerus — Type II/III, Anterior Interosseous Nerve - Medical & Surgical Management",
+    10,
+    5,
+    "Supracondylar Fracture of Humerus — Type II/III, Anterior Interosseous Nerve"
+  ],
+  [
+    12,
+    "Supracondylar Fracture of Humerus — Type II/III, Anterior Interosseous Nerve - Complications & Prognosis",
+    10,
+    5,
+    "Supracondylar Fracture of Humerus — Type II/III, Anterior Interosseous Nerve"
+  ],
+  [
+    12,
+    "Supracondylar Fracture of Humerus — Reduction",
+    10,
+    8,
+    "Supracondylar Fracture of Humerus — Type II/III, Anterior Interosseous Nerve & Reduction"
+  ],
+  [
+    12,
+    "Supracondylar Fracture of Humerus — Reduction - Etiology & Risk Factors",
+    10,
+    5,
+    "Supracondylar Fracture of Humerus — Reduction"
+  ],
+  [
+    12,
+    "Supracondylar Fracture of Humerus — Reduction - Pathophysiology",
+    10,
+    5,
+    "Supracondylar Fracture of Humerus — Reduction"
+  ],
+  [
+    12,
+    "Supracondylar Fracture of Humerus — Reduction - Clinical Presentation & Signs",
+    10,
+    5,
+    "Supracondylar Fracture of Humerus — Reduction"
+  ],
+  [
+    12,
+    "Supracondylar Fracture of Humerus — Reduction - Differential Diagnosis",
+    10,
+    5,
+    "Supracondylar Fracture of Humerus — Reduction"
+  ],
+  [
+    12,
+    "Supracondylar Fracture of Humerus — Reduction - Investigations & Lab Findings",
+    10,
+    5,
+    "Supracondylar Fracture of Humerus — Reduction"
+  ],
+  [
+    12,
+    "Supracondylar Fracture of Humerus — Reduction - Medical & Surgical Management",
+    10,
+    5,
+    "Supracondylar Fracture of Humerus — Reduction"
+  ],
+  [
+    12,
+    "Supracondylar Fracture of Humerus — Reduction - Complications & Prognosis",
+    10,
+    5,
+    "Supracondylar Fracture of Humerus — Reduction"
+  ],
+  [12, "Lower Limb Fractures & Dislocations", 10, 50, "Traumatology"],
+  [
+    12,
+    "NOF Fracture — Garden's Classification, Blood Supply & Garden's Alignment",
+    10,
+    18,
+    "Lower Limb Fractures & Dislocations"
+  ],
+  [
+    12,
+    "NOF Fracture — Garden's Classification, Blood Supply",
+    10,
+    9,
+    "NOF Fracture — Garden's Classification, Blood Supply & Garden's Alignment"
+  ],
+  [
+    12,
+    "NOF Fracture — Garden's Classification, Blood Supply - Etiology & Risk Factors",
+    10,
+    5,
+    "NOF Fracture — Garden's Classification, Blood Supply"
+  ],
+  [
+    12,
+    "NOF Fracture — Garden's Classification, Blood Supply - Pathophysiology",
+    10,
+    5,
+    "NOF Fracture — Garden's Classification, Blood Supply"
+  ],
+  [
+    12,
+    "NOF Fracture — Garden's Classification, Blood Supply - Clinical Presentation & Signs",
+    10,
+    5,
+    "NOF Fracture — Garden's Classification, Blood Supply"
+  ],
+  [
+    12,
+    "NOF Fracture — Garden's Classification, Blood Supply - Differential Diagnosis",
+    10,
+    5,
+    "NOF Fracture — Garden's Classification, Blood Supply"
+  ],
+  [
+    12,
+    "NOF Fracture — Garden's Classification, Blood Supply - Investigations & Lab Findings",
+    10,
+    5,
+    "NOF Fracture — Garden's Classification, Blood Supply"
+  ],
+  [
+    12,
+    "NOF Fracture — Garden's Classification, Blood Supply - Medical & Surgical Management",
+    10,
+    5,
+    "NOF Fracture — Garden's Classification, Blood Supply"
+  ],
+  [
+    12,
+    "NOF Fracture — Garden's Classification, Blood Supply - Complications & Prognosis",
+    10,
+    5,
+    "NOF Fracture — Garden's Classification, Blood Supply"
+  ],
+  [
+    12,
+    "NOF Fracture — Garden's Alignment",
+    10,
+    9,
+    "NOF Fracture — Garden's Classification, Blood Supply & Garden's Alignment"
+  ],
+  [
+    12,
+    "NOF Fracture — Garden's Alignment - Etiology & Risk Factors",
+    10,
+    5,
+    "NOF Fracture — Garden's Alignment"
+  ],
+  [
+    12,
+    "NOF Fracture — Garden's Alignment - Pathophysiology",
+    10,
+    5,
+    "NOF Fracture — Garden's Alignment"
+  ],
+  [
+    12,
+    "NOF Fracture — Garden's Alignment - Clinical Presentation & Signs",
+    10,
+    5,
+    "NOF Fracture — Garden's Alignment"
+  ],
+  [
+    12,
+    "NOF Fracture — Garden's Alignment - Differential Diagnosis",
+    10,
+    5,
+    "NOF Fracture — Garden's Alignment"
+  ],
+  [
+    12,
+    "NOF Fracture — Garden's Alignment - Investigations & Lab Findings",
+    10,
+    5,
+    "NOF Fracture — Garden's Alignment"
+  ],
+  [
+    12,
+    "NOF Fracture — Garden's Alignment - Medical & Surgical Management",
+    10,
+    5,
+    "NOF Fracture — Garden's Alignment"
+  ],
+  [
+    12,
+    "NOF Fracture — Garden's Alignment - Complications & Prognosis",
+    10,
+    5,
+    "NOF Fracture — Garden's Alignment"
+  ],
+  [
+    12,
+    "Intertrochanteric vs NOF Fracture — DHS vs Hemiarthroplasty",
+    10,
+    15,
+    "Lower Limb Fractures & Dislocations"
+  ],
+  [
+    12,
+    "Intertrochanteric vs NOF Fracture — Basics",
+    10,
+    7,
+    "Intertrochanteric vs NOF Fracture — DHS vs Hemiarthroplasty"
+  ],
+  [
+    12,
+    "Intertrochanteric vs NOF Fracture — Basics - Etiology & Risk Factors",
+    10,
+    5,
+    "Intertrochanteric vs NOF Fracture — Basics"
+  ],
+  [
+    12,
+    "Intertrochanteric vs NOF Fracture — Basics - Pathophysiology",
+    10,
+    5,
+    "Intertrochanteric vs NOF Fracture — Basics"
+  ],
+  [
+    12,
+    "Intertrochanteric vs NOF Fracture — Basics - Clinical Presentation & Signs",
+    10,
+    5,
+    "Intertrochanteric vs NOF Fracture — Basics"
+  ],
+  [
+    12,
+    "Intertrochanteric vs NOF Fracture — Basics - Differential Diagnosis",
+    10,
+    5,
+    "Intertrochanteric vs NOF Fracture — Basics"
+  ],
+  [
+    12,
+    "Intertrochanteric vs NOF Fracture — Basics - Investigations & Lab Findings",
+    10,
+    5,
+    "Intertrochanteric vs NOF Fracture — Basics"
+  ],
+  [
+    12,
+    "Intertrochanteric vs NOF Fracture — Basics - Medical & Surgical Management",
+    10,
+    5,
+    "Intertrochanteric vs NOF Fracture — Basics"
+  ],
+  [
+    12,
+    "Intertrochanteric vs NOF Fracture — Basics - Complications & Prognosis",
+    10,
+    5,
+    "Intertrochanteric vs NOF Fracture — Basics"
+  ],
+  [
+    12,
+    "Intertrochanteric vs NOF Fracture — Details",
+    10,
+    8,
+    "Intertrochanteric vs NOF Fracture — DHS vs Hemiarthroplasty"
+  ],
+  [
+    12,
+    "Intertrochanteric vs NOF Fracture — Details - Etiology & Risk Factors",
+    10,
+    5,
+    "Intertrochanteric vs NOF Fracture — Details"
+  ],
+  [
+    12,
+    "Intertrochanteric vs NOF Fracture — Details - Pathophysiology",
+    10,
+    5,
+    "Intertrochanteric vs NOF Fracture — Details"
+  ],
+  [
+    12,
+    "Intertrochanteric vs NOF Fracture — Details - Clinical Presentation & Signs",
+    10,
+    5,
+    "Intertrochanteric vs NOF Fracture — Details"
+  ],
+  [
+    12,
+    "Intertrochanteric vs NOF Fracture — Details - Differential Diagnosis",
+    10,
+    5,
+    "Intertrochanteric vs NOF Fracture — Details"
+  ],
+  [
+    12,
+    "Intertrochanteric vs NOF Fracture — Details - Investigations & Lab Findings",
+    10,
+    5,
+    "Intertrochanteric vs NOF Fracture — Details"
+  ],
+  [
+    12,
+    "Intertrochanteric vs NOF Fracture — Details - Medical & Surgical Management",
+    10,
+    5,
+    "Intertrochanteric vs NOF Fracture — Details"
+  ],
+  [
+    12,
+    "Intertrochanteric vs NOF Fracture — Details - Complications & Prognosis",
+    10,
+    5,
+    "Intertrochanteric vs NOF Fracture — Details"
+  ],
+  [
+    12,
+    "Tibial Fractures & Patella — Compartment Syndrome & Management",
+    10,
+    15,
+    "Lower Limb Fractures & Dislocations"
+  ],
+  [
+    12,
+    "Tibial Fractures & Patella — Compartment Syndrome",
+    10,
+    7,
+    "Tibial Fractures & Patella — Compartment Syndrome & Management"
+  ],
+  [
+    12,
+    "Tibial Fractures & Patella — Compartment Syndrome - Etiology & Risk Factors",
+    10,
+    5,
+    "Tibial Fractures & Patella — Compartment Syndrome"
+  ],
+  [
+    12,
+    "Tibial Fractures & Patella — Compartment Syndrome - Pathophysiology",
+    10,
+    5,
+    "Tibial Fractures & Patella — Compartment Syndrome"
+  ],
+  [
+    12,
+    "Tibial Fractures & Patella — Compartment Syndrome - Clinical Presentation & Signs",
+    10,
+    5,
+    "Tibial Fractures & Patella — Compartment Syndrome"
+  ],
+  [
+    12,
+    "Tibial Fractures & Patella — Compartment Syndrome - Differential Diagnosis",
+    10,
+    5,
+    "Tibial Fractures & Patella — Compartment Syndrome"
+  ],
+  [
+    12,
+    "Tibial Fractures & Patella — Compartment Syndrome - Investigations & Lab Findings",
+    10,
+    5,
+    "Tibial Fractures & Patella — Compartment Syndrome"
+  ],
+  [
+    12,
+    "Tibial Fractures & Patella — Compartment Syndrome - Medical & Surgical Management",
+    10,
+    5,
+    "Tibial Fractures & Patella — Compartment Syndrome"
+  ],
+  [
+    12,
+    "Tibial Fractures & Patella — Compartment Syndrome - Complications & Prognosis",
+    10,
+    5,
+    "Tibial Fractures & Patella — Compartment Syndrome"
+  ],
+  [
+    12,
+    "Tibial Fractures & Patella — Management",
+    10,
+    8,
+    "Tibial Fractures & Patella — Compartment Syndrome & Management"
+  ],
+  [
+    12,
+    "Tibial Fractures & Patella — Management - Etiology & Risk Factors",
+    10,
+    5,
+    "Tibial Fractures & Patella — Management"
+  ],
+  [
+    12,
+    "Tibial Fractures & Patella — Management - Pathophysiology",
+    10,
+    5,
+    "Tibial Fractures & Patella — Management"
+  ],
+  [
+    12,
+    "Tibial Fractures & Patella — Management - Clinical Presentation & Signs",
+    10,
+    5,
+    "Tibial Fractures & Patella — Management"
+  ],
+  [
+    12,
+    "Tibial Fractures & Patella — Management - Differential Diagnosis",
+    10,
+    5,
+    "Tibial Fractures & Patella — Management"
+  ],
+  [
+    12,
+    "Tibial Fractures & Patella — Management - Investigations & Lab Findings",
+    10,
+    5,
+    "Tibial Fractures & Patella — Management"
+  ],
+  [
+    12,
+    "Tibial Fractures & Patella — Management - Medical & Surgical Management",
+    10,
+    5,
+    "Tibial Fractures & Patella — Management"
+  ],
+  [
+    12,
+    "Tibial Fractures & Patella — Management - Complications & Prognosis",
+    10,
+    5,
+    "Tibial Fractures & Patella — Management"
+  ],
+  [12, "Spine & Pelvis Trauma", 10, 45, "Traumatology"],
+  [
+    12,
+    "Spinal Injury — ASIA Grading, C-spine Immobilization & Methylprednisolone",
+    10,
+    18,
+    "Spine & Pelvis Trauma"
+  ],
+  [
+    12,
+    "Spinal Injury — ASIA Grading, C-spine Immobilization",
+    10,
+    9,
+    "Spinal Injury — ASIA Grading, C-spine Immobilization & Methylprednisolone"
+  ],
+  [
+    12,
+    "Spinal Injury — ASIA Grading, C-spine Immobilization - Etiology & Risk Factors",
+    10,
+    5,
+    "Spinal Injury — ASIA Grading, C-spine Immobilization"
+  ],
+  [
+    12,
+    "Spinal Injury — ASIA Grading, C-spine Immobilization - Pathophysiology",
+    10,
+    5,
+    "Spinal Injury — ASIA Grading, C-spine Immobilization"
+  ],
+  [
+    12,
+    "Spinal Injury — ASIA Grading, C-spine Immobilization - Clinical Presentation & Signs",
+    10,
+    5,
+    "Spinal Injury — ASIA Grading, C-spine Immobilization"
+  ],
+  [
+    12,
+    "Spinal Injury — ASIA Grading, C-spine Immobilization - Differential Diagnosis",
+    10,
+    5,
+    "Spinal Injury — ASIA Grading, C-spine Immobilization"
+  ],
+  [
+    12,
+    "Spinal Injury — ASIA Grading, C-spine Immobilization - Investigations & Lab Findings",
+    10,
+    5,
+    "Spinal Injury — ASIA Grading, C-spine Immobilization"
+  ],
+  [
+    12,
+    "Spinal Injury — ASIA Grading, C-spine Immobilization - Medical & Surgical Management",
+    10,
+    5,
+    "Spinal Injury — ASIA Grading, C-spine Immobilization"
+  ],
+  [
+    12,
+    "Spinal Injury — ASIA Grading, C-spine Immobilization - Complications & Prognosis",
+    10,
+    5,
+    "Spinal Injury — ASIA Grading, C-spine Immobilization"
+  ],
+  [
+    12,
+    "Spinal Injury — Methylprednisolone",
+    10,
+    9,
+    "Spinal Injury — ASIA Grading, C-spine Immobilization & Methylprednisolone"
+  ],
+  [
+    12,
+    "Spinal Injury — Methylprednisolone - Etiology & Risk Factors",
+    10,
+    5,
+    "Spinal Injury — Methylprednisolone"
+  ],
+  [
+    12,
+    "Spinal Injury — Methylprednisolone - Pathophysiology",
+    10,
+    5,
+    "Spinal Injury — Methylprednisolone"
+  ],
+  [
+    12,
+    "Spinal Injury — Methylprednisolone - Clinical Presentation & Signs",
+    10,
+    5,
+    "Spinal Injury — Methylprednisolone"
+  ],
+  [
+    12,
+    "Spinal Injury — Methylprednisolone - Differential Diagnosis",
+    10,
+    5,
+    "Spinal Injury — Methylprednisolone"
+  ],
+  [
+    12,
+    "Spinal Injury — Methylprednisolone - Investigations & Lab Findings",
+    10,
+    5,
+    "Spinal Injury — Methylprednisolone"
+  ],
+  [
+    12,
+    "Spinal Injury — Methylprednisolone - Medical & Surgical Management",
+    10,
+    5,
+    "Spinal Injury — Methylprednisolone"
+  ],
+  [
+    12,
+    "Spinal Injury — Methylprednisolone - Complications & Prognosis",
+    10,
+    5,
+    "Spinal Injury — Methylprednisolone"
+  ],
+  [
+    12,
+    "Pelvic Fractures — Open Book, Tile Classification & Hemorrhage Control",
+    10,
+    15,
+    "Spine & Pelvis Trauma"
+  ],
+  [
+    12,
+    "Pelvic Fractures — Open Book, Tile Classification",
+    10,
+    7,
+    "Pelvic Fractures — Open Book, Tile Classification & Hemorrhage Control"
+  ],
+  [
+    12,
+    "Pelvic Fractures — Open Book, Tile Classification - Etiology & Risk Factors",
+    10,
+    5,
+    "Pelvic Fractures — Open Book, Tile Classification"
+  ],
+  [
+    12,
+    "Pelvic Fractures — Open Book, Tile Classification - Pathophysiology",
+    10,
+    5,
+    "Pelvic Fractures — Open Book, Tile Classification"
+  ],
+  [
+    12,
+    "Pelvic Fractures — Open Book, Tile Classification - Clinical Presentation & Signs",
+    10,
+    5,
+    "Pelvic Fractures — Open Book, Tile Classification"
+  ],
+  [
+    12,
+    "Pelvic Fractures — Open Book, Tile Classification - Differential Diagnosis",
+    10,
+    5,
+    "Pelvic Fractures — Open Book, Tile Classification"
+  ],
+  [
+    12,
+    "Pelvic Fractures — Open Book, Tile Classification - Investigations & Lab Findings",
+    10,
+    5,
+    "Pelvic Fractures — Open Book, Tile Classification"
+  ],
+  [
+    12,
+    "Pelvic Fractures — Open Book, Tile Classification - Medical & Surgical Management",
+    10,
+    5,
+    "Pelvic Fractures — Open Book, Tile Classification"
+  ],
+  [
+    12,
+    "Pelvic Fractures — Open Book, Tile Classification - Complications & Prognosis",
+    10,
+    5,
+    "Pelvic Fractures — Open Book, Tile Classification"
+  ],
+  [
+    12,
+    "Pelvic Fractures — Hemorrhage Control",
+    10,
+    8,
+    "Pelvic Fractures — Open Book, Tile Classification & Hemorrhage Control"
+  ],
+  [
+    12,
+    "Pelvic Fractures — Hemorrhage Control - Etiology & Risk Factors",
+    10,
+    5,
+    "Pelvic Fractures — Hemorrhage Control"
+  ],
+  [
+    12,
+    "Pelvic Fractures — Hemorrhage Control - Pathophysiology",
+    10,
+    5,
+    "Pelvic Fractures — Hemorrhage Control"
+  ],
+  [
+    12,
+    "Pelvic Fractures — Hemorrhage Control - Clinical Presentation & Signs",
+    10,
+    5,
+    "Pelvic Fractures — Hemorrhage Control"
+  ],
+  [
+    12,
+    "Pelvic Fractures — Hemorrhage Control - Differential Diagnosis",
+    10,
+    5,
+    "Pelvic Fractures — Hemorrhage Control"
+  ],
+  [
+    12,
+    "Pelvic Fractures — Hemorrhage Control - Investigations & Lab Findings",
+    10,
+    5,
+    "Pelvic Fractures — Hemorrhage Control"
+  ],
+  [
+    12,
+    "Pelvic Fractures — Hemorrhage Control - Medical & Surgical Management",
+    10,
+    5,
+    "Pelvic Fractures — Hemorrhage Control"
+  ],
+  [
+    12,
+    "Pelvic Fractures — Hemorrhage Control - Complications & Prognosis",
+    10,
+    5,
+    "Pelvic Fractures — Hemorrhage Control"
+  ],
+  [12, "Peripheral Nerve Injuries", 9, 35, "Traumatology"],
+  [
+    12,
+    "Nerve Injury Classification — Neurapraxia, Axonotmesis & Neurotmesis (Seddon/Sunderland)",
+    9,
+    18,
+    "Peripheral Nerve Injuries"
+  ],
+  [
+    12,
+    "Nerve Injury Classification — Neurapraxia, Axonotmesis",
+    9,
+    9,
+    "Nerve Injury Classification — Neurapraxia, Axonotmesis & Neurotmesis (Seddon/Sunderland)"
+  ],
+  [
+    12,
+    "Nerve Injury Classification — Neurapraxia, Axonotmesis - Etiology & Risk Factors",
+    9,
+    5,
+    "Nerve Injury Classification — Neurapraxia, Axonotmesis"
+  ],
+  [
+    12,
+    "Nerve Injury Classification — Neurapraxia, Axonotmesis - Pathophysiology",
+    9,
+    5,
+    "Nerve Injury Classification — Neurapraxia, Axonotmesis"
+  ],
+  [
+    12,
+    "Nerve Injury Classification — Neurapraxia, Axonotmesis - Clinical Presentation & Signs",
+    9,
+    5,
+    "Nerve Injury Classification — Neurapraxia, Axonotmesis"
+  ],
+  [
+    12,
+    "Nerve Injury Classification — Neurapraxia, Axonotmesis - Differential Diagnosis",
+    9,
+    5,
+    "Nerve Injury Classification — Neurapraxia, Axonotmesis"
+  ],
+  [
+    12,
+    "Nerve Injury Classification — Neurapraxia, Axonotmesis - Investigations & Lab Findings",
+    9,
+    5,
+    "Nerve Injury Classification — Neurapraxia, Axonotmesis"
+  ],
+  [
+    12,
+    "Nerve Injury Classification — Neurapraxia, Axonotmesis - Medical & Surgical Management",
+    9,
+    5,
+    "Nerve Injury Classification — Neurapraxia, Axonotmesis"
+  ],
+  [
+    12,
+    "Nerve Injury Classification — Neurapraxia, Axonotmesis - Complications & Prognosis",
+    9,
+    5,
+    "Nerve Injury Classification — Neurapraxia, Axonotmesis"
+  ],
+  [
+    12,
+    "Nerve Injury Classification — Neurotmesis (Seddon/Sunderland)",
+    9,
+    9,
+    "Nerve Injury Classification — Neurapraxia, Axonotmesis & Neurotmesis (Seddon/Sunderland)"
+  ],
+  [
+    12,
+    "Nerve Injury Classification — Neurotmesis (Seddon/Sunderland) - Etiology & Risk Factors",
+    9,
+    5,
+    "Nerve Injury Classification — Neurotmesis (Seddon/Sunderland)"
+  ],
+  [
+    12,
+    "Nerve Injury Classification — Neurotmesis (Seddon/Sunderland) - Pathophysiology",
+    9,
+    5,
+    "Nerve Injury Classification — Neurotmesis (Seddon/Sunderland)"
+  ],
+  [
+    12,
+    "Nerve Injury Classification — Neurotmesis (Seddon/Sunderland) - Clinical Presentation & Signs",
+    9,
+    5,
+    "Nerve Injury Classification — Neurotmesis (Seddon/Sunderland)"
+  ],
+  [
+    12,
+    "Nerve Injury Classification — Neurotmesis (Seddon/Sunderland) - Differential Diagnosis",
+    9,
+    5,
+    "Nerve Injury Classification — Neurotmesis (Seddon/Sunderland)"
+  ],
+  [
+    12,
+    "Nerve Injury Classification — Neurotmesis (Seddon/Sunderland) - Investigations & Lab Findings",
+    9,
+    5,
+    "Nerve Injury Classification — Neurotmesis (Seddon/Sunderland)"
+  ],
+  [
+    12,
+    "Nerve Injury Classification — Neurotmesis (Seddon/Sunderland) - Medical & Surgical Management",
+    9,
+    5,
+    "Nerve Injury Classification — Neurotmesis (Seddon/Sunderland)"
+  ],
+  [
+    12,
+    "Nerve Injury Classification — Neurotmesis (Seddon/Sunderland) - Complications & Prognosis",
+    9,
+    5,
+    "Nerve Injury Classification — Neurotmesis (Seddon/Sunderland)"
+  ],
+  [
+    12,
+    "Common Nerve Injury Patterns — Saturday Night Palsy, Claw Hand & Foot Drop",
+    9,
+    15,
+    "Peripheral Nerve Injuries"
+  ],
+  [
+    12,
+    "Common Nerve Injury Patterns — Saturday Night Palsy, Claw Hand",
+    9,
+    7,
+    "Common Nerve Injury Patterns — Saturday Night Palsy, Claw Hand & Foot Drop"
+  ],
+  [
+    12,
+    "Common Nerve Injury Patterns — Saturday Night Palsy, Claw Hand - Etiology & Risk Factors",
+    9,
+    5,
+    "Common Nerve Injury Patterns — Saturday Night Palsy, Claw Hand"
+  ],
+  [
+    12,
+    "Common Nerve Injury Patterns — Saturday Night Palsy, Claw Hand - Pathophysiology",
+    9,
+    5,
+    "Common Nerve Injury Patterns — Saturday Night Palsy, Claw Hand"
+  ],
+  [
+    12,
+    "Common Nerve Injury Patterns — Saturday Night Palsy, Claw Hand - Clinical Presentation & Signs",
+    9,
+    5,
+    "Common Nerve Injury Patterns — Saturday Night Palsy, Claw Hand"
+  ],
+  [
+    12,
+    "Common Nerve Injury Patterns — Saturday Night Palsy, Claw Hand - Differential Diagnosis",
+    9,
+    5,
+    "Common Nerve Injury Patterns — Saturday Night Palsy, Claw Hand"
+  ],
+  [
+    12,
+    "Common Nerve Injury Patterns — Saturday Night Palsy, Claw Hand - Investigations & Lab Findings",
+    9,
+    5,
+    "Common Nerve Injury Patterns — Saturday Night Palsy, Claw Hand"
+  ],
+  [
+    12,
+    "Common Nerve Injury Patterns — Saturday Night Palsy, Claw Hand - Medical & Surgical Management",
+    9,
+    5,
+    "Common Nerve Injury Patterns — Saturday Night Palsy, Claw Hand"
+  ],
+  [
+    12,
+    "Common Nerve Injury Patterns — Saturday Night Palsy, Claw Hand - Complications & Prognosis",
+    9,
+    5,
+    "Common Nerve Injury Patterns — Saturday Night Palsy, Claw Hand"
+  ],
+  [
+    12,
+    "Common Nerve Injury Patterns — Foot Drop",
+    9,
+    8,
+    "Common Nerve Injury Patterns — Saturday Night Palsy, Claw Hand & Foot Drop"
+  ],
+  [
+    12,
+    "Common Nerve Injury Patterns — Foot Drop - Etiology & Risk Factors",
+    9,
+    5,
+    "Common Nerve Injury Patterns — Foot Drop"
+  ],
+  [
+    12,
+    "Common Nerve Injury Patterns — Foot Drop - Pathophysiology",
+    9,
+    5,
+    "Common Nerve Injury Patterns — Foot Drop"
+  ],
+  [
+    12,
+    "Common Nerve Injury Patterns — Foot Drop - Clinical Presentation & Signs",
+    9,
+    5,
+    "Common Nerve Injury Patterns — Foot Drop"
+  ],
+  [
+    12,
+    "Common Nerve Injury Patterns — Foot Drop - Differential Diagnosis",
+    9,
+    5,
+    "Common Nerve Injury Patterns — Foot Drop"
+  ],
+  [
+    12,
+    "Common Nerve Injury Patterns — Foot Drop - Investigations & Lab Findings",
+    9,
+    5,
+    "Common Nerve Injury Patterns — Foot Drop"
+  ],
+  [
+    12,
+    "Common Nerve Injury Patterns — Foot Drop - Medical & Surgical Management",
+    9,
+    5,
+    "Common Nerve Injury Patterns — Foot Drop"
+  ],
+  [
+    12,
+    "Common Nerve Injury Patterns — Foot Drop - Complications & Prognosis",
+    9,
+    5,
+    "Common Nerve Injury Patterns — Foot Drop"
+  ],
+  [12, "Orthopedic Diseases", 9, 60],
+  [12, "Bone Infections (Osteomyelitis, TB)", 10, 50, "Orthopedic Diseases"],
+  [
+    12,
+    "Acute Osteomyelitis — Haematogenous (Children), Bacteria & Management",
+    10,
+    18,
+    "Bone Infections (Osteomyelitis, TB)"
+  ],
+  [
+    12,
+    "Acute Osteomyelitis — Haematogenous (Children), Bacteria",
+    10,
+    9,
+    "Acute Osteomyelitis — Haematogenous (Children), Bacteria & Management"
+  ],
+  [
+    12,
+    "Acute Osteomyelitis — Haematogenous (Children), Bacteria - Etiology & Risk Factors",
+    10,
+    5,
+    "Acute Osteomyelitis — Haematogenous (Children), Bacteria"
+  ],
+  [
+    12,
+    "Acute Osteomyelitis — Haematogenous (Children), Bacteria - Pathophysiology",
+    10,
+    5,
+    "Acute Osteomyelitis — Haematogenous (Children), Bacteria"
+  ],
+  [
+    12,
+    "Acute Osteomyelitis — Haematogenous (Children), Bacteria - Clinical Presentation & Signs",
+    10,
+    5,
+    "Acute Osteomyelitis — Haematogenous (Children), Bacteria"
+  ],
+  [
+    12,
+    "Acute Osteomyelitis — Haematogenous (Children), Bacteria - Differential Diagnosis",
+    10,
+    5,
+    "Acute Osteomyelitis — Haematogenous (Children), Bacteria"
+  ],
+  [
+    12,
+    "Acute Osteomyelitis — Haematogenous (Children), Bacteria - Investigations & Lab Findings",
+    10,
+    5,
+    "Acute Osteomyelitis — Haematogenous (Children), Bacteria"
+  ],
+  [
+    12,
+    "Acute Osteomyelitis — Haematogenous (Children), Bacteria - Medical & Surgical Management",
+    10,
+    5,
+    "Acute Osteomyelitis — Haematogenous (Children), Bacteria"
+  ],
+  [
+    12,
+    "Acute Osteomyelitis — Haematogenous (Children), Bacteria - Complications & Prognosis",
+    10,
+    5,
+    "Acute Osteomyelitis — Haematogenous (Children), Bacteria"
+  ],
+  [
+    12,
+    "Acute Osteomyelitis — Management",
+    10,
+    9,
+    "Acute Osteomyelitis — Haematogenous (Children), Bacteria & Management"
+  ],
+  [
+    12,
+    "Acute Osteomyelitis — Management - Etiology & Risk Factors",
+    10,
+    5,
+    "Acute Osteomyelitis — Management"
+  ],
+  [
+    12,
+    "Acute Osteomyelitis — Management - Pathophysiology",
+    10,
+    5,
+    "Acute Osteomyelitis — Management"
+  ],
+  [
+    12,
+    "Acute Osteomyelitis — Management - Clinical Presentation & Signs",
+    10,
+    5,
+    "Acute Osteomyelitis — Management"
+  ],
+  [
+    12,
+    "Acute Osteomyelitis — Management - Differential Diagnosis",
+    10,
+    5,
+    "Acute Osteomyelitis — Management"
+  ],
+  [
+    12,
+    "Acute Osteomyelitis — Management - Investigations & Lab Findings",
+    10,
+    5,
+    "Acute Osteomyelitis — Management"
+  ],
+  [
+    12,
+    "Acute Osteomyelitis — Management - Medical & Surgical Management",
+    10,
+    5,
+    "Acute Osteomyelitis — Management"
+  ],
+  [
+    12,
+    "Acute Osteomyelitis — Management - Complications & Prognosis",
+    10,
+    5,
+    "Acute Osteomyelitis — Management"
+  ],
+  [
+    12,
+    "Chronic Osteomyelitis — Involucrum, Sequestrum, Cloaca & Sinus",
+    10,
+    15,
+    "Bone Infections (Osteomyelitis, TB)"
+  ],
+  [
+    12,
+    "Chronic Osteomyelitis — Involucrum, Sequestrum, Cloaca",
+    10,
+    7,
+    "Chronic Osteomyelitis — Involucrum, Sequestrum, Cloaca & Sinus"
+  ],
+  [
+    12,
+    "Chronic Osteomyelitis — Involucrum, Sequestrum, Cloaca - Etiology & Risk Factors",
+    10,
+    5,
+    "Chronic Osteomyelitis — Involucrum, Sequestrum, Cloaca"
+  ],
+  [
+    12,
+    "Chronic Osteomyelitis — Involucrum, Sequestrum, Cloaca - Pathophysiology",
+    10,
+    5,
+    "Chronic Osteomyelitis — Involucrum, Sequestrum, Cloaca"
+  ],
+  [
+    12,
+    "Chronic Osteomyelitis — Involucrum, Sequestrum, Cloaca - Clinical Presentation & Signs",
+    10,
+    5,
+    "Chronic Osteomyelitis — Involucrum, Sequestrum, Cloaca"
+  ],
+  [
+    12,
+    "Chronic Osteomyelitis — Involucrum, Sequestrum, Cloaca - Differential Diagnosis",
+    10,
+    5,
+    "Chronic Osteomyelitis — Involucrum, Sequestrum, Cloaca"
+  ],
+  [
+    12,
+    "Chronic Osteomyelitis — Involucrum, Sequestrum, Cloaca - Investigations & Lab Findings",
+    10,
+    5,
+    "Chronic Osteomyelitis — Involucrum, Sequestrum, Cloaca"
+  ],
+  [
+    12,
+    "Chronic Osteomyelitis — Involucrum, Sequestrum, Cloaca - Medical & Surgical Management",
+    10,
+    5,
+    "Chronic Osteomyelitis — Involucrum, Sequestrum, Cloaca"
+  ],
+  [
+    12,
+    "Chronic Osteomyelitis — Involucrum, Sequestrum, Cloaca - Complications & Prognosis",
+    10,
+    5,
+    "Chronic Osteomyelitis — Involucrum, Sequestrum, Cloaca"
+  ],
+  [
+    12,
+    "Chronic Osteomyelitis — Sinus",
+    10,
+    8,
+    "Chronic Osteomyelitis — Involucrum, Sequestrum, Cloaca & Sinus"
+  ],
+  [
+    12,
+    "Chronic Osteomyelitis — Sinus - Etiology & Risk Factors",
+    10,
+    5,
+    "Chronic Osteomyelitis — Sinus"
+  ],
+  [12, "Chronic Osteomyelitis — Sinus - Pathophysiology", 10, 5, "Chronic Osteomyelitis — Sinus"],
+  [
+    12,
+    "Chronic Osteomyelitis — Sinus - Clinical Presentation & Signs",
+    10,
+    5,
+    "Chronic Osteomyelitis — Sinus"
+  ],
+  [
+    12,
+    "Chronic Osteomyelitis — Sinus - Differential Diagnosis",
+    10,
+    5,
+    "Chronic Osteomyelitis — Sinus"
+  ],
+  [
+    12,
+    "Chronic Osteomyelitis — Sinus - Investigations & Lab Findings",
+    10,
+    5,
+    "Chronic Osteomyelitis — Sinus"
+  ],
+  [
+    12,
+    "Chronic Osteomyelitis — Sinus - Medical & Surgical Management",
+    10,
+    5,
+    "Chronic Osteomyelitis — Sinus"
+  ],
+  [
+    12,
+    "Chronic Osteomyelitis — Sinus - Complications & Prognosis",
+    10,
+    5,
+    "Chronic Osteomyelitis — Sinus"
+  ],
+  [
+    12,
+    "Skeletal TB — Pott's Spine: Gibbus, Cold Abscess & Paradoxical Worsening",
+    10,
+    15,
+    "Bone Infections (Osteomyelitis, TB)"
+  ],
+  [
+    12,
+    "Skeletal TB — Pott's Spine: Gibbus, Cold Abscess",
+    10,
+    7,
+    "Skeletal TB — Pott's Spine: Gibbus, Cold Abscess & Paradoxical Worsening"
+  ],
+  [
+    12,
+    "Skeletal TB — Pott's Spine: Gibbus, Cold Abscess - Etiology & Risk Factors",
+    10,
+    5,
+    "Skeletal TB — Pott's Spine: Gibbus, Cold Abscess"
+  ],
+  [
+    12,
+    "Skeletal TB — Pott's Spine: Gibbus, Cold Abscess - Pathophysiology",
+    10,
+    5,
+    "Skeletal TB — Pott's Spine: Gibbus, Cold Abscess"
+  ],
+  [
+    12,
+    "Skeletal TB — Pott's Spine: Gibbus, Cold Abscess - Clinical Presentation & Signs",
+    10,
+    5,
+    "Skeletal TB — Pott's Spine: Gibbus, Cold Abscess"
+  ],
+  [
+    12,
+    "Skeletal TB — Pott's Spine: Gibbus, Cold Abscess - Differential Diagnosis",
+    10,
+    5,
+    "Skeletal TB — Pott's Spine: Gibbus, Cold Abscess"
+  ],
+  [
+    12,
+    "Skeletal TB — Pott's Spine: Gibbus, Cold Abscess - Investigations & Lab Findings",
+    10,
+    5,
+    "Skeletal TB — Pott's Spine: Gibbus, Cold Abscess"
+  ],
+  [
+    12,
+    "Skeletal TB — Pott's Spine: Gibbus, Cold Abscess - Medical & Surgical Management",
+    10,
+    5,
+    "Skeletal TB — Pott's Spine: Gibbus, Cold Abscess"
+  ],
+  [
+    12,
+    "Skeletal TB — Pott's Spine: Gibbus, Cold Abscess - Complications & Prognosis",
+    10,
+    5,
+    "Skeletal TB — Pott's Spine: Gibbus, Cold Abscess"
+  ],
+  [
+    12,
+    "Skeletal TB — Paradoxical Worsening",
+    10,
+    8,
+    "Skeletal TB — Pott's Spine: Gibbus, Cold Abscess & Paradoxical Worsening"
+  ],
+  [
+    12,
+    "Skeletal TB — Paradoxical Worsening - Etiology & Risk Factors",
+    10,
+    5,
+    "Skeletal TB — Paradoxical Worsening"
+  ],
+  [
+    12,
+    "Skeletal TB — Paradoxical Worsening - Pathophysiology",
+    10,
+    5,
+    "Skeletal TB — Paradoxical Worsening"
+  ],
+  [
+    12,
+    "Skeletal TB — Paradoxical Worsening - Clinical Presentation & Signs",
+    10,
+    5,
+    "Skeletal TB — Paradoxical Worsening"
+  ],
+  [
+    12,
+    "Skeletal TB — Paradoxical Worsening - Differential Diagnosis",
+    10,
+    5,
+    "Skeletal TB — Paradoxical Worsening"
+  ],
+  [
+    12,
+    "Skeletal TB — Paradoxical Worsening - Investigations & Lab Findings",
+    10,
+    5,
+    "Skeletal TB — Paradoxical Worsening"
+  ],
+  [
+    12,
+    "Skeletal TB — Paradoxical Worsening - Medical & Surgical Management",
+    10,
+    5,
+    "Skeletal TB — Paradoxical Worsening"
+  ],
+  [
+    12,
+    "Skeletal TB — Paradoxical Worsening - Complications & Prognosis",
+    10,
+    5,
+    "Skeletal TB — Paradoxical Worsening"
+  ],
+  [12, "Bone Tumors", 10, 45, "Orthopedic Diseases"],
+  [
+    12,
+    "Benign Bone Tumors — Osteochondroma, Giant Cell, Enchondroma & Features",
+    10,
+    15,
+    "Bone Tumors"
+  ],
+  [
+    12,
+    "Benign Bone Tumors — Osteochondroma, Giant Cell, Enchondroma",
+    10,
+    7,
+    "Benign Bone Tumors — Osteochondroma, Giant Cell, Enchondroma & Features"
+  ],
+  [
+    12,
+    "Benign Bone Tumors — Osteochondroma, Giant Cell, Enchondroma - Etiology & Risk Factors",
+    10,
+    5,
+    "Benign Bone Tumors — Osteochondroma, Giant Cell, Enchondroma"
+  ],
+  [
+    12,
+    "Benign Bone Tumors — Osteochondroma, Giant Cell, Enchondroma - Pathophysiology",
+    10,
+    5,
+    "Benign Bone Tumors — Osteochondroma, Giant Cell, Enchondroma"
+  ],
+  [
+    12,
+    "Benign Bone Tumors — Osteochondroma, Giant Cell, Enchondroma - Clinical Presentation & Signs",
+    10,
+    5,
+    "Benign Bone Tumors — Osteochondroma, Giant Cell, Enchondroma"
+  ],
+  [
+    12,
+    "Benign Bone Tumors — Osteochondroma, Giant Cell, Enchondroma - Differential Diagnosis",
+    10,
+    5,
+    "Benign Bone Tumors — Osteochondroma, Giant Cell, Enchondroma"
+  ],
+  [
+    12,
+    "Benign Bone Tumors — Osteochondroma, Giant Cell, Enchondroma - Investigations & Lab Findings",
+    10,
+    5,
+    "Benign Bone Tumors — Osteochondroma, Giant Cell, Enchondroma"
+  ],
+  [
+    12,
+    "Benign Bone Tumors — Osteochondroma, Giant Cell, Enchondroma - Medical & Surgical Management",
+    10,
+    5,
+    "Benign Bone Tumors — Osteochondroma, Giant Cell, Enchondroma"
+  ],
+  [
+    12,
+    "Benign Bone Tumors — Osteochondroma, Giant Cell, Enchondroma - Complications & Prognosis",
+    10,
+    5,
+    "Benign Bone Tumors — Osteochondroma, Giant Cell, Enchondroma"
+  ],
+  [
+    12,
+    "Benign Bone Tumors — Features",
+    10,
+    8,
+    "Benign Bone Tumors — Osteochondroma, Giant Cell, Enchondroma & Features"
+  ],
+  [
+    12,
+    "Benign Bone Tumors — Features - Etiology & Risk Factors",
+    10,
+    5,
+    "Benign Bone Tumors — Features"
+  ],
+  [12, "Benign Bone Tumors — Features - Pathophysiology", 10, 5, "Benign Bone Tumors — Features"],
+  [
+    12,
+    "Benign Bone Tumors — Features - Clinical Presentation & Signs",
+    10,
+    5,
+    "Benign Bone Tumors — Features"
+  ],
+  [
+    12,
+    "Benign Bone Tumors — Features - Differential Diagnosis",
+    10,
+    5,
+    "Benign Bone Tumors — Features"
+  ],
+  [
+    12,
+    "Benign Bone Tumors — Features - Investigations & Lab Findings",
+    10,
+    5,
+    "Benign Bone Tumors — Features"
+  ],
+  [
+    12,
+    "Benign Bone Tumors — Features - Medical & Surgical Management",
+    10,
+    5,
+    "Benign Bone Tumors — Features"
+  ],
+  [
+    12,
+    "Benign Bone Tumors — Features - Complications & Prognosis",
+    10,
+    5,
+    "Benign Bone Tumors — Features"
+  ],
+  [
+    12,
+    "Malignant Bone Tumors — Osteosarcoma (Codman's Triangle), Ewing's (Onion Peel) & Mets",
+    10,
+    18,
+    "Bone Tumors"
+  ],
+  [
+    12,
+    "Malignant Bone Tumors — Osteosarcoma (Codman's Triangle), Ewing's (Onion Peel)",
+    10,
+    9,
+    "Malignant Bone Tumors — Osteosarcoma (Codman's Triangle), Ewing's (Onion Peel) & Mets"
+  ],
+  [
+    12,
+    "Malignant Bone Tumors — Osteosarcoma (Codman's Triangle), Ewing's (Onion Peel) - Etiology & Risk Factors",
+    10,
+    5,
+    "Malignant Bone Tumors — Osteosarcoma (Codman's Triangle), Ewing's (Onion Peel)"
+  ],
+  [
+    12,
+    "Malignant Bone Tumors — Osteosarcoma (Codman's Triangle), Ewing's (Onion Peel) - Pathophysiology",
+    10,
+    5,
+    "Malignant Bone Tumors — Osteosarcoma (Codman's Triangle), Ewing's (Onion Peel)"
+  ],
+  [
+    12,
+    "Malignant Bone Tumors — Osteosarcoma (Codman's Triangle), Ewing's (Onion Peel) - Clinical Presentation & Signs",
+    10,
+    5,
+    "Malignant Bone Tumors — Osteosarcoma (Codman's Triangle), Ewing's (Onion Peel)"
+  ],
+  [
+    12,
+    "Malignant Bone Tumors — Osteosarcoma (Codman's Triangle), Ewing's (Onion Peel) - Differential Diagnosis",
+    10,
+    5,
+    "Malignant Bone Tumors — Osteosarcoma (Codman's Triangle), Ewing's (Onion Peel)"
+  ],
+  [
+    12,
+    "Malignant Bone Tumors — Osteosarcoma (Codman's Triangle), Ewing's (Onion Peel) - Investigations & Lab Findings",
+    10,
+    5,
+    "Malignant Bone Tumors — Osteosarcoma (Codman's Triangle), Ewing's (Onion Peel)"
+  ],
+  [
+    12,
+    "Malignant Bone Tumors — Osteosarcoma (Codman's Triangle), Ewing's (Onion Peel) - Medical & Surgical Management",
+    10,
+    5,
+    "Malignant Bone Tumors — Osteosarcoma (Codman's Triangle), Ewing's (Onion Peel)"
+  ],
+  [
+    12,
+    "Malignant Bone Tumors — Osteosarcoma (Codman's Triangle), Ewing's (Onion Peel) - Complications & Prognosis",
+    10,
+    5,
+    "Malignant Bone Tumors — Osteosarcoma (Codman's Triangle), Ewing's (Onion Peel)"
+  ],
+  [
+    12,
+    "Malignant Bone Tumors — Mets",
+    10,
+    9,
+    "Malignant Bone Tumors — Osteosarcoma (Codman's Triangle), Ewing's (Onion Peel) & Mets"
+  ],
+  [
+    12,
+    "Malignant Bone Tumors — Mets - Etiology & Risk Factors",
+    10,
+    5,
+    "Malignant Bone Tumors — Mets"
+  ],
+  [12, "Malignant Bone Tumors — Mets - Pathophysiology", 10, 5, "Malignant Bone Tumors — Mets"],
+  [
+    12,
+    "Malignant Bone Tumors — Mets - Clinical Presentation & Signs",
+    10,
+    5,
+    "Malignant Bone Tumors — Mets"
+  ],
+  [
+    12,
+    "Malignant Bone Tumors — Mets - Differential Diagnosis",
+    10,
+    5,
+    "Malignant Bone Tumors — Mets"
+  ],
+  [
+    12,
+    "Malignant Bone Tumors — Mets - Investigations & Lab Findings",
+    10,
+    5,
+    "Malignant Bone Tumors — Mets"
+  ],
+  [
+    12,
+    "Malignant Bone Tumors — Mets - Medical & Surgical Management",
+    10,
+    5,
+    "Malignant Bone Tumors — Mets"
+  ],
+  [
+    12,
+    "Malignant Bone Tumors — Mets - Complications & Prognosis",
+    10,
+    5,
+    "Malignant Bone Tumors — Mets"
+  ],
+  [12, "Metabolic Bone Diseases (Rickets, Osteoporosis)", 9, 40, "Orthopedic Diseases"],
+  [
+    12,
+    "Rickets vs Osteomalacia — Vitamin D, X-ray Changes & Treatment",
+    9,
+    18,
+    "Metabolic Bone Diseases (Rickets, Osteoporosis)"
+  ],
+  [
+    12,
+    "Rickets vs Osteomalacia — Vitamin D, X-ray Changes",
+    9,
+    9,
+    "Rickets vs Osteomalacia — Vitamin D, X-ray Changes & Treatment"
+  ],
+  [
+    12,
+    "Rickets vs Osteomalacia — Vitamin D, X-ray Changes - Etiology & Risk Factors",
+    9,
+    5,
+    "Rickets vs Osteomalacia — Vitamin D, X-ray Changes"
+  ],
+  [
+    12,
+    "Rickets vs Osteomalacia — Vitamin D, X-ray Changes - Pathophysiology",
+    9,
+    5,
+    "Rickets vs Osteomalacia — Vitamin D, X-ray Changes"
+  ],
+  [
+    12,
+    "Rickets vs Osteomalacia — Vitamin D, X-ray Changes - Clinical Presentation & Signs",
+    9,
+    5,
+    "Rickets vs Osteomalacia — Vitamin D, X-ray Changes"
+  ],
+  [
+    12,
+    "Rickets vs Osteomalacia — Vitamin D, X-ray Changes - Differential Diagnosis",
+    9,
+    5,
+    "Rickets vs Osteomalacia — Vitamin D, X-ray Changes"
+  ],
+  [
+    12,
+    "Rickets vs Osteomalacia — Vitamin D, X-ray Changes - Investigations & Lab Findings",
+    9,
+    5,
+    "Rickets vs Osteomalacia — Vitamin D, X-ray Changes"
+  ],
+  [
+    12,
+    "Rickets vs Osteomalacia — Vitamin D, X-ray Changes - Medical & Surgical Management",
+    9,
+    5,
+    "Rickets vs Osteomalacia — Vitamin D, X-ray Changes"
+  ],
+  [
+    12,
+    "Rickets vs Osteomalacia — Vitamin D, X-ray Changes - Complications & Prognosis",
+    9,
+    5,
+    "Rickets vs Osteomalacia — Vitamin D, X-ray Changes"
+  ],
+  [
+    12,
+    "Rickets vs Osteomalacia — Treatment",
+    9,
+    9,
+    "Rickets vs Osteomalacia — Vitamin D, X-ray Changes & Treatment"
+  ],
+  [
+    12,
+    "Rickets vs Osteomalacia — Treatment - Etiology & Risk Factors",
+    9,
+    5,
+    "Rickets vs Osteomalacia — Treatment"
+  ],
+  [
+    12,
+    "Rickets vs Osteomalacia — Treatment - Pathophysiology",
+    9,
+    5,
+    "Rickets vs Osteomalacia — Treatment"
+  ],
+  [
+    12,
+    "Rickets vs Osteomalacia — Treatment - Clinical Presentation & Signs",
+    9,
+    5,
+    "Rickets vs Osteomalacia — Treatment"
+  ],
+  [
+    12,
+    "Rickets vs Osteomalacia — Treatment - Differential Diagnosis",
+    9,
+    5,
+    "Rickets vs Osteomalacia — Treatment"
+  ],
+  [
+    12,
+    "Rickets vs Osteomalacia — Treatment - Investigations & Lab Findings",
+    9,
+    5,
+    "Rickets vs Osteomalacia — Treatment"
+  ],
+  [
+    12,
+    "Rickets vs Osteomalacia — Treatment - Medical & Surgical Management",
+    9,
+    5,
+    "Rickets vs Osteomalacia — Treatment"
+  ],
+  [
+    12,
+    "Rickets vs Osteomalacia — Treatment - Complications & Prognosis",
+    9,
+    5,
+    "Rickets vs Osteomalacia — Treatment"
+  ],
+  [
+    12,
+    "Osteoporosis — T-score, DEXA, Bisphosphonates & FRAX Tool",
+    9,
+    18,
+    "Metabolic Bone Diseases (Rickets, Osteoporosis)"
+  ],
+  [
+    12,
+    "Osteoporosis — T-score, DEXA, Bisphosphonates",
+    9,
+    9,
+    "Osteoporosis — T-score, DEXA, Bisphosphonates & FRAX Tool"
+  ],
+  [
+    12,
+    "Osteoporosis — T-score, DEXA, Bisphosphonates - Etiology & Risk Factors",
+    9,
+    5,
+    "Osteoporosis — T-score, DEXA, Bisphosphonates"
+  ],
+  [
+    12,
+    "Osteoporosis — T-score, DEXA, Bisphosphonates - Pathophysiology",
+    9,
+    5,
+    "Osteoporosis — T-score, DEXA, Bisphosphonates"
+  ],
+  [
+    12,
+    "Osteoporosis — T-score, DEXA, Bisphosphonates - Clinical Presentation & Signs",
+    9,
+    5,
+    "Osteoporosis — T-score, DEXA, Bisphosphonates"
+  ],
+  [
+    12,
+    "Osteoporosis — T-score, DEXA, Bisphosphonates - Differential Diagnosis",
+    9,
+    5,
+    "Osteoporosis — T-score, DEXA, Bisphosphonates"
+  ],
+  [
+    12,
+    "Osteoporosis — T-score, DEXA, Bisphosphonates - Investigations & Lab Findings",
+    9,
+    5,
+    "Osteoporosis — T-score, DEXA, Bisphosphonates"
+  ],
+  [
+    12,
+    "Osteoporosis — T-score, DEXA, Bisphosphonates - Medical & Surgical Management",
+    9,
+    5,
+    "Osteoporosis — T-score, DEXA, Bisphosphonates"
+  ],
+  [
+    12,
+    "Osteoporosis — T-score, DEXA, Bisphosphonates - Complications & Prognosis",
+    9,
+    5,
+    "Osteoporosis — T-score, DEXA, Bisphosphonates"
+  ],
+  [
+    12,
+    "Osteoporosis — FRAX Tool",
+    9,
+    9,
+    "Osteoporosis — T-score, DEXA, Bisphosphonates & FRAX Tool"
+  ],
+  [12, "Osteoporosis — FRAX Tool - Etiology & Risk Factors", 9, 5, "Osteoporosis — FRAX Tool"],
+  [12, "Osteoporosis — FRAX Tool - Pathophysiology", 9, 5, "Osteoporosis — FRAX Tool"],
+  [
+    12,
+    "Osteoporosis — FRAX Tool - Clinical Presentation & Signs",
+    9,
+    5,
+    "Osteoporosis — FRAX Tool"
+  ],
+  [12, "Osteoporosis — FRAX Tool - Differential Diagnosis", 9, 5, "Osteoporosis — FRAX Tool"],
+  [
+    12,
+    "Osteoporosis — FRAX Tool - Investigations & Lab Findings",
+    9,
+    5,
+    "Osteoporosis — FRAX Tool"
+  ],
+  [
+    12,
+    "Osteoporosis — FRAX Tool - Medical & Surgical Management",
+    9,
+    5,
+    "Osteoporosis — FRAX Tool"
+  ],
+  [12, "Osteoporosis — FRAX Tool - Complications & Prognosis", 9, 5, "Osteoporosis — FRAX Tool"],
+  [12, "Arthritis (OA, RA, Gout)", 9, 40, "Orthopedic Diseases"],
+  [
+    12,
+    "Osteoarthritis — Pathology, Heberden's Nodes, X-ray Changes & THR/TKR",
+    9,
+    18,
+    "Arthritis (OA, RA, Gout)"
+  ],
+  [
+    12,
+    "Osteoarthritis — Pathology, Heberden's Nodes, X-ray Changes",
+    9,
+    9,
+    "Osteoarthritis — Pathology, Heberden's Nodes, X-ray Changes & THR/TKR"
+  ],
+  [
+    12,
+    "Osteoarthritis — Pathology, Heberden's Nodes, X-ray Changes - Etiology & Risk Factors",
+    9,
+    5,
+    "Osteoarthritis — Pathology, Heberden's Nodes, X-ray Changes"
+  ],
+  [
+    12,
+    "Osteoarthritis — Pathology, Heberden's Nodes, X-ray Changes - Pathophysiology",
+    9,
+    5,
+    "Osteoarthritis — Pathology, Heberden's Nodes, X-ray Changes"
+  ],
+  [
+    12,
+    "Osteoarthritis — Pathology, Heberden's Nodes, X-ray Changes - Clinical Presentation & Signs",
+    9,
+    5,
+    "Osteoarthritis — Pathology, Heberden's Nodes, X-ray Changes"
+  ],
+  [
+    12,
+    "Osteoarthritis — Pathology, Heberden's Nodes, X-ray Changes - Differential Diagnosis",
+    9,
+    5,
+    "Osteoarthritis — Pathology, Heberden's Nodes, X-ray Changes"
+  ],
+  [
+    12,
+    "Osteoarthritis — Pathology, Heberden's Nodes, X-ray Changes - Investigations & Lab Findings",
+    9,
+    5,
+    "Osteoarthritis — Pathology, Heberden's Nodes, X-ray Changes"
+  ],
+  [
+    12,
+    "Osteoarthritis — Pathology, Heberden's Nodes, X-ray Changes - Medical & Surgical Management",
+    9,
+    5,
+    "Osteoarthritis — Pathology, Heberden's Nodes, X-ray Changes"
+  ],
+  [
+    12,
+    "Osteoarthritis — Pathology, Heberden's Nodes, X-ray Changes - Complications & Prognosis",
+    9,
+    5,
+    "Osteoarthritis — Pathology, Heberden's Nodes, X-ray Changes"
+  ],
+  [
+    12,
+    "Osteoarthritis — THR/TKR",
+    9,
+    9,
+    "Osteoarthritis — Pathology, Heberden's Nodes, X-ray Changes & THR/TKR"
+  ],
+  [12, "Osteoarthritis — THR/TKR - Etiology & Risk Factors", 9, 5, "Osteoarthritis — THR/TKR"],
+  [12, "Osteoarthritis — THR/TKR - Pathophysiology", 9, 5, "Osteoarthritis — THR/TKR"],
+  [
+    12,
+    "Osteoarthritis — THR/TKR - Clinical Presentation & Signs",
+    9,
+    5,
+    "Osteoarthritis — THR/TKR"
+  ],
+  [12, "Osteoarthritis — THR/TKR - Differential Diagnosis", 9, 5, "Osteoarthritis — THR/TKR"],
+  [
+    12,
+    "Osteoarthritis — THR/TKR - Investigations & Lab Findings",
+    9,
+    5,
+    "Osteoarthritis — THR/TKR"
+  ],
+  [
+    12,
+    "Osteoarthritis — THR/TKR - Medical & Surgical Management",
+    9,
+    5,
+    "Osteoarthritis — THR/TKR"
+  ],
+  [12, "Osteoarthritis — THR/TKR - Complications & Prognosis", 9, 5, "Osteoarthritis — THR/TKR"],
+  [
+    12,
+    "Gout — Urate Crystals (CPPD vs MSU), Tophi, Allopurinol & Colchicine",
+    9,
+    18,
+    "Arthritis (OA, RA, Gout)"
+  ],
+  [
+    12,
+    "Gout — Urate Crystals (CPPD vs MSU), Tophi, Allopurinol",
+    9,
+    9,
+    "Gout — Urate Crystals (CPPD vs MSU), Tophi, Allopurinol & Colchicine"
+  ],
+  [
+    12,
+    "Gout — Urate Crystals (CPPD vs MSU), Tophi, Allopurinol - Etiology & Risk Factors",
+    9,
+    5,
+    "Gout — Urate Crystals (CPPD vs MSU), Tophi, Allopurinol"
+  ],
+  [
+    12,
+    "Gout — Urate Crystals (CPPD vs MSU), Tophi, Allopurinol - Pathophysiology",
+    9,
+    5,
+    "Gout — Urate Crystals (CPPD vs MSU), Tophi, Allopurinol"
+  ],
+  [
+    12,
+    "Gout — Urate Crystals (CPPD vs MSU), Tophi, Allopurinol - Clinical Presentation & Signs",
+    9,
+    5,
+    "Gout — Urate Crystals (CPPD vs MSU), Tophi, Allopurinol"
+  ],
+  [
+    12,
+    "Gout — Urate Crystals (CPPD vs MSU), Tophi, Allopurinol - Differential Diagnosis",
+    9,
+    5,
+    "Gout — Urate Crystals (CPPD vs MSU), Tophi, Allopurinol"
+  ],
+  [
+    12,
+    "Gout — Urate Crystals (CPPD vs MSU), Tophi, Allopurinol - Investigations & Lab Findings",
+    9,
+    5,
+    "Gout — Urate Crystals (CPPD vs MSU), Tophi, Allopurinol"
+  ],
+  [
+    12,
+    "Gout — Urate Crystals (CPPD vs MSU), Tophi, Allopurinol - Medical & Surgical Management",
+    9,
+    5,
+    "Gout — Urate Crystals (CPPD vs MSU), Tophi, Allopurinol"
+  ],
+  [
+    12,
+    "Gout — Urate Crystals (CPPD vs MSU), Tophi, Allopurinol - Complications & Prognosis",
+    9,
+    5,
+    "Gout — Urate Crystals (CPPD vs MSU), Tophi, Allopurinol"
+  ],
+  [
+    12,
+    "Gout — Colchicine",
+    9,
+    9,
+    "Gout — Urate Crystals (CPPD vs MSU), Tophi, Allopurinol & Colchicine"
+  ],
+  [12, "Gout — Colchicine - Etiology & Risk Factors", 9, 5, "Gout — Colchicine"],
+  [12, "Gout — Colchicine - Pathophysiology", 9, 5, "Gout — Colchicine"],
+  [12, "Gout — Colchicine - Clinical Presentation & Signs", 9, 5, "Gout — Colchicine"],
+  [12, "Gout — Colchicine - Differential Diagnosis", 9, 5, "Gout — Colchicine"],
+  [12, "Gout — Colchicine - Investigations & Lab Findings", 9, 5, "Gout — Colchicine"],
+  [12, "Gout — Colchicine - Medical & Surgical Management", 9, 5, "Gout — Colchicine"],
+  [12, "Gout — Colchicine - Complications & Prognosis", 9, 5, "Gout — Colchicine"],
+  [12, "Congenital Anomalies (CTEV, DDH)", 9, 35, "Orthopedic Diseases"],
+  [
+    12,
+    "CTEV (Club Foot) — CAVE Deformity, Ponseti Method & Pirani Score",
+    9,
+    18,
+    "Congenital Anomalies (CTEV, DDH)"
+  ],
+  [
+    12,
+    "CTEV (Club Foot) — CAVE Deformity, Ponseti Method",
+    9,
+    9,
+    "CTEV (Club Foot) — CAVE Deformity, Ponseti Method & Pirani Score"
+  ],
+  [
+    12,
+    "CTEV (Club Foot) — CAVE Deformity, Ponseti Method - Etiology & Risk Factors",
+    9,
+    5,
+    "CTEV (Club Foot) — CAVE Deformity, Ponseti Method"
+  ],
+  [
+    12,
+    "CTEV (Club Foot) — CAVE Deformity, Ponseti Method - Pathophysiology",
+    9,
+    5,
+    "CTEV (Club Foot) — CAVE Deformity, Ponseti Method"
+  ],
+  [
+    12,
+    "CTEV (Club Foot) — CAVE Deformity, Ponseti Method - Clinical Presentation & Signs",
+    9,
+    5,
+    "CTEV (Club Foot) — CAVE Deformity, Ponseti Method"
+  ],
+  [
+    12,
+    "CTEV (Club Foot) — CAVE Deformity, Ponseti Method - Differential Diagnosis",
+    9,
+    5,
+    "CTEV (Club Foot) — CAVE Deformity, Ponseti Method"
+  ],
+  [
+    12,
+    "CTEV (Club Foot) — CAVE Deformity, Ponseti Method - Investigations & Lab Findings",
+    9,
+    5,
+    "CTEV (Club Foot) — CAVE Deformity, Ponseti Method"
+  ],
+  [
+    12,
+    "CTEV (Club Foot) — CAVE Deformity, Ponseti Method - Medical & Surgical Management",
+    9,
+    5,
+    "CTEV (Club Foot) — CAVE Deformity, Ponseti Method"
+  ],
+  [
+    12,
+    "CTEV (Club Foot) — CAVE Deformity, Ponseti Method - Complications & Prognosis",
+    9,
+    5,
+    "CTEV (Club Foot) — CAVE Deformity, Ponseti Method"
+  ],
+  [
+    12,
+    "CTEV (Club Foot) — Pirani Score",
+    9,
+    9,
+    "CTEV (Club Foot) — CAVE Deformity, Ponseti Method & Pirani Score"
+  ],
+  [
+    12,
+    "CTEV (Club Foot) — Pirani Score - Etiology & Risk Factors",
+    9,
+    5,
+    "CTEV (Club Foot) — Pirani Score"
+  ],
+  [
+    12,
+    "CTEV (Club Foot) — Pirani Score - Pathophysiology",
+    9,
+    5,
+    "CTEV (Club Foot) — Pirani Score"
+  ],
+  [
+    12,
+    "CTEV (Club Foot) — Pirani Score - Clinical Presentation & Signs",
+    9,
+    5,
+    "CTEV (Club Foot) — Pirani Score"
+  ],
+  [
+    12,
+    "CTEV (Club Foot) — Pirani Score - Differential Diagnosis",
+    9,
+    5,
+    "CTEV (Club Foot) — Pirani Score"
+  ],
+  [
+    12,
+    "CTEV (Club Foot) — Pirani Score - Investigations & Lab Findings",
+    9,
+    5,
+    "CTEV (Club Foot) — Pirani Score"
+  ],
+  [
+    12,
+    "CTEV (Club Foot) — Pirani Score - Medical & Surgical Management",
+    9,
+    5,
+    "CTEV (Club Foot) — Pirani Score"
+  ],
+  [
+    12,
+    "CTEV (Club Foot) — Pirani Score - Complications & Prognosis",
+    9,
+    5,
+    "CTEV (Club Foot) — Pirani Score"
+  ],
+  [
+    12,
+    "DDH — Barlow's, Ortolani's Tests, Ultrasound & Pavlik Harness",
+    9,
+    15,
+    "Congenital Anomalies (CTEV, DDH)"
+  ],
+  [
+    12,
+    "DDH — Barlow's, Ortolani's Tests, Ultrasound",
+    9,
+    7,
+    "DDH — Barlow's, Ortolani's Tests, Ultrasound & Pavlik Harness"
+  ],
+  [
+    12,
+    "DDH — Barlow's, Ortolani's Tests, Ultrasound - Etiology & Risk Factors",
+    9,
+    5,
+    "DDH — Barlow's, Ortolani's Tests, Ultrasound"
+  ],
+  [
+    12,
+    "DDH — Barlow's, Ortolani's Tests, Ultrasound - Pathophysiology",
+    9,
+    5,
+    "DDH — Barlow's, Ortolani's Tests, Ultrasound"
+  ],
+  [
+    12,
+    "DDH — Barlow's, Ortolani's Tests, Ultrasound - Clinical Presentation & Signs",
+    9,
+    5,
+    "DDH — Barlow's, Ortolani's Tests, Ultrasound"
+  ],
+  [
+    12,
+    "DDH — Barlow's, Ortolani's Tests, Ultrasound - Differential Diagnosis",
+    9,
+    5,
+    "DDH — Barlow's, Ortolani's Tests, Ultrasound"
+  ],
+  [
+    12,
+    "DDH — Barlow's, Ortolani's Tests, Ultrasound - Investigations & Lab Findings",
+    9,
+    5,
+    "DDH — Barlow's, Ortolani's Tests, Ultrasound"
+  ],
+  [
+    12,
+    "DDH — Barlow's, Ortolani's Tests, Ultrasound - Medical & Surgical Management",
+    9,
+    5,
+    "DDH — Barlow's, Ortolani's Tests, Ultrasound"
+  ],
+  [
+    12,
+    "DDH — Barlow's, Ortolani's Tests, Ultrasound - Complications & Prognosis",
+    9,
+    5,
+    "DDH — Barlow's, Ortolani's Tests, Ultrasound"
+  ],
+  [
+    12,
+    "DDH — Pavlik Harness",
+    9,
+    8,
+    "DDH — Barlow's, Ortolani's Tests, Ultrasound & Pavlik Harness"
+  ],
+  [12, "DDH — Pavlik Harness - Etiology & Risk Factors", 9, 5, "DDH — Pavlik Harness"],
+  [12, "DDH — Pavlik Harness - Pathophysiology", 9, 5, "DDH — Pavlik Harness"],
+  [12, "DDH — Pavlik Harness - Clinical Presentation & Signs", 9, 5, "DDH — Pavlik Harness"],
+  [12, "DDH — Pavlik Harness - Differential Diagnosis", 9, 5, "DDH — Pavlik Harness"],
+  [12, "DDH — Pavlik Harness - Investigations & Lab Findings", 9, 5, "DDH — Pavlik Harness"],
+  [12, "DDH — Pavlik Harness - Medical & Surgical Management", 9, 5, "DDH — Pavlik Harness"],
+  [12, "DDH — Pavlik Harness - Complications & Prognosis", 9, 5, "DDH — Pavlik Harness"],
+  [12, "Avascular Necrosis & Osteochondritis", 8, 30, "Orthopedic Diseases"],
+  [
+    12,
+    "AVN of Femoral Head — Risk Factors, Ficat Staging & Core Decompression",
+    8,
+    15,
+    "Avascular Necrosis & Osteochondritis"
+  ],
+  [
+    12,
+    "AVN of Femoral Head — Risk Factors, Ficat Staging",
+    8,
+    7,
+    "AVN of Femoral Head — Risk Factors, Ficat Staging & Core Decompression"
+  ],
+  [
+    12,
+    "AVN of Femoral Head — Risk Factors, Ficat Staging - Etiology & Risk Factors",
+    8,
+    5,
+    "AVN of Femoral Head — Risk Factors, Ficat Staging"
+  ],
+  [
+    12,
+    "AVN of Femoral Head — Risk Factors, Ficat Staging - Pathophysiology",
+    8,
+    5,
+    "AVN of Femoral Head — Risk Factors, Ficat Staging"
+  ],
+  [
+    12,
+    "AVN of Femoral Head — Risk Factors, Ficat Staging - Clinical Presentation & Signs",
+    8,
+    5,
+    "AVN of Femoral Head — Risk Factors, Ficat Staging"
+  ],
+  [
+    12,
+    "AVN of Femoral Head — Risk Factors, Ficat Staging - Differential Diagnosis",
+    8,
+    5,
+    "AVN of Femoral Head — Risk Factors, Ficat Staging"
+  ],
+  [
+    12,
+    "AVN of Femoral Head — Risk Factors, Ficat Staging - Investigations & Lab Findings",
+    8,
+    5,
+    "AVN of Femoral Head — Risk Factors, Ficat Staging"
+  ],
+  [
+    12,
+    "AVN of Femoral Head — Risk Factors, Ficat Staging - Medical & Surgical Management",
+    8,
+    5,
+    "AVN of Femoral Head — Risk Factors, Ficat Staging"
+  ],
+  [
+    12,
+    "AVN of Femoral Head — Risk Factors, Ficat Staging - Complications & Prognosis",
+    8,
+    5,
+    "AVN of Femoral Head — Risk Factors, Ficat Staging"
+  ],
+  [
+    12,
+    "AVN of Femoral Head — Core Decompression",
+    8,
+    8,
+    "AVN of Femoral Head — Risk Factors, Ficat Staging & Core Decompression"
+  ],
+  [
+    12,
+    "AVN of Femoral Head — Core Decompression - Etiology & Risk Factors",
+    8,
+    5,
+    "AVN of Femoral Head — Core Decompression"
+  ],
+  [
+    12,
+    "AVN of Femoral Head — Core Decompression - Pathophysiology",
+    8,
+    5,
+    "AVN of Femoral Head — Core Decompression"
+  ],
+  [
+    12,
+    "AVN of Femoral Head — Core Decompression - Clinical Presentation & Signs",
+    8,
+    5,
+    "AVN of Femoral Head — Core Decompression"
+  ],
+  [
+    12,
+    "AVN of Femoral Head — Core Decompression - Differential Diagnosis",
+    8,
+    5,
+    "AVN of Femoral Head — Core Decompression"
+  ],
+  [
+    12,
+    "AVN of Femoral Head — Core Decompression - Investigations & Lab Findings",
+    8,
+    5,
+    "AVN of Femoral Head — Core Decompression"
+  ],
+  [
+    12,
+    "AVN of Femoral Head — Core Decompression - Medical & Surgical Management",
+    8,
+    5,
+    "AVN of Femoral Head — Core Decompression"
+  ],
+  [
+    12,
+    "AVN of Femoral Head — Core Decompression - Complications & Prognosis",
+    8,
+    5,
+    "AVN of Femoral Head — Core Decompression"
+  ],
+  [
+    12,
+    "Perthes Disease, OSD & Sever's Disease — Age, Location & Management",
+    8,
+    15,
+    "Avascular Necrosis & Osteochondritis"
+  ],
+  [
+    12,
+    "Perthes Disease, OSD & Sever's Disease — Age, Location",
+    8,
+    7,
+    "Perthes Disease, OSD & Sever's Disease — Age, Location & Management"
+  ],
+  [
+    12,
+    "Perthes Disease, OSD & Sever's Disease — Age, Location - Etiology & Risk Factors",
+    8,
+    5,
+    "Perthes Disease, OSD & Sever's Disease — Age, Location"
+  ],
+  [
+    12,
+    "Perthes Disease, OSD & Sever's Disease — Age, Location - Pathophysiology",
+    8,
+    5,
+    "Perthes Disease, OSD & Sever's Disease — Age, Location"
+  ],
+  [
+    12,
+    "Perthes Disease, OSD & Sever's Disease — Age, Location - Clinical Presentation & Signs",
+    8,
+    5,
+    "Perthes Disease, OSD & Sever's Disease — Age, Location"
+  ],
+  [
+    12,
+    "Perthes Disease, OSD & Sever's Disease — Age, Location - Differential Diagnosis",
+    8,
+    5,
+    "Perthes Disease, OSD & Sever's Disease — Age, Location"
+  ],
+  [
+    12,
+    "Perthes Disease, OSD & Sever's Disease — Age, Location - Investigations & Lab Findings",
+    8,
+    5,
+    "Perthes Disease, OSD & Sever's Disease — Age, Location"
+  ],
+  [
+    12,
+    "Perthes Disease, OSD & Sever's Disease — Age, Location - Medical & Surgical Management",
+    8,
+    5,
+    "Perthes Disease, OSD & Sever's Disease — Age, Location"
+  ],
+  [
+    12,
+    "Perthes Disease, OSD & Sever's Disease — Age, Location - Complications & Prognosis",
+    8,
+    5,
+    "Perthes Disease, OSD & Sever's Disease — Age, Location"
+  ],
+  [
+    12,
+    "Perthes Disease, OSD & Sever's Disease — Management",
+    8,
+    8,
+    "Perthes Disease, OSD & Sever's Disease — Age, Location & Management"
+  ],
+  [
+    12,
+    "Perthes Disease, OSD & Sever's Disease — Management - Etiology & Risk Factors",
+    8,
+    5,
+    "Perthes Disease, OSD & Sever's Disease — Management"
+  ],
+  [
+    12,
+    "Perthes Disease, OSD & Sever's Disease — Management - Pathophysiology",
+    8,
+    5,
+    "Perthes Disease, OSD & Sever's Disease — Management"
+  ],
+  [
+    12,
+    "Perthes Disease, OSD & Sever's Disease — Management - Clinical Presentation & Signs",
+    8,
+    5,
+    "Perthes Disease, OSD & Sever's Disease — Management"
+  ],
+  [
+    12,
+    "Perthes Disease, OSD & Sever's Disease — Management - Differential Diagnosis",
+    8,
+    5,
+    "Perthes Disease, OSD & Sever's Disease — Management"
+  ],
+  [
+    12,
+    "Perthes Disease, OSD & Sever's Disease — Management - Investigations & Lab Findings",
+    8,
+    5,
+    "Perthes Disease, OSD & Sever's Disease — Management"
+  ],
+  [
+    12,
+    "Perthes Disease, OSD & Sever's Disease — Management - Medical & Surgical Management",
+    8,
+    5,
+    "Perthes Disease, OSD & Sever's Disease — Management"
+  ],
+  [
+    12,
+    "Perthes Disease, OSD & Sever's Disease — Management - Complications & Prognosis",
+    8,
+    5,
+    "Perthes Disease, OSD & Sever's Disease — Management"
+  ]
 ]

@@ -4,28 +4,29 @@
 
 `create_deerflow_agent` 通过 `RuntimeFeatures` 组装的完整 middleware 链（默认全开时）：
 
-| # | Middleware | `before_agent` | `before_model` | `after_model` | `after_agent` | `wrap_tool_call` | 主 Agent | Subagent | 来源 |
-|---|-----------|:-:|:-:|:-:|:-:|:-:|:-:|:-:|------|
-| 0 | ThreadDataMiddleware | ✓ | | | | | ✓ | ✓ | `sandbox` |
-| 1 | UploadsMiddleware | ✓ | | | | | ✓ | ✗ | `sandbox` |
-| 2 | SandboxMiddleware | ✓ | | | ✓ | | ✓ | ✓ | `sandbox` |
-| 3 | DanglingToolCallMiddleware | | | ✓ | | | ✓ | ✗ | 始终开启 |
-| 4 | GuardrailMiddleware | | | | | ✓ | ✓ | ✓ | *Phase 2 纳入* |
-| 5 | ToolErrorHandlingMiddleware | | | | | ✓ | ✓ | ✓ | 始终开启 |
-| 6 | SummarizationMiddleware | | | ✓ | | | ✓ | ✗ | `summarization` |
-| 7 | TodoMiddleware | | | ✓ | | | ✓ | ✗ | `plan_mode` 参数 |
-| 8 | TitleMiddleware | | | ✓ | | | ✓ | ✗ | `auto_title` |
-| 9 | MemoryMiddleware | | | | ✓ | | ✓ | ✗ | `memory` |
-| 10 | ViewImageMiddleware | | ✓ | | | | ✓ | ✗ | `vision` |
-| 11 | SubagentLimitMiddleware | | | ✓ | | | ✓ | ✗ | `subagent` |
-| 12 | LoopDetectionMiddleware | | | ✓ | | | ✓ | ✗ | 始终开启 |
-| 13 | ClarificationMiddleware | | | ✓ | | | ✓ | ✗ | 始终最后 |
+| #   | Middleware                  | `before_agent` | `before_model` | `after_model` | `after_agent` | `wrap_tool_call` | 主 Agent | Subagent | 来源             |
+| --- | --------------------------- | :------------: | :------------: | :-----------: | :-----------: | :--------------: | :------: | :------: | ---------------- |
+| 0   | ThreadDataMiddleware        |       ✓        |                |               |               |                  |    ✓     |    ✓     | `sandbox`        |
+| 1   | UploadsMiddleware           |       ✓        |                |               |               |                  |    ✓     |    ✗     | `sandbox`        |
+| 2   | SandboxMiddleware           |       ✓        |                |               |       ✓       |                  |    ✓     |    ✓     | `sandbox`        |
+| 3   | DanglingToolCallMiddleware  |                |                |       ✓       |               |                  |    ✓     |    ✗     | 始终开启         |
+| 4   | GuardrailMiddleware         |                |                |               |               |        ✓         |    ✓     |    ✓     | _Phase 2 纳入_   |
+| 5   | ToolErrorHandlingMiddleware |                |                |               |               |        ✓         |    ✓     |    ✓     | 始终开启         |
+| 6   | SummarizationMiddleware     |                |                |       ✓       |               |                  |    ✓     |    ✗     | `summarization`  |
+| 7   | TodoMiddleware              |                |                |       ✓       |               |                  |    ✓     |    ✗     | `plan_mode` 参数 |
+| 8   | TitleMiddleware             |                |                |       ✓       |               |                  |    ✓     |    ✗     | `auto_title`     |
+| 9   | MemoryMiddleware            |                |                |               |       ✓       |                  |    ✓     |    ✗     | `memory`         |
+| 10  | ViewImageMiddleware         |                |       ✓        |               |               |                  |    ✓     |    ✗     | `vision`         |
+| 11  | SubagentLimitMiddleware     |                |                |       ✓       |               |                  |    ✓     |    ✗     | `subagent`       |
+| 12  | LoopDetectionMiddleware     |                |                |       ✓       |               |                  |    ✓     |    ✗     | 始终开启         |
+| 13  | ClarificationMiddleware     |                |                |       ✓       |               |                  |    ✓     |    ✗     | 始终最后         |
 
 主 agent **14 个** middleware（`make_lead_agent`），subagent **4 个**（ThreadData、Sandbox、Guardrail、ToolErrorHandling）。`create_deerflow_agent` Phase 1 实现 **13 个**（Guardrail 仅支持自定义实例，无内置默认）。
 
 ## 执行流程
 
 LangChain `create_agent` 的规则：
+
 - **`before_*` 正序执行**（列表位置 0 → N）
 - **`after_*` 反序执行**（列表位置 N → 0）
 
@@ -269,12 +270,12 @@ sequenceDiagram
 
 ### 结论
 
-| | 真正的洋葱 | DeerFlow 实际 |
-|---|---|---|
-| 每个 middleware | before + after 对称 | 大多只用一个钩子 |
-| 激活条 | 嵌套（外长内短） | 不嵌套（串行） |
-| 反序的意义 | 清理与初始化配对 | 仅影响 after_model 的执行优先级 |
-| 典型例子 | Auth: 校验 token / 清理上下文 | ThreadData: 只创建目录，没有清理 |
+|                 | 真正的洋葱                    | DeerFlow 实际                    |
+| --------------- | ----------------------------- | -------------------------------- |
+| 每个 middleware | before + after 对称           | 大多只用一个钩子                 |
+| 激活条          | 嵌套（外长内短）              | 不嵌套（串行）                   |
+| 反序的意义      | 清理与初始化配对              | 仅影响 after_model 的执行优先级  |
+| 典型例子        | Auth: 校验 token / 清理上下文 | ThreadData: 只创建目录，没有清理 |
 
 ## 关键设计点
 

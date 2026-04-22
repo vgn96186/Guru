@@ -17,18 +17,18 @@ limitations under the License.
 -->
 
 <script>
-  window["ai_edge_gallery_get_result"] = async (data, secret) => {
-    const apiKey = secret || "YOUR_API_KEY_HERE";
+  window['ai_edge_gallery_get_result'] = async (data, secret) => {
+    const apiKey = secret || 'YOUR_API_KEY_HERE';
     try {
-      const response = await fetch("https://soundtracks.loudly.com/api/ai/genres", {
-        headers: { "API-KEY": apiKey, Accept: "application/json" },
+      const response = await fetch('https://soundtracks.loudly.com/api/ai/genres', {
+        headers: { 'API-KEY': apiKey, Accept: 'application/json' },
       });
       const genres = await response.json();
       const mappedGenres = genres.map((g) => ({ name: g.name, description: g.description }));
       // Feed the list directly back to the LLM
       return JSON.stringify({ available_genres: mappedGenres });
     } catch (e) {
-      return JSON.stringify({ error: "Could not fetch genres." });
+      return JSON.stringify({ error: 'Could not fetch genres.' });
     }
   };
 </script>

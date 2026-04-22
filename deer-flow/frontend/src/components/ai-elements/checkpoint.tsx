@@ -21,7 +21,7 @@ export const Checkpoint = ({
   <div
     className={cn(
       "text-muted-foreground flex items-center gap-0.5 overflow-hidden",
-      className,
+      className
     )}
     {...props}
   >

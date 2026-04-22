@@ -121,7 +121,9 @@ function resolvePrimaryAdbDevice(adbCmd) {
     const found = ready.find((row) => row.serial === requested);
     if (!found) {
       return {
-        error: `Requested device "${requested}" not in adb devices. Available: ${ready.map((x) => x.serial).join(', ')}`,
+        error: `Requested device "${requested}" not in adb devices. Available: ${ready
+          .map((x) => x.serial)
+          .join(', ')}`,
         ready,
       };
     }

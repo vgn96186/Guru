@@ -21,16 +21,16 @@ This skill generates professional PowerPoint presentations by creating AI-genera
 
 Choose one of the following styles when creating the presentation plan:
 
-| Style | Description | Best For |
-|-------|-------------|----------|
-| **glassmorphism** | Frosted glass panels with blur effects, floating translucent cards, vibrant gradient backgrounds, depth through layering | Tech products, AI/SaaS demos, futuristic pitches |
-| **dark-premium** | Rich black backgrounds (#0a0a0a), luminous accent colors, subtle glow effects, luxury brand aesthetic | Premium products, executive presentations, high-end brands |
-| **gradient-modern** | Bold mesh gradients, fluid color transitions, contemporary typography, vibrant yet sophisticated | Startups, creative agencies, brand launches |
-| **neo-brutalist** | Raw bold typography, high contrast, intentional "ugly" aesthetic, anti-design as design, Memphis-inspired | Edgy brands, Gen-Z targeting, disruptive startups |
-| **3d-isometric** | Clean isometric illustrations, floating 3D elements, soft shadows, tech-forward aesthetic | Tech explainers, product features, SaaS presentations |
-| **editorial** | Magazine-quality layouts, sophisticated typography hierarchy, dramatic photography, Vogue/Bloomberg aesthetic | Annual reports, luxury brands, thought leadership |
-| **minimal-swiss** | Grid-based precision, Helvetica-inspired typography, bold use of negative space, timeless modernism | Architecture, design firms, premium consulting |
-| **keynote** | Apple-inspired aesthetic with bold typography, dramatic imagery, high contrast, cinematic feel | Keynotes, product reveals, inspirational talks |
+| Style               | Description                                                                                                              | Best For                                                   |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------- |
+| **glassmorphism**   | Frosted glass panels with blur effects, floating translucent cards, vibrant gradient backgrounds, depth through layering | Tech products, AI/SaaS demos, futuristic pitches           |
+| **dark-premium**    | Rich black backgrounds (#0a0a0a), luminous accent colors, subtle glow effects, luxury brand aesthetic                    | Premium products, executive presentations, high-end brands |
+| **gradient-modern** | Bold mesh gradients, fluid color transitions, contemporary typography, vibrant yet sophisticated                         | Startups, creative agencies, brand launches                |
+| **neo-brutalist**   | Raw bold typography, high contrast, intentional "ugly" aesthetic, anti-design as design, Memphis-inspired                | Edgy brands, Gen-Z targeting, disruptive startups          |
+| **3d-isometric**    | Clean isometric illustrations, floating 3D elements, soft shadows, tech-forward aesthetic                                | Tech explainers, product features, SaaS presentations      |
+| **editorial**       | Magazine-quality layouts, sophisticated typography hierarchy, dramatic photography, Vogue/Bloomberg aesthetic            | Annual reports, luxury brands, thought leadership          |
+| **minimal-swiss**   | Grid-based precision, Helvetica-inspired typography, bold use of negative space, timeless modernism                      | Architecture, design firms, premium consulting             |
+| **keynote**         | Apple-inspired aesthetic with bold typography, dramatic imagery, high contrast, cinematic feel                           | Keynotes, product reveals, inspirational talks             |
 
 ## Workflow
 
@@ -169,6 +169,7 @@ User request: "Create a presentation about AI product launch"
 ### Step 1: Create presentation plan
 
 Create `/mnt/user-data/workspace/ai-product-plan.json`:
+
 ```json
 {
   "title": "Introducing Nova AI",
@@ -194,7 +195,11 @@ Create `/mnt/user-data/workspace/ai-product-plan.json`:
       "slide_number": 2,
       "type": "content",
       "title": "Why Nova?",
-      "key_points": ["10x faster processing", "Human-like understanding", "Enterprise-grade security"],
+      "key_points": [
+        "10x faster processing",
+        "Human-like understanding",
+        "Enterprise-grade security"
+      ],
       "visual_description": "Same purple-cyan gradient background. Left side: floating frosted glass card with title 'Why Nova?' in bold white, three key points below with subtle glass pill badges. Right side: abstract 3D visualization of neural network as interconnected glass nodes with soft glow. Floating translucent geometric shapes (icosahedrons, tori) adding depth. Consistent glassmorphism aesthetic with previous slide."
     },
     {
@@ -231,6 +236,7 @@ Read `/mnt/skills/public/image-generation/SKILL.md` to understand how to generat
 **Slide 1 - Title (establishes the visual language):**
 
 Create `/mnt/user-data/workspace/nova-slide-01.json`:
+
 ```json
 {
   "prompt": "Ultra-premium presentation title slide with glassmorphism design. Background: smooth flowing gradient from deep purple (#667eea) through magenta (#f093fb) to cyan (#00d4ff), soft and vibrant. Center: large frosted glass panel with strong backdrop blur effect, rounded corners 32px, containing bold white sans-serif title 'Introducing Nova AI' (72pt, SF Pro Display style, font-weight 700) with subtle text shadow, subtitle 'Intelligence, Reimagined' below in lighter weight. The glass panel has subtle white border (1px rgba 255,255,255,0.25) and soft purple-tinted drop shadow. Floating around the card: 3D glass spheres with refraction, translucent geometric shapes (icosahedrons, abstract blobs), creating depth and dimension. Soft luminous glow emanating from behind the glass panel. Small floating particles of light. Apple Vision Pro / visionOS UI aesthetic. Professional presentation slide, 16:9 aspect ratio. Hyper-modern, premium tech product launch feel.",
@@ -252,6 +258,7 @@ python /mnt/skills/public/image-generation/scripts/generate.py \
 **Slide 2 - Content (MUST reference slide 1 for consistency):**
 
 Create `/mnt/user-data/workspace/nova-slide-02.json`:
+
 ```json
 {
   "prompt": "Presentation slide continuing EXACT visual style from reference image. SAME purple-to-cyan gradient background, SAME glassmorphism aesthetic, SAME typography style. Left side: frosted glass card with backdrop blur containing title 'Why Nova?' in bold white (matching reference font style), three feature points as subtle glass pill badges below. Right side: abstract 3D neural network visualization made of interconnected glass nodes with soft cyan glow, floating in space. Floating translucent geometric shapes (matching style from reference) adding depth. The frosted glass has identical treatment: white border, purple-tinted shadow, same blur intensity. CRITICAL: This slide must look like it belongs in the exact same presentation as the reference image - same colors, same glass treatment, same overall aesthetic.",
@@ -273,6 +280,7 @@ python /mnt/skills/public/image-generation/scripts/generate.py \
 **Slides 3-5: Continue the same pattern, each referencing the previous slide**
 
 Key consistency rules for subsequent slides:
+
 - Always include "continuing EXACT visual style from reference image" in prompt
 - Specify "SAME gradient background", "SAME glass treatment", "SAME typography"
 - Include `consistency_note` emphasizing style matching
@@ -290,6 +298,7 @@ python /mnt/skills/public/ppt-generation/scripts/generate.py \
 ## Style-Specific Guidelines
 
 ### Glassmorphism Style (推荐 - 最现代前卫)
+
 ```json
 {
   "style": "glassmorphism",
@@ -305,6 +314,7 @@ python /mnt/skills/public/ppt-generation/scripts/generate.py \
 ```
 
 ### Dark Premium Style
+
 ```json
 {
   "style": "dark-premium",
@@ -320,6 +330,7 @@ python /mnt/skills/public/ppt-generation/scripts/generate.py \
 ```
 
 ### Gradient Modern Style
+
 ```json
 {
   "style": "gradient-modern",
@@ -335,6 +346,7 @@ python /mnt/skills/public/ppt-generation/scripts/generate.py \
 ```
 
 ### Neo-Brutalist Style
+
 ```json
 {
   "style": "neo-brutalist",
@@ -350,6 +362,7 @@ python /mnt/skills/public/ppt-generation/scripts/generate.py \
 ```
 
 ### 3D Isometric Style
+
 ```json
 {
   "style": "3d-isometric",
@@ -365,6 +378,7 @@ python /mnt/skills/public/ppt-generation/scripts/generate.py \
 ```
 
 ### Editorial Style
+
 ```json
 {
   "style": "editorial",
@@ -380,6 +394,7 @@ python /mnt/skills/public/ppt-generation/scripts/generate.py \
 ```
 
 ### Minimal Swiss Style
+
 ```json
 {
   "style": "minimal-swiss",
@@ -394,7 +409,8 @@ python /mnt/skills/public/ppt-generation/scripts/generate.py \
 }
 ```
 
-### Keynote Style (Apple风格)
+### Keynote Style (Apple 风格)
+
 ```json
 {
   "style": "keynote",
@@ -424,6 +440,7 @@ After generation:
 ### Critical Quality Guidelines
 
 **Prompt Engineering for Professional Results:**
+
 - Always use English for image prompts regardless of user's language
 - Be EXTREMELY specific about visual details - vague prompts produce generic results
 - Include exact hex color codes (e.g., #667eea not "purple")
@@ -432,6 +449,7 @@ After generation:
 - Reference real design systems: "visionOS aesthetic", "Stripe website style", "Bloomberg Businessweek layout"
 
 **Visual Consistency (Most Important):**
+
 - **Generate slides sequentially** - each slide MUST reference the previous one
 - The first slide is critical - it establishes the visual language for the entire presentation
 - In every subsequent slide prompt, explicitly state: "continuing EXACT visual style from reference image"
@@ -440,6 +458,7 @@ After generation:
 - If a slide looks inconsistent, regenerate it with STRONGER reference emphasis
 
 **Design Principles for Modern Aesthetics:**
+
 - Embrace negative space - 40-60% empty space creates premium feel
 - Limit elements per slide - one focal point, one message
 - Use depth through layering (shadows, transparency, z-depth)
@@ -447,6 +466,7 @@ After generation:
 - Color restraint: one primary palette, 1-2 accent colors maximum
 
 **Common Mistakes to Avoid:**
+
 - ❌ Generic prompts like "professional slide" - be specific
 - ❌ Too many elements/text per slide - cluttered = unprofessional
 - ❌ Inconsistent colors between slides - always reference previous slide
@@ -455,6 +475,7 @@ After generation:
 - ❌ Generating slides in parallel - slides MUST be generated one at a time in order (slide 1 → 2 → 3 ...), never concurrently
 
 **Recommended Styles for Different Contexts:**
+
 - Tech product launch → `glassmorphism` or `gradient-modern`
 - Luxury/premium brand → `dark-premium` or `editorial`
 - Startup pitch → `gradient-modern` or `minimal-swiss`

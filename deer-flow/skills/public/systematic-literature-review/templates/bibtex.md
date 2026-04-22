@@ -101,10 +101,11 @@ This review surveyed <N> arXiv papers retrieved on <YYYY-MM-DD> using the query 
 **Research question**: <1 sentence>
 **Methodology**: <1-2 sentences>
 **Key findings**:
+
 - <bullet>
 - <bullet>
 - <bullet>
-**Limitations**: <1-2 sentences>
+  **Limitations**: <1-2 sentences>
 
 ### \cite{devlin2018bert} — "BERT: Pre-training of Deep Bidirectional Transformers" (2018)
 
@@ -116,30 +117,30 @@ Save the entries below to a `.bib` file and reference them from your LaTeX docum
 
 \`\`\`bibtex
 @misc{vaswani2017attention,
-  author        = {Vaswani, Ashish and Shazeer, Noam and Parmar, Niki and Uszkoreit, Jakob and Jones, Llion and Gomez, Aidan N. and Kaiser, {\L}ukasz and Polosukhin, Illia},
-  title         = {Attention Is All You Need},
-  year          = {2017},
-  eprint        = {1706.03762},
-  archivePrefix = {arXiv},
-  primaryClass  = {cs.CL},
-  url           = {https://arxiv.org/abs/1706.03762}
+author = {Vaswani, Ashish and Shazeer, Noam and Parmar, Niki and Uszkoreit, Jakob and Jones, Llion and Gomez, Aidan N. and Kaiser, {\L}ukasz and Polosukhin, Illia},
+title = {Attention Is All You Need},
+year = {2017},
+eprint = {1706.03762},
+archivePrefix = {arXiv},
+primaryClass = {cs.CL},
+url = {https://arxiv.org/abs/1706.03762}
 }
 
 @misc{devlin2018bert,
-  author        = {Devlin, Jacob and Chang, Ming-Wei and Lee, Kenton and Toutanova, Kristina},
-  title         = {{BERT}: Pre-training of Deep Bidirectional Transformers for Language Understanding},
-  year          = {2018},
-  eprint        = {1810.04805},
-  archivePrefix = {arXiv},
-  primaryClass  = {cs.CL},
-  url           = {https://arxiv.org/abs/1810.04805}
+author = {Devlin, Jacob and Chang, Ming-Wei and Lee, Kenton and Toutanova, Kristina},
+title = {{BERT}: Pre-training of Deep Bidirectional Transformers for Language Understanding},
+year = {2018},
+eprint = {1810.04805},
+archivePrefix = {arXiv},
+primaryClass = {cs.CL},
+url = {https://arxiv.org/abs/1810.04805}
 }
 
 ... more entries, one per paper ...
 \`\`\`
 ```
 
-(Note: in the actual saved report, use a real fenced code block `` ```bibtex `` — the backticks above are escaped only because this template file itself is inside a markdown code block when rendered.)
+(Note: in the actual saved report, use a real fenced code block ` ```bibtex ` — the backticks above are escaped only because this template file itself is inside a markdown code block when rendered.)
 
 ## Quality checks before finalizing
 
@@ -148,9 +149,9 @@ Before saving the report, verify:
 - [ ] Every entry is `@misc`, not `@article` (this workflow only has arXiv metadata).
 - [ ] Cite keys are unique within the report.
 - [ ] Cite keys follow the `<firstauthorlast><year><firstword>` pattern, all lowercase.
-- [ ] `author` field uses ` and ` (the literal word) between authors, not commas.
+- [ ] `author` field uses `and` (the literal word) between authors, not commas.
 - [ ] LaTeX special characters in author names are escaped or brace-wrapped.
 - [ ] `eprint` is the bare arXiv id (no `arXiv:` prefix, no version suffix).
 - [ ] `primaryClass` is set from the paper's first category.
 - [ ] Every `\cite{key}` in the text has a matching `@misc` entry in the bibliography.
-- [ ] The bibliography is emitted inside a fenced ```` ```bibtex ```` code block so users can copy-paste directly into a `.bib` file.
+- [ ] The bibliography is emitted inside a fenced ` ```bibtex ` code block so users can copy-paste directly into a `.bib` file.

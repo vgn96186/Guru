@@ -2,12 +2,12 @@
 
 ## Project Files
 
-| File | What | When to update |
-|------|------|----------------|
-| `CLAUDE.md` | Project rules | When workflow/rules change |
-| `QA_CHECKLIST.md` | E2E test cases + debug changelog | Every code change |
-| `BACKLOG.md` | Features, bugs, ideas with priority | When new items come in or items get done |
-| `CLAUDE.local.md` | Current session state | Every session |
+| File              | What                                | When to update                           |
+| ----------------- | ----------------------------------- | ---------------------------------------- |
+| `CLAUDE.md`       | Project rules                       | When workflow/rules change               |
+| `QA_CHECKLIST.md` | E2E test cases + debug changelog    | Every code change                        |
+| `BACKLOG.md`      | Features, bugs, ideas with priority | When new items come in or items get done |
+| `CLAUDE.local.md` | Current session state               | Every session                            |
 
 When Nicole mentions a feature idea, bug, or "之後要做" item → write it into `BACKLOG.md` immediately. Don't rely on session memory.
 
@@ -35,12 +35,14 @@ Every code change MUST include E2E QA. No exceptions. This is the highest-priori
 - "The app asks me to enable something, I do it, and come back" — not "startActivity(ACTION_ACCESSIBILITY_SETTINGS)"
 
 Cover what real users actually do:
+
 - Tap the wrong thing, tap twice, tap while something is loading
 - Leave the app mid-task, get a phone call, rotate the screen
 - Have bad internet, no permissions, wrong settings
 - Use the app for the first time with zero setup vs returning user with everything configured
 
 Each test has a unique ID (e.g., K7, B3, J4)
+
 - Format: `- [ ] **ID. Short name**: step1 → expected1 → step2 → expected2`
 - Tests that need a second device or manual interaction: mark clearly so QA tester knows
 - Tests that can be automated via ADB: write the full adb command sequence
@@ -66,6 +68,7 @@ Each test has a unique ID (e.g., K7, B3, J4)
 If you spot an architecture problem while working on a feature — **stop the feature and flag it**. Do not build on top of a broken foundation.
 
 Examples of architecture problems:
+
 - God class doing too many things (e.g., ComposeChatActivity handling chat + task + model loading + permissions)
 - Duplicate code paths that should be unified (e.g., two ways to start a monitor)
 - Missing abstraction layer (e.g., task agent and chat UI both directly managing LiteRT-LM sessions)
@@ -73,6 +76,7 @@ Examples of architecture problems:
 - State managed in multiple places with no single source of truth
 
 When you see this:
+
 1. Stop the current feature work
 2. Tell Nicole: "I found an architecture issue — [description]. I want to refactor [X] before continuing. OK?"
 3. Wait for approval

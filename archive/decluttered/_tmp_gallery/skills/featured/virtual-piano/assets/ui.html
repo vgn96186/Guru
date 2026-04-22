@@ -16,7 +16,7 @@ limitations under the License.
 ==============================================================================
 -->
 
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
@@ -54,9 +54,7 @@ limitations under the License.
         background: #222;
         padding: 10px 10px 0 10px;
         border-radius: 12px;
-        box-shadow:
-          0 10px 30px rgba(0, 0, 0, 0.8),
-          inset 0 2px 5px rgba(255, 255, 255, 0.1);
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8), inset 0 2px 5px rgba(255, 255, 255, 0.1);
       }
 
       #key-container {
@@ -161,30 +159,30 @@ limitations under the License.
     </div>
 
     <script>
-      const keyContainer = document.getElementById("key-container");
+      const keyContainer = document.getElementById('key-container');
       let noteNumber = 1;
-      const noteNamesArray = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
+      const noteNamesArray = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
 
       // 1. GENERATE THE KEYS (No more biased Z-Index loop!)
       while (noteNumber <= 88) {
-        const group = document.createElement("div");
-        group.className = "key-group";
+        const group = document.createElement('div');
+        group.className = 'key-group';
 
         const cOffset = (noteNumber + 8) % 12;
         const noteName = noteNamesArray[cOffset];
         const octave = Math.floor((noteNumber + 8) / 12);
 
-        const whiteKey = document.createElement("div");
-        whiteKey.className = "key white";
-        whiteKey.setAttribute("data-note", noteNumber);
+        const whiteKey = document.createElement('div');
+        whiteKey.className = 'key white';
+        whiteKey.setAttribute('data-note', noteNumber);
         whiteKey.innerText = noteName + octave;
         group.appendChild(whiteKey);
 
         if (cOffset !== 4 && cOffset !== 11 && noteNumber !== 88) {
           noteNumber++;
-          const blackKey = document.createElement("div");
-          blackKey.className = "key black";
-          blackKey.setAttribute("data-note", noteNumber);
+          const blackKey = document.createElement('div');
+          blackKey.className = 'key black';
+          blackKey.setAttribute('data-note', noteNumber);
           group.appendChild(blackKey);
         }
 
@@ -199,20 +197,20 @@ limitations under the License.
         audioNotes[i] = new Audio(audioUrl);
       }
 
-      const keys = document.querySelectorAll(".key");
+      const keys = document.querySelectorAll('.key');
 
       keys.forEach((key) => {
-        key.addEventListener("pointerdown", function (event) {
+        key.addEventListener('pointerdown', function (event) {
           event.stopPropagation();
 
-          const note = this.getAttribute("data-note");
+          const note = this.getAttribute('data-note');
           const audio = audioNotes[note];
 
           if (audio) {
             audio.currentTime = 0;
-            audio.play().catch((e) => console.warn("Waiting for audio:", e));
+            audio.play().catch((e) => console.warn('Waiting for audio:', e));
 
-            this.classList.add("active");
+            this.classList.add('active');
 
             setTimeout(() => {
               audio.pause();
@@ -221,14 +219,14 @@ limitations under the License.
           }
         });
 
-        key.addEventListener("pointerup", function () {
-          this.classList.remove("active");
+        key.addEventListener('pointerup', function () {
+          this.classList.remove('active');
         });
-        key.addEventListener("pointerleave", function () {
-          this.classList.remove("active");
+        key.addEventListener('pointerleave', function () {
+          this.classList.remove('active');
         });
-        key.addEventListener("pointercancel", function () {
-          this.classList.remove("active");
+        key.addEventListener('pointercancel', function () {
+          this.classList.remove('active');
         });
       });
 
@@ -236,7 +234,7 @@ limitations under the License.
       setTimeout(() => {
         const middleC = document.querySelector('.key.white[data-note="40"]');
         if (middleC) {
-          middleC.scrollIntoView({ behavior: "auto", inline: "center", block: "nearest" });
+          middleC.scrollIntoView({ behavior: 'auto', inline: 'center', block: 'nearest' });
         }
       }, 50);
     </script>

@@ -1,494 +1,2846 @@
 [
-  [14,"Ear",10,60],
-  [14,"Diseases of External Ear",8,30,"Ear"],
-  [14,"Otitis Externa — Diffuse vs Malignant (Pseudomonas) & Furunculosis",8,15,"Diseases of External Ear"],
-  [14,"Otitis Externa — Diffuse vs Malignant (Pseudomonas)",8,7,"Otitis Externa — Diffuse vs Malignant (Pseudomonas) & Furunculosis"],
-  [14,"Otitis Externa — Diffuse vs Malignant (Pseudomonas) - Etiology & Risk Factors",8,5,"Otitis Externa — Diffuse vs Malignant (Pseudomonas)"],
-  [14,"Otitis Externa — Diffuse vs Malignant (Pseudomonas) - Pathophysiology",8,5,"Otitis Externa — Diffuse vs Malignant (Pseudomonas)"],
-  [14,"Otitis Externa — Diffuse vs Malignant (Pseudomonas) - Clinical Presentation & Signs",8,5,"Otitis Externa — Diffuse vs Malignant (Pseudomonas)"],
-  [14,"Otitis Externa — Diffuse vs Malignant (Pseudomonas) - Differential Diagnosis",8,5,"Otitis Externa — Diffuse vs Malignant (Pseudomonas)"],
-  [14,"Otitis Externa — Diffuse vs Malignant (Pseudomonas) - Investigations & Lab Findings",8,5,"Otitis Externa — Diffuse vs Malignant (Pseudomonas)"],
-  [14,"Otitis Externa — Diffuse vs Malignant (Pseudomonas) - Medical & Surgical Management",8,5,"Otitis Externa — Diffuse vs Malignant (Pseudomonas)"],
-  [14,"Otitis Externa — Diffuse vs Malignant (Pseudomonas) - Complications & Prognosis",8,5,"Otitis Externa — Diffuse vs Malignant (Pseudomonas)"],
-  [14,"Otitis Externa — Furunculosis",8,8,"Otitis Externa — Diffuse vs Malignant (Pseudomonas) & Furunculosis"],
-  [14,"Otitis Externa — Furunculosis - Etiology & Risk Factors",8,5,"Otitis Externa — Furunculosis"],
-  [14,"Otitis Externa — Furunculosis - Pathophysiology",8,5,"Otitis Externa — Furunculosis"],
-  [14,"Otitis Externa — Furunculosis - Clinical Presentation & Signs",8,5,"Otitis Externa — Furunculosis"],
-  [14,"Otitis Externa — Furunculosis - Differential Diagnosis",8,5,"Otitis Externa — Furunculosis"],
-  [14,"Otitis Externa — Furunculosis - Investigations & Lab Findings",8,5,"Otitis Externa — Furunculosis"],
-  [14,"Otitis Externa — Furunculosis - Medical & Surgical Management",8,5,"Otitis Externa — Furunculosis"],
-  [14,"Otitis Externa — Furunculosis - Complications & Prognosis",8,5,"Otitis Externa — Furunculosis"],
-  [14,"Cerumen Impaction, Aural Polyp & Foreign Body",8,12,"Diseases of External Ear"],
-  [14,"Cerumen Impaction, Aural Polyp",8,6,"Cerumen Impaction, Aural Polyp & Foreign Body"],
-  [14,"Cerumen Impaction, Aural Polyp - Etiology & Risk Factors",8,5,"Cerumen Impaction, Aural Polyp"],
-  [14,"Cerumen Impaction, Aural Polyp - Pathophysiology",8,5,"Cerumen Impaction, Aural Polyp"],
-  [14,"Cerumen Impaction, Aural Polyp - Clinical Presentation & Signs",8,5,"Cerumen Impaction, Aural Polyp"],
-  [14,"Cerumen Impaction, Aural Polyp - Differential Diagnosis",8,5,"Cerumen Impaction, Aural Polyp"],
-  [14,"Cerumen Impaction, Aural Polyp - Investigations & Lab Findings",8,5,"Cerumen Impaction, Aural Polyp"],
-  [14,"Cerumen Impaction, Aural Polyp - Medical & Surgical Management",8,5,"Cerumen Impaction, Aural Polyp"],
-  [14,"Cerumen Impaction, Aural Polyp - Complications & Prognosis",8,5,"Cerumen Impaction, Aural Polyp"],
-  [14,"Foreign Body",8,6,"Cerumen Impaction, Aural Polyp & Foreign Body"],
-  [14,"Foreign Body - Etiology & Risk Factors",8,5,"Foreign Body"],
-  [14,"Foreign Body - Pathophysiology",8,5,"Foreign Body"],
-  [14,"Foreign Body - Clinical Presentation & Signs",8,5,"Foreign Body"],
-  [14,"Foreign Body - Differential Diagnosis",8,5,"Foreign Body"],
-  [14,"Foreign Body - Investigations & Lab Findings",8,5,"Foreign Body"],
-  [14,"Foreign Body - Medical & Surgical Management",8,5,"Foreign Body"],
-  [14,"Foreign Body - Complications & Prognosis",8,5,"Foreign Body"],
-  [14,"Diseases of Middle Ear (ASOM, CSOM)",10,50,"Ear"],
-  [14,"ASOM — Stages, TM Perforation & Grommet Insertion",10,15,"Diseases of Middle Ear (ASOM, CSOM)"],
-  [14,"ASOM — Stages, TM Perforation",10,7,"ASOM — Stages, TM Perforation & Grommet Insertion"],
-  [14,"ASOM — Stages, TM Perforation - Etiology & Risk Factors",10,5,"ASOM — Stages, TM Perforation"],
-  [14,"ASOM — Stages, TM Perforation - Pathophysiology",10,5,"ASOM — Stages, TM Perforation"],
-  [14,"ASOM — Stages, TM Perforation - Clinical Presentation & Signs",10,5,"ASOM — Stages, TM Perforation"],
-  [14,"ASOM — Stages, TM Perforation - Differential Diagnosis",10,5,"ASOM — Stages, TM Perforation"],
-  [14,"ASOM — Stages, TM Perforation - Investigations & Lab Findings",10,5,"ASOM — Stages, TM Perforation"],
-  [14,"ASOM — Stages, TM Perforation - Medical & Surgical Management",10,5,"ASOM — Stages, TM Perforation"],
-  [14,"ASOM — Stages, TM Perforation - Complications & Prognosis",10,5,"ASOM — Stages, TM Perforation"],
-  [14,"ASOM — Grommet Insertion",10,8,"ASOM — Stages, TM Perforation & Grommet Insertion"],
-  [14,"ASOM — Grommet Insertion - Etiology & Risk Factors",10,5,"ASOM — Grommet Insertion"],
-  [14,"ASOM — Grommet Insertion - Pathophysiology",10,5,"ASOM — Grommet Insertion"],
-  [14,"ASOM — Grommet Insertion - Clinical Presentation & Signs",10,5,"ASOM — Grommet Insertion"],
-  [14,"ASOM — Grommet Insertion - Differential Diagnosis",10,5,"ASOM — Grommet Insertion"],
-  [14,"ASOM — Grommet Insertion - Investigations & Lab Findings",10,5,"ASOM — Grommet Insertion"],
-  [14,"ASOM — Grommet Insertion - Medical & Surgical Management",10,5,"ASOM — Grommet Insertion"],
-  [14,"ASOM — Grommet Insertion - Complications & Prognosis",10,5,"ASOM — Grommet Insertion"],
-  [14,"CSOM — Tubotympanic (Safe) vs Atticoantral (Unsafe): Features & Surgery",10,18,"Diseases of Middle Ear (ASOM, CSOM)"],
-  [14,"CSOM — Tubotympanic (Safe) vs Atticoantral (Unsafe): Features",10,9,"CSOM — Tubotympanic (Safe) vs Atticoantral (Unsafe): Features & Surgery"],
-  [14,"CSOM — Tubotympanic (Safe) vs Atticoantral (Unsafe): Features - Etiology & Risk Factors",10,5,"CSOM — Tubotympanic (Safe) vs Atticoantral (Unsafe): Features"],
-  [14,"CSOM — Tubotympanic (Safe) vs Atticoantral (Unsafe): Features - Pathophysiology",10,5,"CSOM — Tubotympanic (Safe) vs Atticoantral (Unsafe): Features"],
-  [14,"CSOM — Tubotympanic (Safe) vs Atticoantral (Unsafe): Features - Clinical Presentation & Signs",10,5,"CSOM — Tubotympanic (Safe) vs Atticoantral (Unsafe): Features"],
-  [14,"CSOM — Tubotympanic (Safe) vs Atticoantral (Unsafe): Features - Differential Diagnosis",10,5,"CSOM — Tubotympanic (Safe) vs Atticoantral (Unsafe): Features"],
-  [14,"CSOM — Tubotympanic (Safe) vs Atticoantral (Unsafe): Features - Investigations & Lab Findings",10,5,"CSOM — Tubotympanic (Safe) vs Atticoantral (Unsafe): Features"],
-  [14,"CSOM — Tubotympanic (Safe) vs Atticoantral (Unsafe): Features - Medical & Surgical Management",10,5,"CSOM — Tubotympanic (Safe) vs Atticoantral (Unsafe): Features"],
-  [14,"CSOM — Tubotympanic (Safe) vs Atticoantral (Unsafe): Features - Complications & Prognosis",10,5,"CSOM — Tubotympanic (Safe) vs Atticoantral (Unsafe): Features"],
-  [14,"CSOM — Surgery",10,9,"CSOM — Tubotympanic (Safe) vs Atticoantral (Unsafe): Features & Surgery"],
-  [14,"CSOM — Surgery - Etiology & Risk Factors",10,5,"CSOM — Surgery"],
-  [14,"CSOM — Surgery - Pathophysiology",10,5,"CSOM — Surgery"],
-  [14,"CSOM — Surgery - Clinical Presentation & Signs",10,5,"CSOM — Surgery"],
-  [14,"CSOM — Surgery - Differential Diagnosis",10,5,"CSOM — Surgery"],
-  [14,"CSOM — Surgery - Investigations & Lab Findings",10,5,"CSOM — Surgery"],
-  [14,"CSOM — Surgery - Medical & Surgical Management",10,5,"CSOM — Surgery"],
-  [14,"CSOM — Surgery - Complications & Prognosis",10,5,"CSOM — Surgery"],
-  [14,"Cholesteatoma — Pathogenesis, Attic Perforation & Complications (Meningitis)",10,18,"Diseases of Middle Ear (ASOM, CSOM)"],
-  [14,"Cholesteatoma — Pathogenesis, Attic Perforation",10,9,"Cholesteatoma — Pathogenesis, Attic Perforation & Complications (Meningitis)"],
-  [14,"Cholesteatoma — Pathogenesis, Attic Perforation - Etiology & Risk Factors",10,5,"Cholesteatoma — Pathogenesis, Attic Perforation"],
-  [14,"Cholesteatoma — Pathogenesis, Attic Perforation - Pathophysiology",10,5,"Cholesteatoma — Pathogenesis, Attic Perforation"],
-  [14,"Cholesteatoma — Pathogenesis, Attic Perforation - Clinical Presentation & Signs",10,5,"Cholesteatoma — Pathogenesis, Attic Perforation"],
-  [14,"Cholesteatoma — Pathogenesis, Attic Perforation - Differential Diagnosis",10,5,"Cholesteatoma — Pathogenesis, Attic Perforation"],
-  [14,"Cholesteatoma — Pathogenesis, Attic Perforation - Investigations & Lab Findings",10,5,"Cholesteatoma — Pathogenesis, Attic Perforation"],
-  [14,"Cholesteatoma — Pathogenesis, Attic Perforation - Medical & Surgical Management",10,5,"Cholesteatoma — Pathogenesis, Attic Perforation"],
-  [14,"Cholesteatoma — Pathogenesis, Attic Perforation - Complications & Prognosis",10,5,"Cholesteatoma — Pathogenesis, Attic Perforation"],
-  [14,"Cholesteatoma — Complications (Meningitis)",10,9,"Cholesteatoma — Pathogenesis, Attic Perforation & Complications (Meningitis)"],
-  [14,"Cholesteatoma — Complications (Meningitis) - Etiology & Risk Factors",10,5,"Cholesteatoma — Complications (Meningitis)"],
-  [14,"Cholesteatoma — Complications (Meningitis) - Pathophysiology",10,5,"Cholesteatoma — Complications (Meningitis)"],
-  [14,"Cholesteatoma — Complications (Meningitis) - Clinical Presentation & Signs",10,5,"Cholesteatoma — Complications (Meningitis)"],
-  [14,"Cholesteatoma — Complications (Meningitis) - Differential Diagnosis",10,5,"Cholesteatoma — Complications (Meningitis)"],
-  [14,"Cholesteatoma — Complications (Meningitis) - Investigations & Lab Findings",10,5,"Cholesteatoma — Complications (Meningitis)"],
-  [14,"Cholesteatoma — Complications (Meningitis) - Medical & Surgical Management",10,5,"Cholesteatoma — Complications (Meningitis)"],
-  [14,"Cholesteatoma — Complications (Meningitis) - Complications & Prognosis",10,5,"Cholesteatoma — Complications (Meningitis)"],
-  [14,"Diseases of Inner Ear (Vertigo, Meniere's)",9,45,"Ear"],
-  [14,"Vertigo Classification — Peripheral vs Central: Dix-Hallpike & Romberg",9,18,"Diseases of Inner Ear (Vertigo, Meniere's)"],
-  [14,"Vertigo Classification — Peripheral vs Central: Dix-Hallpike",9,9,"Vertigo Classification — Peripheral vs Central: Dix-Hallpike & Romberg"],
-  [14,"Vertigo Classification — Peripheral vs Central: Dix-Hallpike - Etiology & Risk Factors",9,5,"Vertigo Classification — Peripheral vs Central: Dix-Hallpike"],
-  [14,"Vertigo Classification — Peripheral vs Central: Dix-Hallpike - Pathophysiology",9,5,"Vertigo Classification — Peripheral vs Central: Dix-Hallpike"],
-  [14,"Vertigo Classification — Peripheral vs Central: Dix-Hallpike - Clinical Presentation & Signs",9,5,"Vertigo Classification — Peripheral vs Central: Dix-Hallpike"],
-  [14,"Vertigo Classification — Peripheral vs Central: Dix-Hallpike - Differential Diagnosis",9,5,"Vertigo Classification — Peripheral vs Central: Dix-Hallpike"],
-  [14,"Vertigo Classification — Peripheral vs Central: Dix-Hallpike - Investigations & Lab Findings",9,5,"Vertigo Classification — Peripheral vs Central: Dix-Hallpike"],
-  [14,"Vertigo Classification — Peripheral vs Central: Dix-Hallpike - Medical & Surgical Management",9,5,"Vertigo Classification — Peripheral vs Central: Dix-Hallpike"],
-  [14,"Vertigo Classification — Peripheral vs Central: Dix-Hallpike - Complications & Prognosis",9,5,"Vertigo Classification — Peripheral vs Central: Dix-Hallpike"],
-  [14,"Vertigo Classification — Romberg",9,9,"Vertigo Classification — Peripheral vs Central: Dix-Hallpike & Romberg"],
-  [14,"Vertigo Classification — Romberg - Etiology & Risk Factors",9,5,"Vertigo Classification — Romberg"],
-  [14,"Vertigo Classification — Romberg - Pathophysiology",9,5,"Vertigo Classification — Romberg"],
-  [14,"Vertigo Classification — Romberg - Clinical Presentation & Signs",9,5,"Vertigo Classification — Romberg"],
-  [14,"Vertigo Classification — Romberg - Differential Diagnosis",9,5,"Vertigo Classification — Romberg"],
-  [14,"Vertigo Classification — Romberg - Investigations & Lab Findings",9,5,"Vertigo Classification — Romberg"],
-  [14,"Vertigo Classification — Romberg - Medical & Surgical Management",9,5,"Vertigo Classification — Romberg"],
-  [14,"Vertigo Classification — Romberg - Complications & Prognosis",9,5,"Vertigo Classification — Romberg"],
-  [14,"Meniere's Disease — Endolymphatic Hydrops, Triad & Treatment",9,15,"Diseases of Inner Ear (Vertigo, Meniere's)"],
-  [14,"Meniere's Disease — Endolymphatic Hydrops, Triad",9,7,"Meniere's Disease — Endolymphatic Hydrops, Triad & Treatment"],
-  [14,"Meniere's Disease — Endolymphatic Hydrops, Triad - Etiology & Risk Factors",9,5,"Meniere's Disease — Endolymphatic Hydrops, Triad"],
-  [14,"Meniere's Disease — Endolymphatic Hydrops, Triad - Pathophysiology",9,5,"Meniere's Disease — Endolymphatic Hydrops, Triad"],
-  [14,"Meniere's Disease — Endolymphatic Hydrops, Triad - Clinical Presentation & Signs",9,5,"Meniere's Disease — Endolymphatic Hydrops, Triad"],
-  [14,"Meniere's Disease — Endolymphatic Hydrops, Triad - Differential Diagnosis",9,5,"Meniere's Disease — Endolymphatic Hydrops, Triad"],
-  [14,"Meniere's Disease — Endolymphatic Hydrops, Triad - Investigations & Lab Findings",9,5,"Meniere's Disease — Endolymphatic Hydrops, Triad"],
-  [14,"Meniere's Disease — Endolymphatic Hydrops, Triad - Medical & Surgical Management",9,5,"Meniere's Disease — Endolymphatic Hydrops, Triad"],
-  [14,"Meniere's Disease — Endolymphatic Hydrops, Triad - Complications & Prognosis",9,5,"Meniere's Disease — Endolymphatic Hydrops, Triad"],
-  [14,"Meniere's Disease — Treatment",9,8,"Meniere's Disease — Endolymphatic Hydrops, Triad & Treatment"],
-  [14,"Meniere's Disease — Treatment - Etiology & Risk Factors",9,5,"Meniere's Disease — Treatment"],
-  [14,"Meniere's Disease — Treatment - Pathophysiology",9,5,"Meniere's Disease — Treatment"],
-  [14,"Meniere's Disease — Treatment - Clinical Presentation & Signs",9,5,"Meniere's Disease — Treatment"],
-  [14,"Meniere's Disease — Treatment - Differential Diagnosis",9,5,"Meniere's Disease — Treatment"],
-  [14,"Meniere's Disease — Treatment - Investigations & Lab Findings",9,5,"Meniere's Disease — Treatment"],
-  [14,"Meniere's Disease — Treatment - Medical & Surgical Management",9,5,"Meniere's Disease — Treatment"],
-  [14,"Meniere's Disease — Treatment - Complications & Prognosis",9,5,"Meniere's Disease — Treatment"],
-  [14,"BPPV — PC-BPPV, Epley Manoeuvre & Canalith Repositioning",9,12,"Diseases of Inner Ear (Vertigo, Meniere's)"],
-  [14,"BPPV — PC-BPPV, Epley Manoeuvre",9,6,"BPPV — PC-BPPV, Epley Manoeuvre & Canalith Repositioning"],
-  [14,"BPPV — PC-BPPV, Epley Manoeuvre - Etiology & Risk Factors",9,5,"BPPV — PC-BPPV, Epley Manoeuvre"],
-  [14,"BPPV — PC-BPPV, Epley Manoeuvre - Pathophysiology",9,5,"BPPV — PC-BPPV, Epley Manoeuvre"],
-  [14,"BPPV — PC-BPPV, Epley Manoeuvre - Clinical Presentation & Signs",9,5,"BPPV — PC-BPPV, Epley Manoeuvre"],
-  [14,"BPPV — PC-BPPV, Epley Manoeuvre - Differential Diagnosis",9,5,"BPPV — PC-BPPV, Epley Manoeuvre"],
-  [14,"BPPV — PC-BPPV, Epley Manoeuvre - Investigations & Lab Findings",9,5,"BPPV — PC-BPPV, Epley Manoeuvre"],
-  [14,"BPPV — PC-BPPV, Epley Manoeuvre - Medical & Surgical Management",9,5,"BPPV — PC-BPPV, Epley Manoeuvre"],
-  [14,"BPPV — PC-BPPV, Epley Manoeuvre - Complications & Prognosis",9,5,"BPPV — PC-BPPV, Epley Manoeuvre"],
-  [14,"BPPV — Canalith Repositioning",9,6,"BPPV — PC-BPPV, Epley Manoeuvre & Canalith Repositioning"],
-  [14,"BPPV — Canalith Repositioning - Etiology & Risk Factors",9,5,"BPPV — Canalith Repositioning"],
-  [14,"BPPV — Canalith Repositioning - Pathophysiology",9,5,"BPPV — Canalith Repositioning"],
-  [14,"BPPV — Canalith Repositioning - Clinical Presentation & Signs",9,5,"BPPV — Canalith Repositioning"],
-  [14,"BPPV — Canalith Repositioning - Differential Diagnosis",9,5,"BPPV — Canalith Repositioning"],
-  [14,"BPPV — Canalith Repositioning - Investigations & Lab Findings",9,5,"BPPV — Canalith Repositioning"],
-  [14,"BPPV — Canalith Repositioning - Medical & Surgical Management",9,5,"BPPV — Canalith Repositioning"],
-  [14,"BPPV — Canalith Repositioning - Complications & Prognosis",9,5,"BPPV — Canalith Repositioning"],
-  [14,"Audiology & Deafness",9,40,"Ear"],
-  [14,"Hearing Tests — Rinne's, Weber's, PTA & Audiogram Interpretation",9,18,"Audiology & Deafness"],
-  [14,"Hearing Tests — Rinne's, Weber's, PTA",9,9,"Hearing Tests — Rinne's, Weber's, PTA & Audiogram Interpretation"],
-  [14,"Hearing Tests — Rinne's, Weber's, PTA - Etiology & Risk Factors",9,5,"Hearing Tests — Rinne's, Weber's, PTA"],
-  [14,"Hearing Tests — Rinne's, Weber's, PTA - Pathophysiology",9,5,"Hearing Tests — Rinne's, Weber's, PTA"],
-  [14,"Hearing Tests — Rinne's, Weber's, PTA - Clinical Presentation & Signs",9,5,"Hearing Tests — Rinne's, Weber's, PTA"],
-  [14,"Hearing Tests — Rinne's, Weber's, PTA - Differential Diagnosis",9,5,"Hearing Tests — Rinne's, Weber's, PTA"],
-  [14,"Hearing Tests — Rinne's, Weber's, PTA - Investigations & Lab Findings",9,5,"Hearing Tests — Rinne's, Weber's, PTA"],
-  [14,"Hearing Tests — Rinne's, Weber's, PTA - Medical & Surgical Management",9,5,"Hearing Tests — Rinne's, Weber's, PTA"],
-  [14,"Hearing Tests — Rinne's, Weber's, PTA - Complications & Prognosis",9,5,"Hearing Tests — Rinne's, Weber's, PTA"],
-  [14,"Hearing Tests — Audiogram Interpretation",9,9,"Hearing Tests — Rinne's, Weber's, PTA & Audiogram Interpretation"],
-  [14,"Hearing Tests — Audiogram Interpretation - Etiology & Risk Factors",9,5,"Hearing Tests — Audiogram Interpretation"],
-  [14,"Hearing Tests — Audiogram Interpretation - Pathophysiology",9,5,"Hearing Tests — Audiogram Interpretation"],
-  [14,"Hearing Tests — Audiogram Interpretation - Clinical Presentation & Signs",9,5,"Hearing Tests — Audiogram Interpretation"],
-  [14,"Hearing Tests — Audiogram Interpretation - Differential Diagnosis",9,5,"Hearing Tests — Audiogram Interpretation"],
-  [14,"Hearing Tests — Audiogram Interpretation - Investigations & Lab Findings",9,5,"Hearing Tests — Audiogram Interpretation"],
-  [14,"Hearing Tests — Audiogram Interpretation - Medical & Surgical Management",9,5,"Hearing Tests — Audiogram Interpretation"],
-  [14,"Hearing Tests — Audiogram Interpretation - Complications & Prognosis",9,5,"Hearing Tests — Audiogram Interpretation"],
-  [14,"SNHL vs Conductive HL — Causes, Pure Tone Average & Impedance Audiometry",9,18,"Audiology & Deafness"],
-  [14,"SNHL vs Conductive HL — Causes, Pure Tone Average",9,9,"SNHL vs Conductive HL — Causes, Pure Tone Average & Impedance Audiometry"],
-  [14,"SNHL vs Conductive HL — Causes, Pure Tone Average - Etiology & Risk Factors",9,5,"SNHL vs Conductive HL — Causes, Pure Tone Average"],
-  [14,"SNHL vs Conductive HL — Causes, Pure Tone Average - Pathophysiology",9,5,"SNHL vs Conductive HL — Causes, Pure Tone Average"],
-  [14,"SNHL vs Conductive HL — Causes, Pure Tone Average - Clinical Presentation & Signs",9,5,"SNHL vs Conductive HL — Causes, Pure Tone Average"],
-  [14,"SNHL vs Conductive HL — Causes, Pure Tone Average - Differential Diagnosis",9,5,"SNHL vs Conductive HL — Causes, Pure Tone Average"],
-  [14,"SNHL vs Conductive HL — Causes, Pure Tone Average - Investigations & Lab Findings",9,5,"SNHL vs Conductive HL — Causes, Pure Tone Average"],
-  [14,"SNHL vs Conductive HL — Causes, Pure Tone Average - Medical & Surgical Management",9,5,"SNHL vs Conductive HL — Causes, Pure Tone Average"],
-  [14,"SNHL vs Conductive HL — Causes, Pure Tone Average - Complications & Prognosis",9,5,"SNHL vs Conductive HL — Causes, Pure Tone Average"],
-  [14,"SNHL vs Conductive HL — Impedance Audiometry",9,9,"SNHL vs Conductive HL — Causes, Pure Tone Average & Impedance Audiometry"],
-  [14,"SNHL vs Conductive HL — Impedance Audiometry - Etiology & Risk Factors",9,5,"SNHL vs Conductive HL — Impedance Audiometry"],
-  [14,"SNHL vs Conductive HL — Impedance Audiometry - Pathophysiology",9,5,"SNHL vs Conductive HL — Impedance Audiometry"],
-  [14,"SNHL vs Conductive HL — Impedance Audiometry - Clinical Presentation & Signs",9,5,"SNHL vs Conductive HL — Impedance Audiometry"],
-  [14,"SNHL vs Conductive HL — Impedance Audiometry - Differential Diagnosis",9,5,"SNHL vs Conductive HL — Impedance Audiometry"],
-  [14,"SNHL vs Conductive HL — Impedance Audiometry - Investigations & Lab Findings",9,5,"SNHL vs Conductive HL — Impedance Audiometry"],
-  [14,"SNHL vs Conductive HL — Impedance Audiometry - Medical & Surgical Management",9,5,"SNHL vs Conductive HL — Impedance Audiometry"],
-  [14,"SNHL vs Conductive HL — Impedance Audiometry - Complications & Prognosis",9,5,"SNHL vs Conductive HL — Impedance Audiometry"],
-  [14,"Facial Nerve Disorders",9,35,"Ear"],
-  [14,"Bell's Palsy vs Ramsay Hunt — LMNP Facial, House-Brackmann & Steroids",9,18,"Facial Nerve Disorders"],
-  [14,"Bell's Palsy vs Ramsay Hunt — LMNP Facial, House-Brackmann",9,9,"Bell's Palsy vs Ramsay Hunt — LMNP Facial, House-Brackmann & Steroids"],
-  [14,"Bell's Palsy vs Ramsay Hunt — LMNP Facial, House-Brackmann - Etiology & Risk Factors",9,5,"Bell's Palsy vs Ramsay Hunt — LMNP Facial, House-Brackmann"],
-  [14,"Bell's Palsy vs Ramsay Hunt — LMNP Facial, House-Brackmann - Pathophysiology",9,5,"Bell's Palsy vs Ramsay Hunt — LMNP Facial, House-Brackmann"],
-  [14,"Bell's Palsy vs Ramsay Hunt — LMNP Facial, House-Brackmann - Clinical Presentation & Signs",9,5,"Bell's Palsy vs Ramsay Hunt — LMNP Facial, House-Brackmann"],
-  [14,"Bell's Palsy vs Ramsay Hunt — LMNP Facial, House-Brackmann - Differential Diagnosis",9,5,"Bell's Palsy vs Ramsay Hunt — LMNP Facial, House-Brackmann"],
-  [14,"Bell's Palsy vs Ramsay Hunt — LMNP Facial, House-Brackmann - Investigations & Lab Findings",9,5,"Bell's Palsy vs Ramsay Hunt — LMNP Facial, House-Brackmann"],
-  [14,"Bell's Palsy vs Ramsay Hunt — LMNP Facial, House-Brackmann - Medical & Surgical Management",9,5,"Bell's Palsy vs Ramsay Hunt — LMNP Facial, House-Brackmann"],
-  [14,"Bell's Palsy vs Ramsay Hunt — LMNP Facial, House-Brackmann - Complications & Prognosis",9,5,"Bell's Palsy vs Ramsay Hunt — LMNP Facial, House-Brackmann"],
-  [14,"Bell's Palsy vs Ramsay Hunt — Steroids",9,9,"Bell's Palsy vs Ramsay Hunt — LMNP Facial, House-Brackmann & Steroids"],
-  [14,"Bell's Palsy vs Ramsay Hunt — Steroids - Etiology & Risk Factors",9,5,"Bell's Palsy vs Ramsay Hunt — Steroids"],
-  [14,"Bell's Palsy vs Ramsay Hunt — Steroids - Pathophysiology",9,5,"Bell's Palsy vs Ramsay Hunt — Steroids"],
-  [14,"Bell's Palsy vs Ramsay Hunt — Steroids - Clinical Presentation & Signs",9,5,"Bell's Palsy vs Ramsay Hunt — Steroids"],
-  [14,"Bell's Palsy vs Ramsay Hunt — Steroids - Differential Diagnosis",9,5,"Bell's Palsy vs Ramsay Hunt — Steroids"],
-  [14,"Bell's Palsy vs Ramsay Hunt — Steroids - Investigations & Lab Findings",9,5,"Bell's Palsy vs Ramsay Hunt — Steroids"],
-  [14,"Bell's Palsy vs Ramsay Hunt — Steroids - Medical & Surgical Management",9,5,"Bell's Palsy vs Ramsay Hunt — Steroids"],
-  [14,"Bell's Palsy vs Ramsay Hunt — Steroids - Complications & Prognosis",9,5,"Bell's Palsy vs Ramsay Hunt — Steroids"],
-  [14,"Facial Nerve Anatomy — Branches, Topographic Diagnosis in Temporal Bone",9,15,"Facial Nerve Disorders"],
-  [14,"Facial Nerve Anatomy — Branches",9,7,"Facial Nerve Anatomy — Branches, Topographic Diagnosis in Temporal Bone"],
-  [14,"Facial Nerve Anatomy — Branches - Etiology & Risk Factors",9,5,"Facial Nerve Anatomy — Branches"],
-  [14,"Facial Nerve Anatomy — Branches - Pathophysiology",9,5,"Facial Nerve Anatomy — Branches"],
-  [14,"Facial Nerve Anatomy — Branches - Clinical Presentation & Signs",9,5,"Facial Nerve Anatomy — Branches"],
-  [14,"Facial Nerve Anatomy — Branches - Differential Diagnosis",9,5,"Facial Nerve Anatomy — Branches"],
-  [14,"Facial Nerve Anatomy — Branches - Investigations & Lab Findings",9,5,"Facial Nerve Anatomy — Branches"],
-  [14,"Facial Nerve Anatomy — Branches - Medical & Surgical Management",9,5,"Facial Nerve Anatomy — Branches"],
-  [14,"Facial Nerve Anatomy — Branches - Complications & Prognosis",9,5,"Facial Nerve Anatomy — Branches"],
-  [14,"Facial Nerve Anatomy — Topographic Diagnosis in Temporal Bone",9,8,"Facial Nerve Anatomy — Branches, Topographic Diagnosis in Temporal Bone"],
-  [14,"Facial Nerve Anatomy — Topographic Diagnosis in Temporal Bone - Etiology & Risk Factors",9,5,"Facial Nerve Anatomy — Topographic Diagnosis in Temporal Bone"],
-  [14,"Facial Nerve Anatomy — Topographic Diagnosis in Temporal Bone - Pathophysiology",9,5,"Facial Nerve Anatomy — Topographic Diagnosis in Temporal Bone"],
-  [14,"Facial Nerve Anatomy — Topographic Diagnosis in Temporal Bone - Clinical Presentation & Signs",9,5,"Facial Nerve Anatomy — Topographic Diagnosis in Temporal Bone"],
-  [14,"Facial Nerve Anatomy — Topographic Diagnosis in Temporal Bone - Differential Diagnosis",9,5,"Facial Nerve Anatomy — Topographic Diagnosis in Temporal Bone"],
-  [14,"Facial Nerve Anatomy — Topographic Diagnosis in Temporal Bone - Investigations & Lab Findings",9,5,"Facial Nerve Anatomy — Topographic Diagnosis in Temporal Bone"],
-  [14,"Facial Nerve Anatomy — Topographic Diagnosis in Temporal Bone - Medical & Surgical Management",9,5,"Facial Nerve Anatomy — Topographic Diagnosis in Temporal Bone"],
-  [14,"Facial Nerve Anatomy — Topographic Diagnosis in Temporal Bone - Complications & Prognosis",9,5,"Facial Nerve Anatomy — Topographic Diagnosis in Temporal Bone"],
-  [14,"Nose & PNS",9,50],
-  [14,"Rhinitis & Sinusitis",9,40,"Nose & PNS"],
-  [14,"Rhinitis — Allergic (ARIA Classification) vs Vasomotor vs Rhinitis Medicamentosa",9,15,"Rhinitis & Sinusitis"],
-  [14,"Rhinitis — Basics",9,7,"Rhinitis — Allergic (ARIA Classification) vs Vasomotor vs Rhinitis Medicamentosa"],
-  [14,"Rhinitis — Basics - Etiology & Risk Factors",9,5,"Rhinitis — Basics"],
-  [14,"Rhinitis — Basics - Pathophysiology",9,5,"Rhinitis — Basics"],
-  [14,"Rhinitis — Basics - Clinical Presentation & Signs",9,5,"Rhinitis — Basics"],
-  [14,"Rhinitis — Basics - Differential Diagnosis",9,5,"Rhinitis — Basics"],
-  [14,"Rhinitis — Basics - Investigations & Lab Findings",9,5,"Rhinitis — Basics"],
-  [14,"Rhinitis — Basics - Medical & Surgical Management",9,5,"Rhinitis — Basics"],
-  [14,"Rhinitis — Basics - Complications & Prognosis",9,5,"Rhinitis — Basics"],
-  [14,"Rhinitis — Details",9,8,"Rhinitis — Allergic (ARIA Classification) vs Vasomotor vs Rhinitis Medicamentosa"],
-  [14,"Rhinitis — Details - Etiology & Risk Factors",9,5,"Rhinitis — Details"],
-  [14,"Rhinitis — Details - Pathophysiology",9,5,"Rhinitis — Details"],
-  [14,"Rhinitis — Details - Clinical Presentation & Signs",9,5,"Rhinitis — Details"],
-  [14,"Rhinitis — Details - Differential Diagnosis",9,5,"Rhinitis — Details"],
-  [14,"Rhinitis — Details - Investigations & Lab Findings",9,5,"Rhinitis — Details"],
-  [14,"Rhinitis — Details - Medical & Surgical Management",9,5,"Rhinitis — Details"],
-  [14,"Rhinitis — Details - Complications & Prognosis",9,5,"Rhinitis — Details"],
-  [14,"Sinusitis — Maxillary (Most Common), CRS vs ARS & FESS Indications",9,18,"Rhinitis & Sinusitis"],
-  [14,"Sinusitis — Maxillary (Most Common), CRS vs ARS",9,9,"Sinusitis — Maxillary (Most Common), CRS vs ARS & FESS Indications"],
-  [14,"Sinusitis — Maxillary (Most Common), CRS vs ARS - Etiology & Risk Factors",9,5,"Sinusitis — Maxillary (Most Common), CRS vs ARS"],
-  [14,"Sinusitis — Maxillary (Most Common), CRS vs ARS - Pathophysiology",9,5,"Sinusitis — Maxillary (Most Common), CRS vs ARS"],
-  [14,"Sinusitis — Maxillary (Most Common), CRS vs ARS - Clinical Presentation & Signs",9,5,"Sinusitis — Maxillary (Most Common), CRS vs ARS"],
-  [14,"Sinusitis — Maxillary (Most Common), CRS vs ARS - Differential Diagnosis",9,5,"Sinusitis — Maxillary (Most Common), CRS vs ARS"],
-  [14,"Sinusitis — Maxillary (Most Common), CRS vs ARS - Investigations & Lab Findings",9,5,"Sinusitis — Maxillary (Most Common), CRS vs ARS"],
-  [14,"Sinusitis — Maxillary (Most Common), CRS vs ARS - Medical & Surgical Management",9,5,"Sinusitis — Maxillary (Most Common), CRS vs ARS"],
-  [14,"Sinusitis — Maxillary (Most Common), CRS vs ARS - Complications & Prognosis",9,5,"Sinusitis — Maxillary (Most Common), CRS vs ARS"],
-  [14,"Sinusitis — FESS Indications",9,9,"Sinusitis — Maxillary (Most Common), CRS vs ARS & FESS Indications"],
-  [14,"Sinusitis — FESS Indications - Etiology & Risk Factors",9,5,"Sinusitis — FESS Indications"],
-  [14,"Sinusitis — FESS Indications - Pathophysiology",9,5,"Sinusitis — FESS Indications"],
-  [14,"Sinusitis — FESS Indications - Clinical Presentation & Signs",9,5,"Sinusitis — FESS Indications"],
-  [14,"Sinusitis — FESS Indications - Differential Diagnosis",9,5,"Sinusitis — FESS Indications"],
-  [14,"Sinusitis — FESS Indications - Investigations & Lab Findings",9,5,"Sinusitis — FESS Indications"],
-  [14,"Sinusitis — FESS Indications - Medical & Surgical Management",9,5,"Sinusitis — FESS Indications"],
-  [14,"Sinusitis — FESS Indications - Complications & Prognosis",9,5,"Sinusitis — FESS Indications"],
-  [14,"Nasal Polyps & Epistaxis",9,35,"Nose & PNS"],
-  [14,"Nasal Polyp — Ethmoidal (Bilateral) vs Antrochoanal (Unilateral), Samter's Triad",9,15,"Nasal Polyps & Epistaxis"],
-  [14,"Nasal Polyp — Ethmoidal (Bilateral) vs Antrochoanal (Unilateral)",9,7,"Nasal Polyp — Ethmoidal (Bilateral) vs Antrochoanal (Unilateral), Samter's Triad"],
-  [14,"Nasal Polyp — Ethmoidal (Bilateral) vs Antrochoanal (Unilateral) - Etiology & Risk Factors",9,5,"Nasal Polyp — Ethmoidal (Bilateral) vs Antrochoanal (Unilateral)"],
-  [14,"Nasal Polyp — Ethmoidal (Bilateral) vs Antrochoanal (Unilateral) - Pathophysiology",9,5,"Nasal Polyp — Ethmoidal (Bilateral) vs Antrochoanal (Unilateral)"],
-  [14,"Nasal Polyp — Ethmoidal (Bilateral) vs Antrochoanal (Unilateral) - Clinical Presentation & Signs",9,5,"Nasal Polyp — Ethmoidal (Bilateral) vs Antrochoanal (Unilateral)"],
-  [14,"Nasal Polyp — Ethmoidal (Bilateral) vs Antrochoanal (Unilateral) - Differential Diagnosis",9,5,"Nasal Polyp — Ethmoidal (Bilateral) vs Antrochoanal (Unilateral)"],
-  [14,"Nasal Polyp — Ethmoidal (Bilateral) vs Antrochoanal (Unilateral) - Investigations & Lab Findings",9,5,"Nasal Polyp — Ethmoidal (Bilateral) vs Antrochoanal (Unilateral)"],
-  [14,"Nasal Polyp — Ethmoidal (Bilateral) vs Antrochoanal (Unilateral) - Medical & Surgical Management",9,5,"Nasal Polyp — Ethmoidal (Bilateral) vs Antrochoanal (Unilateral)"],
-  [14,"Nasal Polyp — Ethmoidal (Bilateral) vs Antrochoanal (Unilateral) - Complications & Prognosis",9,5,"Nasal Polyp — Ethmoidal (Bilateral) vs Antrochoanal (Unilateral)"],
-  [14,"Nasal Polyp — Samter's Triad",9,8,"Nasal Polyp — Ethmoidal (Bilateral) vs Antrochoanal (Unilateral), Samter's Triad"],
-  [14,"Nasal Polyp — Samter's Triad - Etiology & Risk Factors",9,5,"Nasal Polyp — Samter's Triad"],
-  [14,"Nasal Polyp — Samter's Triad - Pathophysiology",9,5,"Nasal Polyp — Samter's Triad"],
-  [14,"Nasal Polyp — Samter's Triad - Clinical Presentation & Signs",9,5,"Nasal Polyp — Samter's Triad"],
-  [14,"Nasal Polyp — Samter's Triad - Differential Diagnosis",9,5,"Nasal Polyp — Samter's Triad"],
-  [14,"Nasal Polyp — Samter's Triad - Investigations & Lab Findings",9,5,"Nasal Polyp — Samter's Triad"],
-  [14,"Nasal Polyp — Samter's Triad - Medical & Surgical Management",9,5,"Nasal Polyp — Samter's Triad"],
-  [14,"Nasal Polyp — Samter's Triad - Complications & Prognosis",9,5,"Nasal Polyp — Samter's Triad"],
-  [14,"Epistaxis — Little's Area (Kisselbach's Plexus), Anterior vs Posterior & Cauterization",9,18,"Nasal Polyps & Epistaxis"],
-  [14,"Epistaxis — Little's Area (Kisselbach's Plexus), Anterior vs Posterior",9,9,"Epistaxis — Little's Area (Kisselbach's Plexus), Anterior vs Posterior & Cauterization"],
-  [14,"Epistaxis — Little's Area (Kisselbach's Plexus), Anterior vs Posterior - Etiology & Risk Factors",9,5,"Epistaxis — Little's Area (Kisselbach's Plexus), Anterior vs Posterior"],
-  [14,"Epistaxis — Little's Area (Kisselbach's Plexus), Anterior vs Posterior - Pathophysiology",9,5,"Epistaxis — Little's Area (Kisselbach's Plexus), Anterior vs Posterior"],
-  [14,"Epistaxis — Little's Area (Kisselbach's Plexus), Anterior vs Posterior - Clinical Presentation & Signs",9,5,"Epistaxis — Little's Area (Kisselbach's Plexus), Anterior vs Posterior"],
-  [14,"Epistaxis — Little's Area (Kisselbach's Plexus), Anterior vs Posterior - Differential Diagnosis",9,5,"Epistaxis — Little's Area (Kisselbach's Plexus), Anterior vs Posterior"],
-  [14,"Epistaxis — Little's Area (Kisselbach's Plexus), Anterior vs Posterior - Investigations & Lab Findings",9,5,"Epistaxis — Little's Area (Kisselbach's Plexus), Anterior vs Posterior"],
-  [14,"Epistaxis — Little's Area (Kisselbach's Plexus), Anterior vs Posterior - Medical & Surgical Management",9,5,"Epistaxis — Little's Area (Kisselbach's Plexus), Anterior vs Posterior"],
-  [14,"Epistaxis — Little's Area (Kisselbach's Plexus), Anterior vs Posterior - Complications & Prognosis",9,5,"Epistaxis — Little's Area (Kisselbach's Plexus), Anterior vs Posterior"],
-  [14,"Epistaxis — Cauterization",9,9,"Epistaxis — Little's Area (Kisselbach's Plexus), Anterior vs Posterior & Cauterization"],
-  [14,"Epistaxis — Cauterization - Etiology & Risk Factors",9,5,"Epistaxis — Cauterization"],
-  [14,"Epistaxis — Cauterization - Pathophysiology",9,5,"Epistaxis — Cauterization"],
-  [14,"Epistaxis — Cauterization - Clinical Presentation & Signs",9,5,"Epistaxis — Cauterization"],
-  [14,"Epistaxis — Cauterization - Differential Diagnosis",9,5,"Epistaxis — Cauterization"],
-  [14,"Epistaxis — Cauterization - Investigations & Lab Findings",9,5,"Epistaxis — Cauterization"],
-  [14,"Epistaxis — Cauterization - Medical & Surgical Management",9,5,"Epistaxis — Cauterization"],
-  [14,"Epistaxis — Cauterization - Complications & Prognosis",9,5,"Epistaxis — Cauterization"],
-  [14,"Tumors of Nose & PNS",8,35,"Nose & PNS"],
-  [14,"Juvenile Angiofibroma — Adolescent Male, Holman-Miller Sign & Embolization",8,18,"Tumors of Nose & PNS"],
-  [14,"Juvenile Angiofibroma — Adolescent Male, Holman-Miller Sign",8,9,"Juvenile Angiofibroma — Adolescent Male, Holman-Miller Sign & Embolization"],
-  [14,"Juvenile Angiofibroma — Adolescent Male, Holman-Miller Sign - Etiology & Risk Factors",8,5,"Juvenile Angiofibroma — Adolescent Male, Holman-Miller Sign"],
-  [14,"Juvenile Angiofibroma — Adolescent Male, Holman-Miller Sign - Pathophysiology",8,5,"Juvenile Angiofibroma — Adolescent Male, Holman-Miller Sign"],
-  [14,"Juvenile Angiofibroma — Adolescent Male, Holman-Miller Sign - Clinical Presentation & Signs",8,5,"Juvenile Angiofibroma — Adolescent Male, Holman-Miller Sign"],
-  [14,"Juvenile Angiofibroma — Adolescent Male, Holman-Miller Sign - Differential Diagnosis",8,5,"Juvenile Angiofibroma — Adolescent Male, Holman-Miller Sign"],
-  [14,"Juvenile Angiofibroma — Adolescent Male, Holman-Miller Sign - Investigations & Lab Findings",8,5,"Juvenile Angiofibroma — Adolescent Male, Holman-Miller Sign"],
-  [14,"Juvenile Angiofibroma — Adolescent Male, Holman-Miller Sign - Medical & Surgical Management",8,5,"Juvenile Angiofibroma — Adolescent Male, Holman-Miller Sign"],
-  [14,"Juvenile Angiofibroma — Adolescent Male, Holman-Miller Sign - Complications & Prognosis",8,5,"Juvenile Angiofibroma — Adolescent Male, Holman-Miller Sign"],
-  [14,"Juvenile Angiofibroma — Embolization",8,9,"Juvenile Angiofibroma — Adolescent Male, Holman-Miller Sign & Embolization"],
-  [14,"Juvenile Angiofibroma — Embolization - Etiology & Risk Factors",8,5,"Juvenile Angiofibroma — Embolization"],
-  [14,"Juvenile Angiofibroma — Embolization - Pathophysiology",8,5,"Juvenile Angiofibroma — Embolization"],
-  [14,"Juvenile Angiofibroma — Embolization - Clinical Presentation & Signs",8,5,"Juvenile Angiofibroma — Embolization"],
-  [14,"Juvenile Angiofibroma — Embolization - Differential Diagnosis",8,5,"Juvenile Angiofibroma — Embolization"],
-  [14,"Juvenile Angiofibroma — Embolization - Investigations & Lab Findings",8,5,"Juvenile Angiofibroma — Embolization"],
-  [14,"Juvenile Angiofibroma — Embolization - Medical & Surgical Management",8,5,"Juvenile Angiofibroma — Embolization"],
-  [14,"Juvenile Angiofibroma — Embolization - Complications & Prognosis",8,5,"Juvenile Angiofibroma — Embolization"],
-  [14,"Inverted Papilloma & Nasopharyngeal Carcinoma — EBV & Eustachian Tube",8,15,"Tumors of Nose & PNS"],
-  [14,"Inverted Papilloma & Nasopharyngeal Carcinoma — EBV",8,7,"Inverted Papilloma & Nasopharyngeal Carcinoma — EBV & Eustachian Tube"],
-  [14,"Inverted Papilloma & Nasopharyngeal Carcinoma — EBV - Etiology & Risk Factors",8,5,"Inverted Papilloma & Nasopharyngeal Carcinoma — EBV"],
-  [14,"Inverted Papilloma & Nasopharyngeal Carcinoma — EBV - Pathophysiology",8,5,"Inverted Papilloma & Nasopharyngeal Carcinoma — EBV"],
-  [14,"Inverted Papilloma & Nasopharyngeal Carcinoma — EBV - Clinical Presentation & Signs",8,5,"Inverted Papilloma & Nasopharyngeal Carcinoma — EBV"],
-  [14,"Inverted Papilloma & Nasopharyngeal Carcinoma — EBV - Differential Diagnosis",8,5,"Inverted Papilloma & Nasopharyngeal Carcinoma — EBV"],
-  [14,"Inverted Papilloma & Nasopharyngeal Carcinoma — EBV - Investigations & Lab Findings",8,5,"Inverted Papilloma & Nasopharyngeal Carcinoma — EBV"],
-  [14,"Inverted Papilloma & Nasopharyngeal Carcinoma — EBV - Medical & Surgical Management",8,5,"Inverted Papilloma & Nasopharyngeal Carcinoma — EBV"],
-  [14,"Inverted Papilloma & Nasopharyngeal Carcinoma — EBV - Complications & Prognosis",8,5,"Inverted Papilloma & Nasopharyngeal Carcinoma — EBV"],
-  [14,"Inverted Papilloma & Nasopharyngeal Carcinoma — Eustachian Tube",8,8,"Inverted Papilloma & Nasopharyngeal Carcinoma — EBV & Eustachian Tube"],
-  [14,"Inverted Papilloma & Nasopharyngeal Carcinoma — Eustachian Tube - Etiology & Risk Factors",8,5,"Inverted Papilloma & Nasopharyngeal Carcinoma — Eustachian Tube"],
-  [14,"Inverted Papilloma & Nasopharyngeal Carcinoma — Eustachian Tube - Pathophysiology",8,5,"Inverted Papilloma & Nasopharyngeal Carcinoma — Eustachian Tube"],
-  [14,"Inverted Papilloma & Nasopharyngeal Carcinoma — Eustachian Tube - Clinical Presentation & Signs",8,5,"Inverted Papilloma & Nasopharyngeal Carcinoma — Eustachian Tube"],
-  [14,"Inverted Papilloma & Nasopharyngeal Carcinoma — Eustachian Tube - Differential Diagnosis",8,5,"Inverted Papilloma & Nasopharyngeal Carcinoma — Eustachian Tube"],
-  [14,"Inverted Papilloma & Nasopharyngeal Carcinoma — Eustachian Tube - Investigations & Lab Findings",8,5,"Inverted Papilloma & Nasopharyngeal Carcinoma — Eustachian Tube"],
-  [14,"Inverted Papilloma & Nasopharyngeal Carcinoma — Eustachian Tube - Medical & Surgical Management",8,5,"Inverted Papilloma & Nasopharyngeal Carcinoma — Eustachian Tube"],
-  [14,"Inverted Papilloma & Nasopharyngeal Carcinoma — Eustachian Tube - Complications & Prognosis",8,5,"Inverted Papilloma & Nasopharyngeal Carcinoma — Eustachian Tube"],
-  [14,"Throat (Pharynx & Larynx)",10,60],
-  [14,"Tonsils & Adenoids",9,40,"Throat (Pharynx & Larynx)"],
-  [14,"Tonsillitis — Acute vs Chronic, Indications for Tonsillectomy (Paradise Criteria)",9,15,"Tonsils & Adenoids"],
-  [14,"Tonsillitis — Acute vs Chronic",9,7,"Tonsillitis — Acute vs Chronic, Indications for Tonsillectomy (Paradise Criteria)"],
-  [14,"Tonsillitis — Acute vs Chronic - Etiology & Risk Factors",9,5,"Tonsillitis — Acute vs Chronic"],
-  [14,"Tonsillitis — Acute vs Chronic - Pathophysiology",9,5,"Tonsillitis — Acute vs Chronic"],
-  [14,"Tonsillitis — Acute vs Chronic - Clinical Presentation & Signs",9,5,"Tonsillitis — Acute vs Chronic"],
-  [14,"Tonsillitis — Acute vs Chronic - Differential Diagnosis",9,5,"Tonsillitis — Acute vs Chronic"],
-  [14,"Tonsillitis — Acute vs Chronic - Investigations & Lab Findings",9,5,"Tonsillitis — Acute vs Chronic"],
-  [14,"Tonsillitis — Acute vs Chronic - Medical & Surgical Management",9,5,"Tonsillitis — Acute vs Chronic"],
-  [14,"Tonsillitis — Acute vs Chronic - Complications & Prognosis",9,5,"Tonsillitis — Acute vs Chronic"],
-  [14,"Tonsillitis — Indications for Tonsillectomy (Paradise Criteria)",9,8,"Tonsillitis — Acute vs Chronic, Indications for Tonsillectomy (Paradise Criteria)"],
-  [14,"Tonsillitis — Indications for Tonsillectomy (Paradise Criteria) - Etiology & Risk Factors",9,5,"Tonsillitis — Indications for Tonsillectomy (Paradise Criteria)"],
-  [14,"Tonsillitis — Indications for Tonsillectomy (Paradise Criteria) - Pathophysiology",9,5,"Tonsillitis — Indications for Tonsillectomy (Paradise Criteria)"],
-  [14,"Tonsillitis — Indications for Tonsillectomy (Paradise Criteria) - Clinical Presentation & Signs",9,5,"Tonsillitis — Indications for Tonsillectomy (Paradise Criteria)"],
-  [14,"Tonsillitis — Indications for Tonsillectomy (Paradise Criteria) - Differential Diagnosis",9,5,"Tonsillitis — Indications for Tonsillectomy (Paradise Criteria)"],
-  [14,"Tonsillitis — Indications for Tonsillectomy (Paradise Criteria) - Investigations & Lab Findings",9,5,"Tonsillitis — Indications for Tonsillectomy (Paradise Criteria)"],
-  [14,"Tonsillitis — Indications for Tonsillectomy (Paradise Criteria) - Medical & Surgical Management",9,5,"Tonsillitis — Indications for Tonsillectomy (Paradise Criteria)"],
-  [14,"Tonsillitis — Indications for Tonsillectomy (Paradise Criteria) - Complications & Prognosis",9,5,"Tonsillitis — Indications for Tonsillectomy (Paradise Criteria)"],
-  [14,"Adenoid Hypertrophy — Adenoid Facies, OME & Indications for Adenoidectomy",9,15,"Tonsils & Adenoids"],
-  [14,"Adenoid Hypertrophy — Adenoid Facies, OME",9,7,"Adenoid Hypertrophy — Adenoid Facies, OME & Indications for Adenoidectomy"],
-  [14,"Adenoid Hypertrophy — Adenoid Facies, OME - Etiology & Risk Factors",9,5,"Adenoid Hypertrophy — Adenoid Facies, OME"],
-  [14,"Adenoid Hypertrophy — Adenoid Facies, OME - Pathophysiology",9,5,"Adenoid Hypertrophy — Adenoid Facies, OME"],
-  [14,"Adenoid Hypertrophy — Adenoid Facies, OME - Clinical Presentation & Signs",9,5,"Adenoid Hypertrophy — Adenoid Facies, OME"],
-  [14,"Adenoid Hypertrophy — Adenoid Facies, OME - Differential Diagnosis",9,5,"Adenoid Hypertrophy — Adenoid Facies, OME"],
-  [14,"Adenoid Hypertrophy — Adenoid Facies, OME - Investigations & Lab Findings",9,5,"Adenoid Hypertrophy — Adenoid Facies, OME"],
-  [14,"Adenoid Hypertrophy — Adenoid Facies, OME - Medical & Surgical Management",9,5,"Adenoid Hypertrophy — Adenoid Facies, OME"],
-  [14,"Adenoid Hypertrophy — Adenoid Facies, OME - Complications & Prognosis",9,5,"Adenoid Hypertrophy — Adenoid Facies, OME"],
-  [14,"Adenoid Hypertrophy — Indications for Adenoidectomy",9,8,"Adenoid Hypertrophy — Adenoid Facies, OME & Indications for Adenoidectomy"],
-  [14,"Adenoid Hypertrophy — Indications for Adenoidectomy - Etiology & Risk Factors",9,5,"Adenoid Hypertrophy — Indications for Adenoidectomy"],
-  [14,"Adenoid Hypertrophy — Indications for Adenoidectomy - Pathophysiology",9,5,"Adenoid Hypertrophy — Indications for Adenoidectomy"],
-  [14,"Adenoid Hypertrophy — Indications for Adenoidectomy - Clinical Presentation & Signs",9,5,"Adenoid Hypertrophy — Indications for Adenoidectomy"],
-  [14,"Adenoid Hypertrophy — Indications for Adenoidectomy - Differential Diagnosis",9,5,"Adenoid Hypertrophy — Indications for Adenoidectomy"],
-  [14,"Adenoid Hypertrophy — Indications for Adenoidectomy - Investigations & Lab Findings",9,5,"Adenoid Hypertrophy — Indications for Adenoidectomy"],
-  [14,"Adenoid Hypertrophy — Indications for Adenoidectomy - Medical & Surgical Management",9,5,"Adenoid Hypertrophy — Indications for Adenoidectomy"],
-  [14,"Adenoid Hypertrophy — Indications for Adenoidectomy - Complications & Prognosis",9,5,"Adenoid Hypertrophy — Indications for Adenoidectomy"],
-  [14,"Pharyngeal Abscesses & Tumors",9,40,"Throat (Pharynx & Larynx)"],
-  [14,"Peritonsillar Abscess — Quinsy, Uvula Deviation & Needle Aspiration",9,15,"Pharyngeal Abscesses & Tumors"],
-  [14,"Peritonsillar Abscess — Quinsy, Uvula Deviation",9,7,"Peritonsillar Abscess — Quinsy, Uvula Deviation & Needle Aspiration"],
-  [14,"Peritonsillar Abscess — Quinsy, Uvula Deviation - Etiology & Risk Factors",9,5,"Peritonsillar Abscess — Quinsy, Uvula Deviation"],
-  [14,"Peritonsillar Abscess — Quinsy, Uvula Deviation - Pathophysiology",9,5,"Peritonsillar Abscess — Quinsy, Uvula Deviation"],
-  [14,"Peritonsillar Abscess — Quinsy, Uvula Deviation - Clinical Presentation & Signs",9,5,"Peritonsillar Abscess — Quinsy, Uvula Deviation"],
-  [14,"Peritonsillar Abscess — Quinsy, Uvula Deviation - Differential Diagnosis",9,5,"Peritonsillar Abscess — Quinsy, Uvula Deviation"],
-  [14,"Peritonsillar Abscess — Quinsy, Uvula Deviation - Investigations & Lab Findings",9,5,"Peritonsillar Abscess — Quinsy, Uvula Deviation"],
-  [14,"Peritonsillar Abscess — Quinsy, Uvula Deviation - Medical & Surgical Management",9,5,"Peritonsillar Abscess — Quinsy, Uvula Deviation"],
-  [14,"Peritonsillar Abscess — Quinsy, Uvula Deviation - Complications & Prognosis",9,5,"Peritonsillar Abscess — Quinsy, Uvula Deviation"],
-  [14,"Peritonsillar Abscess — Needle Aspiration",9,8,"Peritonsillar Abscess — Quinsy, Uvula Deviation & Needle Aspiration"],
-  [14,"Peritonsillar Abscess — Needle Aspiration - Etiology & Risk Factors",9,5,"Peritonsillar Abscess — Needle Aspiration"],
-  [14,"Peritonsillar Abscess — Needle Aspiration - Pathophysiology",9,5,"Peritonsillar Abscess — Needle Aspiration"],
-  [14,"Peritonsillar Abscess — Needle Aspiration - Clinical Presentation & Signs",9,5,"Peritonsillar Abscess — Needle Aspiration"],
-  [14,"Peritonsillar Abscess — Needle Aspiration - Differential Diagnosis",9,5,"Peritonsillar Abscess — Needle Aspiration"],
-  [14,"Peritonsillar Abscess — Needle Aspiration - Investigations & Lab Findings",9,5,"Peritonsillar Abscess — Needle Aspiration"],
-  [14,"Peritonsillar Abscess — Needle Aspiration - Medical & Surgical Management",9,5,"Peritonsillar Abscess — Needle Aspiration"],
-  [14,"Peritonsillar Abscess — Needle Aspiration - Complications & Prognosis",9,5,"Peritonsillar Abscess — Needle Aspiration"],
-  [14,"Retropharyngeal & Parapharyngeal Abscess — Danger Space & Mediastinitis",9,18,"Pharyngeal Abscesses & Tumors"],
-  [14,"Retropharyngeal & Parapharyngeal Abscess — Danger Space",9,9,"Retropharyngeal & Parapharyngeal Abscess — Danger Space & Mediastinitis"],
-  [14,"Retropharyngeal & Parapharyngeal Abscess — Danger Space - Etiology & Risk Factors",9,5,"Retropharyngeal & Parapharyngeal Abscess — Danger Space"],
-  [14,"Retropharyngeal & Parapharyngeal Abscess — Danger Space - Pathophysiology",9,5,"Retropharyngeal & Parapharyngeal Abscess — Danger Space"],
-  [14,"Retropharyngeal & Parapharyngeal Abscess — Danger Space - Clinical Presentation & Signs",9,5,"Retropharyngeal & Parapharyngeal Abscess — Danger Space"],
-  [14,"Retropharyngeal & Parapharyngeal Abscess — Danger Space - Differential Diagnosis",9,5,"Retropharyngeal & Parapharyngeal Abscess — Danger Space"],
-  [14,"Retropharyngeal & Parapharyngeal Abscess — Danger Space - Investigations & Lab Findings",9,5,"Retropharyngeal & Parapharyngeal Abscess — Danger Space"],
-  [14,"Retropharyngeal & Parapharyngeal Abscess — Danger Space - Medical & Surgical Management",9,5,"Retropharyngeal & Parapharyngeal Abscess — Danger Space"],
-  [14,"Retropharyngeal & Parapharyngeal Abscess — Danger Space - Complications & Prognosis",9,5,"Retropharyngeal & Parapharyngeal Abscess — Danger Space"],
-  [14,"Retropharyngeal & Parapharyngeal Abscess — Mediastinitis",9,9,"Retropharyngeal & Parapharyngeal Abscess — Danger Space & Mediastinitis"],
-  [14,"Retropharyngeal & Parapharyngeal Abscess — Mediastinitis - Etiology & Risk Factors",9,5,"Retropharyngeal & Parapharyngeal Abscess — Mediastinitis"],
-  [14,"Retropharyngeal & Parapharyngeal Abscess — Mediastinitis - Pathophysiology",9,5,"Retropharyngeal & Parapharyngeal Abscess — Mediastinitis"],
-  [14,"Retropharyngeal & Parapharyngeal Abscess — Mediastinitis - Clinical Presentation & Signs",9,5,"Retropharyngeal & Parapharyngeal Abscess — Mediastinitis"],
-  [14,"Retropharyngeal & Parapharyngeal Abscess — Mediastinitis - Differential Diagnosis",9,5,"Retropharyngeal & Parapharyngeal Abscess — Mediastinitis"],
-  [14,"Retropharyngeal & Parapharyngeal Abscess — Mediastinitis - Investigations & Lab Findings",9,5,"Retropharyngeal & Parapharyngeal Abscess — Mediastinitis"],
-  [14,"Retropharyngeal & Parapharyngeal Abscess — Mediastinitis - Medical & Surgical Management",9,5,"Retropharyngeal & Parapharyngeal Abscess — Mediastinitis"],
-  [14,"Retropharyngeal & Parapharyngeal Abscess — Mediastinitis - Complications & Prognosis",9,5,"Retropharyngeal & Parapharyngeal Abscess — Mediastinitis"],
-  [14,"Laryngeal Disorders (Vocal Cords, Stridor)",9,45,"Throat (Pharynx & Larynx)"],
-  [14,"Vocal Cord Palsy — Unilateral (RLN) vs Bilateral & Causes",9,18,"Laryngeal Disorders (Vocal Cords, Stridor)"],
-  [14,"Vocal Cord Palsy — Unilateral (RLN) vs Bilateral",9,9,"Vocal Cord Palsy — Unilateral (RLN) vs Bilateral & Causes"],
-  [14,"Vocal Cord Palsy — Unilateral (RLN) vs Bilateral - Etiology & Risk Factors",9,5,"Vocal Cord Palsy — Unilateral (RLN) vs Bilateral"],
-  [14,"Vocal Cord Palsy — Unilateral (RLN) vs Bilateral - Pathophysiology",9,5,"Vocal Cord Palsy — Unilateral (RLN) vs Bilateral"],
-  [14,"Vocal Cord Palsy — Unilateral (RLN) vs Bilateral - Clinical Presentation & Signs",9,5,"Vocal Cord Palsy — Unilateral (RLN) vs Bilateral"],
-  [14,"Vocal Cord Palsy — Unilateral (RLN) vs Bilateral - Differential Diagnosis",9,5,"Vocal Cord Palsy — Unilateral (RLN) vs Bilateral"],
-  [14,"Vocal Cord Palsy — Unilateral (RLN) vs Bilateral - Investigations & Lab Findings",9,5,"Vocal Cord Palsy — Unilateral (RLN) vs Bilateral"],
-  [14,"Vocal Cord Palsy — Unilateral (RLN) vs Bilateral - Medical & Surgical Management",9,5,"Vocal Cord Palsy — Unilateral (RLN) vs Bilateral"],
-  [14,"Vocal Cord Palsy — Unilateral (RLN) vs Bilateral - Complications & Prognosis",9,5,"Vocal Cord Palsy — Unilateral (RLN) vs Bilateral"],
-  [14,"Vocal Cord Palsy — Causes",9,9,"Vocal Cord Palsy — Unilateral (RLN) vs Bilateral & Causes"],
-  [14,"Vocal Cord Palsy — Causes - Etiology & Risk Factors",9,5,"Vocal Cord Palsy — Causes"],
-  [14,"Vocal Cord Palsy — Causes - Pathophysiology",9,5,"Vocal Cord Palsy — Causes"],
-  [14,"Vocal Cord Palsy — Causes - Clinical Presentation & Signs",9,5,"Vocal Cord Palsy — Causes"],
-  [14,"Vocal Cord Palsy — Causes - Differential Diagnosis",9,5,"Vocal Cord Palsy — Causes"],
-  [14,"Vocal Cord Palsy — Causes - Investigations & Lab Findings",9,5,"Vocal Cord Palsy — Causes"],
-  [14,"Vocal Cord Palsy — Causes - Medical & Surgical Management",9,5,"Vocal Cord Palsy — Causes"],
-  [14,"Vocal Cord Palsy — Causes - Complications & Prognosis",9,5,"Vocal Cord Palsy — Causes"],
-  [14,"Stridor — Inspiratory vs Biphasic, Croup vs Epiglottitis vs Subglottic Stenosis",9,18,"Laryngeal Disorders (Vocal Cords, Stridor)"],
-  [14,"Stridor — Inspiratory vs Biphasic",9,9,"Stridor — Inspiratory vs Biphasic, Croup vs Epiglottitis vs Subglottic Stenosis"],
-  [14,"Stridor — Inspiratory vs Biphasic - Etiology & Risk Factors",9,5,"Stridor — Inspiratory vs Biphasic"],
-  [14,"Stridor — Inspiratory vs Biphasic - Pathophysiology",9,5,"Stridor — Inspiratory vs Biphasic"],
-  [14,"Stridor — Inspiratory vs Biphasic - Clinical Presentation & Signs",9,5,"Stridor — Inspiratory vs Biphasic"],
-  [14,"Stridor — Inspiratory vs Biphasic - Differential Diagnosis",9,5,"Stridor — Inspiratory vs Biphasic"],
-  [14,"Stridor — Inspiratory vs Biphasic - Investigations & Lab Findings",9,5,"Stridor — Inspiratory vs Biphasic"],
-  [14,"Stridor — Inspiratory vs Biphasic - Medical & Surgical Management",9,5,"Stridor — Inspiratory vs Biphasic"],
-  [14,"Stridor — Inspiratory vs Biphasic - Complications & Prognosis",9,5,"Stridor — Inspiratory vs Biphasic"],
-  [14,"Stridor — Croup vs Epiglottitis vs Subglottic Stenosis",9,9,"Stridor — Inspiratory vs Biphasic, Croup vs Epiglottitis vs Subglottic Stenosis"],
-  [14,"Stridor — Croup vs Epiglottitis vs Subglottic Stenosis - Etiology & Risk Factors",9,5,"Stridor — Croup vs Epiglottitis vs Subglottic Stenosis"],
-  [14,"Stridor — Croup vs Epiglottitis vs Subglottic Stenosis - Pathophysiology",9,5,"Stridor — Croup vs Epiglottitis vs Subglottic Stenosis"],
-  [14,"Stridor — Croup vs Epiglottitis vs Subglottic Stenosis - Clinical Presentation & Signs",9,5,"Stridor — Croup vs Epiglottitis vs Subglottic Stenosis"],
-  [14,"Stridor — Croup vs Epiglottitis vs Subglottic Stenosis - Differential Diagnosis",9,5,"Stridor — Croup vs Epiglottitis vs Subglottic Stenosis"],
-  [14,"Stridor — Croup vs Epiglottitis vs Subglottic Stenosis - Investigations & Lab Findings",9,5,"Stridor — Croup vs Epiglottitis vs Subglottic Stenosis"],
-  [14,"Stridor — Croup vs Epiglottitis vs Subglottic Stenosis - Medical & Surgical Management",9,5,"Stridor — Croup vs Epiglottitis vs Subglottic Stenosis"],
-  [14,"Stridor — Croup vs Epiglottitis vs Subglottic Stenosis - Complications & Prognosis",9,5,"Stridor — Croup vs Epiglottitis vs Subglottic Stenosis"],
-  [14,"Carcinoma Larynx",10,50,"Throat (Pharynx & Larynx)"],
-  [14,"Laryngeal Ca — Supraglottic vs Glottic (Better Prognosis) & Staging",10,18,"Carcinoma Larynx"],
-  [14,"Laryngeal Ca — Supraglottic vs Glottic (Better Prognosis)",10,9,"Laryngeal Ca — Supraglottic vs Glottic (Better Prognosis) & Staging"],
-  [14,"Laryngeal Ca — Supraglottic vs Glottic (Better Prognosis) - Etiology & Risk Factors",10,5,"Laryngeal Ca — Supraglottic vs Glottic (Better Prognosis)"],
-  [14,"Laryngeal Ca — Supraglottic vs Glottic (Better Prognosis) - Pathophysiology",10,5,"Laryngeal Ca — Supraglottic vs Glottic (Better Prognosis)"],
-  [14,"Laryngeal Ca — Supraglottic vs Glottic (Better Prognosis) - Clinical Presentation & Signs",10,5,"Laryngeal Ca — Supraglottic vs Glottic (Better Prognosis)"],
-  [14,"Laryngeal Ca — Supraglottic vs Glottic (Better Prognosis) - Differential Diagnosis",10,5,"Laryngeal Ca — Supraglottic vs Glottic (Better Prognosis)"],
-  [14,"Laryngeal Ca — Supraglottic vs Glottic (Better Prognosis) - Investigations & Lab Findings",10,5,"Laryngeal Ca — Supraglottic vs Glottic (Better Prognosis)"],
-  [14,"Laryngeal Ca — Supraglottic vs Glottic (Better Prognosis) - Medical & Surgical Management",10,5,"Laryngeal Ca — Supraglottic vs Glottic (Better Prognosis)"],
-  [14,"Laryngeal Ca — Supraglottic vs Glottic (Better Prognosis) - Complications & Prognosis",10,5,"Laryngeal Ca — Supraglottic vs Glottic (Better Prognosis)"],
-  [14,"Laryngeal Ca — Staging",10,9,"Laryngeal Ca — Supraglottic vs Glottic (Better Prognosis) & Staging"],
-  [14,"Laryngeal Ca — Staging - Etiology & Risk Factors",10,5,"Laryngeal Ca — Staging"],
-  [14,"Laryngeal Ca — Staging - Pathophysiology",10,5,"Laryngeal Ca — Staging"],
-  [14,"Laryngeal Ca — Staging - Clinical Presentation & Signs",10,5,"Laryngeal Ca — Staging"],
-  [14,"Laryngeal Ca — Staging - Differential Diagnosis",10,5,"Laryngeal Ca — Staging"],
-  [14,"Laryngeal Ca — Staging - Investigations & Lab Findings",10,5,"Laryngeal Ca — Staging"],
-  [14,"Laryngeal Ca — Staging - Medical & Surgical Management",10,5,"Laryngeal Ca — Staging"],
-  [14,"Laryngeal Ca — Staging - Complications & Prognosis",10,5,"Laryngeal Ca — Staging"],
-  [14,"Laryngeal Ca Surgery — TL, Partial vs Total Laryngectomy & Voice Rehab",10,15,"Carcinoma Larynx"],
-  [14,"Laryngeal Ca Surgery — TL, Partial vs Total Laryngectomy",10,7,"Laryngeal Ca Surgery — TL, Partial vs Total Laryngectomy & Voice Rehab"],
-  [14,"Laryngeal Ca Surgery — TL, Partial vs Total Laryngectomy - Etiology & Risk Factors",10,5,"Laryngeal Ca Surgery — TL, Partial vs Total Laryngectomy"],
-  [14,"Laryngeal Ca Surgery — TL, Partial vs Total Laryngectomy - Pathophysiology",10,5,"Laryngeal Ca Surgery — TL, Partial vs Total Laryngectomy"],
-  [14,"Laryngeal Ca Surgery — TL, Partial vs Total Laryngectomy - Clinical Presentation & Signs",10,5,"Laryngeal Ca Surgery — TL, Partial vs Total Laryngectomy"],
-  [14,"Laryngeal Ca Surgery — TL, Partial vs Total Laryngectomy - Differential Diagnosis",10,5,"Laryngeal Ca Surgery — TL, Partial vs Total Laryngectomy"],
-  [14,"Laryngeal Ca Surgery — TL, Partial vs Total Laryngectomy - Investigations & Lab Findings",10,5,"Laryngeal Ca Surgery — TL, Partial vs Total Laryngectomy"],
-  [14,"Laryngeal Ca Surgery — TL, Partial vs Total Laryngectomy - Medical & Surgical Management",10,5,"Laryngeal Ca Surgery — TL, Partial vs Total Laryngectomy"],
-  [14,"Laryngeal Ca Surgery — TL, Partial vs Total Laryngectomy - Complications & Prognosis",10,5,"Laryngeal Ca Surgery — TL, Partial vs Total Laryngectomy"],
-  [14,"Laryngeal Ca Surgery — Voice Rehab",10,8,"Laryngeal Ca Surgery — TL, Partial vs Total Laryngectomy & Voice Rehab"],
-  [14,"Laryngeal Ca Surgery — Voice Rehab - Etiology & Risk Factors",10,5,"Laryngeal Ca Surgery — Voice Rehab"],
-  [14,"Laryngeal Ca Surgery — Voice Rehab - Pathophysiology",10,5,"Laryngeal Ca Surgery — Voice Rehab"],
-  [14,"Laryngeal Ca Surgery — Voice Rehab - Clinical Presentation & Signs",10,5,"Laryngeal Ca Surgery — Voice Rehab"],
-  [14,"Laryngeal Ca Surgery — Voice Rehab - Differential Diagnosis",10,5,"Laryngeal Ca Surgery — Voice Rehab"],
-  [14,"Laryngeal Ca Surgery — Voice Rehab - Investigations & Lab Findings",10,5,"Laryngeal Ca Surgery — Voice Rehab"],
-  [14,"Laryngeal Ca Surgery — Voice Rehab - Medical & Surgical Management",10,5,"Laryngeal Ca Surgery — Voice Rehab"],
-  [14,"Laryngeal Ca Surgery — Voice Rehab - Complications & Prognosis",10,5,"Laryngeal Ca Surgery — Voice Rehab"],
-  [14,"Dysphagia & Esophagus",8,35,"Throat (Pharynx & Larynx)"],
-  [14,"Dysphagia — Oropharyngeal vs Esophageal, Zenker's Diverticulum & Achalasia",8,18,"Dysphagia & Esophagus"],
-  [14,"Dysphagia — Oropharyngeal vs Esophageal, Zenker's Diverticulum",8,9,"Dysphagia — Oropharyngeal vs Esophageal, Zenker's Diverticulum & Achalasia"],
-  [14,"Dysphagia — Oropharyngeal vs Esophageal, Zenker's Diverticulum - Etiology & Risk Factors",8,5,"Dysphagia — Oropharyngeal vs Esophageal, Zenker's Diverticulum"],
-  [14,"Dysphagia — Oropharyngeal vs Esophageal, Zenker's Diverticulum - Pathophysiology",8,5,"Dysphagia — Oropharyngeal vs Esophageal, Zenker's Diverticulum"],
-  [14,"Dysphagia — Oropharyngeal vs Esophageal, Zenker's Diverticulum - Clinical Presentation & Signs",8,5,"Dysphagia — Oropharyngeal vs Esophageal, Zenker's Diverticulum"],
-  [14,"Dysphagia — Oropharyngeal vs Esophageal, Zenker's Diverticulum - Differential Diagnosis",8,5,"Dysphagia — Oropharyngeal vs Esophageal, Zenker's Diverticulum"],
-  [14,"Dysphagia — Oropharyngeal vs Esophageal, Zenker's Diverticulum - Investigations & Lab Findings",8,5,"Dysphagia — Oropharyngeal vs Esophageal, Zenker's Diverticulum"],
-  [14,"Dysphagia — Oropharyngeal vs Esophageal, Zenker's Diverticulum - Medical & Surgical Management",8,5,"Dysphagia — Oropharyngeal vs Esophageal, Zenker's Diverticulum"],
-  [14,"Dysphagia — Oropharyngeal vs Esophageal, Zenker's Diverticulum - Complications & Prognosis",8,5,"Dysphagia — Oropharyngeal vs Esophageal, Zenker's Diverticulum"],
-  [14,"Dysphagia — Achalasia",8,9,"Dysphagia — Oropharyngeal vs Esophageal, Zenker's Diverticulum & Achalasia"],
-  [14,"Dysphagia — Achalasia - Etiology & Risk Factors",8,5,"Dysphagia — Achalasia"],
-  [14,"Dysphagia — Achalasia - Pathophysiology",8,5,"Dysphagia — Achalasia"],
-  [14,"Dysphagia — Achalasia - Clinical Presentation & Signs",8,5,"Dysphagia — Achalasia"],
-  [14,"Dysphagia — Achalasia - Differential Diagnosis",8,5,"Dysphagia — Achalasia"],
-  [14,"Dysphagia — Achalasia - Investigations & Lab Findings",8,5,"Dysphagia — Achalasia"],
-  [14,"Dysphagia — Achalasia - Medical & Surgical Management",8,5,"Dysphagia — Achalasia"],
-  [14,"Dysphagia — Achalasia - Complications & Prognosis",8,5,"Dysphagia — Achalasia"],
-  [14,"Plummer-Vinson Syndrome & Post-cricoid Carcinoma",8,15,"Dysphagia & Esophagus"],
-  [14,"Plummer-Vinson Syndrome",8,7,"Plummer-Vinson Syndrome & Post-cricoid Carcinoma"],
-  [14,"Plummer-Vinson Syndrome - Etiology & Risk Factors",8,5,"Plummer-Vinson Syndrome"],
-  [14,"Plummer-Vinson Syndrome - Pathophysiology",8,5,"Plummer-Vinson Syndrome"],
-  [14,"Plummer-Vinson Syndrome - Clinical Presentation & Signs",8,5,"Plummer-Vinson Syndrome"],
-  [14,"Plummer-Vinson Syndrome - Differential Diagnosis",8,5,"Plummer-Vinson Syndrome"],
-  [14,"Plummer-Vinson Syndrome - Investigations & Lab Findings",8,5,"Plummer-Vinson Syndrome"],
-  [14,"Plummer-Vinson Syndrome - Medical & Surgical Management",8,5,"Plummer-Vinson Syndrome"],
-  [14,"Plummer-Vinson Syndrome - Complications & Prognosis",8,5,"Plummer-Vinson Syndrome"],
-  [14,"Post-cricoid Carcinoma",8,8,"Plummer-Vinson Syndrome & Post-cricoid Carcinoma"],
-  [14,"Post-cricoid Carcinoma - Etiology & Risk Factors",8,5,"Post-cricoid Carcinoma"],
-  [14,"Post-cricoid Carcinoma - Pathophysiology",8,5,"Post-cricoid Carcinoma"],
-  [14,"Post-cricoid Carcinoma - Clinical Presentation & Signs",8,5,"Post-cricoid Carcinoma"],
-  [14,"Post-cricoid Carcinoma - Differential Diagnosis",8,5,"Post-cricoid Carcinoma"],
-  [14,"Post-cricoid Carcinoma - Investigations & Lab Findings",8,5,"Post-cricoid Carcinoma"],
-  [14,"Post-cricoid Carcinoma - Medical & Surgical Management",8,5,"Post-cricoid Carcinoma"],
-  [14,"Post-cricoid Carcinoma - Complications & Prognosis",8,5,"Post-cricoid Carcinoma"]
+  [14, "Ear", 10, 60],
+  [14, "Diseases of External Ear", 8, 30, "Ear"],
+  [
+    14,
+    "Otitis Externa — Diffuse vs Malignant (Pseudomonas) & Furunculosis",
+    8,
+    15,
+    "Diseases of External Ear"
+  ],
+  [
+    14,
+    "Otitis Externa — Diffuse vs Malignant (Pseudomonas)",
+    8,
+    7,
+    "Otitis Externa — Diffuse vs Malignant (Pseudomonas) & Furunculosis"
+  ],
+  [
+    14,
+    "Otitis Externa — Diffuse vs Malignant (Pseudomonas) - Etiology & Risk Factors",
+    8,
+    5,
+    "Otitis Externa — Diffuse vs Malignant (Pseudomonas)"
+  ],
+  [
+    14,
+    "Otitis Externa — Diffuse vs Malignant (Pseudomonas) - Pathophysiology",
+    8,
+    5,
+    "Otitis Externa — Diffuse vs Malignant (Pseudomonas)"
+  ],
+  [
+    14,
+    "Otitis Externa — Diffuse vs Malignant (Pseudomonas) - Clinical Presentation & Signs",
+    8,
+    5,
+    "Otitis Externa — Diffuse vs Malignant (Pseudomonas)"
+  ],
+  [
+    14,
+    "Otitis Externa — Diffuse vs Malignant (Pseudomonas) - Differential Diagnosis",
+    8,
+    5,
+    "Otitis Externa — Diffuse vs Malignant (Pseudomonas)"
+  ],
+  [
+    14,
+    "Otitis Externa — Diffuse vs Malignant (Pseudomonas) - Investigations & Lab Findings",
+    8,
+    5,
+    "Otitis Externa — Diffuse vs Malignant (Pseudomonas)"
+  ],
+  [
+    14,
+    "Otitis Externa — Diffuse vs Malignant (Pseudomonas) - Medical & Surgical Management",
+    8,
+    5,
+    "Otitis Externa — Diffuse vs Malignant (Pseudomonas)"
+  ],
+  [
+    14,
+    "Otitis Externa — Diffuse vs Malignant (Pseudomonas) - Complications & Prognosis",
+    8,
+    5,
+    "Otitis Externa — Diffuse vs Malignant (Pseudomonas)"
+  ],
+  [
+    14,
+    "Otitis Externa — Furunculosis",
+    8,
+    8,
+    "Otitis Externa — Diffuse vs Malignant (Pseudomonas) & Furunculosis"
+  ],
+  [
+    14,
+    "Otitis Externa — Furunculosis - Etiology & Risk Factors",
+    8,
+    5,
+    "Otitis Externa — Furunculosis"
+  ],
+  [14, "Otitis Externa — Furunculosis - Pathophysiology", 8, 5, "Otitis Externa — Furunculosis"],
+  [
+    14,
+    "Otitis Externa — Furunculosis - Clinical Presentation & Signs",
+    8,
+    5,
+    "Otitis Externa — Furunculosis"
+  ],
+  [
+    14,
+    "Otitis Externa — Furunculosis - Differential Diagnosis",
+    8,
+    5,
+    "Otitis Externa — Furunculosis"
+  ],
+  [
+    14,
+    "Otitis Externa — Furunculosis - Investigations & Lab Findings",
+    8,
+    5,
+    "Otitis Externa — Furunculosis"
+  ],
+  [
+    14,
+    "Otitis Externa — Furunculosis - Medical & Surgical Management",
+    8,
+    5,
+    "Otitis Externa — Furunculosis"
+  ],
+  [
+    14,
+    "Otitis Externa — Furunculosis - Complications & Prognosis",
+    8,
+    5,
+    "Otitis Externa — Furunculosis"
+  ],
+  [14, "Cerumen Impaction, Aural Polyp & Foreign Body", 8, 12, "Diseases of External Ear"],
+  [14, "Cerumen Impaction, Aural Polyp", 8, 6, "Cerumen Impaction, Aural Polyp & Foreign Body"],
+  [
+    14,
+    "Cerumen Impaction, Aural Polyp - Etiology & Risk Factors",
+    8,
+    5,
+    "Cerumen Impaction, Aural Polyp"
+  ],
+  [14, "Cerumen Impaction, Aural Polyp - Pathophysiology", 8, 5, "Cerumen Impaction, Aural Polyp"],
+  [
+    14,
+    "Cerumen Impaction, Aural Polyp - Clinical Presentation & Signs",
+    8,
+    5,
+    "Cerumen Impaction, Aural Polyp"
+  ],
+  [
+    14,
+    "Cerumen Impaction, Aural Polyp - Differential Diagnosis",
+    8,
+    5,
+    "Cerumen Impaction, Aural Polyp"
+  ],
+  [
+    14,
+    "Cerumen Impaction, Aural Polyp - Investigations & Lab Findings",
+    8,
+    5,
+    "Cerumen Impaction, Aural Polyp"
+  ],
+  [
+    14,
+    "Cerumen Impaction, Aural Polyp - Medical & Surgical Management",
+    8,
+    5,
+    "Cerumen Impaction, Aural Polyp"
+  ],
+  [
+    14,
+    "Cerumen Impaction, Aural Polyp - Complications & Prognosis",
+    8,
+    5,
+    "Cerumen Impaction, Aural Polyp"
+  ],
+  [14, "Foreign Body", 8, 6, "Cerumen Impaction, Aural Polyp & Foreign Body"],
+  [14, "Foreign Body - Etiology & Risk Factors", 8, 5, "Foreign Body"],
+  [14, "Foreign Body - Pathophysiology", 8, 5, "Foreign Body"],
+  [14, "Foreign Body - Clinical Presentation & Signs", 8, 5, "Foreign Body"],
+  [14, "Foreign Body - Differential Diagnosis", 8, 5, "Foreign Body"],
+  [14, "Foreign Body - Investigations & Lab Findings", 8, 5, "Foreign Body"],
+  [14, "Foreign Body - Medical & Surgical Management", 8, 5, "Foreign Body"],
+  [14, "Foreign Body - Complications & Prognosis", 8, 5, "Foreign Body"],
+  [14, "Diseases of Middle Ear (ASOM, CSOM)", 10, 50, "Ear"],
+  [
+    14,
+    "ASOM — Stages, TM Perforation & Grommet Insertion",
+    10,
+    15,
+    "Diseases of Middle Ear (ASOM, CSOM)"
+  ],
+  [14, "ASOM — Stages, TM Perforation", 10, 7, "ASOM — Stages, TM Perforation & Grommet Insertion"],
+  [
+    14,
+    "ASOM — Stages, TM Perforation - Etiology & Risk Factors",
+    10,
+    5,
+    "ASOM — Stages, TM Perforation"
+  ],
+  [14, "ASOM — Stages, TM Perforation - Pathophysiology", 10, 5, "ASOM — Stages, TM Perforation"],
+  [
+    14,
+    "ASOM — Stages, TM Perforation - Clinical Presentation & Signs",
+    10,
+    5,
+    "ASOM — Stages, TM Perforation"
+  ],
+  [
+    14,
+    "ASOM — Stages, TM Perforation - Differential Diagnosis",
+    10,
+    5,
+    "ASOM — Stages, TM Perforation"
+  ],
+  [
+    14,
+    "ASOM — Stages, TM Perforation - Investigations & Lab Findings",
+    10,
+    5,
+    "ASOM — Stages, TM Perforation"
+  ],
+  [
+    14,
+    "ASOM — Stages, TM Perforation - Medical & Surgical Management",
+    10,
+    5,
+    "ASOM — Stages, TM Perforation"
+  ],
+  [
+    14,
+    "ASOM — Stages, TM Perforation - Complications & Prognosis",
+    10,
+    5,
+    "ASOM — Stages, TM Perforation"
+  ],
+  [14, "ASOM — Grommet Insertion", 10, 8, "ASOM — Stages, TM Perforation & Grommet Insertion"],
+  [14, "ASOM — Grommet Insertion - Etiology & Risk Factors", 10, 5, "ASOM — Grommet Insertion"],
+  [14, "ASOM — Grommet Insertion - Pathophysiology", 10, 5, "ASOM — Grommet Insertion"],
+  [
+    14,
+    "ASOM — Grommet Insertion - Clinical Presentation & Signs",
+    10,
+    5,
+    "ASOM — Grommet Insertion"
+  ],
+  [14, "ASOM — Grommet Insertion - Differential Diagnosis", 10, 5, "ASOM — Grommet Insertion"],
+  [
+    14,
+    "ASOM — Grommet Insertion - Investigations & Lab Findings",
+    10,
+    5,
+    "ASOM — Grommet Insertion"
+  ],
+  [
+    14,
+    "ASOM — Grommet Insertion - Medical & Surgical Management",
+    10,
+    5,
+    "ASOM — Grommet Insertion"
+  ],
+  [14, "ASOM — Grommet Insertion - Complications & Prognosis", 10, 5, "ASOM — Grommet Insertion"],
+  [
+    14,
+    "CSOM — Tubotympanic (Safe) vs Atticoantral (Unsafe): Features & Surgery",
+    10,
+    18,
+    "Diseases of Middle Ear (ASOM, CSOM)"
+  ],
+  [
+    14,
+    "CSOM — Tubotympanic (Safe) vs Atticoantral (Unsafe): Features",
+    10,
+    9,
+    "CSOM — Tubotympanic (Safe) vs Atticoantral (Unsafe): Features & Surgery"
+  ],
+  [
+    14,
+    "CSOM — Tubotympanic (Safe) vs Atticoantral (Unsafe): Features - Etiology & Risk Factors",
+    10,
+    5,
+    "CSOM — Tubotympanic (Safe) vs Atticoantral (Unsafe): Features"
+  ],
+  [
+    14,
+    "CSOM — Tubotympanic (Safe) vs Atticoantral (Unsafe): Features - Pathophysiology",
+    10,
+    5,
+    "CSOM — Tubotympanic (Safe) vs Atticoantral (Unsafe): Features"
+  ],
+  [
+    14,
+    "CSOM — Tubotympanic (Safe) vs Atticoantral (Unsafe): Features - Clinical Presentation & Signs",
+    10,
+    5,
+    "CSOM — Tubotympanic (Safe) vs Atticoantral (Unsafe): Features"
+  ],
+  [
+    14,
+    "CSOM — Tubotympanic (Safe) vs Atticoantral (Unsafe): Features - Differential Diagnosis",
+    10,
+    5,
+    "CSOM — Tubotympanic (Safe) vs Atticoantral (Unsafe): Features"
+  ],
+  [
+    14,
+    "CSOM — Tubotympanic (Safe) vs Atticoantral (Unsafe): Features - Investigations & Lab Findings",
+    10,
+    5,
+    "CSOM — Tubotympanic (Safe) vs Atticoantral (Unsafe): Features"
+  ],
+  [
+    14,
+    "CSOM — Tubotympanic (Safe) vs Atticoantral (Unsafe): Features - Medical & Surgical Management",
+    10,
+    5,
+    "CSOM — Tubotympanic (Safe) vs Atticoantral (Unsafe): Features"
+  ],
+  [
+    14,
+    "CSOM — Tubotympanic (Safe) vs Atticoantral (Unsafe): Features - Complications & Prognosis",
+    10,
+    5,
+    "CSOM — Tubotympanic (Safe) vs Atticoantral (Unsafe): Features"
+  ],
+  [
+    14,
+    "CSOM — Surgery",
+    10,
+    9,
+    "CSOM — Tubotympanic (Safe) vs Atticoantral (Unsafe): Features & Surgery"
+  ],
+  [14, "CSOM — Surgery - Etiology & Risk Factors", 10, 5, "CSOM — Surgery"],
+  [14, "CSOM — Surgery - Pathophysiology", 10, 5, "CSOM — Surgery"],
+  [14, "CSOM — Surgery - Clinical Presentation & Signs", 10, 5, "CSOM — Surgery"],
+  [14, "CSOM — Surgery - Differential Diagnosis", 10, 5, "CSOM — Surgery"],
+  [14, "CSOM — Surgery - Investigations & Lab Findings", 10, 5, "CSOM — Surgery"],
+  [14, "CSOM — Surgery - Medical & Surgical Management", 10, 5, "CSOM — Surgery"],
+  [14, "CSOM — Surgery - Complications & Prognosis", 10, 5, "CSOM — Surgery"],
+  [
+    14,
+    "Cholesteatoma — Pathogenesis, Attic Perforation & Complications (Meningitis)",
+    10,
+    18,
+    "Diseases of Middle Ear (ASOM, CSOM)"
+  ],
+  [
+    14,
+    "Cholesteatoma — Pathogenesis, Attic Perforation",
+    10,
+    9,
+    "Cholesteatoma — Pathogenesis, Attic Perforation & Complications (Meningitis)"
+  ],
+  [
+    14,
+    "Cholesteatoma — Pathogenesis, Attic Perforation - Etiology & Risk Factors",
+    10,
+    5,
+    "Cholesteatoma — Pathogenesis, Attic Perforation"
+  ],
+  [
+    14,
+    "Cholesteatoma — Pathogenesis, Attic Perforation - Pathophysiology",
+    10,
+    5,
+    "Cholesteatoma — Pathogenesis, Attic Perforation"
+  ],
+  [
+    14,
+    "Cholesteatoma — Pathogenesis, Attic Perforation - Clinical Presentation & Signs",
+    10,
+    5,
+    "Cholesteatoma — Pathogenesis, Attic Perforation"
+  ],
+  [
+    14,
+    "Cholesteatoma — Pathogenesis, Attic Perforation - Differential Diagnosis",
+    10,
+    5,
+    "Cholesteatoma — Pathogenesis, Attic Perforation"
+  ],
+  [
+    14,
+    "Cholesteatoma — Pathogenesis, Attic Perforation - Investigations & Lab Findings",
+    10,
+    5,
+    "Cholesteatoma — Pathogenesis, Attic Perforation"
+  ],
+  [
+    14,
+    "Cholesteatoma — Pathogenesis, Attic Perforation - Medical & Surgical Management",
+    10,
+    5,
+    "Cholesteatoma — Pathogenesis, Attic Perforation"
+  ],
+  [
+    14,
+    "Cholesteatoma — Pathogenesis, Attic Perforation - Complications & Prognosis",
+    10,
+    5,
+    "Cholesteatoma — Pathogenesis, Attic Perforation"
+  ],
+  [
+    14,
+    "Cholesteatoma — Complications (Meningitis)",
+    10,
+    9,
+    "Cholesteatoma — Pathogenesis, Attic Perforation & Complications (Meningitis)"
+  ],
+  [
+    14,
+    "Cholesteatoma — Complications (Meningitis) - Etiology & Risk Factors",
+    10,
+    5,
+    "Cholesteatoma — Complications (Meningitis)"
+  ],
+  [
+    14,
+    "Cholesteatoma — Complications (Meningitis) - Pathophysiology",
+    10,
+    5,
+    "Cholesteatoma — Complications (Meningitis)"
+  ],
+  [
+    14,
+    "Cholesteatoma — Complications (Meningitis) - Clinical Presentation & Signs",
+    10,
+    5,
+    "Cholesteatoma — Complications (Meningitis)"
+  ],
+  [
+    14,
+    "Cholesteatoma — Complications (Meningitis) - Differential Diagnosis",
+    10,
+    5,
+    "Cholesteatoma — Complications (Meningitis)"
+  ],
+  [
+    14,
+    "Cholesteatoma — Complications (Meningitis) - Investigations & Lab Findings",
+    10,
+    5,
+    "Cholesteatoma — Complications (Meningitis)"
+  ],
+  [
+    14,
+    "Cholesteatoma — Complications (Meningitis) - Medical & Surgical Management",
+    10,
+    5,
+    "Cholesteatoma — Complications (Meningitis)"
+  ],
+  [
+    14,
+    "Cholesteatoma — Complications (Meningitis) - Complications & Prognosis",
+    10,
+    5,
+    "Cholesteatoma — Complications (Meningitis)"
+  ],
+  [14, "Diseases of Inner Ear (Vertigo, Meniere's)", 9, 45, "Ear"],
+  [
+    14,
+    "Vertigo Classification — Peripheral vs Central: Dix-Hallpike & Romberg",
+    9,
+    18,
+    "Diseases of Inner Ear (Vertigo, Meniere's)"
+  ],
+  [
+    14,
+    "Vertigo Classification — Peripheral vs Central: Dix-Hallpike",
+    9,
+    9,
+    "Vertigo Classification — Peripheral vs Central: Dix-Hallpike & Romberg"
+  ],
+  [
+    14,
+    "Vertigo Classification — Peripheral vs Central: Dix-Hallpike - Etiology & Risk Factors",
+    9,
+    5,
+    "Vertigo Classification — Peripheral vs Central: Dix-Hallpike"
+  ],
+  [
+    14,
+    "Vertigo Classification — Peripheral vs Central: Dix-Hallpike - Pathophysiology",
+    9,
+    5,
+    "Vertigo Classification — Peripheral vs Central: Dix-Hallpike"
+  ],
+  [
+    14,
+    "Vertigo Classification — Peripheral vs Central: Dix-Hallpike - Clinical Presentation & Signs",
+    9,
+    5,
+    "Vertigo Classification — Peripheral vs Central: Dix-Hallpike"
+  ],
+  [
+    14,
+    "Vertigo Classification — Peripheral vs Central: Dix-Hallpike - Differential Diagnosis",
+    9,
+    5,
+    "Vertigo Classification — Peripheral vs Central: Dix-Hallpike"
+  ],
+  [
+    14,
+    "Vertigo Classification — Peripheral vs Central: Dix-Hallpike - Investigations & Lab Findings",
+    9,
+    5,
+    "Vertigo Classification — Peripheral vs Central: Dix-Hallpike"
+  ],
+  [
+    14,
+    "Vertigo Classification — Peripheral vs Central: Dix-Hallpike - Medical & Surgical Management",
+    9,
+    5,
+    "Vertigo Classification — Peripheral vs Central: Dix-Hallpike"
+  ],
+  [
+    14,
+    "Vertigo Classification — Peripheral vs Central: Dix-Hallpike - Complications & Prognosis",
+    9,
+    5,
+    "Vertigo Classification — Peripheral vs Central: Dix-Hallpike"
+  ],
+  [
+    14,
+    "Vertigo Classification — Romberg",
+    9,
+    9,
+    "Vertigo Classification — Peripheral vs Central: Dix-Hallpike & Romberg"
+  ],
+  [
+    14,
+    "Vertigo Classification — Romberg - Etiology & Risk Factors",
+    9,
+    5,
+    "Vertigo Classification — Romberg"
+  ],
+  [
+    14,
+    "Vertigo Classification — Romberg - Pathophysiology",
+    9,
+    5,
+    "Vertigo Classification — Romberg"
+  ],
+  [
+    14,
+    "Vertigo Classification — Romberg - Clinical Presentation & Signs",
+    9,
+    5,
+    "Vertigo Classification — Romberg"
+  ],
+  [
+    14,
+    "Vertigo Classification — Romberg - Differential Diagnosis",
+    9,
+    5,
+    "Vertigo Classification — Romberg"
+  ],
+  [
+    14,
+    "Vertigo Classification — Romberg - Investigations & Lab Findings",
+    9,
+    5,
+    "Vertigo Classification — Romberg"
+  ],
+  [
+    14,
+    "Vertigo Classification — Romberg - Medical & Surgical Management",
+    9,
+    5,
+    "Vertigo Classification — Romberg"
+  ],
+  [
+    14,
+    "Vertigo Classification — Romberg - Complications & Prognosis",
+    9,
+    5,
+    "Vertigo Classification — Romberg"
+  ],
+  [
+    14,
+    "Meniere's Disease — Endolymphatic Hydrops, Triad & Treatment",
+    9,
+    15,
+    "Diseases of Inner Ear (Vertigo, Meniere's)"
+  ],
+  [
+    14,
+    "Meniere's Disease — Endolymphatic Hydrops, Triad",
+    9,
+    7,
+    "Meniere's Disease — Endolymphatic Hydrops, Triad & Treatment"
+  ],
+  [
+    14,
+    "Meniere's Disease — Endolymphatic Hydrops, Triad - Etiology & Risk Factors",
+    9,
+    5,
+    "Meniere's Disease — Endolymphatic Hydrops, Triad"
+  ],
+  [
+    14,
+    "Meniere's Disease — Endolymphatic Hydrops, Triad - Pathophysiology",
+    9,
+    5,
+    "Meniere's Disease — Endolymphatic Hydrops, Triad"
+  ],
+  [
+    14,
+    "Meniere's Disease — Endolymphatic Hydrops, Triad - Clinical Presentation & Signs",
+    9,
+    5,
+    "Meniere's Disease — Endolymphatic Hydrops, Triad"
+  ],
+  [
+    14,
+    "Meniere's Disease — Endolymphatic Hydrops, Triad - Differential Diagnosis",
+    9,
+    5,
+    "Meniere's Disease — Endolymphatic Hydrops, Triad"
+  ],
+  [
+    14,
+    "Meniere's Disease — Endolymphatic Hydrops, Triad - Investigations & Lab Findings",
+    9,
+    5,
+    "Meniere's Disease — Endolymphatic Hydrops, Triad"
+  ],
+  [
+    14,
+    "Meniere's Disease — Endolymphatic Hydrops, Triad - Medical & Surgical Management",
+    9,
+    5,
+    "Meniere's Disease — Endolymphatic Hydrops, Triad"
+  ],
+  [
+    14,
+    "Meniere's Disease — Endolymphatic Hydrops, Triad - Complications & Prognosis",
+    9,
+    5,
+    "Meniere's Disease — Endolymphatic Hydrops, Triad"
+  ],
+  [
+    14,
+    "Meniere's Disease — Treatment",
+    9,
+    8,
+    "Meniere's Disease — Endolymphatic Hydrops, Triad & Treatment"
+  ],
+  [
+    14,
+    "Meniere's Disease — Treatment - Etiology & Risk Factors",
+    9,
+    5,
+    "Meniere's Disease — Treatment"
+  ],
+  [14, "Meniere's Disease — Treatment - Pathophysiology", 9, 5, "Meniere's Disease — Treatment"],
+  [
+    14,
+    "Meniere's Disease — Treatment - Clinical Presentation & Signs",
+    9,
+    5,
+    "Meniere's Disease — Treatment"
+  ],
+  [
+    14,
+    "Meniere's Disease — Treatment - Differential Diagnosis",
+    9,
+    5,
+    "Meniere's Disease — Treatment"
+  ],
+  [
+    14,
+    "Meniere's Disease — Treatment - Investigations & Lab Findings",
+    9,
+    5,
+    "Meniere's Disease — Treatment"
+  ],
+  [
+    14,
+    "Meniere's Disease — Treatment - Medical & Surgical Management",
+    9,
+    5,
+    "Meniere's Disease — Treatment"
+  ],
+  [
+    14,
+    "Meniere's Disease — Treatment - Complications & Prognosis",
+    9,
+    5,
+    "Meniere's Disease — Treatment"
+  ],
+  [
+    14,
+    "BPPV — PC-BPPV, Epley Manoeuvre & Canalith Repositioning",
+    9,
+    12,
+    "Diseases of Inner Ear (Vertigo, Meniere's)"
+  ],
+  [
+    14,
+    "BPPV — PC-BPPV, Epley Manoeuvre",
+    9,
+    6,
+    "BPPV — PC-BPPV, Epley Manoeuvre & Canalith Repositioning"
+  ],
+  [
+    14,
+    "BPPV — PC-BPPV, Epley Manoeuvre - Etiology & Risk Factors",
+    9,
+    5,
+    "BPPV — PC-BPPV, Epley Manoeuvre"
+  ],
+  [
+    14,
+    "BPPV — PC-BPPV, Epley Manoeuvre - Pathophysiology",
+    9,
+    5,
+    "BPPV — PC-BPPV, Epley Manoeuvre"
+  ],
+  [
+    14,
+    "BPPV — PC-BPPV, Epley Manoeuvre - Clinical Presentation & Signs",
+    9,
+    5,
+    "BPPV — PC-BPPV, Epley Manoeuvre"
+  ],
+  [
+    14,
+    "BPPV — PC-BPPV, Epley Manoeuvre - Differential Diagnosis",
+    9,
+    5,
+    "BPPV — PC-BPPV, Epley Manoeuvre"
+  ],
+  [
+    14,
+    "BPPV — PC-BPPV, Epley Manoeuvre - Investigations & Lab Findings",
+    9,
+    5,
+    "BPPV — PC-BPPV, Epley Manoeuvre"
+  ],
+  [
+    14,
+    "BPPV — PC-BPPV, Epley Manoeuvre - Medical & Surgical Management",
+    9,
+    5,
+    "BPPV — PC-BPPV, Epley Manoeuvre"
+  ],
+  [
+    14,
+    "BPPV — PC-BPPV, Epley Manoeuvre - Complications & Prognosis",
+    9,
+    5,
+    "BPPV — PC-BPPV, Epley Manoeuvre"
+  ],
+  [
+    14,
+    "BPPV — Canalith Repositioning",
+    9,
+    6,
+    "BPPV — PC-BPPV, Epley Manoeuvre & Canalith Repositioning"
+  ],
+  [
+    14,
+    "BPPV — Canalith Repositioning - Etiology & Risk Factors",
+    9,
+    5,
+    "BPPV — Canalith Repositioning"
+  ],
+  [14, "BPPV — Canalith Repositioning - Pathophysiology", 9, 5, "BPPV — Canalith Repositioning"],
+  [
+    14,
+    "BPPV — Canalith Repositioning - Clinical Presentation & Signs",
+    9,
+    5,
+    "BPPV — Canalith Repositioning"
+  ],
+  [
+    14,
+    "BPPV — Canalith Repositioning - Differential Diagnosis",
+    9,
+    5,
+    "BPPV — Canalith Repositioning"
+  ],
+  [
+    14,
+    "BPPV — Canalith Repositioning - Investigations & Lab Findings",
+    9,
+    5,
+    "BPPV — Canalith Repositioning"
+  ],
+  [
+    14,
+    "BPPV — Canalith Repositioning - Medical & Surgical Management",
+    9,
+    5,
+    "BPPV — Canalith Repositioning"
+  ],
+  [
+    14,
+    "BPPV — Canalith Repositioning - Complications & Prognosis",
+    9,
+    5,
+    "BPPV — Canalith Repositioning"
+  ],
+  [14, "Audiology & Deafness", 9, 40, "Ear"],
+  [
+    14,
+    "Hearing Tests — Rinne's, Weber's, PTA & Audiogram Interpretation",
+    9,
+    18,
+    "Audiology & Deafness"
+  ],
+  [
+    14,
+    "Hearing Tests — Rinne's, Weber's, PTA",
+    9,
+    9,
+    "Hearing Tests — Rinne's, Weber's, PTA & Audiogram Interpretation"
+  ],
+  [
+    14,
+    "Hearing Tests — Rinne's, Weber's, PTA - Etiology & Risk Factors",
+    9,
+    5,
+    "Hearing Tests — Rinne's, Weber's, PTA"
+  ],
+  [
+    14,
+    "Hearing Tests — Rinne's, Weber's, PTA - Pathophysiology",
+    9,
+    5,
+    "Hearing Tests — Rinne's, Weber's, PTA"
+  ],
+  [
+    14,
+    "Hearing Tests — Rinne's, Weber's, PTA - Clinical Presentation & Signs",
+    9,
+    5,
+    "Hearing Tests — Rinne's, Weber's, PTA"
+  ],
+  [
+    14,
+    "Hearing Tests — Rinne's, Weber's, PTA - Differential Diagnosis",
+    9,
+    5,
+    "Hearing Tests — Rinne's, Weber's, PTA"
+  ],
+  [
+    14,
+    "Hearing Tests — Rinne's, Weber's, PTA - Investigations & Lab Findings",
+    9,
+    5,
+    "Hearing Tests — Rinne's, Weber's, PTA"
+  ],
+  [
+    14,
+    "Hearing Tests — Rinne's, Weber's, PTA - Medical & Surgical Management",
+    9,
+    5,
+    "Hearing Tests — Rinne's, Weber's, PTA"
+  ],
+  [
+    14,
+    "Hearing Tests — Rinne's, Weber's, PTA - Complications & Prognosis",
+    9,
+    5,
+    "Hearing Tests — Rinne's, Weber's, PTA"
+  ],
+  [
+    14,
+    "Hearing Tests — Audiogram Interpretation",
+    9,
+    9,
+    "Hearing Tests — Rinne's, Weber's, PTA & Audiogram Interpretation"
+  ],
+  [
+    14,
+    "Hearing Tests — Audiogram Interpretation - Etiology & Risk Factors",
+    9,
+    5,
+    "Hearing Tests — Audiogram Interpretation"
+  ],
+  [
+    14,
+    "Hearing Tests — Audiogram Interpretation - Pathophysiology",
+    9,
+    5,
+    "Hearing Tests — Audiogram Interpretation"
+  ],
+  [
+    14,
+    "Hearing Tests — Audiogram Interpretation - Clinical Presentation & Signs",
+    9,
+    5,
+    "Hearing Tests — Audiogram Interpretation"
+  ],
+  [
+    14,
+    "Hearing Tests — Audiogram Interpretation - Differential Diagnosis",
+    9,
+    5,
+    "Hearing Tests — Audiogram Interpretation"
+  ],
+  [
+    14,
+    "Hearing Tests — Audiogram Interpretation - Investigations & Lab Findings",
+    9,
+    5,
+    "Hearing Tests — Audiogram Interpretation"
+  ],
+  [
+    14,
+    "Hearing Tests — Audiogram Interpretation - Medical & Surgical Management",
+    9,
+    5,
+    "Hearing Tests — Audiogram Interpretation"
+  ],
+  [
+    14,
+    "Hearing Tests — Audiogram Interpretation - Complications & Prognosis",
+    9,
+    5,
+    "Hearing Tests — Audiogram Interpretation"
+  ],
+  [
+    14,
+    "SNHL vs Conductive HL — Causes, Pure Tone Average & Impedance Audiometry",
+    9,
+    18,
+    "Audiology & Deafness"
+  ],
+  [
+    14,
+    "SNHL vs Conductive HL — Causes, Pure Tone Average",
+    9,
+    9,
+    "SNHL vs Conductive HL — Causes, Pure Tone Average & Impedance Audiometry"
+  ],
+  [
+    14,
+    "SNHL vs Conductive HL — Causes, Pure Tone Average - Etiology & Risk Factors",
+    9,
+    5,
+    "SNHL vs Conductive HL — Causes, Pure Tone Average"
+  ],
+  [
+    14,
+    "SNHL vs Conductive HL — Causes, Pure Tone Average - Pathophysiology",
+    9,
+    5,
+    "SNHL vs Conductive HL — Causes, Pure Tone Average"
+  ],
+  [
+    14,
+    "SNHL vs Conductive HL — Causes, Pure Tone Average - Clinical Presentation & Signs",
+    9,
+    5,
+    "SNHL vs Conductive HL — Causes, Pure Tone Average"
+  ],
+  [
+    14,
+    "SNHL vs Conductive HL — Causes, Pure Tone Average - Differential Diagnosis",
+    9,
+    5,
+    "SNHL vs Conductive HL — Causes, Pure Tone Average"
+  ],
+  [
+    14,
+    "SNHL vs Conductive HL — Causes, Pure Tone Average - Investigations & Lab Findings",
+    9,
+    5,
+    "SNHL vs Conductive HL — Causes, Pure Tone Average"
+  ],
+  [
+    14,
+    "SNHL vs Conductive HL — Causes, Pure Tone Average - Medical & Surgical Management",
+    9,
+    5,
+    "SNHL vs Conductive HL — Causes, Pure Tone Average"
+  ],
+  [
+    14,
+    "SNHL vs Conductive HL — Causes, Pure Tone Average - Complications & Prognosis",
+    9,
+    5,
+    "SNHL vs Conductive HL — Causes, Pure Tone Average"
+  ],
+  [
+    14,
+    "SNHL vs Conductive HL — Impedance Audiometry",
+    9,
+    9,
+    "SNHL vs Conductive HL — Causes, Pure Tone Average & Impedance Audiometry"
+  ],
+  [
+    14,
+    "SNHL vs Conductive HL — Impedance Audiometry - Etiology & Risk Factors",
+    9,
+    5,
+    "SNHL vs Conductive HL — Impedance Audiometry"
+  ],
+  [
+    14,
+    "SNHL vs Conductive HL — Impedance Audiometry - Pathophysiology",
+    9,
+    5,
+    "SNHL vs Conductive HL — Impedance Audiometry"
+  ],
+  [
+    14,
+    "SNHL vs Conductive HL — Impedance Audiometry - Clinical Presentation & Signs",
+    9,
+    5,
+    "SNHL vs Conductive HL — Impedance Audiometry"
+  ],
+  [
+    14,
+    "SNHL vs Conductive HL — Impedance Audiometry - Differential Diagnosis",
+    9,
+    5,
+    "SNHL vs Conductive HL — Impedance Audiometry"
+  ],
+  [
+    14,
+    "SNHL vs Conductive HL — Impedance Audiometry - Investigations & Lab Findings",
+    9,
+    5,
+    "SNHL vs Conductive HL — Impedance Audiometry"
+  ],
+  [
+    14,
+    "SNHL vs Conductive HL — Impedance Audiometry - Medical & Surgical Management",
+    9,
+    5,
+    "SNHL vs Conductive HL — Impedance Audiometry"
+  ],
+  [
+    14,
+    "SNHL vs Conductive HL — Impedance Audiometry - Complications & Prognosis",
+    9,
+    5,
+    "SNHL vs Conductive HL — Impedance Audiometry"
+  ],
+  [14, "Facial Nerve Disorders", 9, 35, "Ear"],
+  [
+    14,
+    "Bell's Palsy vs Ramsay Hunt — LMNP Facial, House-Brackmann & Steroids",
+    9,
+    18,
+    "Facial Nerve Disorders"
+  ],
+  [
+    14,
+    "Bell's Palsy vs Ramsay Hunt — LMNP Facial, House-Brackmann",
+    9,
+    9,
+    "Bell's Palsy vs Ramsay Hunt — LMNP Facial, House-Brackmann & Steroids"
+  ],
+  [
+    14,
+    "Bell's Palsy vs Ramsay Hunt — LMNP Facial, House-Brackmann - Etiology & Risk Factors",
+    9,
+    5,
+    "Bell's Palsy vs Ramsay Hunt — LMNP Facial, House-Brackmann"
+  ],
+  [
+    14,
+    "Bell's Palsy vs Ramsay Hunt — LMNP Facial, House-Brackmann - Pathophysiology",
+    9,
+    5,
+    "Bell's Palsy vs Ramsay Hunt — LMNP Facial, House-Brackmann"
+  ],
+  [
+    14,
+    "Bell's Palsy vs Ramsay Hunt — LMNP Facial, House-Brackmann - Clinical Presentation & Signs",
+    9,
+    5,
+    "Bell's Palsy vs Ramsay Hunt — LMNP Facial, House-Brackmann"
+  ],
+  [
+    14,
+    "Bell's Palsy vs Ramsay Hunt — LMNP Facial, House-Brackmann - Differential Diagnosis",
+    9,
+    5,
+    "Bell's Palsy vs Ramsay Hunt — LMNP Facial, House-Brackmann"
+  ],
+  [
+    14,
+    "Bell's Palsy vs Ramsay Hunt — LMNP Facial, House-Brackmann - Investigations & Lab Findings",
+    9,
+    5,
+    "Bell's Palsy vs Ramsay Hunt — LMNP Facial, House-Brackmann"
+  ],
+  [
+    14,
+    "Bell's Palsy vs Ramsay Hunt — LMNP Facial, House-Brackmann - Medical & Surgical Management",
+    9,
+    5,
+    "Bell's Palsy vs Ramsay Hunt — LMNP Facial, House-Brackmann"
+  ],
+  [
+    14,
+    "Bell's Palsy vs Ramsay Hunt — LMNP Facial, House-Brackmann - Complications & Prognosis",
+    9,
+    5,
+    "Bell's Palsy vs Ramsay Hunt — LMNP Facial, House-Brackmann"
+  ],
+  [
+    14,
+    "Bell's Palsy vs Ramsay Hunt — Steroids",
+    9,
+    9,
+    "Bell's Palsy vs Ramsay Hunt — LMNP Facial, House-Brackmann & Steroids"
+  ],
+  [
+    14,
+    "Bell's Palsy vs Ramsay Hunt — Steroids - Etiology & Risk Factors",
+    9,
+    5,
+    "Bell's Palsy vs Ramsay Hunt — Steroids"
+  ],
+  [
+    14,
+    "Bell's Palsy vs Ramsay Hunt — Steroids - Pathophysiology",
+    9,
+    5,
+    "Bell's Palsy vs Ramsay Hunt — Steroids"
+  ],
+  [
+    14,
+    "Bell's Palsy vs Ramsay Hunt — Steroids - Clinical Presentation & Signs",
+    9,
+    5,
+    "Bell's Palsy vs Ramsay Hunt — Steroids"
+  ],
+  [
+    14,
+    "Bell's Palsy vs Ramsay Hunt — Steroids - Differential Diagnosis",
+    9,
+    5,
+    "Bell's Palsy vs Ramsay Hunt — Steroids"
+  ],
+  [
+    14,
+    "Bell's Palsy vs Ramsay Hunt — Steroids - Investigations & Lab Findings",
+    9,
+    5,
+    "Bell's Palsy vs Ramsay Hunt — Steroids"
+  ],
+  [
+    14,
+    "Bell's Palsy vs Ramsay Hunt — Steroids - Medical & Surgical Management",
+    9,
+    5,
+    "Bell's Palsy vs Ramsay Hunt — Steroids"
+  ],
+  [
+    14,
+    "Bell's Palsy vs Ramsay Hunt — Steroids - Complications & Prognosis",
+    9,
+    5,
+    "Bell's Palsy vs Ramsay Hunt — Steroids"
+  ],
+  [
+    14,
+    "Facial Nerve Anatomy — Branches, Topographic Diagnosis in Temporal Bone",
+    9,
+    15,
+    "Facial Nerve Disorders"
+  ],
+  [
+    14,
+    "Facial Nerve Anatomy — Branches",
+    9,
+    7,
+    "Facial Nerve Anatomy — Branches, Topographic Diagnosis in Temporal Bone"
+  ],
+  [
+    14,
+    "Facial Nerve Anatomy — Branches - Etiology & Risk Factors",
+    9,
+    5,
+    "Facial Nerve Anatomy — Branches"
+  ],
+  [
+    14,
+    "Facial Nerve Anatomy — Branches - Pathophysiology",
+    9,
+    5,
+    "Facial Nerve Anatomy — Branches"
+  ],
+  [
+    14,
+    "Facial Nerve Anatomy — Branches - Clinical Presentation & Signs",
+    9,
+    5,
+    "Facial Nerve Anatomy — Branches"
+  ],
+  [
+    14,
+    "Facial Nerve Anatomy — Branches - Differential Diagnosis",
+    9,
+    5,
+    "Facial Nerve Anatomy — Branches"
+  ],
+  [
+    14,
+    "Facial Nerve Anatomy — Branches - Investigations & Lab Findings",
+    9,
+    5,
+    "Facial Nerve Anatomy — Branches"
+  ],
+  [
+    14,
+    "Facial Nerve Anatomy — Branches - Medical & Surgical Management",
+    9,
+    5,
+    "Facial Nerve Anatomy — Branches"
+  ],
+  [
+    14,
+    "Facial Nerve Anatomy — Branches - Complications & Prognosis",
+    9,
+    5,
+    "Facial Nerve Anatomy — Branches"
+  ],
+  [
+    14,
+    "Facial Nerve Anatomy — Topographic Diagnosis in Temporal Bone",
+    9,
+    8,
+    "Facial Nerve Anatomy — Branches, Topographic Diagnosis in Temporal Bone"
+  ],
+  [
+    14,
+    "Facial Nerve Anatomy — Topographic Diagnosis in Temporal Bone - Etiology & Risk Factors",
+    9,
+    5,
+    "Facial Nerve Anatomy — Topographic Diagnosis in Temporal Bone"
+  ],
+  [
+    14,
+    "Facial Nerve Anatomy — Topographic Diagnosis in Temporal Bone - Pathophysiology",
+    9,
+    5,
+    "Facial Nerve Anatomy — Topographic Diagnosis in Temporal Bone"
+  ],
+  [
+    14,
+    "Facial Nerve Anatomy — Topographic Diagnosis in Temporal Bone - Clinical Presentation & Signs",
+    9,
+    5,
+    "Facial Nerve Anatomy — Topographic Diagnosis in Temporal Bone"
+  ],
+  [
+    14,
+    "Facial Nerve Anatomy — Topographic Diagnosis in Temporal Bone - Differential Diagnosis",
+    9,
+    5,
+    "Facial Nerve Anatomy — Topographic Diagnosis in Temporal Bone"
+  ],
+  [
+    14,
+    "Facial Nerve Anatomy — Topographic Diagnosis in Temporal Bone - Investigations & Lab Findings",
+    9,
+    5,
+    "Facial Nerve Anatomy — Topographic Diagnosis in Temporal Bone"
+  ],
+  [
+    14,
+    "Facial Nerve Anatomy — Topographic Diagnosis in Temporal Bone - Medical & Surgical Management",
+    9,
+    5,
+    "Facial Nerve Anatomy — Topographic Diagnosis in Temporal Bone"
+  ],
+  [
+    14,
+    "Facial Nerve Anatomy — Topographic Diagnosis in Temporal Bone - Complications & Prognosis",
+    9,
+    5,
+    "Facial Nerve Anatomy — Topographic Diagnosis in Temporal Bone"
+  ],
+  [14, "Nose & PNS", 9, 50],
+  [14, "Rhinitis & Sinusitis", 9, 40, "Nose & PNS"],
+  [
+    14,
+    "Rhinitis — Allergic (ARIA Classification) vs Vasomotor vs Rhinitis Medicamentosa",
+    9,
+    15,
+    "Rhinitis & Sinusitis"
+  ],
+  [
+    14,
+    "Rhinitis — Basics",
+    9,
+    7,
+    "Rhinitis — Allergic (ARIA Classification) vs Vasomotor vs Rhinitis Medicamentosa"
+  ],
+  [14, "Rhinitis — Basics - Etiology & Risk Factors", 9, 5, "Rhinitis — Basics"],
+  [14, "Rhinitis — Basics - Pathophysiology", 9, 5, "Rhinitis — Basics"],
+  [14, "Rhinitis — Basics - Clinical Presentation & Signs", 9, 5, "Rhinitis — Basics"],
+  [14, "Rhinitis — Basics - Differential Diagnosis", 9, 5, "Rhinitis — Basics"],
+  [14, "Rhinitis — Basics - Investigations & Lab Findings", 9, 5, "Rhinitis — Basics"],
+  [14, "Rhinitis — Basics - Medical & Surgical Management", 9, 5, "Rhinitis — Basics"],
+  [14, "Rhinitis — Basics - Complications & Prognosis", 9, 5, "Rhinitis — Basics"],
+  [
+    14,
+    "Rhinitis — Details",
+    9,
+    8,
+    "Rhinitis — Allergic (ARIA Classification) vs Vasomotor vs Rhinitis Medicamentosa"
+  ],
+  [14, "Rhinitis — Details - Etiology & Risk Factors", 9, 5, "Rhinitis — Details"],
+  [14, "Rhinitis — Details - Pathophysiology", 9, 5, "Rhinitis — Details"],
+  [14, "Rhinitis — Details - Clinical Presentation & Signs", 9, 5, "Rhinitis — Details"],
+  [14, "Rhinitis — Details - Differential Diagnosis", 9, 5, "Rhinitis — Details"],
+  [14, "Rhinitis — Details - Investigations & Lab Findings", 9, 5, "Rhinitis — Details"],
+  [14, "Rhinitis — Details - Medical & Surgical Management", 9, 5, "Rhinitis — Details"],
+  [14, "Rhinitis — Details - Complications & Prognosis", 9, 5, "Rhinitis — Details"],
+  [
+    14,
+    "Sinusitis — Maxillary (Most Common), CRS vs ARS & FESS Indications",
+    9,
+    18,
+    "Rhinitis & Sinusitis"
+  ],
+  [
+    14,
+    "Sinusitis — Maxillary (Most Common), CRS vs ARS",
+    9,
+    9,
+    "Sinusitis — Maxillary (Most Common), CRS vs ARS & FESS Indications"
+  ],
+  [
+    14,
+    "Sinusitis — Maxillary (Most Common), CRS vs ARS - Etiology & Risk Factors",
+    9,
+    5,
+    "Sinusitis — Maxillary (Most Common), CRS vs ARS"
+  ],
+  [
+    14,
+    "Sinusitis — Maxillary (Most Common), CRS vs ARS - Pathophysiology",
+    9,
+    5,
+    "Sinusitis — Maxillary (Most Common), CRS vs ARS"
+  ],
+  [
+    14,
+    "Sinusitis — Maxillary (Most Common), CRS vs ARS - Clinical Presentation & Signs",
+    9,
+    5,
+    "Sinusitis — Maxillary (Most Common), CRS vs ARS"
+  ],
+  [
+    14,
+    "Sinusitis — Maxillary (Most Common), CRS vs ARS - Differential Diagnosis",
+    9,
+    5,
+    "Sinusitis — Maxillary (Most Common), CRS vs ARS"
+  ],
+  [
+    14,
+    "Sinusitis — Maxillary (Most Common), CRS vs ARS - Investigations & Lab Findings",
+    9,
+    5,
+    "Sinusitis — Maxillary (Most Common), CRS vs ARS"
+  ],
+  [
+    14,
+    "Sinusitis — Maxillary (Most Common), CRS vs ARS - Medical & Surgical Management",
+    9,
+    5,
+    "Sinusitis — Maxillary (Most Common), CRS vs ARS"
+  ],
+  [
+    14,
+    "Sinusitis — Maxillary (Most Common), CRS vs ARS - Complications & Prognosis",
+    9,
+    5,
+    "Sinusitis — Maxillary (Most Common), CRS vs ARS"
+  ],
+  [
+    14,
+    "Sinusitis — FESS Indications",
+    9,
+    9,
+    "Sinusitis — Maxillary (Most Common), CRS vs ARS & FESS Indications"
+  ],
+  [
+    14,
+    "Sinusitis — FESS Indications - Etiology & Risk Factors",
+    9,
+    5,
+    "Sinusitis — FESS Indications"
+  ],
+  [14, "Sinusitis — FESS Indications - Pathophysiology", 9, 5, "Sinusitis — FESS Indications"],
+  [
+    14,
+    "Sinusitis — FESS Indications - Clinical Presentation & Signs",
+    9,
+    5,
+    "Sinusitis — FESS Indications"
+  ],
+  [
+    14,
+    "Sinusitis — FESS Indications - Differential Diagnosis",
+    9,
+    5,
+    "Sinusitis — FESS Indications"
+  ],
+  [
+    14,
+    "Sinusitis — FESS Indications - Investigations & Lab Findings",
+    9,
+    5,
+    "Sinusitis — FESS Indications"
+  ],
+  [
+    14,
+    "Sinusitis — FESS Indications - Medical & Surgical Management",
+    9,
+    5,
+    "Sinusitis — FESS Indications"
+  ],
+  [
+    14,
+    "Sinusitis — FESS Indications - Complications & Prognosis",
+    9,
+    5,
+    "Sinusitis — FESS Indications"
+  ],
+  [14, "Nasal Polyps & Epistaxis", 9, 35, "Nose & PNS"],
+  [
+    14,
+    "Nasal Polyp — Ethmoidal (Bilateral) vs Antrochoanal (Unilateral), Samter's Triad",
+    9,
+    15,
+    "Nasal Polyps & Epistaxis"
+  ],
+  [
+    14,
+    "Nasal Polyp — Ethmoidal (Bilateral) vs Antrochoanal (Unilateral)",
+    9,
+    7,
+    "Nasal Polyp — Ethmoidal (Bilateral) vs Antrochoanal (Unilateral), Samter's Triad"
+  ],
+  [
+    14,
+    "Nasal Polyp — Ethmoidal (Bilateral) vs Antrochoanal (Unilateral) - Etiology & Risk Factors",
+    9,
+    5,
+    "Nasal Polyp — Ethmoidal (Bilateral) vs Antrochoanal (Unilateral)"
+  ],
+  [
+    14,
+    "Nasal Polyp — Ethmoidal (Bilateral) vs Antrochoanal (Unilateral) - Pathophysiology",
+    9,
+    5,
+    "Nasal Polyp — Ethmoidal (Bilateral) vs Antrochoanal (Unilateral)"
+  ],
+  [
+    14,
+    "Nasal Polyp — Ethmoidal (Bilateral) vs Antrochoanal (Unilateral) - Clinical Presentation & Signs",
+    9,
+    5,
+    "Nasal Polyp — Ethmoidal (Bilateral) vs Antrochoanal (Unilateral)"
+  ],
+  [
+    14,
+    "Nasal Polyp — Ethmoidal (Bilateral) vs Antrochoanal (Unilateral) - Differential Diagnosis",
+    9,
+    5,
+    "Nasal Polyp — Ethmoidal (Bilateral) vs Antrochoanal (Unilateral)"
+  ],
+  [
+    14,
+    "Nasal Polyp — Ethmoidal (Bilateral) vs Antrochoanal (Unilateral) - Investigations & Lab Findings",
+    9,
+    5,
+    "Nasal Polyp — Ethmoidal (Bilateral) vs Antrochoanal (Unilateral)"
+  ],
+  [
+    14,
+    "Nasal Polyp — Ethmoidal (Bilateral) vs Antrochoanal (Unilateral) - Medical & Surgical Management",
+    9,
+    5,
+    "Nasal Polyp — Ethmoidal (Bilateral) vs Antrochoanal (Unilateral)"
+  ],
+  [
+    14,
+    "Nasal Polyp — Ethmoidal (Bilateral) vs Antrochoanal (Unilateral) - Complications & Prognosis",
+    9,
+    5,
+    "Nasal Polyp — Ethmoidal (Bilateral) vs Antrochoanal (Unilateral)"
+  ],
+  [
+    14,
+    "Nasal Polyp — Samter's Triad",
+    9,
+    8,
+    "Nasal Polyp — Ethmoidal (Bilateral) vs Antrochoanal (Unilateral), Samter's Triad"
+  ],
+  [
+    14,
+    "Nasal Polyp — Samter's Triad - Etiology & Risk Factors",
+    9,
+    5,
+    "Nasal Polyp — Samter's Triad"
+  ],
+  [14, "Nasal Polyp — Samter's Triad - Pathophysiology", 9, 5, "Nasal Polyp — Samter's Triad"],
+  [
+    14,
+    "Nasal Polyp — Samter's Triad - Clinical Presentation & Signs",
+    9,
+    5,
+    "Nasal Polyp — Samter's Triad"
+  ],
+  [
+    14,
+    "Nasal Polyp — Samter's Triad - Differential Diagnosis",
+    9,
+    5,
+    "Nasal Polyp — Samter's Triad"
+  ],
+  [
+    14,
+    "Nasal Polyp — Samter's Triad - Investigations & Lab Findings",
+    9,
+    5,
+    "Nasal Polyp — Samter's Triad"
+  ],
+  [
+    14,
+    "Nasal Polyp — Samter's Triad - Medical & Surgical Management",
+    9,
+    5,
+    "Nasal Polyp — Samter's Triad"
+  ],
+  [
+    14,
+    "Nasal Polyp — Samter's Triad - Complications & Prognosis",
+    9,
+    5,
+    "Nasal Polyp — Samter's Triad"
+  ],
+  [
+    14,
+    "Epistaxis — Little's Area (Kisselbach's Plexus), Anterior vs Posterior & Cauterization",
+    9,
+    18,
+    "Nasal Polyps & Epistaxis"
+  ],
+  [
+    14,
+    "Epistaxis — Little's Area (Kisselbach's Plexus), Anterior vs Posterior",
+    9,
+    9,
+    "Epistaxis — Little's Area (Kisselbach's Plexus), Anterior vs Posterior & Cauterization"
+  ],
+  [
+    14,
+    "Epistaxis — Little's Area (Kisselbach's Plexus), Anterior vs Posterior - Etiology & Risk Factors",
+    9,
+    5,
+    "Epistaxis — Little's Area (Kisselbach's Plexus), Anterior vs Posterior"
+  ],
+  [
+    14,
+    "Epistaxis — Little's Area (Kisselbach's Plexus), Anterior vs Posterior - Pathophysiology",
+    9,
+    5,
+    "Epistaxis — Little's Area (Kisselbach's Plexus), Anterior vs Posterior"
+  ],
+  [
+    14,
+    "Epistaxis — Little's Area (Kisselbach's Plexus), Anterior vs Posterior - Clinical Presentation & Signs",
+    9,
+    5,
+    "Epistaxis — Little's Area (Kisselbach's Plexus), Anterior vs Posterior"
+  ],
+  [
+    14,
+    "Epistaxis — Little's Area (Kisselbach's Plexus), Anterior vs Posterior - Differential Diagnosis",
+    9,
+    5,
+    "Epistaxis — Little's Area (Kisselbach's Plexus), Anterior vs Posterior"
+  ],
+  [
+    14,
+    "Epistaxis — Little's Area (Kisselbach's Plexus), Anterior vs Posterior - Investigations & Lab Findings",
+    9,
+    5,
+    "Epistaxis — Little's Area (Kisselbach's Plexus), Anterior vs Posterior"
+  ],
+  [
+    14,
+    "Epistaxis — Little's Area (Kisselbach's Plexus), Anterior vs Posterior - Medical & Surgical Management",
+    9,
+    5,
+    "Epistaxis — Little's Area (Kisselbach's Plexus), Anterior vs Posterior"
+  ],
+  [
+    14,
+    "Epistaxis — Little's Area (Kisselbach's Plexus), Anterior vs Posterior - Complications & Prognosis",
+    9,
+    5,
+    "Epistaxis — Little's Area (Kisselbach's Plexus), Anterior vs Posterior"
+  ],
+  [
+    14,
+    "Epistaxis — Cauterization",
+    9,
+    9,
+    "Epistaxis — Little's Area (Kisselbach's Plexus), Anterior vs Posterior & Cauterization"
+  ],
+  [14, "Epistaxis — Cauterization - Etiology & Risk Factors", 9, 5, "Epistaxis — Cauterization"],
+  [14, "Epistaxis — Cauterization - Pathophysiology", 9, 5, "Epistaxis — Cauterization"],
+  [
+    14,
+    "Epistaxis — Cauterization - Clinical Presentation & Signs",
+    9,
+    5,
+    "Epistaxis — Cauterization"
+  ],
+  [14, "Epistaxis — Cauterization - Differential Diagnosis", 9, 5, "Epistaxis — Cauterization"],
+  [
+    14,
+    "Epistaxis — Cauterization - Investigations & Lab Findings",
+    9,
+    5,
+    "Epistaxis — Cauterization"
+  ],
+  [
+    14,
+    "Epistaxis — Cauterization - Medical & Surgical Management",
+    9,
+    5,
+    "Epistaxis — Cauterization"
+  ],
+  [14, "Epistaxis — Cauterization - Complications & Prognosis", 9, 5, "Epistaxis — Cauterization"],
+  [14, "Tumors of Nose & PNS", 8, 35, "Nose & PNS"],
+  [
+    14,
+    "Juvenile Angiofibroma — Adolescent Male, Holman-Miller Sign & Embolization",
+    8,
+    18,
+    "Tumors of Nose & PNS"
+  ],
+  [
+    14,
+    "Juvenile Angiofibroma — Adolescent Male, Holman-Miller Sign",
+    8,
+    9,
+    "Juvenile Angiofibroma — Adolescent Male, Holman-Miller Sign & Embolization"
+  ],
+  [
+    14,
+    "Juvenile Angiofibroma — Adolescent Male, Holman-Miller Sign - Etiology & Risk Factors",
+    8,
+    5,
+    "Juvenile Angiofibroma — Adolescent Male, Holman-Miller Sign"
+  ],
+  [
+    14,
+    "Juvenile Angiofibroma — Adolescent Male, Holman-Miller Sign - Pathophysiology",
+    8,
+    5,
+    "Juvenile Angiofibroma — Adolescent Male, Holman-Miller Sign"
+  ],
+  [
+    14,
+    "Juvenile Angiofibroma — Adolescent Male, Holman-Miller Sign - Clinical Presentation & Signs",
+    8,
+    5,
+    "Juvenile Angiofibroma — Adolescent Male, Holman-Miller Sign"
+  ],
+  [
+    14,
+    "Juvenile Angiofibroma — Adolescent Male, Holman-Miller Sign - Differential Diagnosis",
+    8,
+    5,
+    "Juvenile Angiofibroma — Adolescent Male, Holman-Miller Sign"
+  ],
+  [
+    14,
+    "Juvenile Angiofibroma — Adolescent Male, Holman-Miller Sign - Investigations & Lab Findings",
+    8,
+    5,
+    "Juvenile Angiofibroma — Adolescent Male, Holman-Miller Sign"
+  ],
+  [
+    14,
+    "Juvenile Angiofibroma — Adolescent Male, Holman-Miller Sign - Medical & Surgical Management",
+    8,
+    5,
+    "Juvenile Angiofibroma — Adolescent Male, Holman-Miller Sign"
+  ],
+  [
+    14,
+    "Juvenile Angiofibroma — Adolescent Male, Holman-Miller Sign - Complications & Prognosis",
+    8,
+    5,
+    "Juvenile Angiofibroma — Adolescent Male, Holman-Miller Sign"
+  ],
+  [
+    14,
+    "Juvenile Angiofibroma — Embolization",
+    8,
+    9,
+    "Juvenile Angiofibroma — Adolescent Male, Holman-Miller Sign & Embolization"
+  ],
+  [
+    14,
+    "Juvenile Angiofibroma — Embolization - Etiology & Risk Factors",
+    8,
+    5,
+    "Juvenile Angiofibroma — Embolization"
+  ],
+  [
+    14,
+    "Juvenile Angiofibroma — Embolization - Pathophysiology",
+    8,
+    5,
+    "Juvenile Angiofibroma — Embolization"
+  ],
+  [
+    14,
+    "Juvenile Angiofibroma — Embolization - Clinical Presentation & Signs",
+    8,
+    5,
+    "Juvenile Angiofibroma — Embolization"
+  ],
+  [
+    14,
+    "Juvenile Angiofibroma — Embolization - Differential Diagnosis",
+    8,
+    5,
+    "Juvenile Angiofibroma — Embolization"
+  ],
+  [
+    14,
+    "Juvenile Angiofibroma — Embolization - Investigations & Lab Findings",
+    8,
+    5,
+    "Juvenile Angiofibroma — Embolization"
+  ],
+  [
+    14,
+    "Juvenile Angiofibroma — Embolization - Medical & Surgical Management",
+    8,
+    5,
+    "Juvenile Angiofibroma — Embolization"
+  ],
+  [
+    14,
+    "Juvenile Angiofibroma — Embolization - Complications & Prognosis",
+    8,
+    5,
+    "Juvenile Angiofibroma — Embolization"
+  ],
+  [
+    14,
+    "Inverted Papilloma & Nasopharyngeal Carcinoma — EBV & Eustachian Tube",
+    8,
+    15,
+    "Tumors of Nose & PNS"
+  ],
+  [
+    14,
+    "Inverted Papilloma & Nasopharyngeal Carcinoma — EBV",
+    8,
+    7,
+    "Inverted Papilloma & Nasopharyngeal Carcinoma — EBV & Eustachian Tube"
+  ],
+  [
+    14,
+    "Inverted Papilloma & Nasopharyngeal Carcinoma — EBV - Etiology & Risk Factors",
+    8,
+    5,
+    "Inverted Papilloma & Nasopharyngeal Carcinoma — EBV"
+  ],
+  [
+    14,
+    "Inverted Papilloma & Nasopharyngeal Carcinoma — EBV - Pathophysiology",
+    8,
+    5,
+    "Inverted Papilloma & Nasopharyngeal Carcinoma — EBV"
+  ],
+  [
+    14,
+    "Inverted Papilloma & Nasopharyngeal Carcinoma — EBV - Clinical Presentation & Signs",
+    8,
+    5,
+    "Inverted Papilloma & Nasopharyngeal Carcinoma — EBV"
+  ],
+  [
+    14,
+    "Inverted Papilloma & Nasopharyngeal Carcinoma — EBV - Differential Diagnosis",
+    8,
+    5,
+    "Inverted Papilloma & Nasopharyngeal Carcinoma — EBV"
+  ],
+  [
+    14,
+    "Inverted Papilloma & Nasopharyngeal Carcinoma — EBV - Investigations & Lab Findings",
+    8,
+    5,
+    "Inverted Papilloma & Nasopharyngeal Carcinoma — EBV"
+  ],
+  [
+    14,
+    "Inverted Papilloma & Nasopharyngeal Carcinoma — EBV - Medical & Surgical Management",
+    8,
+    5,
+    "Inverted Papilloma & Nasopharyngeal Carcinoma — EBV"
+  ],
+  [
+    14,
+    "Inverted Papilloma & Nasopharyngeal Carcinoma — EBV - Complications & Prognosis",
+    8,
+    5,
+    "Inverted Papilloma & Nasopharyngeal Carcinoma — EBV"
+  ],
+  [
+    14,
+    "Inverted Papilloma & Nasopharyngeal Carcinoma — Eustachian Tube",
+    8,
+    8,
+    "Inverted Papilloma & Nasopharyngeal Carcinoma — EBV & Eustachian Tube"
+  ],
+  [
+    14,
+    "Inverted Papilloma & Nasopharyngeal Carcinoma — Eustachian Tube - Etiology & Risk Factors",
+    8,
+    5,
+    "Inverted Papilloma & Nasopharyngeal Carcinoma — Eustachian Tube"
+  ],
+  [
+    14,
+    "Inverted Papilloma & Nasopharyngeal Carcinoma — Eustachian Tube - Pathophysiology",
+    8,
+    5,
+    "Inverted Papilloma & Nasopharyngeal Carcinoma — Eustachian Tube"
+  ],
+  [
+    14,
+    "Inverted Papilloma & Nasopharyngeal Carcinoma — Eustachian Tube - Clinical Presentation & Signs",
+    8,
+    5,
+    "Inverted Papilloma & Nasopharyngeal Carcinoma — Eustachian Tube"
+  ],
+  [
+    14,
+    "Inverted Papilloma & Nasopharyngeal Carcinoma — Eustachian Tube - Differential Diagnosis",
+    8,
+    5,
+    "Inverted Papilloma & Nasopharyngeal Carcinoma — Eustachian Tube"
+  ],
+  [
+    14,
+    "Inverted Papilloma & Nasopharyngeal Carcinoma — Eustachian Tube - Investigations & Lab Findings",
+    8,
+    5,
+    "Inverted Papilloma & Nasopharyngeal Carcinoma — Eustachian Tube"
+  ],
+  [
+    14,
+    "Inverted Papilloma & Nasopharyngeal Carcinoma — Eustachian Tube - Medical & Surgical Management",
+    8,
+    5,
+    "Inverted Papilloma & Nasopharyngeal Carcinoma — Eustachian Tube"
+  ],
+  [
+    14,
+    "Inverted Papilloma & Nasopharyngeal Carcinoma — Eustachian Tube - Complications & Prognosis",
+    8,
+    5,
+    "Inverted Papilloma & Nasopharyngeal Carcinoma — Eustachian Tube"
+  ],
+  [14, "Throat (Pharynx & Larynx)", 10, 60],
+  [14, "Tonsils & Adenoids", 9, 40, "Throat (Pharynx & Larynx)"],
+  [
+    14,
+    "Tonsillitis — Acute vs Chronic, Indications for Tonsillectomy (Paradise Criteria)",
+    9,
+    15,
+    "Tonsils & Adenoids"
+  ],
+  [
+    14,
+    "Tonsillitis — Acute vs Chronic",
+    9,
+    7,
+    "Tonsillitis — Acute vs Chronic, Indications for Tonsillectomy (Paradise Criteria)"
+  ],
+  [
+    14,
+    "Tonsillitis — Acute vs Chronic - Etiology & Risk Factors",
+    9,
+    5,
+    "Tonsillitis — Acute vs Chronic"
+  ],
+  [14, "Tonsillitis — Acute vs Chronic - Pathophysiology", 9, 5, "Tonsillitis — Acute vs Chronic"],
+  [
+    14,
+    "Tonsillitis — Acute vs Chronic - Clinical Presentation & Signs",
+    9,
+    5,
+    "Tonsillitis — Acute vs Chronic"
+  ],
+  [
+    14,
+    "Tonsillitis — Acute vs Chronic - Differential Diagnosis",
+    9,
+    5,
+    "Tonsillitis — Acute vs Chronic"
+  ],
+  [
+    14,
+    "Tonsillitis — Acute vs Chronic - Investigations & Lab Findings",
+    9,
+    5,
+    "Tonsillitis — Acute vs Chronic"
+  ],
+  [
+    14,
+    "Tonsillitis — Acute vs Chronic - Medical & Surgical Management",
+    9,
+    5,
+    "Tonsillitis — Acute vs Chronic"
+  ],
+  [
+    14,
+    "Tonsillitis — Acute vs Chronic - Complications & Prognosis",
+    9,
+    5,
+    "Tonsillitis — Acute vs Chronic"
+  ],
+  [
+    14,
+    "Tonsillitis — Indications for Tonsillectomy (Paradise Criteria)",
+    9,
+    8,
+    "Tonsillitis — Acute vs Chronic, Indications for Tonsillectomy (Paradise Criteria)"
+  ],
+  [
+    14,
+    "Tonsillitis — Indications for Tonsillectomy (Paradise Criteria) - Etiology & Risk Factors",
+    9,
+    5,
+    "Tonsillitis — Indications for Tonsillectomy (Paradise Criteria)"
+  ],
+  [
+    14,
+    "Tonsillitis — Indications for Tonsillectomy (Paradise Criteria) - Pathophysiology",
+    9,
+    5,
+    "Tonsillitis — Indications for Tonsillectomy (Paradise Criteria)"
+  ],
+  [
+    14,
+    "Tonsillitis — Indications for Tonsillectomy (Paradise Criteria) - Clinical Presentation & Signs",
+    9,
+    5,
+    "Tonsillitis — Indications for Tonsillectomy (Paradise Criteria)"
+  ],
+  [
+    14,
+    "Tonsillitis — Indications for Tonsillectomy (Paradise Criteria) - Differential Diagnosis",
+    9,
+    5,
+    "Tonsillitis — Indications for Tonsillectomy (Paradise Criteria)"
+  ],
+  [
+    14,
+    "Tonsillitis — Indications for Tonsillectomy (Paradise Criteria) - Investigations & Lab Findings",
+    9,
+    5,
+    "Tonsillitis — Indications for Tonsillectomy (Paradise Criteria)"
+  ],
+  [
+    14,
+    "Tonsillitis — Indications for Tonsillectomy (Paradise Criteria) - Medical & Surgical Management",
+    9,
+    5,
+    "Tonsillitis — Indications for Tonsillectomy (Paradise Criteria)"
+  ],
+  [
+    14,
+    "Tonsillitis — Indications for Tonsillectomy (Paradise Criteria) - Complications & Prognosis",
+    9,
+    5,
+    "Tonsillitis — Indications for Tonsillectomy (Paradise Criteria)"
+  ],
+  [
+    14,
+    "Adenoid Hypertrophy — Adenoid Facies, OME & Indications for Adenoidectomy",
+    9,
+    15,
+    "Tonsils & Adenoids"
+  ],
+  [
+    14,
+    "Adenoid Hypertrophy — Adenoid Facies, OME",
+    9,
+    7,
+    "Adenoid Hypertrophy — Adenoid Facies, OME & Indications for Adenoidectomy"
+  ],
+  [
+    14,
+    "Adenoid Hypertrophy — Adenoid Facies, OME - Etiology & Risk Factors",
+    9,
+    5,
+    "Adenoid Hypertrophy — Adenoid Facies, OME"
+  ],
+  [
+    14,
+    "Adenoid Hypertrophy — Adenoid Facies, OME - Pathophysiology",
+    9,
+    5,
+    "Adenoid Hypertrophy — Adenoid Facies, OME"
+  ],
+  [
+    14,
+    "Adenoid Hypertrophy — Adenoid Facies, OME - Clinical Presentation & Signs",
+    9,
+    5,
+    "Adenoid Hypertrophy — Adenoid Facies, OME"
+  ],
+  [
+    14,
+    "Adenoid Hypertrophy — Adenoid Facies, OME - Differential Diagnosis",
+    9,
+    5,
+    "Adenoid Hypertrophy — Adenoid Facies, OME"
+  ],
+  [
+    14,
+    "Adenoid Hypertrophy — Adenoid Facies, OME - Investigations & Lab Findings",
+    9,
+    5,
+    "Adenoid Hypertrophy — Adenoid Facies, OME"
+  ],
+  [
+    14,
+    "Adenoid Hypertrophy — Adenoid Facies, OME - Medical & Surgical Management",
+    9,
+    5,
+    "Adenoid Hypertrophy — Adenoid Facies, OME"
+  ],
+  [
+    14,
+    "Adenoid Hypertrophy — Adenoid Facies, OME - Complications & Prognosis",
+    9,
+    5,
+    "Adenoid Hypertrophy — Adenoid Facies, OME"
+  ],
+  [
+    14,
+    "Adenoid Hypertrophy — Indications for Adenoidectomy",
+    9,
+    8,
+    "Adenoid Hypertrophy — Adenoid Facies, OME & Indications for Adenoidectomy"
+  ],
+  [
+    14,
+    "Adenoid Hypertrophy — Indications for Adenoidectomy - Etiology & Risk Factors",
+    9,
+    5,
+    "Adenoid Hypertrophy — Indications for Adenoidectomy"
+  ],
+  [
+    14,
+    "Adenoid Hypertrophy — Indications for Adenoidectomy - Pathophysiology",
+    9,
+    5,
+    "Adenoid Hypertrophy — Indications for Adenoidectomy"
+  ],
+  [
+    14,
+    "Adenoid Hypertrophy — Indications for Adenoidectomy - Clinical Presentation & Signs",
+    9,
+    5,
+    "Adenoid Hypertrophy — Indications for Adenoidectomy"
+  ],
+  [
+    14,
+    "Adenoid Hypertrophy — Indications for Adenoidectomy - Differential Diagnosis",
+    9,
+    5,
+    "Adenoid Hypertrophy — Indications for Adenoidectomy"
+  ],
+  [
+    14,
+    "Adenoid Hypertrophy — Indications for Adenoidectomy - Investigations & Lab Findings",
+    9,
+    5,
+    "Adenoid Hypertrophy — Indications for Adenoidectomy"
+  ],
+  [
+    14,
+    "Adenoid Hypertrophy — Indications for Adenoidectomy - Medical & Surgical Management",
+    9,
+    5,
+    "Adenoid Hypertrophy — Indications for Adenoidectomy"
+  ],
+  [
+    14,
+    "Adenoid Hypertrophy — Indications for Adenoidectomy - Complications & Prognosis",
+    9,
+    5,
+    "Adenoid Hypertrophy — Indications for Adenoidectomy"
+  ],
+  [14, "Pharyngeal Abscesses & Tumors", 9, 40, "Throat (Pharynx & Larynx)"],
+  [
+    14,
+    "Peritonsillar Abscess — Quinsy, Uvula Deviation & Needle Aspiration",
+    9,
+    15,
+    "Pharyngeal Abscesses & Tumors"
+  ],
+  [
+    14,
+    "Peritonsillar Abscess — Quinsy, Uvula Deviation",
+    9,
+    7,
+    "Peritonsillar Abscess — Quinsy, Uvula Deviation & Needle Aspiration"
+  ],
+  [
+    14,
+    "Peritonsillar Abscess — Quinsy, Uvula Deviation - Etiology & Risk Factors",
+    9,
+    5,
+    "Peritonsillar Abscess — Quinsy, Uvula Deviation"
+  ],
+  [
+    14,
+    "Peritonsillar Abscess — Quinsy, Uvula Deviation - Pathophysiology",
+    9,
+    5,
+    "Peritonsillar Abscess — Quinsy, Uvula Deviation"
+  ],
+  [
+    14,
+    "Peritonsillar Abscess — Quinsy, Uvula Deviation - Clinical Presentation & Signs",
+    9,
+    5,
+    "Peritonsillar Abscess — Quinsy, Uvula Deviation"
+  ],
+  [
+    14,
+    "Peritonsillar Abscess — Quinsy, Uvula Deviation - Differential Diagnosis",
+    9,
+    5,
+    "Peritonsillar Abscess — Quinsy, Uvula Deviation"
+  ],
+  [
+    14,
+    "Peritonsillar Abscess — Quinsy, Uvula Deviation - Investigations & Lab Findings",
+    9,
+    5,
+    "Peritonsillar Abscess — Quinsy, Uvula Deviation"
+  ],
+  [
+    14,
+    "Peritonsillar Abscess — Quinsy, Uvula Deviation - Medical & Surgical Management",
+    9,
+    5,
+    "Peritonsillar Abscess — Quinsy, Uvula Deviation"
+  ],
+  [
+    14,
+    "Peritonsillar Abscess — Quinsy, Uvula Deviation - Complications & Prognosis",
+    9,
+    5,
+    "Peritonsillar Abscess — Quinsy, Uvula Deviation"
+  ],
+  [
+    14,
+    "Peritonsillar Abscess — Needle Aspiration",
+    9,
+    8,
+    "Peritonsillar Abscess — Quinsy, Uvula Deviation & Needle Aspiration"
+  ],
+  [
+    14,
+    "Peritonsillar Abscess — Needle Aspiration - Etiology & Risk Factors",
+    9,
+    5,
+    "Peritonsillar Abscess — Needle Aspiration"
+  ],
+  [
+    14,
+    "Peritonsillar Abscess — Needle Aspiration - Pathophysiology",
+    9,
+    5,
+    "Peritonsillar Abscess — Needle Aspiration"
+  ],
+  [
+    14,
+    "Peritonsillar Abscess — Needle Aspiration - Clinical Presentation & Signs",
+    9,
+    5,
+    "Peritonsillar Abscess — Needle Aspiration"
+  ],
+  [
+    14,
+    "Peritonsillar Abscess — Needle Aspiration - Differential Diagnosis",
+    9,
+    5,
+    "Peritonsillar Abscess — Needle Aspiration"
+  ],
+  [
+    14,
+    "Peritonsillar Abscess — Needle Aspiration - Investigations & Lab Findings",
+    9,
+    5,
+    "Peritonsillar Abscess — Needle Aspiration"
+  ],
+  [
+    14,
+    "Peritonsillar Abscess — Needle Aspiration - Medical & Surgical Management",
+    9,
+    5,
+    "Peritonsillar Abscess — Needle Aspiration"
+  ],
+  [
+    14,
+    "Peritonsillar Abscess — Needle Aspiration - Complications & Prognosis",
+    9,
+    5,
+    "Peritonsillar Abscess — Needle Aspiration"
+  ],
+  [
+    14,
+    "Retropharyngeal & Parapharyngeal Abscess — Danger Space & Mediastinitis",
+    9,
+    18,
+    "Pharyngeal Abscesses & Tumors"
+  ],
+  [
+    14,
+    "Retropharyngeal & Parapharyngeal Abscess — Danger Space",
+    9,
+    9,
+    "Retropharyngeal & Parapharyngeal Abscess — Danger Space & Mediastinitis"
+  ],
+  [
+    14,
+    "Retropharyngeal & Parapharyngeal Abscess — Danger Space - Etiology & Risk Factors",
+    9,
+    5,
+    "Retropharyngeal & Parapharyngeal Abscess — Danger Space"
+  ],
+  [
+    14,
+    "Retropharyngeal & Parapharyngeal Abscess — Danger Space - Pathophysiology",
+    9,
+    5,
+    "Retropharyngeal & Parapharyngeal Abscess — Danger Space"
+  ],
+  [
+    14,
+    "Retropharyngeal & Parapharyngeal Abscess — Danger Space - Clinical Presentation & Signs",
+    9,
+    5,
+    "Retropharyngeal & Parapharyngeal Abscess — Danger Space"
+  ],
+  [
+    14,
+    "Retropharyngeal & Parapharyngeal Abscess — Danger Space - Differential Diagnosis",
+    9,
+    5,
+    "Retropharyngeal & Parapharyngeal Abscess — Danger Space"
+  ],
+  [
+    14,
+    "Retropharyngeal & Parapharyngeal Abscess — Danger Space - Investigations & Lab Findings",
+    9,
+    5,
+    "Retropharyngeal & Parapharyngeal Abscess — Danger Space"
+  ],
+  [
+    14,
+    "Retropharyngeal & Parapharyngeal Abscess — Danger Space - Medical & Surgical Management",
+    9,
+    5,
+    "Retropharyngeal & Parapharyngeal Abscess — Danger Space"
+  ],
+  [
+    14,
+    "Retropharyngeal & Parapharyngeal Abscess — Danger Space - Complications & Prognosis",
+    9,
+    5,
+    "Retropharyngeal & Parapharyngeal Abscess — Danger Space"
+  ],
+  [
+    14,
+    "Retropharyngeal & Parapharyngeal Abscess — Mediastinitis",
+    9,
+    9,
+    "Retropharyngeal & Parapharyngeal Abscess — Danger Space & Mediastinitis"
+  ],
+  [
+    14,
+    "Retropharyngeal & Parapharyngeal Abscess — Mediastinitis - Etiology & Risk Factors",
+    9,
+    5,
+    "Retropharyngeal & Parapharyngeal Abscess — Mediastinitis"
+  ],
+  [
+    14,
+    "Retropharyngeal & Parapharyngeal Abscess — Mediastinitis - Pathophysiology",
+    9,
+    5,
+    "Retropharyngeal & Parapharyngeal Abscess — Mediastinitis"
+  ],
+  [
+    14,
+    "Retropharyngeal & Parapharyngeal Abscess — Mediastinitis - Clinical Presentation & Signs",
+    9,
+    5,
+    "Retropharyngeal & Parapharyngeal Abscess — Mediastinitis"
+  ],
+  [
+    14,
+    "Retropharyngeal & Parapharyngeal Abscess — Mediastinitis - Differential Diagnosis",
+    9,
+    5,
+    "Retropharyngeal & Parapharyngeal Abscess — Mediastinitis"
+  ],
+  [
+    14,
+    "Retropharyngeal & Parapharyngeal Abscess — Mediastinitis - Investigations & Lab Findings",
+    9,
+    5,
+    "Retropharyngeal & Parapharyngeal Abscess — Mediastinitis"
+  ],
+  [
+    14,
+    "Retropharyngeal & Parapharyngeal Abscess — Mediastinitis - Medical & Surgical Management",
+    9,
+    5,
+    "Retropharyngeal & Parapharyngeal Abscess — Mediastinitis"
+  ],
+  [
+    14,
+    "Retropharyngeal & Parapharyngeal Abscess — Mediastinitis - Complications & Prognosis",
+    9,
+    5,
+    "Retropharyngeal & Parapharyngeal Abscess — Mediastinitis"
+  ],
+  [14, "Laryngeal Disorders (Vocal Cords, Stridor)", 9, 45, "Throat (Pharynx & Larynx)"],
+  [
+    14,
+    "Vocal Cord Palsy — Unilateral (RLN) vs Bilateral & Causes",
+    9,
+    18,
+    "Laryngeal Disorders (Vocal Cords, Stridor)"
+  ],
+  [
+    14,
+    "Vocal Cord Palsy — Unilateral (RLN) vs Bilateral",
+    9,
+    9,
+    "Vocal Cord Palsy — Unilateral (RLN) vs Bilateral & Causes"
+  ],
+  [
+    14,
+    "Vocal Cord Palsy — Unilateral (RLN) vs Bilateral - Etiology & Risk Factors",
+    9,
+    5,
+    "Vocal Cord Palsy — Unilateral (RLN) vs Bilateral"
+  ],
+  [
+    14,
+    "Vocal Cord Palsy — Unilateral (RLN) vs Bilateral - Pathophysiology",
+    9,
+    5,
+    "Vocal Cord Palsy — Unilateral (RLN) vs Bilateral"
+  ],
+  [
+    14,
+    "Vocal Cord Palsy — Unilateral (RLN) vs Bilateral - Clinical Presentation & Signs",
+    9,
+    5,
+    "Vocal Cord Palsy — Unilateral (RLN) vs Bilateral"
+  ],
+  [
+    14,
+    "Vocal Cord Palsy — Unilateral (RLN) vs Bilateral - Differential Diagnosis",
+    9,
+    5,
+    "Vocal Cord Palsy — Unilateral (RLN) vs Bilateral"
+  ],
+  [
+    14,
+    "Vocal Cord Palsy — Unilateral (RLN) vs Bilateral - Investigations & Lab Findings",
+    9,
+    5,
+    "Vocal Cord Palsy — Unilateral (RLN) vs Bilateral"
+  ],
+  [
+    14,
+    "Vocal Cord Palsy — Unilateral (RLN) vs Bilateral - Medical & Surgical Management",
+    9,
+    5,
+    "Vocal Cord Palsy — Unilateral (RLN) vs Bilateral"
+  ],
+  [
+    14,
+    "Vocal Cord Palsy — Unilateral (RLN) vs Bilateral - Complications & Prognosis",
+    9,
+    5,
+    "Vocal Cord Palsy — Unilateral (RLN) vs Bilateral"
+  ],
+  [
+    14,
+    "Vocal Cord Palsy — Causes",
+    9,
+    9,
+    "Vocal Cord Palsy — Unilateral (RLN) vs Bilateral & Causes"
+  ],
+  [14, "Vocal Cord Palsy — Causes - Etiology & Risk Factors", 9, 5, "Vocal Cord Palsy — Causes"],
+  [14, "Vocal Cord Palsy — Causes - Pathophysiology", 9, 5, "Vocal Cord Palsy — Causes"],
+  [
+    14,
+    "Vocal Cord Palsy — Causes - Clinical Presentation & Signs",
+    9,
+    5,
+    "Vocal Cord Palsy — Causes"
+  ],
+  [14, "Vocal Cord Palsy — Causes - Differential Diagnosis", 9, 5, "Vocal Cord Palsy — Causes"],
+  [
+    14,
+    "Vocal Cord Palsy — Causes - Investigations & Lab Findings",
+    9,
+    5,
+    "Vocal Cord Palsy — Causes"
+  ],
+  [
+    14,
+    "Vocal Cord Palsy — Causes - Medical & Surgical Management",
+    9,
+    5,
+    "Vocal Cord Palsy — Causes"
+  ],
+  [14, "Vocal Cord Palsy — Causes - Complications & Prognosis", 9, 5, "Vocal Cord Palsy — Causes"],
+  [
+    14,
+    "Stridor — Inspiratory vs Biphasic, Croup vs Epiglottitis vs Subglottic Stenosis",
+    9,
+    18,
+    "Laryngeal Disorders (Vocal Cords, Stridor)"
+  ],
+  [
+    14,
+    "Stridor — Inspiratory vs Biphasic",
+    9,
+    9,
+    "Stridor — Inspiratory vs Biphasic, Croup vs Epiglottitis vs Subglottic Stenosis"
+  ],
+  [
+    14,
+    "Stridor — Inspiratory vs Biphasic - Etiology & Risk Factors",
+    9,
+    5,
+    "Stridor — Inspiratory vs Biphasic"
+  ],
+  [
+    14,
+    "Stridor — Inspiratory vs Biphasic - Pathophysiology",
+    9,
+    5,
+    "Stridor — Inspiratory vs Biphasic"
+  ],
+  [
+    14,
+    "Stridor — Inspiratory vs Biphasic - Clinical Presentation & Signs",
+    9,
+    5,
+    "Stridor — Inspiratory vs Biphasic"
+  ],
+  [
+    14,
+    "Stridor — Inspiratory vs Biphasic - Differential Diagnosis",
+    9,
+    5,
+    "Stridor — Inspiratory vs Biphasic"
+  ],
+  [
+    14,
+    "Stridor — Inspiratory vs Biphasic - Investigations & Lab Findings",
+    9,
+    5,
+    "Stridor — Inspiratory vs Biphasic"
+  ],
+  [
+    14,
+    "Stridor — Inspiratory vs Biphasic - Medical & Surgical Management",
+    9,
+    5,
+    "Stridor — Inspiratory vs Biphasic"
+  ],
+  [
+    14,
+    "Stridor — Inspiratory vs Biphasic - Complications & Prognosis",
+    9,
+    5,
+    "Stridor — Inspiratory vs Biphasic"
+  ],
+  [
+    14,
+    "Stridor — Croup vs Epiglottitis vs Subglottic Stenosis",
+    9,
+    9,
+    "Stridor — Inspiratory vs Biphasic, Croup vs Epiglottitis vs Subglottic Stenosis"
+  ],
+  [
+    14,
+    "Stridor — Croup vs Epiglottitis vs Subglottic Stenosis - Etiology & Risk Factors",
+    9,
+    5,
+    "Stridor — Croup vs Epiglottitis vs Subglottic Stenosis"
+  ],
+  [
+    14,
+    "Stridor — Croup vs Epiglottitis vs Subglottic Stenosis - Pathophysiology",
+    9,
+    5,
+    "Stridor — Croup vs Epiglottitis vs Subglottic Stenosis"
+  ],
+  [
+    14,
+    "Stridor — Croup vs Epiglottitis vs Subglottic Stenosis - Clinical Presentation & Signs",
+    9,
+    5,
+    "Stridor — Croup vs Epiglottitis vs Subglottic Stenosis"
+  ],
+  [
+    14,
+    "Stridor — Croup vs Epiglottitis vs Subglottic Stenosis - Differential Diagnosis",
+    9,
+    5,
+    "Stridor — Croup vs Epiglottitis vs Subglottic Stenosis"
+  ],
+  [
+    14,
+    "Stridor — Croup vs Epiglottitis vs Subglottic Stenosis - Investigations & Lab Findings",
+    9,
+    5,
+    "Stridor — Croup vs Epiglottitis vs Subglottic Stenosis"
+  ],
+  [
+    14,
+    "Stridor — Croup vs Epiglottitis vs Subglottic Stenosis - Medical & Surgical Management",
+    9,
+    5,
+    "Stridor — Croup vs Epiglottitis vs Subglottic Stenosis"
+  ],
+  [
+    14,
+    "Stridor — Croup vs Epiglottitis vs Subglottic Stenosis - Complications & Prognosis",
+    9,
+    5,
+    "Stridor — Croup vs Epiglottitis vs Subglottic Stenosis"
+  ],
+  [14, "Carcinoma Larynx", 10, 50, "Throat (Pharynx & Larynx)"],
+  [
+    14,
+    "Laryngeal Ca — Supraglottic vs Glottic (Better Prognosis) & Staging",
+    10,
+    18,
+    "Carcinoma Larynx"
+  ],
+  [
+    14,
+    "Laryngeal Ca — Supraglottic vs Glottic (Better Prognosis)",
+    10,
+    9,
+    "Laryngeal Ca — Supraglottic vs Glottic (Better Prognosis) & Staging"
+  ],
+  [
+    14,
+    "Laryngeal Ca — Supraglottic vs Glottic (Better Prognosis) - Etiology & Risk Factors",
+    10,
+    5,
+    "Laryngeal Ca — Supraglottic vs Glottic (Better Prognosis)"
+  ],
+  [
+    14,
+    "Laryngeal Ca — Supraglottic vs Glottic (Better Prognosis) - Pathophysiology",
+    10,
+    5,
+    "Laryngeal Ca — Supraglottic vs Glottic (Better Prognosis)"
+  ],
+  [
+    14,
+    "Laryngeal Ca — Supraglottic vs Glottic (Better Prognosis) - Clinical Presentation & Signs",
+    10,
+    5,
+    "Laryngeal Ca — Supraglottic vs Glottic (Better Prognosis)"
+  ],
+  [
+    14,
+    "Laryngeal Ca — Supraglottic vs Glottic (Better Prognosis) - Differential Diagnosis",
+    10,
+    5,
+    "Laryngeal Ca — Supraglottic vs Glottic (Better Prognosis)"
+  ],
+  [
+    14,
+    "Laryngeal Ca — Supraglottic vs Glottic (Better Prognosis) - Investigations & Lab Findings",
+    10,
+    5,
+    "Laryngeal Ca — Supraglottic vs Glottic (Better Prognosis)"
+  ],
+  [
+    14,
+    "Laryngeal Ca — Supraglottic vs Glottic (Better Prognosis) - Medical & Surgical Management",
+    10,
+    5,
+    "Laryngeal Ca — Supraglottic vs Glottic (Better Prognosis)"
+  ],
+  [
+    14,
+    "Laryngeal Ca — Supraglottic vs Glottic (Better Prognosis) - Complications & Prognosis",
+    10,
+    5,
+    "Laryngeal Ca — Supraglottic vs Glottic (Better Prognosis)"
+  ],
+  [
+    14,
+    "Laryngeal Ca — Staging",
+    10,
+    9,
+    "Laryngeal Ca — Supraglottic vs Glottic (Better Prognosis) & Staging"
+  ],
+  [14, "Laryngeal Ca — Staging - Etiology & Risk Factors", 10, 5, "Laryngeal Ca — Staging"],
+  [14, "Laryngeal Ca — Staging - Pathophysiology", 10, 5, "Laryngeal Ca — Staging"],
+  [14, "Laryngeal Ca — Staging - Clinical Presentation & Signs", 10, 5, "Laryngeal Ca — Staging"],
+  [14, "Laryngeal Ca — Staging - Differential Diagnosis", 10, 5, "Laryngeal Ca — Staging"],
+  [14, "Laryngeal Ca — Staging - Investigations & Lab Findings", 10, 5, "Laryngeal Ca — Staging"],
+  [14, "Laryngeal Ca — Staging - Medical & Surgical Management", 10, 5, "Laryngeal Ca — Staging"],
+  [14, "Laryngeal Ca — Staging - Complications & Prognosis", 10, 5, "Laryngeal Ca — Staging"],
+  [
+    14,
+    "Laryngeal Ca Surgery — TL, Partial vs Total Laryngectomy & Voice Rehab",
+    10,
+    15,
+    "Carcinoma Larynx"
+  ],
+  [
+    14,
+    "Laryngeal Ca Surgery — TL, Partial vs Total Laryngectomy",
+    10,
+    7,
+    "Laryngeal Ca Surgery — TL, Partial vs Total Laryngectomy & Voice Rehab"
+  ],
+  [
+    14,
+    "Laryngeal Ca Surgery — TL, Partial vs Total Laryngectomy - Etiology & Risk Factors",
+    10,
+    5,
+    "Laryngeal Ca Surgery — TL, Partial vs Total Laryngectomy"
+  ],
+  [
+    14,
+    "Laryngeal Ca Surgery — TL, Partial vs Total Laryngectomy - Pathophysiology",
+    10,
+    5,
+    "Laryngeal Ca Surgery — TL, Partial vs Total Laryngectomy"
+  ],
+  [
+    14,
+    "Laryngeal Ca Surgery — TL, Partial vs Total Laryngectomy - Clinical Presentation & Signs",
+    10,
+    5,
+    "Laryngeal Ca Surgery — TL, Partial vs Total Laryngectomy"
+  ],
+  [
+    14,
+    "Laryngeal Ca Surgery — TL, Partial vs Total Laryngectomy - Differential Diagnosis",
+    10,
+    5,
+    "Laryngeal Ca Surgery — TL, Partial vs Total Laryngectomy"
+  ],
+  [
+    14,
+    "Laryngeal Ca Surgery — TL, Partial vs Total Laryngectomy - Investigations & Lab Findings",
+    10,
+    5,
+    "Laryngeal Ca Surgery — TL, Partial vs Total Laryngectomy"
+  ],
+  [
+    14,
+    "Laryngeal Ca Surgery — TL, Partial vs Total Laryngectomy - Medical & Surgical Management",
+    10,
+    5,
+    "Laryngeal Ca Surgery — TL, Partial vs Total Laryngectomy"
+  ],
+  [
+    14,
+    "Laryngeal Ca Surgery — TL, Partial vs Total Laryngectomy - Complications & Prognosis",
+    10,
+    5,
+    "Laryngeal Ca Surgery — TL, Partial vs Total Laryngectomy"
+  ],
+  [
+    14,
+    "Laryngeal Ca Surgery — Voice Rehab",
+    10,
+    8,
+    "Laryngeal Ca Surgery — TL, Partial vs Total Laryngectomy & Voice Rehab"
+  ],
+  [
+    14,
+    "Laryngeal Ca Surgery — Voice Rehab - Etiology & Risk Factors",
+    10,
+    5,
+    "Laryngeal Ca Surgery — Voice Rehab"
+  ],
+  [
+    14,
+    "Laryngeal Ca Surgery — Voice Rehab - Pathophysiology",
+    10,
+    5,
+    "Laryngeal Ca Surgery — Voice Rehab"
+  ],
+  [
+    14,
+    "Laryngeal Ca Surgery — Voice Rehab - Clinical Presentation & Signs",
+    10,
+    5,
+    "Laryngeal Ca Surgery — Voice Rehab"
+  ],
+  [
+    14,
+    "Laryngeal Ca Surgery — Voice Rehab - Differential Diagnosis",
+    10,
+    5,
+    "Laryngeal Ca Surgery — Voice Rehab"
+  ],
+  [
+    14,
+    "Laryngeal Ca Surgery — Voice Rehab - Investigations & Lab Findings",
+    10,
+    5,
+    "Laryngeal Ca Surgery — Voice Rehab"
+  ],
+  [
+    14,
+    "Laryngeal Ca Surgery — Voice Rehab - Medical & Surgical Management",
+    10,
+    5,
+    "Laryngeal Ca Surgery — Voice Rehab"
+  ],
+  [
+    14,
+    "Laryngeal Ca Surgery — Voice Rehab - Complications & Prognosis",
+    10,
+    5,
+    "Laryngeal Ca Surgery — Voice Rehab"
+  ],
+  [14, "Dysphagia & Esophagus", 8, 35, "Throat (Pharynx & Larynx)"],
+  [
+    14,
+    "Dysphagia — Oropharyngeal vs Esophageal, Zenker's Diverticulum & Achalasia",
+    8,
+    18,
+    "Dysphagia & Esophagus"
+  ],
+  [
+    14,
+    "Dysphagia — Oropharyngeal vs Esophageal, Zenker's Diverticulum",
+    8,
+    9,
+    "Dysphagia — Oropharyngeal vs Esophageal, Zenker's Diverticulum & Achalasia"
+  ],
+  [
+    14,
+    "Dysphagia — Oropharyngeal vs Esophageal, Zenker's Diverticulum - Etiology & Risk Factors",
+    8,
+    5,
+    "Dysphagia — Oropharyngeal vs Esophageal, Zenker's Diverticulum"
+  ],
+  [
+    14,
+    "Dysphagia — Oropharyngeal vs Esophageal, Zenker's Diverticulum - Pathophysiology",
+    8,
+    5,
+    "Dysphagia — Oropharyngeal vs Esophageal, Zenker's Diverticulum"
+  ],
+  [
+    14,
+    "Dysphagia — Oropharyngeal vs Esophageal, Zenker's Diverticulum - Clinical Presentation & Signs",
+    8,
+    5,
+    "Dysphagia — Oropharyngeal vs Esophageal, Zenker's Diverticulum"
+  ],
+  [
+    14,
+    "Dysphagia — Oropharyngeal vs Esophageal, Zenker's Diverticulum - Differential Diagnosis",
+    8,
+    5,
+    "Dysphagia — Oropharyngeal vs Esophageal, Zenker's Diverticulum"
+  ],
+  [
+    14,
+    "Dysphagia — Oropharyngeal vs Esophageal, Zenker's Diverticulum - Investigations & Lab Findings",
+    8,
+    5,
+    "Dysphagia — Oropharyngeal vs Esophageal, Zenker's Diverticulum"
+  ],
+  [
+    14,
+    "Dysphagia — Oropharyngeal vs Esophageal, Zenker's Diverticulum - Medical & Surgical Management",
+    8,
+    5,
+    "Dysphagia — Oropharyngeal vs Esophageal, Zenker's Diverticulum"
+  ],
+  [
+    14,
+    "Dysphagia — Oropharyngeal vs Esophageal, Zenker's Diverticulum - Complications & Prognosis",
+    8,
+    5,
+    "Dysphagia — Oropharyngeal vs Esophageal, Zenker's Diverticulum"
+  ],
+  [
+    14,
+    "Dysphagia — Achalasia",
+    8,
+    9,
+    "Dysphagia — Oropharyngeal vs Esophageal, Zenker's Diverticulum & Achalasia"
+  ],
+  [14, "Dysphagia — Achalasia - Etiology & Risk Factors", 8, 5, "Dysphagia — Achalasia"],
+  [14, "Dysphagia — Achalasia - Pathophysiology", 8, 5, "Dysphagia — Achalasia"],
+  [14, "Dysphagia — Achalasia - Clinical Presentation & Signs", 8, 5, "Dysphagia — Achalasia"],
+  [14, "Dysphagia — Achalasia - Differential Diagnosis", 8, 5, "Dysphagia — Achalasia"],
+  [14, "Dysphagia — Achalasia - Investigations & Lab Findings", 8, 5, "Dysphagia — Achalasia"],
+  [14, "Dysphagia — Achalasia - Medical & Surgical Management", 8, 5, "Dysphagia — Achalasia"],
+  [14, "Dysphagia — Achalasia - Complications & Prognosis", 8, 5, "Dysphagia — Achalasia"],
+  [14, "Plummer-Vinson Syndrome & Post-cricoid Carcinoma", 8, 15, "Dysphagia & Esophagus"],
+  [14, "Plummer-Vinson Syndrome", 8, 7, "Plummer-Vinson Syndrome & Post-cricoid Carcinoma"],
+  [14, "Plummer-Vinson Syndrome - Etiology & Risk Factors", 8, 5, "Plummer-Vinson Syndrome"],
+  [14, "Plummer-Vinson Syndrome - Pathophysiology", 8, 5, "Plummer-Vinson Syndrome"],
+  [14, "Plummer-Vinson Syndrome - Clinical Presentation & Signs", 8, 5, "Plummer-Vinson Syndrome"],
+  [14, "Plummer-Vinson Syndrome - Differential Diagnosis", 8, 5, "Plummer-Vinson Syndrome"],
+  [14, "Plummer-Vinson Syndrome - Investigations & Lab Findings", 8, 5, "Plummer-Vinson Syndrome"],
+  [14, "Plummer-Vinson Syndrome - Medical & Surgical Management", 8, 5, "Plummer-Vinson Syndrome"],
+  [14, "Plummer-Vinson Syndrome - Complications & Prognosis", 8, 5, "Plummer-Vinson Syndrome"],
+  [14, "Post-cricoid Carcinoma", 8, 8, "Plummer-Vinson Syndrome & Post-cricoid Carcinoma"],
+  [14, "Post-cricoid Carcinoma - Etiology & Risk Factors", 8, 5, "Post-cricoid Carcinoma"],
+  [14, "Post-cricoid Carcinoma - Pathophysiology", 8, 5, "Post-cricoid Carcinoma"],
+  [14, "Post-cricoid Carcinoma - Clinical Presentation & Signs", 8, 5, "Post-cricoid Carcinoma"],
+  [14, "Post-cricoid Carcinoma - Differential Diagnosis", 8, 5, "Post-cricoid Carcinoma"],
+  [14, "Post-cricoid Carcinoma - Investigations & Lab Findings", 8, 5, "Post-cricoid Carcinoma"],
+  [14, "Post-cricoid Carcinoma - Medical & Surgical Management", 8, 5, "Post-cricoid Carcinoma"],
+  [14, "Post-cricoid Carcinoma - Complications & Prognosis", 8, 5, "Post-cricoid Carcinoma"]
 ]

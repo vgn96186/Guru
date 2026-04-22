@@ -93,7 +93,7 @@ function initQuotesSlider() {
 // ============================================
 function initScrollReveal() {
   const revealElements = document.querySelectorAll(
-    ".about-content, .character-card, .theme-item, .section-header",
+    ".about-content, .character-card, .theme-item, .section-header"
   );
 
   const revealOptions = {
@@ -162,7 +162,9 @@ window.addEventListener("scroll", () => {
   const heroPattern = document.querySelector(".hero-pattern");
 
   if (heroPattern && scrolled < window.innerHeight) {
-    heroPattern.style.transform = `translateY(${scrolled * 0.3}px) rotate(${scrolled * 0.02}deg)`;
+    heroPattern.style.transform = `translateY(${scrolled * 0.3}px) rotate(${
+      scrolled * 0.02
+    }deg)`;
   }
 });
 

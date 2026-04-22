@@ -61,6 +61,7 @@ The Figma MCP server runs locally via the Figma Desktop app. Ensure the Figma De
 **VS Code Extension:** Open Kilo Settings > Agent Behaviour > MCP Servers, then click "Edit Global MCP" (or "Edit Project MCP" for project-specific config) and add the config above.
 
 **CLI:** Add the `mcp` block to your `kilo.json` config file. Config locations:
+
 - **Global:** `~/.config/kilo/kilo.json`
 - **Project:** `./kilo.json` or `./.kilo/kilo.json` in your project root
 

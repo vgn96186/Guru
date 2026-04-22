@@ -15,7 +15,7 @@ export function Hero({ className }: { className?: string }) {
     <div
       className={cn(
         "flex size-full flex-col items-center justify-center",
-        className,
+        className
       )}
     >
       <div className="absolute inset-0 z-0 bg-black/40">

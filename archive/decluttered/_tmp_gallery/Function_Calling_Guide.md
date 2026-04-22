@@ -1,14 +1,16 @@
 # Implementing Your Custom Logic
+
 To build specialized agents that go beyond our provided demos, you can fine-tune your own version of the model and customize the app with your functions to call.
 
 ## Clone the Repository
+
 ```shell
 git clone git@github.com:google-ai-edge/gallery.git
 ```
 
 This will create a local copy of the repository.
 
-## Define Your Action Type 
+## Define Your Action Type
 
 In [Actions.kt](Android/src/app/src/main/java/com/google/ai/edge/gallery/customtasks/mobileactions/Actions.kt), add a new entry to the `ActionType` enum and create a class that extends `Action` to define your specific function name, icon, and parameters.
 
@@ -47,7 +49,7 @@ class MobileActionsTools(val onFunctionCalled: (Action) -> Unit): Toolset {
 }
 ```
 
-## Implement Your Action Logic 
+## Implement Your Action Logic
 
 Update the `performAction` method in [MobileActionsViewModel.kt](Android/src/app/src/main/java/com/google/ai/edge/gallery/customtasks/mobileactions/MobileActionsViewModel.kt) to handle your new action type. This is where you implement the actual Android logic, such as using the `CameraManager` or starting a new `Intent`.
 
@@ -66,11 +68,11 @@ private fun handleNewCustomAction(context: Context, param: String): String {
 }
 ```
 
-## Update the System Prompt (Optional) 
+## Update the System Prompt (Optional)
 
 If your function requires specific context like the current time or device state, update the `getSystemPrompt()` function in [MobileActionsTask.kt](Android/src/app/src/main/java/com/google/ai/edge/gallery/customtasks/mobileactions/MobileActionsTask.kt) to ensure the model has the information it needs.
 
-## Build and Install 
+## Build and Install
 
 Navigate to the `Android/src/` directory in your terminal and use the Gradle wrapper to build the debug version of the app and install it directly onto your connected device:
 

@@ -24,11 +24,11 @@ Right column: x=540, width=450
 
 ## Characters
 
-* Doraemon
-* Nobita
-* Shizuka
-* Giant
-* Suneo
+- Doraemon
+- Nobita
+- Shizuka
+- Giant
+- Suneo
 
 ## Prompt Template
 
@@ -99,7 +99,7 @@ Right column: x=540, width=450
       "color": "#0095D9",
       "text_align": "center"
     }
-  },
+  }
 }
 ```
 

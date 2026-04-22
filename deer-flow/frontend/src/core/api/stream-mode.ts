@@ -14,7 +14,7 @@ const warnedUnsupportedStreamModes = new Set<string>();
 
 export function warnUnsupportedStreamModes(
   modes: string[],
-  warn: (message: string) => void = console.warn,
+  warn: (message: string) => void = console.warn
 ) {
   const unseenModes = modes.filter((mode) => {
     if (warnedUnsupportedStreamModes.has(mode)) {
@@ -29,7 +29,9 @@ export function warnUnsupportedStreamModes(
   }
 
   warn(
-    `[deer-flow] Dropped unsupported LangGraph stream mode(s): ${unseenModes.join(", ")}`,
+    `[deer-flow] Dropped unsupported LangGraph stream mode(s): ${unseenModes.join(
+      ", "
+    )}`
   );
 }
 
@@ -49,7 +51,7 @@ export function sanitizeRunStreamOptions<T>(options: T): T {
 
   const requestedModes = Array.isArray(streamMode) ? streamMode : [streamMode];
   const sanitizedModes = requestedModes.filter((mode) =>
-    SUPPORTED_RUN_STREAM_MODES.has(mode),
+    SUPPORTED_RUN_STREAM_MODES.has(mode)
   );
 
   if (sanitizedModes.length === requestedModes.length) {
@@ -57,7 +59,7 @@ export function sanitizeRunStreamOptions<T>(options: T): T {
   }
 
   const droppedModes = requestedModes.filter(
-    (mode) => !SUPPORTED_RUN_STREAM_MODES.has(mode),
+    (mode) => !SUPPORTED_RUN_STREAM_MODES.has(mode)
   );
   warnUnsupportedStreamModes(droppedModes);
 

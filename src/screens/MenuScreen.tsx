@@ -1,5 +1,5 @@
-import React from 'react';
-import { Pressable, ScrollView, StatusBar, StyleSheet, View } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { Dimensions, Pressable, ScrollView, StatusBar, StyleSheet, View } from 'react-native';
 import LinearText from '../components/primitives/LinearText';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -50,9 +50,24 @@ const PRIMARY_DESTINATIONS: Array<{
   { route: 'DeviceLink', title: 'Device Link', icon: 'link-outline', tint: '#4FC3F7' },
 ];
 
+const TABLET_BREAKPOINT = 600;
+
 export default function MenuScreen() {
   const navigation = useNavigation<Nav>();
   const tabsNavigation = navigation.getParent<NavigationProp<TabParamList>>();
+  const [isTablet, setIsTablet] = useState(() => {
+    const { width, height } = Dimensions.get('window');
+    return Math.min(width, height) >= TABLET_BREAKPOINT;
+  });
+
+  useEffect(() => {
+    const updateDimensions = () => {
+      const { width, height } = Dimensions.get('window');
+      setIsTablet(Math.min(width, height) >= TABLET_BREAKPOINT);
+    };
+    const subscription = Dimensions.addEventListener('change', updateDimensions);
+    return () => subscription?.remove();
+  }, []);
 
   return (
     <SafeAreaView style={styles.safe} testID="menu-screen">
@@ -70,11 +85,14 @@ export default function MenuScreen() {
             <LinearText variant="meta" tone="muted" style={styles.destinationsLabel}>
               DESTINATIONS
             </LinearText>
-            <View style={styles.grid}>
+            <View style={[styles.grid, isTablet && styles.gridTwoColumn]}>
               {PRIMARY_DESTINATIONS.map((item) => (
                 <Pressable
                   key={item.route}
-                  style={({ pressed }) => [pressed && styles.cardPressed]}
+                  style={({ pressed }) => [
+                    pressed && styles.cardPressed,
+                    isTablet && styles.gridItem,
+                  ]}
                   android_ripple={{ color: `${item.tint}22` }}
                   onPress={() => navigation.navigate(item.route as never)}
                   accessibilityRole="button"
@@ -133,6 +151,14 @@ const styles = StyleSheet.create({
   },
   grid: {
     gap: n.spacing.sm,
+  },
+  gridTwoColumn: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+  },
+  gridItem: {
+    width: '49%',
   },
   cardPressed: {
     opacity: n.alpha.pressed,

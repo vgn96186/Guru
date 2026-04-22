@@ -1,1288 +1,1331 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta http-equiv="Cache-Control" content="no-store" />
-  <title>Guru Dev Launcher</title>
-  <style>
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-
-    :root {
-      --bg: #08141d;
-      --bg-accent: #132a3c;
-      --surface: rgba(9, 23, 33, 0.82);
-      --surface-strong: rgba(11, 29, 42, 0.94);
-      --surface-hover: rgba(21, 43, 61, 0.96);
-      --border: rgba(145, 201, 255, 0.16);
-      --border-strong: rgba(145, 201, 255, 0.28);
-      --text: #eef7ff;
-      --text-muted: #9cb5c8;
-      --accent: #72f2c0;
-      --accent-strong: #34d399;
-      --gold: #ffcc66;
-      --danger: #ff6b7c;
-      --info: #87c8ff;
-      --shadow: 0 24px 60px rgba(0, 0, 0, 0.35);
-      --radius-xl: 24px;
-      --radius-lg: 18px;
-      --radius-md: 14px;
-    }
-
-    body {
-      min-height: 100vh;
-      color: var(--text);
-      font-family: 'Segoe UI Variable Display', 'Aptos', 'Trebuchet MS', sans-serif;
-      background:
-        radial-gradient(circle at top left, rgba(114, 242, 192, 0.12), transparent 30%),
-        radial-gradient(circle at top right, rgba(135, 200, 255, 0.18), transparent 26%),
-        linear-gradient(160deg, var(--bg) 0%, var(--bg-accent) 54%, #060e14 100%);
-      padding: 32px 18px 48px;
-    }
-
-    .shell {
-      max-width: 1200px;
-      margin: 0 auto;
-    }
-
-    .hero {
-      display: grid;
-      grid-template-columns: minmax(0, 1.5fr) minmax(280px, 0.9fr);
-      gap: 20px;
-      margin-bottom: 22px;
-    }
-
-    .hero-card,
-    .panel {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-xl);
-      box-shadow: var(--shadow);
-      backdrop-filter: blur(16px);
-    }
-
-    .hero-card {
-      padding: 28px;
-      position: relative;
-      overflow: hidden;
-    }
-
-    .hero-card::after {
-      content: '';
-      position: absolute;
-      inset: auto -10% -40% 25%;
-      height: 220px;
-      background: radial-gradient(circle, rgba(114, 242, 192, 0.16), transparent 65%);
-      pointer-events: none;
-    }
-
-    .eyebrow {
-      display: inline-flex;
-      align-items: center;
-      gap: 10px;
-      padding: 7px 12px;
-      border-radius: 999px;
-      background: rgba(114, 242, 192, 0.1);
-      border: 1px solid rgba(114, 242, 192, 0.18);
-      color: var(--accent);
-      font-size: 12px;
-      font-weight: 700;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-    }
-
-    .hero h1 {
-      font-size: clamp(32px, 4vw, 52px);
-      line-height: 0.94;
-      letter-spacing: -0.04em;
-      margin: 18px 0 12px;
-      max-width: 10ch;
-    }
-
-    .build-banner {
-      margin: 0 0 16px;
-      padding: 10px 14px;
-      max-width: min(56ch, 100%);
-      border-radius: var(--radius-md);
-      background: rgba(135, 200, 255, 0.1);
-      border: 1px solid rgba(135, 200, 255, 0.24);
-      color: var(--info);
-      font-size: 12px;
-      line-height: 1.45;
-      font-family: ui-monospace, 'Cascadia Mono', 'Consolas', monospace;
-      word-break: break-word;
-      white-space: pre-line;
-    }
-
-    .hero p {
-      color: var(--text-muted);
-      font-size: 15px;
-      line-height: 1.6;
-      max-width: 56ch;
-    }
-
-    .hero-actions {
-      display: flex;
-      gap: 12px;
-      flex-wrap: wrap;
-      margin-top: 22px;
-    }
-
-    .primary-cta,
-    .secondary-cta,
-    .toolbar-btn,
-    .action-btn {
-      border: 1px solid transparent;
-      border-radius: 16px;
-      cursor: pointer;
-      transition:
-        transform 0.18s ease,
-        border-color 0.18s ease,
-        background 0.18s ease,
-        opacity 0.18s ease;
-    }
-
-    .primary-cta,
-    .secondary-cta {
-      padding: 14px 18px;
-      font: inherit;
-      font-weight: 700;
-    }
-
-    .primary-cta {
-      background: linear-gradient(135deg, #7ef9cd 0%, #46d5b4 100%);
-      color: #062118;
-      min-width: 210px;
-    }
-
-    .secondary-cta {
-      background: rgba(135, 200, 255, 0.08);
-      border-color: rgba(135, 200, 255, 0.2);
-      color: var(--text);
-    }
-
-    .subtle-cta {
-      font-size: 12px !important;
-      font-weight: 600 !important;
-      padding: 10px 14px !important;
-      opacity: 0.85;
-      border-style: dashed;
-    }
-
-    .primary-cta:hover:not(:disabled),
-    .secondary-cta:hover:not(:disabled),
-    .toolbar-btn:hover:not(:disabled),
-    .action-btn:hover:not(:disabled) {
-      transform: translateY(-1px);
-      border-color: var(--border-strong);
-    }
-
-    .status-stack {
-      display: grid;
-      gap: 14px;
-      padding: 20px;
-    }
-
-    .status-card {
-      background: var(--surface-strong);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-lg);
-      padding: 16px 18px;
-    }
-
-    .status-label {
-      color: var(--text-muted);
-      font-size: 11px;
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-      margin-bottom: 10px;
-    }
-
-    .status-value {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 10px;
-      font-size: 15px;
-      font-weight: 700;
-    }
-
-    .status-subtext {
-      margin-top: 8px;
-      color: var(--text-muted);
-      font-size: 12px;
-      line-height: 1.5;
-    }
-
-    .pill {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      padding: 8px 12px;
-      border-radius: 999px;
-      border: 1px solid var(--border);
-      font-size: 12px;
-      font-weight: 700;
-      white-space: nowrap;
-    }
-
-    .pill::before {
-      content: '';
-      width: 8px;
-      height: 8px;
-      border-radius: 999px;
-      background: currentColor;
-      box-shadow: 0 0 14px currentColor;
-    }
-
-    .pill.good {
-      color: var(--accent);
-      background: rgba(114, 242, 192, 0.08);
-    }
-
-    .pill.warn {
-      color: var(--gold);
-      background: rgba(255, 204, 102, 0.08);
-    }
-
-    .pill.bad {
-      color: var(--danger);
-      background: rgba(255, 107, 124, 0.08);
-    }
-
-    .pill.info {
-      color: var(--info);
-      background: rgba(135, 200, 255, 0.08);
-    }
-
-    .workspace {
-      display: grid;
-      grid-template-columns: minmax(0, 1.08fr) minmax(320px, 0.92fr);
-      gap: 20px;
-      align-items: start;
-    }
-
-    .panel {
-      padding: 22px;
-    }
-
-    .panel-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      gap: 16px;
-      margin-bottom: 18px;
-    }
-
-    .panel-title {
-      font-size: 18px;
-      font-weight: 800;
-      letter-spacing: -0.02em;
-    }
-
-    .panel-copy {
-      margin-top: 6px;
-      color: var(--text-muted);
-      font-size: 13px;
-      line-height: 1.55;
-    }
-
-    .groups {
-      display: grid;
-      gap: 16px;
-    }
-
-    .group {
-      border: 1px solid var(--border);
-      border-radius: var(--radius-lg);
-      padding: 16px;
-      background: rgba(6, 17, 25, 0.42);
-    }
-
-    .group-heading {
-      display: flex;
-      justify-content: space-between;
-      gap: 12px;
-      align-items: flex-start;
-      margin-bottom: 14px;
-    }
-
-    .group-title {
-      font-size: 14px;
-      font-weight: 800;
-      letter-spacing: 0.02em;
-    }
-
-    .group-note {
-      color: var(--text-muted);
-      font-size: 12px;
-      line-height: 1.45;
-      max-width: 42ch;
-    }
-
-    .action-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-      gap: 12px;
-    }
-
-    .action-btn {
-      display: flex;
-      flex-direction: column;
-      align-items: flex-start;
-      gap: 10px;
-      padding: 16px;
-      background: var(--surface-strong);
-      border-color: var(--border);
-      color: var(--text);
-      text-align: left;
-      min-height: 132px;
-    }
-
-    .action-btn:disabled,
-    .primary-cta:disabled,
-    .secondary-cta:disabled,
-    .toolbar-btn:disabled {
-      opacity: 0.45;
-      cursor: not-allowed;
-      transform: none;
-    }
-
-    .action-kicker {
-      color: var(--accent);
-      font-size: 11px;
-      font-weight: 800;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-    }
-
-    .action-label {
-      font-size: 16px;
-      font-weight: 800;
-      letter-spacing: -0.02em;
-    }
-
-    .action-desc {
-      color: var(--text-muted);
-      font-size: 12px;
-      line-height: 1.55;
-    }
-
-    .toolbar {
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-    }
-
-    .toolbar-btn {
-      background: rgba(135, 200, 255, 0.08);
-      border-color: rgba(135, 200, 255, 0.18);
-      color: var(--text);
-      font: inherit;
-      font-size: 12px;
-      font-weight: 700;
-      padding: 10px 14px;
-    }
-
-    .log-shell {
-      border: 1px solid var(--border);
-      border-radius: var(--radius-lg);
-      overflow: hidden;
-      background: rgba(5, 11, 17, 0.85);
-    }
-
-    .log-meta {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 16px;
-      padding: 12px 16px;
-      border-bottom: 1px solid var(--border);
-      background: rgba(255, 255, 255, 0.02);
-      color: var(--text-muted);
-      font-size: 12px;
-    }
-
-    .logs {
-      min-height: 520px;
-      max-height: 68vh;
-      overflow-y: auto;
-      padding: 16px;
-      font-family: Consolas, 'SFMono-Regular', monospace;
-      font-size: 12px;
-      line-height: 1.65;
-    }
-
-    .log-entry {
-      display: grid;
-      grid-template-columns: auto 1fr;
-      gap: 12px;
-      padding: 2px 0;
-      white-space: pre-wrap;
-      word-break: break-word;
-    }
-
-    .log-time {
-      color: #62839b;
-    }
-
-    .log-info {
-      color: #ddefff;
-    }
-
-    .log-stdout {
-      color: #8ed2ff;
-    }
-
-    .log-stderr {
-      color: #ffcf84;
-    }
-
-    .log-success {
-      color: #87ffcf;
-    }
-
-    .log-error {
-      color: #ff9eaa;
-    }
-
-    .log-warning {
-      color: #ffd77c;
-    }
-
-    .empty-state {
-      display: grid;
-      place-items: center;
-      min-height: 360px;
-      text-align: center;
-      color: var(--text-muted);
-      padding: 24px;
-    }
-
-    .empty-title {
-      font-size: 22px;
-      font-weight: 800;
-      color: var(--text);
-      margin-bottom: 8px;
-      letter-spacing: -0.03em;
-    }
-
-    .helper-list {
-      display: grid;
-      gap: 12px;
-      margin-top: 16px;
-    }
-
-    .helper-item {
-      border: 1px solid var(--border);
-      border-radius: var(--radius-md);
-      padding: 14px 15px;
-      background: rgba(4, 13, 19, 0.46);
-    }
-
-    .helper-title {
-      font-size: 13px;
-      font-weight: 800;
-      margin-bottom: 6px;
-    }
-
-    .helper-copy {
-      color: var(--text-muted);
-      font-size: 12px;
-      line-height: 1.5;
-    }
-
-    .toast {
-      position: fixed;
-      right: 20px;
-      bottom: 20px;
-      max-width: min(420px, calc(100vw - 40px));
-      padding: 14px 16px;
-      border-radius: 16px;
-      border: 1px solid var(--border);
-      background: rgba(6, 19, 28, 0.96);
-      color: var(--text);
-      box-shadow: var(--shadow);
-      opacity: 0;
-      transform: translateY(16px);
-      transition:
-        opacity 0.22s ease,
-        transform 0.22s ease;
-      pointer-events: none;
-      cursor: pointer;
-    }
-
-    .toast.show {
-      opacity: 1;
-      transform: translateY(0);
-      pointer-events: auto;
-    }
-
-    .toast.success {
-      border-color: rgba(114, 242, 192, 0.3);
-    }
-
-    .toast.error {
-      border-color: rgba(255, 107, 124, 0.32);
-    }
-
-    .toast.info {
-      border-color: rgba(135, 200, 255, 0.28);
-    }
-
-    .toast-dismiss {
-      display: block;
-      margin-top: 6px;
-      font-size: 10px;
-      opacity: 0.5;
-    }
-
-    .log-separator {
-      grid-column: 1 / -1;
-      padding: 8px 0 4px;
-      color: var(--accent);
-      font-size: 11px;
-      font-weight: 800;
-      letter-spacing: 0.06em;
-      opacity: 0.7;
-      border-top: 1px dashed rgba(114, 242, 192, 0.2);
-      margin-top: 8px;
-    }
-
-    @media (max-width: 980px) {
-
-      .hero,
-      .workspace {
-        grid-template-columns: 1fr;
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="Cache-Control" content="no-store" />
+    <title>Guru Dev Launcher</title>
+    <style>
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
       }
 
-      .logs {
-        min-height: 380px;
-        max-height: none;
+      :root {
+        --bg: #08141d;
+        --bg-accent: #132a3c;
+        --surface: rgba(9, 23, 33, 0.82);
+        --surface-strong: rgba(11, 29, 42, 0.94);
+        --surface-hover: rgba(21, 43, 61, 0.96);
+        --border: rgba(145, 201, 255, 0.16);
+        --border-strong: rgba(145, 201, 255, 0.28);
+        --text: #eef7ff;
+        --text-muted: #9cb5c8;
+        --accent: #72f2c0;
+        --accent-strong: #34d399;
+        --gold: #ffcc66;
+        --danger: #ff6b7c;
+        --info: #87c8ff;
+        --shadow: 0 24px 60px rgba(0, 0, 0, 0.35);
+        --radius-xl: 24px;
+        --radius-lg: 18px;
+        --radius-md: 14px;
       }
-    }
 
-    @media (max-width: 640px) {
       body {
-        padding: 18px 12px 36px;
+        min-height: 100vh;
+        color: var(--text);
+        font-family: 'Segoe UI Variable Display', 'Aptos', 'Trebuchet MS', sans-serif;
+        background: radial-gradient(circle at top left, rgba(114, 242, 192, 0.12), transparent 30%),
+          radial-gradient(circle at top right, rgba(135, 200, 255, 0.18), transparent 26%),
+          linear-gradient(160deg, var(--bg) 0%, var(--bg-accent) 54%, #060e14 100%);
+        padding: 32px 18px 48px;
+      }
+
+      .shell {
+        max-width: 1200px;
+        margin: 0 auto;
+      }
+
+      .hero {
+        display: grid;
+        grid-template-columns: minmax(0, 1.5fr) minmax(280px, 0.9fr);
+        gap: 20px;
+        margin-bottom: 22px;
       }
 
       .hero-card,
       .panel {
-        padding: 18px;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-xl);
+        box-shadow: var(--shadow);
+        backdrop-filter: blur(16px);
       }
 
-      .hero-actions,
-      .toolbar {
-        flex-direction: column;
+      .hero-card {
+        padding: 28px;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .hero-card::after {
+        content: '';
+        position: absolute;
+        inset: auto -10% -40% 25%;
+        height: 220px;
+        background: radial-gradient(circle, rgba(114, 242, 192, 0.16), transparent 65%);
+        pointer-events: none;
+      }
+
+      .eyebrow {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        padding: 7px 12px;
+        border-radius: 999px;
+        background: rgba(114, 242, 192, 0.1);
+        border: 1px solid rgba(114, 242, 192, 0.18);
+        color: var(--accent);
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .hero h1 {
+        font-size: clamp(32px, 4vw, 52px);
+        line-height: 0.94;
+        letter-spacing: -0.04em;
+        margin: 18px 0 12px;
+        max-width: 10ch;
+      }
+
+      .build-banner {
+        margin: 0 0 16px;
+        padding: 10px 14px;
+        max-width: min(56ch, 100%);
+        border-radius: var(--radius-md);
+        background: rgba(135, 200, 255, 0.1);
+        border: 1px solid rgba(135, 200, 255, 0.24);
+        color: var(--info);
+        font-size: 12px;
+        line-height: 1.45;
+        font-family: ui-monospace, 'Cascadia Mono', 'Consolas', monospace;
+        word-break: break-word;
+        white-space: pre-line;
+      }
+
+      .hero p {
+        color: var(--text-muted);
+        font-size: 15px;
+        line-height: 1.6;
+        max-width: 56ch;
+      }
+
+      .hero-actions {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+        margin-top: 22px;
       }
 
       .primary-cta,
       .secondary-cta,
-      .toolbar-btn {
-        width: 100%;
+      .toolbar-btn,
+      .action-btn {
+        border: 1px solid transparent;
+        border-radius: 16px;
+        cursor: pointer;
+        transition: transform 0.18s ease, border-color 0.18s ease, background 0.18s ease,
+          opacity 0.18s ease;
       }
 
-      .panel-header,
-      .group-heading,
-      .log-meta {
+      .primary-cta,
+      .secondary-cta {
+        padding: 14px 18px;
+        font: inherit;
+        font-weight: 700;
+      }
+
+      .primary-cta {
+        background: linear-gradient(135deg, #7ef9cd 0%, #46d5b4 100%);
+        color: #062118;
+        min-width: 210px;
+      }
+
+      .secondary-cta {
+        background: rgba(135, 200, 255, 0.08);
+        border-color: rgba(135, 200, 255, 0.2);
+        color: var(--text);
+      }
+
+      .subtle-cta {
+        font-size: 12px !important;
+        font-weight: 600 !important;
+        padding: 10px 14px !important;
+        opacity: 0.85;
+        border-style: dashed;
+      }
+
+      .primary-cta:hover:not(:disabled),
+      .secondary-cta:hover:not(:disabled),
+      .toolbar-btn:hover:not(:disabled),
+      .action-btn:hover:not(:disabled) {
+        transform: translateY(-1px);
+        border-color: var(--border-strong);
+      }
+
+      .status-stack {
+        display: grid;
+        gap: 14px;
+        padding: 20px;
+      }
+
+      .status-card {
+        background: var(--surface-strong);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-lg);
+        padding: 16px 18px;
+      }
+
+      .status-label {
+        color: var(--text-muted);
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        margin-bottom: 10px;
+      }
+
+      .status-value {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        font-size: 15px;
+        font-weight: 700;
+      }
+
+      .status-subtext {
+        margin-top: 8px;
+        color: var(--text-muted);
+        font-size: 12px;
+        line-height: 1.5;
+      }
+
+      .pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 12px;
+        border-radius: 999px;
+        border: 1px solid var(--border);
+        font-size: 12px;
+        font-weight: 700;
+        white-space: nowrap;
+      }
+
+      .pill::before {
+        content: '';
+        width: 8px;
+        height: 8px;
+        border-radius: 999px;
+        background: currentColor;
+        box-shadow: 0 0 14px currentColor;
+      }
+
+      .pill.good {
+        color: var(--accent);
+        background: rgba(114, 242, 192, 0.08);
+      }
+
+      .pill.warn {
+        color: var(--gold);
+        background: rgba(255, 204, 102, 0.08);
+      }
+
+      .pill.bad {
+        color: var(--danger);
+        background: rgba(255, 107, 124, 0.08);
+      }
+
+      .pill.info {
+        color: var(--info);
+        background: rgba(135, 200, 255, 0.08);
+      }
+
+      .workspace {
+        display: grid;
+        grid-template-columns: minmax(0, 1.08fr) minmax(320px, 0.92fr);
+        gap: 20px;
+        align-items: start;
+      }
+
+      .panel {
+        padding: 22px;
+      }
+
+      .panel-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 16px;
+        margin-bottom: 18px;
+      }
+
+      .panel-title {
+        font-size: 18px;
+        font-weight: 800;
+        letter-spacing: -0.02em;
+      }
+
+      .panel-copy {
+        margin-top: 6px;
+        color: var(--text-muted);
+        font-size: 13px;
+        line-height: 1.55;
+      }
+
+      .groups {
+        display: grid;
+        gap: 16px;
+      }
+
+      .group {
+        border: 1px solid var(--border);
+        border-radius: var(--radius-lg);
+        padding: 16px;
+        background: rgba(6, 17, 25, 0.42);
+      }
+
+      .group-heading {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        align-items: flex-start;
+        margin-bottom: 14px;
+      }
+
+      .group-title {
+        font-size: 14px;
+        font-weight: 800;
+        letter-spacing: 0.02em;
+      }
+
+      .group-note {
+        color: var(--text-muted);
+        font-size: 12px;
+        line-height: 1.45;
+        max-width: 42ch;
+      }
+
+      .action-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 12px;
+      }
+
+      .action-btn {
+        display: flex;
         flex-direction: column;
         align-items: flex-start;
+        gap: 10px;
+        padding: 16px;
+        background: var(--surface-strong);
+        border-color: var(--border);
+        color: var(--text);
+        text-align: left;
+        min-height: 132px;
       }
-    }
-  </style>
-</head>
 
-<body>
-  <div class="shell">
-    <section class="hero">
-      <div class="hero-card">
-        <div class="eyebrow">Simple Android Workflow</div>
-        <h1>Guru Dev Launcher</h1>
-        <div class="build-banner" id="launcherBuildBanner" role="status">
-          Checking this tab is talking to your current launcher (no cache)…
-        </div>
-        <p>
-          <strong>Start here:</strong> Click <strong>Connect Tablet</strong> - it does everything automatically.
-          Then use <strong>Hot Reload</strong> while coding. That's it.
-        </p>
-        <div class="hero-actions">
-          <button class="primary-cta" data-action="doctor">1. Connect Tablet</button>
-          <button class="secondary-cta" data-action="hot-reload">2. Hot Reload</button>
-          <button class="secondary-cta subtle-cta" data-action="quit">Quit Launcher</button>
-          <button class="toolbar-btn" data-action="show-tools">Show All Tools ▾</button>
-        </div>
-      </div>
+      .action-btn:disabled,
+      .primary-cta:disabled,
+      .secondary-cta:disabled,
+      .toolbar-btn:disabled {
+        opacity: 0.45;
+        cursor: not-allowed;
+        transform: none;
+      }
 
-      <div class="hero-card status-stack">
-        <div class="status-card">
-          <div class="status-label">Connection</div>
-          <div class="status-value">
-            <span id="connectionText">Connecting...</span>
-            <span class="pill info" id="connectionPill">Checking</span>
-          </div>
-          <div class="status-subtext" id="connectionSubtext">
-            Waiting for launcher server.
-          </div>
-        </div>
+      .action-kicker {
+        color: var(--accent);
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
 
-        <div class="status-card">
-          <div class="status-label">Current Task</div>
-          <div class="status-value">
-            <span id="taskText">Idle</span>
-            <span class="pill good" id="taskPill">Ready</span>
-          </div>
-          <div class="status-subtext" id="taskSubtext">
-            Ready for action.
-          </div>
-        </div>
+      .action-label {
+        font-size: 16px;
+        font-weight: 800;
+        letter-spacing: -0.02em;
+      }
 
-        <div class="status-card">
-          <div class="status-label">Metro Bundler</div>
-          <div class="status-value">
-            <span id="metroText">Not running</span>
-            <span class="pill warn" id="metroPill">Off</span>
-          </div>
-          <div class="status-subtext" id="metroSubtext">
-            Automatically started when you connect tablet.
-          </div>
-        </div>
+      .action-desc {
+        color: var(--text-muted);
+        font-size: 12px;
+        line-height: 1.55;
+      }
 
-        <div class="status-card" id="patchStatusCard">
-          <div class="status-label">Patches</div>
-          <div class="status-value">
-            <span id="patchText">Checking...</span>
-            <span class="pill info" id="patchPill">Checking</span>
-          </div>
-          <div class="status-subtext" id="patchSubtext">
-            GPU backend &amp; crash guard patches for local AI.
-          </div>
-        </div>
+      .toolbar {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
 
-        <div class="status-card" id="buildStatusCard">
-          <div class="status-label">Debug APK</div>
-          <div class="status-value">
-            <span id="buildText">Checking...</span>
-            <span class="pill info" id="buildPill">Checking</span>
-          </div>
-          <div class="status-subtext" id="buildSubtext">
-            Whether the installed build matches your latest code.
-          </div>
-        </div>
-      </div>
-    </section>
+      .toolbar-btn {
+        background: rgba(135, 200, 255, 0.08);
+        border-color: rgba(135, 200, 255, 0.18);
+        color: var(--text);
+        font: inherit;
+        font-size: 12px;
+        font-weight: 700;
+        padding: 10px 14px;
+      }
 
-    <section class="workspace">
-      <div class="panel">
-        <div class="panel-header">
-          <div>
-            <div class="panel-title">Quick Actions</div>
-            <div class="panel-copy">
-              Two buttons for daily work. Everything else is hidden below.
-            </div>
-          </div>
-        </div>
+      .log-shell {
+        border: 1px solid var(--border);
+        border-radius: var(--radius-lg);
+        overflow: hidden;
+        background: rgba(5, 11, 17, 0.85);
+      }
 
-        <div class="groups">
-          <div class="group" id="quickActions">
-            <div class="group-heading">
-              <div>
-                <div class="group-title">Daily Workflow</div>
-                <div class="group-note">Use these 95% of the time</div>
-              </div>
-            </div>
-            <div class="action-grid">
-              <button class="action-btn" data-action="doctor">
-                <span class="action-kicker">Start Here</span>
-                <span class="action-label">Connect Tablet</span>
-                <span class="action-desc">Auto-fixes everything: checks ADB, installs app if needed, starts Metro,
-                  connects to device.</span>
-              </button>
-              <button class="action-btn" data-action="hot-reload">
-                <span class="action-kicker">While Coding</span>
-                <span class="action-label">Hot Reload</span>
-                <span class="action-desc">Opens app on device with live reload. Use after code changes - no rebuild
-                  needed.</span>
-              </button>
-              <button class="action-btn" data-action="dev">
-                <span class="action-kicker">Native</span>
-                <span class="action-label">Recompile Native</span>
-                <span class="action-desc">Slow Gradle android build. Run this after modifying Kotlin/C++ engine code to push new binary to the device.</span>
-              </button>
-              <button class="action-btn" data-action="quit">
-                <span class="action-kicker">Exit</span>
-                <span class="action-label">Quit Launcher</span>
-                <span class="action-desc">Stops the launcher server and managed Metro cleanly. Use when you're
-                  done.</span>
-              </button>
-            </div>
-          </div>
+      .log-meta {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 16px;
+        padding: 12px 16px;
+        border-bottom: 1px solid var(--border);
+        background: rgba(255, 255, 255, 0.02);
+        color: var(--text-muted);
+        font-size: 12px;
+      }
 
-          <div class="group" id="allTools" style="display: none;">
-            <div class="group-heading">
-              <div>
-                <div class="group-title">All Tools</div>
-                <div class="group-note">Occasional use - when something breaks or you need builds</div>
-              </div>
-            </div>
-            <div class="action-grid">
-              <button class="action-btn" data-action="start-metro">
-                <span class="action-kicker">Metro</span>
-                <span class="action-label">Start Metro</span>
-                <span class="action-desc">Starts the bundler in background. Usually handled automatically by Connect
-                  Tablet.</span>
-              </button>
-              <button class="action-btn" data-action="stop-metro">
-                <span class="action-kicker">Metro</span>
-                <span class="action-label">Stop Metro</span>
-                <span class="action-desc">Stops the bundler when you're done working.</span>
-              </button>
-              <button class="action-btn" data-action="build-debug">
-                <span class="action-kicker">Build</span>
-                <span class="action-label">Build Debug APK</span>
-                <span class="action-desc">Creates a debug APK for sharing or testing. Takes a few minutes.</span>
-              </button>
-              <button class="action-btn" data-action="build-release">
-                <span class="action-kicker">Build</span>
-                <span class="action-label">Build Release APK</span>
-                <span class="action-desc">Production-ready APK for publishing. Takes several minutes.</span>
-              </button>
-              <button class="action-btn" data-action="adb-restart-app">
-                <span class="action-kicker">Fix</span>
-                <span class="action-label">Restart App</span>
-                <span class="action-desc">Force-closes and reopens the app on device.</span>
-              </button>
-              <button class="action-btn" data-action="adb-screenshot">
-                <span class="action-kicker">Device</span>
-                <span class="action-label">Screenshot</span>
-                <span class="action-desc">Takes a screenshot and saves it to your project folder.</span>
-              </button>
-              <button class="action-btn" data-action="adb-logcat">
-                <span class="action-kicker">Debug</span>
-                <span class="action-label">View Logs</span>
-                <span class="action-desc">Shows the last 200 lines of Android logs from the app.</span>
-              </button>
-              <button class="action-btn" data-action="adb-devices">
-                <span class="action-kicker">Debug</span>
-                <span class="action-label">List Devices</span>
-                <span class="action-desc">Shows connected Android devices.</span>
-              </button>
-              <button class="action-btn" data-action="adb-install-dev">
-                <span class="action-kicker">Fix</span>
-                <span class="action-label">Reinstall App</span>
-                <span class="action-desc">Manually installs the app APK without building.</span>
-              </button>
+      .logs {
+        min-height: 520px;
+        max-height: 68vh;
+        overflow-y: auto;
+        padding: 16px;
+        font-family: Consolas, 'SFMono-Regular', monospace;
+        font-size: 12px;
+        line-height: 1.65;
+      }
 
-              <button class="action-btn" data-action="create-shortcut">
-                <span class="action-kicker">Setup</span>
-                <span class="action-label">Desktop Shortcut</span>
-                <span class="action-desc">Creates a desktop shortcut for quick access.</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
+      .log-entry {
+        display: grid;
+        grid-template-columns: auto 1fr;
+        gap: 12px;
+        padding: 2px 0;
+        white-space: pre-wrap;
+        word-break: break-word;
+      }
 
-      <div class="panel">
-        <div class="panel-header">
-          <div>
-            <div class="panel-title">Live Output</div>
-            <div class="panel-copy">
-              Logs stay visible across actions now, so you do not lose context every time you
-              click a new button.
-            </div>
-          </div>
-          <div class="toolbar">
-            <button class="toolbar-btn" id="copyLogsBtn">Copy Logs</button>
-            <button class="toolbar-btn" id="clearLogsBtn">Clear View</button>
-          </div>
-        </div>
+      .log-time {
+        color: #62839b;
+      }
 
-        <div class="log-shell">
-          <div class="log-meta">
-            <span id="logMetaText">Waiting for launcher events.</span>
-            <span id="lastResultText">No completed actions yet.</span>
-          </div>
-          <div class="logs" id="logs">
-            <div class="empty-state" id="emptyState">
-              <div>
-                <div class="empty-title">No logs yet</div>
-                <div>Use the controls on the left and the output stream will appear here.</div>
-              </div>
-            </div>
-          </div>
-        </div>
+      .log-info {
+        color: #ddefff;
+      }
 
-        <div class="helper-list">
-          <div class="helper-item">
-            <div class="helper-title">Auto-run Doctor when this page opens</div>
-            <div class="helper-copy" style="display:flex;align-items:center;gap:10px;">
-              <label style="display:flex;align-items:center;gap:8px;cursor:pointer;user-select:none;">
-                <input type="checkbox" id="autoDoctorToggle" style="width:18px;height:18px;accent-color:var(--accent);cursor:pointer;">
-                <span>Automatically connect tablet when launcher opens</span>
-              </label>
-            </div>
-          </div>
-          <div class="helper-item">
-            <div class="helper-title">Better than memorizing commands</div>
-            <div class="helper-copy">
-              Doctor + auto-run collapse adb, optional APK push, Metro, and open-app into one flow.
-            </div>
-          </div>
-          <div class="helper-item">
-            <div class="helper-title">Managed Metro matters</div>
-            <div class="helper-copy">
-              If you start Metro from here, the launcher can track it, show its state, and stop it
-              without forcing you back into PowerShell.
-            </div>
-          </div>
-          <div class="helper-item">
-            <div class="helper-title">If another terminal started Metro</div>
-            <div class="helper-copy">
-              The stop action still falls back to the existing Guru cleanup script, so you can
-              recover even from older sessions.
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-  </div>
+      .log-stdout {
+        color: #8ed2ff;
+      }
 
-  <div class="toast" id="toast"></div>
+      .log-stderr {
+        color: #ffcf84;
+      }
 
-  <script>
-    const state = {
-      connected: false,
-      busy: false,
-      foregroundTask: null,
-      metro: null,
-      lastResult: null,
-      legacyServer: false,
-      seenLogIds: new Set(),
-      visibleLogCount: 0,
-      /** Only auto-run Doctor once per page load (reconnects do not repeat). */
-      didAutoRunDoctor: false,
-      launcherBuildId: '',
-    };
+      .log-success {
+        color: #87ffcf;
+      }
 
-    let eventSource = null;
+      .log-error {
+        color: #ff9eaa;
+      }
 
-    let toolsVisible = false;
+      .log-warning {
+        color: #ffd77c;
+      }
 
-    document.querySelectorAll('[data-action]').forEach((button) => {
-      button.addEventListener('click', () => {
-        const action = button.dataset.action;
-        if (action === 'show-tools') {
-          toolsVisible = !toolsVisible;
-          const allTools = document.getElementById('allTools');
-          const btn = document.querySelector('[data-action="show-tools"]');
-          if (allTools) {
-            allTools.style.display = toolsVisible ? 'block' : 'none';
-          }
-          if (btn) {
-            btn.textContent = toolsVisible ? 'Hide Tools ▴' : 'Show All Tools ▾';
-          }
-          return;
+      .empty-state {
+        display: grid;
+        place-items: center;
+        min-height: 360px;
+        text-align: center;
+        color: var(--text-muted);
+        padding: 24px;
+      }
+
+      .empty-title {
+        font-size: 22px;
+        font-weight: 800;
+        color: var(--text);
+        margin-bottom: 8px;
+        letter-spacing: -0.03em;
+      }
+
+      .helper-list {
+        display: grid;
+        gap: 12px;
+        margin-top: 16px;
+      }
+
+      .helper-item {
+        border: 1px solid var(--border);
+        border-radius: var(--radius-md);
+        padding: 14px 15px;
+        background: rgba(4, 13, 19, 0.46);
+      }
+
+      .helper-title {
+        font-size: 13px;
+        font-weight: 800;
+        margin-bottom: 6px;
+      }
+
+      .helper-copy {
+        color: var(--text-muted);
+        font-size: 12px;
+        line-height: 1.5;
+      }
+
+      .toast {
+        position: fixed;
+        right: 20px;
+        bottom: 20px;
+        max-width: min(420px, calc(100vw - 40px));
+        padding: 14px 16px;
+        border-radius: 16px;
+        border: 1px solid var(--border);
+        background: rgba(6, 19, 28, 0.96);
+        color: var(--text);
+        box-shadow: var(--shadow);
+        opacity: 0;
+        transform: translateY(16px);
+        transition: opacity 0.22s ease, transform 0.22s ease;
+        pointer-events: none;
+        cursor: pointer;
+      }
+
+      .toast.show {
+        opacity: 1;
+        transform: translateY(0);
+        pointer-events: auto;
+      }
+
+      .toast.success {
+        border-color: rgba(114, 242, 192, 0.3);
+      }
+
+      .toast.error {
+        border-color: rgba(255, 107, 124, 0.32);
+      }
+
+      .toast.info {
+        border-color: rgba(135, 200, 255, 0.28);
+      }
+
+      .toast-dismiss {
+        display: block;
+        margin-top: 6px;
+        font-size: 10px;
+        opacity: 0.5;
+      }
+
+      .log-separator {
+        grid-column: 1 / -1;
+        padding: 8px 0 4px;
+        color: var(--accent);
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 0.06em;
+        opacity: 0.7;
+        border-top: 1px dashed rgba(114, 242, 192, 0.2);
+        margin-top: 8px;
+      }
+
+      @media (max-width: 980px) {
+        .hero,
+        .workspace {
+          grid-template-columns: 1fr;
         }
 
-        // Smart confirmation for Connect Tablet
-        if (action === 'doctor' && state.metro && state.connected) {
-          if (!confirm('Metro is already running. This will restart the app on your device.\n\nRestart anyway?')) {
+        .logs {
+          min-height: 380px;
+          max-height: none;
+        }
+      }
+
+      @media (max-width: 640px) {
+        body {
+          padding: 18px 12px 36px;
+        }
+
+        .hero-card,
+        .panel {
+          padding: 18px;
+        }
+
+        .hero-actions,
+        .toolbar {
+          flex-direction: column;
+        }
+
+        .primary-cta,
+        .secondary-cta,
+        .toolbar-btn {
+          width: 100%;
+        }
+
+        .panel-header,
+        .group-heading,
+        .log-meta {
+          flex-direction: column;
+          align-items: flex-start;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="shell">
+      <section class="hero">
+        <div class="hero-card">
+          <div class="eyebrow">Simple Android Workflow</div>
+          <h1>Guru Dev Launcher</h1>
+          <div class="build-banner" id="launcherBuildBanner" role="status">
+            Checking this tab is talking to your current launcher (no cache)…
+          </div>
+          <p>
+            <strong>Start here:</strong> Click <strong>Connect Tablet</strong> - it does everything
+            automatically. Then use <strong>Hot Reload</strong> while coding. That's it.
+          </p>
+          <div class="hero-actions">
+            <button class="primary-cta" data-action="doctor">1. Connect Tablet</button>
+            <button class="secondary-cta" data-action="hot-reload">2. Hot Reload</button>
+            <button class="secondary-cta subtle-cta" data-action="quit">Quit Launcher</button>
+            <button class="toolbar-btn" data-action="show-tools">Show All Tools ▾</button>
+          </div>
+        </div>
+
+        <div class="hero-card status-stack">
+          <div class="status-card">
+            <div class="status-label">Connection</div>
+            <div class="status-value">
+              <span id="connectionText">Connecting...</span>
+              <span class="pill info" id="connectionPill">Checking</span>
+            </div>
+            <div class="status-subtext" id="connectionSubtext">Waiting for launcher server.</div>
+          </div>
+
+          <div class="status-card">
+            <div class="status-label">Current Task</div>
+            <div class="status-value">
+              <span id="taskText">Idle</span>
+              <span class="pill good" id="taskPill">Ready</span>
+            </div>
+            <div class="status-subtext" id="taskSubtext">Ready for action.</div>
+          </div>
+
+          <div class="status-card">
+            <div class="status-label">Metro Bundler</div>
+            <div class="status-value">
+              <span id="metroText">Not running</span>
+              <span class="pill warn" id="metroPill">Off</span>
+            </div>
+            <div class="status-subtext" id="metroSubtext">
+              Automatically started when you connect tablet.
+            </div>
+          </div>
+
+          <div class="status-card" id="patchStatusCard">
+            <div class="status-label">Patches</div>
+            <div class="status-value">
+              <span id="patchText">Checking...</span>
+              <span class="pill info" id="patchPill">Checking</span>
+            </div>
+            <div class="status-subtext" id="patchSubtext">
+              GPU backend &amp; crash guard patches for local AI.
+            </div>
+          </div>
+
+          <div class="status-card" id="buildStatusCard">
+            <div class="status-label">Debug APK</div>
+            <div class="status-value">
+              <span id="buildText">Checking...</span>
+              <span class="pill info" id="buildPill">Checking</span>
+            </div>
+            <div class="status-subtext" id="buildSubtext">
+              Whether the installed build matches your latest code.
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="workspace">
+        <div class="panel">
+          <div class="panel-header">
+            <div>
+              <div class="panel-title">Quick Actions</div>
+              <div class="panel-copy">
+                Two buttons for daily work. Everything else is hidden below.
+              </div>
+            </div>
+          </div>
+
+          <div class="groups">
+            <div class="group" id="quickActions">
+              <div class="group-heading">
+                <div>
+                  <div class="group-title">Daily Workflow</div>
+                  <div class="group-note">Use these 95% of the time</div>
+                </div>
+              </div>
+              <div class="action-grid">
+                <button class="action-btn" data-action="doctor">
+                  <span class="action-kicker">Start Here</span>
+                  <span class="action-label">Connect Tablet</span>
+                  <span class="action-desc"
+                    >Auto-fixes everything: checks ADB, installs app if needed, starts Metro,
+                    connects to device.</span
+                  >
+                </button>
+                <button class="action-btn" data-action="hot-reload">
+                  <span class="action-kicker">While Coding</span>
+                  <span class="action-label">Hot Reload</span>
+                  <span class="action-desc"
+                    >Opens app on device with live reload. Use after code changes - no rebuild
+                    needed.</span
+                  >
+                </button>
+                <button class="action-btn" data-action="dev">
+                  <span class="action-kicker">Native</span>
+                  <span class="action-label">Recompile Native</span>
+                  <span class="action-desc"
+                    >Slow Gradle android build. Run this after modifying Kotlin/C++ engine code to
+                    push new binary to the device.</span
+                  >
+                </button>
+                <button class="action-btn" data-action="quit">
+                  <span class="action-kicker">Exit</span>
+                  <span class="action-label">Quit Launcher</span>
+                  <span class="action-desc"
+                    >Stops the launcher server and managed Metro cleanly. Use when you're
+                    done.</span
+                  >
+                </button>
+              </div>
+            </div>
+
+            <div class="group" id="allTools" style="display: none">
+              <div class="group-heading">
+                <div>
+                  <div class="group-title">All Tools</div>
+                  <div class="group-note">
+                    Occasional use - when something breaks or you need builds
+                  </div>
+                </div>
+              </div>
+              <div class="action-grid">
+                <button class="action-btn" data-action="start-metro">
+                  <span class="action-kicker">Metro</span>
+                  <span class="action-label">Start Metro</span>
+                  <span class="action-desc"
+                    >Starts the bundler in background. Usually handled automatically by Connect
+                    Tablet.</span
+                  >
+                </button>
+                <button class="action-btn" data-action="stop-metro">
+                  <span class="action-kicker">Metro</span>
+                  <span class="action-label">Stop Metro</span>
+                  <span class="action-desc">Stops the bundler when you're done working.</span>
+                </button>
+                <button class="action-btn" data-action="build-debug">
+                  <span class="action-kicker">Build</span>
+                  <span class="action-label">Build Debug APK</span>
+                  <span class="action-desc"
+                    >Creates a debug APK for sharing or testing. Takes a few minutes.</span
+                  >
+                </button>
+                <button class="action-btn" data-action="build-release">
+                  <span class="action-kicker">Build</span>
+                  <span class="action-label">Build Release APK</span>
+                  <span class="action-desc"
+                    >Production-ready APK for publishing. Takes several minutes.</span
+                  >
+                </button>
+                <button class="action-btn" data-action="adb-restart-app">
+                  <span class="action-kicker">Fix</span>
+                  <span class="action-label">Restart App</span>
+                  <span class="action-desc">Force-closes and reopens the app on device.</span>
+                </button>
+                <button class="action-btn" data-action="adb-screenshot">
+                  <span class="action-kicker">Device</span>
+                  <span class="action-label">Screenshot</span>
+                  <span class="action-desc"
+                    >Takes a screenshot and saves it to your project folder.</span
+                  >
+                </button>
+                <button class="action-btn" data-action="adb-logcat">
+                  <span class="action-kicker">Debug</span>
+                  <span class="action-label">View Logs</span>
+                  <span class="action-desc"
+                    >Shows the last 200 lines of Android logs from the app.</span
+                  >
+                </button>
+                <button class="action-btn" data-action="adb-devices">
+                  <span class="action-kicker">Debug</span>
+                  <span class="action-label">List Devices</span>
+                  <span class="action-desc">Shows connected Android devices.</span>
+                </button>
+                <button class="action-btn" data-action="adb-install-dev">
+                  <span class="action-kicker">Fix</span>
+                  <span class="action-label">Reinstall App</span>
+                  <span class="action-desc">Manually installs the app APK without building.</span>
+                </button>
+
+                <button class="action-btn" data-action="create-shortcut">
+                  <span class="action-kicker">Setup</span>
+                  <span class="action-label">Desktop Shortcut</span>
+                  <span class="action-desc">Creates a desktop shortcut for quick access.</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-header">
+            <div>
+              <div class="panel-title">Live Output</div>
+              <div class="panel-copy">
+                Logs stay visible across actions now, so you do not lose context every time you
+                click a new button.
+              </div>
+            </div>
+            <div class="toolbar">
+              <button class="toolbar-btn" id="copyLogsBtn">Copy Logs</button>
+              <button class="toolbar-btn" id="clearLogsBtn">Clear View</button>
+            </div>
+          </div>
+
+          <div class="log-shell">
+            <div class="log-meta">
+              <span id="logMetaText">Waiting for launcher events.</span>
+              <span id="lastResultText">No completed actions yet.</span>
+            </div>
+            <div class="logs" id="logs">
+              <div class="empty-state" id="emptyState">
+                <div>
+                  <div class="empty-title">No logs yet</div>
+                  <div>Use the controls on the left and the output stream will appear here.</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="helper-list">
+            <div class="helper-item">
+              <div class="helper-title">Auto-run Doctor when this page opens</div>
+              <div class="helper-copy" style="display: flex; align-items: center; gap: 10px">
+                <label
+                  style="
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
+                    cursor: pointer;
+                    user-select: none;
+                  "
+                >
+                  <input
+                    type="checkbox"
+                    id="autoDoctorToggle"
+                    style="width: 18px; height: 18px; accent-color: var(--accent); cursor: pointer"
+                  />
+                  <span>Automatically connect tablet when launcher opens</span>
+                </label>
+              </div>
+            </div>
+            <div class="helper-item">
+              <div class="helper-title">Better than memorizing commands</div>
+              <div class="helper-copy">
+                Doctor + auto-run collapse adb, optional APK push, Metro, and open-app into one
+                flow.
+              </div>
+            </div>
+            <div class="helper-item">
+              <div class="helper-title">Managed Metro matters</div>
+              <div class="helper-copy">
+                If you start Metro from here, the launcher can track it, show its state, and stop it
+                without forcing you back into PowerShell.
+              </div>
+            </div>
+            <div class="helper-item">
+              <div class="helper-title">If another terminal started Metro</div>
+              <div class="helper-copy">
+                The stop action still falls back to the existing Guru cleanup script, so you can
+                recover even from older sessions.
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script>
+      const state = {
+        connected: false,
+        busy: false,
+        foregroundTask: null,
+        metro: null,
+        lastResult: null,
+        legacyServer: false,
+        seenLogIds: new Set(),
+        visibleLogCount: 0,
+        /** Only auto-run Doctor once per page load (reconnects do not repeat). */
+        didAutoRunDoctor: false,
+        launcherBuildId: '',
+      };
+
+      let eventSource = null;
+
+      let toolsVisible = false;
+
+      document.querySelectorAll('[data-action]').forEach((button) => {
+        button.addEventListener('click', () => {
+          const action = button.dataset.action;
+          if (action === 'show-tools') {
+            toolsVisible = !toolsVisible;
+            const allTools = document.getElementById('allTools');
+            const btn = document.querySelector('[data-action="show-tools"]');
+            if (allTools) {
+              allTools.style.display = toolsVisible ? 'block' : 'none';
+            }
+            if (btn) {
+              btn.textContent = toolsVisible ? 'Hide Tools ▴' : 'Show All Tools ▾';
+            }
             return;
           }
-        }
 
-        runAction(action);
-      });
-    });
+          // Smart confirmation for Connect Tablet
+          if (action === 'doctor' && state.metro && state.connected) {
+            if (
+              !confirm(
+                'Metro is already running. This will restart the app on your device.\n\nRestart anyway?',
+              )
+            ) {
+              return;
+            }
+          }
 
-    document.getElementById('clearLogsBtn').addEventListener('click', clearLogs);
-    document.getElementById('copyLogsBtn').addEventListener('click', copyLogs);
-
-    // Auto-doctor checkbox toggle
-    const autoDoctorCheckbox = document.getElementById('autoDoctorToggle');
-    if (autoDoctorCheckbox) {
-      autoDoctorCheckbox.checked = window.localStorage?.getItem('guruLauncherAutoDoctor') === '1';
-      autoDoctorCheckbox.addEventListener('change', () => {
-        if (autoDoctorCheckbox.checked) {
-          window.localStorage?.setItem('guruLauncherAutoDoctor', '1');
-        } else {
-          window.localStorage?.removeItem('guruLauncherAutoDoctor');
-        }
-      });
-    }
-
-    function applyLauncherIdentity(v) {
-      if (!v || typeof v.launcherBuildId !== 'string' || !v.launcherBuildId) {
-        return;
-      }
-      state.launcherBuildId = v.launcherBuildId;
-      const banner = document.getElementById('launcherBuildBanner');
-      if (!banner) {
-        return;
-      }
-      const { launcherPid: pid, launcherPort: port, launcherStartedAtMs: startedMs, nodeExecPath } = v;
-      const lines = [v.launcherBuildId];
-      if (typeof pid === 'number' && typeof port === 'number' && typeof startedMs === 'number') {
-        lines.push(
-          `Live process: Node PID ${pid} · port ${port} · started ${new Date(startedMs).toLocaleString()}`,
-        );
-      }
-      if (typeof nodeExecPath === 'string' && nodeExecPath.trim()) {
-        lines.push(nodeExecPath.trim());
-      }
-      banner.textContent = lines.join('\n');
-      document.title = `Guru Launcher · PID ${typeof pid === 'number' ? pid : '?'}`;
-    }
-
-    async function refreshLauncherIdentity() {
-      const banner = document.getElementById('launcherBuildBanner');
-      const oldLauncherHelp = [
-        'The Node process on this port is an OLD Guru launcher (it has no /api/version).',
-        '1) Task Manager → end every node.exe that might be the launcher, OR run your port-free script.',
-        '2) From the Guru repo: npm run dev:launcher',
-        '3) Open http://localhost:3100/guru-launcher-version.json — you should see JSON with launcherBuildId (doctor-v8+).',
-      ].join('\n');
-
-      async function fetchVersionJson(urlPath) {
-        const r = await fetch(`${urlPath}?_=${Date.now()}`, {
-          cache: 'no-store',
-          headers: { Accept: 'application/json' },
+          runAction(action);
         });
-        const ct = (r.headers.get('content-type') || '').toLowerCase();
-        if (!r.ok) {
-          return { ok: false, status: r.status, isJson: false };
-        }
-        if (!ct.includes('application/json')) {
-          return { ok: false, status: r.status, isJson: false, wasHtml: true };
-        }
-        try {
-          const v = await r.json();
-          return { ok: true, v };
-        } catch {
-          return { ok: false, status: r.status, isJson: false };
-        }
+      });
+
+      document.getElementById('clearLogsBtn').addEventListener('click', clearLogs);
+      document.getElementById('copyLogsBtn').addEventListener('click', copyLogs);
+
+      // Auto-doctor checkbox toggle
+      const autoDoctorCheckbox = document.getElementById('autoDoctorToggle');
+      if (autoDoctorCheckbox) {
+        autoDoctorCheckbox.checked = window.localStorage?.getItem('guruLauncherAutoDoctor') === '1';
+        autoDoctorCheckbox.addEventListener('change', () => {
+          if (autoDoctorCheckbox.checked) {
+            window.localStorage?.setItem('guruLauncherAutoDoctor', '1');
+          } else {
+            window.localStorage?.removeItem('guruLauncherAutoDoctor');
+          }
+        });
       }
 
-      try {
-        let result = await fetchVersionJson('/api/version');
-        if (!result.ok && result.status === 404) {
-          result = await fetchVersionJson('/guru-launcher-version.json');
-        }
-        if (result.ok) {
-          applyLauncherIdentity(result.v);
+      function applyLauncherIdentity(v) {
+        if (!v || typeof v.launcherBuildId !== 'string' || !v.launcherBuildId) {
           return;
         }
-        if (banner) {
-          if (result.status === 404) {
-            banner.textContent = oldLauncherHelp;
-          } else if (result.wasHtml) {
+        state.launcherBuildId = v.launcherBuildId;
+        const banner = document.getElementById('launcherBuildBanner');
+        if (!banner) {
+          return;
+        }
+        const {
+          launcherPid: pid,
+          launcherPort: port,
+          launcherStartedAtMs: startedMs,
+          nodeExecPath,
+        } = v;
+        const lines = [v.launcherBuildId];
+        if (typeof pid === 'number' && typeof port === 'number' && typeof startedMs === 'number') {
+          lines.push(
+            `Live process: Node PID ${pid} · port ${port} · started ${new Date(
+              startedMs,
+            ).toLocaleString()}`,
+          );
+        }
+        if (typeof nodeExecPath === 'string' && nodeExecPath.trim()) {
+          lines.push(nodeExecPath.trim());
+        }
+        banner.textContent = lines.join('\n');
+        document.title = `Guru Launcher · PID ${typeof pid === 'number' ? pid : '?'}`;
+      }
+
+      async function refreshLauncherIdentity() {
+        const banner = document.getElementById('launcherBuildBanner');
+        const oldLauncherHelp = [
+          'The Node process on this port is an OLD Guru launcher (it has no /api/version).',
+          '1) Task Manager → end every node.exe that might be the launcher, OR run your port-free script.',
+          '2) From the Guru repo: npm run dev:launcher',
+          '3) Open http://localhost:3100/guru-launcher-version.json — you should see JSON with launcherBuildId (doctor-v8+).',
+        ].join('\n');
+
+        async function fetchVersionJson(urlPath) {
+          const r = await fetch(`${urlPath}?_=${Date.now()}`, {
+            cache: 'no-store',
+            headers: { Accept: 'application/json' },
+          });
+          const ct = (r.headers.get('content-type') || '').toLowerCase();
+          if (!r.ok) {
+            return { ok: false, status: r.status, isJson: false };
+          }
+          if (!ct.includes('application/json')) {
+            return { ok: false, status: r.status, isJson: false, wasHtml: true };
+          }
+          try {
+            const v = await r.json();
+            return { ok: true, v };
+          } catch {
+            return { ok: false, status: r.status, isJson: false };
+          }
+        }
+
+        try {
+          let result = await fetchVersionJson('/api/version');
+          if (!result.ok && result.status === 404) {
+            result = await fetchVersionJson('/guru-launcher-version.json');
+          }
+          if (result.ok) {
+            applyLauncherIdentity(result.v);
+            return;
+          }
+          if (banner) {
+            if (result.status === 404) {
+              banner.textContent = oldLauncherHelp;
+            } else if (result.wasHtml) {
+              banner.textContent = [
+                'Got HTML instead of JSON (often an old launcher + SPA fallback).',
+                oldLauncherHelp,
+              ].join('\n\n');
+            } else {
+              banner.textContent = [
+                `Version check failed (HTTP ${result.status || 'unknown'}).`,
+                'Hard refresh: Ctrl+Shift+R. Confirm URL/port. Then restart: npm run dev:launcher',
+              ].join('\n');
+            }
+          }
+        } catch {
+          if (banner) {
             banner.textContent = [
-              'Got HTML instead of JSON (often an old launcher + SPA fallback).',
-              oldLauncherHelp,
-            ].join('\n\n');
-          } else {
-            banner.textContent = [
-              `Version check failed (HTTP ${result.status || 'unknown'}).`,
-              'Hard refresh: Ctrl+Shift+R. Confirm URL/port. Then restart: npm run dev:launcher',
+              'Cannot reach the launcher (network error).',
+              'Confirm http://localhost:3100 (or GURU_LAUNCHER_PORT). Hard refresh: Ctrl+Shift+R.',
             ].join('\n');
           }
         }
-      } catch {
-        if (banner) {
-          banner.textContent = [
-            'Cannot reach the launcher (network error).',
-            'Confirm http://localhost:3100 (or GURU_LAUNCHER_PORT). Hard refresh: Ctrl+Shift+R.',
-          ].join('\n');
-        }
-      }
-    }
-
-    function connect() {
-      if (eventSource) {
-        eventSource.close();
       }
 
-      eventSource = new EventSource('/events');
-
-      eventSource.onopen = () => {
-        state.connected = true;
-        const banner = document.getElementById('launcherBuildBanner');
-        if (banner && !state.launcherBuildId) {
-          banner.textContent = 'Connected — loading server version…';
-        }
-        renderStatus();
-        const wantAuto =
-          typeof window !== 'undefined' &&
-          window.localStorage?.getItem('guruLauncherAutoDoctor') === '1';
-        if (!state.didAutoRunDoctor && wantAuto && !state.legacyServer) {
-          state.didAutoRunDoctor = true;
-          showToast(
-            'info',
-            'Auto Doctor: install APK if needed → Metro → reverse → open app. Watch the log.',
-          );
-          window.setTimeout(() => runAction('doctor'), 400);
-        }
-      };
-
-      eventSource.onmessage = (event) => {
-        const data = JSON.parse(event.data);
-
-        if (data.type === 'log') {
-          addLog(data);
-          return;
+      function connect() {
+        if (eventSource) {
+          eventSource.close();
         }
 
-        if (data.type === 'status') {
-          applyStatus(data);
-          return;
-        }
+        eventSource = new EventSource('/events');
 
-        if (data.type === 'done') {
-          showToast(
-            data.success ? 'success' : 'error',
-            data.success
-              ? `${data.taskName || 'Action'} finished.`
-              : `${data.taskName || 'Action'} failed.`,
-          );
-        }
-      };
+        eventSource.onopen = () => {
+          state.connected = true;
+          const banner = document.getElementById('launcherBuildBanner');
+          if (banner && !state.launcherBuildId) {
+            banner.textContent = 'Connected — loading server version…';
+          }
+          renderStatus();
+          const wantAuto =
+            typeof window !== 'undefined' &&
+            window.localStorage?.getItem('guruLauncherAutoDoctor') === '1';
+          if (!state.didAutoRunDoctor && wantAuto && !state.legacyServer) {
+            state.didAutoRunDoctor = true;
+            showToast(
+              'info',
+              'Auto Doctor: install APK if needed → Metro → reverse → open app. Watch the log.',
+            );
+            window.setTimeout(() => runAction('doctor'), 400);
+          }
+        };
 
-      eventSource.onerror = () => {
-        state.connected = false;
-        const banner = document.getElementById('launcherBuildBanner');
-        if (banner) {
-          banner.textContent = state.launcherBuildId
-            ? `${state.launcherBuildId} — connection dropped, retrying…`
-            : 'Offline — retrying connection to launcher…';
-        }
-        renderStatus();
-        setTimeout(connect, 3000);
-      };
-    }
+        eventSource.onmessage = (event) => {
+          const data = JSON.parse(event.data);
 
-    function applyStatus(status) {
-      applyLauncherIdentity(status);
+          if (data.type === 'log') {
+            addLog(data);
+            return;
+          }
 
-      state.legacyServer =
-        typeof status.running === 'boolean' && typeof status.busy === 'undefined';
-      state.busy = Boolean(
-        typeof status.busy === 'boolean'
-          ? status.busy
-          : state.legacyServer
+          if (data.type === 'status') {
+            applyStatus(data);
+            return;
+          }
+
+          if (data.type === 'done') {
+            showToast(
+              data.success ? 'success' : 'error',
+              data.success
+                ? `${data.taskName || 'Action'} finished.`
+                : `${data.taskName || 'Action'} failed.`,
+            );
+          }
+        };
+
+        eventSource.onerror = () => {
+          state.connected = false;
+          const banner = document.getElementById('launcherBuildBanner');
+          if (banner) {
+            banner.textContent = state.launcherBuildId
+              ? `${state.launcherBuildId} — connection dropped, retrying…`
+              : 'Offline — retrying connection to launcher…';
+          }
+          renderStatus();
+          setTimeout(connect, 3000);
+        };
+      }
+
+      function applyStatus(status) {
+        applyLauncherIdentity(status);
+
+        state.legacyServer =
+          typeof status.running === 'boolean' && typeof status.busy === 'undefined';
+        state.busy = Boolean(
+          typeof status.busy === 'boolean'
+            ? status.busy
+            : state.legacyServer
             ? status.running
             : false,
-      );
-      state.foregroundTask = status.foregroundTask || null;
-      state.metro =
-        status.backgroundTasks && status.backgroundTasks.metro
-          ? status.backgroundTasks.metro
-          : null;
-      state.metroHealth = status.metroHealth || null;
-      state.patchHealth = status.patchHealth || null;
-      state.buildHealth = status.buildHealth || null;
-      state.lastResult = status.lastResult || null;
+        );
+        state.foregroundTask = status.foregroundTask || null;
+        state.metro =
+          status.backgroundTasks && status.backgroundTasks.metro
+            ? status.backgroundTasks.metro
+            : null;
+        state.metroHealth = status.metroHealth || null;
+        state.patchHealth = status.patchHealth || null;
+        state.buildHealth = status.buildHealth || null;
+        state.lastResult = status.lastResult || null;
 
-      if (Array.isArray(status.logs)) {
-        status.logs.forEach(addLog);
-      }
-
-      renderStatus();
-    }
-
-    function renderStatus() {
-      const connectionText = document.getElementById('connectionText');
-      const connectionPill = document.getElementById('connectionPill');
-      const connectionSubtext = document.getElementById('connectionSubtext');
-      const taskText = document.getElementById('taskText');
-      const taskPill = document.getElementById('taskPill');
-      const taskSubtext = document.getElementById('taskSubtext');
-      const metroText = document.getElementById('metroText');
-      const metroPill = document.getElementById('metroPill');
-      const metroSubtext = document.getElementById('metroSubtext');
-      const logMetaText = document.getElementById('logMetaText');
-      const lastResultText = document.getElementById('lastResultText');
-
-      connectionText.textContent = state.connected
-        ? 'Connected to launcher server'
-        : 'Reconnecting to launcher server';
-      if (state.legacyServer) {
-        connectionPill.className = 'pill bad';
-        connectionPill.textContent = 'Outdated';
-        connectionSubtext.textContent =
-          'This page is talking to an older launcher backend. Restart the launcher from the desktop shortcut.';
-        const banner = document.getElementById('launcherBuildBanner');
-        if (banner) {
-          banner.textContent =
-            'This server is too old to show a build banner — restart the Guru Launcher from your shortcut.';
+        if (Array.isArray(status.logs)) {
+          status.logs.forEach(addLog);
         }
-      } else {
-        connectionPill.className = `pill ${state.connected ? 'good' : 'bad'}`;
-        connectionPill.textContent = state.connected ? 'Live' : 'Offline';
-        connectionSubtext.textContent = state.connected
-          ? 'Status and logs are streaming in real time.'
-          : 'The page will retry automatically every 3 seconds.';
+
+        renderStatus();
       }
 
-      if (state.legacyServer) {
-        taskText.textContent = 'Backend restart needed';
-        taskPill.className = 'pill bad';
-        taskPill.textContent = 'Blocked';
-        taskSubtext.textContent =
-          'The old server does not understand the new button actions, so this page is intentionally pausing controls.';
-      } else if (state.busy && state.foregroundTask) {
-        taskText.textContent = state.foregroundTask.name;
-        taskPill.className = 'pill warn';
-        taskPill.textContent = 'Running';
-        taskSubtext.textContent = `PID ${state.foregroundTask.pid || 'unknown'} started at ${formatTime(state.foregroundTask.startedAt)}.`;
-      } else {
-        taskText.textContent = 'Idle';
-        taskPill.className = 'pill good';
-        taskPill.textContent = 'Ready';
-        taskSubtext.textContent = 'You can start a launcher action now.';
-      }
+      function renderStatus() {
+        const connectionText = document.getElementById('connectionText');
+        const connectionPill = document.getElementById('connectionPill');
+        const connectionSubtext = document.getElementById('connectionSubtext');
+        const taskText = document.getElementById('taskText');
+        const taskPill = document.getElementById('taskPill');
+        const taskSubtext = document.getElementById('taskSubtext');
+        const metroText = document.getElementById('metroText');
+        const metroPill = document.getElementById('metroPill');
+        const metroSubtext = document.getElementById('metroSubtext');
+        const logMetaText = document.getElementById('logMetaText');
+        const lastResultText = document.getElementById('lastResultText');
 
-      if (state.legacyServer) {
-        metroText.textContent = 'Unknown';
-        metroPill.className = 'pill bad';
-        metroPill.textContent = 'Restart';
-        metroSubtext.textContent =
-          'Once the launcher backend is restarted, Metro state will be tracked properly again.';
-      } else if (state.metro) {
-        metroText.textContent = state.metro.name;
-        metroPill.className = 'pill good';
-        metroPill.textContent = 'Managed';
-        metroSubtext.textContent = `PID ${state.metro.pid || 'unknown'} started at ${formatTime(state.metro.startedAt)}.`;
-      } else if (state.metroHealth?.running) {
-        metroText.textContent = 'Metro detected';
-        metroPill.className = state.metroHealth?.hasFailure ? 'pill bad' : 'pill info';
-        metroPill.textContent = state.metroHealth?.hasFailure ? 'Broken' : 'External';
-        if (state.metroHealth?.hasFailure && state.metroHealth?.latestFailureLine) {
-          metroSubtext.textContent = `Metro is running but reported a bundle/build failure: ${state.metroHealth.latestFailureLine}`;
-        } else if (state.metroHealth?.latestBundleCompletionLine) {
-          metroSubtext.textContent = `Metro is running and recently bundled successfully: ${state.metroHealth.latestBundleCompletionLine}`;
+        connectionText.textContent = state.connected
+          ? 'Connected to launcher server'
+          : 'Reconnecting to launcher server';
+        if (state.legacyServer) {
+          connectionPill.className = 'pill bad';
+          connectionPill.textContent = 'Outdated';
+          connectionSubtext.textContent =
+            'This page is talking to an older launcher backend. Restart the launcher from the desktop shortcut.';
+          const banner = document.getElementById('launcherBuildBanner');
+          if (banner) {
+            banner.textContent =
+              'This server is too old to show a build banner — restart the Guru Launcher from your shortcut.';
+          }
         } else {
-          metroSubtext.textContent = 'Metro is running, but it was not started as a managed launcher task.';
+          connectionPill.className = `pill ${state.connected ? 'good' : 'bad'}`;
+          connectionPill.textContent = state.connected ? 'Live' : 'Offline';
+          connectionSubtext.textContent = state.connected
+            ? 'Status and logs are streaming in real time.'
+            : 'The page will retry automatically every 3 seconds.';
         }
-      } else {
-        metroText.textContent = 'Not managed';
-        metroPill.className = 'pill warn';
-        metroPill.textContent = 'Off';
-        metroSubtext.textContent = 'Use Start Metro here if you want the launcher to track it.';
-      }
 
-      // ── Patch health ──
-      const patchText = document.getElementById('patchText');
-      const patchPill = document.getElementById('patchPill');
-      const patchSubtext = document.getElementById('patchSubtext');
-      if (patchText && state.patchHealth) {
-        if (state.patchHealth.ok) {
-          patchText.textContent = 'Applied';
-          patchPill.className = 'pill good';
-          patchPill.textContent = 'OK';
-          patchSubtext.textContent = 'GPU backend & crash guard patches verified.';
+        if (state.legacyServer) {
+          taskText.textContent = 'Backend restart needed';
+          taskPill.className = 'pill bad';
+          taskPill.textContent = 'Blocked';
+          taskSubtext.textContent =
+            'The old server does not understand the new button actions, so this page is intentionally pausing controls.';
+        } else if (state.busy && state.foregroundTask) {
+          taskText.textContent = state.foregroundTask.name;
+          taskPill.className = 'pill warn';
+          taskPill.textContent = 'Running';
+          taskSubtext.textContent = `PID ${
+            state.foregroundTask.pid || 'unknown'
+          } started at ${formatTime(state.foregroundTask.startedAt)}.`;
         } else {
-          patchText.textContent = 'MISSING';
-          patchPill.className = 'pill bad';
-          patchPill.textContent = 'Fix';
-          patchSubtext.textContent = state.patchHealth.detail || 'Run: npx patch-package';
+          taskText.textContent = 'Idle';
+          taskPill.className = 'pill good';
+          taskPill.textContent = 'Ready';
+          taskSubtext.textContent = 'You can start a launcher action now.';
         }
-      }
 
-      // ── Build health ──
-      const buildText = document.getElementById('buildText');
-      const buildPill = document.getElementById('buildPill');
-      const buildSubtext = document.getElementById('buildSubtext');
-      if (buildText && state.buildHealth) {
-        if (!state.buildHealth.apkExists) {
-          buildText.textContent = 'Not Built';
-          buildPill.className = 'pill bad';
-          buildPill.textContent = 'Missing';
-          buildSubtext.textContent = 'No debug APK found. Click "Connect Tablet" or "Build Debug APK".';
-        } else if (state.buildHealth.stale) {
-          buildText.textContent = 'Outdated';
-          buildPill.className = 'pill warn';
-          buildPill.textContent = 'Stale';
-          buildSubtext.textContent = state.buildHealth.detail || 'Native code changed since last build. Doctor will auto-rebuild.';
+        if (state.legacyServer) {
+          metroText.textContent = 'Unknown';
+          metroPill.className = 'pill bad';
+          metroPill.textContent = 'Restart';
+          metroSubtext.textContent =
+            'Once the launcher backend is restarted, Metro state will be tracked properly again.';
+        } else if (state.metro) {
+          metroText.textContent = state.metro.name;
+          metroPill.className = 'pill good';
+          metroPill.textContent = 'Managed';
+          metroSubtext.textContent = `PID ${state.metro.pid || 'unknown'} started at ${formatTime(
+            state.metro.startedAt,
+          )}.`;
+        } else if (state.metroHealth?.running) {
+          metroText.textContent = 'Metro detected';
+          metroPill.className = state.metroHealth?.hasFailure ? 'pill bad' : 'pill info';
+          metroPill.textContent = state.metroHealth?.hasFailure ? 'Broken' : 'External';
+          if (state.metroHealth?.hasFailure && state.metroHealth?.latestFailureLine) {
+            metroSubtext.textContent = `Metro is running but reported a bundle/build failure: ${state.metroHealth.latestFailureLine}`;
+          } else if (state.metroHealth?.latestBundleCompletionLine) {
+            metroSubtext.textContent = `Metro is running and recently bundled successfully: ${state.metroHealth.latestBundleCompletionLine}`;
+          } else {
+            metroSubtext.textContent =
+              'Metro is running, but it was not started as a managed launcher task.';
+          }
         } else {
-          buildText.textContent = 'Up to date';
-          buildPill.className = 'pill good';
-          buildPill.textContent = 'Fresh';
-          buildSubtext.textContent = 'Debug APK matches latest native source.';
-        }
-      }
-
-      logMetaText.textContent = `${state.visibleLogCount} log line${state.visibleLogCount === 1 ? '' : 's'} visible in this session.`;
-      lastResultText.textContent = state.lastResult
-        ? `${state.lastResult.taskName}: ${state.lastResult.success ? 'success' : 'failed'}`
-        : 'No completed actions yet.';
-
-      document.querySelectorAll('[data-action]').forEach((button) => {
-        const action = button.dataset.action;
-        let disabled = state.busy || state.legacyServer;
-
-        if (!state.busy && action === 'start-metro' && state.metro) {
-          disabled = true;
+          metroText.textContent = 'Not managed';
+          metroPill.className = 'pill warn';
+          metroPill.textContent = 'Off';
+          metroSubtext.textContent = 'Use Start Metro here if you want the launcher to track it.';
         }
 
-        button.disabled = disabled;
-      });
-    }
+        // ── Patch health ──
+        const patchText = document.getElementById('patchText');
+        const patchPill = document.getElementById('patchPill');
+        const patchSubtext = document.getElementById('patchSubtext');
+        if (patchText && state.patchHealth) {
+          if (state.patchHealth.ok) {
+            patchText.textContent = 'Applied';
+            patchPill.className = 'pill good';
+            patchPill.textContent = 'OK';
+            patchSubtext.textContent = 'GPU backend & crash guard patches verified.';
+          } else {
+            patchText.textContent = 'MISSING';
+            patchPill.className = 'pill bad';
+            patchPill.textContent = 'Fix';
+            patchSubtext.textContent = state.patchHealth.detail || 'Run: npx patch-package';
+          }
+        }
 
-    function addLog(entry) {
-      if (entry.id && state.seenLogIds.has(entry.id)) {
-        return;
+        // ── Build health ──
+        const buildText = document.getElementById('buildText');
+        const buildPill = document.getElementById('buildPill');
+        const buildSubtext = document.getElementById('buildSubtext');
+        if (buildText && state.buildHealth) {
+          if (!state.buildHealth.apkExists) {
+            buildText.textContent = 'Not Built';
+            buildPill.className = 'pill bad';
+            buildPill.textContent = 'Missing';
+            buildSubtext.textContent =
+              'No debug APK found. Click "Connect Tablet" or "Build Debug APK".';
+          } else if (state.buildHealth.stale) {
+            buildText.textContent = 'Outdated';
+            buildPill.className = 'pill warn';
+            buildPill.textContent = 'Stale';
+            buildSubtext.textContent =
+              state.buildHealth.detail ||
+              'Native code changed since last build. Doctor will auto-rebuild.';
+          } else {
+            buildText.textContent = 'Up to date';
+            buildPill.className = 'pill good';
+            buildPill.textContent = 'Fresh';
+            buildSubtext.textContent = 'Debug APK matches latest native source.';
+          }
+        }
+
+        logMetaText.textContent = `${state.visibleLogCount} log line${
+          state.visibleLogCount === 1 ? '' : 's'
+        } visible in this session.`;
+        lastResultText.textContent = state.lastResult
+          ? `${state.lastResult.taskName}: ${state.lastResult.success ? 'success' : 'failed'}`
+          : 'No completed actions yet.';
+
+        document.querySelectorAll('[data-action]').forEach((button) => {
+          const action = button.dataset.action;
+          let disabled = state.busy || state.legacyServer;
+
+          if (!state.busy && action === 'start-metro' && state.metro) {
+            disabled = true;
+          }
+
+          button.disabled = disabled;
+        });
       }
 
-      if (entry.id) {
-        state.seenLogIds.add(entry.id);
+      function addLog(entry) {
+        if (entry.id && state.seenLogIds.has(entry.id)) {
+          return;
+        }
+
+        if (entry.id) {
+          state.seenLogIds.add(entry.id);
+        }
+
+        const logsEl = document.getElementById('logs');
+        const emptyState = document.getElementById('emptyState');
+        if (emptyState) {
+          emptyState.remove();
+        }
+
+        // Insert a visual separator when a new action starts
+        const msg = entry.message || '';
+        if (msg.startsWith('[start] ') || msg.startsWith('══')) {
+          const sep = document.createElement('div');
+          sep.className = 'log-separator';
+          const label = msg.startsWith('[start] ') ? msg.replace('[start] ', '').split(':')[0] : '';
+          const time = new Date().toLocaleTimeString();
+          sep.textContent = `──── ${label || 'New Action'} · ${time} ────`;
+          logsEl.appendChild(sep);
+        }
+
+        const row = document.createElement('div');
+        row.className = 'log-entry';
+
+        const time = document.createElement('span');
+        time.className = 'log-time';
+        time.textContent = entry.time || '--:--:--';
+
+        const message = document.createElement('span');
+        message.className = `log-${entry.level || 'info'}`;
+        message.textContent = msg;
+
+        row.appendChild(time);
+        row.appendChild(message);
+        logsEl.appendChild(row);
+        logsEl.scrollTop = logsEl.scrollHeight;
+
+        state.visibleLogCount += 1;
+        renderStatus();
       }
 
-      const logsEl = document.getElementById('logs');
-      const emptyState = document.getElementById('emptyState');
-      if (emptyState) {
-        emptyState.remove();
-      }
-
-      // Insert a visual separator when a new action starts
-      const msg = entry.message || '';
-      if (msg.startsWith('[start] ') || msg.startsWith('══')) {
-        const sep = document.createElement('div');
-        sep.className = 'log-separator';
-        const label = msg.startsWith('[start] ') ? msg.replace('[start] ', '').split(':')[0] : '';
-        const time = new Date().toLocaleTimeString();
-        sep.textContent = `──── ${label || 'New Action'} · ${time} ────`;
-        logsEl.appendChild(sep);
-      }
-
-      const row = document.createElement('div');
-      row.className = 'log-entry';
-
-      const time = document.createElement('span');
-      time.className = 'log-time';
-      time.textContent = entry.time || '--:--:--';
-
-      const message = document.createElement('span');
-      message.className = `log-${entry.level || 'info'}`;
-      message.textContent = msg;
-
-      row.appendChild(time);
-      row.appendChild(message);
-      logsEl.appendChild(row);
-      logsEl.scrollTop = logsEl.scrollHeight;
-
-      state.visibleLogCount += 1;
-      renderStatus();
-    }
-
-    function clearLogs() {
-      const logsEl = document.getElementById('logs');
-      logsEl.innerHTML = `
+      function clearLogs() {
+        const logsEl = document.getElementById('logs');
+        logsEl.innerHTML = `
         <div class="empty-state" id="emptyState">
           <div>
             <div class="empty-title">Log view cleared</div>
@@ -1290,110 +1333,113 @@
           </div>
         </div>
       `;
-      state.visibleLogCount = 0;
-      renderStatus();
-    }
-
-    async function copyLogs() {
-      const lines = Array.from(document.querySelectorAll('#logs .log-entry')).map(
-        (row) => row.innerText,
-      );
-      const text = lines.join('\n').trim();
-
-      if (!text) {
-        showToast('info', 'There are no visible logs to copy yet.');
-        return;
+        state.visibleLogCount = 0;
+        renderStatus();
       }
 
-      try {
-        await navigator.clipboard.writeText(text);
-        showToast('success', 'Visible logs copied to clipboard.');
-      } catch (error) {
-        showToast('error', 'Clipboard copy failed in this browser.');
-      }
-    }
-
-    async function runAction(action) {
-      if (state.legacyServer) {
-        showToast(
-          'error',
-          'Launcher backend is outdated. Restart it from the desktop shortcut first.',
+      async function copyLogs() {
+        const lines = Array.from(document.querySelectorAll('#logs .log-entry')).map(
+          (row) => row.innerText,
         );
-        return;
-      }
+        const text = lines.join('\n').trim();
 
-      try {
-        if (action === 'quit') {
-          if (!confirm('Quit GuruLauncher and stop managed Metro?')) {
-            return;
-          }
-        }
-
-        const response = await fetch('/api/run', {
-          method: 'POST',
-          cache: 'no-store',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action }),
-        });
-
-        const result = await response.json().catch(() => ({}));
-
-        if (!response.ok) {
-          throw new Error(result.error || `Launcher request failed (${response.status}).`);
-        }
-
-        if (result.status) {
-          applyStatus(result.status);
-        }
-
-        if (action === 'quit') {
-          showToast('info', 'Launcher is shutting down...');
-          window.setTimeout(() => {
-            try {
-              window.close();
-            } catch { }
-            document.body.innerHTML =
-              '<div style="padding:32px;font-family:Segoe UI,sans-serif;color:#eef7ff;background:#08141d;min-height:100vh;">GuruLauncher has shut down. You can close this browser tab.</div>';
-          }, 500);
+        if (!text) {
+          showToast('info', 'There are no visible logs to copy yet.');
           return;
         }
 
-        showToast('info', `${result.label || 'Action'} started.`);
-      } catch (error) {
-        const message = error instanceof Error ? error.message : String(error);
-        showToast('error', message);
+        try {
+          await navigator.clipboard.writeText(text);
+          showToast('success', 'Visible logs copied to clipboard.');
+        } catch (error) {
+          showToast('error', 'Clipboard copy failed in this browser.');
+        }
       }
-    }
 
-    function showToast(type, message) {
-      const toast = document.getElementById('toast');
-      toast.className = `toast ${type}`;
-      const isError = type === 'error';
-      toast.innerHTML = message + (isError ? '<span class="toast-dismiss">click to dismiss</span>' : '');
-      toast.classList.add('show');
-      window.clearTimeout(showToast.timeoutId);
-      if (isError) {
-        // Error toasts stay until clicked
-        toast.onclick = () => { toast.classList.remove('show'); toast.onclick = null; };
-      } else {
-        toast.onclick = null;
-        showToast.timeoutId = window.setTimeout(() => {
-          toast.classList.remove('show');
-        }, 4000);
+      async function runAction(action) {
+        if (state.legacyServer) {
+          showToast(
+            'error',
+            'Launcher backend is outdated. Restart it from the desktop shortcut first.',
+          );
+          return;
+        }
+
+        try {
+          if (action === 'quit') {
+            if (!confirm('Quit GuruLauncher and stop managed Metro?')) {
+              return;
+            }
+          }
+
+          const response = await fetch('/api/run', {
+            method: 'POST',
+            cache: 'no-store',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action }),
+          });
+
+          const result = await response.json().catch(() => ({}));
+
+          if (!response.ok) {
+            throw new Error(result.error || `Launcher request failed (${response.status}).`);
+          }
+
+          if (result.status) {
+            applyStatus(result.status);
+          }
+
+          if (action === 'quit') {
+            showToast('info', 'Launcher is shutting down...');
+            window.setTimeout(() => {
+              try {
+                window.close();
+              } catch {}
+              document.body.innerHTML =
+                '<div style="padding:32px;font-family:Segoe UI,sans-serif;color:#eef7ff;background:#08141d;min-height:100vh;">GuruLauncher has shut down. You can close this browser tab.</div>';
+            }, 500);
+            return;
+          }
+
+          showToast('info', `${result.label || 'Action'} started.`);
+        } catch (error) {
+          const message = error instanceof Error ? error.message : String(error);
+          showToast('error', message);
+        }
       }
-    }
 
-    function formatTime(value) {
-      if (!value) {
-        return 'unknown time';
+      function showToast(type, message) {
+        const toast = document.getElementById('toast');
+        toast.className = `toast ${type}`;
+        const isError = type === 'error';
+        toast.innerHTML =
+          message + (isError ? '<span class="toast-dismiss">click to dismiss</span>' : '');
+        toast.classList.add('show');
+        window.clearTimeout(showToast.timeoutId);
+        if (isError) {
+          // Error toasts stay until clicked
+          toast.onclick = () => {
+            toast.classList.remove('show');
+            toast.onclick = null;
+          };
+        } else {
+          toast.onclick = null;
+          showToast.timeoutId = window.setTimeout(() => {
+            toast.classList.remove('show');
+          }, 4000);
+        }
       }
-      return new Date(value).toLocaleTimeString();
-    }
 
-    renderStatus();
-    void refreshLauncherIdentity();
-    connect();
-  </script>
-</body>
+      function formatTime(value) {
+        if (!value) {
+          return 'unknown time';
+        }
+        return new Date(value).toLocaleTimeString();
+      }
 
+      renderStatus();
+      void refreshLauncherIdentity();
+      connect();
+    </script>
+  </body>
 </html>

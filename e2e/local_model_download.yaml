@@ -4,22 +4,22 @@ appId: com.anonymous.gurustudy
 - runFlow: check_in.yaml
 
 # Go to Profile / Settings tab
-- tapOn: "Profile" 
+- tapOn: 'Profile'
 
 # Navigate to Local AI setup
-- tapOn: "Local AI Setup"
+- tapOn: 'Local AI Setup'
 
 # Assert downloading section is working
-- assertVisible: "On-Device AI Setup"
-- tapOn: "⬇️ Download"
+- assertVisible: 'On-Device AI Setup'
+- tapOn: '⬇️ Download'
 
 # The string might be Llama-3.2-1B-Instruct-Q4.gguf
 # In reality, downloading 850MB takes a long time, so a real automated test
 # would either mock the FileSystem or have an extended timeout.
-- assertVisible: "Downloading:"
+- assertVisible: 'Downloading:'
 
 # We test the cancel mechanic
-- tapOn: "Cancel"
+- tapOn: 'Cancel'
 
 # It should revert to showing the models again
-- assertVisible: "⬇️ Download"
+- assertVisible: '⬇️ Download'

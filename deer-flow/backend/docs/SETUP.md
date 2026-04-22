@@ -9,16 +9,19 @@ DeerFlow uses a YAML configuration file that should be placed in the **project r
 ### Steps
 
 1. **Navigate to project root**:
+
    ```bash
    cd /path/to/deer-flow
    ```
 
 2. **Copy example configuration**:
+
    ```bash
    cp config.example.yaml config.yaml
    ```
 
 3. **Edit configuration**:
+
    ```bash
    # Option A: Set environment variables (recommended)
    export OPENAI_API_KEY="your-key-here"
@@ -59,6 +62,7 @@ make setup-sandbox
 ```
 
 **Why pre-pull?**
+
 - The sandbox image (~500MB+) is pulled on first use, causing a long wait
 - Pre-pulling provides clear progress indication
 - Avoids confusion when first using the agent
@@ -76,6 +80,7 @@ python -c "from deerflow.config.app_config import AppConfig; print(AppConfig.res
 ```
 
 If it can't find the config:
+
 1. Ensure you've copied `config.example.yaml` to `config.yaml`
 2. Verify you're in the correct directory
 3. Check the file exists: `ls -la ../config.yaml`

@@ -9,7 +9,7 @@ export async function main() {
   const host = url.host;
   const apiURL = new URL(
     `/api/langgraph/threads/${threadId}/history`,
-    `${url.protocol}//${host}`,
+    `${url.protocol}//${host}`
   );
   const response = await fetch(apiURL, {
     method: "POST",
@@ -36,12 +36,12 @@ export async function main() {
   fs.mkdirSync(rootPath, { recursive: true });
   fs.writeFileSync(
     path.resolve(rootPath, "thread.json"),
-    JSON.stringify(data, null, 2),
+    JSON.stringify(data, null, 2)
   );
   const backendRootPath = path.resolve(
     process.cwd(),
     "../backend/.deer-flow/threads",
-    threadId,
+    threadId
   );
   copyFolder("user-data/outputs", rootPath, backendRootPath);
   copyFolder("user-data/uploads", rootPath, backendRootPath);

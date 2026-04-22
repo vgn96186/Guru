@@ -43,15 +43,15 @@ Before writing any documentation, thoroughly understand the codebase.
 
 Identify the project fundamentals:
 
-| Field | How to Determine |
-|-------|-----------------|
-| **Language(s)** | Check file extensions, `package.json`, `pyproject.toml`, `go.mod`, `Cargo.toml`, etc. |
-| **Framework** | Look at dependencies for known frameworks (React, Django, Express, Spring, etc.) |
-| **Build System** | Check for `Makefile`, `CMakeLists.txt`, `webpack.config.js`, `build.gradle`, etc. |
-| **Package Manager** | npm/yarn/pnpm, pip/uv/poetry, cargo, go modules, etc. |
-| **Project Structure** | Map out the directory tree to understand the architecture |
-| **Entry Points** | Find main files, CLI entry points, exported modules |
-| **Existing Docs** | Check for existing README, docs/, wiki, or inline documentation |
+| Field                 | How to Determine                                                                      |
+| --------------------- | ------------------------------------------------------------------------------------- |
+| **Language(s)**       | Check file extensions, `package.json`, `pyproject.toml`, `go.mod`, `Cargo.toml`, etc. |
+| **Framework**         | Look at dependencies for known frameworks (React, Django, Express, Spring, etc.)      |
+| **Build System**      | Check for `Makefile`, `CMakeLists.txt`, `webpack.config.js`, `build.gradle`, etc.     |
+| **Package Manager**   | npm/yarn/pnpm, pip/uv/poetry, cargo, go modules, etc.                                 |
+| **Project Structure** | Map out the directory tree to understand the architecture                             |
+| **Entry Points**      | Find main files, CLI entry points, exported modules                                   |
+| **Existing Docs**     | Check for existing README, docs/, wiki, or inline documentation                       |
 
 #### Step 1.2: Code Structure Analysis
 
@@ -75,12 +75,12 @@ grep -r "func " /mnt/user-data/uploads/project-dir/ --include="*.go"
 
 Based on analysis, determine what documentation to produce:
 
-| Project Size | Recommended Documentation |
-|-------------|--------------------------|
-| **Single file / script** | Inline comments + usage header |
-| **Small library** | README with API reference |
-| **Medium project** | README + API docs + examples |
-| **Large project** | README + Architecture + API + Contributing + Changelog |
+| Project Size             | Recommended Documentation                              |
+| ------------------------ | ------------------------------------------------------ |
+| **Single file / script** | Inline comments + usage header                         |
+| **Small library**        | README with API reference                              |
+| **Medium project**       | README + API docs + examples                           |
+| **Large project**        | README + Architecture + API + Contributing + Changelog |
 
 ### Phase 2: Documentation Generation
 
@@ -170,16 +170,17 @@ Brief description of what this function does.
 
 **Parameters:**
 
-| Parameter | Type | Required | Default | Description |
-|-----------|------|----------|---------|-------------|
-| `param1` | `string` | Yes | — | Description of param1 |
-| `param2` | `number` | Yes | — | Description of param2 |
-| `options` | `Object` | No | `{}` | Configuration options |
-| `options.timeout` | `number` | No | `5000` | Timeout in milliseconds |
+| Parameter         | Type     | Required | Default | Description             |
+| ----------------- | -------- | -------- | ------- | ----------------------- |
+| `param1`          | `string` | Yes      | —       | Description of param1   |
+| `param2`          | `number` | Yes      | —       | Description of param2   |
+| `options`         | `Object` | No       | `{}`    | Configuration options   |
+| `options.timeout` | `number` | No       | `5000`  | Timeout in milliseconds |
 
 **Returns:** `Promise<Result>` — Description of return value
 
 **Throws:**
+
 - `ValidationError` — When param1 is empty
 - `TimeoutError` — When the operation exceeds the timeout
 
@@ -204,9 +205,9 @@ Brief description of the class and its purpose.
 new ClassName(config)
 \`\`\`
 
-| Parameter | Type | Description |
-|-----------|------|-------------|
-| `config.option1` | `string` | Description |
+| Parameter        | Type      | Description |
+| ---------------- | --------- | ----------- |
+| `config.option1` | `string`  | Description |
 | `config.option2` | `boolean` | Description |
 
 **Methods:**
@@ -216,9 +217,9 @@ new ClassName(config)
 
 **Properties:**
 
-| Property | Type | Description |
-|----------|------|-------------|
-| `property1` | `string` | Description |
+| Property    | Type     | Description            |
+| ----------- | -------- | ---------------------- |
+| `property1` | `string` | Description            |
 | `property2` | `number` | Read-only. Description |
 ```
 
@@ -235,16 +236,17 @@ For medium-to-large projects, include architecture documentation:
 
 \`\`\`mermaid
 graph TD
-    A[Client] --> B[API Gateway]
-    B --> C[Service A]
-    B --> D[Service B]
-    C --> E[(Database)]
-    D --> E
+A[Client] --> B[API Gateway]
+B --> C[Service A]
+B --> D[Service B]
+C --> E[(Database)]
+D --> E
 \`\`\`
 
 ## Component Overview
 
 ### Component Name
+
 - **Purpose**: What this component does
 - **Location**: `src/components/name/`
 - **Dependencies**: What it depends on
@@ -257,6 +259,7 @@ graph TD
 ## Design Decisions
 
 ### Decision Title
+
 - **Context**: What situation led to this decision
 - **Decision**: What was decided
 - **Rationale**: Why this approach was chosen
@@ -268,6 +271,7 @@ graph TD
 Generate language-appropriate inline documentation:
 
 **Python (Docstrings — Google style)**:
+
 ```python
 def process_data(input_path: str, options: dict | None = None) -> ProcessResult:
     """Process data from the given file path.
@@ -297,7 +301,8 @@ def process_data(input_path: str, options: dict | None = None) -> ProcessResult:
 ```
 
 **TypeScript (JSDoc / TSDoc)**:
-```typescript
+
+````typescript
 /**
  * Fetches user data from the API and transforms it for display.
  *
@@ -315,9 +320,10 @@ def process_data(input_path: str, options: dict | None = None) -> ProcessResult:
  * console.log(user.displayName);
  * ```
  */
-```
+````
 
 **Go (GoDoc)**:
+
 ```go
 // ProcessData reads the input file at the given path, applies the specified
 // transformations, and returns the processed result.
@@ -346,18 +352,19 @@ Verify the documentation covers:
 
 #### Step 3.2: Quality Standards
 
-| Standard | Check |
-|----------|-------|
-| **Accuracy** | Every code example must actually work with the described API |
-| **Completeness** | No public API surface left undocumented |
-| **Consistency** | Same formatting and structure throughout |
-| **Freshness** | Documentation matches the current code, not an older version |
+| Standard          | Check                                                        |
+| ----------------- | ------------------------------------------------------------ |
+| **Accuracy**      | Every code example must actually work with the described API |
+| **Completeness**  | No public API surface left undocumented                      |
+| **Consistency**   | Same formatting and structure throughout                     |
+| **Freshness**     | Documentation matches the current code, not an older version |
 | **Accessibility** | No jargon without explanation, acronyms defined on first use |
-| **Examples** | Every complex concept has at least one practical example |
+| **Examples**      | Every complex concept has at least one practical example     |
 
 #### Step 3.3: Cross-reference Validation
 
 Ensure:
+
 - All mentioned file paths exist in the project
 - All referenced functions and classes exist in the code
 - All code examples use the correct function signatures
@@ -386,14 +393,14 @@ Ensure:
 
 ### Language-Specific Conventions
 
-| Language | Doc Format | Style Guide |
-|----------|-----------|-------------|
-| Python | Google-style docstrings | PEP 257 |
-| TypeScript/JavaScript | TSDoc / JSDoc | TypeDoc conventions |
-| Go | GoDoc comments | Effective Go |
-| Rust | Rustdoc (`///`) | Rust API Guidelines |
-| Java | Javadoc | Oracle Javadoc Guide |
-| C/C++ | Doxygen | Doxygen manual |
+| Language              | Doc Format              | Style Guide          |
+| --------------------- | ----------------------- | -------------------- |
+| Python                | Google-style docstrings | PEP 257              |
+| TypeScript/JavaScript | TSDoc / JSDoc           | TypeDoc conventions  |
+| Go                    | GoDoc comments          | Effective Go         |
+| Rust                  | Rustdoc (`///`)         | Rust API Guidelines  |
+| Java                  | Javadoc                 | Oracle Javadoc Guide |
+| C/C++                 | Doxygen                 | Doxygen manual       |
 
 ## Output Handling
 

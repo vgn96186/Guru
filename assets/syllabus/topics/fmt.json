@@ -1,314 +1,1640 @@
 [
-  [7,"Forensic Thanatology",10,50],
-  [7,"Signs of Death",10,40,"Forensic Thanatology"],
-  [7,"Early Signs of Death — Pallor, Algor, Livor & Primary Flaccidity",10,15,"Signs of Death"],
-  [7,"Early Signs of Death — Pallor, Algor, Livor",10,7,"Early Signs of Death — Pallor, Algor, Livor & Primary Flaccidity"],
-  [7,"Early Signs of Death — Pallor, Algor, Livor - Medicolegal Importance",10,5,"Early Signs of Death — Pallor, Algor, Livor"],
-  [7,"Early Signs of Death — Pallor, Algor, Livor - Pathological Findings",10,5,"Early Signs of Death — Pallor, Algor, Livor"],
-  [7,"Early Signs of Death — Pallor, Algor, Livor - Toxicological Aspects",10,5,"Early Signs of Death — Pallor, Algor, Livor"],
-  [7,"Early Signs of Death — Pallor, Algor, Livor - Legal Sections & Acts",10,5,"Early Signs of Death — Pallor, Algor, Livor"],
-  [7,"Early Signs of Death — Primary Flaccidity",10,8,"Early Signs of Death — Pallor, Algor, Livor & Primary Flaccidity"],
-  [7,"Early Signs of Death — Primary Flaccidity - Medicolegal Importance",10,5,"Early Signs of Death — Primary Flaccidity"],
-  [7,"Early Signs of Death — Primary Flaccidity - Pathological Findings",10,5,"Early Signs of Death — Primary Flaccidity"],
-  [7,"Early Signs of Death — Primary Flaccidity - Toxicological Aspects",10,5,"Early Signs of Death — Primary Flaccidity"],
-  [7,"Early Signs of Death — Primary Flaccidity - Legal Sections & Acts",10,5,"Early Signs of Death — Primary Flaccidity"],
-  [7,"Rigor Mortis — Mechanism, Sequence & Medico-legal Significance",10,15,"Signs of Death"],
-  [7,"Rigor Mortis — Mechanism, Sequence",10,7,"Rigor Mortis — Mechanism, Sequence & Medico-legal Significance"],
-  [7,"Rigor Mortis — Mechanism, Sequence - Medicolegal Importance",10,5,"Rigor Mortis — Mechanism, Sequence"],
-  [7,"Rigor Mortis — Mechanism, Sequence - Pathological Findings",10,5,"Rigor Mortis — Mechanism, Sequence"],
-  [7,"Rigor Mortis — Mechanism, Sequence - Toxicological Aspects",10,5,"Rigor Mortis — Mechanism, Sequence"],
-  [7,"Rigor Mortis — Mechanism, Sequence - Legal Sections & Acts",10,5,"Rigor Mortis — Mechanism, Sequence"],
-  [7,"Rigor Mortis — Medico-legal Significance",10,8,"Rigor Mortis — Mechanism, Sequence & Medico-legal Significance"],
-  [7,"Rigor Mortis — Medico-legal Significance - Medicolegal Importance",10,5,"Rigor Mortis — Medico-legal Significance"],
-  [7,"Rigor Mortis — Medico-legal Significance - Pathological Findings",10,5,"Rigor Mortis — Medico-legal Significance"],
-  [7,"Rigor Mortis — Medico-legal Significance - Toxicological Aspects",10,5,"Rigor Mortis — Medico-legal Significance"],
-  [7,"Rigor Mortis — Medico-legal Significance - Legal Sections & Acts",10,5,"Rigor Mortis — Medico-legal Significance"],
-  [7,"Putrefaction & Late Changes — Adipocere, Mummification",10,12,"Signs of Death"],
-  [7,"Putrefaction & Late Changes — Adipocere",10,6,"Putrefaction & Late Changes — Adipocere, Mummification"],
-  [7,"Putrefaction & Late Changes — Adipocere - Medicolegal Importance",10,5,"Putrefaction & Late Changes — Adipocere"],
-  [7,"Putrefaction & Late Changes — Adipocere - Pathological Findings",10,5,"Putrefaction & Late Changes — Adipocere"],
-  [7,"Putrefaction & Late Changes — Adipocere - Toxicological Aspects",10,5,"Putrefaction & Late Changes — Adipocere"],
-  [7,"Putrefaction & Late Changes — Adipocere - Legal Sections & Acts",10,5,"Putrefaction & Late Changes — Adipocere"],
-  [7,"Putrefaction & Late Changes — Mummification",10,6,"Putrefaction & Late Changes — Adipocere, Mummification"],
-  [7,"Putrefaction & Late Changes — Mummification - Medicolegal Importance",10,5,"Putrefaction & Late Changes — Mummification"],
-  [7,"Putrefaction & Late Changes — Mummification - Pathological Findings",10,5,"Putrefaction & Late Changes — Mummification"],
-  [7,"Putrefaction & Late Changes — Mummification - Toxicological Aspects",10,5,"Putrefaction & Late Changes — Mummification"],
-  [7,"Putrefaction & Late Changes — Mummification - Legal Sections & Acts",10,5,"Putrefaction & Late Changes — Mummification"],
-  [7,"Medico-legal Autopsy",10,45,"Forensic Thanatology"],
-  [7,"Types of Autopsy — Medico-legal vs Clinical; Inquest",10,15,"Medico-legal Autopsy"],
-  [7,"Types of Autopsy — Basics",10,7,"Types of Autopsy — Medico-legal vs Clinical; Inquest"],
-  [7,"Types of Autopsy — Basics - Medicolegal Importance",10,5,"Types of Autopsy — Basics"],
-  [7,"Types of Autopsy — Basics - Pathological Findings",10,5,"Types of Autopsy — Basics"],
-  [7,"Types of Autopsy — Basics - Toxicological Aspects",10,5,"Types of Autopsy — Basics"],
-  [7,"Types of Autopsy — Basics - Legal Sections & Acts",10,5,"Types of Autopsy — Basics"],
-  [7,"Types of Autopsy — Details",10,8,"Types of Autopsy — Medico-legal vs Clinical; Inquest"],
-  [7,"Types of Autopsy — Details - Medicolegal Importance",10,5,"Types of Autopsy — Details"],
-  [7,"Types of Autopsy — Details - Pathological Findings",10,5,"Types of Autopsy — Details"],
-  [7,"Types of Autopsy — Details - Toxicological Aspects",10,5,"Types of Autopsy — Details"],
-  [7,"Types of Autopsy — Details - Legal Sections & Acts",10,5,"Types of Autopsy — Details"],
-  [7,"Post-mortem Artifacts & Estimation of Time of Death",10,15,"Medico-legal Autopsy"],
-  [7,"Post-mortem Artifacts",10,7,"Post-mortem Artifacts & Estimation of Time of Death"],
-  [7,"Post-mortem Artifacts - Medicolegal Importance",10,5,"Post-mortem Artifacts"],
-  [7,"Post-mortem Artifacts - Pathological Findings",10,5,"Post-mortem Artifacts"],
-  [7,"Post-mortem Artifacts - Toxicological Aspects",10,5,"Post-mortem Artifacts"],
-  [7,"Post-mortem Artifacts - Legal Sections & Acts",10,5,"Post-mortem Artifacts"],
-  [7,"Estimation of Time of Death",10,8,"Post-mortem Artifacts & Estimation of Time of Death"],
-  [7,"Estimation of Time of Death - Medicolegal Importance",10,5,"Estimation of Time of Death"],
-  [7,"Estimation of Time of Death - Pathological Findings",10,5,"Estimation of Time of Death"],
-  [7,"Estimation of Time of Death - Toxicological Aspects",10,5,"Estimation of Time of Death"],
-  [7,"Estimation of Time of Death - Legal Sections & Acts",10,5,"Estimation of Time of Death"],
-  [7,"Forensic Traumatology",10,60],
-  [7,"Mechanical Injuries",10,50,"Forensic Traumatology"],
-  [7,"Blunt Force Injuries — Abrasion, Contusion & Laceration",10,15,"Mechanical Injuries"],
-  [7,"Blunt Force Injuries — Abrasion, Contusion",10,7,"Blunt Force Injuries — Abrasion, Contusion & Laceration"],
-  [7,"Blunt Force Injuries — Abrasion, Contusion - Medicolegal Importance",10,5,"Blunt Force Injuries — Abrasion, Contusion"],
-  [7,"Blunt Force Injuries — Abrasion, Contusion - Pathological Findings",10,5,"Blunt Force Injuries — Abrasion, Contusion"],
-  [7,"Blunt Force Injuries — Abrasion, Contusion - Toxicological Aspects",10,5,"Blunt Force Injuries — Abrasion, Contusion"],
-  [7,"Blunt Force Injuries — Abrasion, Contusion - Legal Sections & Acts",10,5,"Blunt Force Injuries — Abrasion, Contusion"],
-  [7,"Blunt Force Injuries — Laceration",10,8,"Blunt Force Injuries — Abrasion, Contusion & Laceration"],
-  [7,"Blunt Force Injuries — Laceration - Medicolegal Importance",10,5,"Blunt Force Injuries — Laceration"],
-  [7,"Blunt Force Injuries — Laceration - Pathological Findings",10,5,"Blunt Force Injuries — Laceration"],
-  [7,"Blunt Force Injuries — Laceration - Toxicological Aspects",10,5,"Blunt Force Injuries — Laceration"],
-  [7,"Blunt Force Injuries — Laceration - Legal Sections & Acts",10,5,"Blunt Force Injuries — Laceration"],
-  [7,"Sharp Force Injuries — Incised, Stab & Chop Wounds",10,15,"Mechanical Injuries"],
-  [7,"Sharp Force Injuries — Incised, Stab",10,7,"Sharp Force Injuries — Incised, Stab & Chop Wounds"],
-  [7,"Sharp Force Injuries — Incised, Stab - Medicolegal Importance",10,5,"Sharp Force Injuries — Incised, Stab"],
-  [7,"Sharp Force Injuries — Incised, Stab - Pathological Findings",10,5,"Sharp Force Injuries — Incised, Stab"],
-  [7,"Sharp Force Injuries — Incised, Stab - Toxicological Aspects",10,5,"Sharp Force Injuries — Incised, Stab"],
-  [7,"Sharp Force Injuries — Incised, Stab - Legal Sections & Acts",10,5,"Sharp Force Injuries — Incised, Stab"],
-  [7,"Sharp Force Injuries — Chop Wounds",10,8,"Sharp Force Injuries — Incised, Stab & Chop Wounds"],
-  [7,"Sharp Force Injuries — Chop Wounds - Medicolegal Importance",10,5,"Sharp Force Injuries — Chop Wounds"],
-  [7,"Sharp Force Injuries — Chop Wounds - Pathological Findings",10,5,"Sharp Force Injuries — Chop Wounds"],
-  [7,"Sharp Force Injuries — Chop Wounds - Toxicological Aspects",10,5,"Sharp Force Injuries — Chop Wounds"],
-  [7,"Sharp Force Injuries — Chop Wounds - Legal Sections & Acts",10,5,"Sharp Force Injuries — Chop Wounds"],
-  [7,"Firearm Injuries — Entry vs Exit Wound, Blackening & Tattooing",10,18,"Mechanical Injuries"],
-  [7,"Firearm Injuries — Entry vs Exit Wound, Blackening",10,9,"Firearm Injuries — Entry vs Exit Wound, Blackening & Tattooing"],
-  [7,"Firearm Injuries — Entry vs Exit Wound, Blackening - Medicolegal Importance",10,5,"Firearm Injuries — Entry vs Exit Wound, Blackening"],
-  [7,"Firearm Injuries — Entry vs Exit Wound, Blackening - Pathological Findings",10,5,"Firearm Injuries — Entry vs Exit Wound, Blackening"],
-  [7,"Firearm Injuries — Entry vs Exit Wound, Blackening - Toxicological Aspects",10,5,"Firearm Injuries — Entry vs Exit Wound, Blackening"],
-  [7,"Firearm Injuries — Entry vs Exit Wound, Blackening - Legal Sections & Acts",10,5,"Firearm Injuries — Entry vs Exit Wound, Blackening"],
-  [7,"Firearm Injuries — Tattooing",10,9,"Firearm Injuries — Entry vs Exit Wound, Blackening & Tattooing"],
-  [7,"Firearm Injuries — Tattooing - Medicolegal Importance",10,5,"Firearm Injuries — Tattooing"],
-  [7,"Firearm Injuries — Tattooing - Pathological Findings",10,5,"Firearm Injuries — Tattooing"],
-  [7,"Firearm Injuries — Tattooing - Toxicological Aspects",10,5,"Firearm Injuries — Tattooing"],
-  [7,"Firearm Injuries — Tattooing - Legal Sections & Acts",10,5,"Firearm Injuries — Tattooing"],
-  [7,"Asphyxia Deaths",10,50,"Forensic Traumatology"],
-  [7,"Asphyxia — Types: Hanging, Strangulation, Smothering & Drowning",10,18,"Asphyxia Deaths"],
-  [7,"Asphyxia — Types: Hanging, Strangulation, Smothering",10,9,"Asphyxia — Types: Hanging, Strangulation, Smothering & Drowning"],
-  [7,"Asphyxia — Types: Hanging, Strangulation, Smothering - Medicolegal Importance",10,5,"Asphyxia — Types: Hanging, Strangulation, Smothering"],
-  [7,"Asphyxia — Types: Hanging, Strangulation, Smothering - Pathological Findings",10,5,"Asphyxia — Types: Hanging, Strangulation, Smothering"],
-  [7,"Asphyxia — Types: Hanging, Strangulation, Smothering - Toxicological Aspects",10,5,"Asphyxia — Types: Hanging, Strangulation, Smothering"],
-  [7,"Asphyxia — Types: Hanging, Strangulation, Smothering - Legal Sections & Acts",10,5,"Asphyxia — Types: Hanging, Strangulation, Smothering"],
-  [7,"Asphyxia — Drowning",10,9,"Asphyxia — Types: Hanging, Strangulation, Smothering & Drowning"],
-  [7,"Asphyxia — Drowning - Medicolegal Importance",10,5,"Asphyxia — Drowning"],
-  [7,"Asphyxia — Drowning - Pathological Findings",10,5,"Asphyxia — Drowning"],
-  [7,"Asphyxia — Drowning - Toxicological Aspects",10,5,"Asphyxia — Drowning"],
-  [7,"Asphyxia — Drowning - Legal Sections & Acts",10,5,"Asphyxia — Drowning"],
-  [7,"Hanging — Ligature Mark, Judicial vs Suicidal & PM Findings",10,15,"Asphyxia Deaths"],
-  [7,"Hanging — Ligature Mark, Judicial vs Suicidal",10,7,"Hanging — Ligature Mark, Judicial vs Suicidal & PM Findings"],
-  [7,"Hanging — Ligature Mark, Judicial vs Suicidal - Medicolegal Importance",10,5,"Hanging — Ligature Mark, Judicial vs Suicidal"],
-  [7,"Hanging — Ligature Mark, Judicial vs Suicidal - Pathological Findings",10,5,"Hanging — Ligature Mark, Judicial vs Suicidal"],
-  [7,"Hanging — Ligature Mark, Judicial vs Suicidal - Toxicological Aspects",10,5,"Hanging — Ligature Mark, Judicial vs Suicidal"],
-  [7,"Hanging — Ligature Mark, Judicial vs Suicidal - Legal Sections & Acts",10,5,"Hanging — Ligature Mark, Judicial vs Suicidal"],
-  [7,"Hanging — PM Findings",10,8,"Hanging — Ligature Mark, Judicial vs Suicidal & PM Findings"],
-  [7,"Hanging — PM Findings - Medicolegal Importance",10,5,"Hanging — PM Findings"],
-  [7,"Hanging — PM Findings - Pathological Findings",10,5,"Hanging — PM Findings"],
-  [7,"Hanging — PM Findings - Toxicological Aspects",10,5,"Hanging — PM Findings"],
-  [7,"Hanging — PM Findings - Legal Sections & Acts",10,5,"Hanging — PM Findings"],
-  [7,"Drowning — Freshwater vs Saltwater, Diatoms & Gettler's Test",10,12,"Asphyxia Deaths"],
-  [7,"Drowning — Freshwater vs Saltwater, Diatoms",10,6,"Drowning — Freshwater vs Saltwater, Diatoms & Gettler's Test"],
-  [7,"Drowning — Freshwater vs Saltwater, Diatoms - Medicolegal Importance",10,5,"Drowning — Freshwater vs Saltwater, Diatoms"],
-  [7,"Drowning — Freshwater vs Saltwater, Diatoms - Pathological Findings",10,5,"Drowning — Freshwater vs Saltwater, Diatoms"],
-  [7,"Drowning — Freshwater vs Saltwater, Diatoms - Toxicological Aspects",10,5,"Drowning — Freshwater vs Saltwater, Diatoms"],
-  [7,"Drowning — Freshwater vs Saltwater, Diatoms - Legal Sections & Acts",10,5,"Drowning — Freshwater vs Saltwater, Diatoms"],
-  [7,"Drowning — Gettler's Test",10,6,"Drowning — Freshwater vs Saltwater, Diatoms & Gettler's Test"],
-  [7,"Drowning — Gettler's Test - Medicolegal Importance",10,5,"Drowning — Gettler's Test"],
-  [7,"Drowning — Gettler's Test - Pathological Findings",10,5,"Drowning — Gettler's Test"],
-  [7,"Drowning — Gettler's Test - Toxicological Aspects",10,5,"Drowning — Gettler's Test"],
-  [7,"Drowning — Gettler's Test - Legal Sections & Acts",10,5,"Drowning — Gettler's Test"],
-  [7,"Thermal & Electrical Injuries",9,35,"Forensic Traumatology"],
-  [7,"Burns — Degrees, Joule Burns, Flash Burns & Crocodile Skin",9,15,"Thermal & Electrical Injuries"],
-  [7,"Burns — Degrees, Joule Burns, Flash Burns",9,7,"Burns — Degrees, Joule Burns, Flash Burns & Crocodile Skin"],
-  [7,"Burns — Degrees, Joule Burns, Flash Burns - Medicolegal Importance",9,5,"Burns — Degrees, Joule Burns, Flash Burns"],
-  [7,"Burns — Degrees, Joule Burns, Flash Burns - Pathological Findings",9,5,"Burns — Degrees, Joule Burns, Flash Burns"],
-  [7,"Burns — Degrees, Joule Burns, Flash Burns - Toxicological Aspects",9,5,"Burns — Degrees, Joule Burns, Flash Burns"],
-  [7,"Burns — Degrees, Joule Burns, Flash Burns - Legal Sections & Acts",9,5,"Burns — Degrees, Joule Burns, Flash Burns"],
-  [7,"Burns — Crocodile Skin",9,8,"Burns — Degrees, Joule Burns, Flash Burns & Crocodile Skin"],
-  [7,"Burns — Crocodile Skin - Medicolegal Importance",9,5,"Burns — Crocodile Skin"],
-  [7,"Burns — Crocodile Skin - Pathological Findings",9,5,"Burns — Crocodile Skin"],
-  [7,"Burns — Crocodile Skin - Toxicological Aspects",9,5,"Burns — Crocodile Skin"],
-  [7,"Burns — Crocodile Skin - Legal Sections & Acts",9,5,"Burns — Crocodile Skin"],
-  [7,"Lightning & Electrical Injuries — Filigree/Arborescent Marking",9,12,"Thermal & Electrical Injuries"],
-  [7,"Lightning & Electrical Injuries — Basics",9,6,"Lightning & Electrical Injuries — Filigree/Arborescent Marking"],
-  [7,"Lightning & Electrical Injuries — Basics - Medicolegal Importance",9,5,"Lightning & Electrical Injuries — Basics"],
-  [7,"Lightning & Electrical Injuries — Basics - Pathological Findings",9,5,"Lightning & Electrical Injuries — Basics"],
-  [7,"Lightning & Electrical Injuries — Basics - Toxicological Aspects",9,5,"Lightning & Electrical Injuries — Basics"],
-  [7,"Lightning & Electrical Injuries — Basics - Legal Sections & Acts",9,5,"Lightning & Electrical Injuries — Basics"],
-  [7,"Lightning & Electrical Injuries — Details",9,6,"Lightning & Electrical Injuries — Filigree/Arborescent Marking"],
-  [7,"Lightning & Electrical Injuries — Details - Medicolegal Importance",9,5,"Lightning & Electrical Injuries — Details"],
-  [7,"Lightning & Electrical Injuries — Details - Pathological Findings",9,5,"Lightning & Electrical Injuries — Details"],
-  [7,"Lightning & Electrical Injuries — Details - Toxicological Aspects",9,5,"Lightning & Electrical Injuries — Details"],
-  [7,"Lightning & Electrical Injuries — Details - Legal Sections & Acts",9,5,"Lightning & Electrical Injuries — Details"],
-  [7,"Forensic Toxicology",10,60],
-  [7,"General Toxicology",9,40,"Forensic Toxicology"],
-  [7,"Toxicology Principles — LD50, Routes & Medicolegal Poisons Classification",9,15,"General Toxicology"],
-  [7,"Toxicology Principles — LD50, Routes",9,7,"Toxicology Principles — LD50, Routes & Medicolegal Poisons Classification"],
-  [7,"Toxicology Principles — LD50, Routes - Medicolegal Importance",9,5,"Toxicology Principles — LD50, Routes"],
-  [7,"Toxicology Principles — LD50, Routes - Pathological Findings",9,5,"Toxicology Principles — LD50, Routes"],
-  [7,"Toxicology Principles — LD50, Routes - Toxicological Aspects",9,5,"Toxicology Principles — LD50, Routes"],
-  [7,"Toxicology Principles — LD50, Routes - Legal Sections & Acts",9,5,"Toxicology Principles — LD50, Routes"],
-  [7,"Toxicology Principles — Medicolegal Poisons Classification",9,8,"Toxicology Principles — LD50, Routes & Medicolegal Poisons Classification"],
-  [7,"Toxicology Principles — Medicolegal Poisons Classification - Medicolegal Importance",9,5,"Toxicology Principles — Medicolegal Poisons Classification"],
-  [7,"Toxicology Principles — Medicolegal Poisons Classification - Pathological Findings",9,5,"Toxicology Principles — Medicolegal Poisons Classification"],
-  [7,"Toxicology Principles — Medicolegal Poisons Classification - Toxicological Aspects",9,5,"Toxicology Principles — Medicolegal Poisons Classification"],
-  [7,"Toxicology Principles — Medicolegal Poisons Classification - Legal Sections & Acts",9,5,"Toxicology Principles — Medicolegal Poisons Classification"],
-  [7,"Corrosive Poisons — Acids, Alkalis & Phenol: PM Findings",9,15,"General Toxicology"],
-  [7,"Corrosive Poisons — Acids, Alkalis",9,7,"Corrosive Poisons — Acids, Alkalis & Phenol: PM Findings"],
-  [7,"Corrosive Poisons — Acids, Alkalis - Medicolegal Importance",9,5,"Corrosive Poisons — Acids, Alkalis"],
-  [7,"Corrosive Poisons — Acids, Alkalis - Pathological Findings",9,5,"Corrosive Poisons — Acids, Alkalis"],
-  [7,"Corrosive Poisons — Acids, Alkalis - Toxicological Aspects",9,5,"Corrosive Poisons — Acids, Alkalis"],
-  [7,"Corrosive Poisons — Acids, Alkalis - Legal Sections & Acts",9,5,"Corrosive Poisons — Acids, Alkalis"],
-  [7,"Corrosive Poisons — Phenol: PM Findings",9,8,"Corrosive Poisons — Acids, Alkalis & Phenol: PM Findings"],
-  [7,"Corrosive Poisons — Phenol: PM Findings - Medicolegal Importance",9,5,"Corrosive Poisons — Phenol: PM Findings"],
-  [7,"Corrosive Poisons — Phenol: PM Findings - Pathological Findings",9,5,"Corrosive Poisons — Phenol: PM Findings"],
-  [7,"Corrosive Poisons — Phenol: PM Findings - Toxicological Aspects",9,5,"Corrosive Poisons — Phenol: PM Findings"],
-  [7,"Corrosive Poisons — Phenol: PM Findings - Legal Sections & Acts",9,5,"Corrosive Poisons — Phenol: PM Findings"],
-  [7,"Common Poisons",10,55,"Forensic Toxicology"],
-  [7,"Organophosphate Poisoning — SLUDGE, Atropine & PAM",10,18,"Common Poisons"],
-  [7,"Organophosphate Poisoning — SLUDGE, Atropine",10,9,"Organophosphate Poisoning — SLUDGE, Atropine & PAM"],
-  [7,"Organophosphate Poisoning — SLUDGE, Atropine - Medicolegal Importance",10,5,"Organophosphate Poisoning — SLUDGE, Atropine"],
-  [7,"Organophosphate Poisoning — SLUDGE, Atropine - Pathological Findings",10,5,"Organophosphate Poisoning — SLUDGE, Atropine"],
-  [7,"Organophosphate Poisoning — SLUDGE, Atropine - Toxicological Aspects",10,5,"Organophosphate Poisoning — SLUDGE, Atropine"],
-  [7,"Organophosphate Poisoning — SLUDGE, Atropine - Legal Sections & Acts",10,5,"Organophosphate Poisoning — SLUDGE, Atropine"],
-  [7,"Organophosphate Poisoning — PAM",10,9,"Organophosphate Poisoning — SLUDGE, Atropine & PAM"],
-  [7,"Organophosphate Poisoning — PAM - Medicolegal Importance",10,5,"Organophosphate Poisoning — PAM"],
-  [7,"Organophosphate Poisoning — PAM - Pathological Findings",10,5,"Organophosphate Poisoning — PAM"],
-  [7,"Organophosphate Poisoning — PAM - Toxicological Aspects",10,5,"Organophosphate Poisoning — PAM"],
-  [7,"Organophosphate Poisoning — PAM - Legal Sections & Acts",10,5,"Organophosphate Poisoning — PAM"],
-  [7,"Alcohol Poisoning — Acute, Chronic & Blood Alcohol Levels",10,15,"Common Poisons"],
-  [7,"Alcohol Poisoning — Acute, Chronic",10,7,"Alcohol Poisoning — Acute, Chronic & Blood Alcohol Levels"],
-  [7,"Alcohol Poisoning — Acute, Chronic - Medicolegal Importance",10,5,"Alcohol Poisoning — Acute, Chronic"],
-  [7,"Alcohol Poisoning — Acute, Chronic - Pathological Findings",10,5,"Alcohol Poisoning — Acute, Chronic"],
-  [7,"Alcohol Poisoning — Acute, Chronic - Toxicological Aspects",10,5,"Alcohol Poisoning — Acute, Chronic"],
-  [7,"Alcohol Poisoning — Acute, Chronic - Legal Sections & Acts",10,5,"Alcohol Poisoning — Acute, Chronic"],
-  [7,"Alcohol Poisoning — Blood Alcohol Levels",10,8,"Alcohol Poisoning — Acute, Chronic & Blood Alcohol Levels"],
-  [7,"Alcohol Poisoning — Blood Alcohol Levels - Medicolegal Importance",10,5,"Alcohol Poisoning — Blood Alcohol Levels"],
-  [7,"Alcohol Poisoning — Blood Alcohol Levels - Pathological Findings",10,5,"Alcohol Poisoning — Blood Alcohol Levels"],
-  [7,"Alcohol Poisoning — Blood Alcohol Levels - Toxicological Aspects",10,5,"Alcohol Poisoning — Blood Alcohol Levels"],
-  [7,"Alcohol Poisoning — Blood Alcohol Levels - Legal Sections & Acts",10,5,"Alcohol Poisoning — Blood Alcohol Levels"],
-  [7,"CO & CN Poisoning — Cherry-red Skin & Antidotes",10,12,"Common Poisons"],
-  [7,"CO & CN Poisoning — Cherry-red Skin",10,6,"CO & CN Poisoning — Cherry-red Skin & Antidotes"],
-  [7,"CO & CN Poisoning — Cherry-red Skin - Medicolegal Importance",10,5,"CO & CN Poisoning — Cherry-red Skin"],
-  [7,"CO & CN Poisoning — Cherry-red Skin - Pathological Findings",10,5,"CO & CN Poisoning — Cherry-red Skin"],
-  [7,"CO & CN Poisoning — Cherry-red Skin - Toxicological Aspects",10,5,"CO & CN Poisoning — Cherry-red Skin"],
-  [7,"CO & CN Poisoning — Cherry-red Skin - Legal Sections & Acts",10,5,"CO & CN Poisoning — Cherry-red Skin"],
-  [7,"CO & CN Poisoning — Antidotes",10,6,"CO & CN Poisoning — Cherry-red Skin & Antidotes"],
-  [7,"CO & CN Poisoning — Antidotes - Medicolegal Importance",10,5,"CO & CN Poisoning — Antidotes"],
-  [7,"CO & CN Poisoning — Antidotes - Pathological Findings",10,5,"CO & CN Poisoning — Antidotes"],
-  [7,"CO & CN Poisoning — Antidotes - Toxicological Aspects",10,5,"CO & CN Poisoning — Antidotes"],
-  [7,"CO & CN Poisoning — Antidotes - Legal Sections & Acts",10,5,"CO & CN Poisoning — Antidotes"],
-  [7,"Opium & Barbiturate Poisoning — Pin-point Pupils & Antidote",10,12,"Common Poisons"],
-  [7,"Opium & Barbiturate Poisoning — Pin-point Pupils",10,6,"Opium & Barbiturate Poisoning — Pin-point Pupils & Antidote"],
-  [7,"Opium & Barbiturate Poisoning — Pin-point Pupils - Medicolegal Importance",10,5,"Opium & Barbiturate Poisoning — Pin-point Pupils"],
-  [7,"Opium & Barbiturate Poisoning — Pin-point Pupils - Pathological Findings",10,5,"Opium & Barbiturate Poisoning — Pin-point Pupils"],
-  [7,"Opium & Barbiturate Poisoning — Pin-point Pupils - Toxicological Aspects",10,5,"Opium & Barbiturate Poisoning — Pin-point Pupils"],
-  [7,"Opium & Barbiturate Poisoning — Pin-point Pupils - Legal Sections & Acts",10,5,"Opium & Barbiturate Poisoning — Pin-point Pupils"],
-  [7,"Opium & Barbiturate Poisoning — Antidote",10,6,"Opium & Barbiturate Poisoning — Pin-point Pupils & Antidote"],
-  [7,"Opium & Barbiturate Poisoning — Antidote - Medicolegal Importance",10,5,"Opium & Barbiturate Poisoning — Antidote"],
-  [7,"Opium & Barbiturate Poisoning — Antidote - Pathological Findings",10,5,"Opium & Barbiturate Poisoning — Antidote"],
-  [7,"Opium & Barbiturate Poisoning — Antidote - Toxicological Aspects",10,5,"Opium & Barbiturate Poisoning — Antidote"],
-  [7,"Opium & Barbiturate Poisoning — Antidote - Legal Sections & Acts",10,5,"Opium & Barbiturate Poisoning — Antidote"],
-  [7,"Snake & Food Poisoning",9,35,"Forensic Toxicology"],
-  [7,"Venomous Snakes — Neurotoxic vs Haemotoxic & Antisnake Venom",9,15,"Snake & Food Poisoning"],
-  [7,"Venomous Snakes — Neurotoxic vs Haemotoxic",9,7,"Venomous Snakes — Neurotoxic vs Haemotoxic & Antisnake Venom"],
-  [7,"Venomous Snakes — Neurotoxic vs Haemotoxic - Medicolegal Importance",9,5,"Venomous Snakes — Neurotoxic vs Haemotoxic"],
-  [7,"Venomous Snakes — Neurotoxic vs Haemotoxic - Pathological Findings",9,5,"Venomous Snakes — Neurotoxic vs Haemotoxic"],
-  [7,"Venomous Snakes — Neurotoxic vs Haemotoxic - Toxicological Aspects",9,5,"Venomous Snakes — Neurotoxic vs Haemotoxic"],
-  [7,"Venomous Snakes — Neurotoxic vs Haemotoxic - Legal Sections & Acts",9,5,"Venomous Snakes — Neurotoxic vs Haemotoxic"],
-  [7,"Venomous Snakes — Antisnake Venom",9,8,"Venomous Snakes — Neurotoxic vs Haemotoxic & Antisnake Venom"],
-  [7,"Venomous Snakes — Antisnake Venom - Medicolegal Importance",9,5,"Venomous Snakes — Antisnake Venom"],
-  [7,"Venomous Snakes — Antisnake Venom - Pathological Findings",9,5,"Venomous Snakes — Antisnake Venom"],
-  [7,"Venomous Snakes — Antisnake Venom - Toxicological Aspects",9,5,"Venomous Snakes — Antisnake Venom"],
-  [7,"Venomous Snakes — Antisnake Venom - Legal Sections & Acts",9,5,"Venomous Snakes — Antisnake Venom"],
-  [7,"Food Poisoning — Botulism, Staphylococcal & Mushroom Poisoning",9,15,"Snake & Food Poisoning"],
-  [7,"Food Poisoning — Botulism, Staphylococcal",9,7,"Food Poisoning — Botulism, Staphylococcal & Mushroom Poisoning"],
-  [7,"Food Poisoning — Botulism, Staphylococcal - Medicolegal Importance",9,5,"Food Poisoning — Botulism, Staphylococcal"],
-  [7,"Food Poisoning — Botulism, Staphylococcal - Pathological Findings",9,5,"Food Poisoning — Botulism, Staphylococcal"],
-  [7,"Food Poisoning — Botulism, Staphylococcal - Toxicological Aspects",9,5,"Food Poisoning — Botulism, Staphylococcal"],
-  [7,"Food Poisoning — Botulism, Staphylococcal - Legal Sections & Acts",9,5,"Food Poisoning — Botulism, Staphylococcal"],
-  [7,"Food Poisoning — Mushroom Poisoning",9,8,"Food Poisoning — Botulism, Staphylococcal & Mushroom Poisoning"],
-  [7,"Food Poisoning — Mushroom Poisoning - Medicolegal Importance",9,5,"Food Poisoning — Mushroom Poisoning"],
-  [7,"Food Poisoning — Mushroom Poisoning - Pathological Findings",9,5,"Food Poisoning — Mushroom Poisoning"],
-  [7,"Food Poisoning — Mushroom Poisoning - Toxicological Aspects",9,5,"Food Poisoning — Mushroom Poisoning"],
-  [7,"Food Poisoning — Mushroom Poisoning - Legal Sections & Acts",9,5,"Food Poisoning — Mushroom Poisoning"],
-  [7,"Forensic Medicine (Clinical & Legal)",9,50],
-  [7,"Sexual Offences & POCSO",10,45,"Forensic Medicine (Clinical & Legal)"],
-  [7,"Rape — Examination, Two-finger Test (Abolished) & Evidence Collection",10,18,"Sexual Offences & POCSO"],
-  [7,"Rape — Examination, Two-finger Test (Abolished)",10,9,"Rape — Examination, Two-finger Test (Abolished) & Evidence Collection"],
-  [7,"Rape — Examination, Two-finger Test (Abolished) - Medicolegal Importance",10,5,"Rape — Examination, Two-finger Test (Abolished)"],
-  [7,"Rape — Examination, Two-finger Test (Abolished) - Pathological Findings",10,5,"Rape — Examination, Two-finger Test (Abolished)"],
-  [7,"Rape — Examination, Two-finger Test (Abolished) - Toxicological Aspects",10,5,"Rape — Examination, Two-finger Test (Abolished)"],
-  [7,"Rape — Examination, Two-finger Test (Abolished) - Legal Sections & Acts",10,5,"Rape — Examination, Two-finger Test (Abolished)"],
-  [7,"Rape — Evidence Collection",10,9,"Rape — Examination, Two-finger Test (Abolished) & Evidence Collection"],
-  [7,"Rape — Evidence Collection - Medicolegal Importance",10,5,"Rape — Evidence Collection"],
-  [7,"Rape — Evidence Collection - Pathological Findings",10,5,"Rape — Evidence Collection"],
-  [7,"Rape — Evidence Collection - Toxicological Aspects",10,5,"Rape — Evidence Collection"],
-  [7,"Rape — Evidence Collection - Legal Sections & Acts",10,5,"Rape — Evidence Collection"],
-  [7,"POCSO Act 2012 — Key Provisions, Mandatory Reporting & Penalties",10,15,"Sexual Offences & POCSO"],
-  [7,"POCSO Act 2012 — Key Provisions, Mandatory Reporting",10,7,"POCSO Act 2012 — Key Provisions, Mandatory Reporting & Penalties"],
-  [7,"POCSO Act 2012 — Key Provisions, Mandatory Reporting - Medicolegal Importance",10,5,"POCSO Act 2012 — Key Provisions, Mandatory Reporting"],
-  [7,"POCSO Act 2012 — Key Provisions, Mandatory Reporting - Pathological Findings",10,5,"POCSO Act 2012 — Key Provisions, Mandatory Reporting"],
-  [7,"POCSO Act 2012 — Key Provisions, Mandatory Reporting - Toxicological Aspects",10,5,"POCSO Act 2012 — Key Provisions, Mandatory Reporting"],
-  [7,"POCSO Act 2012 — Key Provisions, Mandatory Reporting - Legal Sections & Acts",10,5,"POCSO Act 2012 — Key Provisions, Mandatory Reporting"],
-  [7,"POCSO Act 2012 — Penalties",10,8,"POCSO Act 2012 — Key Provisions, Mandatory Reporting & Penalties"],
-  [7,"POCSO Act 2012 — Penalties - Medicolegal Importance",10,5,"POCSO Act 2012 — Penalties"],
-  [7,"POCSO Act 2012 — Penalties - Pathological Findings",10,5,"POCSO Act 2012 — Penalties"],
-  [7,"POCSO Act 2012 — Penalties - Toxicological Aspects",10,5,"POCSO Act 2012 — Penalties"],
-  [7,"POCSO Act 2012 — Penalties - Legal Sections & Acts",10,5,"POCSO Act 2012 — Penalties"],
-  [7,"Medico-legal Aspects",9,40,"Forensic Medicine (Clinical & Legal)"],
-  [7,"MLC — Definition, Duties of Doctor, Consent & Dying Declaration",9,15,"Medico-legal Aspects"],
-  [7,"MLC — Definition, Duties of Doctor, Consent",9,7,"MLC — Definition, Duties of Doctor, Consent & Dying Declaration"],
-  [7,"MLC — Definition, Duties of Doctor, Consent - Medicolegal Importance",9,5,"MLC — Definition, Duties of Doctor, Consent"],
-  [7,"MLC — Definition, Duties of Doctor, Consent - Pathological Findings",9,5,"MLC — Definition, Duties of Doctor, Consent"],
-  [7,"MLC — Definition, Duties of Doctor, Consent - Toxicological Aspects",9,5,"MLC — Definition, Duties of Doctor, Consent"],
-  [7,"MLC — Definition, Duties of Doctor, Consent - Legal Sections & Acts",9,5,"MLC — Definition, Duties of Doctor, Consent"],
-  [7,"MLC — Dying Declaration",9,8,"MLC — Definition, Duties of Doctor, Consent & Dying Declaration"],
-  [7,"MLC — Dying Declaration - Medicolegal Importance",9,5,"MLC — Dying Declaration"],
-  [7,"MLC — Dying Declaration - Pathological Findings",9,5,"MLC — Dying Declaration"],
-  [7,"MLC — Dying Declaration - Toxicological Aspects",9,5,"MLC — Dying Declaration"],
-  [7,"MLC — Dying Declaration - Legal Sections & Acts",9,5,"MLC — Dying Declaration"],
-  [7,"Medical Negligence & IPC Sections Relevant to Doctors",9,15,"Medico-legal Aspects"],
-  [7,"Medical Negligence",9,7,"Medical Negligence & IPC Sections Relevant to Doctors"],
-  [7,"Medical Negligence - Medicolegal Importance",9,5,"Medical Negligence"],
-  [7,"Medical Negligence - Pathological Findings",9,5,"Medical Negligence"],
-  [7,"Medical Negligence - Toxicological Aspects",9,5,"Medical Negligence"],
-  [7,"Medical Negligence - Legal Sections & Acts",9,5,"Medical Negligence"],
-  [7,"IPC Sections Relevant to Doctors",9,8,"Medical Negligence & IPC Sections Relevant to Doctors"],
-  [7,"IPC Sections Relevant to Doctors - Medicolegal Importance",9,5,"IPC Sections Relevant to Doctors"],
-  [7,"IPC Sections Relevant to Doctors - Pathological Findings",9,5,"IPC Sections Relevant to Doctors"],
-  [7,"IPC Sections Relevant to Doctors - Toxicological Aspects",9,5,"IPC Sections Relevant to Doctors"],
-  [7,"IPC Sections Relevant to Doctors - Legal Sections & Acts",9,5,"IPC Sections Relevant to Doctors"],
-  [7,"Forensic Psychiatry",8,35,"Forensic Medicine (Clinical & Legal)"],
-  [7,"Criminal Responsibility — M'Naghten Rules & IPC 84",8,15,"Forensic Psychiatry"],
-  [7,"Criminal Responsibility — M'Naghten Rules",8,7,"Criminal Responsibility — M'Naghten Rules & IPC 84"],
-  [7,"Criminal Responsibility — M'Naghten Rules - Medicolegal Importance",8,5,"Criminal Responsibility — M'Naghten Rules"],
-  [7,"Criminal Responsibility — M'Naghten Rules - Pathological Findings",8,5,"Criminal Responsibility — M'Naghten Rules"],
-  [7,"Criminal Responsibility — M'Naghten Rules - Toxicological Aspects",8,5,"Criminal Responsibility — M'Naghten Rules"],
-  [7,"Criminal Responsibility — M'Naghten Rules - Legal Sections & Acts",8,5,"Criminal Responsibility — M'Naghten Rules"],
-  [7,"Criminal Responsibility — IPC 84",8,8,"Criminal Responsibility — M'Naghten Rules & IPC 84"],
-  [7,"Criminal Responsibility — IPC 84 - Medicolegal Importance",8,5,"Criminal Responsibility — IPC 84"],
-  [7,"Criminal Responsibility — IPC 84 - Pathological Findings",8,5,"Criminal Responsibility — IPC 84"],
-  [7,"Criminal Responsibility — IPC 84 - Toxicological Aspects",8,5,"Criminal Responsibility — IPC 84"],
-  [7,"Criminal Responsibility — IPC 84 - Legal Sections & Acts",8,5,"Criminal Responsibility — IPC 84"],
-  [7,"Fitness to Plead, Diminished Responsibility & Testamentary Capacity",8,12,"Forensic Psychiatry"],
-  [7,"Fitness to Plead, Diminished Responsibility",8,6,"Fitness to Plead, Diminished Responsibility & Testamentary Capacity"],
-  [7,"Fitness to Plead, Diminished Responsibility - Medicolegal Importance",8,5,"Fitness to Plead, Diminished Responsibility"],
-  [7,"Fitness to Plead, Diminished Responsibility - Pathological Findings",8,5,"Fitness to Plead, Diminished Responsibility"],
-  [7,"Fitness to Plead, Diminished Responsibility - Toxicological Aspects",8,5,"Fitness to Plead, Diminished Responsibility"],
-  [7,"Fitness to Plead, Diminished Responsibility - Legal Sections & Acts",8,5,"Fitness to Plead, Diminished Responsibility"],
-  [7,"Testamentary Capacity",8,6,"Fitness to Plead, Diminished Responsibility & Testamentary Capacity"],
-  [7,"Testamentary Capacity - Medicolegal Importance",8,5,"Testamentary Capacity"],
-  [7,"Testamentary Capacity - Pathological Findings",8,5,"Testamentary Capacity"],
-  [7,"Testamentary Capacity - Toxicological Aspects",8,5,"Testamentary Capacity"],
-  [7,"Testamentary Capacity - Legal Sections & Acts",8,5,"Testamentary Capacity"]
+  [7, "Forensic Thanatology", 10, 50],
+  [7, "Signs of Death", 10, 40, "Forensic Thanatology"],
+  [7, "Early Signs of Death — Pallor, Algor, Livor & Primary Flaccidity", 10, 15, "Signs of Death"],
+  [
+    7,
+    "Early Signs of Death — Pallor, Algor, Livor",
+    10,
+    7,
+    "Early Signs of Death — Pallor, Algor, Livor & Primary Flaccidity"
+  ],
+  [
+    7,
+    "Early Signs of Death — Pallor, Algor, Livor - Medicolegal Importance",
+    10,
+    5,
+    "Early Signs of Death — Pallor, Algor, Livor"
+  ],
+  [
+    7,
+    "Early Signs of Death — Pallor, Algor, Livor - Pathological Findings",
+    10,
+    5,
+    "Early Signs of Death — Pallor, Algor, Livor"
+  ],
+  [
+    7,
+    "Early Signs of Death — Pallor, Algor, Livor - Toxicological Aspects",
+    10,
+    5,
+    "Early Signs of Death — Pallor, Algor, Livor"
+  ],
+  [
+    7,
+    "Early Signs of Death — Pallor, Algor, Livor - Legal Sections & Acts",
+    10,
+    5,
+    "Early Signs of Death — Pallor, Algor, Livor"
+  ],
+  [
+    7,
+    "Early Signs of Death — Primary Flaccidity",
+    10,
+    8,
+    "Early Signs of Death — Pallor, Algor, Livor & Primary Flaccidity"
+  ],
+  [
+    7,
+    "Early Signs of Death — Primary Flaccidity - Medicolegal Importance",
+    10,
+    5,
+    "Early Signs of Death — Primary Flaccidity"
+  ],
+  [
+    7,
+    "Early Signs of Death — Primary Flaccidity - Pathological Findings",
+    10,
+    5,
+    "Early Signs of Death — Primary Flaccidity"
+  ],
+  [
+    7,
+    "Early Signs of Death — Primary Flaccidity - Toxicological Aspects",
+    10,
+    5,
+    "Early Signs of Death — Primary Flaccidity"
+  ],
+  [
+    7,
+    "Early Signs of Death — Primary Flaccidity - Legal Sections & Acts",
+    10,
+    5,
+    "Early Signs of Death — Primary Flaccidity"
+  ],
+  [7, "Rigor Mortis — Mechanism, Sequence & Medico-legal Significance", 10, 15, "Signs of Death"],
+  [
+    7,
+    "Rigor Mortis — Mechanism, Sequence",
+    10,
+    7,
+    "Rigor Mortis — Mechanism, Sequence & Medico-legal Significance"
+  ],
+  [
+    7,
+    "Rigor Mortis — Mechanism, Sequence - Medicolegal Importance",
+    10,
+    5,
+    "Rigor Mortis — Mechanism, Sequence"
+  ],
+  [
+    7,
+    "Rigor Mortis — Mechanism, Sequence - Pathological Findings",
+    10,
+    5,
+    "Rigor Mortis — Mechanism, Sequence"
+  ],
+  [
+    7,
+    "Rigor Mortis — Mechanism, Sequence - Toxicological Aspects",
+    10,
+    5,
+    "Rigor Mortis — Mechanism, Sequence"
+  ],
+  [
+    7,
+    "Rigor Mortis — Mechanism, Sequence - Legal Sections & Acts",
+    10,
+    5,
+    "Rigor Mortis — Mechanism, Sequence"
+  ],
+  [
+    7,
+    "Rigor Mortis — Medico-legal Significance",
+    10,
+    8,
+    "Rigor Mortis — Mechanism, Sequence & Medico-legal Significance"
+  ],
+  [
+    7,
+    "Rigor Mortis — Medico-legal Significance - Medicolegal Importance",
+    10,
+    5,
+    "Rigor Mortis — Medico-legal Significance"
+  ],
+  [
+    7,
+    "Rigor Mortis — Medico-legal Significance - Pathological Findings",
+    10,
+    5,
+    "Rigor Mortis — Medico-legal Significance"
+  ],
+  [
+    7,
+    "Rigor Mortis — Medico-legal Significance - Toxicological Aspects",
+    10,
+    5,
+    "Rigor Mortis — Medico-legal Significance"
+  ],
+  [
+    7,
+    "Rigor Mortis — Medico-legal Significance - Legal Sections & Acts",
+    10,
+    5,
+    "Rigor Mortis — Medico-legal Significance"
+  ],
+  [7, "Putrefaction & Late Changes — Adipocere, Mummification", 10, 12, "Signs of Death"],
+  [
+    7,
+    "Putrefaction & Late Changes — Adipocere",
+    10,
+    6,
+    "Putrefaction & Late Changes — Adipocere, Mummification"
+  ],
+  [
+    7,
+    "Putrefaction & Late Changes — Adipocere - Medicolegal Importance",
+    10,
+    5,
+    "Putrefaction & Late Changes — Adipocere"
+  ],
+  [
+    7,
+    "Putrefaction & Late Changes — Adipocere - Pathological Findings",
+    10,
+    5,
+    "Putrefaction & Late Changes — Adipocere"
+  ],
+  [
+    7,
+    "Putrefaction & Late Changes — Adipocere - Toxicological Aspects",
+    10,
+    5,
+    "Putrefaction & Late Changes — Adipocere"
+  ],
+  [
+    7,
+    "Putrefaction & Late Changes — Adipocere - Legal Sections & Acts",
+    10,
+    5,
+    "Putrefaction & Late Changes — Adipocere"
+  ],
+  [
+    7,
+    "Putrefaction & Late Changes — Mummification",
+    10,
+    6,
+    "Putrefaction & Late Changes — Adipocere, Mummification"
+  ],
+  [
+    7,
+    "Putrefaction & Late Changes — Mummification - Medicolegal Importance",
+    10,
+    5,
+    "Putrefaction & Late Changes — Mummification"
+  ],
+  [
+    7,
+    "Putrefaction & Late Changes — Mummification - Pathological Findings",
+    10,
+    5,
+    "Putrefaction & Late Changes — Mummification"
+  ],
+  [
+    7,
+    "Putrefaction & Late Changes — Mummification - Toxicological Aspects",
+    10,
+    5,
+    "Putrefaction & Late Changes — Mummification"
+  ],
+  [
+    7,
+    "Putrefaction & Late Changes — Mummification - Legal Sections & Acts",
+    10,
+    5,
+    "Putrefaction & Late Changes — Mummification"
+  ],
+  [7, "Medico-legal Autopsy", 10, 45, "Forensic Thanatology"],
+  [7, "Types of Autopsy — Medico-legal vs Clinical; Inquest", 10, 15, "Medico-legal Autopsy"],
+  [7, "Types of Autopsy — Basics", 10, 7, "Types of Autopsy — Medico-legal vs Clinical; Inquest"],
+  [7, "Types of Autopsy — Basics - Medicolegal Importance", 10, 5, "Types of Autopsy — Basics"],
+  [7, "Types of Autopsy — Basics - Pathological Findings", 10, 5, "Types of Autopsy — Basics"],
+  [7, "Types of Autopsy — Basics - Toxicological Aspects", 10, 5, "Types of Autopsy — Basics"],
+  [7, "Types of Autopsy — Basics - Legal Sections & Acts", 10, 5, "Types of Autopsy — Basics"],
+  [7, "Types of Autopsy — Details", 10, 8, "Types of Autopsy — Medico-legal vs Clinical; Inquest"],
+  [7, "Types of Autopsy — Details - Medicolegal Importance", 10, 5, "Types of Autopsy — Details"],
+  [7, "Types of Autopsy — Details - Pathological Findings", 10, 5, "Types of Autopsy — Details"],
+  [7, "Types of Autopsy — Details - Toxicological Aspects", 10, 5, "Types of Autopsy — Details"],
+  [7, "Types of Autopsy — Details - Legal Sections & Acts", 10, 5, "Types of Autopsy — Details"],
+  [7, "Post-mortem Artifacts & Estimation of Time of Death", 10, 15, "Medico-legal Autopsy"],
+  [7, "Post-mortem Artifacts", 10, 7, "Post-mortem Artifacts & Estimation of Time of Death"],
+  [7, "Post-mortem Artifacts - Medicolegal Importance", 10, 5, "Post-mortem Artifacts"],
+  [7, "Post-mortem Artifacts - Pathological Findings", 10, 5, "Post-mortem Artifacts"],
+  [7, "Post-mortem Artifacts - Toxicological Aspects", 10, 5, "Post-mortem Artifacts"],
+  [7, "Post-mortem Artifacts - Legal Sections & Acts", 10, 5, "Post-mortem Artifacts"],
+  [7, "Estimation of Time of Death", 10, 8, "Post-mortem Artifacts & Estimation of Time of Death"],
+  [7, "Estimation of Time of Death - Medicolegal Importance", 10, 5, "Estimation of Time of Death"],
+  [7, "Estimation of Time of Death - Pathological Findings", 10, 5, "Estimation of Time of Death"],
+  [7, "Estimation of Time of Death - Toxicological Aspects", 10, 5, "Estimation of Time of Death"],
+  [7, "Estimation of Time of Death - Legal Sections & Acts", 10, 5, "Estimation of Time of Death"],
+  [7, "Forensic Traumatology", 10, 60],
+  [7, "Mechanical Injuries", 10, 50, "Forensic Traumatology"],
+  [7, "Blunt Force Injuries — Abrasion, Contusion & Laceration", 10, 15, "Mechanical Injuries"],
+  [
+    7,
+    "Blunt Force Injuries — Abrasion, Contusion",
+    10,
+    7,
+    "Blunt Force Injuries — Abrasion, Contusion & Laceration"
+  ],
+  [
+    7,
+    "Blunt Force Injuries — Abrasion, Contusion - Medicolegal Importance",
+    10,
+    5,
+    "Blunt Force Injuries — Abrasion, Contusion"
+  ],
+  [
+    7,
+    "Blunt Force Injuries — Abrasion, Contusion - Pathological Findings",
+    10,
+    5,
+    "Blunt Force Injuries — Abrasion, Contusion"
+  ],
+  [
+    7,
+    "Blunt Force Injuries — Abrasion, Contusion - Toxicological Aspects",
+    10,
+    5,
+    "Blunt Force Injuries — Abrasion, Contusion"
+  ],
+  [
+    7,
+    "Blunt Force Injuries — Abrasion, Contusion - Legal Sections & Acts",
+    10,
+    5,
+    "Blunt Force Injuries — Abrasion, Contusion"
+  ],
+  [
+    7,
+    "Blunt Force Injuries — Laceration",
+    10,
+    8,
+    "Blunt Force Injuries — Abrasion, Contusion & Laceration"
+  ],
+  [
+    7,
+    "Blunt Force Injuries — Laceration - Medicolegal Importance",
+    10,
+    5,
+    "Blunt Force Injuries — Laceration"
+  ],
+  [
+    7,
+    "Blunt Force Injuries — Laceration - Pathological Findings",
+    10,
+    5,
+    "Blunt Force Injuries — Laceration"
+  ],
+  [
+    7,
+    "Blunt Force Injuries — Laceration - Toxicological Aspects",
+    10,
+    5,
+    "Blunt Force Injuries — Laceration"
+  ],
+  [
+    7,
+    "Blunt Force Injuries — Laceration - Legal Sections & Acts",
+    10,
+    5,
+    "Blunt Force Injuries — Laceration"
+  ],
+  [7, "Sharp Force Injuries — Incised, Stab & Chop Wounds", 10, 15, "Mechanical Injuries"],
+  [
+    7,
+    "Sharp Force Injuries — Incised, Stab",
+    10,
+    7,
+    "Sharp Force Injuries — Incised, Stab & Chop Wounds"
+  ],
+  [
+    7,
+    "Sharp Force Injuries — Incised, Stab - Medicolegal Importance",
+    10,
+    5,
+    "Sharp Force Injuries — Incised, Stab"
+  ],
+  [
+    7,
+    "Sharp Force Injuries — Incised, Stab - Pathological Findings",
+    10,
+    5,
+    "Sharp Force Injuries — Incised, Stab"
+  ],
+  [
+    7,
+    "Sharp Force Injuries — Incised, Stab - Toxicological Aspects",
+    10,
+    5,
+    "Sharp Force Injuries — Incised, Stab"
+  ],
+  [
+    7,
+    "Sharp Force Injuries — Incised, Stab - Legal Sections & Acts",
+    10,
+    5,
+    "Sharp Force Injuries — Incised, Stab"
+  ],
+  [
+    7,
+    "Sharp Force Injuries — Chop Wounds",
+    10,
+    8,
+    "Sharp Force Injuries — Incised, Stab & Chop Wounds"
+  ],
+  [
+    7,
+    "Sharp Force Injuries — Chop Wounds - Medicolegal Importance",
+    10,
+    5,
+    "Sharp Force Injuries — Chop Wounds"
+  ],
+  [
+    7,
+    "Sharp Force Injuries — Chop Wounds - Pathological Findings",
+    10,
+    5,
+    "Sharp Force Injuries — Chop Wounds"
+  ],
+  [
+    7,
+    "Sharp Force Injuries — Chop Wounds - Toxicological Aspects",
+    10,
+    5,
+    "Sharp Force Injuries — Chop Wounds"
+  ],
+  [
+    7,
+    "Sharp Force Injuries — Chop Wounds - Legal Sections & Acts",
+    10,
+    5,
+    "Sharp Force Injuries — Chop Wounds"
+  ],
+  [
+    7,
+    "Firearm Injuries — Entry vs Exit Wound, Blackening & Tattooing",
+    10,
+    18,
+    "Mechanical Injuries"
+  ],
+  [
+    7,
+    "Firearm Injuries — Entry vs Exit Wound, Blackening",
+    10,
+    9,
+    "Firearm Injuries — Entry vs Exit Wound, Blackening & Tattooing"
+  ],
+  [
+    7,
+    "Firearm Injuries — Entry vs Exit Wound, Blackening - Medicolegal Importance",
+    10,
+    5,
+    "Firearm Injuries — Entry vs Exit Wound, Blackening"
+  ],
+  [
+    7,
+    "Firearm Injuries — Entry vs Exit Wound, Blackening - Pathological Findings",
+    10,
+    5,
+    "Firearm Injuries — Entry vs Exit Wound, Blackening"
+  ],
+  [
+    7,
+    "Firearm Injuries — Entry vs Exit Wound, Blackening - Toxicological Aspects",
+    10,
+    5,
+    "Firearm Injuries — Entry vs Exit Wound, Blackening"
+  ],
+  [
+    7,
+    "Firearm Injuries — Entry vs Exit Wound, Blackening - Legal Sections & Acts",
+    10,
+    5,
+    "Firearm Injuries — Entry vs Exit Wound, Blackening"
+  ],
+  [
+    7,
+    "Firearm Injuries — Tattooing",
+    10,
+    9,
+    "Firearm Injuries — Entry vs Exit Wound, Blackening & Tattooing"
+  ],
+  [
+    7,
+    "Firearm Injuries — Tattooing - Medicolegal Importance",
+    10,
+    5,
+    "Firearm Injuries — Tattooing"
+  ],
+  [
+    7,
+    "Firearm Injuries — Tattooing - Pathological Findings",
+    10,
+    5,
+    "Firearm Injuries — Tattooing"
+  ],
+  [
+    7,
+    "Firearm Injuries — Tattooing - Toxicological Aspects",
+    10,
+    5,
+    "Firearm Injuries — Tattooing"
+  ],
+  [
+    7,
+    "Firearm Injuries — Tattooing - Legal Sections & Acts",
+    10,
+    5,
+    "Firearm Injuries — Tattooing"
+  ],
+  [7, "Asphyxia Deaths", 10, 50, "Forensic Traumatology"],
+  [7, "Asphyxia — Types: Hanging, Strangulation, Smothering & Drowning", 10, 18, "Asphyxia Deaths"],
+  [
+    7,
+    "Asphyxia — Types: Hanging, Strangulation, Smothering",
+    10,
+    9,
+    "Asphyxia — Types: Hanging, Strangulation, Smothering & Drowning"
+  ],
+  [
+    7,
+    "Asphyxia — Types: Hanging, Strangulation, Smothering - Medicolegal Importance",
+    10,
+    5,
+    "Asphyxia — Types: Hanging, Strangulation, Smothering"
+  ],
+  [
+    7,
+    "Asphyxia — Types: Hanging, Strangulation, Smothering - Pathological Findings",
+    10,
+    5,
+    "Asphyxia — Types: Hanging, Strangulation, Smothering"
+  ],
+  [
+    7,
+    "Asphyxia — Types: Hanging, Strangulation, Smothering - Toxicological Aspects",
+    10,
+    5,
+    "Asphyxia — Types: Hanging, Strangulation, Smothering"
+  ],
+  [
+    7,
+    "Asphyxia — Types: Hanging, Strangulation, Smothering - Legal Sections & Acts",
+    10,
+    5,
+    "Asphyxia — Types: Hanging, Strangulation, Smothering"
+  ],
+  [
+    7,
+    "Asphyxia — Drowning",
+    10,
+    9,
+    "Asphyxia — Types: Hanging, Strangulation, Smothering & Drowning"
+  ],
+  [7, "Asphyxia — Drowning - Medicolegal Importance", 10, 5, "Asphyxia — Drowning"],
+  [7, "Asphyxia — Drowning - Pathological Findings", 10, 5, "Asphyxia — Drowning"],
+  [7, "Asphyxia — Drowning - Toxicological Aspects", 10, 5, "Asphyxia — Drowning"],
+  [7, "Asphyxia — Drowning - Legal Sections & Acts", 10, 5, "Asphyxia — Drowning"],
+  [7, "Hanging — Ligature Mark, Judicial vs Suicidal & PM Findings", 10, 15, "Asphyxia Deaths"],
+  [
+    7,
+    "Hanging — Ligature Mark, Judicial vs Suicidal",
+    10,
+    7,
+    "Hanging — Ligature Mark, Judicial vs Suicidal & PM Findings"
+  ],
+  [
+    7,
+    "Hanging — Ligature Mark, Judicial vs Suicidal - Medicolegal Importance",
+    10,
+    5,
+    "Hanging — Ligature Mark, Judicial vs Suicidal"
+  ],
+  [
+    7,
+    "Hanging — Ligature Mark, Judicial vs Suicidal - Pathological Findings",
+    10,
+    5,
+    "Hanging — Ligature Mark, Judicial vs Suicidal"
+  ],
+  [
+    7,
+    "Hanging — Ligature Mark, Judicial vs Suicidal - Toxicological Aspects",
+    10,
+    5,
+    "Hanging — Ligature Mark, Judicial vs Suicidal"
+  ],
+  [
+    7,
+    "Hanging — Ligature Mark, Judicial vs Suicidal - Legal Sections & Acts",
+    10,
+    5,
+    "Hanging — Ligature Mark, Judicial vs Suicidal"
+  ],
+  [
+    7,
+    "Hanging — PM Findings",
+    10,
+    8,
+    "Hanging — Ligature Mark, Judicial vs Suicidal & PM Findings"
+  ],
+  [7, "Hanging — PM Findings - Medicolegal Importance", 10, 5, "Hanging — PM Findings"],
+  [7, "Hanging — PM Findings - Pathological Findings", 10, 5, "Hanging — PM Findings"],
+  [7, "Hanging — PM Findings - Toxicological Aspects", 10, 5, "Hanging — PM Findings"],
+  [7, "Hanging — PM Findings - Legal Sections & Acts", 10, 5, "Hanging — PM Findings"],
+  [7, "Drowning — Freshwater vs Saltwater, Diatoms & Gettler's Test", 10, 12, "Asphyxia Deaths"],
+  [
+    7,
+    "Drowning — Freshwater vs Saltwater, Diatoms",
+    10,
+    6,
+    "Drowning — Freshwater vs Saltwater, Diatoms & Gettler's Test"
+  ],
+  [
+    7,
+    "Drowning — Freshwater vs Saltwater, Diatoms - Medicolegal Importance",
+    10,
+    5,
+    "Drowning — Freshwater vs Saltwater, Diatoms"
+  ],
+  [
+    7,
+    "Drowning — Freshwater vs Saltwater, Diatoms - Pathological Findings",
+    10,
+    5,
+    "Drowning — Freshwater vs Saltwater, Diatoms"
+  ],
+  [
+    7,
+    "Drowning — Freshwater vs Saltwater, Diatoms - Toxicological Aspects",
+    10,
+    5,
+    "Drowning — Freshwater vs Saltwater, Diatoms"
+  ],
+  [
+    7,
+    "Drowning — Freshwater vs Saltwater, Diatoms - Legal Sections & Acts",
+    10,
+    5,
+    "Drowning — Freshwater vs Saltwater, Diatoms"
+  ],
+  [
+    7,
+    "Drowning — Gettler's Test",
+    10,
+    6,
+    "Drowning — Freshwater vs Saltwater, Diatoms & Gettler's Test"
+  ],
+  [7, "Drowning — Gettler's Test - Medicolegal Importance", 10, 5, "Drowning — Gettler's Test"],
+  [7, "Drowning — Gettler's Test - Pathological Findings", 10, 5, "Drowning — Gettler's Test"],
+  [7, "Drowning — Gettler's Test - Toxicological Aspects", 10, 5, "Drowning — Gettler's Test"],
+  [7, "Drowning — Gettler's Test - Legal Sections & Acts", 10, 5, "Drowning — Gettler's Test"],
+  [7, "Thermal & Electrical Injuries", 9, 35, "Forensic Traumatology"],
+  [
+    7,
+    "Burns — Degrees, Joule Burns, Flash Burns & Crocodile Skin",
+    9,
+    15,
+    "Thermal & Electrical Injuries"
+  ],
+  [
+    7,
+    "Burns — Degrees, Joule Burns, Flash Burns",
+    9,
+    7,
+    "Burns — Degrees, Joule Burns, Flash Burns & Crocodile Skin"
+  ],
+  [
+    7,
+    "Burns — Degrees, Joule Burns, Flash Burns - Medicolegal Importance",
+    9,
+    5,
+    "Burns — Degrees, Joule Burns, Flash Burns"
+  ],
+  [
+    7,
+    "Burns — Degrees, Joule Burns, Flash Burns - Pathological Findings",
+    9,
+    5,
+    "Burns — Degrees, Joule Burns, Flash Burns"
+  ],
+  [
+    7,
+    "Burns — Degrees, Joule Burns, Flash Burns - Toxicological Aspects",
+    9,
+    5,
+    "Burns — Degrees, Joule Burns, Flash Burns"
+  ],
+  [
+    7,
+    "Burns — Degrees, Joule Burns, Flash Burns - Legal Sections & Acts",
+    9,
+    5,
+    "Burns — Degrees, Joule Burns, Flash Burns"
+  ],
+  [7, "Burns — Crocodile Skin", 9, 8, "Burns — Degrees, Joule Burns, Flash Burns & Crocodile Skin"],
+  [7, "Burns — Crocodile Skin - Medicolegal Importance", 9, 5, "Burns — Crocodile Skin"],
+  [7, "Burns — Crocodile Skin - Pathological Findings", 9, 5, "Burns — Crocodile Skin"],
+  [7, "Burns — Crocodile Skin - Toxicological Aspects", 9, 5, "Burns — Crocodile Skin"],
+  [7, "Burns — Crocodile Skin - Legal Sections & Acts", 9, 5, "Burns — Crocodile Skin"],
+  [
+    7,
+    "Lightning & Electrical Injuries — Filigree/Arborescent Marking",
+    9,
+    12,
+    "Thermal & Electrical Injuries"
+  ],
+  [
+    7,
+    "Lightning & Electrical Injuries — Basics",
+    9,
+    6,
+    "Lightning & Electrical Injuries — Filigree/Arborescent Marking"
+  ],
+  [
+    7,
+    "Lightning & Electrical Injuries — Basics - Medicolegal Importance",
+    9,
+    5,
+    "Lightning & Electrical Injuries — Basics"
+  ],
+  [
+    7,
+    "Lightning & Electrical Injuries — Basics - Pathological Findings",
+    9,
+    5,
+    "Lightning & Electrical Injuries — Basics"
+  ],
+  [
+    7,
+    "Lightning & Electrical Injuries — Basics - Toxicological Aspects",
+    9,
+    5,
+    "Lightning & Electrical Injuries — Basics"
+  ],
+  [
+    7,
+    "Lightning & Electrical Injuries — Basics - Legal Sections & Acts",
+    9,
+    5,
+    "Lightning & Electrical Injuries — Basics"
+  ],
+  [
+    7,
+    "Lightning & Electrical Injuries — Details",
+    9,
+    6,
+    "Lightning & Electrical Injuries — Filigree/Arborescent Marking"
+  ],
+  [
+    7,
+    "Lightning & Electrical Injuries — Details - Medicolegal Importance",
+    9,
+    5,
+    "Lightning & Electrical Injuries — Details"
+  ],
+  [
+    7,
+    "Lightning & Electrical Injuries — Details - Pathological Findings",
+    9,
+    5,
+    "Lightning & Electrical Injuries — Details"
+  ],
+  [
+    7,
+    "Lightning & Electrical Injuries — Details - Toxicological Aspects",
+    9,
+    5,
+    "Lightning & Electrical Injuries — Details"
+  ],
+  [
+    7,
+    "Lightning & Electrical Injuries — Details - Legal Sections & Acts",
+    9,
+    5,
+    "Lightning & Electrical Injuries — Details"
+  ],
+  [7, "Forensic Toxicology", 10, 60],
+  [7, "General Toxicology", 9, 40, "Forensic Toxicology"],
+  [
+    7,
+    "Toxicology Principles — LD50, Routes & Medicolegal Poisons Classification",
+    9,
+    15,
+    "General Toxicology"
+  ],
+  [
+    7,
+    "Toxicology Principles — LD50, Routes",
+    9,
+    7,
+    "Toxicology Principles — LD50, Routes & Medicolegal Poisons Classification"
+  ],
+  [
+    7,
+    "Toxicology Principles — LD50, Routes - Medicolegal Importance",
+    9,
+    5,
+    "Toxicology Principles — LD50, Routes"
+  ],
+  [
+    7,
+    "Toxicology Principles — LD50, Routes - Pathological Findings",
+    9,
+    5,
+    "Toxicology Principles — LD50, Routes"
+  ],
+  [
+    7,
+    "Toxicology Principles — LD50, Routes - Toxicological Aspects",
+    9,
+    5,
+    "Toxicology Principles — LD50, Routes"
+  ],
+  [
+    7,
+    "Toxicology Principles — LD50, Routes - Legal Sections & Acts",
+    9,
+    5,
+    "Toxicology Principles — LD50, Routes"
+  ],
+  [
+    7,
+    "Toxicology Principles — Medicolegal Poisons Classification",
+    9,
+    8,
+    "Toxicology Principles — LD50, Routes & Medicolegal Poisons Classification"
+  ],
+  [
+    7,
+    "Toxicology Principles — Medicolegal Poisons Classification - Medicolegal Importance",
+    9,
+    5,
+    "Toxicology Principles — Medicolegal Poisons Classification"
+  ],
+  [
+    7,
+    "Toxicology Principles — Medicolegal Poisons Classification - Pathological Findings",
+    9,
+    5,
+    "Toxicology Principles — Medicolegal Poisons Classification"
+  ],
+  [
+    7,
+    "Toxicology Principles — Medicolegal Poisons Classification - Toxicological Aspects",
+    9,
+    5,
+    "Toxicology Principles — Medicolegal Poisons Classification"
+  ],
+  [
+    7,
+    "Toxicology Principles — Medicolegal Poisons Classification - Legal Sections & Acts",
+    9,
+    5,
+    "Toxicology Principles — Medicolegal Poisons Classification"
+  ],
+  [7, "Corrosive Poisons — Acids, Alkalis & Phenol: PM Findings", 9, 15, "General Toxicology"],
+  [
+    7,
+    "Corrosive Poisons — Acids, Alkalis",
+    9,
+    7,
+    "Corrosive Poisons — Acids, Alkalis & Phenol: PM Findings"
+  ],
+  [
+    7,
+    "Corrosive Poisons — Acids, Alkalis - Medicolegal Importance",
+    9,
+    5,
+    "Corrosive Poisons — Acids, Alkalis"
+  ],
+  [
+    7,
+    "Corrosive Poisons — Acids, Alkalis - Pathological Findings",
+    9,
+    5,
+    "Corrosive Poisons — Acids, Alkalis"
+  ],
+  [
+    7,
+    "Corrosive Poisons — Acids, Alkalis - Toxicological Aspects",
+    9,
+    5,
+    "Corrosive Poisons — Acids, Alkalis"
+  ],
+  [
+    7,
+    "Corrosive Poisons — Acids, Alkalis - Legal Sections & Acts",
+    9,
+    5,
+    "Corrosive Poisons — Acids, Alkalis"
+  ],
+  [
+    7,
+    "Corrosive Poisons — Phenol: PM Findings",
+    9,
+    8,
+    "Corrosive Poisons — Acids, Alkalis & Phenol: PM Findings"
+  ],
+  [
+    7,
+    "Corrosive Poisons — Phenol: PM Findings - Medicolegal Importance",
+    9,
+    5,
+    "Corrosive Poisons — Phenol: PM Findings"
+  ],
+  [
+    7,
+    "Corrosive Poisons — Phenol: PM Findings - Pathological Findings",
+    9,
+    5,
+    "Corrosive Poisons — Phenol: PM Findings"
+  ],
+  [
+    7,
+    "Corrosive Poisons — Phenol: PM Findings - Toxicological Aspects",
+    9,
+    5,
+    "Corrosive Poisons — Phenol: PM Findings"
+  ],
+  [
+    7,
+    "Corrosive Poisons — Phenol: PM Findings - Legal Sections & Acts",
+    9,
+    5,
+    "Corrosive Poisons — Phenol: PM Findings"
+  ],
+  [7, "Common Poisons", 10, 55, "Forensic Toxicology"],
+  [7, "Organophosphate Poisoning — SLUDGE, Atropine & PAM", 10, 18, "Common Poisons"],
+  [
+    7,
+    "Organophosphate Poisoning — SLUDGE, Atropine",
+    10,
+    9,
+    "Organophosphate Poisoning — SLUDGE, Atropine & PAM"
+  ],
+  [
+    7,
+    "Organophosphate Poisoning — SLUDGE, Atropine - Medicolegal Importance",
+    10,
+    5,
+    "Organophosphate Poisoning — SLUDGE, Atropine"
+  ],
+  [
+    7,
+    "Organophosphate Poisoning — SLUDGE, Atropine - Pathological Findings",
+    10,
+    5,
+    "Organophosphate Poisoning — SLUDGE, Atropine"
+  ],
+  [
+    7,
+    "Organophosphate Poisoning — SLUDGE, Atropine - Toxicological Aspects",
+    10,
+    5,
+    "Organophosphate Poisoning — SLUDGE, Atropine"
+  ],
+  [
+    7,
+    "Organophosphate Poisoning — SLUDGE, Atropine - Legal Sections & Acts",
+    10,
+    5,
+    "Organophosphate Poisoning — SLUDGE, Atropine"
+  ],
+  [
+    7,
+    "Organophosphate Poisoning — PAM",
+    10,
+    9,
+    "Organophosphate Poisoning — SLUDGE, Atropine & PAM"
+  ],
+  [
+    7,
+    "Organophosphate Poisoning — PAM - Medicolegal Importance",
+    10,
+    5,
+    "Organophosphate Poisoning — PAM"
+  ],
+  [
+    7,
+    "Organophosphate Poisoning — PAM - Pathological Findings",
+    10,
+    5,
+    "Organophosphate Poisoning — PAM"
+  ],
+  [
+    7,
+    "Organophosphate Poisoning — PAM - Toxicological Aspects",
+    10,
+    5,
+    "Organophosphate Poisoning — PAM"
+  ],
+  [
+    7,
+    "Organophosphate Poisoning — PAM - Legal Sections & Acts",
+    10,
+    5,
+    "Organophosphate Poisoning — PAM"
+  ],
+  [7, "Alcohol Poisoning — Acute, Chronic & Blood Alcohol Levels", 10, 15, "Common Poisons"],
+  [
+    7,
+    "Alcohol Poisoning — Acute, Chronic",
+    10,
+    7,
+    "Alcohol Poisoning — Acute, Chronic & Blood Alcohol Levels"
+  ],
+  [
+    7,
+    "Alcohol Poisoning — Acute, Chronic - Medicolegal Importance",
+    10,
+    5,
+    "Alcohol Poisoning — Acute, Chronic"
+  ],
+  [
+    7,
+    "Alcohol Poisoning — Acute, Chronic - Pathological Findings",
+    10,
+    5,
+    "Alcohol Poisoning — Acute, Chronic"
+  ],
+  [
+    7,
+    "Alcohol Poisoning — Acute, Chronic - Toxicological Aspects",
+    10,
+    5,
+    "Alcohol Poisoning — Acute, Chronic"
+  ],
+  [
+    7,
+    "Alcohol Poisoning — Acute, Chronic - Legal Sections & Acts",
+    10,
+    5,
+    "Alcohol Poisoning — Acute, Chronic"
+  ],
+  [
+    7,
+    "Alcohol Poisoning — Blood Alcohol Levels",
+    10,
+    8,
+    "Alcohol Poisoning — Acute, Chronic & Blood Alcohol Levels"
+  ],
+  [
+    7,
+    "Alcohol Poisoning — Blood Alcohol Levels - Medicolegal Importance",
+    10,
+    5,
+    "Alcohol Poisoning — Blood Alcohol Levels"
+  ],
+  [
+    7,
+    "Alcohol Poisoning — Blood Alcohol Levels - Pathological Findings",
+    10,
+    5,
+    "Alcohol Poisoning — Blood Alcohol Levels"
+  ],
+  [
+    7,
+    "Alcohol Poisoning — Blood Alcohol Levels - Toxicological Aspects",
+    10,
+    5,
+    "Alcohol Poisoning — Blood Alcohol Levels"
+  ],
+  [
+    7,
+    "Alcohol Poisoning — Blood Alcohol Levels - Legal Sections & Acts",
+    10,
+    5,
+    "Alcohol Poisoning — Blood Alcohol Levels"
+  ],
+  [7, "CO & CN Poisoning — Cherry-red Skin & Antidotes", 10, 12, "Common Poisons"],
+  [
+    7,
+    "CO & CN Poisoning — Cherry-red Skin",
+    10,
+    6,
+    "CO & CN Poisoning — Cherry-red Skin & Antidotes"
+  ],
+  [
+    7,
+    "CO & CN Poisoning — Cherry-red Skin - Medicolegal Importance",
+    10,
+    5,
+    "CO & CN Poisoning — Cherry-red Skin"
+  ],
+  [
+    7,
+    "CO & CN Poisoning — Cherry-red Skin - Pathological Findings",
+    10,
+    5,
+    "CO & CN Poisoning — Cherry-red Skin"
+  ],
+  [
+    7,
+    "CO & CN Poisoning — Cherry-red Skin - Toxicological Aspects",
+    10,
+    5,
+    "CO & CN Poisoning — Cherry-red Skin"
+  ],
+  [
+    7,
+    "CO & CN Poisoning — Cherry-red Skin - Legal Sections & Acts",
+    10,
+    5,
+    "CO & CN Poisoning — Cherry-red Skin"
+  ],
+  [7, "CO & CN Poisoning — Antidotes", 10, 6, "CO & CN Poisoning — Cherry-red Skin & Antidotes"],
+  [
+    7,
+    "CO & CN Poisoning — Antidotes - Medicolegal Importance",
+    10,
+    5,
+    "CO & CN Poisoning — Antidotes"
+  ],
+  [
+    7,
+    "CO & CN Poisoning — Antidotes - Pathological Findings",
+    10,
+    5,
+    "CO & CN Poisoning — Antidotes"
+  ],
+  [
+    7,
+    "CO & CN Poisoning — Antidotes - Toxicological Aspects",
+    10,
+    5,
+    "CO & CN Poisoning — Antidotes"
+  ],
+  [
+    7,
+    "CO & CN Poisoning — Antidotes - Legal Sections & Acts",
+    10,
+    5,
+    "CO & CN Poisoning — Antidotes"
+  ],
+  [7, "Opium & Barbiturate Poisoning — Pin-point Pupils & Antidote", 10, 12, "Common Poisons"],
+  [
+    7,
+    "Opium & Barbiturate Poisoning — Pin-point Pupils",
+    10,
+    6,
+    "Opium & Barbiturate Poisoning — Pin-point Pupils & Antidote"
+  ],
+  [
+    7,
+    "Opium & Barbiturate Poisoning — Pin-point Pupils - Medicolegal Importance",
+    10,
+    5,
+    "Opium & Barbiturate Poisoning — Pin-point Pupils"
+  ],
+  [
+    7,
+    "Opium & Barbiturate Poisoning — Pin-point Pupils - Pathological Findings",
+    10,
+    5,
+    "Opium & Barbiturate Poisoning — Pin-point Pupils"
+  ],
+  [
+    7,
+    "Opium & Barbiturate Poisoning — Pin-point Pupils - Toxicological Aspects",
+    10,
+    5,
+    "Opium & Barbiturate Poisoning — Pin-point Pupils"
+  ],
+  [
+    7,
+    "Opium & Barbiturate Poisoning — Pin-point Pupils - Legal Sections & Acts",
+    10,
+    5,
+    "Opium & Barbiturate Poisoning — Pin-point Pupils"
+  ],
+  [
+    7,
+    "Opium & Barbiturate Poisoning — Antidote",
+    10,
+    6,
+    "Opium & Barbiturate Poisoning — Pin-point Pupils & Antidote"
+  ],
+  [
+    7,
+    "Opium & Barbiturate Poisoning — Antidote - Medicolegal Importance",
+    10,
+    5,
+    "Opium & Barbiturate Poisoning — Antidote"
+  ],
+  [
+    7,
+    "Opium & Barbiturate Poisoning — Antidote - Pathological Findings",
+    10,
+    5,
+    "Opium & Barbiturate Poisoning — Antidote"
+  ],
+  [
+    7,
+    "Opium & Barbiturate Poisoning — Antidote - Toxicological Aspects",
+    10,
+    5,
+    "Opium & Barbiturate Poisoning — Antidote"
+  ],
+  [
+    7,
+    "Opium & Barbiturate Poisoning — Antidote - Legal Sections & Acts",
+    10,
+    5,
+    "Opium & Barbiturate Poisoning — Antidote"
+  ],
+  [7, "Snake & Food Poisoning", 9, 35, "Forensic Toxicology"],
+  [
+    7,
+    "Venomous Snakes — Neurotoxic vs Haemotoxic & Antisnake Venom",
+    9,
+    15,
+    "Snake & Food Poisoning"
+  ],
+  [
+    7,
+    "Venomous Snakes — Neurotoxic vs Haemotoxic",
+    9,
+    7,
+    "Venomous Snakes — Neurotoxic vs Haemotoxic & Antisnake Venom"
+  ],
+  [
+    7,
+    "Venomous Snakes — Neurotoxic vs Haemotoxic - Medicolegal Importance",
+    9,
+    5,
+    "Venomous Snakes — Neurotoxic vs Haemotoxic"
+  ],
+  [
+    7,
+    "Venomous Snakes — Neurotoxic vs Haemotoxic - Pathological Findings",
+    9,
+    5,
+    "Venomous Snakes — Neurotoxic vs Haemotoxic"
+  ],
+  [
+    7,
+    "Venomous Snakes — Neurotoxic vs Haemotoxic - Toxicological Aspects",
+    9,
+    5,
+    "Venomous Snakes — Neurotoxic vs Haemotoxic"
+  ],
+  [
+    7,
+    "Venomous Snakes — Neurotoxic vs Haemotoxic - Legal Sections & Acts",
+    9,
+    5,
+    "Venomous Snakes — Neurotoxic vs Haemotoxic"
+  ],
+  [
+    7,
+    "Venomous Snakes — Antisnake Venom",
+    9,
+    8,
+    "Venomous Snakes — Neurotoxic vs Haemotoxic & Antisnake Venom"
+  ],
+  [
+    7,
+    "Venomous Snakes — Antisnake Venom - Medicolegal Importance",
+    9,
+    5,
+    "Venomous Snakes — Antisnake Venom"
+  ],
+  [
+    7,
+    "Venomous Snakes — Antisnake Venom - Pathological Findings",
+    9,
+    5,
+    "Venomous Snakes — Antisnake Venom"
+  ],
+  [
+    7,
+    "Venomous Snakes — Antisnake Venom - Toxicological Aspects",
+    9,
+    5,
+    "Venomous Snakes — Antisnake Venom"
+  ],
+  [
+    7,
+    "Venomous Snakes — Antisnake Venom - Legal Sections & Acts",
+    9,
+    5,
+    "Venomous Snakes — Antisnake Venom"
+  ],
+  [
+    7,
+    "Food Poisoning — Botulism, Staphylococcal & Mushroom Poisoning",
+    9,
+    15,
+    "Snake & Food Poisoning"
+  ],
+  [
+    7,
+    "Food Poisoning — Botulism, Staphylococcal",
+    9,
+    7,
+    "Food Poisoning — Botulism, Staphylococcal & Mushroom Poisoning"
+  ],
+  [
+    7,
+    "Food Poisoning — Botulism, Staphylococcal - Medicolegal Importance",
+    9,
+    5,
+    "Food Poisoning — Botulism, Staphylococcal"
+  ],
+  [
+    7,
+    "Food Poisoning — Botulism, Staphylococcal - Pathological Findings",
+    9,
+    5,
+    "Food Poisoning — Botulism, Staphylococcal"
+  ],
+  [
+    7,
+    "Food Poisoning — Botulism, Staphylococcal - Toxicological Aspects",
+    9,
+    5,
+    "Food Poisoning — Botulism, Staphylococcal"
+  ],
+  [
+    7,
+    "Food Poisoning — Botulism, Staphylococcal - Legal Sections & Acts",
+    9,
+    5,
+    "Food Poisoning — Botulism, Staphylococcal"
+  ],
+  [
+    7,
+    "Food Poisoning — Mushroom Poisoning",
+    9,
+    8,
+    "Food Poisoning — Botulism, Staphylococcal & Mushroom Poisoning"
+  ],
+  [
+    7,
+    "Food Poisoning — Mushroom Poisoning - Medicolegal Importance",
+    9,
+    5,
+    "Food Poisoning — Mushroom Poisoning"
+  ],
+  [
+    7,
+    "Food Poisoning — Mushroom Poisoning - Pathological Findings",
+    9,
+    5,
+    "Food Poisoning — Mushroom Poisoning"
+  ],
+  [
+    7,
+    "Food Poisoning — Mushroom Poisoning - Toxicological Aspects",
+    9,
+    5,
+    "Food Poisoning — Mushroom Poisoning"
+  ],
+  [
+    7,
+    "Food Poisoning — Mushroom Poisoning - Legal Sections & Acts",
+    9,
+    5,
+    "Food Poisoning — Mushroom Poisoning"
+  ],
+  [7, "Forensic Medicine (Clinical & Legal)", 9, 50],
+  [7, "Sexual Offences & POCSO", 10, 45, "Forensic Medicine (Clinical & Legal)"],
+  [
+    7,
+    "Rape — Examination, Two-finger Test (Abolished) & Evidence Collection",
+    10,
+    18,
+    "Sexual Offences & POCSO"
+  ],
+  [
+    7,
+    "Rape — Examination, Two-finger Test (Abolished)",
+    10,
+    9,
+    "Rape — Examination, Two-finger Test (Abolished) & Evidence Collection"
+  ],
+  [
+    7,
+    "Rape — Examination, Two-finger Test (Abolished) - Medicolegal Importance",
+    10,
+    5,
+    "Rape — Examination, Two-finger Test (Abolished)"
+  ],
+  [
+    7,
+    "Rape — Examination, Two-finger Test (Abolished) - Pathological Findings",
+    10,
+    5,
+    "Rape — Examination, Two-finger Test (Abolished)"
+  ],
+  [
+    7,
+    "Rape — Examination, Two-finger Test (Abolished) - Toxicological Aspects",
+    10,
+    5,
+    "Rape — Examination, Two-finger Test (Abolished)"
+  ],
+  [
+    7,
+    "Rape — Examination, Two-finger Test (Abolished) - Legal Sections & Acts",
+    10,
+    5,
+    "Rape — Examination, Two-finger Test (Abolished)"
+  ],
+  [
+    7,
+    "Rape — Evidence Collection",
+    10,
+    9,
+    "Rape — Examination, Two-finger Test (Abolished) & Evidence Collection"
+  ],
+  [7, "Rape — Evidence Collection - Medicolegal Importance", 10, 5, "Rape — Evidence Collection"],
+  [7, "Rape — Evidence Collection - Pathological Findings", 10, 5, "Rape — Evidence Collection"],
+  [7, "Rape — Evidence Collection - Toxicological Aspects", 10, 5, "Rape — Evidence Collection"],
+  [7, "Rape — Evidence Collection - Legal Sections & Acts", 10, 5, "Rape — Evidence Collection"],
+  [
+    7,
+    "POCSO Act 2012 — Key Provisions, Mandatory Reporting & Penalties",
+    10,
+    15,
+    "Sexual Offences & POCSO"
+  ],
+  [
+    7,
+    "POCSO Act 2012 — Key Provisions, Mandatory Reporting",
+    10,
+    7,
+    "POCSO Act 2012 — Key Provisions, Mandatory Reporting & Penalties"
+  ],
+  [
+    7,
+    "POCSO Act 2012 — Key Provisions, Mandatory Reporting - Medicolegal Importance",
+    10,
+    5,
+    "POCSO Act 2012 — Key Provisions, Mandatory Reporting"
+  ],
+  [
+    7,
+    "POCSO Act 2012 — Key Provisions, Mandatory Reporting - Pathological Findings",
+    10,
+    5,
+    "POCSO Act 2012 — Key Provisions, Mandatory Reporting"
+  ],
+  [
+    7,
+    "POCSO Act 2012 — Key Provisions, Mandatory Reporting - Toxicological Aspects",
+    10,
+    5,
+    "POCSO Act 2012 — Key Provisions, Mandatory Reporting"
+  ],
+  [
+    7,
+    "POCSO Act 2012 — Key Provisions, Mandatory Reporting - Legal Sections & Acts",
+    10,
+    5,
+    "POCSO Act 2012 — Key Provisions, Mandatory Reporting"
+  ],
+  [
+    7,
+    "POCSO Act 2012 — Penalties",
+    10,
+    8,
+    "POCSO Act 2012 — Key Provisions, Mandatory Reporting & Penalties"
+  ],
+  [7, "POCSO Act 2012 — Penalties - Medicolegal Importance", 10, 5, "POCSO Act 2012 — Penalties"],
+  [7, "POCSO Act 2012 — Penalties - Pathological Findings", 10, 5, "POCSO Act 2012 — Penalties"],
+  [7, "POCSO Act 2012 — Penalties - Toxicological Aspects", 10, 5, "POCSO Act 2012 — Penalties"],
+  [7, "POCSO Act 2012 — Penalties - Legal Sections & Acts", 10, 5, "POCSO Act 2012 — Penalties"],
+  [7, "Medico-legal Aspects", 9, 40, "Forensic Medicine (Clinical & Legal)"],
+  [
+    7,
+    "MLC — Definition, Duties of Doctor, Consent & Dying Declaration",
+    9,
+    15,
+    "Medico-legal Aspects"
+  ],
+  [
+    7,
+    "MLC — Definition, Duties of Doctor, Consent",
+    9,
+    7,
+    "MLC — Definition, Duties of Doctor, Consent & Dying Declaration"
+  ],
+  [
+    7,
+    "MLC — Definition, Duties of Doctor, Consent - Medicolegal Importance",
+    9,
+    5,
+    "MLC — Definition, Duties of Doctor, Consent"
+  ],
+  [
+    7,
+    "MLC — Definition, Duties of Doctor, Consent - Pathological Findings",
+    9,
+    5,
+    "MLC — Definition, Duties of Doctor, Consent"
+  ],
+  [
+    7,
+    "MLC — Definition, Duties of Doctor, Consent - Toxicological Aspects",
+    9,
+    5,
+    "MLC — Definition, Duties of Doctor, Consent"
+  ],
+  [
+    7,
+    "MLC — Definition, Duties of Doctor, Consent - Legal Sections & Acts",
+    9,
+    5,
+    "MLC — Definition, Duties of Doctor, Consent"
+  ],
+  [
+    7,
+    "MLC — Dying Declaration",
+    9,
+    8,
+    "MLC — Definition, Duties of Doctor, Consent & Dying Declaration"
+  ],
+  [7, "MLC — Dying Declaration - Medicolegal Importance", 9, 5, "MLC — Dying Declaration"],
+  [7, "MLC — Dying Declaration - Pathological Findings", 9, 5, "MLC — Dying Declaration"],
+  [7, "MLC — Dying Declaration - Toxicological Aspects", 9, 5, "MLC — Dying Declaration"],
+  [7, "MLC — Dying Declaration - Legal Sections & Acts", 9, 5, "MLC — Dying Declaration"],
+  [7, "Medical Negligence & IPC Sections Relevant to Doctors", 9, 15, "Medico-legal Aspects"],
+  [7, "Medical Negligence", 9, 7, "Medical Negligence & IPC Sections Relevant to Doctors"],
+  [7, "Medical Negligence - Medicolegal Importance", 9, 5, "Medical Negligence"],
+  [7, "Medical Negligence - Pathological Findings", 9, 5, "Medical Negligence"],
+  [7, "Medical Negligence - Toxicological Aspects", 9, 5, "Medical Negligence"],
+  [7, "Medical Negligence - Legal Sections & Acts", 9, 5, "Medical Negligence"],
+  [
+    7,
+    "IPC Sections Relevant to Doctors",
+    9,
+    8,
+    "Medical Negligence & IPC Sections Relevant to Doctors"
+  ],
+  [
+    7,
+    "IPC Sections Relevant to Doctors - Medicolegal Importance",
+    9,
+    5,
+    "IPC Sections Relevant to Doctors"
+  ],
+  [
+    7,
+    "IPC Sections Relevant to Doctors - Pathological Findings",
+    9,
+    5,
+    "IPC Sections Relevant to Doctors"
+  ],
+  [
+    7,
+    "IPC Sections Relevant to Doctors - Toxicological Aspects",
+    9,
+    5,
+    "IPC Sections Relevant to Doctors"
+  ],
+  [
+    7,
+    "IPC Sections Relevant to Doctors - Legal Sections & Acts",
+    9,
+    5,
+    "IPC Sections Relevant to Doctors"
+  ],
+  [7, "Forensic Psychiatry", 8, 35, "Forensic Medicine (Clinical & Legal)"],
+  [7, "Criminal Responsibility — M'Naghten Rules & IPC 84", 8, 15, "Forensic Psychiatry"],
+  [
+    7,
+    "Criminal Responsibility — M'Naghten Rules",
+    8,
+    7,
+    "Criminal Responsibility — M'Naghten Rules & IPC 84"
+  ],
+  [
+    7,
+    "Criminal Responsibility — M'Naghten Rules - Medicolegal Importance",
+    8,
+    5,
+    "Criminal Responsibility — M'Naghten Rules"
+  ],
+  [
+    7,
+    "Criminal Responsibility — M'Naghten Rules - Pathological Findings",
+    8,
+    5,
+    "Criminal Responsibility — M'Naghten Rules"
+  ],
+  [
+    7,
+    "Criminal Responsibility — M'Naghten Rules - Toxicological Aspects",
+    8,
+    5,
+    "Criminal Responsibility — M'Naghten Rules"
+  ],
+  [
+    7,
+    "Criminal Responsibility — M'Naghten Rules - Legal Sections & Acts",
+    8,
+    5,
+    "Criminal Responsibility — M'Naghten Rules"
+  ],
+  [
+    7,
+    "Criminal Responsibility — IPC 84",
+    8,
+    8,
+    "Criminal Responsibility — M'Naghten Rules & IPC 84"
+  ],
+  [
+    7,
+    "Criminal Responsibility — IPC 84 - Medicolegal Importance",
+    8,
+    5,
+    "Criminal Responsibility — IPC 84"
+  ],
+  [
+    7,
+    "Criminal Responsibility — IPC 84 - Pathological Findings",
+    8,
+    5,
+    "Criminal Responsibility — IPC 84"
+  ],
+  [
+    7,
+    "Criminal Responsibility — IPC 84 - Toxicological Aspects",
+    8,
+    5,
+    "Criminal Responsibility — IPC 84"
+  ],
+  [
+    7,
+    "Criminal Responsibility — IPC 84 - Legal Sections & Acts",
+    8,
+    5,
+    "Criminal Responsibility — IPC 84"
+  ],
+  [
+    7,
+    "Fitness to Plead, Diminished Responsibility & Testamentary Capacity",
+    8,
+    12,
+    "Forensic Psychiatry"
+  ],
+  [
+    7,
+    "Fitness to Plead, Diminished Responsibility",
+    8,
+    6,
+    "Fitness to Plead, Diminished Responsibility & Testamentary Capacity"
+  ],
+  [
+    7,
+    "Fitness to Plead, Diminished Responsibility - Medicolegal Importance",
+    8,
+    5,
+    "Fitness to Plead, Diminished Responsibility"
+  ],
+  [
+    7,
+    "Fitness to Plead, Diminished Responsibility - Pathological Findings",
+    8,
+    5,
+    "Fitness to Plead, Diminished Responsibility"
+  ],
+  [
+    7,
+    "Fitness to Plead, Diminished Responsibility - Toxicological Aspects",
+    8,
+    5,
+    "Fitness to Plead, Diminished Responsibility"
+  ],
+  [
+    7,
+    "Fitness to Plead, Diminished Responsibility - Legal Sections & Acts",
+    8,
+    5,
+    "Fitness to Plead, Diminished Responsibility"
+  ],
+  [
+    7,
+    "Testamentary Capacity",
+    8,
+    6,
+    "Fitness to Plead, Diminished Responsibility & Testamentary Capacity"
+  ],
+  [7, "Testamentary Capacity - Medicolegal Importance", 8, 5, "Testamentary Capacity"],
+  [7, "Testamentary Capacity - Pathological Findings", 8, 5, "Testamentary Capacity"],
+  [7, "Testamentary Capacity - Toxicological Aspects", 8, 5, "Testamentary Capacity"],
+  [7, "Testamentary Capacity - Legal Sections & Acts", 8, 5, "Testamentary Capacity"]
 ]

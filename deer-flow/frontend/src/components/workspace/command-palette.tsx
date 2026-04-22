@@ -59,7 +59,7 @@ export function CommandPalette() {
       { key: ",", meta: true, action: handleOpenSettings },
       { key: "/", meta: true, action: handleShowShortcuts },
     ],
-    [handleNewChat, handleOpenSettings, handleShowShortcuts],
+    [handleNewChat, handleOpenSettings, handleShowShortcuts]
   );
 
   useGlobalShortcuts(shortcuts);

@@ -267,6 +267,9 @@ export function mapUserProfileRow(row: UserProfileRow | undefined): UserProfile 
     scanOrphanedTranscriptsEnabled: row.scanOrphanedTranscriptsEnabled === 1,
     deepgramApiKey: row.deepgramApiKey ?? '',
     jinaApiKey: row.jinaApiKey ?? '',
+    vertexAiProject: row.vertexAiProject ?? '',
+    vertexAiLocation: row.vertexAiLocation ?? '',
+    vertexAiToken: row.vertexAiToken ?? '',
     qwenConnected: row.qwenConnected === 1,
     disabledProviders: (() => {
       try {
@@ -323,6 +326,9 @@ export function mapToDrizzleUpdate(updates: Partial<UserProfile>): Partial<NewUs
     agentRouterKey: 'agentRouterKey',
     deepgramApiKey: 'deepgramApiKey',
     jinaApiKey: 'jinaApiKey',
+    vertexAiProject: 'vertexAiProject',
+    vertexAiLocation: 'vertexAiLocation',
+    vertexAiToken: 'vertexAiToken',
     gdriveWebClientId: 'gdriveWebClientId',
     gdriveEmail: 'gdriveEmail',
     gdriveLastSyncAt: 'gdriveLastSyncAt',
@@ -552,6 +558,9 @@ export function createDefaultUserProfile(): UserProfile {
     scanOrphanedTranscriptsEnabled: false,
     deepgramApiKey: '',
     jinaApiKey: '',
+    vertexAiProject: '',
+    vertexAiLocation: '',
+    vertexAiToken: '',
     qwenConnected: false,
     disabledProviders: [],
   };

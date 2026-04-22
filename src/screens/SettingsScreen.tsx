@@ -64,6 +64,7 @@ import {
   testGitLabDuoConnection,
   testKiloConnection,
   testDeepgramConnection,
+  testVertexConnection,
   testQwenConnection,
 } from '../services/ai/providerHealth';
 import type { ChatGptAccountSlot, ContentType, ProviderId, Subject, UserProfile } from '../types';
@@ -543,6 +544,9 @@ export default function SettingsScreen() {
   const [geminiKey, setGeminiKey] = useState('');
   const [cfAccountId, setCfAccountId] = useState('');
   const [cfApiToken, setCfApiToken] = useState('');
+  const [vertexAiProject, setVertexAiProject] = useState('');
+  const [vertexAiLocation, setVertexAiLocation] = useState('');
+  const [vertexAiToken, setVertexAiToken] = useState('');
   const [falApiKey, setFalApiKey] = useState('');
   const [braveSearchApiKey, setBraveSearchApiKey] = useState('');
   const [googleCustomSearchApiKey, setGoogleCustomSearchApiKey] = useState('');
@@ -550,6 +554,8 @@ export default function SettingsScreen() {
   const [geminiKeyTestResult, setGeminiKeyTestResult] = useState<'ok' | 'fail' | null>(null);
   const [testingCloudflare, setTestingCloudflare] = useState(false);
   const [cloudflareTestResult, setCloudflareTestResult] = useState<'ok' | 'fail' | null>(null);
+  const [testingVertexKey, setTestingVertexKey] = useState(false);
+  const [vertexKeyTestResult, setVertexKeyTestResult] = useState<'ok' | 'fail' | null>(null);
   const [testingFalKey, setTestingFalKey] = useState(false);
   const [falKeyTestResult, setFalKeyTestResult] = useState<'ok' | 'fail' | null>(null);
   const [testingBraveSearchKey, setTestingBraveSearchKey] = useState(false);
@@ -850,6 +856,23 @@ export default function SettingsScreen() {
     const res = await testHuggingFaceConnection(token, huggingFaceModel.trim());
     _setHuggingFaceTokenTestResult(res.ok ? 'ok' : 'fail');
     _setTestingHuggingFaceToken(false);
+  }
+
+  async function testVertexKey() {
+    const p = vertexAiProject.trim() || profile?.vertexAiProject || '';
+    const l = vertexAiLocation.trim() || profile?.vertexAiLocation || '';
+    const t = vertexAiToken.trim() || profile?.vertexAiToken || '';
+    if (!p || !l || !t) {
+      showWarning('Missing info', 'Project, Location, and Token required.');
+      return;
+    }
+    setTestingVertexKey(true);
+    setVertexKeyTestResult(null);
+    const res = await testVertexConnection(p, l, t);
+    setVertexKeyTestResult(res.ok ? 'ok' : 'fail');
+    if (res.ok) markProviderValidated('vertex', t);
+    else clearProviderValidated('vertex');
+    setTestingVertexKey(false);
   }
 
   async function testDeepgramKey() {
@@ -1500,6 +1523,9 @@ export default function SettingsScreen() {
       setGeminiKey(profile.geminiKey ?? '');
       setCfAccountId(profile.cloudflareAccountId ?? '');
       setCfApiToken(profile.cloudflareApiToken ?? '');
+      setVertexAiProject(profile.vertexAiProject ?? '');
+      setVertexAiLocation(profile.vertexAiLocation ?? '');
+      setVertexAiToken(profile.vertexAiToken ?? '');
       setFalApiKey(profile.falApiKey ?? '');
       setBraveSearchApiKey(profile.braveSearchApiKey ?? '');
       setGoogleCustomSearchApiKey(profile.googleCustomSearchApiKey ?? '');
@@ -1581,6 +1607,9 @@ export default function SettingsScreen() {
         geminiKey: geminiKey.trim(),
         cloudflareAccountId: cfAccountId.trim(),
         cloudflareApiToken: cfApiToken.trim(),
+        vertexAiProject: vertexAiProject.trim(),
+        vertexAiLocation: vertexAiLocation.trim(),
+        vertexAiToken: vertexAiToken.trim(),
         falApiKey: falApiKey.trim(),
         braveSearchApiKey: braveSearchApiKey.trim(),
         googleCustomSearchApiKey: googleCustomSearchApiKey.trim(),
@@ -1647,6 +1676,9 @@ export default function SettingsScreen() {
     kiloApiKey,
     deepseekKey,
     agentRouterKey,
+    vertexAiProject,
+    vertexAiLocation,
+    vertexAiToken,
     providerOrder,
     disabledProviders,
     orKey,
@@ -1842,6 +1874,11 @@ export default function SettingsScreen() {
     `${cfAccountId.trim() || profile?.cloudflareAccountId || ''}:${
       cfApiToken.trim() || profile?.cloudflareApiToken || ''
     }`,
+  );
+  const vertexValidationStatus = resolveValidationStatus(
+    'vertex',
+    vertexKeyTestResult,
+    vertexAiToken.trim() || profile?.vertexAiToken || '',
   );
   const falValidationStatus = resolveValidationStatus(
     'fal',
@@ -2146,6 +2183,23 @@ export default function SettingsScreen() {
                       : 'idle',
                 test: testDeepgramKey,
                 testing: testingDeepgramKey,
+              },
+              vertex: {
+                project: vertexAiProject,
+                setProject: setVertexAiProject,
+                location: vertexAiLocation,
+                setLocation: setVertexAiLocation,
+                token: vertexAiToken,
+                setToken: setVertexAiToken,
+                setTestResult: setVertexKeyTestResult,
+                validationStatus:
+                  vertexValidationStatus === 'ok'
+                    ? 'valid'
+                    : vertexValidationStatus === 'fail'
+                      ? 'invalid'
+                      : 'idle',
+                test: testVertexKey,
+                testing: testingVertexKey,
               },
               cloudflare: {
                 accountId: cfAccountId,

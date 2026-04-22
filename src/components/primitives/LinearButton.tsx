@@ -2,14 +2,11 @@ import React from 'react';
 import {
   ActivityIndicator,
   Pressable,
-  StyleSheet,
   View,
   type PressableProps,
-  type StyleProp,
-  type ViewStyle,
   type TextStyle,
 } from 'react-native';
-import { linearTheme } from '../../theme/linearTheme';
+import { tv } from 'tailwind-variants';
 import LinearText, { type LinearTextTone } from './LinearText';
 
 export type LinearButtonVariant = 'primary' | 'secondary' | 'ghost';
@@ -20,7 +17,7 @@ function resolveLegacyVariant(v: LinearButtonVariant): { variant: LinearButtonVa
   return { variant: v, tone: 'neutral' };
 }
 
-interface LinearButtonProps extends Omit<PressableProps, 'style'> {
+interface LinearButtonProps extends Omit<PressableProps, 'style' | 'className'> {
   label: string;
   variant?: LinearButtonVariant;
   tone?: LinearButtonTone;
@@ -28,11 +25,40 @@ interface LinearButtonProps extends Omit<PressableProps, 'style'> {
   loading?: boolean;
   loadingLabel?: string;
   textTone?: LinearTextTone;
-  style?: StyleProp<ViewStyle>;
-  textStyle?: StyleProp<TextStyle>;
+  className?: string;
+  /** @deprecated Use className instead */
+  style?: PressableProps['style'];
+  /** @deprecated Use className on LinearText instead */
+  textStyle?: any;
   leftIcon?: React.ReactNode;
   rightIcon?: React.ReactNode;
 }
+
+const buttonVariants = tv({
+  base: 'items-center justify-center rounded-xl',
+  variants: {
+    variant: {
+      primary: 'bg-accent border border-accentBorder',
+      primaryDanger: 'bg-error border border-error/65',
+      secondary: 'bg-white/[0.02] border border-white/10',
+      secondaryDanger: 'bg-error/[0.06] border border-error/35',
+      ghost: 'bg-transparent',
+    },
+    size: {
+      sm: 'min-h-[36px] px-4 py-2',
+      md: 'min-h-[44px] px-6 py-4',
+      lg: 'min-h-[52px] px-6 py-4',
+    },
+    disabled: {
+      true: 'opacity-[0.55]',
+    },
+  },
+  defaultVariants: {
+    variant: 'primary',
+    size: 'md',
+    disabled: false,
+  },
+});
 
 export default function LinearButton({
   label,
@@ -42,6 +68,7 @@ export default function LinearButton({
   loading = false,
   loadingLabel,
   textTone,
+  className,
   style,
   textStyle,
   leftIcon,
@@ -56,20 +83,32 @@ export default function LinearButton({
   const isDanger = finalTone === 'danger';
   const resolvedDisabled = disabled || loading;
   const resolvedLabel = loading ? loadingLabel ?? null : label;
+  const spinnerColor = getSpinnerColor(textTn);
   const leadingDecoration = loading ? (
-    <ActivityIndicator size="small" color={getSpinnerColor(textTn)} />
+    <ActivityIndicator size="small" color={spinnerColor} />
   ) : (
     leftIcon
   );
   const trailingDecoration = loading ? (
     resolvedLabel ? (
-      <View style={styles.iconSlot} />
+      <View className="w-6 items-center justify-center" />
     ) : null
   ) : (
     rightIcon
   );
   const useDecoratedLayout =
     resolvedLabel != null && (leadingDecoration != null || trailingDecoration != null);
+
+  const variantKey: 'primary' | 'primaryDanger' | 'secondary' | 'secondaryDanger' | 'ghost' =
+    v === 'primary'
+      ? isDanger
+        ? 'primaryDanger'
+        : 'primary'
+      : v === 'secondary'
+        ? isDanger
+          ? 'secondaryDanger'
+          : 'secondary'
+        : 'ghost';
 
   return (
     <Pressable
@@ -80,38 +119,40 @@ export default function LinearButton({
         disabled: resolvedDisabled,
         busy: loading || accessibilityState?.busy,
       }}
+      className={buttonVariants({
+        variant: variantKey,
+        size,
+        disabled: resolvedDisabled,
+        className,
+      })}
       style={({ pressed }) => [
-        styles.base,
-        sizeStyles[size],
-        v === 'primary' && (isDanger ? styles.primaryDanger : styles.primary),
-        v === 'secondary' && (isDanger ? styles.secondaryDanger : styles.secondary),
-        v === 'ghost' && styles.ghost,
-        pressed && styles.pressed,
-        resolvedDisabled && styles.disabled,
-        style,
+        { opacity: pressed ? 0.88 : resolvedDisabled ? 0.55 : 1 },
+        typeof style === 'function' ? style({ pressed }) : style,
       ]}
       accessibilityRole="button"
     >
-      <View style={styles.contentRow}>
+      <View className="flex-row items-center justify-center gap-2 w-full min-w-0">
         {useDecoratedLayout ? (
           <>
-            <View style={styles.iconSlot}>{leadingDecoration}</View>
-            <View style={styles.labelWrap}>
+            <View className="w-6 items-center justify-center">{leadingDecoration}</View>
+            <View className="flex-1 items-center justify-center min-w-0">
               <LinearText
                 variant="button"
                 tone={textTn}
-                style={[styles.labelBase, textStyle]}
+                className="text-center flex-shrink min-w-0"
+                style={textStyle}
               >
                 {resolvedLabel}
               </LinearText>
             </View>
-            <View style={styles.iconSlot}>{trailingDecoration}</View>
+            <View className="w-6 items-center justify-center">{trailingDecoration}</View>
           </>
         ) : resolvedLabel != null ? (
           <LinearText
             variant="button"
             tone={textTn}
-            style={[styles.labelBase, textStyle]}
+            className="text-center flex-shrink min-w-0"
+            style={textStyle}
           >
             {resolvedLabel}
           </LinearText>
@@ -123,84 +164,6 @@ export default function LinearButton({
   );
 }
 
-const styles = StyleSheet.create({
-  base: {
-    borderRadius: linearTheme.radius.md,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  primary: {
-    backgroundColor: linearTheme.colors.accent,
-    borderWidth: 1,
-    borderColor: `${linearTheme.colors.accent}AA`,
-  },
-  primaryDanger: {
-    backgroundColor: linearTheme.colors.error,
-    borderWidth: 1,
-    borderColor: `${linearTheme.colors.error}AA`,
-  },
-  secondary: {
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.10)',
-    backgroundColor: 'rgba(255,255,255,0.02)',
-  },
-  secondaryDanger: {
-    borderWidth: 1,
-    borderColor: `${linearTheme.colors.error}55`,
-    backgroundColor: 'rgba(241,76,76,0.06)',
-  },
-  ghost: {
-    backgroundColor: 'transparent',
-  },
-  pressed: {
-    opacity: linearTheme.alpha.pressed,
-  },
-  disabled: {
-    opacity: linearTheme.alpha.disabled,
-  },
-  contentRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: linearTheme.spacing.sm,
-    width: '100%',
-    minWidth: 0,
-  },
-  iconSlot: {
-    width: 24,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  labelWrap: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    minWidth: 0,
-  },
-  labelBase: {
-    textAlign: 'center',
-    flexShrink: 1,
-    minWidth: 0,
-  },
-});
-
-const sizeStyles = StyleSheet.create({
-  sm: {
-    minHeight: 36,
-    paddingHorizontal: linearTheme.spacing.md,
-    paddingVertical: linearTheme.spacing.sm,
-  },
-  md: {
-    minHeight: 44,
-    paddingHorizontal: linearTheme.spacing.lg,
-    paddingVertical: linearTheme.spacing.md,
-  },
-  lg: {
-    minHeight: 52,
-    paddingHorizontal: linearTheme.spacing.lg,
-    paddingVertical: linearTheme.spacing.md,
-  },
-});
 
 function getDefaultTextTone(
   variant: LinearButtonVariant,
@@ -211,24 +174,17 @@ function getDefaultTextTone(
   return 'primary';
 }
 
+const toneColorMap: Record<LinearTextTone, string> = {
+  inverse: '#000000',
+  accent: '#5E6AD2',
+  warning: '#D97706',
+  success: '#3FB950',
+  error: '#F14C4C',
+  secondary: '#B8B8BD',
+  muted: '#7A7A80',
+  primary: '#FAFAFA',
+};
+
 function getSpinnerColor(tone: LinearTextTone): string {
-  switch (tone) {
-    case 'inverse':
-      return linearTheme.colors.textInverse;
-    case 'accent':
-      return linearTheme.colors.accent;
-    case 'warning':
-      return linearTheme.colors.warning;
-    case 'success':
-      return linearTheme.colors.success;
-    case 'error':
-      return linearTheme.colors.error;
-    case 'secondary':
-      return linearTheme.colors.textSecondary;
-    case 'muted':
-      return linearTheme.colors.textMuted;
-    case 'primary':
-    default:
-      return linearTheme.colors.textPrimary;
-  }
+  return toneColorMap[tone] ?? toneColorMap.primary;
 }

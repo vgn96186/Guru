@@ -5,10 +5,19 @@ const { VAULT_TOPICS_SEED } = require('../src/constants/vaultTopics');
 const backup = {
   version: 1,
   exportedAt: new Date().toISOString(),
-  user_profile: { id: 1, display_name: 'Doctor', total_xp: 0, current_level: 1, streak_current: 0, streak_best: 0, daily_goal_minutes: 120, preferred_session_length: 45 },
+  user_profile: {
+    id: 1,
+    display_name: 'Doctor',
+    total_xp: 0,
+    current_level: 1,
+    streak_current: 0,
+    streak_best: 0,
+    daily_goal_minutes: 120,
+    preferred_session_length: 45,
+  },
   topic_progress: [],
   daily_log: [],
-  lecture_notes: []
+  lecture_notes: [],
 };
 
 const allTopics = [...TOPICS_SEED, ...VAULT_TOPICS_SEED];
@@ -21,7 +30,7 @@ allTopics.forEach((t, index) => {
     times_studied: 0,
     xp_earned: 0,
     next_review_date: null,
-    user_notes: ''
+    user_notes: '',
   });
 });
 

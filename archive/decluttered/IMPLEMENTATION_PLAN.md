@@ -103,6 +103,7 @@ export function decryptPayload(key: CryptoKey, envelope: string): object {
 ```
 
 3. In `src/services/deviceSyncService.ts`:
+
    - On `connectToRoom(syncCode, cb)`: derive key once via `deriveKey(syncCode)`, store in module scope.
    - On publish: wrap every `JSON.stringify(msg)` ➜ `encryptPayload(key, msg)`.
    - On subscribe callback: wrap every `JSON.parse(raw)` ➜ `decryptPayload(key, raw)`.
@@ -450,6 +451,7 @@ export const theme = {
 ```
 
 2. Migrate screens incrementally (one per PR):
+
    - Start with `HomeScreen.tsx` and `SettingsScreen.tsx` (highest-traffic screens).
    - Find/replace hardcoded hex values → `theme.colors.*`.
    - Replace magic padding/margin numbers → `theme.spacing.*`.
@@ -489,6 +491,7 @@ export const theme = {
 ```
 
 3. **Priority screens** (by user traffic):
+
    - `HomeScreen.tsx` — ~15 interactive elements
    - `SessionScreen.tsx` — content type buttons, timer controls
    - `SyllabusScreen.tsx` — topic list items, subject cards
@@ -753,6 +756,7 @@ CREATE TABLE IF NOT EXISTS offline_ai_queue (
 ```
 
 2. Create `src/services/offlineQueue.ts`:
+
    - `enqueueRequest(type, payload)` — insert into queue.
    - `processQueue()` — pop pending items, attempt execution, mark success or increment attempts.
    - `MAX_ATTEMPTS = 5`.
@@ -927,12 +931,12 @@ function RootNavigator() {
   const shouldSkipCheckIn = useMemo(() => {
     const db = getDb();
     const today = db.getFirstSync<{ count: number }>(
-      `SELECT COUNT(*) as count FROM daily_log WHERE date = date('now')`
+      `SELECT COUNT(*) as count FROM daily_log WHERE date = date('now')`,
     );
     if (today?.count > 0) return true;
 
     const quickStarts = db.getFirstSync<{ count: number }>(
-      `SELECT quick_start_streak FROM user_profile WHERE id = 1`
+      `SELECT quick_start_streak FROM user_profile WHERE id = 1`,
     );
     return (quickStarts?.count ?? 0) >= 3;
   }, []);

@@ -16,6 +16,7 @@ So the FSRS pipeline is built end-to-end **except** the ReviewScreen — the pri
 ### 1. `src/screens/ReviewScreen.tsx` — Remove hardcoded intervals, use FSRS
 
 **Current (broken):**
+
 ```ts
 const RATINGS = [
   { label: 'Again', days: 1, confidence: 1, color: ... },
@@ -38,9 +39,9 @@ await updateTopicProgress(
 ```ts
 const RATINGS = [
   { label: 'Again', confidence: 1, color: n.colors.error },
-  { label: 'Hard',  confidence: 2, color: n.colors.warning },
-  { label: 'Good',  confidence: 3, color: n.colors.success },
-  { label: 'Easy',  confidence: 4, color: n.colors.accent },
+  { label: 'Hard', confidence: 2, color: n.colors.warning },
+  { label: 'Good', confidence: 3, color: n.colors.success },
+  { label: 'Easy', confidence: 4, color: n.colors.accent },
 ];
 ```
 
@@ -55,9 +56,9 @@ const card = buildFsrsCard(currentTopic); // reads fsrs_* fields from progress
 const logs = f.repeat(card, new Date());
 setFsrsIntervals({
   Again: logs[Rating.Again].card.scheduled_days,
-  Hard:  logs[Rating.Hard].card.scheduled_days,
-  Good:  logs[Rating.Good].card.scheduled_days,
-  Easy:  logs[Rating.Easy].card.scheduled_days,
+  Hard: logs[Rating.Hard].card.scheduled_days,
+  Good: logs[Rating.Good].card.scheduled_days,
+  Easy: logs[Rating.Easy].card.scheduled_days,
 });
 ```
 
@@ -72,16 +73,14 @@ async function handleRate(rating: (typeof RATINGS)[0]) {
   const fsrsCard = log.card;
 
   // Map FSRS state to app status
-  const status = fsrsCard.state === State.Learning ? 'seen'
-    : fsrsCard.stability >= 21 ? 'mastered'  // 3+ weeks stability
-    : 'reviewed';
+  const status =
+    fsrsCard.state === State.Learning
+      ? 'seen'
+      : fsrsCard.stability >= 21
+      ? 'mastered' // 3+ weeks stability
+      : 'reviewed';
 
-  await updateTopicProgress(
-    currentTopic.id,
-    status,
-    rating.confidence,
-    xp,
-  );
+  await updateTopicProgress(currentTopic.id, status, rating.confidence, xp);
   // ... rest unchanged
 }
 ```
@@ -89,6 +88,7 @@ async function handleRate(rating: (typeof RATINGS)[0]) {
 ### 2. `src/db/queries/topics.ts` — Ensure `updateTopicProgressInTx` is called correctly
 
 **No changes needed.** The function already:
+
 1. Reads existing FSRS fields from DB
 2. Constructs a `Card` object
 3. Calls `reviewCardFromConfidence()` to get the FSRS-scheduled card
@@ -106,9 +106,9 @@ export function previewIntervals(card: Card, now: Date = new Date()) {
   const logs = f.repeat(card, now);
   return {
     Again: logs[Rating.Again].card.scheduled_days,
-    Hard:  logs[Rating.Hard].card.scheduled_days,
-    Good:  logs[Rating.Good].card.scheduled_days,
-    Easy:  logs[Rating.Easy].card.scheduled_days,
+    Hard: logs[Rating.Hard].card.scheduled_days,
+    Good: logs[Rating.Good].card.scheduled_days,
+    Easy: logs[Rating.Easy].card.scheduled_days,
   };
 }
 ```
@@ -140,10 +140,10 @@ This is a **purely additive** fix. Existing topics that were reviewed with hardc
 
 ## Files Changed
 
-| File | Lines Changed | What |
-|---|---|---|
-| `src/screens/ReviewScreen.tsx` | ~25 | Remove hardcoded days, add FSRS interval preview, derive status from FSRS |
-| `src/services/fsrsService.ts` | ~10 | Add `previewIntervals()` helper |
-| `src/db/queries/topics.ts` | 0 | No changes needed |
+| File                           | Lines Changed | What                                                                      |
+| ------------------------------ | ------------- | ------------------------------------------------------------------------- |
+| `src/screens/ReviewScreen.tsx` | ~25           | Remove hardcoded days, add FSRS interval preview, derive status from FSRS |
+| `src/services/fsrsService.ts`  | ~10           | Add `previewIntervals()` helper                                           |
+| `src/db/queries/topics.ts`     | 0             | No changes needed                                                         |
 
 **Total: ~35 lines across 2 files.**

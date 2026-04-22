@@ -1,6 +1,6 @@
 ---
 name: claude-to-deerflow
-description: "Interact with DeerFlow AI agent platform via its HTTP API. Use this skill when the user wants to send messages or questions to DeerFlow for research/analysis, start a DeerFlow conversation thread, check DeerFlow status or health, list available models/skills/agents in DeerFlow, manage DeerFlow memory, upload files to DeerFlow threads, or delegate complex research tasks to DeerFlow. Also use when the user mentions deerflow, deer flow, or wants to run a deep research task that DeerFlow can handle."
+description: 'Interact with DeerFlow AI agent platform via its HTTP API. Use this skill when the user wants to send messages or questions to DeerFlow for research/analysis, start a DeerFlow conversation thread, check DeerFlow status or health, list available models/skills/agents in DeerFlow, manage DeerFlow memory, upload files to DeerFlow threads, or delegate complex research tasks to DeerFlow. Also use when the user mentions deerflow, deer flow, or wants to run a deep research task that DeerFlow can handle.'
 ---
 
 # DeerFlow Skill
@@ -12,20 +12,20 @@ built on LangGraph that orchestrates sub-agents for research, code execution, we
 
 DeerFlow exposes two API surfaces behind an Nginx reverse proxy:
 
-| Service        | Direct Port | Via Proxy                        | Purpose                          |
-|----------------|-------------|----------------------------------|----------------------------------|
-| Gateway API    | 8001        | `$DEERFLOW_GATEWAY_URL`          | REST endpoints (models, skills, memory, uploads) |
-| LangGraph API  | 2024        | `$DEERFLOW_LANGGRAPH_URL`        | Agent threads, runs, streaming   |
+| Service       | Direct Port | Via Proxy                 | Purpose                                          |
+| ------------- | ----------- | ------------------------- | ------------------------------------------------ |
+| Gateway API   | 8001        | `$DEERFLOW_GATEWAY_URL`   | REST endpoints (models, skills, memory, uploads) |
+| LangGraph API | 2024        | `$DEERFLOW_LANGGRAPH_URL` | Agent threads, runs, streaming                   |
 
 ## Environment Variables
 
 All URLs are configurable via environment variables. **Read these env vars before making any request.**
 
-| Variable                | Default                                  | Description                        |
-|-------------------------|------------------------------------------|------------------------------------|
-| `DEERFLOW_URL`          | `http://localhost:2026`                  | Unified proxy base URL             |
-| `DEERFLOW_GATEWAY_URL`  | `${DEERFLOW_URL}`                        | Gateway API base (models, skills, memory, uploads) |
-| `DEERFLOW_LANGGRAPH_URL`| `${DEERFLOW_URL}/api/langgraph`          | LangGraph API base (threads, runs) |
+| Variable                 | Default                         | Description                                        |
+| ------------------------ | ------------------------------- | -------------------------------------------------- |
+| `DEERFLOW_URL`           | `http://localhost:2026`         | Unified proxy base URL                             |
+| `DEERFLOW_GATEWAY_URL`   | `${DEERFLOW_URL}`               | Gateway API base (models, skills, memory, uploads) |
+| `DEERFLOW_LANGGRAPH_URL` | `${DEERFLOW_URL}/api/langgraph` | LangGraph API base (threads, runs)                 |
 
 When making curl calls, always resolve the URL like this:
 
@@ -90,18 +90,21 @@ curl -s -N -X POST "$DEERFLOW_LANGGRAPH_URL/threads/<thread_id>/runs/stream" \
 ```
 
 The response is an SSE stream. Each event has the format:
+
 ```
 event: <event_type>
 data: <json_data>
 ```
 
 Key event types:
+
 - `metadata` — run metadata including `run_id`
 - `values` — full state snapshot with `messages` array
 - `messages-tuple` — incremental message updates (AI text chunks, tool calls, tool results)
 - `end` — stream is complete
 
 **Context modes** (set via `context`):
+
 - Flash mode: `thinking_enabled: false, is_plan_mode: false, subagent_enabled: false`
 - Standard mode: `thinking_enabled: true, is_plan_mode: false, subagent_enabled: false`
 - Pro mode: `thinking_enabled: true, is_plan_mode: true, subagent_enabled: false`
@@ -190,6 +193,7 @@ bash /path/to/skills/claude-to-deerflow/scripts/chat.sh "Your question here"
 ```
 
 See `scripts/chat.sh` for the implementation. The script:
+
 1. Checks health
 2. Creates a thread
 3. Streams the run and collects the final AI response
@@ -198,6 +202,7 @@ See `scripts/chat.sh` for the implementation. The script:
 ## Parsing SSE Output
 
 The stream returns SSE events. To extract the final AI response from a `values` event:
+
 - Look for the last `event: values` block
 - Parse its `data` JSON
 - The `messages` array contains all messages; the last one with `type: "ai"` is the response

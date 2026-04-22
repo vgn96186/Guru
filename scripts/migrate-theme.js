@@ -16,7 +16,10 @@ function collectFiles(dir) {
     if (entry.isDirectory()) collectFiles(full);
     else if (entry.name.endsWith('.tsx') || entry.name.endsWith('.ts')) {
       const content = fs.readFileSync(full, 'utf8');
-      if (content.includes("from '../constants/theme'") || content.includes("from '../../constants/theme'")) {
+      if (
+        content.includes("from '../constants/theme'") ||
+        content.includes("from '../../constants/theme'")
+      ) {
         files.push(full);
       }
     }
@@ -31,97 +34,97 @@ console.log(`Found ${files.length} files to migrate\n`);
 // theme.colors.X → n.colors.Y
 const colorMap = {
   // Direct renames
-  'primary': 'accent',
-  'primaryLight': 'accent',
-  'primaryDark': 'accent',
-  'accentAlt': 'warning',
-  'accent': 'error',          // old theme.colors.accent (#FF6B9D) → error-ish
-  'info': 'accent',
-  'divider': 'border',
-  'surfaceAlt': 'surface',
-  'panel': 'surface',
-  'panelAlt': 'surface',
-  'inputBg': 'surface',
-  'primaryTint': 'primaryTintSoft',
-  'primaryTintMedium': 'borderHighlight',
+  primary: 'accent',
+  primaryLight: 'accent',
+  primaryDark: 'accent',
+  accentAlt: 'warning',
+  accent: 'error', // old theme.colors.accent (#FF6B9D) → error-ish
+  info: 'accent',
+  divider: 'border',
+  surfaceAlt: 'surface',
+  panel: 'surface',
+  panelAlt: 'surface',
+  inputBg: 'surface',
+  primaryTint: 'primaryTintSoft',
+  primaryTintMedium: 'borderHighlight',
   // Direct keep (same name)
-  'background': 'background',
-  'surface': 'surface',
-  'card': 'card',
-  'cardHover': 'cardHover',
-  'surfaceHover': 'surfaceHover',
-  'textPrimary': 'textPrimary',
-  'textSecondary': 'textSecondary',
-  'textMuted': 'textMuted',
-  'textInverse': 'textInverse',
-  'success': 'success',
-  'warning': 'warning',
-  'error': 'error',
-  'border': 'border',
-  'borderLight': 'borderLight',
-  'successSurface': 'successSurface',
-  'errorSurface': 'errorSurface',
-  'primaryTintSoft': 'primaryTintSoft',
+  background: 'background',
+  surface: 'surface',
+  card: 'card',
+  cardHover: 'cardHover',
+  surfaceHover: 'surfaceHover',
+  textPrimary: 'textPrimary',
+  textSecondary: 'textSecondary',
+  textMuted: 'textMuted',
+  textInverse: 'textInverse',
+  success: 'success',
+  warning: 'warning',
+  error: 'error',
+  border: 'border',
+  borderLight: 'borderLight',
+  successSurface: 'successSurface',
+  errorSurface: 'errorSurface',
+  primaryTintSoft: 'primaryTintSoft',
 };
 
 // Hardcoded replacements for colors not in linearTheme
 const hardcodedColorReplace = {
-  "theme.colors.overlay": "'rgba(2,2,4,0.72)'",
-  "theme.colors.backdropStrong": "'rgba(0,0,0,0.82)'",
-  "theme.colors.warningTintSoft": "'rgba(217,119,6,0.08)'",
-  "theme.colors.errorTintSoft": "'rgba(241,76,76,0.08)'",
-  "theme.colors.successTintSoft": "'rgba(63,185,80,0.08)'",
-  "theme.colors.warningSurface": "'rgba(217,119,6,0.1)'",
-  "theme.colors.unseen": "'#606080'",
-  "theme.colors.seen": "'#2196F3'",
-  "theme.colors.reviewed": "'#FF9800'",
-  "theme.colors.mastered": "'#4CAF50'",
+  'theme.colors.overlay': "'rgba(2,2,4,0.72)'",
+  'theme.colors.backdropStrong': "'rgba(0,0,0,0.82)'",
+  'theme.colors.warningTintSoft': "'rgba(217,119,6,0.08)'",
+  'theme.colors.errorTintSoft': "'rgba(241,76,76,0.08)'",
+  'theme.colors.successTintSoft': "'rgba(63,185,80,0.08)'",
+  'theme.colors.warningSurface': "'rgba(217,119,6,0.1)'",
+  'theme.colors.unseen': "'#606080'",
+  'theme.colors.seen': "'#2196F3'",
+  'theme.colors.reviewed': "'#FF9800'",
+  'theme.colors.mastered': "'#4CAF50'",
 };
 
 // === SPACING MAPPINGS ===
 // theme.spacing.X → n.spacing.Y
 const spacingMap = {
-  'xs': 'xs',
-  'sm': 'sm',
-  'md': 'md',     // note: old md=12, new md=16
-  'lg': 'lg',     // old lg=16, new lg=24
-  'xl': 'xl',     // old xl=24, new xl=32
-  'xxl': 'xl',    // old xxl=32, new xl=32
-  'xxxl': 'xl',   // old xxxl=48, approximate to xl=32
+  xs: 'xs',
+  sm: 'sm',
+  md: 'md', // note: old md=12, new md=16
+  lg: 'lg', // old lg=16, new lg=24
+  xl: 'xl', // old xl=24, new xl=32
+  xxl: 'xl', // old xxl=32, new xl=32
+  xxxl: 'xl', // old xxxl=48, approximate to xl=32
 };
 
 // === BORDER RADIUS MAPPINGS ===
 // theme.borderRadius.X → n.radius.Y
 const radiusMap = {
-  'sm': 'sm',
-  'md': 'md',
-  'lg': 'lg',
-  'xl': 'lg',     // old xl=20 → new lg=16
-  'xxl': 'lg',    // old xxl=28 → new lg=16
-  'full': 'full',
+  sm: 'sm',
+  md: 'md',
+  lg: 'lg',
+  xl: 'lg', // old xl=20 → new lg=16
+  xxl: 'lg', // old xxl=28 → new lg=16
+  full: 'full',
 };
 
 // === ALPHA MAPPINGS ===
 const alphaMap = {
-  'pressed': 'pressed',
-  'subtlePressed': 'pressed',
+  pressed: 'pressed',
+  subtlePressed: 'pressed',
 };
 
 // === TYPOGRAPHY MAPPINGS ===
 // theme.typography.X → approximate n.typography spread
 // We'll keep these as-is with a "n." prefix since typography keys mostly overlap
 const typographyMap = {
-  'h0': 'display',
-  'h1': 'display',
-  'h2': 'title',
-  'h3': 'sectionTitle',
-  'h4': 'sectionTitle',
-  'body': 'body',
-  'bodySmall': 'bodySmall',
-  'caption': 'caption',
-  'captionSmall': 'caption',
-  'label': 'label',
-  'button': 'button',
+  h0: 'display',
+  h1: 'display',
+  h2: 'title',
+  h3: 'sectionTitle',
+  h4: 'sectionTitle',
+  body: 'body',
+  bodySmall: 'bodySmall',
+  caption: 'caption',
+  captionSmall: 'caption',
+  label: 'label',
+  button: 'button',
 };
 
 let totalChanges = 0;
@@ -226,10 +229,10 @@ for (const filePath of files) {
     changes++;
     return "{ shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.4, shadowRadius: 8, elevation: 6 }";
   });
-  // theme.shadows.glow(color) → inline 
+  // theme.shadows.glow(color) → inline
   content = content.replace(/theme\.shadows\.glow\(/g, (match) => {
     changes++;
-    return "((c: string) => ({ shadowColor: c, shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.5, shadowRadius: 12, elevation: 8 }))(";
+    return '((c: string) => ({ shadowColor: c, shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.5, shadowRadius: 12, elevation: 8 }))(';
   });
 
   if (content !== origContent) {

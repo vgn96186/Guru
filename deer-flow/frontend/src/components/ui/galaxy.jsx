@@ -208,7 +208,7 @@ export default function Galaxy({
     } catch (error) {
       console.warn(
         "Galaxy: WebGL is not available. The galaxy background will not be rendered.",
-        error,
+        error
       );
       return;
     }
@@ -216,7 +216,7 @@ export default function Galaxy({
     const gl = renderer.gl;
     if (!gl) {
       console.warn(
-        "Galaxy: WebGL context is null. The galaxy background will not be rendered.",
+        "Galaxy: WebGL context is null. The galaxy background will not be rendered."
       );
       return;
     }
@@ -239,7 +239,7 @@ export default function Galaxy({
         program.uniforms.uResolution.value = new Color(
           gl.canvas.width,
           gl.canvas.height,
-          gl.canvas.width / gl.canvas.height,
+          gl.canvas.width / gl.canvas.height
         );
       }
     }
@@ -256,7 +256,7 @@ export default function Galaxy({
           value: new Color(
             gl.canvas.width,
             gl.canvas.height,
-            gl.canvas.width / gl.canvas.height,
+            gl.canvas.width / gl.canvas.height
           ),
         },
         uFocal: { value: new Float32Array(focal) },

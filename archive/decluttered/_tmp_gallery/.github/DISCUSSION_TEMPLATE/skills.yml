@@ -1,4 +1,4 @@
-title: "[Skill Name]: Brief Description"
+title: '[Skill Name]: Brief Description'
 body:
   - type: markdown
     attributes:
@@ -26,7 +26,7 @@ body:
 
   - type: markdown
     attributes:
-      value: "<br>"
+      value: '<br>'
 
   - type: input
     id: repo-link
@@ -37,7 +37,7 @@ body:
 
   - type: markdown
     attributes:
-      value: "<br>"
+      value: '<br>'
 
   - type: textarea
     id: skill-details

@@ -43,14 +43,14 @@ Thoroughly read and understand the paper before forming any judgments.
 
 Extract and record:
 
-| Field | Description |
-|-------|-------------|
-| **Title** | Full paper title |
-| **Authors** | Author list and affiliations |
-| **Venue / Status** | Publication venue, preprint server, or submission status |
-| **Year** | Publication or submission year |
-| **Domain** | Research field and subfield |
-| **Paper Type** | Empirical, theoretical, survey, position paper, systems paper, etc. |
+| Field              | Description                                                         |
+| ------------------ | ------------------------------------------------------------------- |
+| **Title**          | Full paper title                                                    |
+| **Authors**        | Author list and affiliations                                        |
+| **Venue / Status** | Publication venue, preprint server, or submission status            |
+| **Year**           | Publication or submission year                                      |
+| **Domain**         | Research field and subfield                                         |
+| **Paper Type**     | Empirical, theoretical, survey, position paper, systems paper, etc. |
 
 #### Step 1.2: Deep Reading Pass
 
@@ -97,30 +97,31 @@ Use `web_fetch` on key related papers or surveys to understand where this work f
 
 Evaluate the methodology using the following framework:
 
-| Criterion | Questions to Ask | Rating |
-|-----------|-----------------|--------|
-| **Soundness** | Is the approach technically correct? Are there logical flaws? | 1-5 |
-| **Novelty** | What is genuinely new vs. incremental improvement? | 1-5 |
-| **Reproducibility** | Are details sufficient to reproduce? Code/data available? | 1-5 |
-| **Experimental Design** | Are baselines fair? Are ablations adequate? Are datasets appropriate? | 1-5 |
-| **Statistical Rigor** | Are results statistically significant? Error bars reported? Multiple runs? | 1-5 |
-| **Scalability** | Does the approach scale? Are computational costs discussed? | 1-5 |
+| Criterion               | Questions to Ask                                                           | Rating |
+| ----------------------- | -------------------------------------------------------------------------- | ------ |
+| **Soundness**           | Is the approach technically correct? Are there logical flaws?              | 1-5    |
+| **Novelty**             | What is genuinely new vs. incremental improvement?                         | 1-5    |
+| **Reproducibility**     | Are details sufficient to reproduce? Code/data available?                  | 1-5    |
+| **Experimental Design** | Are baselines fair? Are ablations adequate? Are datasets appropriate?      | 1-5    |
+| **Statistical Rigor**   | Are results statistically significant? Error bars reported? Multiple runs? | 1-5    |
+| **Scalability**         | Does the approach scale? Are computational costs discussed?                | 1-5    |
 
 #### Step 2.3: Contribution Significance Assessment
 
 Evaluate the significance level:
 
-| Level | Description | Criteria |
-|-------|-------------|----------|
-| **Landmark** | Fundamentally changes the field | New paradigm, widely applicable breakthrough |
-| **Significant** | Strong contribution advancing the state of the art | Clear improvement with solid evidence |
-| **Moderate** | Useful contribution with some limitations | Incremental but valid improvement |
-| **Marginal** | Minimal advance over existing work | Small gains, narrow applicability |
-| **Below threshold** | Does not meet publication standards | Fundamental flaws, insufficient evidence |
+| Level               | Description                                        | Criteria                                     |
+| ------------------- | -------------------------------------------------- | -------------------------------------------- |
+| **Landmark**        | Fundamentally changes the field                    | New paradigm, widely applicable breakthrough |
+| **Significant**     | Strong contribution advancing the state of the art | Clear improvement with solid evidence        |
+| **Moderate**        | Useful contribution with some limitations          | Incremental but valid improvement            |
+| **Marginal**        | Minimal advance over existing work                 | Small gains, narrow applicability            |
+| **Below threshold** | Does not meet publication standards                | Fundamental flaws, insufficient evidence     |
 
 #### Step 2.4: Strengths and Weaknesses Analysis
 
 For each strength or weakness, provide:
+
 - **What**: Specific observation
 - **Where**: Section/figure/table reference
 - **Why it matters**: Impact on the paper's claims or utility
@@ -137,6 +138,7 @@ Produce the final review using the template below.
 # Paper Review: [Paper Title]
 
 ## Paper Metadata
+
 - **Authors**: [Author list]
 - **Venue**: [Publication venue or preprint server]
 - **Year**: [Year]
@@ -158,37 +160,43 @@ and whether the contribution is sufficient for the claimed venue/impact level.]
 ## Strengths
 
 ### S1: [Concise strength title]
+
 [Detailed explanation with specific references to sections, figures, or tables in the paper.
 Explain WHY this is a strength and its significance.]
 
 ### S2: [Concise strength title]
+
 [...]
 
 ### S3: [Concise strength title]
+
 [...]
 
 ## Weaknesses
 
 ### W1: [Concise weakness title]
+
 [Detailed explanation with specific references. Explain the impact of this weakness on
 the paper's claims. Suggest how it could be addressed.]
 
 ### W2: [Concise weakness title]
+
 [...]
 
 ### W3: [Concise weakness title]
+
 [...]
 
 ## Methodology Assessment
 
-| Criterion | Rating (1-5) | Assessment |
-|-----------|:---:|------------|
-| Soundness | X | [Brief justification] |
-| Novelty | X | [Brief justification] |
-| Reproducibility | X | [Brief justification] |
-| Experimental Design | X | [Brief justification] |
-| Statistical Rigor | X | [Brief justification] |
-| Scalability | X | [Brief justification] |
+| Criterion           | Rating (1-5) | Assessment            |
+| ------------------- | :----------: | --------------------- |
+| Soundness           |      X       | [Brief justification] |
+| Novelty             |      X       | [Brief justification] |
+| Reproducibility     |      X       | [Brief justification] |
+| Experimental Design |      X       | [Brief justification] |
+| Statistical Rigor   |      X       | [Brief justification] |
+| Scalability         |      X       | [Brief justification] |
 
 ## Questions for the Authors
 
@@ -217,6 +225,7 @@ What important related work is missing?]
 **Contribution Level**: [Landmark / Significant / Moderate / Marginal / Below threshold]
 
 ### Actionable Suggestions for Improvement
+
 1. [Specific, constructive suggestion]
 2. [Specific, constructive suggestion]
 3. [Specific, constructive suggestion]
@@ -225,16 +234,19 @@ What important related work is missing?]
 ## Review Principles
 
 ### Constructive Criticism
+
 - **Always suggest how to fix it** — Don't just point out problems; propose solutions
 - **Give credit where due** — Acknowledge genuine contributions even in flawed papers
 - **Be specific** — Reference exact sections, equations, figures, and tables
 - **Separate minor from major** — Distinguish fatal flaws from fixable issues
 
 ### Objectivity Standards
+
 - ❌ "This paper is poorly written" (vague, unhelpful)
 - ✅ "Section 3.2 introduces notation X without formal definition, making the proof in Theorem 1 difficult to follow. Consider adding a notation table after the problem formulation." (specific, actionable)
 
 ### Ethical Review Practices
+
 - Do NOT dismiss work based on author reputation or affiliation
 - Evaluate the work on its own merits
 - Flag potential ethical concerns (bias in datasets, dual-use implications) constructively
@@ -242,13 +254,13 @@ What important related work is missing?]
 
 ## Adaptation by Paper Type
 
-| Paper Type | Focus Areas |
-|------------|-------------|
-| **Empirical** | Experimental design, baselines, statistical significance, ablations, reproducibility |
-| **Theoretical** | Proof correctness, assumption reasonableness, tightness of bounds, connection to practice |
-| **Survey** | Comprehensiveness, taxonomy quality, coverage of recent work, synthesis insights |
-| **Systems** | Architecture decisions, scalability evidence, real-world deployment, engineering contributions |
-| **Position** | Argument coherence, evidence for claims, impact potential, fairness of characterizations |
+| Paper Type      | Focus Areas                                                                                    |
+| --------------- | ---------------------------------------------------------------------------------------------- |
+| **Empirical**   | Experimental design, baselines, statistical significance, ablations, reproducibility           |
+| **Theoretical** | Proof correctness, assumption reasonableness, tightness of bounds, connection to practice      |
+| **Survey**      | Comprehensiveness, taxonomy quality, coverage of recent work, synthesis insights               |
+| **Systems**     | Architecture decisions, scalability evidence, real-world deployment, engineering contributions |
+| **Position**    | Argument coherence, evidence for claims, impact potential, fairness of characterizations       |
 
 ## Common Pitfalls to Avoid
 

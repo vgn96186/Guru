@@ -159,8 +159,7 @@ body {
 .hero-pattern {
   position: absolute;
   inset: -50%;
-  background-image:
-    radial-gradient(
+  background-image: radial-gradient(
       circle at 20% 30%,
       rgba(201, 169, 98, 0.08) 0%,
       transparent 50%

@@ -123,7 +123,7 @@ export default function ProgressiveSkillsAnimation() {
         setBuildIndex(0);
         setShowWorkspace(false);
         setIsPlaying(false);
-      }, totalDelay + FINAL_DISPLAY_DURATION),
+      }, totalDelay + FINAL_DISPLAY_DURATION)
     );
 
     timeoutsRef.current = timeouts;
@@ -184,7 +184,7 @@ export default function ProgressiveSkillsAnimation() {
       {
         threshold: 0.3, // Trigger when 30% of the component is visible
         rootMargin: "0px",
-      },
+      }
     );
 
     observer.observe(containerElement);
@@ -405,12 +405,12 @@ export default function ProgressiveSkillsAnimation() {
                   item.done
                     ? "text-green-500"
                     : item.dragging
-                      ? "translate-x-8 scale-105 text-blue-400"
-                      : item.active
-                        ? "text-white"
-                        : item.highlight
-                          ? "text-purple-400"
-                          : "text-zinc-600"
+                    ? "translate-x-8 scale-105 text-blue-400"
+                    : item.active
+                    ? "text-white"
+                    : item.highlight
+                    ? "text-purple-400"
+                    : "text-zinc-600"
                 }`}
                 style={{ paddingLeft: `${item.indent * 24}px` }}
                 animate={
@@ -429,8 +429,8 @@ export default function ProgressiveSkillsAnimation() {
                       item.done
                         ? "text-green-500"
                         : item.highlight
-                          ? "text-purple-400"
-                          : ""
+                        ? "text-purple-400"
+                        : ""
                     }
                   />
                 ) : (
@@ -440,8 +440,8 @@ export default function ProgressiveSkillsAnimation() {
                       item.done
                         ? "text-green-500"
                         : item.highlight
-                          ? "text-purple-400"
-                          : ""
+                        ? "text-purple-400"
+                        : ""
                     }
                   />
                 )}
@@ -615,7 +615,7 @@ export default function ProgressiveSkillsAnimation() {
 
                   {/* Building */}
                   {["building", "load-deploy", "deploying", "done"].includes(
-                    phase,
+                    phase
                   ) && (
                     <motion.div
                       initial={{ opacity: 0 }}

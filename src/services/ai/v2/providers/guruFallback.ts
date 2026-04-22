@@ -69,6 +69,7 @@ const DEFAULT_MODEL_IDS: Record<ProviderId | 'local', string> = {
   gitlab_duo: 'gpt-4o',
   poe: 'GPT-4o-Mini',
   qwen: 'qwen2.5-72b-instruct',
+  vertex: 'gemini-2.5-flash',
   local: '',
 };
 
@@ -103,6 +104,7 @@ function resolveChosenModelSelection(chosenModel: string | undefined): ChosenMod
     { prefix: 'gitlab_duo/', provider: 'gitlab_duo' },
     { prefix: 'poe/', provider: 'poe' },
     { prefix: 'qwen/', provider: 'qwen' },
+    { prefix: 'vertex/', provider: 'vertex' },
   ];
 
   for (const { prefix, provider } of prefixedProviders) {
@@ -284,6 +286,17 @@ function tryCreateProvider(
 
     case 'qwen':
       return profile.qwenConnected ? createQwenModel({ modelId: ids.qwen }) : null;
+
+    case 'vertex':
+      return profile.vertexAiToken && profile.vertexAiProject && profile.vertexAiLocation
+        ? createGeminiModel({
+            modelId: ids.vertex,
+            apiKey: profile.vertexAiToken,
+            isVertex: true,
+            vertexProject: profile.vertexAiProject,
+            vertexLocation: profile.vertexAiLocation,
+          })
+        : null;
 
     default:
       return null;

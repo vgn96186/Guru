@@ -88,7 +88,7 @@ function getRunMetadataStorage(): {
   return {
     getItem(key) {
       const normalized = normalizeStoredRunId(
-        window.sessionStorage.getItem(key),
+        window.sessionStorage.getItem(key)
       );
       if (normalized) {
         window.sessionStorage.setItem(key, normalized);
@@ -185,7 +185,7 @@ export function useThreadStream({
       threadIdRef.current = _threadId;
       _handleOnStart(_threadId);
     },
-    [_handleOnStart],
+    [_handleOnStart]
   );
 
   const queryClient = useQueryClient();
@@ -230,7 +230,7 @@ export function useThreadStream({
     },
     onUpdateEvent(data) {
       const updates: Array<Partial<AgentThreadState> | null> = Object.values(
-        data || {},
+        data || {}
       );
       for (const update of updates) {
         if (update && "title" in update && update.title) {
@@ -252,7 +252,7 @@ export function useThreadStream({
                 }
                 return t;
               });
-            },
+            }
           );
         }
       }
@@ -328,7 +328,7 @@ export function useThreadStream({
       threadId: string,
       message: PromptInputMessage,
       extraContext?: Record<string, unknown>,
-      options?: SendMessageOptions,
+      options?: SendMessageOptions
     ) => {
       if (sendInFlightRef.current) {
         return;
@@ -346,7 +346,7 @@ export function useThreadStream({
           filename: f.filename ?? "",
           size: 0,
           status: "uploading" as const,
-        }),
+        })
       );
 
       const hideFromUI = options?.additionalKwargs?.hide_from_ui === true;
@@ -391,18 +391,18 @@ export function useThreadStream({
           setIsUploading(true);
           try {
             const filePromises = message.files.map((fileUIPart) =>
-              promptInputFilePartToFile(fileUIPart),
+              promptInputFilePartToFile(fileUIPart)
             );
 
             const conversionResults = await Promise.all(filePromises);
             const files = conversionResults.filter(
-              (file): file is File => file !== null,
+              (file): file is File => file !== null
             );
             const failedConversions = conversionResults.length - files.length;
 
             if (failedConversions > 0) {
               throw new Error(
-                `Failed to prepare ${failedConversions} attachment(s) for upload. Please retry.`,
+                `Failed to prepare ${failedConversions} attachment(s) for upload. Please retry.`
               );
             }
 
@@ -421,7 +421,7 @@ export function useThreadStream({
                   size: info.size,
                   path: info.virtual_path,
                   status: "uploaded" as const,
-                }),
+                })
               );
               setOptimisticMessages((messages) => {
                 if (messages.length > 1 && messages[0]) {
@@ -457,7 +457,7 @@ export function useThreadStream({
             size: info.size,
             path: info.virtual_path,
             status: "uploaded" as const,
-          }),
+          })
         );
 
         await thread.submit(
@@ -498,13 +498,13 @@ export function useThreadStream({
                 (context.mode === "ultra"
                   ? "high"
                   : context.mode === "pro"
-                    ? "medium"
-                    : context.mode === "thinking"
-                      ? "low"
-                      : undefined),
+                  ? "medium"
+                  : context.mode === "thinking"
+                  ? "low"
+                  : undefined),
               thread_id: threadId,
             },
-          },
+          }
         );
         void queryClient.invalidateQueries({ queryKey: ["threads", "search"] });
       } catch (error) {
@@ -515,7 +515,7 @@ export function useThreadStream({
         sendInFlightRef.current = false;
       }
     },
-    [thread, _handleOnStart, t.uploads.uploadingFiles, context, queryClient],
+    [thread, _handleOnStart, t.uploads.uploadingFiles, context, queryClient]
   );
 
   // Merge thread with optimistic messages for display
@@ -536,7 +536,7 @@ export function useThreads(
     sortBy: "updated_at",
     sortOrder: "desc",
     select: ["thread_id", "updated_at", "values", "metadata"],
-  },
+  }
 ) {
   const apiClient = getAPIClient();
   return useQuery<AgentThread[]>({
@@ -549,8 +549,9 @@ export function useThreads(
       // Preserve prior semantics: if a non-positive limit is explicitly provided,
       // delegate to a single search call with the original parameters.
       if (maxResults !== undefined && maxResults <= 0) {
-        const response =
-          await apiClient.threads.search<AgentThreadState>(params);
+        const response = await apiClient.threads.search<AgentThreadState>(
+          params
+        );
         return response as AgentThread[];
       }
 
@@ -608,7 +609,7 @@ export function useDeleteThread() {
         `${getBackendBaseURL()}/api/threads/${encodeURIComponent(threadId)}`,
         {
           method: "DELETE",
-        },
+        }
       );
 
       if (!response.ok) {
@@ -629,7 +630,7 @@ export function useDeleteThread() {
             return oldData;
           }
           return oldData.filter((t) => t.thread_id !== threadId);
-        },
+        }
       );
     },
     onSettled() {
@@ -672,7 +673,7 @@ export function useRenameThread() {
             }
             return t;
           });
-        },
+        }
       );
     },
   });

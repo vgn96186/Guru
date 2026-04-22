@@ -13,14 +13,15 @@ This skill searches for up to 10 restaurants matching a specific cuisine and loc
 
 ## Examples
 
-* "Suggest Mexican food in San Jose."
-* "Find a random Italian restaurant near Sunnyvale."
-* "Where should I get Sushi in San Francisco today?"
-* "Show a restaurant roulette for Indian food in Palo Alto."
+- "Suggest Mexican food in San Jose."
+- "Find a random Italian restaurant near Sunnyvale."
+- "Where should I get Sushi in San Francisco today?"
+- "Show a restaurant roulette for Indian food in Palo Alto."
 
 ## Instructions
 
 Call the `run_js` tool with the following exact parameters:
+
 - data: A JSON string with the following fields
   - location: the target city or location (e.g., "San Jose", "Sunnyvale", "San Francisco").
   - cuisine: the style of food or cuisine desired (e.g., "Mexican", "Italian", "Indian", "Sushi").

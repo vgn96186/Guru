@@ -123,12 +123,8 @@
         "maxTokens": 1024,
         "accelerators": "cpu"
       },
-      "taskTypes": [
-        "llm_tiny_garden"
-      ],
-      "bestForTaskTypes": [
-        "llm_tiny_garden"
-      ]
+      "taskTypes": ["llm_tiny_garden"],
+      "bestForTaskTypes": ["llm_tiny_garden"]
     }
   ]
 }

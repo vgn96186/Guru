@@ -64,7 +64,7 @@ export function getThreadModelName(threadId: string): string | undefined {
 
 export function saveThreadModelName(
   threadId: string,
-  modelName: string | undefined,
+  modelName: string | undefined
 ) {
   if (!isBrowser()) {
     return;
@@ -79,7 +79,7 @@ export function saveThreadModelName(
 
 export function applyThreadModelOverride(
   settings: LocalSettings,
-  threadModelName: string | undefined,
+  threadModelName: string | undefined
 ): LocalSettings {
   if (!threadModelName) {
     return settings;

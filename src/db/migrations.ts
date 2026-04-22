@@ -1119,7 +1119,22 @@ DROP TABLE ai_cache_old;`,
     sql: `ALTER TABLE user_profile ADD COLUMN samsungBatteryPromptShownAt INTEGER DEFAULT 0`,
     description: 'Track if Samsung battery optimization prompt was shown',
   },
+  {
+    version: 170,
+    sql: `ALTER TABLE user_profile ADD COLUMN vertex_ai_project TEXT NOT NULL DEFAULT ''`,
+    description: 'Add Vertex AI project ID for enterprise Gemini API access',
+  },
+  {
+    version: 171,
+    sql: `ALTER TABLE user_profile ADD COLUMN vertex_ai_location TEXT NOT NULL DEFAULT ''`,
+    description: 'Add Vertex AI location (e.g. us-central1)',
+  },
+  {
+    version: 172,
+    sql: `ALTER TABLE user_profile ADD COLUMN vertex_ai_token TEXT NOT NULL DEFAULT ''`,
+    description: 'Add Vertex AI access token / service account credentials',
+  },
 ];
 
 /** Latest schema version. Bump when adding new migrations. */
-export const LATEST_VERSION = 169;
+export const LATEST_VERSION = 172;

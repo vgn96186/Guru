@@ -59,7 +59,9 @@ function ensureDeviceConnected() {
     const found = ready.find((row) => row.serial === REQUESTED_DEVICE_SERIAL);
     if (!found) {
       fail(
-        `Requested device "${REQUESTED_DEVICE_SERIAL}" not found. Available: ${ready.map((r) => r.serial).join(', ')}`,
+        `Requested device "${REQUESTED_DEVICE_SERIAL}" not found. Available: ${ready
+          .map((r) => r.serial)
+          .join(', ')}`,
       );
     }
     activeDeviceSerial = found.serial;
@@ -161,7 +163,9 @@ function main() {
     if (execOut.error.code === 'ETIMEDOUT' || execOut.error.code === 'TIMEOUT') {
       console.warn('[adb-screenshot] exec-out timed out, trying on-device screencap + pull...');
     } else {
-      console.warn(`[adb-screenshot] exec-out error (${execOut.error.message}), trying fallback...`);
+      console.warn(
+        `[adb-screenshot] exec-out error (${execOut.error.message}), trying fallback...`,
+      );
     }
     tryShellAndPull(outPath);
     console.log(`[adb-screenshot] ${fs.statSync(outPath).size} bytes → ${outPath}`);
@@ -174,7 +178,8 @@ function main() {
     return;
   }
 
-  const stderrHint = execOut.stderr && execOut.stderr.length ? execOut.stderr.toString('utf8').slice(0, 200) : '';
+  const stderrHint =
+    execOut.stderr && execOut.stderr.length ? execOut.stderr.toString('utf8').slice(0, 200) : '';
   if (stderrHint) {
     console.warn('[adb-screenshot] exec-out did not return PNG:', stderrHint);
   }

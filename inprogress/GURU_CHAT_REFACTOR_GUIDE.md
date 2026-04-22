@@ -33,11 +33,11 @@ Tools (AI SDK Integration)
 
 ### Connected Tools
 
-| Tool | Purpose | Output Mapped To |
-|------|---------|------------------|
-| `search_medical` | Search Wikipedia, Europe PMC, PubMed | `UIMessage.sources` |
-| `search_reference_images` | Find anatomy diagrams, charts | `UIMessage.referenceImages` |
-| `generate_image` | Generate custom study images | `UIMessage.images` |
+| Tool                      | Purpose                              | Output Mapped To            |
+| ------------------------- | ------------------------------------ | --------------------------- |
+| `search_medical`          | Search Wikipedia, Europe PMC, PubMed | `UIMessage.sources`         |
+| `search_reference_images` | Find anatomy diagrams, charts        | `UIMessage.referenceImages` |
+| `generate_image`          | Generate custom study images         | `UIMessage.images`          |
 
 ### Tool Flow
 
@@ -56,18 +56,21 @@ UI displays sources/images in GuruChatMessageItem
 ### Changes Made
 
 1. **Added imports** in `GuruChatScreen.tsx`:
+
    ```typescript
    import { useGuruChatSession } from '../hooks/useGuruChatSession';
    import { useGuruChatModels } from '../hooks/useGuruChatModels';
    ```
 
 2. **Instantiated hooks** after `flatListRef`:
+
    ```typescript
    const guruSession = useGuruChatSession({ topicName, syllabusTopicId, requestedThreadId });
    const guruModels = useGuruChatModels({ profile });
    ```
 
 3. **Added sync effects** to bridge old and new state:
+
    - `guruSession.currentThread` → `setCurrentThread`
    - `guruSession.threads` → `setThreads`
    - `guruSession.sessionSummary` → `setSessionSummary`
@@ -94,6 +97,7 @@ UI displays sources/images in GuruChatMessageItem
 ### Changes Made
 
 1. **Added component imports** in `GuruChatScreen.tsx`:
+
    ```typescript
    import { GuruChatHistoryDrawer } from '../components/chat/GuruChatHistoryDrawer';
    import { GuruChatRenameSheet } from '../components/chat/GuruChatRenameSheet';
@@ -102,6 +106,7 @@ UI displays sources/images in GuruChatMessageItem
    ```
 
 2. **Replaced History Drawer** (~40 lines → 1 component):
+
    ```tsx
    <GuruChatHistoryDrawer
      visible={showHistoryDrawer}
@@ -116,6 +121,7 @@ UI displays sources/images in GuruChatMessageItem
    ```
 
 3. **Replaced Rename Sheet** (~50 lines → 1 component):
+
    ```tsx
    <GuruChatRenameSheet
      visible={renameThreadId !== null}
@@ -127,6 +133,7 @@ UI displays sources/images in GuruChatMessageItem
    ```
 
 4. **Replaced Model Selector** (~60 lines → 1 component):
+
    ```tsx
    <GuruChatModelSelector
      visible={showModelPicker}
@@ -169,6 +176,7 @@ UI displays sources/images in GuruChatMessageItem
 ### Changes Made
 
 1. **Added `useGuruChat` hook** in `GuruChatScreen.tsx`:
+
    ```typescript
    // Feature flag: Enable new streaming + tool calling
    const [enableVercelAI, setEnableVercelAI] = useState(false);
@@ -187,6 +195,7 @@ UI displays sources/images in GuruChatMessageItem
    ```
 
 2. **Created tool definitions** in `src/services/ai/chatTools.ts`:
+
    - `search_medical` - Wikipedia, Europe PMC, PubMed search
    - `search_reference_images` - Medical diagrams, charts
    - `generate_image` - Custom study image generation
@@ -344,6 +353,7 @@ npx tsc --noEmit --skipLibCheck \
 ## Rollback Strategy
 
 Each phase is isolated - if issues arise:
+
 1. Keep original `GuruChatScreen.tsx` as `GuruChatScreen.legacy.tsx`
 2. Revert imports to legacy version
 3. Fix issues in new modules

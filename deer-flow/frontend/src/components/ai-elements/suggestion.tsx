@@ -27,14 +27,16 @@ export const Suggestions = ({
           <span
             className="animate-fade-in-up max-w-full opacity-0"
             style={{
-              animationDelay: `${STAGGER_DELAY_MS_OFFSET + index * STAGGER_DELAY_MS}ms`,
+              animationDelay: `${
+                STAGGER_DELAY_MS_OFFSET + index * STAGGER_DELAY_MS
+              }ms`,
             }}
           >
             {child}
           </span>
         ) : (
           child
-        ),
+        )
       )}
     </div>
     <ScrollBar className="hidden" orientation="horizontal" />
@@ -65,7 +67,7 @@ export const Suggestion = ({
     <Button
       className={cn(
         "text-muted-foreground h-auto max-w-full cursor-pointer rounded-full px-4 py-2 text-center text-xs font-normal whitespace-normal",
-        className,
+        className
       )}
       onClick={handleClick}
       size={size}

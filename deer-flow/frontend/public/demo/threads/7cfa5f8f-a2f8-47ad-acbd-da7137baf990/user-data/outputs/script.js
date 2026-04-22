@@ -91,7 +91,7 @@ document.addEventListener("DOMContentLoaded", function () {
   // Observe elements to animate
   document
     .querySelectorAll(
-      ".trend-card, .opportunity-card, .challenge-card, .highlight-card",
+      ".trend-card, .opportunity-card, .challenge-card, .highlight-card"
     )
     .forEach((el) => {
       observer.observe(el);
@@ -125,7 +125,7 @@ document.addEventListener("DOMContentLoaded", function () {
         }
       });
     },
-    { threshold: 0.5 },
+    { threshold: 0.5 }
   );
 
   stats.forEach((stat) => {
@@ -151,7 +151,7 @@ document.addEventListener("DOMContentLoaded", function () {
   if (yearElement) {
     yearElement.textContent = yearElement.textContent.replace(
       "2026",
-      currentYear,
+      currentYear
     );
   }
 

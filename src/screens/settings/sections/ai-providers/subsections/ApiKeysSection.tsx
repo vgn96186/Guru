@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text } from 'react-native';
 import ApiKeyRow from '../components/ApiKeyRow';
 import CloudflareKeyRow from '../components/CloudflareKeyRow';
+import VertexKeyRow from '../components/VertexKeyRow';
 import type { AiProvidersProps } from '../types';
 
 export default function ApiKeysSection({
@@ -87,6 +88,12 @@ export default function ApiKeysSection({
         styles={styles}
         clearProviderValidated={clearProviderValidated}
         providerId="cf"
+      />
+      <VertexKeyRow
+        {...apiKeys.vertex}
+        styles={styles}
+        clearProviderValidated={clearProviderValidated}
+        providerId="vertex"
       />
     </SubSectionToggle>
   );

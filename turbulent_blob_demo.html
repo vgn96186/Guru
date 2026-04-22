@@ -1,248 +1,268 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Turbulent to Smooth Blob</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;600;800&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;600;800&display=swap"
+      rel="stylesheet"
+    />
     <style>
-        :root {
-            --bg: #020408;
-            --orb-start: #9BA3EE;
-            --orb-mid: #4450C0;
-            --orb-end: #2E3BAC;
-            --orb-glow: #6366F1;
-            --text: #F2F2F2;
-        }
+      :root {
+        --bg: #020408;
+        --orb-start: #9ba3ee;
+        --orb-mid: #4450c0;
+        --orb-end: #2e3bac;
+        --orb-glow: #6366f1;
+        --text: #f2f2f2;
+      }
 
-        body {
-            margin: 0;
-            background: var(--bg);
-            color: var(--text);
-            font-family: 'Outfit', sans-serif;
-            height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            overflow: hidden;
-        }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        font-family: 'Outfit', sans-serif;
+        height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        overflow: hidden;
+      }
 
-        .container {
-            position: relative;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 60px;
-        }
+      .container {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 60px;
+      }
 
-        /* The Guru Orb */
-        .blob {
-            width: 200px;
-            height: 200px;
-            background: radial-gradient(circle at center, var(--orb-start), var(--orb-mid), var(--orb-end));
-            border-radius: 50%;
-            filter: url('#turbulenceFilter');
-            box-shadow: 0 0 50px var(--orb-glow), 0 0 100px rgba(99, 102, 241, 0.2);
-            position: relative;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            animation: breathe 5s infinite ease-in-out;
-            cursor: pointer;
-        }
+      /* The Guru Orb */
+      .blob {
+        width: 200px;
+        height: 200px;
+        background: radial-gradient(
+          circle at center,
+          var(--orb-start),
+          var(--orb-mid),
+          var(--orb-end)
+        );
+        border-radius: 50%;
+        filter: url('#turbulenceFilter');
+        box-shadow: 0 0 50px var(--orb-glow), 0 0 100px rgba(99, 102, 241, 0.2);
+        position: relative;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        animation: breathe 5s infinite ease-in-out;
+        cursor: pointer;
+      }
 
-        @keyframes breathe {
-            0%, 100% { transform: scale(0.97); }
-            50% { transform: scale(1.03); }
+      @keyframes breathe {
+        0%,
+        100% {
+          transform: scale(0.97);
         }
+        50% {
+          transform: scale(1.03);
+        }
+      }
 
-        .ui {
-            text-align: center;
-            max-width: 400px;
-            z-index: 100;
-        }
+      .ui {
+        text-align: center;
+        max-width: 400px;
+        z-index: 100;
+      }
 
-        h1 {
-            font-size: 1.5rem;
-            margin: 0 0 8px 0;
-            letter-spacing: 1px;
-            font-weight: 600;
-        }
+      h1 {
+        font-size: 1.5rem;
+        margin: 0 0 8px 0;
+        letter-spacing: 1px;
+        font-weight: 600;
+      }
 
-        p {
-            color: #555;
-            font-size: 0.9rem;
-            margin-bottom: 24px;
-        }
+      p {
+        color: #555;
+        font-size: 0.9rem;
+        margin-bottom: 24px;
+      }
 
-        .btn {
-            background: rgba(255, 255, 255, 0.05);
-            color: #888;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            padding: 10px 24px;
-            border-radius: 100px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            text-transform: uppercase;
-            letter-spacing: 1.5px;
-            font-size: 10px;
-        }
+      .btn {
+        background: rgba(255, 255, 255, 0.05);
+        color: #888;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        padding: 10px 24px;
+        border-radius: 100px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-transform: uppercase;
+        letter-spacing: 1.5px;
+        font-size: 10px;
+      }
 
-        .btn:hover {
-            background: var(--orb-glow);
-            color: white;
-            border-color: transparent;
-            box-shadow: 0 0 20px var(--orb-glow);
-        }
+      .btn:hover {
+        background: var(--orb-glow);
+        color: white;
+        border-color: transparent;
+        box-shadow: 0 0 20px var(--orb-glow);
+      }
 
-        .status {
-            position: fixed;
-            bottom: 30px;
-            font-size: 11px;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            color: #444;
-        }
+      .status {
+        position: fixed;
+        bottom: 30px;
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        color: #444;
+      }
     </style>
-</head>
-<body>
-
+  </head>
+  <body>
     <div class="container">
-        <div class="blob" id="orb"></div>
-        
-        <div class="ui">
-            <h1>15-Second Fluid Bridge.</h1>
-            <p>An extended, hyper-smooth simulation of liquid dynamics settling into a perfect equilibrium.</p>
-            <button class="btn" id="resetBtn">Initiate Cycle</button>
-        </div>
+      <div class="blob" id="orb"></div>
+
+      <div class="ui">
+        <h1>15-Second Fluid Bridge.</h1>
+        <p>
+          An extended, hyper-smooth simulation of liquid dynamics settling into a perfect
+          equilibrium.
+        </p>
+        <button class="btn" id="resetBtn">Initiate Cycle</button>
+      </div>
     </div>
 
     <!-- The SVG Filter -->
-    <svg width="0" height="0" style="position: absolute;">
-        <defs>
-            <filter id="turbulenceFilter" x="-100%" y="-100%" width="300%" height="300%">
-                <!-- 1. Generate Static Noise (Smoother octaves) -->
-                <feTurbulence 
-                    id="turbulence"
-                    type="turbulence" 
-                    baseFrequency="0.012" 
-                    numOctaves="1" 
-                    seed="42"
-                    result="noise" />
-                
-                <!-- 2. Smooth Drift -->
-                <feOffset id="noiseOffset" in="noise" dx="0" dy="0" result="driftedNoise" />
+    <svg width="0" height="0" style="position: absolute">
+      <defs>
+        <filter id="turbulenceFilter" x="-100%" y="-100%" width="300%" height="300%">
+          <!-- 1. Generate Static Noise (Smoother octaves) -->
+          <feTurbulence
+            id="turbulence"
+            type="turbulence"
+            baseFrequency="0.012"
+            numOctaves="1"
+            seed="42"
+            result="noise"
+          />
 
-                <!-- 3. Displace the Sphere -->
-                <feDisplacementMap 
-                    id="displacement"
-                    in="SourceGraphic" 
-                    in2="driftedNoise" 
-                    scale="80" 
-                    xChannelSelector="R" 
-                    yChannelSelector="G"
-                    result="displaced" />
+          <!-- 2. Smooth Drift -->
+          <feOffset id="noiseOffset" in="noise" dx="0" dy="0" result="driftedNoise" />
 
-                <!-- 4. Liquid Gooey Smoothing (Fixed: No static composite) -->
-                <feGaussianBlur in="displaced" stdDeviation="8" result="blur" />
-                <feColorMatrix in="blur" mode="matrix" 
-                    values="1 0 0 0 0  
+          <!-- 3. Displace the Sphere -->
+          <feDisplacementMap
+            id="displacement"
+            in="SourceGraphic"
+            in2="driftedNoise"
+            scale="80"
+            xChannelSelector="R"
+            yChannelSelector="G"
+            result="displaced"
+          />
+
+          <!-- 4. Liquid Gooey Smoothing (Fixed: No static composite) -->
+          <feGaussianBlur in="displaced" stdDeviation="8" result="blur" />
+          <feColorMatrix
+            in="blur"
+            mode="matrix"
+            values="1 0 0 0 0  
                             0 1 0 0 0  
                             0 0 1 0 0  
-                            0 0 0 30 -12" 
-                    result="goo" />
-            </filter>
-        </defs>
+                            0 0 0 30 -12"
+            result="goo"
+          />
+        </filter>
+      </defs>
     </svg>
 
     <div class="status">Refined Fluid Equilibrium</div>
 
     <script>
-        const turb = document.getElementById('turbulence');
-        const disp = document.getElementById('displacement');
-        const offset = document.getElementById('noiseOffset');
-        const btn = document.getElementById('resetBtn');
-        const orb = document.getElementById('orb');
-        
-        let startTime = null;
-        let isAnimating = false;
-        const duration = 15000; 
-        const maxScale = 80; // Reduced chaos
-        
-        function animate(timestamp) {
-            if (!startTime) startTime = timestamp;
-            const elapsed = timestamp - startTime;
-            const progress = Math.min(elapsed / duration, 1);
-            
-            let currentScale = 0;
-            if (progress < 0.15) {
-                // Ramp Up
-                const rampProgress = progress / 0.15;
-                currentScale = maxScale * (1 - Math.pow(1 - rampProgress, 2));
-            } else {
-                // Settle
-                const settleProgress = (progress - 0.15) / (1 - 0.15);
-                currentScale = maxScale * Math.pow(1 - settleProgress, 3);
-            }
-            
-            disp.setAttribute('scale', currentScale);
-            
-            // Continuous Noise Drift
-            const baseDrift = 0.04;
-            const turbulenceDrift = (currentScale / maxScale) * 0.12;
-            const driftSpeed = baseDrift + turbulenceDrift;
-            const dx = (timestamp * driftSpeed) % 1000;
-            const dy = (timestamp * driftSpeed * 0.8) % 1000;
-            offset.setAttribute('dx', dx);
-            offset.setAttribute('dy', dy);
-            
-            // Subtle Frequency "Breathing"
-            const breathingScale = Math.sin(timestamp / 3500) * 0.0015;
-            const turbulenceFreq = (currentScale / maxScale) * 0.008;
-            turb.setAttribute('baseFrequency', 0.012 + breathingScale + turbulenceFreq);
+      const turb = document.getElementById('turbulence');
+      const disp = document.getElementById('displacement');
+      const offset = document.getElementById('noiseOffset');
+      const btn = document.getElementById('resetBtn');
+      const orb = document.getElementById('orb');
 
-            if (progress < 1) {
-                requestAnimationFrame(animate);
-            } else {
-                isAnimating = false;
-                btn.innerText = "Restart Cycle";
-                requestAnimationFrame(maintainRestingFlow);
-            }
+      let startTime = null;
+      let isAnimating = false;
+      const duration = 15000;
+      const maxScale = 80; // Reduced chaos
+
+      function animate(timestamp) {
+        if (!startTime) startTime = timestamp;
+        const elapsed = timestamp - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+
+        let currentScale = 0;
+        if (progress < 0.15) {
+          // Ramp Up
+          const rampProgress = progress / 0.15;
+          currentScale = maxScale * (1 - Math.pow(1 - rampProgress, 2));
+        } else {
+          // Settle
+          const settleProgress = (progress - 0.15) / (1 - 0.15);
+          currentScale = maxScale * Math.pow(1 - settleProgress, 3);
         }
 
-        function maintainRestingFlow(timestamp) {
-            if (isAnimating) return;
-            // Keep the orb "living" with a slow drift
-            const dx = (timestamp * 0.05) % 1000;
-            const dy = (timestamp * 0.035) % 1000;
-            offset.setAttribute('dx', dx);
-            offset.setAttribute('dy', dy);
-            
-            const breathing = 0.012 + Math.sin(timestamp / 3000) * 0.002;
-            turb.setAttribute('baseFrequency', breathing);
-            
-            requestAnimationFrame(maintainRestingFlow);
+        disp.setAttribute('scale', currentScale);
+
+        // Continuous Noise Drift
+        const baseDrift = 0.04;
+        const turbulenceDrift = (currentScale / maxScale) * 0.12;
+        const driftSpeed = baseDrift + turbulenceDrift;
+        const dx = (timestamp * driftSpeed) % 1000;
+        const dy = (timestamp * driftSpeed * 0.8) % 1000;
+        offset.setAttribute('dx', dx);
+        offset.setAttribute('dy', dy);
+
+        // Subtle Frequency "Breathing"
+        const breathingScale = Math.sin(timestamp / 3500) * 0.0015;
+        const turbulenceFreq = (currentScale / maxScale) * 0.008;
+        turb.setAttribute('baseFrequency', 0.012 + breathingScale + turbulenceFreq);
+
+        if (progress < 1) {
+          requestAnimationFrame(animate);
+        } else {
+          isAnimating = false;
+          btn.innerText = 'Restart Cycle';
+          requestAnimationFrame(maintainRestingFlow);
         }
+      }
 
-        function trigger() {
-            if (isAnimating) return;
-            isAnimating = true;
-            startTime = null;
-            btn.innerText = "Processing...";
-            requestAnimationFrame(animate);
-        }
+      function maintainRestingFlow(timestamp) {
+        if (isAnimating) return;
+        // Keep the orb "living" with a slow drift
+        const dx = (timestamp * 0.05) % 1000;
+        const dy = (timestamp * 0.035) % 1000;
+        offset.setAttribute('dx', dx);
+        offset.setAttribute('dy', dy);
 
-        btn.addEventListener('click', trigger);
-        orb.addEventListener('click', trigger);
+        const breathing = 0.012 + Math.sin(timestamp / 3000) * 0.002;
+        turb.setAttribute('baseFrequency', breathing);
 
-        // Initial resting flow
         requestAnimationFrame(maintainRestingFlow);
-        
-        // Auto-start after a short delay
-        setTimeout(trigger, 1000);
+      }
+
+      function trigger() {
+        if (isAnimating) return;
+        isAnimating = true;
+        startTime = null;
+        btn.innerText = 'Processing...';
+        requestAnimationFrame(animate);
+      }
+
+      btn.addEventListener('click', trigger);
+      orb.addEventListener('click', trigger);
+
+      // Initial resting flow
+      requestAnimationFrame(maintainRestingFlow);
+
+      // Auto-start after a short delay
+      setTimeout(trigger, 1000);
     </script>
-</body>
+  </body>
 </html>

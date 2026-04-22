@@ -16,7 +16,7 @@ function createCompatibleClient(isMock?: boolean): LangGraphClient {
     originalRunStream(
       threadId,
       assistantId,
-      sanitizeRunStreamOptions(payload),
+      sanitizeRunStreamOptions(payload)
     )) as typeof client.runs.stream;
 
   const originalJoinStream = client.runs.joinStream.bind(client.runs);
@@ -24,7 +24,7 @@ function createCompatibleClient(isMock?: boolean): LangGraphClient {
     originalJoinStream(
       threadId,
       runId,
-      sanitizeRunStreamOptions(options),
+      sanitizeRunStreamOptions(options)
     )) as typeof client.runs.joinStream;
 
   return client;

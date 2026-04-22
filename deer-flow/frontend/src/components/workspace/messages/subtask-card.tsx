@@ -59,7 +59,7 @@ export function SubtaskCard({
       <div
         className={cn(
           "ambilight z-[-1]",
-          task.status === "in_progress" ? "enabled" : "",
+          task.status === "in_progress" ? "enabled" : ""
         )}
       ></div>
       {task.status === "in_progress" && (
@@ -96,7 +96,7 @@ export function SubtaskCard({
                   <div
                     className={cn(
                       "text-muted-foreground flex items-center gap-1 text-xs font-normal",
-                      task.status === "failed" ? "text-red-500 opacity-67" : "",
+                      task.status === "failed" ? "text-red-500 opacity-67" : ""
                     )}
                   >
                     {icon}
@@ -115,7 +115,7 @@ export function SubtaskCard({
                 <ChevronUp
                   className={cn(
                     "text-muted-foreground size-4",
-                    !collapsed ? "" : "rotate-180",
+                    !collapsed ? "" : "rotate-180"
                   )}
                 />
               </div>

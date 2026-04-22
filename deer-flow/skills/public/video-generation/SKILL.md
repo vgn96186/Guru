@@ -40,6 +40,7 @@ Generate reference image for the video generation.
 ### Step 3: Execute Generation
 
 Call the Python script:
+
 ```bash
 python /mnt/skills/public/video-generation/scripts/generate.py \
   --prompt-file /mnt/user-data/workspace/prompt-file.json \
@@ -113,6 +114,7 @@ Step 3: Use the image-generation skill to generate the reference image
 Load the image-generation skill and generate a single reference image `narnia-farewell-scene-01.jpg` according to the skill.
 
 Step 4: Use the generate.py script to generate the video
+
 ```bash
 python /mnt/skills/public/video-generation/scripts/generate.py \
   --prompt-file /mnt/user-data/workspace/narnia-farewell-scene.json \
@@ -120,6 +122,7 @@ python /mnt/skills/public/video-generation/scripts/generate.py \
   --output-file /mnt/user-data/outputs/narnia-farewell-scene-01.mp4 \
   --aspect-ratio 16:9
 ```
+
 > Do NOT read the python file, just call it with the parameters.
 
 ## Output Handling

@@ -37,29 +37,26 @@ window['ai_edge_gallery_get_result'] = async (dataStr, secret) => {
     }
 
     // We simplified the prompt because we are using strict JSON mode now
-    const prompt = `List 10 real, highly-rated ${cuisine} restaurants in ${
-        location}. Within 15 miles location range`;
+    const prompt = `List 10 real, highly-rated ${cuisine} restaurants in ${location}. Within 15 miles location range`;
 
-    const url =
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${
-            GEMINI_API_KEY}`;
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`;
 
     let places = [];
 
     try {
       const response = await fetch(url, {
         method: 'POST',
-        headers: {'Content-Type': 'application/json'},
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          contents: [{parts: [{text: prompt}]}],
+          contents: [{ parts: [{ text: prompt }] }],
           // THIS IS THE MAGIC FIX: Forces Gemini to return pure JSON
           generationConfig: {
             responseMimeType: 'application/json',
             // We tell it exactly what shape the JSON should be: an array of
             // strings
-            responseSchema: {type: 'ARRAY', items: {type: 'STRING'}}
-          }
-        })
+            responseSchema: { type: 'ARRAY', items: { type: 'STRING' } },
+          },
+        }),
       });
 
       if (!response.ok) {
@@ -80,8 +77,7 @@ window['ai_edge_gallery_get_result'] = async (dataStr, secret) => {
       console.warn('Gemini API failed.', apiError);
       // IF IT FAILS, THE WHEEL WILL NOW SHOW YOU THE EXACT ERROR MESSAGE!
       let errorMessage = apiError.message;
-      if (errorMessage.length > 15)
-        errorMessage = errorMessage.substring(0, 15);
+      if (errorMessage.length > 15) errorMessage = errorMessage.substring(0, 15);
       places = ['Error:', errorMessage, 'Check', 'Console'];
     }
 
@@ -91,19 +87,19 @@ window['ai_edge_gallery_get_result'] = async (dataStr, secret) => {
 
     // 3. Build the REAL local URL
     const baseUrl = 'webview.html';
-    const fullUrl = `${baseUrl}?c=${encodeURIComponent(cuisine)}&l=${
-        encodeURIComponent(location)}&data=${compressedData}&v=${Date.now()}`;
+    const fullUrl = `${baseUrl}?c=${encodeURIComponent(cuisine)}&l=${encodeURIComponent(
+      location,
+    )}&data=${compressedData}&v=${Date.now()}`;
 
     // 4. Return ONLY the webview. This guarantees the preview card appears and
     // stops the AI from overriding it!
     return JSON.stringify({
-      webview: {url: fullUrl},
+      webview: { url: fullUrl },
       result:
-          'Here is the restaurant roulette wheel you requested! Tap the preview card to spin it and pick a winner!'
+        'Here is the restaurant roulette wheel you requested! Tap the preview card to spin it and pick a winner!',
     });
-
   } catch (e) {
     console.error(e);
-    return JSON.stringify({error: `Failed to load roulette: ${e.message}`});
+    return JSON.stringify({ error: `Failed to load roulette: ${e.message}` });
   }
 };

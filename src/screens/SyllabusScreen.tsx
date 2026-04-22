@@ -765,7 +765,7 @@ function SyllabusScreenContent() {
                         </LinearText>
                       </View>
                     </View>
-                    {suggestion.sourceSummary ? (
+                    {suggestion.sourceSummary && (
                       <LinearText
                         variant="caption"
                         tone="secondary"
@@ -774,7 +774,7 @@ function SyllabusScreenContent() {
                       >
                         {suggestion.sourceSummary}
                       </LinearText>
-                    ) : null}
+                    )}
                     <View style={styles.suggestionActions}>
                       <TouchableOpacity
                         style={[styles.suggestionActionBtn, styles.suggestionRejectBtn]}

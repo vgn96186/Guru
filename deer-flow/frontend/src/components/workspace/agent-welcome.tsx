@@ -21,7 +21,7 @@ export function AgentWelcome({
     <div
       className={cn(
         "mx-auto flex w-full flex-col items-center justify-center gap-2 px-8 py-4 text-center",
-        className,
+        className
       )}
     >
       <div className="bg-primary/10 flex h-12 w-12 items-center justify-center rounded-full">

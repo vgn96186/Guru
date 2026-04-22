@@ -19,7 +19,7 @@ Summarization is configured in `config.yaml` under the `summarization` key:
 ```yaml
 summarization:
   enabled: true
-  model_name: null  # Use default model or specify a lightweight model
+  model_name: null # Use default model or specify a lightweight model
 
   # Trigger conditions (OR logic - any condition triggers summarization)
   trigger:
@@ -46,16 +46,19 @@ summarization:
 ### Configuration Options
 
 #### `enabled`
+
 - **Type**: Boolean
 - **Default**: `false`
 - **Description**: Enable or disable automatic summarization
 
 #### `model_name`
+
 - **Type**: String or null
 - **Default**: `null` (uses default model)
 - **Description**: Model to use for generating summaries. Recommended to use a lightweight, cost-effective model like `gpt-4o-mini` or equivalent.
 
 #### `trigger`
+
 - **Type**: Single `ContextSize` or list of `ContextSize` objects
 - **Required**: At least one trigger must be specified when enabled
 - **Description**: Thresholds that trigger summarization. Uses OR logic - summarization runs when ANY threshold is met.
@@ -63,6 +66,7 @@ summarization:
 **ContextSize Types:**
 
 1. **Token-based trigger**: Activates when token count reaches the specified value
+
    ```yaml
    trigger:
      type: tokens
@@ -70,6 +74,7 @@ summarization:
    ```
 
 2. **Message-based trigger**: Activates when message count reaches the specified value
+
    ```yaml
    trigger:
      type: messages
@@ -80,10 +85,11 @@ summarization:
    ```yaml
    trigger:
      type: fraction
-     value: 0.8  # 80% of max input tokens
+     value: 0.8 # 80% of max input tokens
    ```
 
 **Multiple Triggers:**
+
 ```yaml
 trigger:
   - type: tokens
@@ -93,11 +99,13 @@ trigger:
 ```
 
 #### `keep`
+
 - **Type**: `ContextSize` object
 - **Default**: `{type: messages, value: 20}`
 - **Description**: Specifies how much recent conversation history to preserve after summarization.
 
 **Examples:**
+
 ```yaml
 # Keep most recent 20 messages
 keep:
@@ -116,17 +124,20 @@ keep:
 ```
 
 #### `trim_tokens_to_summarize`
+
 - **Type**: Integer or null
 - **Default**: `4000`
 - **Description**: Maximum tokens to include when preparing messages for the summarization call itself. Set to `null` to skip trimming (not recommended for very long conversations).
 
 #### `summary_prompt`
+
 - **Type**: String or null
 - **Default**: `null` (uses LangChain's default prompt)
 - **Description**: Custom prompt template for generating summaries. The prompt should guide the model to extract the most important context.
 
 **Default Prompt Behavior:**
 The default LangChain prompt instructs the model to:
+
 - Extract highest quality/most relevant context
 - Focus on information critical to the overall goal
 - Avoid repeating completed actions
@@ -162,6 +173,7 @@ The middleware intelligently preserves message context:
 - **Recent Messages**: Always kept intact based on `keep` configuration
 - **AI/Tool Pairs**: Never split - if a cutoff point falls within tool messages, the system adjusts to keep the entire AI + Tool message sequence together
 - **Summary Format**: Summary is injected as a HumanMessage with the format:
+
   ```
   Here is a summary of the conversation to date:
 
@@ -173,10 +185,12 @@ The middleware intelligently preserves message context:
 ### Choosing Trigger Thresholds
 
 1. **Token-based triggers**: Recommended for most use cases
+
    - Set to 60-80% of your model's context window
    - Example: For 8K context, use 4000-6000 tokens
 
 2. **Message-based triggers**: Useful for controlling conversation length
+
    - Good for applications with many short messages
    - Example: 50-100 messages depending on average message length
 
@@ -187,10 +201,12 @@ The middleware intelligently preserves message context:
 ### Choosing Retention Policy (`keep`)
 
 1. **Message-based retention**: Best for most scenarios
+
    - Preserves natural conversation flow
    - Recommended: 15-25 messages
 
 2. **Token-based retention**: Use when precise control is needed
+
    - Good for managing exact token budgets
    - Recommended: 2000-4000 tokens
 
@@ -201,6 +217,7 @@ The middleware intelligently preserves message context:
 ### Model Selection
 
 - **Recommended**: Use a lightweight, cost-effective model for summaries
+
   - Examples: `gpt-4o-mini`, `claude-haiku`, or equivalent
   - Summaries don't require the most powerful models
   - Significant cost savings on high-volume applications
@@ -212,6 +229,7 @@ The middleware intelligently preserves message context:
 ### Optimization Tips
 
 1. **Balance triggers**: Combine token and message triggers for robust handling
+
    ```yaml
    trigger:
      - type: tokens
@@ -221,15 +239,17 @@ The middleware intelligently preserves message context:
    ```
 
 2. **Conservative retention**: Keep more messages initially, adjust based on performance
+
    ```yaml
    keep:
      type: messages
-     value: 25  # Start higher, reduce if needed
+     value: 25 # Start higher, reduce if needed
    ```
 
 3. **Trim strategically**: Limit tokens sent to summarization model
+
    ```yaml
-   trim_tokens_to_summarize: 4000  # Prevents expensive summarization calls
+   trim_tokens_to_summarize: 4000 # Prevents expensive summarization calls
    ```
 
 4. **Monitor and iterate**: Track summary quality and adjust configuration
@@ -241,6 +261,7 @@ The middleware intelligently preserves message context:
 **Problem**: Summaries losing important context
 
 **Solutions**:
+
 1. Increase `keep` value to preserve more messages
 2. Decrease trigger thresholds to summarize earlier
 3. Customize `summary_prompt` to emphasize key information
@@ -251,6 +272,7 @@ The middleware intelligently preserves message context:
 **Problem**: Summarization calls taking too long
 
 **Solutions**:
+
 1. Use a faster model for summaries (e.g., `gpt-4o-mini`)
 2. Reduce `trim_tokens_to_summarize` to send less context
 3. Increase trigger thresholds to summarize less frequently
@@ -260,6 +282,7 @@ The middleware intelligently preserves message context:
 **Problem**: Still hitting token limits despite summarization
 
 **Solutions**:
+
 1. Lower trigger thresholds to summarize earlier
 2. Reduce `keep` value to preserve fewer messages
 3. Check if individual messages are very large
@@ -292,6 +315,7 @@ Summarization runs after ThreadData and Sandbox initialization but before Title 
 ## Example Configurations
 
 ### Minimal Configuration
+
 ```yaml
 summarization:
   enabled: true
@@ -304,10 +328,11 @@ summarization:
 ```
 
 ### Production Configuration
+
 ```yaml
 summarization:
   enabled: true
-  model_name: gpt-4o-mini  # Lightweight model for cost efficiency
+  model_name: gpt-4o-mini # Lightweight model for cost efficiency
   trigger:
     - type: tokens
       value: 6000
@@ -320,31 +345,33 @@ summarization:
 ```
 
 ### Multi-Model Configuration
+
 ```yaml
 summarization:
   enabled: true
   model_name: gpt-4o-mini
   trigger:
     type: fraction
-    value: 0.7  # 70% of model's max input
+    value: 0.7 # 70% of model's max input
   keep:
     type: fraction
-    value: 0.3  # Keep 30% of max input
+    value: 0.3 # Keep 30% of max input
   trim_tokens_to_summarize: 4000
 ```
 
 ### Conservative Configuration (High Quality)
+
 ```yaml
 summarization:
   enabled: true
-  model_name: gpt-4  # Use full model for high-quality summaries
+  model_name: gpt-4 # Use full model for high-quality summaries
   trigger:
     type: tokens
     value: 8000
   keep:
     type: messages
-    value: 40  # Keep more context
-  trim_tokens_to_summarize: null  # No trimming
+    value: 40 # Keep more context
+  trim_tokens_to_summarize: null # No trimming
 ```
 
 ## References

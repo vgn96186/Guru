@@ -146,7 +146,7 @@ function confidenceToLevelKey(confidence: unknown): {
 
 function formatMemorySection(
   section: MemorySection,
-  t: ReturnType<typeof useI18n>["t"],
+  t: ReturnType<typeof useI18n>["t"]
 ): string {
   const content =
     section.summary.trim() ||
@@ -156,7 +156,9 @@ function formatMemorySection(
     content,
     "",
     section.updatedAt &&
-      `> ${t.settings.memory.markdown.updatedAt}: \`${formatTimeAgo(section.updatedAt)}\``,
+      `> ${t.settings.memory.markdown.updatedAt}: \`${formatTimeAgo(
+        section.updatedAt
+      )}\``,
   ]
     .filter(Boolean)
     .join("\n");
@@ -164,7 +166,7 @@ function formatMemorySection(
 
 function buildMemorySectionGroups(
   memory: UserMemory,
-  t: ReturnType<typeof useI18n>["t"],
+  t: ReturnType<typeof useI18n>["t"]
 ): MemorySectionGroup[] {
   return [
     {
@@ -213,13 +215,13 @@ function buildMemorySectionGroups(
 function summariesToMarkdown(
   memory: UserMemory,
   sectionGroups: MemorySectionGroup[],
-  t: ReturnType<typeof useI18n>["t"],
+  t: ReturnType<typeof useI18n>["t"]
 ) {
   const parts: string[] = [];
 
   parts.push(`## ${t.settings.memory.markdown.overview}`);
   parts.push(
-    `- **${t.common.lastUpdated}**: \`${formatTimeAgo(memory.lastUpdated)}\``,
+    `- **${t.common.lastUpdated}**: \`${formatTimeAgo(memory.lastUpdated)}\``
   );
 
   for (const group of sectionGroups) {
@@ -287,12 +289,12 @@ export function MemorySettingsPage() {
   const [factToEdit, setFactToEdit] = useState<MemoryFact | null>(null);
   const [factEditorOpen, setFactEditorOpen] = useState(false);
   const [factForm, setFactForm] = useState<FactFormState>(
-    DEFAULT_FACT_FORM_STATE,
+    DEFAULT_FACT_FORM_STATE
   );
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<MemoryViewFilter>("all");
   const [pendingImport, setPendingImport] = useState<PendingImport | null>(
-    null,
+    null
   );
   const [isExporting, setIsExporting] = useState(false);
   const deferredQuery = useDeferredValue(query);
@@ -358,7 +360,7 @@ export function MemorySettingsPage() {
           ? `${section.title} ${section.summary}`
               .toLowerCase()
               .includes(normalizedQuery)
-          : true,
+          : true
       ),
     }))
     .filter((group) => group.sections.length > 0);
@@ -369,7 +371,7 @@ export function MemorySettingsPage() {
           ? `${fact.content} ${fact.category}`
               .toLowerCase()
               .includes(normalizedQuery)
-          : true,
+          : true
       )
     : [];
 
@@ -389,7 +391,9 @@ export function MemorySettingsPage() {
     try {
       setIsExporting(true);
       const exportedMemory = await exportMemory();
-      const fileName = `deerflow-memory-${(exportedMemory.lastUpdated || new Date().toISOString()).replace(/[:.]/g, "-")}.json`;
+      const fileName = `deerflow-memory-${(
+        exportedMemory.lastUpdated || new Date().toISOString()
+      ).replace(/[:.]/g, "-")}.json`;
       const blob = new Blob([JSON.stringify(exportedMemory, null, 2)], {
         type: "application/json",
       });

@@ -4,7 +4,7 @@ type IMEKeyboardEvent = KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>;
 
 export function isIMEComposing(
   event: IMEKeyboardEvent,
-  isComposing = false,
+  isComposing = false
 ): boolean {
   return isComposing || event.nativeEvent.isComposing || event.keyCode === 229;
 }

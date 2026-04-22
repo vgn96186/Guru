@@ -1,473 +1,3035 @@
 [
-  [15,"General Psychiatry",9,40],
-  [15,"Psychopathology & MSE",10,40,"General Psychiatry"],
-  [15,"Mental Status Examination — Components: Appearance, Behaviour, Speech, Mood, Thought, Perception, Cognition, Insight",10,18,"Psychopathology & MSE"],
-  [15,"Mental Status Examination — Components: Appearance",10,9,"Mental Status Examination — Components: Appearance, Behaviour, Speech, Mood, Thought, Perception, Cognition, Insight"],
-  [15,"Mental Status Examination — Components: Appearance - Etiology & Risk Factors",10,5,"Mental Status Examination — Components: Appearance"],
-  [15,"Mental Status Examination — Components: Appearance - Pathophysiology",10,5,"Mental Status Examination — Components: Appearance"],
-  [15,"Mental Status Examination — Components: Appearance - Clinical Presentation & Signs",10,5,"Mental Status Examination — Components: Appearance"],
-  [15,"Mental Status Examination — Components: Appearance - Differential Diagnosis",10,5,"Mental Status Examination — Components: Appearance"],
-  [15,"Mental Status Examination — Components: Appearance - Investigations & Lab Findings",10,5,"Mental Status Examination — Components: Appearance"],
-  [15,"Mental Status Examination — Components: Appearance - Medical & Surgical Management",10,5,"Mental Status Examination — Components: Appearance"],
-  [15,"Mental Status Examination — Components: Appearance - Complications & Prognosis",10,5,"Mental Status Examination — Components: Appearance"],
-  [15,"Mental Status Examination — Behaviour, Speech, Mood, Thought, Perception, Cognition, Insight",10,9,"Mental Status Examination — Components: Appearance, Behaviour, Speech, Mood, Thought, Perception, Cognition, Insight"],
-  [15,"Mental Status Examination — Behaviour, Speech, Mood, Thought, Perception, Cognition, Insight - Etiology & Risk Factors",10,5,"Mental Status Examination — Behaviour, Speech, Mood, Thought, Perception, Cognition, Insight"],
-  [15,"Mental Status Examination — Behaviour, Speech, Mood, Thought, Perception, Cognition, Insight - Pathophysiology",10,5,"Mental Status Examination — Behaviour, Speech, Mood, Thought, Perception, Cognition, Insight"],
-  [15,"Mental Status Examination — Behaviour, Speech, Mood, Thought, Perception, Cognition, Insight - Clinical Presentation & Signs",10,5,"Mental Status Examination — Behaviour, Speech, Mood, Thought, Perception, Cognition, Insight"],
-  [15,"Mental Status Examination — Behaviour, Speech, Mood, Thought, Perception, Cognition, Insight - Differential Diagnosis",10,5,"Mental Status Examination — Behaviour, Speech, Mood, Thought, Perception, Cognition, Insight"],
-  [15,"Mental Status Examination — Behaviour, Speech, Mood, Thought, Perception, Cognition, Insight - Investigations & Lab Findings",10,5,"Mental Status Examination — Behaviour, Speech, Mood, Thought, Perception, Cognition, Insight"],
-  [15,"Mental Status Examination — Behaviour, Speech, Mood, Thought, Perception, Cognition, Insight - Medical & Surgical Management",10,5,"Mental Status Examination — Behaviour, Speech, Mood, Thought, Perception, Cognition, Insight"],
-  [15,"Mental Status Examination — Behaviour, Speech, Mood, Thought, Perception, Cognition, Insight - Complications & Prognosis",10,5,"Mental Status Examination — Behaviour, Speech, Mood, Thought, Perception, Cognition, Insight"],
-  [15,"Abnormal Perceptions — Hallucinations, Illusions & Pseudo-hallucinations",10,12,"Psychopathology & MSE"],
-  [15,"Abnormal Perceptions — Hallucinations, Illusions",10,6,"Abnormal Perceptions — Hallucinations, Illusions & Pseudo-hallucinations"],
-  [15,"Abnormal Perceptions — Hallucinations, Illusions - Etiology & Risk Factors",10,5,"Abnormal Perceptions — Hallucinations, Illusions"],
-  [15,"Abnormal Perceptions — Hallucinations, Illusions - Pathophysiology",10,5,"Abnormal Perceptions — Hallucinations, Illusions"],
-  [15,"Abnormal Perceptions — Hallucinations, Illusions - Clinical Presentation & Signs",10,5,"Abnormal Perceptions — Hallucinations, Illusions"],
-  [15,"Abnormal Perceptions — Hallucinations, Illusions - Differential Diagnosis",10,5,"Abnormal Perceptions — Hallucinations, Illusions"],
-  [15,"Abnormal Perceptions — Hallucinations, Illusions - Investigations & Lab Findings",10,5,"Abnormal Perceptions — Hallucinations, Illusions"],
-  [15,"Abnormal Perceptions — Hallucinations, Illusions - Medical & Surgical Management",10,5,"Abnormal Perceptions — Hallucinations, Illusions"],
-  [15,"Abnormal Perceptions — Hallucinations, Illusions - Complications & Prognosis",10,5,"Abnormal Perceptions — Hallucinations, Illusions"],
-  [15,"Abnormal Perceptions — Pseudo-hallucinations",10,6,"Abnormal Perceptions — Hallucinations, Illusions & Pseudo-hallucinations"],
-  [15,"Abnormal Perceptions — Pseudo-hallucinations - Etiology & Risk Factors",10,5,"Abnormal Perceptions — Pseudo-hallucinations"],
-  [15,"Abnormal Perceptions — Pseudo-hallucinations - Pathophysiology",10,5,"Abnormal Perceptions — Pseudo-hallucinations"],
-  [15,"Abnormal Perceptions — Pseudo-hallucinations - Clinical Presentation & Signs",10,5,"Abnormal Perceptions — Pseudo-hallucinations"],
-  [15,"Abnormal Perceptions — Pseudo-hallucinations - Differential Diagnosis",10,5,"Abnormal Perceptions — Pseudo-hallucinations"],
-  [15,"Abnormal Perceptions — Pseudo-hallucinations - Investigations & Lab Findings",10,5,"Abnormal Perceptions — Pseudo-hallucinations"],
-  [15,"Abnormal Perceptions — Pseudo-hallucinations - Medical & Surgical Management",10,5,"Abnormal Perceptions — Pseudo-hallucinations"],
-  [15,"Abnormal Perceptions — Pseudo-hallucinations - Complications & Prognosis",10,5,"Abnormal Perceptions — Pseudo-hallucinations"],
-  [15,"Thought Disorders — Formal Thought Disorders, Delusions & Classification",10,12,"Psychopathology & MSE"],
-  [15,"Thought Disorders — Formal Thought Disorders, Delusions",10,6,"Thought Disorders — Formal Thought Disorders, Delusions & Classification"],
-  [15,"Thought Disorders — Formal Thought Disorders, Delusions - Etiology & Risk Factors",10,5,"Thought Disorders — Formal Thought Disorders, Delusions"],
-  [15,"Thought Disorders — Formal Thought Disorders, Delusions - Pathophysiology",10,5,"Thought Disorders — Formal Thought Disorders, Delusions"],
-  [15,"Thought Disorders — Formal Thought Disorders, Delusions - Clinical Presentation & Signs",10,5,"Thought Disorders — Formal Thought Disorders, Delusions"],
-  [15,"Thought Disorders — Formal Thought Disorders, Delusions - Differential Diagnosis",10,5,"Thought Disorders — Formal Thought Disorders, Delusions"],
-  [15,"Thought Disorders — Formal Thought Disorders, Delusions - Investigations & Lab Findings",10,5,"Thought Disorders — Formal Thought Disorders, Delusions"],
-  [15,"Thought Disorders — Formal Thought Disorders, Delusions - Medical & Surgical Management",10,5,"Thought Disorders — Formal Thought Disorders, Delusions"],
-  [15,"Thought Disorders — Formal Thought Disorders, Delusions - Complications & Prognosis",10,5,"Thought Disorders — Formal Thought Disorders, Delusions"],
-  [15,"Thought Disorders — Classification",10,6,"Thought Disorders — Formal Thought Disorders, Delusions & Classification"],
-  [15,"Thought Disorders — Classification - Etiology & Risk Factors",10,5,"Thought Disorders — Classification"],
-  [15,"Thought Disorders — Classification - Pathophysiology",10,5,"Thought Disorders — Classification"],
-  [15,"Thought Disorders — Classification - Clinical Presentation & Signs",10,5,"Thought Disorders — Classification"],
-  [15,"Thought Disorders — Classification - Differential Diagnosis",10,5,"Thought Disorders — Classification"],
-  [15,"Thought Disorders — Classification - Investigations & Lab Findings",10,5,"Thought Disorders — Classification"],
-  [15,"Thought Disorders — Classification - Medical & Surgical Management",10,5,"Thought Disorders — Classification"],
-  [15,"Thought Disorders — Classification - Complications & Prognosis",10,5,"Thought Disorders — Classification"],
-  [15,"Psychopharmacology",10,45,"General Psychiatry"],
-  [15,"Antipsychotics — D2 Blockade, EPS (ACUTE EPS: Akathisia, Dystonia) & Clozapine Monitoring",10,18,"Psychopharmacology"],
-  [15,"Antipsychotics — D2 Blockade, EPS (ACUTE EPS: Akathisia, Dystonia)",10,9,"Antipsychotics — D2 Blockade, EPS (ACUTE EPS: Akathisia, Dystonia) & Clozapine Monitoring"],
-  [15,"Antipsychotics — D2 Blockade, EPS (ACUTE EPS: Akathisia, Dystonia) - Etiology & Risk Factors",10,5,"Antipsychotics — D2 Blockade, EPS (ACUTE EPS: Akathisia, Dystonia)"],
-  [15,"Antipsychotics — D2 Blockade, EPS (ACUTE EPS: Akathisia, Dystonia) - Pathophysiology",10,5,"Antipsychotics — D2 Blockade, EPS (ACUTE EPS: Akathisia, Dystonia)"],
-  [15,"Antipsychotics — D2 Blockade, EPS (ACUTE EPS: Akathisia, Dystonia) - Clinical Presentation & Signs",10,5,"Antipsychotics — D2 Blockade, EPS (ACUTE EPS: Akathisia, Dystonia)"],
-  [15,"Antipsychotics — D2 Blockade, EPS (ACUTE EPS: Akathisia, Dystonia) - Differential Diagnosis",10,5,"Antipsychotics — D2 Blockade, EPS (ACUTE EPS: Akathisia, Dystonia)"],
-  [15,"Antipsychotics — D2 Blockade, EPS (ACUTE EPS: Akathisia, Dystonia) - Investigations & Lab Findings",10,5,"Antipsychotics — D2 Blockade, EPS (ACUTE EPS: Akathisia, Dystonia)"],
-  [15,"Antipsychotics — D2 Blockade, EPS (ACUTE EPS: Akathisia, Dystonia) - Medical & Surgical Management",10,5,"Antipsychotics — D2 Blockade, EPS (ACUTE EPS: Akathisia, Dystonia)"],
-  [15,"Antipsychotics — D2 Blockade, EPS (ACUTE EPS: Akathisia, Dystonia) - Complications & Prognosis",10,5,"Antipsychotics — D2 Blockade, EPS (ACUTE EPS: Akathisia, Dystonia)"],
-  [15,"Antipsychotics — Clozapine Monitoring",10,9,"Antipsychotics — D2 Blockade, EPS (ACUTE EPS: Akathisia, Dystonia) & Clozapine Monitoring"],
-  [15,"Antipsychotics — Clozapine Monitoring - Etiology & Risk Factors",10,5,"Antipsychotics — Clozapine Monitoring"],
-  [15,"Antipsychotics — Clozapine Monitoring - Pathophysiology",10,5,"Antipsychotics — Clozapine Monitoring"],
-  [15,"Antipsychotics — Clozapine Monitoring - Clinical Presentation & Signs",10,5,"Antipsychotics — Clozapine Monitoring"],
-  [15,"Antipsychotics — Clozapine Monitoring - Differential Diagnosis",10,5,"Antipsychotics — Clozapine Monitoring"],
-  [15,"Antipsychotics — Clozapine Monitoring - Investigations & Lab Findings",10,5,"Antipsychotics — Clozapine Monitoring"],
-  [15,"Antipsychotics — Clozapine Monitoring - Medical & Surgical Management",10,5,"Antipsychotics — Clozapine Monitoring"],
-  [15,"Antipsychotics — Clozapine Monitoring - Complications & Prognosis",10,5,"Antipsychotics — Clozapine Monitoring"],
-  [15,"Mood Stabilizers — Lithium Toxicity, Valproate & Carbamazepine",10,15,"Psychopharmacology"],
-  [15,"Mood Stabilizers — Lithium Toxicity, Valproate",10,7,"Mood Stabilizers — Lithium Toxicity, Valproate & Carbamazepine"],
-  [15,"Mood Stabilizers — Lithium Toxicity, Valproate - Etiology & Risk Factors",10,5,"Mood Stabilizers — Lithium Toxicity, Valproate"],
-  [15,"Mood Stabilizers — Lithium Toxicity, Valproate - Pathophysiology",10,5,"Mood Stabilizers — Lithium Toxicity, Valproate"],
-  [15,"Mood Stabilizers — Lithium Toxicity, Valproate - Clinical Presentation & Signs",10,5,"Mood Stabilizers — Lithium Toxicity, Valproate"],
-  [15,"Mood Stabilizers — Lithium Toxicity, Valproate - Differential Diagnosis",10,5,"Mood Stabilizers — Lithium Toxicity, Valproate"],
-  [15,"Mood Stabilizers — Lithium Toxicity, Valproate - Investigations & Lab Findings",10,5,"Mood Stabilizers — Lithium Toxicity, Valproate"],
-  [15,"Mood Stabilizers — Lithium Toxicity, Valproate - Medical & Surgical Management",10,5,"Mood Stabilizers — Lithium Toxicity, Valproate"],
-  [15,"Mood Stabilizers — Lithium Toxicity, Valproate - Complications & Prognosis",10,5,"Mood Stabilizers — Lithium Toxicity, Valproate"],
-  [15,"Mood Stabilizers — Carbamazepine",10,8,"Mood Stabilizers — Lithium Toxicity, Valproate & Carbamazepine"],
-  [15,"Mood Stabilizers — Carbamazepine - Etiology & Risk Factors",10,5,"Mood Stabilizers — Carbamazepine"],
-  [15,"Mood Stabilizers — Carbamazepine - Pathophysiology",10,5,"Mood Stabilizers — Carbamazepine"],
-  [15,"Mood Stabilizers — Carbamazepine - Clinical Presentation & Signs",10,5,"Mood Stabilizers — Carbamazepine"],
-  [15,"Mood Stabilizers — Carbamazepine - Differential Diagnosis",10,5,"Mood Stabilizers — Carbamazepine"],
-  [15,"Mood Stabilizers — Carbamazepine - Investigations & Lab Findings",10,5,"Mood Stabilizers — Carbamazepine"],
-  [15,"Mood Stabilizers — Carbamazepine - Medical & Surgical Management",10,5,"Mood Stabilizers — Carbamazepine"],
-  [15,"Mood Stabilizers — Carbamazepine - Complications & Prognosis",10,5,"Mood Stabilizers — Carbamazepine"],
-  [15,"Antidepressants — SSRI, TCA, MAOIs & Serotonin Syndrome",10,12,"Psychopharmacology"],
-  [15,"Antidepressants — SSRI, TCA, MAOIs",10,6,"Antidepressants — SSRI, TCA, MAOIs & Serotonin Syndrome"],
-  [15,"Antidepressants — SSRI, TCA, MAOIs - Etiology & Risk Factors",10,5,"Antidepressants — SSRI, TCA, MAOIs"],
-  [15,"Antidepressants — SSRI, TCA, MAOIs - Pathophysiology",10,5,"Antidepressants — SSRI, TCA, MAOIs"],
-  [15,"Antidepressants — SSRI, TCA, MAOIs - Clinical Presentation & Signs",10,5,"Antidepressants — SSRI, TCA, MAOIs"],
-  [15,"Antidepressants — SSRI, TCA, MAOIs - Differential Diagnosis",10,5,"Antidepressants — SSRI, TCA, MAOIs"],
-  [15,"Antidepressants — SSRI, TCA, MAOIs - Investigations & Lab Findings",10,5,"Antidepressants — SSRI, TCA, MAOIs"],
-  [15,"Antidepressants — SSRI, TCA, MAOIs - Medical & Surgical Management",10,5,"Antidepressants — SSRI, TCA, MAOIs"],
-  [15,"Antidepressants — SSRI, TCA, MAOIs - Complications & Prognosis",10,5,"Antidepressants — SSRI, TCA, MAOIs"],
-  [15,"Antidepressants — Serotonin Syndrome",10,6,"Antidepressants — SSRI, TCA, MAOIs & Serotonin Syndrome"],
-  [15,"Antidepressants — Serotonin Syndrome - Etiology & Risk Factors",10,5,"Antidepressants — Serotonin Syndrome"],
-  [15,"Antidepressants — Serotonin Syndrome - Pathophysiology",10,5,"Antidepressants — Serotonin Syndrome"],
-  [15,"Antidepressants — Serotonin Syndrome - Clinical Presentation & Signs",10,5,"Antidepressants — Serotonin Syndrome"],
-  [15,"Antidepressants — Serotonin Syndrome - Differential Diagnosis",10,5,"Antidepressants — Serotonin Syndrome"],
-  [15,"Antidepressants — Serotonin Syndrome - Investigations & Lab Findings",10,5,"Antidepressants — Serotonin Syndrome"],
-  [15,"Antidepressants — Serotonin Syndrome - Medical & Surgical Management",10,5,"Antidepressants — Serotonin Syndrome"],
-  [15,"Antidepressants — Serotonin Syndrome - Complications & Prognosis",10,5,"Antidepressants — Serotonin Syndrome"],
-  [15,"Clinical Disorders",10,60],
-  [15,"Schizophrenia & Psychotic Disorders",10,50,"Clinical Disorders"],
-  [15,"Schizophrenia — DSM-5 Criteria, Positive & Negative Symptoms, Subtypes",10,18,"Schizophrenia & Psychotic Disorders"],
-  [15,"Schizophrenia — DSM-5 Criteria, Positive",10,9,"Schizophrenia — DSM-5 Criteria, Positive & Negative Symptoms, Subtypes"],
-  [15,"Schizophrenia — DSM-5 Criteria, Positive - Etiology & Risk Factors",10,5,"Schizophrenia — DSM-5 Criteria, Positive"],
-  [15,"Schizophrenia — DSM-5 Criteria, Positive - Pathophysiology",10,5,"Schizophrenia — DSM-5 Criteria, Positive"],
-  [15,"Schizophrenia — DSM-5 Criteria, Positive - Clinical Presentation & Signs",10,5,"Schizophrenia — DSM-5 Criteria, Positive"],
-  [15,"Schizophrenia — DSM-5 Criteria, Positive - Differential Diagnosis",10,5,"Schizophrenia — DSM-5 Criteria, Positive"],
-  [15,"Schizophrenia — DSM-5 Criteria, Positive - Investigations & Lab Findings",10,5,"Schizophrenia — DSM-5 Criteria, Positive"],
-  [15,"Schizophrenia — DSM-5 Criteria, Positive - Medical & Surgical Management",10,5,"Schizophrenia — DSM-5 Criteria, Positive"],
-  [15,"Schizophrenia — DSM-5 Criteria, Positive - Complications & Prognosis",10,5,"Schizophrenia — DSM-5 Criteria, Positive"],
-  [15,"Schizophrenia — Negative Symptoms, Subtypes",10,9,"Schizophrenia — DSM-5 Criteria, Positive & Negative Symptoms, Subtypes"],
-  [15,"Schizophrenia — Negative Symptoms, Subtypes - Etiology & Risk Factors",10,5,"Schizophrenia — Negative Symptoms, Subtypes"],
-  [15,"Schizophrenia — Negative Symptoms, Subtypes - Pathophysiology",10,5,"Schizophrenia — Negative Symptoms, Subtypes"],
-  [15,"Schizophrenia — Negative Symptoms, Subtypes - Clinical Presentation & Signs",10,5,"Schizophrenia — Negative Symptoms, Subtypes"],
-  [15,"Schizophrenia — Negative Symptoms, Subtypes - Differential Diagnosis",10,5,"Schizophrenia — Negative Symptoms, Subtypes"],
-  [15,"Schizophrenia — Negative Symptoms, Subtypes - Investigations & Lab Findings",10,5,"Schizophrenia — Negative Symptoms, Subtypes"],
-  [15,"Schizophrenia — Negative Symptoms, Subtypes - Medical & Surgical Management",10,5,"Schizophrenia — Negative Symptoms, Subtypes"],
-  [15,"Schizophrenia — Negative Symptoms, Subtypes - Complications & Prognosis",10,5,"Schizophrenia — Negative Symptoms, Subtypes"],
-  [15,"Schizophrenia Treatment — Typical vs Atypical & Long-acting Injectables",10,15,"Schizophrenia & Psychotic Disorders"],
-  [15,"Schizophrenia Treatment — Typical vs Atypical",10,7,"Schizophrenia Treatment — Typical vs Atypical & Long-acting Injectables"],
-  [15,"Schizophrenia Treatment — Typical vs Atypical - Etiology & Risk Factors",10,5,"Schizophrenia Treatment — Typical vs Atypical"],
-  [15,"Schizophrenia Treatment — Typical vs Atypical - Pathophysiology",10,5,"Schizophrenia Treatment — Typical vs Atypical"],
-  [15,"Schizophrenia Treatment — Typical vs Atypical - Clinical Presentation & Signs",10,5,"Schizophrenia Treatment — Typical vs Atypical"],
-  [15,"Schizophrenia Treatment — Typical vs Atypical - Differential Diagnosis",10,5,"Schizophrenia Treatment — Typical vs Atypical"],
-  [15,"Schizophrenia Treatment — Typical vs Atypical - Investigations & Lab Findings",10,5,"Schizophrenia Treatment — Typical vs Atypical"],
-  [15,"Schizophrenia Treatment — Typical vs Atypical - Medical & Surgical Management",10,5,"Schizophrenia Treatment — Typical vs Atypical"],
-  [15,"Schizophrenia Treatment — Typical vs Atypical - Complications & Prognosis",10,5,"Schizophrenia Treatment — Typical vs Atypical"],
-  [15,"Schizophrenia Treatment — Long-acting Injectables",10,8,"Schizophrenia Treatment — Typical vs Atypical & Long-acting Injectables"],
-  [15,"Schizophrenia Treatment — Long-acting Injectables - Etiology & Risk Factors",10,5,"Schizophrenia Treatment — Long-acting Injectables"],
-  [15,"Schizophrenia Treatment — Long-acting Injectables - Pathophysiology",10,5,"Schizophrenia Treatment — Long-acting Injectables"],
-  [15,"Schizophrenia Treatment — Long-acting Injectables - Clinical Presentation & Signs",10,5,"Schizophrenia Treatment — Long-acting Injectables"],
-  [15,"Schizophrenia Treatment — Long-acting Injectables - Differential Diagnosis",10,5,"Schizophrenia Treatment — Long-acting Injectables"],
-  [15,"Schizophrenia Treatment — Long-acting Injectables - Investigations & Lab Findings",10,5,"Schizophrenia Treatment — Long-acting Injectables"],
-  [15,"Schizophrenia Treatment — Long-acting Injectables - Medical & Surgical Management",10,5,"Schizophrenia Treatment — Long-acting Injectables"],
-  [15,"Schizophrenia Treatment — Long-acting Injectables - Complications & Prognosis",10,5,"Schizophrenia Treatment — Long-acting Injectables"],
-  [15,"Brief Psychotic Disorder, Schizoaffective & Delusional Disorder — Distinctions",10,15,"Schizophrenia & Psychotic Disorders"],
-  [15,"Brief Psychotic Disorder, Schizoaffective & Delusional Disorder — Basics",10,7,"Brief Psychotic Disorder, Schizoaffective & Delusional Disorder — Distinctions"],
-  [15,"Brief Psychotic Disorder, Schizoaffective & Delusional Disorder — Basics - Etiology & Risk Factors",10,5,"Brief Psychotic Disorder, Schizoaffective & Delusional Disorder — Basics"],
-  [15,"Brief Psychotic Disorder, Schizoaffective & Delusional Disorder — Basics - Pathophysiology",10,5,"Brief Psychotic Disorder, Schizoaffective & Delusional Disorder — Basics"],
-  [15,"Brief Psychotic Disorder, Schizoaffective & Delusional Disorder — Basics - Clinical Presentation & Signs",10,5,"Brief Psychotic Disorder, Schizoaffective & Delusional Disorder — Basics"],
-  [15,"Brief Psychotic Disorder, Schizoaffective & Delusional Disorder — Basics - Differential Diagnosis",10,5,"Brief Psychotic Disorder, Schizoaffective & Delusional Disorder — Basics"],
-  [15,"Brief Psychotic Disorder, Schizoaffective & Delusional Disorder — Basics - Investigations & Lab Findings",10,5,"Brief Psychotic Disorder, Schizoaffective & Delusional Disorder — Basics"],
-  [15,"Brief Psychotic Disorder, Schizoaffective & Delusional Disorder — Basics - Medical & Surgical Management",10,5,"Brief Psychotic Disorder, Schizoaffective & Delusional Disorder — Basics"],
-  [15,"Brief Psychotic Disorder, Schizoaffective & Delusional Disorder — Basics - Complications & Prognosis",10,5,"Brief Psychotic Disorder, Schizoaffective & Delusional Disorder — Basics"],
-  [15,"Brief Psychotic Disorder, Schizoaffective & Delusional Disorder — Details",10,8,"Brief Psychotic Disorder, Schizoaffective & Delusional Disorder — Distinctions"],
-  [15,"Brief Psychotic Disorder, Schizoaffective & Delusional Disorder — Details - Etiology & Risk Factors",10,5,"Brief Psychotic Disorder, Schizoaffective & Delusional Disorder — Details"],
-  [15,"Brief Psychotic Disorder, Schizoaffective & Delusional Disorder — Details - Pathophysiology",10,5,"Brief Psychotic Disorder, Schizoaffective & Delusional Disorder — Details"],
-  [15,"Brief Psychotic Disorder, Schizoaffective & Delusional Disorder — Details - Clinical Presentation & Signs",10,5,"Brief Psychotic Disorder, Schizoaffective & Delusional Disorder — Details"],
-  [15,"Brief Psychotic Disorder, Schizoaffective & Delusional Disorder — Details - Differential Diagnosis",10,5,"Brief Psychotic Disorder, Schizoaffective & Delusional Disorder — Details"],
-  [15,"Brief Psychotic Disorder, Schizoaffective & Delusional Disorder — Details - Investigations & Lab Findings",10,5,"Brief Psychotic Disorder, Schizoaffective & Delusional Disorder — Details"],
-  [15,"Brief Psychotic Disorder, Schizoaffective & Delusional Disorder — Details - Medical & Surgical Management",10,5,"Brief Psychotic Disorder, Schizoaffective & Delusional Disorder — Details"],
-  [15,"Brief Psychotic Disorder, Schizoaffective & Delusional Disorder — Details - Complications & Prognosis",10,5,"Brief Psychotic Disorder, Schizoaffective & Delusional Disorder — Details"],
-  [15,"Mood Disorders (Depression, Bipolar)",10,50,"Clinical Disorders"],
-  [15,"MDD — DSM-5 (SIGECAPS), Severity & Treatment Algorithm",10,18,"Mood Disorders (Depression, Bipolar)"],
-  [15,"MDD — DSM-5 (SIGECAPS), Severity",10,9,"MDD — DSM-5 (SIGECAPS), Severity & Treatment Algorithm"],
-  [15,"MDD — DSM-5 (SIGECAPS), Severity - Etiology & Risk Factors",10,5,"MDD — DSM-5 (SIGECAPS), Severity"],
-  [15,"MDD — DSM-5 (SIGECAPS), Severity - Pathophysiology",10,5,"MDD — DSM-5 (SIGECAPS), Severity"],
-  [15,"MDD — DSM-5 (SIGECAPS), Severity - Clinical Presentation & Signs",10,5,"MDD — DSM-5 (SIGECAPS), Severity"],
-  [15,"MDD — DSM-5 (SIGECAPS), Severity - Differential Diagnosis",10,5,"MDD — DSM-5 (SIGECAPS), Severity"],
-  [15,"MDD — DSM-5 (SIGECAPS), Severity - Investigations & Lab Findings",10,5,"MDD — DSM-5 (SIGECAPS), Severity"],
-  [15,"MDD — DSM-5 (SIGECAPS), Severity - Medical & Surgical Management",10,5,"MDD — DSM-5 (SIGECAPS), Severity"],
-  [15,"MDD — DSM-5 (SIGECAPS), Severity - Complications & Prognosis",10,5,"MDD — DSM-5 (SIGECAPS), Severity"],
-  [15,"MDD — Treatment Algorithm",10,9,"MDD — DSM-5 (SIGECAPS), Severity & Treatment Algorithm"],
-  [15,"MDD — Treatment Algorithm - Etiology & Risk Factors",10,5,"MDD — Treatment Algorithm"],
-  [15,"MDD — Treatment Algorithm - Pathophysiology",10,5,"MDD — Treatment Algorithm"],
-  [15,"MDD — Treatment Algorithm - Clinical Presentation & Signs",10,5,"MDD — Treatment Algorithm"],
-  [15,"MDD — Treatment Algorithm - Differential Diagnosis",10,5,"MDD — Treatment Algorithm"],
-  [15,"MDD — Treatment Algorithm - Investigations & Lab Findings",10,5,"MDD — Treatment Algorithm"],
-  [15,"MDD — Treatment Algorithm - Medical & Surgical Management",10,5,"MDD — Treatment Algorithm"],
-  [15,"MDD — Treatment Algorithm - Complications & Prognosis",10,5,"MDD — Treatment Algorithm"],
-  [15,"Bipolar Disorder — Type I vs II, Cyclothymia & Mood Stabilizer Choices",10,18,"Mood Disorders (Depression, Bipolar)"],
-  [15,"Bipolar Disorder — Type I vs II, Cyclothymia",10,9,"Bipolar Disorder — Type I vs II, Cyclothymia & Mood Stabilizer Choices"],
-  [15,"Bipolar Disorder — Type I vs II, Cyclothymia - Etiology & Risk Factors",10,5,"Bipolar Disorder — Type I vs II, Cyclothymia"],
-  [15,"Bipolar Disorder — Type I vs II, Cyclothymia - Pathophysiology",10,5,"Bipolar Disorder — Type I vs II, Cyclothymia"],
-  [15,"Bipolar Disorder — Type I vs II, Cyclothymia - Clinical Presentation & Signs",10,5,"Bipolar Disorder — Type I vs II, Cyclothymia"],
-  [15,"Bipolar Disorder — Type I vs II, Cyclothymia - Differential Diagnosis",10,5,"Bipolar Disorder — Type I vs II, Cyclothymia"],
-  [15,"Bipolar Disorder — Type I vs II, Cyclothymia - Investigations & Lab Findings",10,5,"Bipolar Disorder — Type I vs II, Cyclothymia"],
-  [15,"Bipolar Disorder — Type I vs II, Cyclothymia - Medical & Surgical Management",10,5,"Bipolar Disorder — Type I vs II, Cyclothymia"],
-  [15,"Bipolar Disorder — Type I vs II, Cyclothymia - Complications & Prognosis",10,5,"Bipolar Disorder — Type I vs II, Cyclothymia"],
-  [15,"Bipolar Disorder — Mood Stabilizer Choices",10,9,"Bipolar Disorder — Type I vs II, Cyclothymia & Mood Stabilizer Choices"],
-  [15,"Bipolar Disorder — Mood Stabilizer Choices - Etiology & Risk Factors",10,5,"Bipolar Disorder — Mood Stabilizer Choices"],
-  [15,"Bipolar Disorder — Mood Stabilizer Choices - Pathophysiology",10,5,"Bipolar Disorder — Mood Stabilizer Choices"],
-  [15,"Bipolar Disorder — Mood Stabilizer Choices - Clinical Presentation & Signs",10,5,"Bipolar Disorder — Mood Stabilizer Choices"],
-  [15,"Bipolar Disorder — Mood Stabilizer Choices - Differential Diagnosis",10,5,"Bipolar Disorder — Mood Stabilizer Choices"],
-  [15,"Bipolar Disorder — Mood Stabilizer Choices - Investigations & Lab Findings",10,5,"Bipolar Disorder — Mood Stabilizer Choices"],
-  [15,"Bipolar Disorder — Mood Stabilizer Choices - Medical & Surgical Management",10,5,"Bipolar Disorder — Mood Stabilizer Choices"],
-  [15,"Bipolar Disorder — Mood Stabilizer Choices - Complications & Prognosis",10,5,"Bipolar Disorder — Mood Stabilizer Choices"],
-  [15,"Suicide Risk Assessment — SAD PERSONS Scale & Safe Messaging",10,12,"Mood Disorders (Depression, Bipolar)"],
-  [15,"Suicide Risk Assessment — SAD PERSONS Scale",10,6,"Suicide Risk Assessment — SAD PERSONS Scale & Safe Messaging"],
-  [15,"Suicide Risk Assessment — SAD PERSONS Scale - Etiology & Risk Factors",10,5,"Suicide Risk Assessment — SAD PERSONS Scale"],
-  [15,"Suicide Risk Assessment — SAD PERSONS Scale - Pathophysiology",10,5,"Suicide Risk Assessment — SAD PERSONS Scale"],
-  [15,"Suicide Risk Assessment — SAD PERSONS Scale - Clinical Presentation & Signs",10,5,"Suicide Risk Assessment — SAD PERSONS Scale"],
-  [15,"Suicide Risk Assessment — SAD PERSONS Scale - Differential Diagnosis",10,5,"Suicide Risk Assessment — SAD PERSONS Scale"],
-  [15,"Suicide Risk Assessment — SAD PERSONS Scale - Investigations & Lab Findings",10,5,"Suicide Risk Assessment — SAD PERSONS Scale"],
-  [15,"Suicide Risk Assessment — SAD PERSONS Scale - Medical & Surgical Management",10,5,"Suicide Risk Assessment — SAD PERSONS Scale"],
-  [15,"Suicide Risk Assessment — SAD PERSONS Scale - Complications & Prognosis",10,5,"Suicide Risk Assessment — SAD PERSONS Scale"],
-  [15,"Suicide Risk Assessment — Safe Messaging",10,6,"Suicide Risk Assessment — SAD PERSONS Scale & Safe Messaging"],
-  [15,"Suicide Risk Assessment — Safe Messaging - Etiology & Risk Factors",10,5,"Suicide Risk Assessment — Safe Messaging"],
-  [15,"Suicide Risk Assessment — Safe Messaging - Pathophysiology",10,5,"Suicide Risk Assessment — Safe Messaging"],
-  [15,"Suicide Risk Assessment — Safe Messaging - Clinical Presentation & Signs",10,5,"Suicide Risk Assessment — Safe Messaging"],
-  [15,"Suicide Risk Assessment — Safe Messaging - Differential Diagnosis",10,5,"Suicide Risk Assessment — Safe Messaging"],
-  [15,"Suicide Risk Assessment — Safe Messaging - Investigations & Lab Findings",10,5,"Suicide Risk Assessment — Safe Messaging"],
-  [15,"Suicide Risk Assessment — Safe Messaging - Medical & Surgical Management",10,5,"Suicide Risk Assessment — Safe Messaging"],
-  [15,"Suicide Risk Assessment — Safe Messaging - Complications & Prognosis",10,5,"Suicide Risk Assessment — Safe Messaging"],
-  [15,"Anxiety, OCD & Stress Disorders",10,45,"Clinical Disorders"],
-  [15,"Anxiety Disorders — GAD, Panic, Phobia, Social Anxiety: DSM-5 & DOC",10,18,"Anxiety, OCD & Stress Disorders"],
-  [15,"Anxiety Disorders — GAD, Panic, Phobia, Social Anxiety: DSM-5",10,9,"Anxiety Disorders — GAD, Panic, Phobia, Social Anxiety: DSM-5 & DOC"],
-  [15,"Anxiety Disorders — GAD, Panic, Phobia, Social Anxiety: DSM-5 - Etiology & Risk Factors",10,5,"Anxiety Disorders — GAD, Panic, Phobia, Social Anxiety: DSM-5"],
-  [15,"Anxiety Disorders — GAD, Panic, Phobia, Social Anxiety: DSM-5 - Pathophysiology",10,5,"Anxiety Disorders — GAD, Panic, Phobia, Social Anxiety: DSM-5"],
-  [15,"Anxiety Disorders — GAD, Panic, Phobia, Social Anxiety: DSM-5 - Clinical Presentation & Signs",10,5,"Anxiety Disorders — GAD, Panic, Phobia, Social Anxiety: DSM-5"],
-  [15,"Anxiety Disorders — GAD, Panic, Phobia, Social Anxiety: DSM-5 - Differential Diagnosis",10,5,"Anxiety Disorders — GAD, Panic, Phobia, Social Anxiety: DSM-5"],
-  [15,"Anxiety Disorders — GAD, Panic, Phobia, Social Anxiety: DSM-5 - Investigations & Lab Findings",10,5,"Anxiety Disorders — GAD, Panic, Phobia, Social Anxiety: DSM-5"],
-  [15,"Anxiety Disorders — GAD, Panic, Phobia, Social Anxiety: DSM-5 - Medical & Surgical Management",10,5,"Anxiety Disorders — GAD, Panic, Phobia, Social Anxiety: DSM-5"],
-  [15,"Anxiety Disorders — GAD, Panic, Phobia, Social Anxiety: DSM-5 - Complications & Prognosis",10,5,"Anxiety Disorders — GAD, Panic, Phobia, Social Anxiety: DSM-5"],
-  [15,"Anxiety Disorders — DOC",10,9,"Anxiety Disorders — GAD, Panic, Phobia, Social Anxiety: DSM-5 & DOC"],
-  [15,"Anxiety Disorders — DOC - Etiology & Risk Factors",10,5,"Anxiety Disorders — DOC"],
-  [15,"Anxiety Disorders — DOC - Pathophysiology",10,5,"Anxiety Disorders — DOC"],
-  [15,"Anxiety Disorders — DOC - Clinical Presentation & Signs",10,5,"Anxiety Disorders — DOC"],
-  [15,"Anxiety Disorders — DOC - Differential Diagnosis",10,5,"Anxiety Disorders — DOC"],
-  [15,"Anxiety Disorders — DOC - Investigations & Lab Findings",10,5,"Anxiety Disorders — DOC"],
-  [15,"Anxiety Disorders — DOC - Medical & Surgical Management",10,5,"Anxiety Disorders — DOC"],
-  [15,"Anxiety Disorders — DOC - Complications & Prognosis",10,5,"Anxiety Disorders — DOC"],
-  [15,"OCD — Obsessions vs Compulsions, Y-BOCS & ERP + SSRI Treatment",10,15,"Anxiety, OCD & Stress Disorders"],
-  [15,"OCD — Obsessions vs Compulsions, Y-BOCS",10,7,"OCD — Obsessions vs Compulsions, Y-BOCS & ERP + SSRI Treatment"],
-  [15,"OCD — Obsessions vs Compulsions, Y-BOCS - Etiology & Risk Factors",10,5,"OCD — Obsessions vs Compulsions, Y-BOCS"],
-  [15,"OCD — Obsessions vs Compulsions, Y-BOCS - Pathophysiology",10,5,"OCD — Obsessions vs Compulsions, Y-BOCS"],
-  [15,"OCD — Obsessions vs Compulsions, Y-BOCS - Clinical Presentation & Signs",10,5,"OCD — Obsessions vs Compulsions, Y-BOCS"],
-  [15,"OCD — Obsessions vs Compulsions, Y-BOCS - Differential Diagnosis",10,5,"OCD — Obsessions vs Compulsions, Y-BOCS"],
-  [15,"OCD — Obsessions vs Compulsions, Y-BOCS - Investigations & Lab Findings",10,5,"OCD — Obsessions vs Compulsions, Y-BOCS"],
-  [15,"OCD — Obsessions vs Compulsions, Y-BOCS - Medical & Surgical Management",10,5,"OCD — Obsessions vs Compulsions, Y-BOCS"],
-  [15,"OCD — Obsessions vs Compulsions, Y-BOCS - Complications & Prognosis",10,5,"OCD — Obsessions vs Compulsions, Y-BOCS"],
-  [15,"OCD — ERP + SSRI Treatment",10,8,"OCD — Obsessions vs Compulsions, Y-BOCS & ERP + SSRI Treatment"],
-  [15,"OCD — ERP + SSRI Treatment - Etiology & Risk Factors",10,5,"OCD — ERP + SSRI Treatment"],
-  [15,"OCD — ERP + SSRI Treatment - Pathophysiology",10,5,"OCD — ERP + SSRI Treatment"],
-  [15,"OCD — ERP + SSRI Treatment - Clinical Presentation & Signs",10,5,"OCD — ERP + SSRI Treatment"],
-  [15,"OCD — ERP + SSRI Treatment - Differential Diagnosis",10,5,"OCD — ERP + SSRI Treatment"],
-  [15,"OCD — ERP + SSRI Treatment - Investigations & Lab Findings",10,5,"OCD — ERP + SSRI Treatment"],
-  [15,"OCD — ERP + SSRI Treatment - Medical & Surgical Management",10,5,"OCD — ERP + SSRI Treatment"],
-  [15,"OCD — ERP + SSRI Treatment - Complications & Prognosis",10,5,"OCD — ERP + SSRI Treatment"],
-  [15,"PTSD & Acute Stress Reaction — Criteria, Trauma-focused CBT & Sertraline",10,12,"Anxiety, OCD & Stress Disorders"],
-  [15,"PTSD & Acute Stress Reaction — Criteria, Trauma-focused CBT",10,6,"PTSD & Acute Stress Reaction — Criteria, Trauma-focused CBT & Sertraline"],
-  [15,"PTSD & Acute Stress Reaction — Criteria, Trauma-focused CBT - Etiology & Risk Factors",10,5,"PTSD & Acute Stress Reaction — Criteria, Trauma-focused CBT"],
-  [15,"PTSD & Acute Stress Reaction — Criteria, Trauma-focused CBT - Pathophysiology",10,5,"PTSD & Acute Stress Reaction — Criteria, Trauma-focused CBT"],
-  [15,"PTSD & Acute Stress Reaction — Criteria, Trauma-focused CBT - Clinical Presentation & Signs",10,5,"PTSD & Acute Stress Reaction — Criteria, Trauma-focused CBT"],
-  [15,"PTSD & Acute Stress Reaction — Criteria, Trauma-focused CBT - Differential Diagnosis",10,5,"PTSD & Acute Stress Reaction — Criteria, Trauma-focused CBT"],
-  [15,"PTSD & Acute Stress Reaction — Criteria, Trauma-focused CBT - Investigations & Lab Findings",10,5,"PTSD & Acute Stress Reaction — Criteria, Trauma-focused CBT"],
-  [15,"PTSD & Acute Stress Reaction — Criteria, Trauma-focused CBT - Medical & Surgical Management",10,5,"PTSD & Acute Stress Reaction — Criteria, Trauma-focused CBT"],
-  [15,"PTSD & Acute Stress Reaction — Criteria, Trauma-focused CBT - Complications & Prognosis",10,5,"PTSD & Acute Stress Reaction — Criteria, Trauma-focused CBT"],
-  [15,"PTSD & Acute Stress Reaction — Sertraline",10,6,"PTSD & Acute Stress Reaction — Criteria, Trauma-focused CBT & Sertraline"],
-  [15,"PTSD & Acute Stress Reaction — Sertraline - Etiology & Risk Factors",10,5,"PTSD & Acute Stress Reaction — Sertraline"],
-  [15,"PTSD & Acute Stress Reaction — Sertraline - Pathophysiology",10,5,"PTSD & Acute Stress Reaction — Sertraline"],
-  [15,"PTSD & Acute Stress Reaction — Sertraline - Clinical Presentation & Signs",10,5,"PTSD & Acute Stress Reaction — Sertraline"],
-  [15,"PTSD & Acute Stress Reaction — Sertraline - Differential Diagnosis",10,5,"PTSD & Acute Stress Reaction — Sertraline"],
-  [15,"PTSD & Acute Stress Reaction — Sertraline - Investigations & Lab Findings",10,5,"PTSD & Acute Stress Reaction — Sertraline"],
-  [15,"PTSD & Acute Stress Reaction — Sertraline - Medical & Surgical Management",10,5,"PTSD & Acute Stress Reaction — Sertraline"],
-  [15,"PTSD & Acute Stress Reaction — Sertraline - Complications & Prognosis",10,5,"PTSD & Acute Stress Reaction — Sertraline"],
-  [15,"Substance Use Disorders (Alcohol, Opioids)",10,55,"Clinical Disorders"],
-  [15,"Alcohol Use Disorder — CAGE, AUDIT, Withdrawal (Delirium Tremens) & Detox",10,18,"Substance Use Disorders (Alcohol, Opioids)"],
-  [15,"Alcohol Use Disorder — CAGE, AUDIT, Withdrawal (Delirium Tremens)",10,9,"Alcohol Use Disorder — CAGE, AUDIT, Withdrawal (Delirium Tremens) & Detox"],
-  [15,"Alcohol Use Disorder — CAGE, AUDIT, Withdrawal (Delirium Tremens) - Etiology & Risk Factors",10,5,"Alcohol Use Disorder — CAGE, AUDIT, Withdrawal (Delirium Tremens)"],
-  [15,"Alcohol Use Disorder — CAGE, AUDIT, Withdrawal (Delirium Tremens) - Pathophysiology",10,5,"Alcohol Use Disorder — CAGE, AUDIT, Withdrawal (Delirium Tremens)"],
-  [15,"Alcohol Use Disorder — CAGE, AUDIT, Withdrawal (Delirium Tremens) - Clinical Presentation & Signs",10,5,"Alcohol Use Disorder — CAGE, AUDIT, Withdrawal (Delirium Tremens)"],
-  [15,"Alcohol Use Disorder — CAGE, AUDIT, Withdrawal (Delirium Tremens) - Differential Diagnosis",10,5,"Alcohol Use Disorder — CAGE, AUDIT, Withdrawal (Delirium Tremens)"],
-  [15,"Alcohol Use Disorder — CAGE, AUDIT, Withdrawal (Delirium Tremens) - Investigations & Lab Findings",10,5,"Alcohol Use Disorder — CAGE, AUDIT, Withdrawal (Delirium Tremens)"],
-  [15,"Alcohol Use Disorder — CAGE, AUDIT, Withdrawal (Delirium Tremens) - Medical & Surgical Management",10,5,"Alcohol Use Disorder — CAGE, AUDIT, Withdrawal (Delirium Tremens)"],
-  [15,"Alcohol Use Disorder — CAGE, AUDIT, Withdrawal (Delirium Tremens) - Complications & Prognosis",10,5,"Alcohol Use Disorder — CAGE, AUDIT, Withdrawal (Delirium Tremens)"],
-  [15,"Alcohol Use Disorder — Detox",10,9,"Alcohol Use Disorder — CAGE, AUDIT, Withdrawal (Delirium Tremens) & Detox"],
-  [15,"Alcohol Use Disorder — Detox - Etiology & Risk Factors",10,5,"Alcohol Use Disorder — Detox"],
-  [15,"Alcohol Use Disorder — Detox - Pathophysiology",10,5,"Alcohol Use Disorder — Detox"],
-  [15,"Alcohol Use Disorder — Detox - Clinical Presentation & Signs",10,5,"Alcohol Use Disorder — Detox"],
-  [15,"Alcohol Use Disorder — Detox - Differential Diagnosis",10,5,"Alcohol Use Disorder — Detox"],
-  [15,"Alcohol Use Disorder — Detox - Investigations & Lab Findings",10,5,"Alcohol Use Disorder — Detox"],
-  [15,"Alcohol Use Disorder — Detox - Medical & Surgical Management",10,5,"Alcohol Use Disorder — Detox"],
-  [15,"Alcohol Use Disorder — Detox - Complications & Prognosis",10,5,"Alcohol Use Disorder — Detox"],
-  [15,"Opioid Use Disorder — Physical Dependence, Withdrawal & Methadone/Buprenorphine",10,18,"Substance Use Disorders (Alcohol, Opioids)"],
-  [15,"Opioid Use Disorder — Physical Dependence, Withdrawal",10,9,"Opioid Use Disorder — Physical Dependence, Withdrawal & Methadone/Buprenorphine"],
-  [15,"Opioid Use Disorder — Physical Dependence, Withdrawal - Etiology & Risk Factors",10,5,"Opioid Use Disorder — Physical Dependence, Withdrawal"],
-  [15,"Opioid Use Disorder — Physical Dependence, Withdrawal - Pathophysiology",10,5,"Opioid Use Disorder — Physical Dependence, Withdrawal"],
-  [15,"Opioid Use Disorder — Physical Dependence, Withdrawal - Clinical Presentation & Signs",10,5,"Opioid Use Disorder — Physical Dependence, Withdrawal"],
-  [15,"Opioid Use Disorder — Physical Dependence, Withdrawal - Differential Diagnosis",10,5,"Opioid Use Disorder — Physical Dependence, Withdrawal"],
-  [15,"Opioid Use Disorder — Physical Dependence, Withdrawal - Investigations & Lab Findings",10,5,"Opioid Use Disorder — Physical Dependence, Withdrawal"],
-  [15,"Opioid Use Disorder — Physical Dependence, Withdrawal - Medical & Surgical Management",10,5,"Opioid Use Disorder — Physical Dependence, Withdrawal"],
-  [15,"Opioid Use Disorder — Physical Dependence, Withdrawal - Complications & Prognosis",10,5,"Opioid Use Disorder — Physical Dependence, Withdrawal"],
-  [15,"Opioid Use Disorder — Methadone/Buprenorphine",10,9,"Opioid Use Disorder — Physical Dependence, Withdrawal & Methadone/Buprenorphine"],
-  [15,"Opioid Use Disorder — Methadone/Buprenorphine - Etiology & Risk Factors",10,5,"Opioid Use Disorder — Methadone/Buprenorphine"],
-  [15,"Opioid Use Disorder — Methadone/Buprenorphine - Pathophysiology",10,5,"Opioid Use Disorder — Methadone/Buprenorphine"],
-  [15,"Opioid Use Disorder — Methadone/Buprenorphine - Clinical Presentation & Signs",10,5,"Opioid Use Disorder — Methadone/Buprenorphine"],
-  [15,"Opioid Use Disorder — Methadone/Buprenorphine - Differential Diagnosis",10,5,"Opioid Use Disorder — Methadone/Buprenorphine"],
-  [15,"Opioid Use Disorder — Methadone/Buprenorphine - Investigations & Lab Findings",10,5,"Opioid Use Disorder — Methadone/Buprenorphine"],
-  [15,"Opioid Use Disorder — Methadone/Buprenorphine - Medical & Surgical Management",10,5,"Opioid Use Disorder — Methadone/Buprenorphine"],
-  [15,"Opioid Use Disorder — Methadone/Buprenorphine - Complications & Prognosis",10,5,"Opioid Use Disorder — Methadone/Buprenorphine"],
-  [15,"Alcohol-related Disorders — Wernicke's, Korsakoff's, Alcoholic Hallucinosis",10,15,"Substance Use Disorders (Alcohol, Opioids)"],
-  [15,"Alcohol-related Disorders — Wernicke's",10,7,"Alcohol-related Disorders — Wernicke's, Korsakoff's, Alcoholic Hallucinosis"],
-  [15,"Alcohol-related Disorders — Wernicke's - Etiology & Risk Factors",10,5,"Alcohol-related Disorders — Wernicke's"],
-  [15,"Alcohol-related Disorders — Wernicke's - Pathophysiology",10,5,"Alcohol-related Disorders — Wernicke's"],
-  [15,"Alcohol-related Disorders — Wernicke's - Clinical Presentation & Signs",10,5,"Alcohol-related Disorders — Wernicke's"],
-  [15,"Alcohol-related Disorders — Wernicke's - Differential Diagnosis",10,5,"Alcohol-related Disorders — Wernicke's"],
-  [15,"Alcohol-related Disorders — Wernicke's - Investigations & Lab Findings",10,5,"Alcohol-related Disorders — Wernicke's"],
-  [15,"Alcohol-related Disorders — Wernicke's - Medical & Surgical Management",10,5,"Alcohol-related Disorders — Wernicke's"],
-  [15,"Alcohol-related Disorders — Wernicke's - Complications & Prognosis",10,5,"Alcohol-related Disorders — Wernicke's"],
-  [15,"Alcohol-related Disorders — Korsakoff's, Alcoholic Hallucinosis",10,8,"Alcohol-related Disorders — Wernicke's, Korsakoff's, Alcoholic Hallucinosis"],
-  [15,"Alcohol-related Disorders — Korsakoff's, Alcoholic Hallucinosis - Etiology & Risk Factors",10,5,"Alcohol-related Disorders — Korsakoff's, Alcoholic Hallucinosis"],
-  [15,"Alcohol-related Disorders — Korsakoff's, Alcoholic Hallucinosis - Pathophysiology",10,5,"Alcohol-related Disorders — Korsakoff's, Alcoholic Hallucinosis"],
-  [15,"Alcohol-related Disorders — Korsakoff's, Alcoholic Hallucinosis - Clinical Presentation & Signs",10,5,"Alcohol-related Disorders — Korsakoff's, Alcoholic Hallucinosis"],
-  [15,"Alcohol-related Disorders — Korsakoff's, Alcoholic Hallucinosis - Differential Diagnosis",10,5,"Alcohol-related Disorders — Korsakoff's, Alcoholic Hallucinosis"],
-  [15,"Alcohol-related Disorders — Korsakoff's, Alcoholic Hallucinosis - Investigations & Lab Findings",10,5,"Alcohol-related Disorders — Korsakoff's, Alcoholic Hallucinosis"],
-  [15,"Alcohol-related Disorders — Korsakoff's, Alcoholic Hallucinosis - Medical & Surgical Management",10,5,"Alcohol-related Disorders — Korsakoff's, Alcoholic Hallucinosis"],
-  [15,"Alcohol-related Disorders — Korsakoff's, Alcoholic Hallucinosis - Complications & Prognosis",10,5,"Alcohol-related Disorders — Korsakoff's, Alcoholic Hallucinosis"],
-  [15,"Somatoform & Dissociative Disorders",8,35,"Clinical Disorders"],
-  [15,"Somatoform Disorders — Somatic Symptom, Illness Anxiety & Conversion",8,18,"Somatoform & Dissociative Disorders"],
-  [15,"Somatoform Disorders — Somatic Symptom, Illness Anxiety",8,9,"Somatoform Disorders — Somatic Symptom, Illness Anxiety & Conversion"],
-  [15,"Somatoform Disorders — Somatic Symptom, Illness Anxiety - Etiology & Risk Factors",8,5,"Somatoform Disorders — Somatic Symptom, Illness Anxiety"],
-  [15,"Somatoform Disorders — Somatic Symptom, Illness Anxiety - Pathophysiology",8,5,"Somatoform Disorders — Somatic Symptom, Illness Anxiety"],
-  [15,"Somatoform Disorders — Somatic Symptom, Illness Anxiety - Clinical Presentation & Signs",8,5,"Somatoform Disorders — Somatic Symptom, Illness Anxiety"],
-  [15,"Somatoform Disorders — Somatic Symptom, Illness Anxiety - Differential Diagnosis",8,5,"Somatoform Disorders — Somatic Symptom, Illness Anxiety"],
-  [15,"Somatoform Disorders — Somatic Symptom, Illness Anxiety - Investigations & Lab Findings",8,5,"Somatoform Disorders — Somatic Symptom, Illness Anxiety"],
-  [15,"Somatoform Disorders — Somatic Symptom, Illness Anxiety - Medical & Surgical Management",8,5,"Somatoform Disorders — Somatic Symptom, Illness Anxiety"],
-  [15,"Somatoform Disorders — Somatic Symptom, Illness Anxiety - Complications & Prognosis",8,5,"Somatoform Disorders — Somatic Symptom, Illness Anxiety"],
-  [15,"Somatoform Disorders — Conversion",8,9,"Somatoform Disorders — Somatic Symptom, Illness Anxiety & Conversion"],
-  [15,"Somatoform Disorders — Conversion - Etiology & Risk Factors",8,5,"Somatoform Disorders — Conversion"],
-  [15,"Somatoform Disorders — Conversion - Pathophysiology",8,5,"Somatoform Disorders — Conversion"],
-  [15,"Somatoform Disorders — Conversion - Clinical Presentation & Signs",8,5,"Somatoform Disorders — Conversion"],
-  [15,"Somatoform Disorders — Conversion - Differential Diagnosis",8,5,"Somatoform Disorders — Conversion"],
-  [15,"Somatoform Disorders — Conversion - Investigations & Lab Findings",8,5,"Somatoform Disorders — Conversion"],
-  [15,"Somatoform Disorders — Conversion - Medical & Surgical Management",8,5,"Somatoform Disorders — Conversion"],
-  [15,"Somatoform Disorders — Conversion - Complications & Prognosis",8,5,"Somatoform Disorders — Conversion"],
-  [15,"Dissociative Disorders — Amnesia, Fugue, DID & Ganser's Syndrome",8,15,"Somatoform & Dissociative Disorders"],
-  [15,"Dissociative Disorders — Amnesia, Fugue, DID",8,7,"Dissociative Disorders — Amnesia, Fugue, DID & Ganser's Syndrome"],
-  [15,"Dissociative Disorders — Amnesia, Fugue, DID - Etiology & Risk Factors",8,5,"Dissociative Disorders — Amnesia, Fugue, DID"],
-  [15,"Dissociative Disorders — Amnesia, Fugue, DID - Pathophysiology",8,5,"Dissociative Disorders — Amnesia, Fugue, DID"],
-  [15,"Dissociative Disorders — Amnesia, Fugue, DID - Clinical Presentation & Signs",8,5,"Dissociative Disorders — Amnesia, Fugue, DID"],
-  [15,"Dissociative Disorders — Amnesia, Fugue, DID - Differential Diagnosis",8,5,"Dissociative Disorders — Amnesia, Fugue, DID"],
-  [15,"Dissociative Disorders — Amnesia, Fugue, DID - Investigations & Lab Findings",8,5,"Dissociative Disorders — Amnesia, Fugue, DID"],
-  [15,"Dissociative Disorders — Amnesia, Fugue, DID - Medical & Surgical Management",8,5,"Dissociative Disorders — Amnesia, Fugue, DID"],
-  [15,"Dissociative Disorders — Amnesia, Fugue, DID - Complications & Prognosis",8,5,"Dissociative Disorders — Amnesia, Fugue, DID"],
-  [15,"Dissociative Disorders — Ganser's Syndrome",8,8,"Dissociative Disorders — Amnesia, Fugue, DID & Ganser's Syndrome"],
-  [15,"Dissociative Disorders — Ganser's Syndrome - Etiology & Risk Factors",8,5,"Dissociative Disorders — Ganser's Syndrome"],
-  [15,"Dissociative Disorders — Ganser's Syndrome - Pathophysiology",8,5,"Dissociative Disorders — Ganser's Syndrome"],
-  [15,"Dissociative Disorders — Ganser's Syndrome - Clinical Presentation & Signs",8,5,"Dissociative Disorders — Ganser's Syndrome"],
-  [15,"Dissociative Disorders — Ganser's Syndrome - Differential Diagnosis",8,5,"Dissociative Disorders — Ganser's Syndrome"],
-  [15,"Dissociative Disorders — Ganser's Syndrome - Investigations & Lab Findings",8,5,"Dissociative Disorders — Ganser's Syndrome"],
-  [15,"Dissociative Disorders — Ganser's Syndrome - Medical & Surgical Management",8,5,"Dissociative Disorders — Ganser's Syndrome"],
-  [15,"Dissociative Disorders — Ganser's Syndrome - Complications & Prognosis",8,5,"Dissociative Disorders — Ganser's Syndrome"],
-  [15,"Personality Disorders",9,35,"Clinical Disorders"],
-  [15,"Cluster A (Odd) — Paranoid, Schizoid & Schizotypal PD",9,12,"Personality Disorders"],
-  [15,"Cluster A (Odd) — Paranoid, Schizoid",9,6,"Cluster A (Odd) — Paranoid, Schizoid & Schizotypal PD"],
-  [15,"Cluster A (Odd) — Paranoid, Schizoid - Etiology & Risk Factors",9,5,"Cluster A (Odd) — Paranoid, Schizoid"],
-  [15,"Cluster A (Odd) — Paranoid, Schizoid - Pathophysiology",9,5,"Cluster A (Odd) — Paranoid, Schizoid"],
-  [15,"Cluster A (Odd) — Paranoid, Schizoid - Clinical Presentation & Signs",9,5,"Cluster A (Odd) — Paranoid, Schizoid"],
-  [15,"Cluster A (Odd) — Paranoid, Schizoid - Differential Diagnosis",9,5,"Cluster A (Odd) — Paranoid, Schizoid"],
-  [15,"Cluster A (Odd) — Paranoid, Schizoid - Investigations & Lab Findings",9,5,"Cluster A (Odd) — Paranoid, Schizoid"],
-  [15,"Cluster A (Odd) — Paranoid, Schizoid - Medical & Surgical Management",9,5,"Cluster A (Odd) — Paranoid, Schizoid"],
-  [15,"Cluster A (Odd) — Paranoid, Schizoid - Complications & Prognosis",9,5,"Cluster A (Odd) — Paranoid, Schizoid"],
-  [15,"Cluster A (Odd) — Schizotypal PD",9,6,"Cluster A (Odd) — Paranoid, Schizoid & Schizotypal PD"],
-  [15,"Cluster A (Odd) — Schizotypal PD - Etiology & Risk Factors",9,5,"Cluster A (Odd) — Schizotypal PD"],
-  [15,"Cluster A (Odd) — Schizotypal PD - Pathophysiology",9,5,"Cluster A (Odd) — Schizotypal PD"],
-  [15,"Cluster A (Odd) — Schizotypal PD - Clinical Presentation & Signs",9,5,"Cluster A (Odd) — Schizotypal PD"],
-  [15,"Cluster A (Odd) — Schizotypal PD - Differential Diagnosis",9,5,"Cluster A (Odd) — Schizotypal PD"],
-  [15,"Cluster A (Odd) — Schizotypal PD - Investigations & Lab Findings",9,5,"Cluster A (Odd) — Schizotypal PD"],
-  [15,"Cluster A (Odd) — Schizotypal PD - Medical & Surgical Management",9,5,"Cluster A (Odd) — Schizotypal PD"],
-  [15,"Cluster A (Odd) — Schizotypal PD - Complications & Prognosis",9,5,"Cluster A (Odd) — Schizotypal PD"],
-  [15,"Cluster B (Dramatic) — Antisocial, Borderline, Histrionic & Narcissistic PD",9,15,"Personality Disorders"],
-  [15,"Cluster B (Dramatic) — Antisocial, Borderline, Histrionic",9,7,"Cluster B (Dramatic) — Antisocial, Borderline, Histrionic & Narcissistic PD"],
-  [15,"Cluster B (Dramatic) — Antisocial, Borderline, Histrionic - Etiology & Risk Factors",9,5,"Cluster B (Dramatic) — Antisocial, Borderline, Histrionic"],
-  [15,"Cluster B (Dramatic) — Antisocial, Borderline, Histrionic - Pathophysiology",9,5,"Cluster B (Dramatic) — Antisocial, Borderline, Histrionic"],
-  [15,"Cluster B (Dramatic) — Antisocial, Borderline, Histrionic - Clinical Presentation & Signs",9,5,"Cluster B (Dramatic) — Antisocial, Borderline, Histrionic"],
-  [15,"Cluster B (Dramatic) — Antisocial, Borderline, Histrionic - Differential Diagnosis",9,5,"Cluster B (Dramatic) — Antisocial, Borderline, Histrionic"],
-  [15,"Cluster B (Dramatic) — Antisocial, Borderline, Histrionic - Investigations & Lab Findings",9,5,"Cluster B (Dramatic) — Antisocial, Borderline, Histrionic"],
-  [15,"Cluster B (Dramatic) — Antisocial, Borderline, Histrionic - Medical & Surgical Management",9,5,"Cluster B (Dramatic) — Antisocial, Borderline, Histrionic"],
-  [15,"Cluster B (Dramatic) — Antisocial, Borderline, Histrionic - Complications & Prognosis",9,5,"Cluster B (Dramatic) — Antisocial, Borderline, Histrionic"],
-  [15,"Cluster B (Dramatic) — Narcissistic PD",9,8,"Cluster B (Dramatic) — Antisocial, Borderline, Histrionic & Narcissistic PD"],
-  [15,"Cluster B (Dramatic) — Narcissistic PD - Etiology & Risk Factors",9,5,"Cluster B (Dramatic) — Narcissistic PD"],
-  [15,"Cluster B (Dramatic) — Narcissistic PD - Pathophysiology",9,5,"Cluster B (Dramatic) — Narcissistic PD"],
-  [15,"Cluster B (Dramatic) — Narcissistic PD - Clinical Presentation & Signs",9,5,"Cluster B (Dramatic) — Narcissistic PD"],
-  [15,"Cluster B (Dramatic) — Narcissistic PD - Differential Diagnosis",9,5,"Cluster B (Dramatic) — Narcissistic PD"],
-  [15,"Cluster B (Dramatic) — Narcissistic PD - Investigations & Lab Findings",9,5,"Cluster B (Dramatic) — Narcissistic PD"],
-  [15,"Cluster B (Dramatic) — Narcissistic PD - Medical & Surgical Management",9,5,"Cluster B (Dramatic) — Narcissistic PD"],
-  [15,"Cluster B (Dramatic) — Narcissistic PD - Complications & Prognosis",9,5,"Cluster B (Dramatic) — Narcissistic PD"],
-  [15,"Cluster C (Anxious) — Avoidant, Dependent & OC PD",9,12,"Personality Disorders"],
-  [15,"Cluster C (Anxious) — Avoidant, Dependent",9,6,"Cluster C (Anxious) — Avoidant, Dependent & OC PD"],
-  [15,"Cluster C (Anxious) — Avoidant, Dependent - Etiology & Risk Factors",9,5,"Cluster C (Anxious) — Avoidant, Dependent"],
-  [15,"Cluster C (Anxious) — Avoidant, Dependent - Pathophysiology",9,5,"Cluster C (Anxious) — Avoidant, Dependent"],
-  [15,"Cluster C (Anxious) — Avoidant, Dependent - Clinical Presentation & Signs",9,5,"Cluster C (Anxious) — Avoidant, Dependent"],
-  [15,"Cluster C (Anxious) — Avoidant, Dependent - Differential Diagnosis",9,5,"Cluster C (Anxious) — Avoidant, Dependent"],
-  [15,"Cluster C (Anxious) — Avoidant, Dependent - Investigations & Lab Findings",9,5,"Cluster C (Anxious) — Avoidant, Dependent"],
-  [15,"Cluster C (Anxious) — Avoidant, Dependent - Medical & Surgical Management",9,5,"Cluster C (Anxious) — Avoidant, Dependent"],
-  [15,"Cluster C (Anxious) — Avoidant, Dependent - Complications & Prognosis",9,5,"Cluster C (Anxious) — Avoidant, Dependent"],
-  [15,"Cluster C (Anxious) — OC PD",9,6,"Cluster C (Anxious) — Avoidant, Dependent & OC PD"],
-  [15,"Cluster C (Anxious) — OC PD - Etiology & Risk Factors",9,5,"Cluster C (Anxious) — OC PD"],
-  [15,"Cluster C (Anxious) — OC PD - Pathophysiology",9,5,"Cluster C (Anxious) — OC PD"],
-  [15,"Cluster C (Anxious) — OC PD - Clinical Presentation & Signs",9,5,"Cluster C (Anxious) — OC PD"],
-  [15,"Cluster C (Anxious) — OC PD - Differential Diagnosis",9,5,"Cluster C (Anxious) — OC PD"],
-  [15,"Cluster C (Anxious) — OC PD - Investigations & Lab Findings",9,5,"Cluster C (Anxious) — OC PD"],
-  [15,"Cluster C (Anxious) — OC PD - Medical & Surgical Management",9,5,"Cluster C (Anxious) — OC PD"],
-  [15,"Cluster C (Anxious) — OC PD - Complications & Prognosis",9,5,"Cluster C (Anxious) — OC PD"],
-  [15,"Child Psychiatry (ADHD, Autism)",9,40,"Clinical Disorders"],
-  [15,"ADHD — DSM-5 Criteria, Subtypes, Methylphenidate & Behavioral Therapy",9,18,"Child Psychiatry (ADHD, Autism)"],
-  [15,"ADHD — DSM-5 Criteria, Subtypes, Methylphenidate",9,9,"ADHD — DSM-5 Criteria, Subtypes, Methylphenidate & Behavioral Therapy"],
-  [15,"ADHD — DSM-5 Criteria, Subtypes, Methylphenidate - Etiology & Risk Factors",9,5,"ADHD — DSM-5 Criteria, Subtypes, Methylphenidate"],
-  [15,"ADHD — DSM-5 Criteria, Subtypes, Methylphenidate - Pathophysiology",9,5,"ADHD — DSM-5 Criteria, Subtypes, Methylphenidate"],
-  [15,"ADHD — DSM-5 Criteria, Subtypes, Methylphenidate - Clinical Presentation & Signs",9,5,"ADHD — DSM-5 Criteria, Subtypes, Methylphenidate"],
-  [15,"ADHD — DSM-5 Criteria, Subtypes, Methylphenidate - Differential Diagnosis",9,5,"ADHD — DSM-5 Criteria, Subtypes, Methylphenidate"],
-  [15,"ADHD — DSM-5 Criteria, Subtypes, Methylphenidate - Investigations & Lab Findings",9,5,"ADHD — DSM-5 Criteria, Subtypes, Methylphenidate"],
-  [15,"ADHD — DSM-5 Criteria, Subtypes, Methylphenidate - Medical & Surgical Management",9,5,"ADHD — DSM-5 Criteria, Subtypes, Methylphenidate"],
-  [15,"ADHD — DSM-5 Criteria, Subtypes, Methylphenidate - Complications & Prognosis",9,5,"ADHD — DSM-5 Criteria, Subtypes, Methylphenidate"],
-  [15,"ADHD — Behavioral Therapy",9,9,"ADHD — DSM-5 Criteria, Subtypes, Methylphenidate & Behavioral Therapy"],
-  [15,"ADHD — Behavioral Therapy - Etiology & Risk Factors",9,5,"ADHD — Behavioral Therapy"],
-  [15,"ADHD — Behavioral Therapy - Pathophysiology",9,5,"ADHD — Behavioral Therapy"],
-  [15,"ADHD — Behavioral Therapy - Clinical Presentation & Signs",9,5,"ADHD — Behavioral Therapy"],
-  [15,"ADHD — Behavioral Therapy - Differential Diagnosis",9,5,"ADHD — Behavioral Therapy"],
-  [15,"ADHD — Behavioral Therapy - Investigations & Lab Findings",9,5,"ADHD — Behavioral Therapy"],
-  [15,"ADHD — Behavioral Therapy - Medical & Surgical Management",9,5,"ADHD — Behavioral Therapy"],
-  [15,"ADHD — Behavioral Therapy - Complications & Prognosis",9,5,"ADHD — Behavioral Therapy"],
-  [15,"ASD — DSM-5 Criteria, Triad (Social, Communication, Restricted Behavior) & ABA",9,18,"Child Psychiatry (ADHD, Autism)"],
-  [15,"ASD — DSM-5 Criteria, Triad (Social, Communication, Restricted Behavior)",9,9,"ASD — DSM-5 Criteria, Triad (Social, Communication, Restricted Behavior) & ABA"],
-  [15,"ASD — DSM-5 Criteria, Triad (Social, Communication, Restricted Behavior) - Etiology & Risk Factors",9,5,"ASD — DSM-5 Criteria, Triad (Social, Communication, Restricted Behavior)"],
-  [15,"ASD — DSM-5 Criteria, Triad (Social, Communication, Restricted Behavior) - Pathophysiology",9,5,"ASD — DSM-5 Criteria, Triad (Social, Communication, Restricted Behavior)"],
-  [15,"ASD — DSM-5 Criteria, Triad (Social, Communication, Restricted Behavior) - Clinical Presentation & Signs",9,5,"ASD — DSM-5 Criteria, Triad (Social, Communication, Restricted Behavior)"],
-  [15,"ASD — DSM-5 Criteria, Triad (Social, Communication, Restricted Behavior) - Differential Diagnosis",9,5,"ASD — DSM-5 Criteria, Triad (Social, Communication, Restricted Behavior)"],
-  [15,"ASD — DSM-5 Criteria, Triad (Social, Communication, Restricted Behavior) - Investigations & Lab Findings",9,5,"ASD — DSM-5 Criteria, Triad (Social, Communication, Restricted Behavior)"],
-  [15,"ASD — DSM-5 Criteria, Triad (Social, Communication, Restricted Behavior) - Medical & Surgical Management",9,5,"ASD — DSM-5 Criteria, Triad (Social, Communication, Restricted Behavior)"],
-  [15,"ASD — DSM-5 Criteria, Triad (Social, Communication, Restricted Behavior) - Complications & Prognosis",9,5,"ASD — DSM-5 Criteria, Triad (Social, Communication, Restricted Behavior)"],
-  [15,"ASD — ABA",9,9,"ASD — DSM-5 Criteria, Triad (Social, Communication, Restricted Behavior) & ABA"],
-  [15,"ASD — ABA - Etiology & Risk Factors",9,5,"ASD — ABA"],
-  [15,"ASD — ABA - Pathophysiology",9,5,"ASD — ABA"],
-  [15,"ASD — ABA - Clinical Presentation & Signs",9,5,"ASD — ABA"],
-  [15,"ASD — ABA - Differential Diagnosis",9,5,"ASD — ABA"],
-  [15,"ASD — ABA - Investigations & Lab Findings",9,5,"ASD — ABA"],
-  [15,"ASD — ABA - Medical & Surgical Management",9,5,"ASD — ABA"],
-  [15,"ASD — ABA - Complications & Prognosis",9,5,"ASD — ABA"],
-  [15,"Sleep & Eating Disorders",8,30,"Clinical Disorders"],
-  [15,"Insomnia, Narcolepsy & OSA — Polysomnography & Sleep Hygiene",8,15,"Sleep & Eating Disorders"],
-  [15,"Insomnia, Narcolepsy & OSA — Polysomnography",8,7,"Insomnia, Narcolepsy & OSA — Polysomnography & Sleep Hygiene"],
-  [15,"Insomnia, Narcolepsy & OSA — Polysomnography - Etiology & Risk Factors",8,5,"Insomnia, Narcolepsy & OSA — Polysomnography"],
-  [15,"Insomnia, Narcolepsy & OSA — Polysomnography - Pathophysiology",8,5,"Insomnia, Narcolepsy & OSA — Polysomnography"],
-  [15,"Insomnia, Narcolepsy & OSA — Polysomnography - Clinical Presentation & Signs",8,5,"Insomnia, Narcolepsy & OSA — Polysomnography"],
-  [15,"Insomnia, Narcolepsy & OSA — Polysomnography - Differential Diagnosis",8,5,"Insomnia, Narcolepsy & OSA — Polysomnography"],
-  [15,"Insomnia, Narcolepsy & OSA — Polysomnography - Investigations & Lab Findings",8,5,"Insomnia, Narcolepsy & OSA — Polysomnography"],
-  [15,"Insomnia, Narcolepsy & OSA — Polysomnography - Medical & Surgical Management",8,5,"Insomnia, Narcolepsy & OSA — Polysomnography"],
-  [15,"Insomnia, Narcolepsy & OSA — Polysomnography - Complications & Prognosis",8,5,"Insomnia, Narcolepsy & OSA — Polysomnography"],
-  [15,"Insomnia, Narcolepsy & OSA — Sleep Hygiene",8,8,"Insomnia, Narcolepsy & OSA — Polysomnography & Sleep Hygiene"],
-  [15,"Insomnia, Narcolepsy & OSA — Sleep Hygiene - Etiology & Risk Factors",8,5,"Insomnia, Narcolepsy & OSA — Sleep Hygiene"],
-  [15,"Insomnia, Narcolepsy & OSA — Sleep Hygiene - Pathophysiology",8,5,"Insomnia, Narcolepsy & OSA — Sleep Hygiene"],
-  [15,"Insomnia, Narcolepsy & OSA — Sleep Hygiene - Clinical Presentation & Signs",8,5,"Insomnia, Narcolepsy & OSA — Sleep Hygiene"],
-  [15,"Insomnia, Narcolepsy & OSA — Sleep Hygiene - Differential Diagnosis",8,5,"Insomnia, Narcolepsy & OSA — Sleep Hygiene"],
-  [15,"Insomnia, Narcolepsy & OSA — Sleep Hygiene - Investigations & Lab Findings",8,5,"Insomnia, Narcolepsy & OSA — Sleep Hygiene"],
-  [15,"Insomnia, Narcolepsy & OSA — Sleep Hygiene - Medical & Surgical Management",8,5,"Insomnia, Narcolepsy & OSA — Sleep Hygiene"],
-  [15,"Insomnia, Narcolepsy & OSA — Sleep Hygiene - Complications & Prognosis",8,5,"Insomnia, Narcolepsy & OSA — Sleep Hygiene"],
-  [15,"Eating Disorders — Anorexia Nervosa (BMI, Russell's Sign) & Bulimia Nervosa",8,15,"Sleep & Eating Disorders"],
-  [15,"Eating Disorders — Anorexia Nervosa (BMI, Russell's Sign)",8,7,"Eating Disorders — Anorexia Nervosa (BMI, Russell's Sign) & Bulimia Nervosa"],
-  [15,"Eating Disorders — Anorexia Nervosa (BMI, Russell's Sign) - Etiology & Risk Factors",8,5,"Eating Disorders — Anorexia Nervosa (BMI, Russell's Sign)"],
-  [15,"Eating Disorders — Anorexia Nervosa (BMI, Russell's Sign) - Pathophysiology",8,5,"Eating Disorders — Anorexia Nervosa (BMI, Russell's Sign)"],
-  [15,"Eating Disorders — Anorexia Nervosa (BMI, Russell's Sign) - Clinical Presentation & Signs",8,5,"Eating Disorders — Anorexia Nervosa (BMI, Russell's Sign)"],
-  [15,"Eating Disorders — Anorexia Nervosa (BMI, Russell's Sign) - Differential Diagnosis",8,5,"Eating Disorders — Anorexia Nervosa (BMI, Russell's Sign)"],
-  [15,"Eating Disorders — Anorexia Nervosa (BMI, Russell's Sign) - Investigations & Lab Findings",8,5,"Eating Disorders — Anorexia Nervosa (BMI, Russell's Sign)"],
-  [15,"Eating Disorders — Anorexia Nervosa (BMI, Russell's Sign) - Medical & Surgical Management",8,5,"Eating Disorders — Anorexia Nervosa (BMI, Russell's Sign)"],
-  [15,"Eating Disorders — Anorexia Nervosa (BMI, Russell's Sign) - Complications & Prognosis",8,5,"Eating Disorders — Anorexia Nervosa (BMI, Russell's Sign)"],
-  [15,"Eating Disorders — Bulimia Nervosa",8,8,"Eating Disorders — Anorexia Nervosa (BMI, Russell's Sign) & Bulimia Nervosa"],
-  [15,"Eating Disorders — Bulimia Nervosa - Etiology & Risk Factors",8,5,"Eating Disorders — Bulimia Nervosa"],
-  [15,"Eating Disorders — Bulimia Nervosa - Pathophysiology",8,5,"Eating Disorders — Bulimia Nervosa"],
-  [15,"Eating Disorders — Bulimia Nervosa - Clinical Presentation & Signs",8,5,"Eating Disorders — Bulimia Nervosa"],
-  [15,"Eating Disorders — Bulimia Nervosa - Differential Diagnosis",8,5,"Eating Disorders — Bulimia Nervosa"],
-  [15,"Eating Disorders — Bulimia Nervosa - Investigations & Lab Findings",8,5,"Eating Disorders — Bulimia Nervosa"],
-  [15,"Eating Disorders — Bulimia Nervosa - Medical & Surgical Management",8,5,"Eating Disorders — Bulimia Nervosa"],
-  [15,"Eating Disorders — Bulimia Nervosa - Complications & Prognosis",8,5,"Eating Disorders — Bulimia Nervosa"]
+  [15, "General Psychiatry", 9, 40],
+  [15, "Psychopathology & MSE", 10, 40, "General Psychiatry"],
+  [
+    15,
+    "Mental Status Examination — Components: Appearance, Behaviour, Speech, Mood, Thought, Perception, Cognition, Insight",
+    10,
+    18,
+    "Psychopathology & MSE"
+  ],
+  [
+    15,
+    "Mental Status Examination — Components: Appearance",
+    10,
+    9,
+    "Mental Status Examination — Components: Appearance, Behaviour, Speech, Mood, Thought, Perception, Cognition, Insight"
+  ],
+  [
+    15,
+    "Mental Status Examination — Components: Appearance - Etiology & Risk Factors",
+    10,
+    5,
+    "Mental Status Examination — Components: Appearance"
+  ],
+  [
+    15,
+    "Mental Status Examination — Components: Appearance - Pathophysiology",
+    10,
+    5,
+    "Mental Status Examination — Components: Appearance"
+  ],
+  [
+    15,
+    "Mental Status Examination — Components: Appearance - Clinical Presentation & Signs",
+    10,
+    5,
+    "Mental Status Examination — Components: Appearance"
+  ],
+  [
+    15,
+    "Mental Status Examination — Components: Appearance - Differential Diagnosis",
+    10,
+    5,
+    "Mental Status Examination — Components: Appearance"
+  ],
+  [
+    15,
+    "Mental Status Examination — Components: Appearance - Investigations & Lab Findings",
+    10,
+    5,
+    "Mental Status Examination — Components: Appearance"
+  ],
+  [
+    15,
+    "Mental Status Examination — Components: Appearance - Medical & Surgical Management",
+    10,
+    5,
+    "Mental Status Examination — Components: Appearance"
+  ],
+  [
+    15,
+    "Mental Status Examination — Components: Appearance - Complications & Prognosis",
+    10,
+    5,
+    "Mental Status Examination — Components: Appearance"
+  ],
+  [
+    15,
+    "Mental Status Examination — Behaviour, Speech, Mood, Thought, Perception, Cognition, Insight",
+    10,
+    9,
+    "Mental Status Examination — Components: Appearance, Behaviour, Speech, Mood, Thought, Perception, Cognition, Insight"
+  ],
+  [
+    15,
+    "Mental Status Examination — Behaviour, Speech, Mood, Thought, Perception, Cognition, Insight - Etiology & Risk Factors",
+    10,
+    5,
+    "Mental Status Examination — Behaviour, Speech, Mood, Thought, Perception, Cognition, Insight"
+  ],
+  [
+    15,
+    "Mental Status Examination — Behaviour, Speech, Mood, Thought, Perception, Cognition, Insight - Pathophysiology",
+    10,
+    5,
+    "Mental Status Examination — Behaviour, Speech, Mood, Thought, Perception, Cognition, Insight"
+  ],
+  [
+    15,
+    "Mental Status Examination — Behaviour, Speech, Mood, Thought, Perception, Cognition, Insight - Clinical Presentation & Signs",
+    10,
+    5,
+    "Mental Status Examination — Behaviour, Speech, Mood, Thought, Perception, Cognition, Insight"
+  ],
+  [
+    15,
+    "Mental Status Examination — Behaviour, Speech, Mood, Thought, Perception, Cognition, Insight - Differential Diagnosis",
+    10,
+    5,
+    "Mental Status Examination — Behaviour, Speech, Mood, Thought, Perception, Cognition, Insight"
+  ],
+  [
+    15,
+    "Mental Status Examination — Behaviour, Speech, Mood, Thought, Perception, Cognition, Insight - Investigations & Lab Findings",
+    10,
+    5,
+    "Mental Status Examination — Behaviour, Speech, Mood, Thought, Perception, Cognition, Insight"
+  ],
+  [
+    15,
+    "Mental Status Examination — Behaviour, Speech, Mood, Thought, Perception, Cognition, Insight - Medical & Surgical Management",
+    10,
+    5,
+    "Mental Status Examination — Behaviour, Speech, Mood, Thought, Perception, Cognition, Insight"
+  ],
+  [
+    15,
+    "Mental Status Examination — Behaviour, Speech, Mood, Thought, Perception, Cognition, Insight - Complications & Prognosis",
+    10,
+    5,
+    "Mental Status Examination — Behaviour, Speech, Mood, Thought, Perception, Cognition, Insight"
+  ],
+  [
+    15,
+    "Abnormal Perceptions — Hallucinations, Illusions & Pseudo-hallucinations",
+    10,
+    12,
+    "Psychopathology & MSE"
+  ],
+  [
+    15,
+    "Abnormal Perceptions — Hallucinations, Illusions",
+    10,
+    6,
+    "Abnormal Perceptions — Hallucinations, Illusions & Pseudo-hallucinations"
+  ],
+  [
+    15,
+    "Abnormal Perceptions — Hallucinations, Illusions - Etiology & Risk Factors",
+    10,
+    5,
+    "Abnormal Perceptions — Hallucinations, Illusions"
+  ],
+  [
+    15,
+    "Abnormal Perceptions — Hallucinations, Illusions - Pathophysiology",
+    10,
+    5,
+    "Abnormal Perceptions — Hallucinations, Illusions"
+  ],
+  [
+    15,
+    "Abnormal Perceptions — Hallucinations, Illusions - Clinical Presentation & Signs",
+    10,
+    5,
+    "Abnormal Perceptions — Hallucinations, Illusions"
+  ],
+  [
+    15,
+    "Abnormal Perceptions — Hallucinations, Illusions - Differential Diagnosis",
+    10,
+    5,
+    "Abnormal Perceptions — Hallucinations, Illusions"
+  ],
+  [
+    15,
+    "Abnormal Perceptions — Hallucinations, Illusions - Investigations & Lab Findings",
+    10,
+    5,
+    "Abnormal Perceptions — Hallucinations, Illusions"
+  ],
+  [
+    15,
+    "Abnormal Perceptions — Hallucinations, Illusions - Medical & Surgical Management",
+    10,
+    5,
+    "Abnormal Perceptions — Hallucinations, Illusions"
+  ],
+  [
+    15,
+    "Abnormal Perceptions — Hallucinations, Illusions - Complications & Prognosis",
+    10,
+    5,
+    "Abnormal Perceptions — Hallucinations, Illusions"
+  ],
+  [
+    15,
+    "Abnormal Perceptions — Pseudo-hallucinations",
+    10,
+    6,
+    "Abnormal Perceptions — Hallucinations, Illusions & Pseudo-hallucinations"
+  ],
+  [
+    15,
+    "Abnormal Perceptions — Pseudo-hallucinations - Etiology & Risk Factors",
+    10,
+    5,
+    "Abnormal Perceptions — Pseudo-hallucinations"
+  ],
+  [
+    15,
+    "Abnormal Perceptions — Pseudo-hallucinations - Pathophysiology",
+    10,
+    5,
+    "Abnormal Perceptions — Pseudo-hallucinations"
+  ],
+  [
+    15,
+    "Abnormal Perceptions — Pseudo-hallucinations - Clinical Presentation & Signs",
+    10,
+    5,
+    "Abnormal Perceptions — Pseudo-hallucinations"
+  ],
+  [
+    15,
+    "Abnormal Perceptions — Pseudo-hallucinations - Differential Diagnosis",
+    10,
+    5,
+    "Abnormal Perceptions — Pseudo-hallucinations"
+  ],
+  [
+    15,
+    "Abnormal Perceptions — Pseudo-hallucinations - Investigations & Lab Findings",
+    10,
+    5,
+    "Abnormal Perceptions — Pseudo-hallucinations"
+  ],
+  [
+    15,
+    "Abnormal Perceptions — Pseudo-hallucinations - Medical & Surgical Management",
+    10,
+    5,
+    "Abnormal Perceptions — Pseudo-hallucinations"
+  ],
+  [
+    15,
+    "Abnormal Perceptions — Pseudo-hallucinations - Complications & Prognosis",
+    10,
+    5,
+    "Abnormal Perceptions — Pseudo-hallucinations"
+  ],
+  [
+    15,
+    "Thought Disorders — Formal Thought Disorders, Delusions & Classification",
+    10,
+    12,
+    "Psychopathology & MSE"
+  ],
+  [
+    15,
+    "Thought Disorders — Formal Thought Disorders, Delusions",
+    10,
+    6,
+    "Thought Disorders — Formal Thought Disorders, Delusions & Classification"
+  ],
+  [
+    15,
+    "Thought Disorders — Formal Thought Disorders, Delusions - Etiology & Risk Factors",
+    10,
+    5,
+    "Thought Disorders — Formal Thought Disorders, Delusions"
+  ],
+  [
+    15,
+    "Thought Disorders — Formal Thought Disorders, Delusions - Pathophysiology",
+    10,
+    5,
+    "Thought Disorders — Formal Thought Disorders, Delusions"
+  ],
+  [
+    15,
+    "Thought Disorders — Formal Thought Disorders, Delusions - Clinical Presentation & Signs",
+    10,
+    5,
+    "Thought Disorders — Formal Thought Disorders, Delusions"
+  ],
+  [
+    15,
+    "Thought Disorders — Formal Thought Disorders, Delusions - Differential Diagnosis",
+    10,
+    5,
+    "Thought Disorders — Formal Thought Disorders, Delusions"
+  ],
+  [
+    15,
+    "Thought Disorders — Formal Thought Disorders, Delusions - Investigations & Lab Findings",
+    10,
+    5,
+    "Thought Disorders — Formal Thought Disorders, Delusions"
+  ],
+  [
+    15,
+    "Thought Disorders — Formal Thought Disorders, Delusions - Medical & Surgical Management",
+    10,
+    5,
+    "Thought Disorders — Formal Thought Disorders, Delusions"
+  ],
+  [
+    15,
+    "Thought Disorders — Formal Thought Disorders, Delusions - Complications & Prognosis",
+    10,
+    5,
+    "Thought Disorders — Formal Thought Disorders, Delusions"
+  ],
+  [
+    15,
+    "Thought Disorders — Classification",
+    10,
+    6,
+    "Thought Disorders — Formal Thought Disorders, Delusions & Classification"
+  ],
+  [
+    15,
+    "Thought Disorders — Classification - Etiology & Risk Factors",
+    10,
+    5,
+    "Thought Disorders — Classification"
+  ],
+  [
+    15,
+    "Thought Disorders — Classification - Pathophysiology",
+    10,
+    5,
+    "Thought Disorders — Classification"
+  ],
+  [
+    15,
+    "Thought Disorders — Classification - Clinical Presentation & Signs",
+    10,
+    5,
+    "Thought Disorders — Classification"
+  ],
+  [
+    15,
+    "Thought Disorders — Classification - Differential Diagnosis",
+    10,
+    5,
+    "Thought Disorders — Classification"
+  ],
+  [
+    15,
+    "Thought Disorders — Classification - Investigations & Lab Findings",
+    10,
+    5,
+    "Thought Disorders — Classification"
+  ],
+  [
+    15,
+    "Thought Disorders — Classification - Medical & Surgical Management",
+    10,
+    5,
+    "Thought Disorders — Classification"
+  ],
+  [
+    15,
+    "Thought Disorders — Classification - Complications & Prognosis",
+    10,
+    5,
+    "Thought Disorders — Classification"
+  ],
+  [15, "Psychopharmacology", 10, 45, "General Psychiatry"],
+  [
+    15,
+    "Antipsychotics — D2 Blockade, EPS (ACUTE EPS: Akathisia, Dystonia) & Clozapine Monitoring",
+    10,
+    18,
+    "Psychopharmacology"
+  ],
+  [
+    15,
+    "Antipsychotics — D2 Blockade, EPS (ACUTE EPS: Akathisia, Dystonia)",
+    10,
+    9,
+    "Antipsychotics — D2 Blockade, EPS (ACUTE EPS: Akathisia, Dystonia) & Clozapine Monitoring"
+  ],
+  [
+    15,
+    "Antipsychotics — D2 Blockade, EPS (ACUTE EPS: Akathisia, Dystonia) - Etiology & Risk Factors",
+    10,
+    5,
+    "Antipsychotics — D2 Blockade, EPS (ACUTE EPS: Akathisia, Dystonia)"
+  ],
+  [
+    15,
+    "Antipsychotics — D2 Blockade, EPS (ACUTE EPS: Akathisia, Dystonia) - Pathophysiology",
+    10,
+    5,
+    "Antipsychotics — D2 Blockade, EPS (ACUTE EPS: Akathisia, Dystonia)"
+  ],
+  [
+    15,
+    "Antipsychotics — D2 Blockade, EPS (ACUTE EPS: Akathisia, Dystonia) - Clinical Presentation & Signs",
+    10,
+    5,
+    "Antipsychotics — D2 Blockade, EPS (ACUTE EPS: Akathisia, Dystonia)"
+  ],
+  [
+    15,
+    "Antipsychotics — D2 Blockade, EPS (ACUTE EPS: Akathisia, Dystonia) - Differential Diagnosis",
+    10,
+    5,
+    "Antipsychotics — D2 Blockade, EPS (ACUTE EPS: Akathisia, Dystonia)"
+  ],
+  [
+    15,
+    "Antipsychotics — D2 Blockade, EPS (ACUTE EPS: Akathisia, Dystonia) - Investigations & Lab Findings",
+    10,
+    5,
+    "Antipsychotics — D2 Blockade, EPS (ACUTE EPS: Akathisia, Dystonia)"
+  ],
+  [
+    15,
+    "Antipsychotics — D2 Blockade, EPS (ACUTE EPS: Akathisia, Dystonia) - Medical & Surgical Management",
+    10,
+    5,
+    "Antipsychotics — D2 Blockade, EPS (ACUTE EPS: Akathisia, Dystonia)"
+  ],
+  [
+    15,
+    "Antipsychotics — D2 Blockade, EPS (ACUTE EPS: Akathisia, Dystonia) - Complications & Prognosis",
+    10,
+    5,
+    "Antipsychotics — D2 Blockade, EPS (ACUTE EPS: Akathisia, Dystonia)"
+  ],
+  [
+    15,
+    "Antipsychotics — Clozapine Monitoring",
+    10,
+    9,
+    "Antipsychotics — D2 Blockade, EPS (ACUTE EPS: Akathisia, Dystonia) & Clozapine Monitoring"
+  ],
+  [
+    15,
+    "Antipsychotics — Clozapine Monitoring - Etiology & Risk Factors",
+    10,
+    5,
+    "Antipsychotics — Clozapine Monitoring"
+  ],
+  [
+    15,
+    "Antipsychotics — Clozapine Monitoring - Pathophysiology",
+    10,
+    5,
+    "Antipsychotics — Clozapine Monitoring"
+  ],
+  [
+    15,
+    "Antipsychotics — Clozapine Monitoring - Clinical Presentation & Signs",
+    10,
+    5,
+    "Antipsychotics — Clozapine Monitoring"
+  ],
+  [
+    15,
+    "Antipsychotics — Clozapine Monitoring - Differential Diagnosis",
+    10,
+    5,
+    "Antipsychotics — Clozapine Monitoring"
+  ],
+  [
+    15,
+    "Antipsychotics — Clozapine Monitoring - Investigations & Lab Findings",
+    10,
+    5,
+    "Antipsychotics — Clozapine Monitoring"
+  ],
+  [
+    15,
+    "Antipsychotics — Clozapine Monitoring - Medical & Surgical Management",
+    10,
+    5,
+    "Antipsychotics — Clozapine Monitoring"
+  ],
+  [
+    15,
+    "Antipsychotics — Clozapine Monitoring - Complications & Prognosis",
+    10,
+    5,
+    "Antipsychotics — Clozapine Monitoring"
+  ],
+  [
+    15,
+    "Mood Stabilizers — Lithium Toxicity, Valproate & Carbamazepine",
+    10,
+    15,
+    "Psychopharmacology"
+  ],
+  [
+    15,
+    "Mood Stabilizers — Lithium Toxicity, Valproate",
+    10,
+    7,
+    "Mood Stabilizers — Lithium Toxicity, Valproate & Carbamazepine"
+  ],
+  [
+    15,
+    "Mood Stabilizers — Lithium Toxicity, Valproate - Etiology & Risk Factors",
+    10,
+    5,
+    "Mood Stabilizers — Lithium Toxicity, Valproate"
+  ],
+  [
+    15,
+    "Mood Stabilizers — Lithium Toxicity, Valproate - Pathophysiology",
+    10,
+    5,
+    "Mood Stabilizers — Lithium Toxicity, Valproate"
+  ],
+  [
+    15,
+    "Mood Stabilizers — Lithium Toxicity, Valproate - Clinical Presentation & Signs",
+    10,
+    5,
+    "Mood Stabilizers — Lithium Toxicity, Valproate"
+  ],
+  [
+    15,
+    "Mood Stabilizers — Lithium Toxicity, Valproate - Differential Diagnosis",
+    10,
+    5,
+    "Mood Stabilizers — Lithium Toxicity, Valproate"
+  ],
+  [
+    15,
+    "Mood Stabilizers — Lithium Toxicity, Valproate - Investigations & Lab Findings",
+    10,
+    5,
+    "Mood Stabilizers — Lithium Toxicity, Valproate"
+  ],
+  [
+    15,
+    "Mood Stabilizers — Lithium Toxicity, Valproate - Medical & Surgical Management",
+    10,
+    5,
+    "Mood Stabilizers — Lithium Toxicity, Valproate"
+  ],
+  [
+    15,
+    "Mood Stabilizers — Lithium Toxicity, Valproate - Complications & Prognosis",
+    10,
+    5,
+    "Mood Stabilizers — Lithium Toxicity, Valproate"
+  ],
+  [
+    15,
+    "Mood Stabilizers — Carbamazepine",
+    10,
+    8,
+    "Mood Stabilizers — Lithium Toxicity, Valproate & Carbamazepine"
+  ],
+  [
+    15,
+    "Mood Stabilizers — Carbamazepine - Etiology & Risk Factors",
+    10,
+    5,
+    "Mood Stabilizers — Carbamazepine"
+  ],
+  [
+    15,
+    "Mood Stabilizers — Carbamazepine - Pathophysiology",
+    10,
+    5,
+    "Mood Stabilizers — Carbamazepine"
+  ],
+  [
+    15,
+    "Mood Stabilizers — Carbamazepine - Clinical Presentation & Signs",
+    10,
+    5,
+    "Mood Stabilizers — Carbamazepine"
+  ],
+  [
+    15,
+    "Mood Stabilizers — Carbamazepine - Differential Diagnosis",
+    10,
+    5,
+    "Mood Stabilizers — Carbamazepine"
+  ],
+  [
+    15,
+    "Mood Stabilizers — Carbamazepine - Investigations & Lab Findings",
+    10,
+    5,
+    "Mood Stabilizers — Carbamazepine"
+  ],
+  [
+    15,
+    "Mood Stabilizers — Carbamazepine - Medical & Surgical Management",
+    10,
+    5,
+    "Mood Stabilizers — Carbamazepine"
+  ],
+  [
+    15,
+    "Mood Stabilizers — Carbamazepine - Complications & Prognosis",
+    10,
+    5,
+    "Mood Stabilizers — Carbamazepine"
+  ],
+  [15, "Antidepressants — SSRI, TCA, MAOIs & Serotonin Syndrome", 10, 12, "Psychopharmacology"],
+  [
+    15,
+    "Antidepressants — SSRI, TCA, MAOIs",
+    10,
+    6,
+    "Antidepressants — SSRI, TCA, MAOIs & Serotonin Syndrome"
+  ],
+  [
+    15,
+    "Antidepressants — SSRI, TCA, MAOIs - Etiology & Risk Factors",
+    10,
+    5,
+    "Antidepressants — SSRI, TCA, MAOIs"
+  ],
+  [
+    15,
+    "Antidepressants — SSRI, TCA, MAOIs - Pathophysiology",
+    10,
+    5,
+    "Antidepressants — SSRI, TCA, MAOIs"
+  ],
+  [
+    15,
+    "Antidepressants — SSRI, TCA, MAOIs - Clinical Presentation & Signs",
+    10,
+    5,
+    "Antidepressants — SSRI, TCA, MAOIs"
+  ],
+  [
+    15,
+    "Antidepressants — SSRI, TCA, MAOIs - Differential Diagnosis",
+    10,
+    5,
+    "Antidepressants — SSRI, TCA, MAOIs"
+  ],
+  [
+    15,
+    "Antidepressants — SSRI, TCA, MAOIs - Investigations & Lab Findings",
+    10,
+    5,
+    "Antidepressants — SSRI, TCA, MAOIs"
+  ],
+  [
+    15,
+    "Antidepressants — SSRI, TCA, MAOIs - Medical & Surgical Management",
+    10,
+    5,
+    "Antidepressants — SSRI, TCA, MAOIs"
+  ],
+  [
+    15,
+    "Antidepressants — SSRI, TCA, MAOIs - Complications & Prognosis",
+    10,
+    5,
+    "Antidepressants — SSRI, TCA, MAOIs"
+  ],
+  [
+    15,
+    "Antidepressants — Serotonin Syndrome",
+    10,
+    6,
+    "Antidepressants — SSRI, TCA, MAOIs & Serotonin Syndrome"
+  ],
+  [
+    15,
+    "Antidepressants — Serotonin Syndrome - Etiology & Risk Factors",
+    10,
+    5,
+    "Antidepressants — Serotonin Syndrome"
+  ],
+  [
+    15,
+    "Antidepressants — Serotonin Syndrome - Pathophysiology",
+    10,
+    5,
+    "Antidepressants — Serotonin Syndrome"
+  ],
+  [
+    15,
+    "Antidepressants — Serotonin Syndrome - Clinical Presentation & Signs",
+    10,
+    5,
+    "Antidepressants — Serotonin Syndrome"
+  ],
+  [
+    15,
+    "Antidepressants — Serotonin Syndrome - Differential Diagnosis",
+    10,
+    5,
+    "Antidepressants — Serotonin Syndrome"
+  ],
+  [
+    15,
+    "Antidepressants — Serotonin Syndrome - Investigations & Lab Findings",
+    10,
+    5,
+    "Antidepressants — Serotonin Syndrome"
+  ],
+  [
+    15,
+    "Antidepressants — Serotonin Syndrome - Medical & Surgical Management",
+    10,
+    5,
+    "Antidepressants — Serotonin Syndrome"
+  ],
+  [
+    15,
+    "Antidepressants — Serotonin Syndrome - Complications & Prognosis",
+    10,
+    5,
+    "Antidepressants — Serotonin Syndrome"
+  ],
+  [15, "Clinical Disorders", 10, 60],
+  [15, "Schizophrenia & Psychotic Disorders", 10, 50, "Clinical Disorders"],
+  [
+    15,
+    "Schizophrenia — DSM-5 Criteria, Positive & Negative Symptoms, Subtypes",
+    10,
+    18,
+    "Schizophrenia & Psychotic Disorders"
+  ],
+  [
+    15,
+    "Schizophrenia — DSM-5 Criteria, Positive",
+    10,
+    9,
+    "Schizophrenia — DSM-5 Criteria, Positive & Negative Symptoms, Subtypes"
+  ],
+  [
+    15,
+    "Schizophrenia — DSM-5 Criteria, Positive - Etiology & Risk Factors",
+    10,
+    5,
+    "Schizophrenia — DSM-5 Criteria, Positive"
+  ],
+  [
+    15,
+    "Schizophrenia — DSM-5 Criteria, Positive - Pathophysiology",
+    10,
+    5,
+    "Schizophrenia — DSM-5 Criteria, Positive"
+  ],
+  [
+    15,
+    "Schizophrenia — DSM-5 Criteria, Positive - Clinical Presentation & Signs",
+    10,
+    5,
+    "Schizophrenia — DSM-5 Criteria, Positive"
+  ],
+  [
+    15,
+    "Schizophrenia — DSM-5 Criteria, Positive - Differential Diagnosis",
+    10,
+    5,
+    "Schizophrenia — DSM-5 Criteria, Positive"
+  ],
+  [
+    15,
+    "Schizophrenia — DSM-5 Criteria, Positive - Investigations & Lab Findings",
+    10,
+    5,
+    "Schizophrenia — DSM-5 Criteria, Positive"
+  ],
+  [
+    15,
+    "Schizophrenia — DSM-5 Criteria, Positive - Medical & Surgical Management",
+    10,
+    5,
+    "Schizophrenia — DSM-5 Criteria, Positive"
+  ],
+  [
+    15,
+    "Schizophrenia — DSM-5 Criteria, Positive - Complications & Prognosis",
+    10,
+    5,
+    "Schizophrenia — DSM-5 Criteria, Positive"
+  ],
+  [
+    15,
+    "Schizophrenia — Negative Symptoms, Subtypes",
+    10,
+    9,
+    "Schizophrenia — DSM-5 Criteria, Positive & Negative Symptoms, Subtypes"
+  ],
+  [
+    15,
+    "Schizophrenia — Negative Symptoms, Subtypes - Etiology & Risk Factors",
+    10,
+    5,
+    "Schizophrenia — Negative Symptoms, Subtypes"
+  ],
+  [
+    15,
+    "Schizophrenia — Negative Symptoms, Subtypes - Pathophysiology",
+    10,
+    5,
+    "Schizophrenia — Negative Symptoms, Subtypes"
+  ],
+  [
+    15,
+    "Schizophrenia — Negative Symptoms, Subtypes - Clinical Presentation & Signs",
+    10,
+    5,
+    "Schizophrenia — Negative Symptoms, Subtypes"
+  ],
+  [
+    15,
+    "Schizophrenia — Negative Symptoms, Subtypes - Differential Diagnosis",
+    10,
+    5,
+    "Schizophrenia — Negative Symptoms, Subtypes"
+  ],
+  [
+    15,
+    "Schizophrenia — Negative Symptoms, Subtypes - Investigations & Lab Findings",
+    10,
+    5,
+    "Schizophrenia — Negative Symptoms, Subtypes"
+  ],
+  [
+    15,
+    "Schizophrenia — Negative Symptoms, Subtypes - Medical & Surgical Management",
+    10,
+    5,
+    "Schizophrenia — Negative Symptoms, Subtypes"
+  ],
+  [
+    15,
+    "Schizophrenia — Negative Symptoms, Subtypes - Complications & Prognosis",
+    10,
+    5,
+    "Schizophrenia — Negative Symptoms, Subtypes"
+  ],
+  [
+    15,
+    "Schizophrenia Treatment — Typical vs Atypical & Long-acting Injectables",
+    10,
+    15,
+    "Schizophrenia & Psychotic Disorders"
+  ],
+  [
+    15,
+    "Schizophrenia Treatment — Typical vs Atypical",
+    10,
+    7,
+    "Schizophrenia Treatment — Typical vs Atypical & Long-acting Injectables"
+  ],
+  [
+    15,
+    "Schizophrenia Treatment — Typical vs Atypical - Etiology & Risk Factors",
+    10,
+    5,
+    "Schizophrenia Treatment — Typical vs Atypical"
+  ],
+  [
+    15,
+    "Schizophrenia Treatment — Typical vs Atypical - Pathophysiology",
+    10,
+    5,
+    "Schizophrenia Treatment — Typical vs Atypical"
+  ],
+  [
+    15,
+    "Schizophrenia Treatment — Typical vs Atypical - Clinical Presentation & Signs",
+    10,
+    5,
+    "Schizophrenia Treatment — Typical vs Atypical"
+  ],
+  [
+    15,
+    "Schizophrenia Treatment — Typical vs Atypical - Differential Diagnosis",
+    10,
+    5,
+    "Schizophrenia Treatment — Typical vs Atypical"
+  ],
+  [
+    15,
+    "Schizophrenia Treatment — Typical vs Atypical - Investigations & Lab Findings",
+    10,
+    5,
+    "Schizophrenia Treatment — Typical vs Atypical"
+  ],
+  [
+    15,
+    "Schizophrenia Treatment — Typical vs Atypical - Medical & Surgical Management",
+    10,
+    5,
+    "Schizophrenia Treatment — Typical vs Atypical"
+  ],
+  [
+    15,
+    "Schizophrenia Treatment — Typical vs Atypical - Complications & Prognosis",
+    10,
+    5,
+    "Schizophrenia Treatment — Typical vs Atypical"
+  ],
+  [
+    15,
+    "Schizophrenia Treatment — Long-acting Injectables",
+    10,
+    8,
+    "Schizophrenia Treatment — Typical vs Atypical & Long-acting Injectables"
+  ],
+  [
+    15,
+    "Schizophrenia Treatment — Long-acting Injectables - Etiology & Risk Factors",
+    10,
+    5,
+    "Schizophrenia Treatment — Long-acting Injectables"
+  ],
+  [
+    15,
+    "Schizophrenia Treatment — Long-acting Injectables - Pathophysiology",
+    10,
+    5,
+    "Schizophrenia Treatment — Long-acting Injectables"
+  ],
+  [
+    15,
+    "Schizophrenia Treatment — Long-acting Injectables - Clinical Presentation & Signs",
+    10,
+    5,
+    "Schizophrenia Treatment — Long-acting Injectables"
+  ],
+  [
+    15,
+    "Schizophrenia Treatment — Long-acting Injectables - Differential Diagnosis",
+    10,
+    5,
+    "Schizophrenia Treatment — Long-acting Injectables"
+  ],
+  [
+    15,
+    "Schizophrenia Treatment — Long-acting Injectables - Investigations & Lab Findings",
+    10,
+    5,
+    "Schizophrenia Treatment — Long-acting Injectables"
+  ],
+  [
+    15,
+    "Schizophrenia Treatment — Long-acting Injectables - Medical & Surgical Management",
+    10,
+    5,
+    "Schizophrenia Treatment — Long-acting Injectables"
+  ],
+  [
+    15,
+    "Schizophrenia Treatment — Long-acting Injectables - Complications & Prognosis",
+    10,
+    5,
+    "Schizophrenia Treatment — Long-acting Injectables"
+  ],
+  [
+    15,
+    "Brief Psychotic Disorder, Schizoaffective & Delusional Disorder — Distinctions",
+    10,
+    15,
+    "Schizophrenia & Psychotic Disorders"
+  ],
+  [
+    15,
+    "Brief Psychotic Disorder, Schizoaffective & Delusional Disorder — Basics",
+    10,
+    7,
+    "Brief Psychotic Disorder, Schizoaffective & Delusional Disorder — Distinctions"
+  ],
+  [
+    15,
+    "Brief Psychotic Disorder, Schizoaffective & Delusional Disorder — Basics - Etiology & Risk Factors",
+    10,
+    5,
+    "Brief Psychotic Disorder, Schizoaffective & Delusional Disorder — Basics"
+  ],
+  [
+    15,
+    "Brief Psychotic Disorder, Schizoaffective & Delusional Disorder — Basics - Pathophysiology",
+    10,
+    5,
+    "Brief Psychotic Disorder, Schizoaffective & Delusional Disorder — Basics"
+  ],
+  [
+    15,
+    "Brief Psychotic Disorder, Schizoaffective & Delusional Disorder — Basics - Clinical Presentation & Signs",
+    10,
+    5,
+    "Brief Psychotic Disorder, Schizoaffective & Delusional Disorder — Basics"
+  ],
+  [
+    15,
+    "Brief Psychotic Disorder, Schizoaffective & Delusional Disorder — Basics - Differential Diagnosis",
+    10,
+    5,
+    "Brief Psychotic Disorder, Schizoaffective & Delusional Disorder — Basics"
+  ],
+  [
+    15,
+    "Brief Psychotic Disorder, Schizoaffective & Delusional Disorder — Basics - Investigations & Lab Findings",
+    10,
+    5,
+    "Brief Psychotic Disorder, Schizoaffective & Delusional Disorder — Basics"
+  ],
+  [
+    15,
+    "Brief Psychotic Disorder, Schizoaffective & Delusional Disorder — Basics - Medical & Surgical Management",
+    10,
+    5,
+    "Brief Psychotic Disorder, Schizoaffective & Delusional Disorder — Basics"
+  ],
+  [
+    15,
+    "Brief Psychotic Disorder, Schizoaffective & Delusional Disorder — Basics - Complications & Prognosis",
+    10,
+    5,
+    "Brief Psychotic Disorder, Schizoaffective & Delusional Disorder — Basics"
+  ],
+  [
+    15,
+    "Brief Psychotic Disorder, Schizoaffective & Delusional Disorder — Details",
+    10,
+    8,
+    "Brief Psychotic Disorder, Schizoaffective & Delusional Disorder — Distinctions"
+  ],
+  [
+    15,
+    "Brief Psychotic Disorder, Schizoaffective & Delusional Disorder — Details - Etiology & Risk Factors",
+    10,
+    5,
+    "Brief Psychotic Disorder, Schizoaffective & Delusional Disorder — Details"
+  ],
+  [
+    15,
+    "Brief Psychotic Disorder, Schizoaffective & Delusional Disorder — Details - Pathophysiology",
+    10,
+    5,
+    "Brief Psychotic Disorder, Schizoaffective & Delusional Disorder — Details"
+  ],
+  [
+    15,
+    "Brief Psychotic Disorder, Schizoaffective & Delusional Disorder — Details - Clinical Presentation & Signs",
+    10,
+    5,
+    "Brief Psychotic Disorder, Schizoaffective & Delusional Disorder — Details"
+  ],
+  [
+    15,
+    "Brief Psychotic Disorder, Schizoaffective & Delusional Disorder — Details - Differential Diagnosis",
+    10,
+    5,
+    "Brief Psychotic Disorder, Schizoaffective & Delusional Disorder — Details"
+  ],
+  [
+    15,
+    "Brief Psychotic Disorder, Schizoaffective & Delusional Disorder — Details - Investigations & Lab Findings",
+    10,
+    5,
+    "Brief Psychotic Disorder, Schizoaffective & Delusional Disorder — Details"
+  ],
+  [
+    15,
+    "Brief Psychotic Disorder, Schizoaffective & Delusional Disorder — Details - Medical & Surgical Management",
+    10,
+    5,
+    "Brief Psychotic Disorder, Schizoaffective & Delusional Disorder — Details"
+  ],
+  [
+    15,
+    "Brief Psychotic Disorder, Schizoaffective & Delusional Disorder — Details - Complications & Prognosis",
+    10,
+    5,
+    "Brief Psychotic Disorder, Schizoaffective & Delusional Disorder — Details"
+  ],
+  [15, "Mood Disorders (Depression, Bipolar)", 10, 50, "Clinical Disorders"],
+  [
+    15,
+    "MDD — DSM-5 (SIGECAPS), Severity & Treatment Algorithm",
+    10,
+    18,
+    "Mood Disorders (Depression, Bipolar)"
+  ],
+  [
+    15,
+    "MDD — DSM-5 (SIGECAPS), Severity",
+    10,
+    9,
+    "MDD — DSM-5 (SIGECAPS), Severity & Treatment Algorithm"
+  ],
+  [
+    15,
+    "MDD — DSM-5 (SIGECAPS), Severity - Etiology & Risk Factors",
+    10,
+    5,
+    "MDD — DSM-5 (SIGECAPS), Severity"
+  ],
+  [
+    15,
+    "MDD — DSM-5 (SIGECAPS), Severity - Pathophysiology",
+    10,
+    5,
+    "MDD — DSM-5 (SIGECAPS), Severity"
+  ],
+  [
+    15,
+    "MDD — DSM-5 (SIGECAPS), Severity - Clinical Presentation & Signs",
+    10,
+    5,
+    "MDD — DSM-5 (SIGECAPS), Severity"
+  ],
+  [
+    15,
+    "MDD — DSM-5 (SIGECAPS), Severity - Differential Diagnosis",
+    10,
+    5,
+    "MDD — DSM-5 (SIGECAPS), Severity"
+  ],
+  [
+    15,
+    "MDD — DSM-5 (SIGECAPS), Severity - Investigations & Lab Findings",
+    10,
+    5,
+    "MDD — DSM-5 (SIGECAPS), Severity"
+  ],
+  [
+    15,
+    "MDD — DSM-5 (SIGECAPS), Severity - Medical & Surgical Management",
+    10,
+    5,
+    "MDD — DSM-5 (SIGECAPS), Severity"
+  ],
+  [
+    15,
+    "MDD — DSM-5 (SIGECAPS), Severity - Complications & Prognosis",
+    10,
+    5,
+    "MDD — DSM-5 (SIGECAPS), Severity"
+  ],
+  [
+    15,
+    "MDD — Treatment Algorithm",
+    10,
+    9,
+    "MDD — DSM-5 (SIGECAPS), Severity & Treatment Algorithm"
+  ],
+  [15, "MDD — Treatment Algorithm - Etiology & Risk Factors", 10, 5, "MDD — Treatment Algorithm"],
+  [15, "MDD — Treatment Algorithm - Pathophysiology", 10, 5, "MDD — Treatment Algorithm"],
+  [
+    15,
+    "MDD — Treatment Algorithm - Clinical Presentation & Signs",
+    10,
+    5,
+    "MDD — Treatment Algorithm"
+  ],
+  [15, "MDD — Treatment Algorithm - Differential Diagnosis", 10, 5, "MDD — Treatment Algorithm"],
+  [
+    15,
+    "MDD — Treatment Algorithm - Investigations & Lab Findings",
+    10,
+    5,
+    "MDD — Treatment Algorithm"
+  ],
+  [
+    15,
+    "MDD — Treatment Algorithm - Medical & Surgical Management",
+    10,
+    5,
+    "MDD — Treatment Algorithm"
+  ],
+  [15, "MDD — Treatment Algorithm - Complications & Prognosis", 10, 5, "MDD — Treatment Algorithm"],
+  [
+    15,
+    "Bipolar Disorder — Type I vs II, Cyclothymia & Mood Stabilizer Choices",
+    10,
+    18,
+    "Mood Disorders (Depression, Bipolar)"
+  ],
+  [
+    15,
+    "Bipolar Disorder — Type I vs II, Cyclothymia",
+    10,
+    9,
+    "Bipolar Disorder — Type I vs II, Cyclothymia & Mood Stabilizer Choices"
+  ],
+  [
+    15,
+    "Bipolar Disorder — Type I vs II, Cyclothymia - Etiology & Risk Factors",
+    10,
+    5,
+    "Bipolar Disorder — Type I vs II, Cyclothymia"
+  ],
+  [
+    15,
+    "Bipolar Disorder — Type I vs II, Cyclothymia - Pathophysiology",
+    10,
+    5,
+    "Bipolar Disorder — Type I vs II, Cyclothymia"
+  ],
+  [
+    15,
+    "Bipolar Disorder — Type I vs II, Cyclothymia - Clinical Presentation & Signs",
+    10,
+    5,
+    "Bipolar Disorder — Type I vs II, Cyclothymia"
+  ],
+  [
+    15,
+    "Bipolar Disorder — Type I vs II, Cyclothymia - Differential Diagnosis",
+    10,
+    5,
+    "Bipolar Disorder — Type I vs II, Cyclothymia"
+  ],
+  [
+    15,
+    "Bipolar Disorder — Type I vs II, Cyclothymia - Investigations & Lab Findings",
+    10,
+    5,
+    "Bipolar Disorder — Type I vs II, Cyclothymia"
+  ],
+  [
+    15,
+    "Bipolar Disorder — Type I vs II, Cyclothymia - Medical & Surgical Management",
+    10,
+    5,
+    "Bipolar Disorder — Type I vs II, Cyclothymia"
+  ],
+  [
+    15,
+    "Bipolar Disorder — Type I vs II, Cyclothymia - Complications & Prognosis",
+    10,
+    5,
+    "Bipolar Disorder — Type I vs II, Cyclothymia"
+  ],
+  [
+    15,
+    "Bipolar Disorder — Mood Stabilizer Choices",
+    10,
+    9,
+    "Bipolar Disorder — Type I vs II, Cyclothymia & Mood Stabilizer Choices"
+  ],
+  [
+    15,
+    "Bipolar Disorder — Mood Stabilizer Choices - Etiology & Risk Factors",
+    10,
+    5,
+    "Bipolar Disorder — Mood Stabilizer Choices"
+  ],
+  [
+    15,
+    "Bipolar Disorder — Mood Stabilizer Choices - Pathophysiology",
+    10,
+    5,
+    "Bipolar Disorder — Mood Stabilizer Choices"
+  ],
+  [
+    15,
+    "Bipolar Disorder — Mood Stabilizer Choices - Clinical Presentation & Signs",
+    10,
+    5,
+    "Bipolar Disorder — Mood Stabilizer Choices"
+  ],
+  [
+    15,
+    "Bipolar Disorder — Mood Stabilizer Choices - Differential Diagnosis",
+    10,
+    5,
+    "Bipolar Disorder — Mood Stabilizer Choices"
+  ],
+  [
+    15,
+    "Bipolar Disorder — Mood Stabilizer Choices - Investigations & Lab Findings",
+    10,
+    5,
+    "Bipolar Disorder — Mood Stabilizer Choices"
+  ],
+  [
+    15,
+    "Bipolar Disorder — Mood Stabilizer Choices - Medical & Surgical Management",
+    10,
+    5,
+    "Bipolar Disorder — Mood Stabilizer Choices"
+  ],
+  [
+    15,
+    "Bipolar Disorder — Mood Stabilizer Choices - Complications & Prognosis",
+    10,
+    5,
+    "Bipolar Disorder — Mood Stabilizer Choices"
+  ],
+  [
+    15,
+    "Suicide Risk Assessment — SAD PERSONS Scale & Safe Messaging",
+    10,
+    12,
+    "Mood Disorders (Depression, Bipolar)"
+  ],
+  [
+    15,
+    "Suicide Risk Assessment — SAD PERSONS Scale",
+    10,
+    6,
+    "Suicide Risk Assessment — SAD PERSONS Scale & Safe Messaging"
+  ],
+  [
+    15,
+    "Suicide Risk Assessment — SAD PERSONS Scale - Etiology & Risk Factors",
+    10,
+    5,
+    "Suicide Risk Assessment — SAD PERSONS Scale"
+  ],
+  [
+    15,
+    "Suicide Risk Assessment — SAD PERSONS Scale - Pathophysiology",
+    10,
+    5,
+    "Suicide Risk Assessment — SAD PERSONS Scale"
+  ],
+  [
+    15,
+    "Suicide Risk Assessment — SAD PERSONS Scale - Clinical Presentation & Signs",
+    10,
+    5,
+    "Suicide Risk Assessment — SAD PERSONS Scale"
+  ],
+  [
+    15,
+    "Suicide Risk Assessment — SAD PERSONS Scale - Differential Diagnosis",
+    10,
+    5,
+    "Suicide Risk Assessment — SAD PERSONS Scale"
+  ],
+  [
+    15,
+    "Suicide Risk Assessment — SAD PERSONS Scale - Investigations & Lab Findings",
+    10,
+    5,
+    "Suicide Risk Assessment — SAD PERSONS Scale"
+  ],
+  [
+    15,
+    "Suicide Risk Assessment — SAD PERSONS Scale - Medical & Surgical Management",
+    10,
+    5,
+    "Suicide Risk Assessment — SAD PERSONS Scale"
+  ],
+  [
+    15,
+    "Suicide Risk Assessment — SAD PERSONS Scale - Complications & Prognosis",
+    10,
+    5,
+    "Suicide Risk Assessment — SAD PERSONS Scale"
+  ],
+  [
+    15,
+    "Suicide Risk Assessment — Safe Messaging",
+    10,
+    6,
+    "Suicide Risk Assessment — SAD PERSONS Scale & Safe Messaging"
+  ],
+  [
+    15,
+    "Suicide Risk Assessment — Safe Messaging - Etiology & Risk Factors",
+    10,
+    5,
+    "Suicide Risk Assessment — Safe Messaging"
+  ],
+  [
+    15,
+    "Suicide Risk Assessment — Safe Messaging - Pathophysiology",
+    10,
+    5,
+    "Suicide Risk Assessment — Safe Messaging"
+  ],
+  [
+    15,
+    "Suicide Risk Assessment — Safe Messaging - Clinical Presentation & Signs",
+    10,
+    5,
+    "Suicide Risk Assessment — Safe Messaging"
+  ],
+  [
+    15,
+    "Suicide Risk Assessment — Safe Messaging - Differential Diagnosis",
+    10,
+    5,
+    "Suicide Risk Assessment — Safe Messaging"
+  ],
+  [
+    15,
+    "Suicide Risk Assessment — Safe Messaging - Investigations & Lab Findings",
+    10,
+    5,
+    "Suicide Risk Assessment — Safe Messaging"
+  ],
+  [
+    15,
+    "Suicide Risk Assessment — Safe Messaging - Medical & Surgical Management",
+    10,
+    5,
+    "Suicide Risk Assessment — Safe Messaging"
+  ],
+  [
+    15,
+    "Suicide Risk Assessment — Safe Messaging - Complications & Prognosis",
+    10,
+    5,
+    "Suicide Risk Assessment — Safe Messaging"
+  ],
+  [15, "Anxiety, OCD & Stress Disorders", 10, 45, "Clinical Disorders"],
+  [
+    15,
+    "Anxiety Disorders — GAD, Panic, Phobia, Social Anxiety: DSM-5 & DOC",
+    10,
+    18,
+    "Anxiety, OCD & Stress Disorders"
+  ],
+  [
+    15,
+    "Anxiety Disorders — GAD, Panic, Phobia, Social Anxiety: DSM-5",
+    10,
+    9,
+    "Anxiety Disorders — GAD, Panic, Phobia, Social Anxiety: DSM-5 & DOC"
+  ],
+  [
+    15,
+    "Anxiety Disorders — GAD, Panic, Phobia, Social Anxiety: DSM-5 - Etiology & Risk Factors",
+    10,
+    5,
+    "Anxiety Disorders — GAD, Panic, Phobia, Social Anxiety: DSM-5"
+  ],
+  [
+    15,
+    "Anxiety Disorders — GAD, Panic, Phobia, Social Anxiety: DSM-5 - Pathophysiology",
+    10,
+    5,
+    "Anxiety Disorders — GAD, Panic, Phobia, Social Anxiety: DSM-5"
+  ],
+  [
+    15,
+    "Anxiety Disorders — GAD, Panic, Phobia, Social Anxiety: DSM-5 - Clinical Presentation & Signs",
+    10,
+    5,
+    "Anxiety Disorders — GAD, Panic, Phobia, Social Anxiety: DSM-5"
+  ],
+  [
+    15,
+    "Anxiety Disorders — GAD, Panic, Phobia, Social Anxiety: DSM-5 - Differential Diagnosis",
+    10,
+    5,
+    "Anxiety Disorders — GAD, Panic, Phobia, Social Anxiety: DSM-5"
+  ],
+  [
+    15,
+    "Anxiety Disorders — GAD, Panic, Phobia, Social Anxiety: DSM-5 - Investigations & Lab Findings",
+    10,
+    5,
+    "Anxiety Disorders — GAD, Panic, Phobia, Social Anxiety: DSM-5"
+  ],
+  [
+    15,
+    "Anxiety Disorders — GAD, Panic, Phobia, Social Anxiety: DSM-5 - Medical & Surgical Management",
+    10,
+    5,
+    "Anxiety Disorders — GAD, Panic, Phobia, Social Anxiety: DSM-5"
+  ],
+  [
+    15,
+    "Anxiety Disorders — GAD, Panic, Phobia, Social Anxiety: DSM-5 - Complications & Prognosis",
+    10,
+    5,
+    "Anxiety Disorders — GAD, Panic, Phobia, Social Anxiety: DSM-5"
+  ],
+  [
+    15,
+    "Anxiety Disorders — DOC",
+    10,
+    9,
+    "Anxiety Disorders — GAD, Panic, Phobia, Social Anxiety: DSM-5 & DOC"
+  ],
+  [15, "Anxiety Disorders — DOC - Etiology & Risk Factors", 10, 5, "Anxiety Disorders — DOC"],
+  [15, "Anxiety Disorders — DOC - Pathophysiology", 10, 5, "Anxiety Disorders — DOC"],
+  [15, "Anxiety Disorders — DOC - Clinical Presentation & Signs", 10, 5, "Anxiety Disorders — DOC"],
+  [15, "Anxiety Disorders — DOC - Differential Diagnosis", 10, 5, "Anxiety Disorders — DOC"],
+  [15, "Anxiety Disorders — DOC - Investigations & Lab Findings", 10, 5, "Anxiety Disorders — DOC"],
+  [15, "Anxiety Disorders — DOC - Medical & Surgical Management", 10, 5, "Anxiety Disorders — DOC"],
+  [15, "Anxiety Disorders — DOC - Complications & Prognosis", 10, 5, "Anxiety Disorders — DOC"],
+  [
+    15,
+    "OCD — Obsessions vs Compulsions, Y-BOCS & ERP + SSRI Treatment",
+    10,
+    15,
+    "Anxiety, OCD & Stress Disorders"
+  ],
+  [
+    15,
+    "OCD — Obsessions vs Compulsions, Y-BOCS",
+    10,
+    7,
+    "OCD — Obsessions vs Compulsions, Y-BOCS & ERP + SSRI Treatment"
+  ],
+  [
+    15,
+    "OCD — Obsessions vs Compulsions, Y-BOCS - Etiology & Risk Factors",
+    10,
+    5,
+    "OCD — Obsessions vs Compulsions, Y-BOCS"
+  ],
+  [
+    15,
+    "OCD — Obsessions vs Compulsions, Y-BOCS - Pathophysiology",
+    10,
+    5,
+    "OCD — Obsessions vs Compulsions, Y-BOCS"
+  ],
+  [
+    15,
+    "OCD — Obsessions vs Compulsions, Y-BOCS - Clinical Presentation & Signs",
+    10,
+    5,
+    "OCD — Obsessions vs Compulsions, Y-BOCS"
+  ],
+  [
+    15,
+    "OCD — Obsessions vs Compulsions, Y-BOCS - Differential Diagnosis",
+    10,
+    5,
+    "OCD — Obsessions vs Compulsions, Y-BOCS"
+  ],
+  [
+    15,
+    "OCD — Obsessions vs Compulsions, Y-BOCS - Investigations & Lab Findings",
+    10,
+    5,
+    "OCD — Obsessions vs Compulsions, Y-BOCS"
+  ],
+  [
+    15,
+    "OCD — Obsessions vs Compulsions, Y-BOCS - Medical & Surgical Management",
+    10,
+    5,
+    "OCD — Obsessions vs Compulsions, Y-BOCS"
+  ],
+  [
+    15,
+    "OCD — Obsessions vs Compulsions, Y-BOCS - Complications & Prognosis",
+    10,
+    5,
+    "OCD — Obsessions vs Compulsions, Y-BOCS"
+  ],
+  [
+    15,
+    "OCD — ERP + SSRI Treatment",
+    10,
+    8,
+    "OCD — Obsessions vs Compulsions, Y-BOCS & ERP + SSRI Treatment"
+  ],
+  [15, "OCD — ERP + SSRI Treatment - Etiology & Risk Factors", 10, 5, "OCD — ERP + SSRI Treatment"],
+  [15, "OCD — ERP + SSRI Treatment - Pathophysiology", 10, 5, "OCD — ERP + SSRI Treatment"],
+  [
+    15,
+    "OCD — ERP + SSRI Treatment - Clinical Presentation & Signs",
+    10,
+    5,
+    "OCD — ERP + SSRI Treatment"
+  ],
+  [15, "OCD — ERP + SSRI Treatment - Differential Diagnosis", 10, 5, "OCD — ERP + SSRI Treatment"],
+  [
+    15,
+    "OCD — ERP + SSRI Treatment - Investigations & Lab Findings",
+    10,
+    5,
+    "OCD — ERP + SSRI Treatment"
+  ],
+  [
+    15,
+    "OCD — ERP + SSRI Treatment - Medical & Surgical Management",
+    10,
+    5,
+    "OCD — ERP + SSRI Treatment"
+  ],
+  [
+    15,
+    "OCD — ERP + SSRI Treatment - Complications & Prognosis",
+    10,
+    5,
+    "OCD — ERP + SSRI Treatment"
+  ],
+  [
+    15,
+    "PTSD & Acute Stress Reaction — Criteria, Trauma-focused CBT & Sertraline",
+    10,
+    12,
+    "Anxiety, OCD & Stress Disorders"
+  ],
+  [
+    15,
+    "PTSD & Acute Stress Reaction — Criteria, Trauma-focused CBT",
+    10,
+    6,
+    "PTSD & Acute Stress Reaction — Criteria, Trauma-focused CBT & Sertraline"
+  ],
+  [
+    15,
+    "PTSD & Acute Stress Reaction — Criteria, Trauma-focused CBT - Etiology & Risk Factors",
+    10,
+    5,
+    "PTSD & Acute Stress Reaction — Criteria, Trauma-focused CBT"
+  ],
+  [
+    15,
+    "PTSD & Acute Stress Reaction — Criteria, Trauma-focused CBT - Pathophysiology",
+    10,
+    5,
+    "PTSD & Acute Stress Reaction — Criteria, Trauma-focused CBT"
+  ],
+  [
+    15,
+    "PTSD & Acute Stress Reaction — Criteria, Trauma-focused CBT - Clinical Presentation & Signs",
+    10,
+    5,
+    "PTSD & Acute Stress Reaction — Criteria, Trauma-focused CBT"
+  ],
+  [
+    15,
+    "PTSD & Acute Stress Reaction — Criteria, Trauma-focused CBT - Differential Diagnosis",
+    10,
+    5,
+    "PTSD & Acute Stress Reaction — Criteria, Trauma-focused CBT"
+  ],
+  [
+    15,
+    "PTSD & Acute Stress Reaction — Criteria, Trauma-focused CBT - Investigations & Lab Findings",
+    10,
+    5,
+    "PTSD & Acute Stress Reaction — Criteria, Trauma-focused CBT"
+  ],
+  [
+    15,
+    "PTSD & Acute Stress Reaction — Criteria, Trauma-focused CBT - Medical & Surgical Management",
+    10,
+    5,
+    "PTSD & Acute Stress Reaction — Criteria, Trauma-focused CBT"
+  ],
+  [
+    15,
+    "PTSD & Acute Stress Reaction — Criteria, Trauma-focused CBT - Complications & Prognosis",
+    10,
+    5,
+    "PTSD & Acute Stress Reaction — Criteria, Trauma-focused CBT"
+  ],
+  [
+    15,
+    "PTSD & Acute Stress Reaction — Sertraline",
+    10,
+    6,
+    "PTSD & Acute Stress Reaction — Criteria, Trauma-focused CBT & Sertraline"
+  ],
+  [
+    15,
+    "PTSD & Acute Stress Reaction — Sertraline - Etiology & Risk Factors",
+    10,
+    5,
+    "PTSD & Acute Stress Reaction — Sertraline"
+  ],
+  [
+    15,
+    "PTSD & Acute Stress Reaction — Sertraline - Pathophysiology",
+    10,
+    5,
+    "PTSD & Acute Stress Reaction — Sertraline"
+  ],
+  [
+    15,
+    "PTSD & Acute Stress Reaction — Sertraline - Clinical Presentation & Signs",
+    10,
+    5,
+    "PTSD & Acute Stress Reaction — Sertraline"
+  ],
+  [
+    15,
+    "PTSD & Acute Stress Reaction — Sertraline - Differential Diagnosis",
+    10,
+    5,
+    "PTSD & Acute Stress Reaction — Sertraline"
+  ],
+  [
+    15,
+    "PTSD & Acute Stress Reaction — Sertraline - Investigations & Lab Findings",
+    10,
+    5,
+    "PTSD & Acute Stress Reaction — Sertraline"
+  ],
+  [
+    15,
+    "PTSD & Acute Stress Reaction — Sertraline - Medical & Surgical Management",
+    10,
+    5,
+    "PTSD & Acute Stress Reaction — Sertraline"
+  ],
+  [
+    15,
+    "PTSD & Acute Stress Reaction — Sertraline - Complications & Prognosis",
+    10,
+    5,
+    "PTSD & Acute Stress Reaction — Sertraline"
+  ],
+  [15, "Substance Use Disorders (Alcohol, Opioids)", 10, 55, "Clinical Disorders"],
+  [
+    15,
+    "Alcohol Use Disorder — CAGE, AUDIT, Withdrawal (Delirium Tremens) & Detox",
+    10,
+    18,
+    "Substance Use Disorders (Alcohol, Opioids)"
+  ],
+  [
+    15,
+    "Alcohol Use Disorder — CAGE, AUDIT, Withdrawal (Delirium Tremens)",
+    10,
+    9,
+    "Alcohol Use Disorder — CAGE, AUDIT, Withdrawal (Delirium Tremens) & Detox"
+  ],
+  [
+    15,
+    "Alcohol Use Disorder — CAGE, AUDIT, Withdrawal (Delirium Tremens) - Etiology & Risk Factors",
+    10,
+    5,
+    "Alcohol Use Disorder — CAGE, AUDIT, Withdrawal (Delirium Tremens)"
+  ],
+  [
+    15,
+    "Alcohol Use Disorder — CAGE, AUDIT, Withdrawal (Delirium Tremens) - Pathophysiology",
+    10,
+    5,
+    "Alcohol Use Disorder — CAGE, AUDIT, Withdrawal (Delirium Tremens)"
+  ],
+  [
+    15,
+    "Alcohol Use Disorder — CAGE, AUDIT, Withdrawal (Delirium Tremens) - Clinical Presentation & Signs",
+    10,
+    5,
+    "Alcohol Use Disorder — CAGE, AUDIT, Withdrawal (Delirium Tremens)"
+  ],
+  [
+    15,
+    "Alcohol Use Disorder — CAGE, AUDIT, Withdrawal (Delirium Tremens) - Differential Diagnosis",
+    10,
+    5,
+    "Alcohol Use Disorder — CAGE, AUDIT, Withdrawal (Delirium Tremens)"
+  ],
+  [
+    15,
+    "Alcohol Use Disorder — CAGE, AUDIT, Withdrawal (Delirium Tremens) - Investigations & Lab Findings",
+    10,
+    5,
+    "Alcohol Use Disorder — CAGE, AUDIT, Withdrawal (Delirium Tremens)"
+  ],
+  [
+    15,
+    "Alcohol Use Disorder — CAGE, AUDIT, Withdrawal (Delirium Tremens) - Medical & Surgical Management",
+    10,
+    5,
+    "Alcohol Use Disorder — CAGE, AUDIT, Withdrawal (Delirium Tremens)"
+  ],
+  [
+    15,
+    "Alcohol Use Disorder — CAGE, AUDIT, Withdrawal (Delirium Tremens) - Complications & Prognosis",
+    10,
+    5,
+    "Alcohol Use Disorder — CAGE, AUDIT, Withdrawal (Delirium Tremens)"
+  ],
+  [
+    15,
+    "Alcohol Use Disorder — Detox",
+    10,
+    9,
+    "Alcohol Use Disorder — CAGE, AUDIT, Withdrawal (Delirium Tremens) & Detox"
+  ],
+  [
+    15,
+    "Alcohol Use Disorder — Detox - Etiology & Risk Factors",
+    10,
+    5,
+    "Alcohol Use Disorder — Detox"
+  ],
+  [15, "Alcohol Use Disorder — Detox - Pathophysiology", 10, 5, "Alcohol Use Disorder — Detox"],
+  [
+    15,
+    "Alcohol Use Disorder — Detox - Clinical Presentation & Signs",
+    10,
+    5,
+    "Alcohol Use Disorder — Detox"
+  ],
+  [
+    15,
+    "Alcohol Use Disorder — Detox - Differential Diagnosis",
+    10,
+    5,
+    "Alcohol Use Disorder — Detox"
+  ],
+  [
+    15,
+    "Alcohol Use Disorder — Detox - Investigations & Lab Findings",
+    10,
+    5,
+    "Alcohol Use Disorder — Detox"
+  ],
+  [
+    15,
+    "Alcohol Use Disorder — Detox - Medical & Surgical Management",
+    10,
+    5,
+    "Alcohol Use Disorder — Detox"
+  ],
+  [
+    15,
+    "Alcohol Use Disorder — Detox - Complications & Prognosis",
+    10,
+    5,
+    "Alcohol Use Disorder — Detox"
+  ],
+  [
+    15,
+    "Opioid Use Disorder — Physical Dependence, Withdrawal & Methadone/Buprenorphine",
+    10,
+    18,
+    "Substance Use Disorders (Alcohol, Opioids)"
+  ],
+  [
+    15,
+    "Opioid Use Disorder — Physical Dependence, Withdrawal",
+    10,
+    9,
+    "Opioid Use Disorder — Physical Dependence, Withdrawal & Methadone/Buprenorphine"
+  ],
+  [
+    15,
+    "Opioid Use Disorder — Physical Dependence, Withdrawal - Etiology & Risk Factors",
+    10,
+    5,
+    "Opioid Use Disorder — Physical Dependence, Withdrawal"
+  ],
+  [
+    15,
+    "Opioid Use Disorder — Physical Dependence, Withdrawal - Pathophysiology",
+    10,
+    5,
+    "Opioid Use Disorder — Physical Dependence, Withdrawal"
+  ],
+  [
+    15,
+    "Opioid Use Disorder — Physical Dependence, Withdrawal - Clinical Presentation & Signs",
+    10,
+    5,
+    "Opioid Use Disorder — Physical Dependence, Withdrawal"
+  ],
+  [
+    15,
+    "Opioid Use Disorder — Physical Dependence, Withdrawal - Differential Diagnosis",
+    10,
+    5,
+    "Opioid Use Disorder — Physical Dependence, Withdrawal"
+  ],
+  [
+    15,
+    "Opioid Use Disorder — Physical Dependence, Withdrawal - Investigations & Lab Findings",
+    10,
+    5,
+    "Opioid Use Disorder — Physical Dependence, Withdrawal"
+  ],
+  [
+    15,
+    "Opioid Use Disorder — Physical Dependence, Withdrawal - Medical & Surgical Management",
+    10,
+    5,
+    "Opioid Use Disorder — Physical Dependence, Withdrawal"
+  ],
+  [
+    15,
+    "Opioid Use Disorder — Physical Dependence, Withdrawal - Complications & Prognosis",
+    10,
+    5,
+    "Opioid Use Disorder — Physical Dependence, Withdrawal"
+  ],
+  [
+    15,
+    "Opioid Use Disorder — Methadone/Buprenorphine",
+    10,
+    9,
+    "Opioid Use Disorder — Physical Dependence, Withdrawal & Methadone/Buprenorphine"
+  ],
+  [
+    15,
+    "Opioid Use Disorder — Methadone/Buprenorphine - Etiology & Risk Factors",
+    10,
+    5,
+    "Opioid Use Disorder — Methadone/Buprenorphine"
+  ],
+  [
+    15,
+    "Opioid Use Disorder — Methadone/Buprenorphine - Pathophysiology",
+    10,
+    5,
+    "Opioid Use Disorder — Methadone/Buprenorphine"
+  ],
+  [
+    15,
+    "Opioid Use Disorder — Methadone/Buprenorphine - Clinical Presentation & Signs",
+    10,
+    5,
+    "Opioid Use Disorder — Methadone/Buprenorphine"
+  ],
+  [
+    15,
+    "Opioid Use Disorder — Methadone/Buprenorphine - Differential Diagnosis",
+    10,
+    5,
+    "Opioid Use Disorder — Methadone/Buprenorphine"
+  ],
+  [
+    15,
+    "Opioid Use Disorder — Methadone/Buprenorphine - Investigations & Lab Findings",
+    10,
+    5,
+    "Opioid Use Disorder — Methadone/Buprenorphine"
+  ],
+  [
+    15,
+    "Opioid Use Disorder — Methadone/Buprenorphine - Medical & Surgical Management",
+    10,
+    5,
+    "Opioid Use Disorder — Methadone/Buprenorphine"
+  ],
+  [
+    15,
+    "Opioid Use Disorder — Methadone/Buprenorphine - Complications & Prognosis",
+    10,
+    5,
+    "Opioid Use Disorder — Methadone/Buprenorphine"
+  ],
+  [
+    15,
+    "Alcohol-related Disorders — Wernicke's, Korsakoff's, Alcoholic Hallucinosis",
+    10,
+    15,
+    "Substance Use Disorders (Alcohol, Opioids)"
+  ],
+  [
+    15,
+    "Alcohol-related Disorders — Wernicke's",
+    10,
+    7,
+    "Alcohol-related Disorders — Wernicke's, Korsakoff's, Alcoholic Hallucinosis"
+  ],
+  [
+    15,
+    "Alcohol-related Disorders — Wernicke's - Etiology & Risk Factors",
+    10,
+    5,
+    "Alcohol-related Disorders — Wernicke's"
+  ],
+  [
+    15,
+    "Alcohol-related Disorders — Wernicke's - Pathophysiology",
+    10,
+    5,
+    "Alcohol-related Disorders — Wernicke's"
+  ],
+  [
+    15,
+    "Alcohol-related Disorders — Wernicke's - Clinical Presentation & Signs",
+    10,
+    5,
+    "Alcohol-related Disorders — Wernicke's"
+  ],
+  [
+    15,
+    "Alcohol-related Disorders — Wernicke's - Differential Diagnosis",
+    10,
+    5,
+    "Alcohol-related Disorders — Wernicke's"
+  ],
+  [
+    15,
+    "Alcohol-related Disorders — Wernicke's - Investigations & Lab Findings",
+    10,
+    5,
+    "Alcohol-related Disorders — Wernicke's"
+  ],
+  [
+    15,
+    "Alcohol-related Disorders — Wernicke's - Medical & Surgical Management",
+    10,
+    5,
+    "Alcohol-related Disorders — Wernicke's"
+  ],
+  [
+    15,
+    "Alcohol-related Disorders — Wernicke's - Complications & Prognosis",
+    10,
+    5,
+    "Alcohol-related Disorders — Wernicke's"
+  ],
+  [
+    15,
+    "Alcohol-related Disorders — Korsakoff's, Alcoholic Hallucinosis",
+    10,
+    8,
+    "Alcohol-related Disorders — Wernicke's, Korsakoff's, Alcoholic Hallucinosis"
+  ],
+  [
+    15,
+    "Alcohol-related Disorders — Korsakoff's, Alcoholic Hallucinosis - Etiology & Risk Factors",
+    10,
+    5,
+    "Alcohol-related Disorders — Korsakoff's, Alcoholic Hallucinosis"
+  ],
+  [
+    15,
+    "Alcohol-related Disorders — Korsakoff's, Alcoholic Hallucinosis - Pathophysiology",
+    10,
+    5,
+    "Alcohol-related Disorders — Korsakoff's, Alcoholic Hallucinosis"
+  ],
+  [
+    15,
+    "Alcohol-related Disorders — Korsakoff's, Alcoholic Hallucinosis - Clinical Presentation & Signs",
+    10,
+    5,
+    "Alcohol-related Disorders — Korsakoff's, Alcoholic Hallucinosis"
+  ],
+  [
+    15,
+    "Alcohol-related Disorders — Korsakoff's, Alcoholic Hallucinosis - Differential Diagnosis",
+    10,
+    5,
+    "Alcohol-related Disorders — Korsakoff's, Alcoholic Hallucinosis"
+  ],
+  [
+    15,
+    "Alcohol-related Disorders — Korsakoff's, Alcoholic Hallucinosis - Investigations & Lab Findings",
+    10,
+    5,
+    "Alcohol-related Disorders — Korsakoff's, Alcoholic Hallucinosis"
+  ],
+  [
+    15,
+    "Alcohol-related Disorders — Korsakoff's, Alcoholic Hallucinosis - Medical & Surgical Management",
+    10,
+    5,
+    "Alcohol-related Disorders — Korsakoff's, Alcoholic Hallucinosis"
+  ],
+  [
+    15,
+    "Alcohol-related Disorders — Korsakoff's, Alcoholic Hallucinosis - Complications & Prognosis",
+    10,
+    5,
+    "Alcohol-related Disorders — Korsakoff's, Alcoholic Hallucinosis"
+  ],
+  [15, "Somatoform & Dissociative Disorders", 8, 35, "Clinical Disorders"],
+  [
+    15,
+    "Somatoform Disorders — Somatic Symptom, Illness Anxiety & Conversion",
+    8,
+    18,
+    "Somatoform & Dissociative Disorders"
+  ],
+  [
+    15,
+    "Somatoform Disorders — Somatic Symptom, Illness Anxiety",
+    8,
+    9,
+    "Somatoform Disorders — Somatic Symptom, Illness Anxiety & Conversion"
+  ],
+  [
+    15,
+    "Somatoform Disorders — Somatic Symptom, Illness Anxiety - Etiology & Risk Factors",
+    8,
+    5,
+    "Somatoform Disorders — Somatic Symptom, Illness Anxiety"
+  ],
+  [
+    15,
+    "Somatoform Disorders — Somatic Symptom, Illness Anxiety - Pathophysiology",
+    8,
+    5,
+    "Somatoform Disorders — Somatic Symptom, Illness Anxiety"
+  ],
+  [
+    15,
+    "Somatoform Disorders — Somatic Symptom, Illness Anxiety - Clinical Presentation & Signs",
+    8,
+    5,
+    "Somatoform Disorders — Somatic Symptom, Illness Anxiety"
+  ],
+  [
+    15,
+    "Somatoform Disorders — Somatic Symptom, Illness Anxiety - Differential Diagnosis",
+    8,
+    5,
+    "Somatoform Disorders — Somatic Symptom, Illness Anxiety"
+  ],
+  [
+    15,
+    "Somatoform Disorders — Somatic Symptom, Illness Anxiety - Investigations & Lab Findings",
+    8,
+    5,
+    "Somatoform Disorders — Somatic Symptom, Illness Anxiety"
+  ],
+  [
+    15,
+    "Somatoform Disorders — Somatic Symptom, Illness Anxiety - Medical & Surgical Management",
+    8,
+    5,
+    "Somatoform Disorders — Somatic Symptom, Illness Anxiety"
+  ],
+  [
+    15,
+    "Somatoform Disorders — Somatic Symptom, Illness Anxiety - Complications & Prognosis",
+    8,
+    5,
+    "Somatoform Disorders — Somatic Symptom, Illness Anxiety"
+  ],
+  [
+    15,
+    "Somatoform Disorders — Conversion",
+    8,
+    9,
+    "Somatoform Disorders — Somatic Symptom, Illness Anxiety & Conversion"
+  ],
+  [
+    15,
+    "Somatoform Disorders — Conversion - Etiology & Risk Factors",
+    8,
+    5,
+    "Somatoform Disorders — Conversion"
+  ],
+  [
+    15,
+    "Somatoform Disorders — Conversion - Pathophysiology",
+    8,
+    5,
+    "Somatoform Disorders — Conversion"
+  ],
+  [
+    15,
+    "Somatoform Disorders — Conversion - Clinical Presentation & Signs",
+    8,
+    5,
+    "Somatoform Disorders — Conversion"
+  ],
+  [
+    15,
+    "Somatoform Disorders — Conversion - Differential Diagnosis",
+    8,
+    5,
+    "Somatoform Disorders — Conversion"
+  ],
+  [
+    15,
+    "Somatoform Disorders — Conversion - Investigations & Lab Findings",
+    8,
+    5,
+    "Somatoform Disorders — Conversion"
+  ],
+  [
+    15,
+    "Somatoform Disorders — Conversion - Medical & Surgical Management",
+    8,
+    5,
+    "Somatoform Disorders — Conversion"
+  ],
+  [
+    15,
+    "Somatoform Disorders — Conversion - Complications & Prognosis",
+    8,
+    5,
+    "Somatoform Disorders — Conversion"
+  ],
+  [
+    15,
+    "Dissociative Disorders — Amnesia, Fugue, DID & Ganser's Syndrome",
+    8,
+    15,
+    "Somatoform & Dissociative Disorders"
+  ],
+  [
+    15,
+    "Dissociative Disorders — Amnesia, Fugue, DID",
+    8,
+    7,
+    "Dissociative Disorders — Amnesia, Fugue, DID & Ganser's Syndrome"
+  ],
+  [
+    15,
+    "Dissociative Disorders — Amnesia, Fugue, DID - Etiology & Risk Factors",
+    8,
+    5,
+    "Dissociative Disorders — Amnesia, Fugue, DID"
+  ],
+  [
+    15,
+    "Dissociative Disorders — Amnesia, Fugue, DID - Pathophysiology",
+    8,
+    5,
+    "Dissociative Disorders — Amnesia, Fugue, DID"
+  ],
+  [
+    15,
+    "Dissociative Disorders — Amnesia, Fugue, DID - Clinical Presentation & Signs",
+    8,
+    5,
+    "Dissociative Disorders — Amnesia, Fugue, DID"
+  ],
+  [
+    15,
+    "Dissociative Disorders — Amnesia, Fugue, DID - Differential Diagnosis",
+    8,
+    5,
+    "Dissociative Disorders — Amnesia, Fugue, DID"
+  ],
+  [
+    15,
+    "Dissociative Disorders — Amnesia, Fugue, DID - Investigations & Lab Findings",
+    8,
+    5,
+    "Dissociative Disorders — Amnesia, Fugue, DID"
+  ],
+  [
+    15,
+    "Dissociative Disorders — Amnesia, Fugue, DID - Medical & Surgical Management",
+    8,
+    5,
+    "Dissociative Disorders — Amnesia, Fugue, DID"
+  ],
+  [
+    15,
+    "Dissociative Disorders — Amnesia, Fugue, DID - Complications & Prognosis",
+    8,
+    5,
+    "Dissociative Disorders — Amnesia, Fugue, DID"
+  ],
+  [
+    15,
+    "Dissociative Disorders — Ganser's Syndrome",
+    8,
+    8,
+    "Dissociative Disorders — Amnesia, Fugue, DID & Ganser's Syndrome"
+  ],
+  [
+    15,
+    "Dissociative Disorders — Ganser's Syndrome - Etiology & Risk Factors",
+    8,
+    5,
+    "Dissociative Disorders — Ganser's Syndrome"
+  ],
+  [
+    15,
+    "Dissociative Disorders — Ganser's Syndrome - Pathophysiology",
+    8,
+    5,
+    "Dissociative Disorders — Ganser's Syndrome"
+  ],
+  [
+    15,
+    "Dissociative Disorders — Ganser's Syndrome - Clinical Presentation & Signs",
+    8,
+    5,
+    "Dissociative Disorders — Ganser's Syndrome"
+  ],
+  [
+    15,
+    "Dissociative Disorders — Ganser's Syndrome - Differential Diagnosis",
+    8,
+    5,
+    "Dissociative Disorders — Ganser's Syndrome"
+  ],
+  [
+    15,
+    "Dissociative Disorders — Ganser's Syndrome - Investigations & Lab Findings",
+    8,
+    5,
+    "Dissociative Disorders — Ganser's Syndrome"
+  ],
+  [
+    15,
+    "Dissociative Disorders — Ganser's Syndrome - Medical & Surgical Management",
+    8,
+    5,
+    "Dissociative Disorders — Ganser's Syndrome"
+  ],
+  [
+    15,
+    "Dissociative Disorders — Ganser's Syndrome - Complications & Prognosis",
+    8,
+    5,
+    "Dissociative Disorders — Ganser's Syndrome"
+  ],
+  [15, "Personality Disorders", 9, 35, "Clinical Disorders"],
+  [15, "Cluster A (Odd) — Paranoid, Schizoid & Schizotypal PD", 9, 12, "Personality Disorders"],
+  [
+    15,
+    "Cluster A (Odd) — Paranoid, Schizoid",
+    9,
+    6,
+    "Cluster A (Odd) — Paranoid, Schizoid & Schizotypal PD"
+  ],
+  [
+    15,
+    "Cluster A (Odd) — Paranoid, Schizoid - Etiology & Risk Factors",
+    9,
+    5,
+    "Cluster A (Odd) — Paranoid, Schizoid"
+  ],
+  [
+    15,
+    "Cluster A (Odd) — Paranoid, Schizoid - Pathophysiology",
+    9,
+    5,
+    "Cluster A (Odd) — Paranoid, Schizoid"
+  ],
+  [
+    15,
+    "Cluster A (Odd) — Paranoid, Schizoid - Clinical Presentation & Signs",
+    9,
+    5,
+    "Cluster A (Odd) — Paranoid, Schizoid"
+  ],
+  [
+    15,
+    "Cluster A (Odd) — Paranoid, Schizoid - Differential Diagnosis",
+    9,
+    5,
+    "Cluster A (Odd) — Paranoid, Schizoid"
+  ],
+  [
+    15,
+    "Cluster A (Odd) — Paranoid, Schizoid - Investigations & Lab Findings",
+    9,
+    5,
+    "Cluster A (Odd) — Paranoid, Schizoid"
+  ],
+  [
+    15,
+    "Cluster A (Odd) — Paranoid, Schizoid - Medical & Surgical Management",
+    9,
+    5,
+    "Cluster A (Odd) — Paranoid, Schizoid"
+  ],
+  [
+    15,
+    "Cluster A (Odd) — Paranoid, Schizoid - Complications & Prognosis",
+    9,
+    5,
+    "Cluster A (Odd) — Paranoid, Schizoid"
+  ],
+  [
+    15,
+    "Cluster A (Odd) — Schizotypal PD",
+    9,
+    6,
+    "Cluster A (Odd) — Paranoid, Schizoid & Schizotypal PD"
+  ],
+  [
+    15,
+    "Cluster A (Odd) — Schizotypal PD - Etiology & Risk Factors",
+    9,
+    5,
+    "Cluster A (Odd) — Schizotypal PD"
+  ],
+  [
+    15,
+    "Cluster A (Odd) — Schizotypal PD - Pathophysiology",
+    9,
+    5,
+    "Cluster A (Odd) — Schizotypal PD"
+  ],
+  [
+    15,
+    "Cluster A (Odd) — Schizotypal PD - Clinical Presentation & Signs",
+    9,
+    5,
+    "Cluster A (Odd) — Schizotypal PD"
+  ],
+  [
+    15,
+    "Cluster A (Odd) — Schizotypal PD - Differential Diagnosis",
+    9,
+    5,
+    "Cluster A (Odd) — Schizotypal PD"
+  ],
+  [
+    15,
+    "Cluster A (Odd) — Schizotypal PD - Investigations & Lab Findings",
+    9,
+    5,
+    "Cluster A (Odd) — Schizotypal PD"
+  ],
+  [
+    15,
+    "Cluster A (Odd) — Schizotypal PD - Medical & Surgical Management",
+    9,
+    5,
+    "Cluster A (Odd) — Schizotypal PD"
+  ],
+  [
+    15,
+    "Cluster A (Odd) — Schizotypal PD - Complications & Prognosis",
+    9,
+    5,
+    "Cluster A (Odd) — Schizotypal PD"
+  ],
+  [
+    15,
+    "Cluster B (Dramatic) — Antisocial, Borderline, Histrionic & Narcissistic PD",
+    9,
+    15,
+    "Personality Disorders"
+  ],
+  [
+    15,
+    "Cluster B (Dramatic) — Antisocial, Borderline, Histrionic",
+    9,
+    7,
+    "Cluster B (Dramatic) — Antisocial, Borderline, Histrionic & Narcissistic PD"
+  ],
+  [
+    15,
+    "Cluster B (Dramatic) — Antisocial, Borderline, Histrionic - Etiology & Risk Factors",
+    9,
+    5,
+    "Cluster B (Dramatic) — Antisocial, Borderline, Histrionic"
+  ],
+  [
+    15,
+    "Cluster B (Dramatic) — Antisocial, Borderline, Histrionic - Pathophysiology",
+    9,
+    5,
+    "Cluster B (Dramatic) — Antisocial, Borderline, Histrionic"
+  ],
+  [
+    15,
+    "Cluster B (Dramatic) — Antisocial, Borderline, Histrionic - Clinical Presentation & Signs",
+    9,
+    5,
+    "Cluster B (Dramatic) — Antisocial, Borderline, Histrionic"
+  ],
+  [
+    15,
+    "Cluster B (Dramatic) — Antisocial, Borderline, Histrionic - Differential Diagnosis",
+    9,
+    5,
+    "Cluster B (Dramatic) — Antisocial, Borderline, Histrionic"
+  ],
+  [
+    15,
+    "Cluster B (Dramatic) — Antisocial, Borderline, Histrionic - Investigations & Lab Findings",
+    9,
+    5,
+    "Cluster B (Dramatic) — Antisocial, Borderline, Histrionic"
+  ],
+  [
+    15,
+    "Cluster B (Dramatic) — Antisocial, Borderline, Histrionic - Medical & Surgical Management",
+    9,
+    5,
+    "Cluster B (Dramatic) — Antisocial, Borderline, Histrionic"
+  ],
+  [
+    15,
+    "Cluster B (Dramatic) — Antisocial, Borderline, Histrionic - Complications & Prognosis",
+    9,
+    5,
+    "Cluster B (Dramatic) — Antisocial, Borderline, Histrionic"
+  ],
+  [
+    15,
+    "Cluster B (Dramatic) — Narcissistic PD",
+    9,
+    8,
+    "Cluster B (Dramatic) — Antisocial, Borderline, Histrionic & Narcissistic PD"
+  ],
+  [
+    15,
+    "Cluster B (Dramatic) — Narcissistic PD - Etiology & Risk Factors",
+    9,
+    5,
+    "Cluster B (Dramatic) — Narcissistic PD"
+  ],
+  [
+    15,
+    "Cluster B (Dramatic) — Narcissistic PD - Pathophysiology",
+    9,
+    5,
+    "Cluster B (Dramatic) — Narcissistic PD"
+  ],
+  [
+    15,
+    "Cluster B (Dramatic) — Narcissistic PD - Clinical Presentation & Signs",
+    9,
+    5,
+    "Cluster B (Dramatic) — Narcissistic PD"
+  ],
+  [
+    15,
+    "Cluster B (Dramatic) — Narcissistic PD - Differential Diagnosis",
+    9,
+    5,
+    "Cluster B (Dramatic) — Narcissistic PD"
+  ],
+  [
+    15,
+    "Cluster B (Dramatic) — Narcissistic PD - Investigations & Lab Findings",
+    9,
+    5,
+    "Cluster B (Dramatic) — Narcissistic PD"
+  ],
+  [
+    15,
+    "Cluster B (Dramatic) — Narcissistic PD - Medical & Surgical Management",
+    9,
+    5,
+    "Cluster B (Dramatic) — Narcissistic PD"
+  ],
+  [
+    15,
+    "Cluster B (Dramatic) — Narcissistic PD - Complications & Prognosis",
+    9,
+    5,
+    "Cluster B (Dramatic) — Narcissistic PD"
+  ],
+  [15, "Cluster C (Anxious) — Avoidant, Dependent & OC PD", 9, 12, "Personality Disorders"],
+  [
+    15,
+    "Cluster C (Anxious) — Avoidant, Dependent",
+    9,
+    6,
+    "Cluster C (Anxious) — Avoidant, Dependent & OC PD"
+  ],
+  [
+    15,
+    "Cluster C (Anxious) — Avoidant, Dependent - Etiology & Risk Factors",
+    9,
+    5,
+    "Cluster C (Anxious) — Avoidant, Dependent"
+  ],
+  [
+    15,
+    "Cluster C (Anxious) — Avoidant, Dependent - Pathophysiology",
+    9,
+    5,
+    "Cluster C (Anxious) — Avoidant, Dependent"
+  ],
+  [
+    15,
+    "Cluster C (Anxious) — Avoidant, Dependent - Clinical Presentation & Signs",
+    9,
+    5,
+    "Cluster C (Anxious) — Avoidant, Dependent"
+  ],
+  [
+    15,
+    "Cluster C (Anxious) — Avoidant, Dependent - Differential Diagnosis",
+    9,
+    5,
+    "Cluster C (Anxious) — Avoidant, Dependent"
+  ],
+  [
+    15,
+    "Cluster C (Anxious) — Avoidant, Dependent - Investigations & Lab Findings",
+    9,
+    5,
+    "Cluster C (Anxious) — Avoidant, Dependent"
+  ],
+  [
+    15,
+    "Cluster C (Anxious) — Avoidant, Dependent - Medical & Surgical Management",
+    9,
+    5,
+    "Cluster C (Anxious) — Avoidant, Dependent"
+  ],
+  [
+    15,
+    "Cluster C (Anxious) — Avoidant, Dependent - Complications & Prognosis",
+    9,
+    5,
+    "Cluster C (Anxious) — Avoidant, Dependent"
+  ],
+  [15, "Cluster C (Anxious) — OC PD", 9, 6, "Cluster C (Anxious) — Avoidant, Dependent & OC PD"],
+  [
+    15,
+    "Cluster C (Anxious) — OC PD - Etiology & Risk Factors",
+    9,
+    5,
+    "Cluster C (Anxious) — OC PD"
+  ],
+  [15, "Cluster C (Anxious) — OC PD - Pathophysiology", 9, 5, "Cluster C (Anxious) — OC PD"],
+  [
+    15,
+    "Cluster C (Anxious) — OC PD - Clinical Presentation & Signs",
+    9,
+    5,
+    "Cluster C (Anxious) — OC PD"
+  ],
+  [15, "Cluster C (Anxious) — OC PD - Differential Diagnosis", 9, 5, "Cluster C (Anxious) — OC PD"],
+  [
+    15,
+    "Cluster C (Anxious) — OC PD - Investigations & Lab Findings",
+    9,
+    5,
+    "Cluster C (Anxious) — OC PD"
+  ],
+  [
+    15,
+    "Cluster C (Anxious) — OC PD - Medical & Surgical Management",
+    9,
+    5,
+    "Cluster C (Anxious) — OC PD"
+  ],
+  [
+    15,
+    "Cluster C (Anxious) — OC PD - Complications & Prognosis",
+    9,
+    5,
+    "Cluster C (Anxious) — OC PD"
+  ],
+  [15, "Child Psychiatry (ADHD, Autism)", 9, 40, "Clinical Disorders"],
+  [
+    15,
+    "ADHD — DSM-5 Criteria, Subtypes, Methylphenidate & Behavioral Therapy",
+    9,
+    18,
+    "Child Psychiatry (ADHD, Autism)"
+  ],
+  [
+    15,
+    "ADHD — DSM-5 Criteria, Subtypes, Methylphenidate",
+    9,
+    9,
+    "ADHD — DSM-5 Criteria, Subtypes, Methylphenidate & Behavioral Therapy"
+  ],
+  [
+    15,
+    "ADHD — DSM-5 Criteria, Subtypes, Methylphenidate - Etiology & Risk Factors",
+    9,
+    5,
+    "ADHD — DSM-5 Criteria, Subtypes, Methylphenidate"
+  ],
+  [
+    15,
+    "ADHD — DSM-5 Criteria, Subtypes, Methylphenidate - Pathophysiology",
+    9,
+    5,
+    "ADHD — DSM-5 Criteria, Subtypes, Methylphenidate"
+  ],
+  [
+    15,
+    "ADHD — DSM-5 Criteria, Subtypes, Methylphenidate - Clinical Presentation & Signs",
+    9,
+    5,
+    "ADHD — DSM-5 Criteria, Subtypes, Methylphenidate"
+  ],
+  [
+    15,
+    "ADHD — DSM-5 Criteria, Subtypes, Methylphenidate - Differential Diagnosis",
+    9,
+    5,
+    "ADHD — DSM-5 Criteria, Subtypes, Methylphenidate"
+  ],
+  [
+    15,
+    "ADHD — DSM-5 Criteria, Subtypes, Methylphenidate - Investigations & Lab Findings",
+    9,
+    5,
+    "ADHD — DSM-5 Criteria, Subtypes, Methylphenidate"
+  ],
+  [
+    15,
+    "ADHD — DSM-5 Criteria, Subtypes, Methylphenidate - Medical & Surgical Management",
+    9,
+    5,
+    "ADHD — DSM-5 Criteria, Subtypes, Methylphenidate"
+  ],
+  [
+    15,
+    "ADHD — DSM-5 Criteria, Subtypes, Methylphenidate - Complications & Prognosis",
+    9,
+    5,
+    "ADHD — DSM-5 Criteria, Subtypes, Methylphenidate"
+  ],
+  [
+    15,
+    "ADHD — Behavioral Therapy",
+    9,
+    9,
+    "ADHD — DSM-5 Criteria, Subtypes, Methylphenidate & Behavioral Therapy"
+  ],
+  [15, "ADHD — Behavioral Therapy - Etiology & Risk Factors", 9, 5, "ADHD — Behavioral Therapy"],
+  [15, "ADHD — Behavioral Therapy - Pathophysiology", 9, 5, "ADHD — Behavioral Therapy"],
+  [
+    15,
+    "ADHD — Behavioral Therapy - Clinical Presentation & Signs",
+    9,
+    5,
+    "ADHD — Behavioral Therapy"
+  ],
+  [15, "ADHD — Behavioral Therapy - Differential Diagnosis", 9, 5, "ADHD — Behavioral Therapy"],
+  [
+    15,
+    "ADHD — Behavioral Therapy - Investigations & Lab Findings",
+    9,
+    5,
+    "ADHD — Behavioral Therapy"
+  ],
+  [
+    15,
+    "ADHD — Behavioral Therapy - Medical & Surgical Management",
+    9,
+    5,
+    "ADHD — Behavioral Therapy"
+  ],
+  [15, "ADHD — Behavioral Therapy - Complications & Prognosis", 9, 5, "ADHD — Behavioral Therapy"],
+  [
+    15,
+    "ASD — DSM-5 Criteria, Triad (Social, Communication, Restricted Behavior) & ABA",
+    9,
+    18,
+    "Child Psychiatry (ADHD, Autism)"
+  ],
+  [
+    15,
+    "ASD — DSM-5 Criteria, Triad (Social, Communication, Restricted Behavior)",
+    9,
+    9,
+    "ASD — DSM-5 Criteria, Triad (Social, Communication, Restricted Behavior) & ABA"
+  ],
+  [
+    15,
+    "ASD — DSM-5 Criteria, Triad (Social, Communication, Restricted Behavior) - Etiology & Risk Factors",
+    9,
+    5,
+    "ASD — DSM-5 Criteria, Triad (Social, Communication, Restricted Behavior)"
+  ],
+  [
+    15,
+    "ASD — DSM-5 Criteria, Triad (Social, Communication, Restricted Behavior) - Pathophysiology",
+    9,
+    5,
+    "ASD — DSM-5 Criteria, Triad (Social, Communication, Restricted Behavior)"
+  ],
+  [
+    15,
+    "ASD — DSM-5 Criteria, Triad (Social, Communication, Restricted Behavior) - Clinical Presentation & Signs",
+    9,
+    5,
+    "ASD — DSM-5 Criteria, Triad (Social, Communication, Restricted Behavior)"
+  ],
+  [
+    15,
+    "ASD — DSM-5 Criteria, Triad (Social, Communication, Restricted Behavior) - Differential Diagnosis",
+    9,
+    5,
+    "ASD — DSM-5 Criteria, Triad (Social, Communication, Restricted Behavior)"
+  ],
+  [
+    15,
+    "ASD — DSM-5 Criteria, Triad (Social, Communication, Restricted Behavior) - Investigations & Lab Findings",
+    9,
+    5,
+    "ASD — DSM-5 Criteria, Triad (Social, Communication, Restricted Behavior)"
+  ],
+  [
+    15,
+    "ASD — DSM-5 Criteria, Triad (Social, Communication, Restricted Behavior) - Medical & Surgical Management",
+    9,
+    5,
+    "ASD — DSM-5 Criteria, Triad (Social, Communication, Restricted Behavior)"
+  ],
+  [
+    15,
+    "ASD — DSM-5 Criteria, Triad (Social, Communication, Restricted Behavior) - Complications & Prognosis",
+    9,
+    5,
+    "ASD — DSM-5 Criteria, Triad (Social, Communication, Restricted Behavior)"
+  ],
+  [
+    15,
+    "ASD — ABA",
+    9,
+    9,
+    "ASD — DSM-5 Criteria, Triad (Social, Communication, Restricted Behavior) & ABA"
+  ],
+  [15, "ASD — ABA - Etiology & Risk Factors", 9, 5, "ASD — ABA"],
+  [15, "ASD — ABA - Pathophysiology", 9, 5, "ASD — ABA"],
+  [15, "ASD — ABA - Clinical Presentation & Signs", 9, 5, "ASD — ABA"],
+  [15, "ASD — ABA - Differential Diagnosis", 9, 5, "ASD — ABA"],
+  [15, "ASD — ABA - Investigations & Lab Findings", 9, 5, "ASD — ABA"],
+  [15, "ASD — ABA - Medical & Surgical Management", 9, 5, "ASD — ABA"],
+  [15, "ASD — ABA - Complications & Prognosis", 9, 5, "ASD — ABA"],
+  [15, "Sleep & Eating Disorders", 8, 30, "Clinical Disorders"],
+  [
+    15,
+    "Insomnia, Narcolepsy & OSA — Polysomnography & Sleep Hygiene",
+    8,
+    15,
+    "Sleep & Eating Disorders"
+  ],
+  [
+    15,
+    "Insomnia, Narcolepsy & OSA — Polysomnography",
+    8,
+    7,
+    "Insomnia, Narcolepsy & OSA — Polysomnography & Sleep Hygiene"
+  ],
+  [
+    15,
+    "Insomnia, Narcolepsy & OSA — Polysomnography - Etiology & Risk Factors",
+    8,
+    5,
+    "Insomnia, Narcolepsy & OSA — Polysomnography"
+  ],
+  [
+    15,
+    "Insomnia, Narcolepsy & OSA — Polysomnography - Pathophysiology",
+    8,
+    5,
+    "Insomnia, Narcolepsy & OSA — Polysomnography"
+  ],
+  [
+    15,
+    "Insomnia, Narcolepsy & OSA — Polysomnography - Clinical Presentation & Signs",
+    8,
+    5,
+    "Insomnia, Narcolepsy & OSA — Polysomnography"
+  ],
+  [
+    15,
+    "Insomnia, Narcolepsy & OSA — Polysomnography - Differential Diagnosis",
+    8,
+    5,
+    "Insomnia, Narcolepsy & OSA — Polysomnography"
+  ],
+  [
+    15,
+    "Insomnia, Narcolepsy & OSA — Polysomnography - Investigations & Lab Findings",
+    8,
+    5,
+    "Insomnia, Narcolepsy & OSA — Polysomnography"
+  ],
+  [
+    15,
+    "Insomnia, Narcolepsy & OSA — Polysomnography - Medical & Surgical Management",
+    8,
+    5,
+    "Insomnia, Narcolepsy & OSA — Polysomnography"
+  ],
+  [
+    15,
+    "Insomnia, Narcolepsy & OSA — Polysomnography - Complications & Prognosis",
+    8,
+    5,
+    "Insomnia, Narcolepsy & OSA — Polysomnography"
+  ],
+  [
+    15,
+    "Insomnia, Narcolepsy & OSA — Sleep Hygiene",
+    8,
+    8,
+    "Insomnia, Narcolepsy & OSA — Polysomnography & Sleep Hygiene"
+  ],
+  [
+    15,
+    "Insomnia, Narcolepsy & OSA — Sleep Hygiene - Etiology & Risk Factors",
+    8,
+    5,
+    "Insomnia, Narcolepsy & OSA — Sleep Hygiene"
+  ],
+  [
+    15,
+    "Insomnia, Narcolepsy & OSA — Sleep Hygiene - Pathophysiology",
+    8,
+    5,
+    "Insomnia, Narcolepsy & OSA — Sleep Hygiene"
+  ],
+  [
+    15,
+    "Insomnia, Narcolepsy & OSA — Sleep Hygiene - Clinical Presentation & Signs",
+    8,
+    5,
+    "Insomnia, Narcolepsy & OSA — Sleep Hygiene"
+  ],
+  [
+    15,
+    "Insomnia, Narcolepsy & OSA — Sleep Hygiene - Differential Diagnosis",
+    8,
+    5,
+    "Insomnia, Narcolepsy & OSA — Sleep Hygiene"
+  ],
+  [
+    15,
+    "Insomnia, Narcolepsy & OSA — Sleep Hygiene - Investigations & Lab Findings",
+    8,
+    5,
+    "Insomnia, Narcolepsy & OSA — Sleep Hygiene"
+  ],
+  [
+    15,
+    "Insomnia, Narcolepsy & OSA — Sleep Hygiene - Medical & Surgical Management",
+    8,
+    5,
+    "Insomnia, Narcolepsy & OSA — Sleep Hygiene"
+  ],
+  [
+    15,
+    "Insomnia, Narcolepsy & OSA — Sleep Hygiene - Complications & Prognosis",
+    8,
+    5,
+    "Insomnia, Narcolepsy & OSA — Sleep Hygiene"
+  ],
+  [
+    15,
+    "Eating Disorders — Anorexia Nervosa (BMI, Russell's Sign) & Bulimia Nervosa",
+    8,
+    15,
+    "Sleep & Eating Disorders"
+  ],
+  [
+    15,
+    "Eating Disorders — Anorexia Nervosa (BMI, Russell's Sign)",
+    8,
+    7,
+    "Eating Disorders — Anorexia Nervosa (BMI, Russell's Sign) & Bulimia Nervosa"
+  ],
+  [
+    15,
+    "Eating Disorders — Anorexia Nervosa (BMI, Russell's Sign) - Etiology & Risk Factors",
+    8,
+    5,
+    "Eating Disorders — Anorexia Nervosa (BMI, Russell's Sign)"
+  ],
+  [
+    15,
+    "Eating Disorders — Anorexia Nervosa (BMI, Russell's Sign) - Pathophysiology",
+    8,
+    5,
+    "Eating Disorders — Anorexia Nervosa (BMI, Russell's Sign)"
+  ],
+  [
+    15,
+    "Eating Disorders — Anorexia Nervosa (BMI, Russell's Sign) - Clinical Presentation & Signs",
+    8,
+    5,
+    "Eating Disorders — Anorexia Nervosa (BMI, Russell's Sign)"
+  ],
+  [
+    15,
+    "Eating Disorders — Anorexia Nervosa (BMI, Russell's Sign) - Differential Diagnosis",
+    8,
+    5,
+    "Eating Disorders — Anorexia Nervosa (BMI, Russell's Sign)"
+  ],
+  [
+    15,
+    "Eating Disorders — Anorexia Nervosa (BMI, Russell's Sign) - Investigations & Lab Findings",
+    8,
+    5,
+    "Eating Disorders — Anorexia Nervosa (BMI, Russell's Sign)"
+  ],
+  [
+    15,
+    "Eating Disorders — Anorexia Nervosa (BMI, Russell's Sign) - Medical & Surgical Management",
+    8,
+    5,
+    "Eating Disorders — Anorexia Nervosa (BMI, Russell's Sign)"
+  ],
+  [
+    15,
+    "Eating Disorders — Anorexia Nervosa (BMI, Russell's Sign) - Complications & Prognosis",
+    8,
+    5,
+    "Eating Disorders — Anorexia Nervosa (BMI, Russell's Sign)"
+  ],
+  [
+    15,
+    "Eating Disorders — Bulimia Nervosa",
+    8,
+    8,
+    "Eating Disorders — Anorexia Nervosa (BMI, Russell's Sign) & Bulimia Nervosa"
+  ],
+  [
+    15,
+    "Eating Disorders — Bulimia Nervosa - Etiology & Risk Factors",
+    8,
+    5,
+    "Eating Disorders — Bulimia Nervosa"
+  ],
+  [
+    15,
+    "Eating Disorders — Bulimia Nervosa - Pathophysiology",
+    8,
+    5,
+    "Eating Disorders — Bulimia Nervosa"
+  ],
+  [
+    15,
+    "Eating Disorders — Bulimia Nervosa - Clinical Presentation & Signs",
+    8,
+    5,
+    "Eating Disorders — Bulimia Nervosa"
+  ],
+  [
+    15,
+    "Eating Disorders — Bulimia Nervosa - Differential Diagnosis",
+    8,
+    5,
+    "Eating Disorders — Bulimia Nervosa"
+  ],
+  [
+    15,
+    "Eating Disorders — Bulimia Nervosa - Investigations & Lab Findings",
+    8,
+    5,
+    "Eating Disorders — Bulimia Nervosa"
+  ],
+  [
+    15,
+    "Eating Disorders — Bulimia Nervosa - Medical & Surgical Management",
+    8,
+    5,
+    "Eating Disorders — Bulimia Nervosa"
+  ],
+  [
+    15,
+    "Eating Disorders — Bulimia Nervosa - Complications & Prognosis",
+    8,
+    5,
+    "Eating Disorders — Bulimia Nervosa"
+  ]
 ]

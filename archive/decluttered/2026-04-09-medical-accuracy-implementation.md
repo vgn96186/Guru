@@ -1030,7 +1030,12 @@ const styles = StyleSheet.create({
   modalActions: { flexDirection: 'row', justifyContent: 'flex-end', gap: 12, marginTop: 8 },
   cancelButton: { paddingVertical: 10, paddingHorizontal: 16 },
   cancelText: { fontSize: 15, color: n.colors.textMuted },
-  submitButton: { backgroundColor: n.colors.accent, paddingVertical: 10, paddingHorizontal: 20, borderRadius: 8 },
+  submitButton: {
+    backgroundColor: n.colors.accent,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+  },
   submitButtonDisabled: { opacity: 0.5 },
   submitText: { fontSize: 15, fontWeight: '600', color: '#FFF' },
 });
@@ -1133,7 +1138,8 @@ const FLAG_REASON_LABELS: Record<string, string> = {
 };
 
 export default function FlaggedContentScreen() {
-  const navigation = useNavigation<NativeStackNavigationProp<MenuStackParamList, 'FlaggedContent'>>();
+  const navigation =
+    useNavigation<NativeStackNavigationProp<MenuStackParamList, 'FlaggedContent'>>();
   const [flaggedItems, setFlaggedItems] = useState<FlaggedContentItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState<number | null>(null);
@@ -1150,7 +1156,11 @@ export default function FlaggedContentScreen() {
     }
   }, []);
 
-  useFocusEffect(useCallback(() => { loadFlagged(); }, [loadFlagged]));
+  useFocusEffect(
+    useCallback(() => {
+      loadFlagged();
+    }, [loadFlagged]),
+  );
 
   const handleRegenerate = async (item: FlaggedContentItem) => {
     setProcessing(item.topicId);
@@ -1207,11 +1217,18 @@ export default function FlaggedContentScreen() {
       {item.userNote && <Text style={styles.userNote}>"{item.userNote}"</Text>}
 
       <View style={styles.itemActions}>
-        <Pressable style={styles.dismissButton} onPress={() => handleDismiss(item)} disabled={processing === item.topicId}>
+        <Pressable
+          style={styles.dismissButton}
+          onPress={() => handleDismiss(item)}
+          disabled={processing === item.topicId}
+        >
           <Text style={styles.dismissButtonText}>Dismiss</Text>
         </Pressable>
         <Pressable
-          style={[styles.regenerateButton, processing === item.topicId && styles.regenerateButtonDisabled]}
+          style={[
+            styles.regenerateButton,
+            processing === item.topicId && styles.regenerateButtonDisabled,
+          ]}
           onPress={() => handleRegenerate(item)}
           disabled={processing === item.topicId}
         >
@@ -1259,24 +1276,71 @@ export default function FlaggedContentScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: n.colors.background },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: n.colors.border },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: n.colors.border,
+  },
   backButton: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
-  headerTitle: { flex: 1, textAlign: 'center', fontSize: 18, fontWeight: '700', color: n.colors.text },
+  headerTitle: {
+    flex: 1,
+    textAlign: 'center',
+    fontSize: 18,
+    fontWeight: '700',
+    color: n.colors.text,
+  },
   listContent: { padding: 16 },
-  itemCard: { backgroundColor: n.colors.surface, borderRadius: 12, padding: 16, marginBottom: 12, borderWidth: 1, borderColor: n.colors.statusNegative },
-  itemHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 },
+  itemCard: {
+    backgroundColor: n.colors.surface,
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: n.colors.statusNegative,
+  },
+  itemHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 8,
+  },
   itemInfo: { flex: 1 },
   itemTitle: { fontSize: 16, fontWeight: '700', color: n.colors.text },
   itemSubject: { fontSize: 13, color: n.colors.textMuted, marginTop: 2 },
-  itemType: { backgroundColor: `${n.colors.accent}15`, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 12 },
-  itemTypeText: { fontSize: 11, fontWeight: '600', color: n.colors.accent, textTransform: 'capitalize' },
+  itemType: {
+    backgroundColor: `${n.colors.accent}15`,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  itemTypeText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: n.colors.accent,
+    textTransform: 'capitalize',
+  },
   flagReason: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 8 },
   flagReasonText: { fontSize: 13, color: n.colors.statusNegative, fontWeight: '500' },
   userNote: { fontSize: 13, color: n.colors.textMuted, fontStyle: 'italic', marginBottom: 12 },
   itemActions: { flexDirection: 'row', gap: 8, justifyContent: 'flex-end' },
-  dismissButton: { paddingVertical: 8, paddingHorizontal: 16, borderRadius: 8, borderWidth: 1, borderColor: n.colors.border },
+  dismissButton: {
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: n.colors.border,
+  },
   dismissButtonText: { fontSize: 14, fontWeight: '600', color: n.colors.textMuted },
-  regenerateButton: { backgroundColor: n.colors.accent, paddingVertical: 8, paddingHorizontal: 16, borderRadius: 8 },
+  regenerateButton: {
+    backgroundColor: n.colors.accent,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+  },
   regenerateButtonDisabled: { opacity: 0.5 },
   regenerateButtonText: { fontSize: 14, fontWeight: '600', color: '#FFF' },
   loadingContainer: { flex: 1, alignItems: 'center', justifyContent: 'center' },

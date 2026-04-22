@@ -1,12 +1,17 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
+'use strict';
+Object.defineProperty(exports, '__esModule', { value: true });
 exports.resetDbSingleton = void 0;
 exports.getDrizzleDb = getDrizzleDb;
 exports.resetDrizzleDb = resetDrizzleDb;
-var expo_sqlite_1 = require("drizzle-orm/expo-sqlite");
-var database_1 = require("./database");
-Object.defineProperty(exports, "resetDbSingleton", { enumerable: true, get: function () { return database_1.resetDbSingleton; } });
-var schema = require("./drizzleSchema");
+var expo_sqlite_1 = require('drizzle-orm/expo-sqlite');
+var database_1 = require('./database');
+Object.defineProperty(exports, 'resetDbSingleton', {
+  enumerable: true,
+  get: function () {
+    return database_1.resetDbSingleton;
+  },
+});
+var schema = require('./drizzleSchema');
 var _drizzleDb = null;
 /**
  * Returns the singleton Drizzle ORM instance backed by the same expo-sqlite
@@ -17,15 +22,15 @@ var _drizzleDb = null;
  * execute on the JS thread but are fast for local SQLite reads/writes.
  */
 function getDrizzleDb() {
-    if (!_drizzleDb) {
-        _drizzleDb = (0, expo_sqlite_1.drizzle)((0, database_1.getDb)(), { schema: schema });
-    }
-    return _drizzleDb;
+  if (!_drizzleDb) {
+    _drizzleDb = (0, expo_sqlite_1.drizzle)((0, database_1.getDb)(), { schema: schema });
+  }
+  return _drizzleDb;
 }
 /**
  * Clear the Drizzle singleton. Call alongside resetDbSingleton() before
  * re-importing a backup so the new connection is used.
  */
 function resetDrizzleDb() {
-    _drizzleDb = null;
+  _drizzleDb = null;
 }

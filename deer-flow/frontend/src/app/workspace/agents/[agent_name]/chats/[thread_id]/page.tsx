@@ -56,7 +56,7 @@ export default function AgentChatPage() {
       history.replaceState(
         null,
         "",
-        `/workspace/agents/${agent_name}/chats/${createdThreadId}`,
+        `/workspace/agents/${agent_name}/chats/${createdThreadId}`
       );
     },
     onFinish: (state) => {
@@ -81,7 +81,7 @@ export default function AgentChatPage() {
     (message: PromptInputMessage) => {
       void sendMessage(threadId, message, { agent_name });
     },
-    [sendMessage, threadId, agent_name],
+    [sendMessage, threadId, agent_name]
   );
 
   const handleStop = useCallback(async () => {
@@ -102,7 +102,7 @@ export default function AgentChatPage() {
               "absolute top-0 right-0 left-0 z-30 flex h-12 shrink-0 items-center gap-2 px-4",
               isNewThread
                 ? "bg-background/0 backdrop-blur-none"
-                : "bg-background/80 shadow-xs backdrop-blur",
+                : "bg-background/80 shadow-xs backdrop-blur"
             )}
           >
             {/* Agent badge */}
@@ -151,7 +151,7 @@ export default function AgentChatPage() {
                   isNewThread && "-translate-y-[calc(50vh-96px)]",
                   isNewThread
                     ? "max-w-(--container-width-sm)"
-                    : "max-w-(--container-width-md)",
+                    : "max-w-(--container-width-md)"
                 )}
               >
                 <div className="absolute -top-4 right-0 left-0 z-0">
@@ -175,8 +175,8 @@ export default function AgentChatPage() {
                     thread.error
                       ? "error"
                       : thread.isLoading
-                        ? "streaming"
-                        : "ready"
+                      ? "streaming"
+                      : "ready"
                   }
                   context={settings.context}
                   extraHeader={

@@ -22,7 +22,7 @@ export async function Header({ className, homeURL, locale }: HeaderProps) {
     <header
       className={cn(
         "container-md fixed top-0 right-0 left-0 z-20 mx-auto flex h-16 items-center justify-between backdrop-blur-xs",
-        className,
+        className
       )}
     >
       <div className="flex items-center gap-6">
@@ -95,7 +95,7 @@ async function StarCounter() {
         next: {
           revalidate: 3600,
         },
-      },
+      }
     );
 
     if (response.ok) {

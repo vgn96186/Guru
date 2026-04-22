@@ -41,7 +41,7 @@ export async function POST(request: Request) {
     path.resolve(process.cwd(), "public/demo/threads"),
     {
       withFileTypes: true,
-    },
+    }
   );
 
   const threadData = threadsDir
@@ -50,8 +50,8 @@ export async function POST(request: Request) {
         const threadData = JSON.parse(
           fs.readFileSync(
             path.resolve(`public/demo/threads/${threadId.name}/thread.json`),
-            "utf8",
-          ),
+            "utf8"
+          )
         ) as Record<string, unknown>;
 
         return {
@@ -61,8 +61,8 @@ export async function POST(request: Request) {
             typeof threadData.updated_at === "string"
               ? threadData.updated_at
               : typeof threadData.created_at === "string"
-                ? threadData.created_at
-                : undefined,
+              ? threadData.created_at
+              : undefined,
         };
       }
       return null;

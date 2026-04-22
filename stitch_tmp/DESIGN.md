@@ -101,7 +101,7 @@ spacing:
 
 ## Brand & Style
 
-This design system targets high-performance power users who demand technical precision and aesthetic depth. It merges the utilitarian, grid-driven logic of Linear with a sophisticated glassmorphism layer. The brand personality is focused, premium, and futuristic, evoking the feeling of a high-end physical workstation or a cockpit HUD. 
+This design system targets high-performance power users who demand technical precision and aesthetic depth. It merges the utilitarian, grid-driven logic of Linear with a sophisticated glassmorphism layer. The brand personality is focused, premium, and futuristic, evoking the feeling of a high-end physical workstation or a cockpit HUD.
 
 The visual style utilizes "Deep Glass"—a combination of true AMOLED black foundations and floating semi-transparent modules. The emotional response is one of total immersion, where the UI recedes into the background to prioritize the user's work while providing tactile satisfaction through subtle light interactions and depth.
 
@@ -125,11 +125,11 @@ Margins and gutters are kept tight (16-24px) to reinforce the utilitarian feel. 
 
 ## Elevation & Depth
 
-Depth is not communicated through shadows, but through **transparency and backdrop blurs**. 
+Depth is not communicated through shadows, but through **transparency and backdrop blurs**.
 
 1.  **Level 0 (Canvas):** Pure `#000000` black.
 2.  **Level 1 (Gradients):** Subtle, non-interactive radial blurs of dark grey (`#1A1A1A`) behind the glass layers.
-3.  **Level 2 (Glass Surfaces):** Semi-transparent surfaces with a `20px` to `40px` backdrop-blur. 
+3.  **Level 2 (Glass Surfaces):** Semi-transparent surfaces with a `20px` to `40px` backdrop-blur.
 4.  **Level 3 (Interactive):** Hover states on glass elements increase the border opacity or add a faint primary-colored glow (`#5E6AD2` at 10% opacity).
 
 Borders are critical: every glass container must have a `1px` solid border using a low-opacity white (8-12%) to define edges against the black canvas.
@@ -141,18 +141,23 @@ The shape language is "Soft-Tech." Standard components use a `4px` (0.25rem) rad
 ## Components
 
 ### Buttons
+
 - **Primary:** Solid `#5E6AD2` with white text. No glass effect.
 - **Secondary/Glass:** Semi-transparent background with a more pronounced `1px` white border (20% opacity). Subtle hover lift effect.
 
 ### Input Fields
+
 - Dark, recessed appearance. Background is slightly darker than the surrounding glass. Active state uses a `1px` solid `#5E6AD2` border with a tiny glow.
 
 ### Cards & Modules
+
 - Must utilize `backdrop-filter: blur(24px)`.
 - Borders must be absolute 1px (non-scaling) to ensure technical precision.
 
 ### Chips & Badges
+
 - Small, low-contrast capsules. Background uses 10% primary color for active states or 10% white for neutral states. Typography is always `label-caps`.
 
 ### List Items
+
 - Separated by thin, 1px lines at 5% white opacity. Hover states change the background to 5% white to signify selection without breaking the glass transparency.

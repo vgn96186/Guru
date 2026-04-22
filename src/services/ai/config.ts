@@ -31,6 +31,10 @@ import {
   GITLAB_DUO_MODELS,
   orderedGitLabDuoModels,
   POE_MODELS,
+  BUNDLED_VERTEX_AI_PROJECT,
+  BUNDLED_VERTEX_AI_LOCATION,
+  BUNDLED_VERTEX_AI_TOKEN,
+  VERTEX_MODELS,
 } from '../../config/appConfig';
 
 export {
@@ -66,6 +70,10 @@ export {
   GITLAB_DUO_MODELS,
   orderedGitLabDuoModels,
   POE_MODELS,
+  BUNDLED_VERTEX_AI_PROJECT,
+  BUNDLED_VERTEX_AI_LOCATION,
+  BUNDLED_VERTEX_AI_TOKEN,
+  VERTEX_MODELS,
 };
 
 export { getGitLabAiGatewayUrl } from './gitlab/gitlabInstance';
@@ -123,6 +131,9 @@ export function getApiKeys(
     gitlabDuoConnected?: boolean;
     poeConnected?: boolean;
     qwenConnected?: boolean;
+    vertexAiProject?: string;
+    vertexAiLocation?: string;
+    vertexAiToken?: string;
   } | null,
 ): {
   orKey: string | undefined;
@@ -146,6 +157,9 @@ export function getApiKeys(
   gitlabDuoConnected: boolean;
   poeConnected: boolean;
   qwenConnected: boolean;
+  vertexAiProject: string | undefined;
+  vertexAiLocation: string | undefined;
+  vertexAiToken: string | undefined;
 } {
   if (!profile) {
     return {
@@ -170,6 +184,9 @@ export function getApiKeys(
       gitlabDuoConnected: false,
       poeConnected: false,
       qwenConnected: false,
+      vertexAiProject: BUNDLED_VERTEX_AI_PROJECT || undefined,
+      vertexAiLocation: BUNDLED_VERTEX_AI_LOCATION || undefined,
+      vertexAiToken: BUNDLED_VERTEX_AI_TOKEN || undefined,
     };
   }
   return {
@@ -194,5 +211,8 @@ export function getApiKeys(
     gitlabDuoConnected: !!profile.gitlabDuoConnected,
     poeConnected: !!profile.poeConnected,
     qwenConnected: !!profile.qwenConnected,
+    vertexAiProject: profile.vertexAiProject?.trim() || BUNDLED_VERTEX_AI_PROJECT || undefined,
+    vertexAiLocation: profile.vertexAiLocation?.trim() || BUNDLED_VERTEX_AI_LOCATION || undefined,
+    vertexAiToken: profile.vertexAiToken?.trim() || BUNDLED_VERTEX_AI_TOKEN || undefined,
   };
 }

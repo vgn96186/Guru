@@ -18,10 +18,8 @@ async function digestMessage(message) {
   const msgUint8 = new TextEncoder().encode(message); // encode as (utf-8) Uint8Array
   const hashBuffer = await crypto.subtle.digest('SHA-1', msgUint8); // hash the message
   const hashArray = Array.from(new Uint8Array(hashBuffer)); // convert buffer to byte array
-  const hashHex = hashArray
-    .map((b) => b.toString(16).padStart(2, '0'))
-    .join(''); // convert bytes to hex string
-  return {result: hashHex};
+  const hashHex = hashArray.map((b) => b.toString(16).padStart(2, '0')).join(''); // convert bytes to hex string
+  return { result: hashHex };
 }
 
 window['ai_edge_gallery_get_result'] = async (data) => {
@@ -30,6 +28,6 @@ window['ai_edge_gallery_get_result'] = async (data) => {
     return JSON.stringify(await digestMessage(jsonData['text']));
   } catch (e) {
     console.error(e);
-    return JSON.stringify({error: `Failed to calculate hash: ${e.message}`});
+    return JSON.stringify({ error: `Failed to calculate hash: ${e.message}` });
   }
 };

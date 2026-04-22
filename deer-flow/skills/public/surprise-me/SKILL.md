@@ -18,12 +18,14 @@ Read all the skills listed in the <available_skills>.
 Select **1 to 3** skills and design a creative mashup. The goal is a single cohesive deliverable, not separate demos.
 
 **Creative combination principles:**
+
 - Juxtapose skills in unexpected ways (e.g., a presentation about algorithmic art, a research report turned into a slide deck, a styled doc with canvas-designed illustrations)
 - Incorporate the user's known interests/context from memory if available
 - Prioritize visual impact and emotional delight over information density
 - The output should feel like a gift — polished, surprising, and fun
 
 **Theme ideas (pick or remix):**
+
 - Something tied to today's date, season, or trending news
 - A mini creative project the user never asked for but would love
 - A playful "what if" concept

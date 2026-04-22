@@ -21,7 +21,7 @@ test("reuses the original File when a prompt attachment already has one", async 
     "fetch",
     vi.fn(() => {
       throw new Error("fetch should not run when File is already present");
-    }),
+    })
   );
 
   const converted = await promptInputFilePartToFile({
@@ -82,7 +82,7 @@ test("returns null when the URL fallback fetch fails", async () => {
     "fetch",
     vi.fn(async () => {
       throw new Error("network down");
-    }),
+    })
   );
 
   const converted = await promptInputFilePartToFile({
@@ -105,8 +105,8 @@ test("returns null when the URL fallback fetch response is non-ok", async () => 
         new Response("missing", {
           status: 404,
           statusText: "Not Found",
-        }),
-    ),
+        })
+    )
   );
 
   const converted = await promptInputFilePartToFile({

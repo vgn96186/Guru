@@ -11,7 +11,7 @@ export function rehypeSplitWordsIntoSpans() {
     visit(tree, "element", ((node: Element) => {
       if (
         ["p", "h1", "h2", "h3", "h4", "h5", "h6", "li", "strong"].includes(
-          node.tagName,
+          node.tagName
         ) &&
         node.children
       ) {
@@ -50,7 +50,7 @@ export function rehypeSplitWordsIntoSpans() {
 export function useRehypeSplitWordsIntoSpans(enabled = true) {
   const rehypePlugins = useMemo(
     () => (enabled ? [rehypeSplitWordsIntoSpans] : []),
-    [enabled],
+    [enabled]
   );
   return rehypePlugins;
 }

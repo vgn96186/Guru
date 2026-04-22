@@ -37,7 +37,7 @@ export function TokenUsageIndicator({
           type="button"
           className={cn(
             "text-muted-foreground flex cursor-default items-center gap-1 text-xs",
-            className,
+            className
           )}
         >
           <CoinsIcon size={14} />

@@ -297,8 +297,14 @@ export default function BootTransition() {
     opacityRing1.value = withDelay(0, withRepeat(withTiming(0, fastEmit), -1, false));
     scaleRing2.value = withDelay(800, withRepeat(withTiming(4.5, fastEmit), -1, false));
     opacityRing2.value = withDelay(800, withRepeat(withTiming(0, fastEmit), -1, false));
-    scaleRing3.value = withDelay(1600, withRepeat(withTiming(6.5, { ...fastEmit, duration: 2800 }), -1, false));
-    opacityRing3.value = withDelay(1600, withRepeat(withTiming(0, { ...fastEmit, duration: 2800 }), -1, false));
+    scaleRing3.value = withDelay(
+      1600,
+      withRepeat(withTiming(6.5, { ...fastEmit, duration: 2800 }), -1, false),
+    );
+    opacityRing3.value = withDelay(
+      1600,
+      withRepeat(withTiming(0, { ...fastEmit, duration: 2800 }), -1, false),
+    );
 
     highlightTranslateY.value = withRepeat(withTiming(2, fastCore), -1, true);
     highlightOpacity.value = withRepeat(withTiming(0.55, fastCore), -1, true);
@@ -376,8 +382,14 @@ export default function BootTransition() {
 
       cancelAnimation(scaleRing3);
       cancelAnimation(opacityRing3);
-      scaleRing3.value = withDelay(2400, withRepeat(withTiming(6.5, { ...normalEmit, duration: 4000 }), -1, false));
-      opacityRing3.value = withDelay(2400, withRepeat(withTiming(0, { ...normalEmit, duration: 4000 }), -1, false));
+      scaleRing3.value = withDelay(
+        2400,
+        withRepeat(withTiming(6.5, { ...normalEmit, duration: 4000 }), -1, false),
+      );
+      opacityRing3.value = withDelay(
+        2400,
+        withRepeat(withTiming(0, { ...normalEmit, duration: 4000 }), -1, false),
+      );
     }, delay);
 
     return () => clearTimeout(timer);
@@ -442,9 +454,7 @@ export default function BootTransition() {
 
   const styleOrb = useAnimatedStyle(() => {
     const currentSize = interpolate(settleProgress.value, [0, 1], [ORB_SIZE, targetSize]);
-    const targetX = startButtonLayout
-      ? startButtonLayout.x + startButtonLayout.width / 2
-      : centerX;
+    const targetX = startButtonLayout ? startButtonLayout.x + startButtonLayout.width / 2 : centerX;
     const targetY = startButtonLayout
       ? startButtonLayout.y + startButtonLayout.height / 2
       : centerY;
@@ -458,10 +468,7 @@ export default function BootTransition() {
       borderRadius: currentSize / 2,
       left: currentX - currentSize / 2,
       top: currentY - currentSize / 2,
-      transform: [
-        { translateX: jitterX.value },
-        { translateY: jitterY.value },
-      ],
+      transform: [{ translateX: jitterX.value }, { translateY: jitterY.value }],
     };
   });
 
@@ -526,19 +533,30 @@ export default function BootTransition() {
         {/* Core sphere */}
         <Animated.View style={[styles.coreShadow, styleCore]}>
           <View style={styles.coreInner}>
-            <Svg
-              height="100%"
-              width="100%"
-              viewBox="0 0 100 100"
-              style={StyleSheet.absoluteFill}
-            >
+            <Svg height="100%" width="100%" viewBox="0 0 100 100" style={StyleSheet.absoluteFill}>
               <Defs>
-                <RadialGradient id="btColorGrad" cx="45%" cy="45%" rx="55%" ry="55%" fx="45%" fy="45%">
+                <RadialGradient
+                  id="btColorGrad"
+                  cx="45%"
+                  cy="45%"
+                  rx="55%"
+                  ry="55%"
+                  fx="45%"
+                  fy="45%"
+                >
                   <Stop offset="0%" stopColor={theme.colors.primaryLight} stopOpacity="1" />
                   <Stop offset="60%" stopColor={theme.colors.primary} stopOpacity="1" />
                   <Stop offset="100%" stopColor={theme.colors.primaryDark} stopOpacity="1" />
                 </RadialGradient>
-                <RadialGradient id="btLightGrad" cx="30%" cy="28%" rx="65%" ry="65%" fx="30%" fy="28%">
+                <RadialGradient
+                  id="btLightGrad"
+                  cx="30%"
+                  cy="28%"
+                  rx="65%"
+                  ry="65%"
+                  fx="30%"
+                  fy="28%"
+                >
                   <Stop offset="0%" stopColor="#ffffff" stopOpacity="0.6" />
                   <Stop offset="35%" stopColor="#ffffff" stopOpacity="0.1" />
                   <Stop offset="65%" stopColor="#000000" stopOpacity="0.0" />
@@ -567,11 +585,21 @@ export default function BootTransition() {
 
           {/* CTA text (fades in during settle) */}
           <Animated.View style={[styles.ctaContainer, styleCtaText]} pointerEvents="none">
-            <Animated.Text style={styles.ctaLabel} numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.75}>
+            <Animated.Text
+              style={styles.ctaLabel}
+              numberOfLines={2}
+              adjustsFontSizeToFit
+              minimumFontScale={0.75}
+            >
               {startButtonLabel}
             </Animated.Text>
             {startButtonSublabel ? (
-              <Animated.Text style={styles.ctaSublabel} numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.85}>
+              <Animated.Text
+                style={styles.ctaSublabel}
+                numberOfLines={2}
+                adjustsFontSizeToFit
+                minimumFontScale={0.85}
+              >
                 {startButtonSublabel}
               </Animated.Text>
             ) : null}
@@ -580,13 +608,8 @@ export default function BootTransition() {
       </Animated.View>
 
       {/* Loading text (below orb, fades out during settle) */}
-      <Animated.View
-        style={[styles.textContainer, styleLoadingText]}
-        pointerEvents="none"
-      >
-        <Animated.Text style={styles.text}>
-          {displayMessage.replace(/^\s*\+\s*/, '')}
-        </Animated.Text>
+      <Animated.View style={[styles.textContainer, styleLoadingText]} pointerEvents="none">
+        <Animated.Text style={styles.text}>{displayMessage.replace(/^\s*\+\s*/, '')}</Animated.Text>
       </Animated.View>
     </View>
   );

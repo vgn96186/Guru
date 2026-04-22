@@ -11,11 +11,13 @@
 ### Task 1: Add failing tracing config tests
 
 **Files:**
+
 - Modify: `backend/tests/test_tracing_config.py`
 
 **Step 1: Write the failing tests**
 
 Add tests covering:
+
 - Langfuse-only config parsing
 - dual-provider parsing
 - explicit enable with missing required Langfuse fields
@@ -38,12 +40,14 @@ Expected: PASS
 ### Task 2: Add failing callback factory and model attachment tests
 
 **Files:**
+
 - Modify: `backend/tests/test_model_factory.py`
 - Create: `backend/tests/test_tracing_factory.py`
 
 **Step 1: Write the failing tests**
 
 Add tests covering:
+
 - LangSmith callback creation
 - Langfuse callback creation
 - dual callback creation
@@ -67,6 +71,7 @@ Expected: PASS
 ### Task 3: Wire dependency and docs
 
 **Files:**
+
 - Modify: `backend/packages/harness/pyproject.toml`
 - Modify: `README.md`
 - Modify: `backend/README.md`
@@ -78,6 +83,7 @@ Add `langfuse` to the harness dependencies.
 **Step 2: Update docs**
 
 Document:
+
 - Langfuse environment variables
 - dual-provider behavior
 - failure behavior for explicitly enabled providers
@@ -90,6 +96,7 @@ Expected: PASS
 ### Task 4: Run broader regression checks
 
 **Files:**
+
 - No code changes required
 
 **Step 1: Run relevant suite**

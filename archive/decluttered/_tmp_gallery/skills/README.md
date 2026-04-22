@@ -1,7 +1,9 @@
 <!-- omit from toc -->
+
 # AI Edge Gallery Agent Skills
 
 <!-- omit from toc -->
+
 ## Table of contents
 
 - [Introduction](#introduction)
@@ -51,10 +53,10 @@ To overcome this, AI Edge Gallery adapts by focusing on two primary execution
 paths:
 
 1. **JavaScript Skills**: Running logic inside a lightweight, hidden webview,
-    which provides a cross-platform execution environment for custom logic.
+   which provides a cross-platform execution environment for custom logic.
 
 1. **Native App Intents**: Leveraging the Android/iOS operating system's
-    built-in capabilities (like sending email / text messages).
+   built-in capabilities (like sending email / text messages).
 
 ## Text-Only Skills: The Simplest Case
 
@@ -66,9 +68,9 @@ specific persona or scenario data without requiring external code.
 To create a skill, you must follow a standardized directory structure:
 
 - **Directory Name**: Create a dedicated folder for your skill using
-    **kebab-case** (e.g., `fitness-coach`).
+  **kebab-case** (e.g., `fitness-coach`).
 - **SKILL.md**: This is the only required file for a text-only skill and must
-    reside in the root of your skill folder.
+  reside in the root of your skill folder.
 
 ```text
 fitness-coach/
@@ -92,12 +94,15 @@ description: A cheerful, high-energy fitness coach that provides motivational wo
 # Cheerful Fitness Coach
 
 ## Persona
+
 You are an incredibly enthusiastic and supportive fitness coach! Your goal is
 to make exercise feel like a party. Always use upbeat language, plenty of
 encouraging emojis, and focus on the "fun" of moving your body.
 
 ## Instructions
+
 When the user asks for a workout:
+
 1. Start with a high-energy greeting (e.g., "Ready to crush it?").
 2. Provide a 15-minute high-intensity routine that is easy to follow.
 3. End with a massive "virtual high-five" and a reminder of how awesome they are
@@ -153,6 +158,7 @@ description: Calculate the hash of a given text.
 ## Instructions
 
 Call the `run_js` tool with the following exact parameters:
+
 - script name: index.html
 - data: A JSON string with the following field:
   - text: String. The text to calculate hash for.
@@ -178,32 +184,31 @@ field on failure.
 ```html
 <!DOCTYPE html>
 <html lang="en">
-<head></head>
+  <head></head>
 
-<body>
+  <body>
     <script>
-        window['ai_edge_gallery_get_result'] = async (data) => {
-            try {
-                const jsonData = JSON.parse(data);
-                const processedData = await yourImplementation(jsonData.text);
+      window['ai_edge_gallery_get_result'] = async (data) => {
+        try {
+          const jsonData = JSON.parse(data);
+          const processedData = await yourImplementation(jsonData.text);
 
-                return JSON.stringify({
-                    result: processedData
-                });
-            } catch (e) {
-                console.error(e);
-                return JSON.stringify({
-                    error: `Failed: ${e.message}`
-                });
-            }
-        };
-
-        async function yourImplementation(text) {
-            return text + " processed!";
+          return JSON.stringify({
+            result: processedData,
+          });
+        } catch (e) {
+          console.error(e);
+          return JSON.stringify({
+            error: `Failed: ${e.message}`,
+          });
         }
-    </script>
-</body>
+      };
 
+      async function yourImplementation(text) {
+        return text + ' processed!';
+      }
+    </script>
+  </body>
 </html>
 ```
 
@@ -227,18 +232,18 @@ To return an image to the chat, assign a base64 encoded string to the
 
 ```javascript
 window['ai_edge_gallery_get_result'] = async (data) => {
-    try {
-        return JSON.stringify({
-            result: "Image generated.",
-            image: {
-                base64: "imageBase64String"
-            }
-        });
-    } catch (e) {
-        return JSON.stringify({
-            error: e.message
-        });
-    }
+  try {
+    return JSON.stringify({
+      result: 'Image generated.',
+      image: {
+        base64: 'imageBase64String',
+      },
+    });
+  } catch (e) {
+    return JSON.stringify({
+      error: e.message,
+    });
+  }
 };
 ```
 
@@ -252,19 +257,19 @@ specify a `url` (either absolute or relative to an `assets` folder) and an
 
 ```javascript
 window['ai_edge_gallery_get_result'] = async (data) => {
-    try {
-        return JSON.stringify({
-            result: "Here is the interactive view.",
-            webview: {
-                url: "webview.html",
-                aspectRatio: 1.0
-            }
-        });
-    } catch (e) {
-        return JSON.stringify({
-            error: e.message
-        });
-    }
+  try {
+    return JSON.stringify({
+      result: 'Here is the interactive view.',
+      webview: {
+        url: 'webview.html',
+        aspectRatio: 1.0,
+      },
+    });
+  } catch (e) {
+    return JSON.stringify({
+      error: e.message,
+    });
+  }
 };
 ```
 
@@ -297,7 +302,7 @@ skill is called, which is then passed directly to your script.
 
 1. Add `require-secret: true` to your `SKILL.md` metadata.
 1. (Optional) Add `require-secret-description: some description` to your
-    `SKILL.md` metadata. This will be shown in the prompt dialog.
+   `SKILL.md` metadata. This will be shown in the prompt dialog.
 1. Add a second parameter to your JS entry function to receive the secret.
 
 **Example `SKILL.md` snippet:**
@@ -316,24 +321,24 @@ metadata:
 
 ```javascript
 window['ai_edge_gallery_get_result'] = async (data, secret) => {
-    try {
-        const jsonData = JSON.parse(data);
-        // Use the secret variable to authenticate your API call
-        const response = await fetch("https://api.example.com/data", {
-            headers: {
-                "Authorization": `Bearer ${secret}`
-            }
-        });
-        const resultText = await response.text();
+  try {
+    const jsonData = JSON.parse(data);
+    // Use the secret variable to authenticate your API call
+    const response = await fetch('https://api.example.com/data', {
+      headers: {
+        Authorization: `Bearer ${secret}`,
+      },
+    });
+    const resultText = await response.text();
 
-        return JSON.stringify({
-            result: resultText
-        });
-    } catch (e) {
-        return JSON.stringify({
-            error: e.message
-        });
-    }
+    return JSON.stringify({
+      result: resultText,
+    });
+  } catch (e) {
+    return JSON.stringify({
+      error: e.message,
+    });
+  }
 };
 ```
 
@@ -348,7 +353,7 @@ exact parameters:
 
 - `intent`: The native action to run.
 - `parameters`: A JSON string containing the required parameter values for the
-    intent.
+  intent.
 
 **Example `SKILL.md` for Native Intents (Email and Text Message):**
 
@@ -450,12 +455,12 @@ You can load skills directly from your Android device's file system.
 **Steps:**
 
 1. Connect your Android device to your computer and push your entire skill
-    folder (e.g., `my-js-skill/`) onto the device (e.g. to the `Download`
-    folder).
+   folder (e.g., `my-js-skill/`) onto the device (e.g. to the `Download`
+   folder).
 
-    ```bash
-    adb push my-js-skill/ /sdcard/Download/
-    ```
+   ```bash
+   adb push my-js-skill/ /sdcard/Download/
+   ```
 
 2. Enter the Agent Skills use case with your selected model, and navigate to the
    Skill Manager by tapping the "Skills" chip.
@@ -463,8 +468,8 @@ You can load skills directly from your Android device's file system.
 3. Tap the (+) button and select the **Import local skill** option.
 
 4. Use the Android file picker to select the directory containing your
-    `SKILL.md` file. The app will copy the directory into its internal storage
-    and make the skill available.
+   `SKILL.md` file. The app will copy the directory into its internal storage
+   and make the skill available.
 
 ## Share Skills with Community
 
@@ -504,7 +509,6 @@ call details and the specific data passed to your script. This panel also provid
 access to real-time console logs.
 
 <img width="400" alt="debug_js_skill" src="https://github.com/user-attachments/assets/b5e12030-5132-4b60-aa66-93b3b7e5cb6e" />
-
 
 ## Skill Examples
 

@@ -217,6 +217,7 @@ Replace a focused set of alerts:
   - reset progress confirmation → dialog
   - cleanup/export/import success and failure messages → toast where non-blocking
 - `SessionScreen.tsx`
+
   - mark-for-review confirmation → dialog
   - mark-for-review success → toast
 

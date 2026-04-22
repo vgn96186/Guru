@@ -47,7 +47,7 @@ export function WorkspaceHeader({
     <header
       className={cn(
         "top-0 right-0 left-0 z-20 flex h-16 shrink-0 items-center justify-between gap-2 border-b backdrop-blur-sm transition-[width,height] ease-out group-has-data-[collapsible=icon]/sidebar-wrapper:h-12",
-        className,
+        className
       )}
       {...props}
     >
@@ -115,7 +115,7 @@ export function WorkspaceBody({
     <main
       className={cn(
         "relative flex min-h-0 w-full flex-1 flex-col items-center",
-        className,
+        className
       )}
       {...props}
     >
@@ -126,7 +126,7 @@ export function WorkspaceBody({
 
 function nameOfSegment(
   segment: string | undefined,
-  t: ReturnType<typeof useI18n>["t"],
+  t: ReturnType<typeof useI18n>["t"]
 ) {
   if (!segment) return t.common.home;
   if (segment === "workspace") return t.breadcrumb.workspace;

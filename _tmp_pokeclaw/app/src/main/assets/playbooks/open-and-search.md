@@ -2,10 +2,10 @@
 id: open_and_search
 name: Open App and Search
 triggers:
-  - "search"
-  - "find"
-  - "look up"
-  - "look for"
+  - 'search'
+  - 'find'
+  - 'look up'
+  - 'look for'
 ---
 
 When the user wants to search for something in an app:
@@ -19,6 +19,7 @@ When the user wants to search for something in an app:
 7. **finish** → call finish(summary="[describe what you found]")
 
 If the user says "search [app] for [query]":
+
 - app = the app name (YouTube, Chrome, Play Store, etc.)
 - query = what to search for
 

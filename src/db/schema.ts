@@ -223,6 +223,9 @@ CREATE TABLE IF NOT EXISTS user_profile (
   , home_novelty_cooldown_hours INTEGER NOT NULL DEFAULT 6
   , disabled_providers TEXT NOT NULL DEFAULT '[]'
   , jina_api_key TEXT NOT NULL DEFAULT ''
+  , vertex_ai_project TEXT NOT NULL DEFAULT ''
+  , vertex_ai_location TEXT NOT NULL DEFAULT ''
+  , vertex_ai_token TEXT NOT NULL DEFAULT ''
   , auto_repair_legacy_notes_enabled INTEGER NOT NULL DEFAULT 0
   , scan_orphaned_transcripts_enabled INTEGER NOT NULL DEFAULT 0
   , loading_orb_style TEXT NOT NULL DEFAULT 'classic'

@@ -61,7 +61,7 @@ function SkillSettingsList({
   const { mutate: enableSkill } = useEnableSkill();
   const filteredSkills = useMemo(
     () => skills.filter((skill) => skill.category === filter),
-    [skills, filter],
+    [skills, filter]
   );
   const handleCreateSkill = () => {
     onClose?.();

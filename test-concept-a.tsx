@@ -1,5 +1,13 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Animated, LayoutChangeEvent, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import {
+  Animated,
+  LayoutChangeEvent,
+  Platform,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 import LinearText from '../primitives/LinearText';
 import { linearTheme as n } from '../../theme/linearTheme';
 import { useReducedMotion, motion } from '../../motion';
@@ -104,7 +112,11 @@ export default function CompactQuickStatsBar({
   return (
     <View style={styles.container} collapsable={Platform.OS === 'android' ? false : undefined}>
       <LinearGradient
-        colors={['rgba(255, 255, 255, 0.14)', 'rgba(255, 255, 255, 0.04)', 'rgba(255, 255, 255, 0.02)']}
+        colors={[
+          'rgba(255, 255, 255, 0.14)',
+          'rgba(255, 255, 255, 0.04)',
+          'rgba(255, 255, 255, 0.02)',
+        ]}
         start={{ x: 0, y: 0 }}
         end={{ x: 0.5, y: 1 }}
         style={styles.railBorder}
@@ -162,13 +174,15 @@ export default function CompactQuickStatsBar({
                     {todayMinutes}
                     <Text style={styles.ratioBigEm}> / {currentGoal}</Text>
                   </Text>
-                  <Pressable
-                    style={styles.goalChip}
-                    onPress={() => setShowGoalPicker((v) => !v)}
-                  >
+                  <Pressable style={styles.goalChip} onPress={() => setShowGoalPicker((v) => !v)}>
                     <Text style={styles.goalChipText}>Goal {currentGoal}m</Text>
                     <Svg width={12} height={12} viewBox="0 0 12 12" fill="none">
-                      <Path d="M3 4.5L6 7.5L9 4.5" stroke="#b4bbf5" strokeWidth={1.4} strokeLinecap="round" />
+                      <Path
+                        d="M3 4.5L6 7.5L9 4.5"
+                        stroke="#b4bbf5"
+                        strokeWidth={1.4}
+                        strokeLinecap="round"
+                      />
                     </Svg>
                   </Pressable>
                 </View>
@@ -177,7 +191,12 @@ export default function CompactQuickStatsBar({
 
               {/* Divider */}
               <LinearGradient
-                colors={['transparent', 'rgba(255, 255, 255, 0.08)', 'rgba(255, 255, 255, 0.08)', 'transparent']}
+                colors={[
+                  'transparent',
+                  'rgba(255, 255, 255, 0.08)',
+                  'rgba(255, 255, 255, 0.08)',
+                  'transparent',
+                ]}
                 locations={[0, 0.2, 0.8, 1]}
                 style={styles.divider}
               />
@@ -191,14 +210,26 @@ export default function CompactQuickStatsBar({
                       { opacity: glowOpacity, transform: [{ scale: glowScale }] },
                     ]}
                   />
-                  <Animated.View style={[styles.flameWrap, { transform: [{ scale: flameScale }, { rotate: '-4deg' }] }]}>
+                  <Animated.View
+                    style={[
+                      styles.flameWrap,
+                      { transform: [{ scale: flameScale }, { rotate: '-4deg' }] },
+                    ]}
+                  >
                     <Svg width={22} height={22} viewBox="0 0 22 22">
                       <Defs>
                         <RadialGradient id="flameGrad1" cx="40%" cy="20%" r="55%" fx="40%" fy="20%">
                           <Stop offset="0%" stopColor="#fde68a" stopOpacity="1" />
                           <Stop offset="100%" stopColor="#fde68a" stopOpacity="0" />
                         </RadialGradient>
-                        <RadialGradient id="flameGrad2" cx="50%" cy="100%" r="100%" fx="50%" fy="100%">
+                        <RadialGradient
+                          id="flameGrad2"
+                          cx="50%"
+                          cy="100%"
+                          r="100%"
+                          fx="50%"
+                          fy="100%"
+                        >
                           <Stop offset="0%" stopColor={n.colors.warning} stopOpacity="1" />
                           <Stop offset="100%" stopColor="#b45309" stopOpacity="1" />
                         </RadialGradient>
@@ -253,9 +284,13 @@ export default function CompactQuickStatsBar({
                   ]}
                   onPress={() => handleGoalChange(minutes)}
                 >
-                  <Text style={[styles.goalChipLargeText, active && styles.goalChipLargeTextActive]}>
+                  <Text
+                    style={[styles.goalChipLargeText, active && styles.goalChipLargeTextActive]}
+                  >
                     {minutes}
-                    <Text style={[styles.goalChipLargeUnit, active && styles.goalChipLargeTextActive]}>
+                    <Text
+                      style={[styles.goalChipLargeUnit, active && styles.goalChipLargeTextActive]}
+                    >
                       m
                     </Text>
                   </Text>

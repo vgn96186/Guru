@@ -225,6 +225,9 @@ export const userProfile = sqliteTable('user_profile', {
   homeNoveltyCooldownHours: integer('home_novelty_cooldown_hours').notNull().default(6),
   disabledProviders: text('disabled_providers').notNull().default('[]'),
   jinaApiKey: text('jina_api_key').notNull().default(''),
+  vertexAiProject: text('vertex_ai_project').notNull().default(''),
+  vertexAiLocation: text('vertex_ai_location').notNull().default(''),
+  vertexAiToken: text('vertex_ai_token').notNull().default(''),
   autoRepairLegacyNotesEnabled: integer('auto_repair_legacy_notes_enabled').notNull().default(0),
   scanOrphanedTranscriptsEnabled: integer('scan_orphaned_transcripts_enabled').notNull().default(0),
 });

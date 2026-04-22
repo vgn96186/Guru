@@ -12,7 +12,9 @@ The `mood-tracker` skill helps you keep track of your daily emotional well-being
 ### Actions
 
 #### 1. Log Mood
+
 When a user wants to log their mood, call the `run_js` tool with:
+
 - **script name**: `index.html`
 - **data**: A JSON string with:
   - `action`: "log_mood"
@@ -25,14 +27,18 @@ When a user wants to log their mood, call the `run_js` tool with:
     - If no date is mentioned, default to "today".
 
 #### 2. Get Mood for a Specific Date
+
 When a user asks what their mood was on a specific date, call the `run_js` tool with:
+
 - **script name**: `index.html`
 - **data**: A JSON string with:
   - `action`: "get_mood"
   - `date`: String (Identify the date from the user's request)
 
 #### 3. Get History / Show Dashboard
+
 When a user wants to see their mood history ("last week", "past 10 days") or the dashboard, call the `run_js` tool with:
+
 - **script name**: `index.html`
 - **data**: A JSON string with:
   - `action`: "get_history"
@@ -40,7 +46,9 @@ When a user wants to see their mood history ("last week", "past 10 days") or the
   - `show_dashboard`: Boolean (Optional)
 
 #### 4. Plot Mood Trends (Line Chart)
+
 When a user wants to visualize their mood trends with a chart (e.g., "Plot my mood for 7 days"), call the `run_js` tool with:
+
 - **script name**: `index.html`
 - **data**: A JSON string with:
   - `action`: "get_history"
@@ -49,7 +57,9 @@ When a user wants to visualize their mood trends with a chart (e.g., "Plot my mo
   - **TIP**: This will trigger the plotting view in the dashboard.
 
 #### 5. Analyze Trends and Patterns
+
 When a user asks for an analysis of their mood (e.g., "Are there any trends?", "Am I feeling better?"), follow these steps:
+
 1. Call `run_js` with `action: "get_history"` and an appropriate `days` count (e.g., 30 for a monthly analysis).
 2. Once you receive the JSON history, analyze the scores and comments.
 3. Provide a thoughtful response to the user covering:
@@ -58,20 +68,26 @@ When a user asks for an analysis of their mood (e.g., "Are there any trends?", "
    - Themes or patterns found in the comments.
 
 #### 6. Delete Mood for a Specific Date
+
 When a user wants to delete only a single day's entry (e.g., "Delete my mood for today"), call the `run_js` tool with:
+
 - **script name**: `index.html`
 - **data**: A JSON string with:
   - `action`: "delete_mood"
   - `date`: String (Identify the date)
 
 #### 7. Export Data (Backup)
+
 When a user wants to backup or export their data, call the `run_js` tool with:
+
 - **script name**: `index.html`
 - **data**: A JSON string with:
   - `action`: "export_data"
 
 #### 8. Wipe All Data
+
 When a user wants to clear their entire mood history and start fresh, call the `run_js` tool with:
+
 - **script name**: `index.html`
 - **data**: A JSON string with:
   - `action`: "wipe_data"
@@ -81,6 +97,7 @@ When a user wants to clear their entire mood history and start fresh, call the `
 You can use these samples to interact with the mood tracker:
 
 - **Logging Mood:**
+
   - "Log my mood as 8 today, feeling great!"
   - "Set my mood yesterday as a 2"
   - "Set my mood on March 18, 2026 as a 1"
@@ -89,6 +106,7 @@ You can use these samples to interact with the mood tracker:
   - "Record a mood of 9 for me."
 
 - **Viewing History:**
+
   - "Show me my mood history."
   - "Get my mood from last week."
   - "How have I been feeling lately?"
@@ -98,12 +116,14 @@ You can use these samples to interact with the mood tracker:
   - "What was my mood yesterday?"
 
 - **Analyzing Trends:**
+
   - "Analyze my mood for the last 30 days — are there any patterns?"
   - "Am I generally feeling better or worse over time?"
   - "Are there any clusters of bad days in my history?"
   - "What do my recent comments suggest about my well-being?"
 
 - **Wiping & Deleting:**
+
   - "Delete my mood for today."
   - "Remove my mood log for yesterday."
   - "Delete the entry for March 18."
@@ -117,6 +137,7 @@ You can use these samples to interact with the mood tracker:
   - "Graph my mood progress."
 
 ### Rules
+
 - **Privacy**: All data is stored locally on your device.
 - **No Entry**: If no mood entry exists for a specific date requested, explicitly inform the user that no entry was found for that date.
 - **Updates**: Logging a mood for a date that already has an entry will update that entry.

@@ -12,13 +12,9 @@ const SHORTCUT_NAME = 'Guru Dev Launcher.bat';
 
 function getDesktopPath() {
   if (process.platform === 'win32') {
-    return process.env.USERPROFILE
-      ? path.join(process.env.USERPROFILE, 'Desktop')
-      : null;
+    return process.env.USERPROFILE ? path.join(process.env.USERPROFILE, 'Desktop') : null;
   }
-  return process.env.HOME
-    ? path.join(process.env.HOME, 'Desktop')
-    : null;
+  return process.env.HOME ? path.join(process.env.HOME, 'Desktop') : null;
 }
 
 function cleanOldShortcuts(desktop) {
@@ -77,9 +73,7 @@ function main() {
   console.log('Creating desktop shortcut for Guru Dev Launcher...');
   cleanOldShortcuts(desktop);
 
-  const success = process.platform === 'win32'
-    ? createWindows(desktop)
-    : createUnix(desktop);
+  const success = process.platform === 'win32' ? createWindows(desktop) : createUnix(desktop);
 
   if (!success) process.exit(1);
 }

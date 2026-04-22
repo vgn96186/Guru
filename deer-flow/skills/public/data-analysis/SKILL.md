@@ -40,6 +40,7 @@ python /mnt/skills/public/data-analysis/scripts/analyze.py \
 ```
 
 This returns:
+
 - Sheet names (for Excel) or filename (for CSV)
 - Column names, data types, and non-null counts
 - Row count per sheet/file
@@ -81,19 +82,20 @@ python /mnt/skills/public/data-analysis/scripts/analyze.py \
 ```
 
 Supported output formats (auto-detected from extension):
+
 - `.csv` — Comma-separated values
 - `.json` — JSON array of records
 - `.md` — Markdown table
 
 ### Parameters
 
-| Parameter | Required | Description |
-|-----------|----------|-------------|
-| `--files` | Yes | Space-separated paths to Excel/CSV files |
-| `--action` | Yes | One of: `inspect`, `query`, `summary` |
-| `--sql` | For `query` | SQL query to execute |
-| `--table` | For `summary` | Table/sheet name to summarize |
-| `--output-file` | No | Path to export results (CSV/JSON/MD) |
+| Parameter       | Required      | Description                              |
+| --------------- | ------------- | ---------------------------------------- |
+| `--files`       | Yes           | Space-separated paths to Excel/CSV files |
+| `--action`      | Yes           | One of: `inspect`, `query`, `summary`    |
+| `--sql`         | For `query`   | SQL query to execute                     |
+| `--table`       | For `summary` | Table/sheet name to summarize            |
+| `--output-file` | No            | Path to export results (CSV/JSON/MD)     |
 
 > [!NOTE]
 > Do NOT read the Python file, just call it with the parameters.
@@ -108,6 +110,7 @@ Supported output formats (auto-detected from extension):
 ## Analysis Patterns
 
 ### Basic Exploration
+
 ```sql
 -- Row count
 SELECT COUNT(*) FROM Sheet1
@@ -123,6 +126,7 @@ SELECT MIN(date_col), MAX(date_col) FROM Sheet1
 ```
 
 ### Aggregation & Grouping
+
 ```sql
 -- Revenue by category and month
 SELECT category, DATE_TRUNC('month', order_date) as month,
@@ -138,6 +142,7 @@ ORDER BY total_spend DESC LIMIT 10
 ```
 
 ### Cross-file Joins
+
 ```sql
 -- Join sales with customer info from different files
 SELECT s.order_id, s.amount, c.customer_name, c.region
@@ -147,6 +152,7 @@ WHERE s.amount > 500
 ```
 
 ### Window Functions
+
 ```sql
 -- Running total and rank
 SELECT order_date, amount,
@@ -156,6 +162,7 @@ FROM Sales
 ```
 
 ### Pivot-style Analysis
+
 ```sql
 -- Pivot: monthly revenue by category
 SELECT category,

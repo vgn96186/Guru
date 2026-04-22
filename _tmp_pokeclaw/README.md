@@ -1,4 +1,3 @@
-
 <p align="center">
   <img src="banna.png" width="600" />
 </p>
@@ -28,8 +27,6 @@ The current public build is a local-first prototype for turning an Android phone
 
 In Local mode, model execution stays inside your device. No account or API key is required for Local mode.
 
-
-
 ```
 Everyone else:  Phone → Internet → Cloud API → Internet → Phone
                        💳Credit card needed, API key required. Monthly bill attached.
@@ -37,12 +34,12 @@ Everyone else:  Phone → Internet → Cloud API → Internet → Phone
 PokeClaw local: Phone → LLM → Phone
                        Local-first when you want it. Optional cloud when you need it.
 ```
+
 **AI can control your phone, with local-first execution and optional cloud help.**
 
 The current public build is open-source and already handles real chat, task, and automation flows on Android.
 
 Monitor a WhatsApp contact and auto-reply:
-
 
 Context-aware WhatsApp auto-reply:
 
@@ -56,21 +53,14 @@ https://github.com/user-attachments/assets/5c2966c5-04e6-4b22-8d66-11915ae62096
 
 https://github.com/user-attachments/assets/89999dd8-a1be-49ad-9419-60c2b38f6374
 
-
 > **Why is the "hi" demo slow?** That clip was recorded on a CPU-only Android device with no usable GPU or NPU path. Running Gemma 4 E2B on pure CPU takes about 45 seconds to warm up. On stronger phones it is much faster:
+>
 > - **Google Tensor G3/G4** (Pixel 8, Pixel 9)
 > - **Snapdragon 8 Gen 2/3** (Galaxy S24, OnePlus 12)
 > - **Dimensity 9200/9300** (recent MediaTek flagships)
 > - **Snapdragon 7+ Gen 2+** (mid-range with GPU)
 >
 > On these devices, warmup drops to seconds. Same model, better hardware.
-
-
-
-
-
-
-
 
 ## The Story
 
@@ -144,36 +134,34 @@ Every number below comes from repeated trials on a physical Pixel 8 Pro running 
 
 ### Cloud (GPT-4.1) — 18/20 pass, real tasks on real phone
 
-| Task | Result | Rounds | What happens |
-|---|---:|---:|---|
-| Search YouTube for lofi beats | ✅ | 9 | Opens YouTube, types query, hits search |
-| Open Chrome and search for weather | ✅ | 9 | Opens Chrome, types query, reads results |
-| Open Chrome and go to reddit.com | ✅ | 7 | URL navigation with node_id targeting |
-| Compose email to test@example.com | ✅ | 12 | Opens Gmail, fills To + Subject + Body |
-| Install Telegram from Play Store | ✅ | 14 | Search + tap Install + wait |
-| Turn on do not disturb | ✅ | 12 | Navigates Settings, toggles DND |
-| Open Settings, go to About Phone | ✅ | varies | Deep settings navigation |
-| Send hi to Mom on WhatsApp | ✅ | 5 | Opens WhatsApp, finds contact, types, sends |
-| Check my Instagram messages | ✅ | 5 | Handles typo ("instagarm"), opens correct app |
-| 部機仲有幾多storage | ✅ | 2 | Cantonese input, returns answer in 中文 |
-| 打開Instagram | ✅ | varies | Chinese command |
-| Draft an email saying I'll be late | ✅ **10/10** | 8 | Repeated trials: 100% pass rate |
-| Copy latest email subject and Google it | ✅ **8/10** | 15 | Gmail to Chrome cross-app flow, 80% pass rate |
+| Task                                    |       Result | Rounds | What happens                                  |
+| --------------------------------------- | -----------: | -----: | --------------------------------------------- |
+| Search YouTube for lofi beats           |           ✅ |      9 | Opens YouTube, types query, hits search       |
+| Open Chrome and search for weather      |           ✅ |      9 | Opens Chrome, types query, reads results      |
+| Open Chrome and go to reddit.com        |           ✅ |      7 | URL navigation with node_id targeting         |
+| Compose email to test@example.com       |           ✅ |     12 | Opens Gmail, fills To + Subject + Body        |
+| Install Telegram from Play Store        |           ✅ |     14 | Search + tap Install + wait                   |
+| Turn on do not disturb                  |           ✅ |     12 | Navigates Settings, toggles DND               |
+| Open Settings, go to About Phone        |           ✅ | varies | Deep settings navigation                      |
+| Send hi to Mom on WhatsApp              |           ✅ |      5 | Opens WhatsApp, finds contact, types, sends   |
+| Check my Instagram messages             |           ✅ |      5 | Handles typo ("instagarm"), opens correct app |
+| 部機仲有幾多 storage                    |           ✅ |      2 | Cantonese input, returns answer in 中文       |
+| 打開 Instagram                          |           ✅ | varies | Chinese command                               |
+| Draft an email saying I'll be late      | ✅ **10/10** |      8 | Repeated trials: 100% pass rate               |
+| Copy latest email subject and Google it |  ✅ **8/10** |     15 | Gmail to Chrome cross-app flow, 80% pass rate |
 
 All tasks use zero hardcoded app logic. The model reads the screen, picks tools, and figures out the flow on its own. Multi-language works out of the box, including Cantonese, Mandarin, and misspelled English.
 
 ### Local (Gemma 4 E2B, fully on-device) — verified on CPU and GPU
 
-| Task family | Result | CPU avg (Pixel 8 Pro) | GPU avg (Pixel 8 Pro) | Notes |
-|---|---:|---:|---:|---|
-| Clipboard explain | ✅ | 2m 43s | 2m 11s | Real clipboard read |
-| Notifications summary | ✅ | 2m 49s | 2m 53s | Reads live notifications and summarizes |
-| Battery advice | ✅ | 2m 12s | 2m 53s | Returns level + charging state |
-| Storage + apps cleanup advice | ✅ | 2m 33s | 3m 06s | Harness used to mislabel this as blocked because the answer mentioned the Contacts app |
+| Task family                   | Result | CPU avg (Pixel 8 Pro) | GPU avg (Pixel 8 Pro) | Notes                                                                                  |
+| ----------------------------- | -----: | --------------------: | --------------------: | -------------------------------------------------------------------------------------- |
+| Clipboard explain             |     ✅ |                2m 43s |                2m 11s | Real clipboard read                                                                    |
+| Notifications summary         |     ✅ |                2m 49s |                2m 53s | Reads live notifications and summarizes                                                |
+| Battery advice                |     ✅ |                2m 12s |                2m 53s | Returns level + charging state                                                         |
+| Storage + apps cleanup advice |     ✅ |                2m 33s |                3m 06s | Harness used to mislabel this as blocked because the answer mentioned the Contacts app |
 
 For the current `local-core` quick-task bundle on a Pixel 8 Pro, Gemma 4 E2B passed `4/4` on both CPU and GPU. Cold-start average time was `2m 34s` on CPU versus `2m 46s` on GPU, so GPU is now **verified and usable** on this device, but it is **not yet a cold-start speed win** for this short task bundle. The value of the recent hardening work is stability and real backend verification, not inflated benchmark theater.
-
-
 
 ## How it works
 
@@ -185,16 +173,16 @@ Local execution runs via [LiteRT-LM](https://ai.google.dev/edge/litert/llm/overv
 
 The LLM has access to these tools and picks them autonomously:
 
-| Tool | What it does |
-|------|-------------|
-| `tap` / `swipe` / `long_press` | Touch the screen |
-| `input_text` | Type into any text field |
-| `open_app` | Launch any installed app |
-| `send_message` | Full messaging flow: open app, find contact, type, send |
-| `auto_reply` | Monitor a contact and reply automatically using LLM |
-| `get_screen_info` | Read current UI tree |
-| `take_screenshot` | Capture screen |
-| `finish` | Signal task completion |
+| Tool                           | What it does                                            |
+| ------------------------------ | ------------------------------------------------------- |
+| `tap` / `swipe` / `long_press` | Touch the screen                                        |
+| `input_text`                   | Type into any text field                                |
+| `open_app`                     | Launch any installed app                                |
+| `send_message`                 | Full messaging flow: open app, find contact, type, send |
+| `auto_reply`                   | Monitor a contact and reply automatically using LLM     |
+| `get_screen_info`              | Read current UI tree                                    |
+| `take_screenshot`              | Capture screen                                          |
+| `finish`                       | Signal task completion                                  |
 
 These tools are generic — they work with any app, any contact, any language. The LLM picks the right tool and fills in the parameters from your request.
 
@@ -227,14 +215,14 @@ As on-device models get smarter, more of this can become free-form. Right now, s
 
 ### Requirements
 
-| | Minimum | Recommended |
-|---|---|---|
-| **Android** | 9+ | 12+ |
-| **Architecture** | arm64 | arm64 |
-| **RAM** | 8 GB | 12 GB+ |
-| **Storage** | 3 GB free (model download) | 5 GB+ |
-| **GPU** | Not required (CPU works) | Tensor G3/G4, Snapdragon 8 Gen 2+, Dimensity 9200+ |
-| **Root** | Not required | Not required |
+|                  | Minimum                    | Recommended                                        |
+| ---------------- | -------------------------- | -------------------------------------------------- |
+| **Android**      | 9+                         | 12+                                                |
+| **Architecture** | arm64                      | arm64                                              |
+| **RAM**          | 8 GB                       | 12 GB+                                             |
+| **Storage**      | 3 GB free (model download) | 5 GB+                                              |
+| **GPU**          | Not required (CPU works)   | Tensor G3/G4, Snapdragon 8 Gen 2+, Dimensity 9200+ |
+| **Root**         | Not required               | Not required                                       |
 
 > ⚠️ 8 GB gets you in the door. 12 GB+ is the sweet spot for the built-in Gemma 4 local models, especially if you want smoother multitasking and faster model bring-up.
 
@@ -301,6 +289,7 @@ Every star helps more people find the project. Every issue helps shape the next 
 ## Changelog
 
 ### v0.6.0 (2026-04-11)
+
 - **Mainline release hardening.** Cloud and Local chat/task flows were tightened before release instead of shipping more speculative features on top.
 - **Cloud task routing is less fragile.** Ordinary chat prompts like `say hi` no longer misroute into send-message behavior, while Cloud task flows still retain their multi-step capability.
 - **Local chat continuity is materially better.** The on-device chat session now restores visible conversation history after session rebuilds and app relaunches, instead of silently losing the earlier turns.
@@ -313,11 +302,13 @@ Every star helps more people find the project. Every issue helps shape the next 
 - **Cloud release QA now uses success rate, not single-run theater.** The headline compose task passed `10/10`, and the Gmail-subject-to-Google exploratory task passed `8/10`, which is the right standard for stochastic Cloud flows.
 
 ### v0.5.1 (2026-04-10)
+
 - **Chat/task input is more robust across phones.** The bottom input bar now follows the keyboard and system inset directly instead of relying on outer layout resize, which is safer across Pixel/Samsung navigation modes.
 - **Public release signing is now pinned to a stable path.** GitHub releases now refuse to publish unless a stable signing key is configured, and the release workflow builds a signed `release` APK instead of accidentally shipping a debug artifact.
 - **Release artifacts now include checksums.** The release pipeline also uploads `SHA256SUMS.txt` alongside the APK for easier verification.
 
 ### v0.5.0 (2026-04-10)
+
 - **Previously shipped task flows now actually work.** Fixed stale model config reuse after switching Local/Cloud, fixed task/chat tab drift, fixed accessibility reconnect races, and fixed local task cancellation/session cleanup so tasks return to the right conversation instead of leaving stale state behind.
 - **Previously broken task completions now execute the real app flow.** Explicit email-compose tasks now open a real mail composer instead of stopping with draft text in chat, and in-app search tasks can no longer fake-complete before the query is actually typed on screen.
 - **Quick-task QA expanded.** Local quick tasks were swept end-to-end on-device, Cloud quick tasks now have cleaner automated coverage, and the QA runner correctly distinguishes real failures from environment blockers like permission dialogs or missing contacts.
@@ -330,14 +321,17 @@ Every star helps more people find the project. Every issue helps shape the next 
 <summary>Older versions (v0.1.0 — v0.4.1)</summary>
 
 ### v0.4.1 (2026-04-08)
+
 - **Experimental task badge.** Task tab now shows `Experimental — more workflows coming soon`.
 - **12 new complex task QA cases.** Added broader Cloud task coverage for YouTube search, contextual messaging, screen reading, settings toggles, app installs, web search, email compose, camera flows, typo tolerance, and ambiguous requests.
 
 ### v0.3.2 (2026-04-07)
+
 - **Security fix.** Debug task receivers now disabled in release builds. External apps can no longer trigger tasks via broadcast.
 - **Security fix.** The LAN config server was binding to all network interfaces, exposing API keys to anyone on the same WiFi. Now binds to localhost only.
 
 ### v0.3.0 (2026-04-07)
+
 - **Cloud LLM support.** Chat and task modes now work with OpenAI, Anthropic, Google, and any OpenAI-compatible API. Switch providers with one tap in the new tabbed LLM Config screen.
 - **Real-time token and cost display.** See your token count and running cost in the chat header as you talk. Color shifts from grey to blue to amber to red as usage climbs. No other mobile AI app shows you this.
 - **Per-provider API keys.** Store a different API key for each provider. Switching tabs loads the right key automatically.
@@ -350,6 +344,7 @@ Every star helps more people find the project. Every issue helps shape the next 
 - **Enter and Tab key support.** Skills can now press Enter to submit search queries and Tab to move between form fields.
 
 ### v0.2.4 (2026-04-06)
+
 - **Task tab redesigned with skill cards.** No more typing free-form commands that Gemma misunderstands. Two skill cards with fill-in-the-blank forms: "Monitor [name] on [WhatsApp]" and "Send [message] to [name] on [WhatsApp]".
 - **Java skill routing.** Monitor and send-message tasks bypass the LLM entirely. Instant activation, zero warmup.
 - **Progress bar on skill activation.** Card fills up and turns orange when active. You know exactly when monitoring starts.
@@ -357,10 +352,12 @@ Every star helps more people find the project. Every issue helps shape the next 
 - **Tasks stay in-app.** Starting a task no longer jumps to the home screen. You see progress in PokeClaw, then it goes to background when ready.
 
 ### v0.2.0 (2026-04-06)
+
 - **Auto-reply now reads conversation context.** Before replying, the AI opens the chatroom and reads all visible messages on screen. It no longer forgets what was said 3 messages ago.
 - **In-app update checker.** The app checks GitHub Releases once per day and prompts you to download if a newer version exists. No more manually checking.
 
 ### v0.1.0 (2026-04-06)
+
 - Initial release. On-device Gemma 4 E2B with tool calling, accessibility-based phone control, auto-reply, task mode.
 
 </details>

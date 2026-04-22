@@ -10,6 +10,7 @@ import {
   AGENTROUTER_MODELS,
   GITHUB_MODELS_API_VERSION,
   getGitHubModelsChatCompletionsUrl,
+  VERTEX_MODELS,
 } from '../../config/appConfig';
 import { getGitLabInstanceUrl } from './gitlab/gitlabAuth';
 import {
@@ -544,6 +545,41 @@ export async function testAgentRouterConnection(key: string): Promise<ProviderHe
         max_tokens: 8,
       }),
     });
+    return toHealthResult(res);
+  } catch (error) {
+    return {
+      ok: false,
+      status: 0,
+      message: error instanceof Error ? error.message : 'Unknown connection error',
+    };
+  }
+}
+
+export async function testVertexConnection(
+  project: string,
+  location: string,
+  token: string,
+): Promise<ProviderHealthResult> {
+  const p = project.trim();
+  const l = location.trim();
+  const t = token.trim();
+  if (!p || !l || !t)
+    return { ok: false, status: 0, message: 'Project, Location, and Token required' };
+  try {
+    const res = await fetch(
+      `https://${l}-aiplatform.googleapis.com/v1/projects/${p}/locations/${l}/publishers/google/models/${VERTEX_MODELS[0]}:generateContent`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${t}`,
+        },
+        body: JSON.stringify({
+          contents: [{ role: 'user', parts: [{ text: 'Reply with one word: ok' }] }],
+          generationConfig: { maxOutputTokens: 8 },
+        }),
+      },
+    );
     return toHealthResult(res);
   } catch (error) {
     return {

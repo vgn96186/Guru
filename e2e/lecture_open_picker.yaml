@@ -3,20 +3,20 @@ appId: com.anonymous.gurustudy
 - launchApp
 - extendedWaitUntil:
     visible:
-      id: "quick-start-btn"
+      id: 'quick-start-btn'
     timeout: 30000
 - tapOn:
-    id: "quick-start-btn"
+    id: 'quick-start-btn'
 - scrollUntilVisible:
     element:
-      id: "lecture-mode-btn"
+      id: 'lecture-mode-btn'
     direction: DOWN
     timeout: 30000
 - tapOn:
-    id: "lecture-mode-btn"
+    id: 'lecture-mode-btn'
 - extendedWaitUntil:
     visible:
-      id: "import-transcribe-btn"
+      id: 'import-transcribe-btn'
     timeout: 15000
 - tapOn:
-    id: "import-transcribe-btn"
+    id: 'import-transcribe-btn'

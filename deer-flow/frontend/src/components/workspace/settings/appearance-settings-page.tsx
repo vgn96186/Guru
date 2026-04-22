@@ -56,7 +56,7 @@ export function AppearanceSettingsPage() {
       t.settings.appearance.lightDescription,
       t.settings.appearance.system,
       t.settings.appearance.systemDescription,
-    ],
+    ]
   );
 
   return (
@@ -138,7 +138,7 @@ function ThemePreviewCard({
         "group flex h-full flex-col gap-3 rounded-lg border p-4 text-left transition-all",
         active
           ? "border-primary ring-primary/30 shadow-sm ring-2"
-          : "hover:border-border hover:shadow-sm",
+          : "hover:border-border hover:shadow-sm"
       )}
     >
       <div className="flex items-start gap-3">
@@ -157,14 +157,14 @@ function ThemePreviewCard({
           "relative overflow-hidden rounded-md border text-xs transition-colors",
           previewMode === "dark"
             ? "border-neutral-800 bg-neutral-900 text-neutral-200"
-            : "border-slate-200 bg-white text-slate-900",
+            : "border-slate-200 bg-white text-slate-900"
         )}
       >
         <div className="border-border/50 flex items-center gap-2 border-b px-3 py-2">
           <div
             className={cn(
               "h-2 w-2 rounded-full",
-              previewMode === "dark" ? "bg-emerald-400" : "bg-emerald-500",
+              previewMode === "dark" ? "bg-emerald-400" : "bg-emerald-500"
             )}
           />
           <div className="h-2 w-10 rounded-full bg-current/20" />

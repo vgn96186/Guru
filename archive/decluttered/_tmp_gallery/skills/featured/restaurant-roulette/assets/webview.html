@@ -16,7 +16,7 @@ limitations under the License.
 ==============================================================================
 -->
 
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
@@ -78,14 +78,16 @@ limitations under the License.
     <script>
       // 1. Get the short, safe info from the URL
       const params = new URLSearchParams(window.location.search);
-      const cuisine = params.get("c") || "Food";
-      const locationStr = params.get("l") || "Nearby";
-      const compressedData = params.get("data") || "";
+      const cuisine = params.get('c') || 'Food';
+      const locationStr = params.get('l') || 'Nearby';
+      const compressedData = params.get('data') || '';
 
-      document.getElementById("title").innerText = `${cuisine} options ready!`;
+      document.getElementById('title').innerText = `${cuisine} options ready!`;
 
       // 2. Build the local UI URL
-      const uiUrl = `ui.html?c=${encodeURIComponent(cuisine)}&l=${encodeURIComponent(locationStr)}&data=${encodeURIComponent(compressedData)}`;
+      const uiUrl = `ui.html?c=${encodeURIComponent(cuisine)}&l=${encodeURIComponent(
+        locationStr,
+      )}&data=${encodeURIComponent(compressedData)}`;
 
       // 3. Turn the whole card into a redirect trigger
       const redirect = (e) => {
@@ -94,8 +96,8 @@ limitations under the License.
       };
 
       // Listen for taps!
-      document.body.addEventListener("click", redirect);
-      document.body.addEventListener("touchstart", redirect);
+      document.body.addEventListener('click', redirect);
+      document.body.addEventListener('touchstart', redirect);
     </script>
   </body>
 </html>

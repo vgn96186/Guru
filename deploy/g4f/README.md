@@ -37,11 +37,13 @@ App reads `EXPO_PUBLIC_G4F_URL` at build time. `createG4FModel()` picks it
 up automatically. No code edits per machine.
 
 To redeploy after upstream G4F image updates:
+
 ```bash
 cd deploy/g4f && flyctl deploy
 ```
 
 To tear down:
+
 ```bash
 flyctl apps destroy guru-g4f-vishnu
 ```

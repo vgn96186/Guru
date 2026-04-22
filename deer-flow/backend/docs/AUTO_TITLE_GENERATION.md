@@ -7,9 +7,10 @@
 ## 实现方式
 
 使用 `TitleMiddleware` 在 `after_model` 钩子中：
-1. 检测是否是首次对话（1个用户消息 + 1个助手回复）
+
+1. 检测是否是首次对话（1 个用户消息 + 1 个助手回复）
 2. 检查 state 是否已有 title
-3. 调用 LLM 生成简洁的标题（默认最多6个词）
+3. 调用 LLM 生成简洁的标题（默认最多 6 个词）
 4. 将 title 存储到 `ThreadState` 中（会被 checkpointer 持久化）
 
 TitleMiddleware 会先把 LangChain message content 里的结构化 block/list 内容归一化为纯文本，再拼到 title prompt 里，避免把 Python/JSON 的原始 repr 泄漏到标题生成模型。
@@ -28,11 +29,11 @@ class ThreadState(AgentState):
 
 ### 持久化说明
 
-| 部署方式 | 持久化 | 说明 |
-|---------|--------|------|
-| **LangGraph Studio (本地)** | ❌ 否 | 仅内存存储，重启后丢失 |
-| **LangGraph Platform** | ✅ 是 | 自动持久化到数据库 |
-| **自定义 + Checkpointer** | ✅ 是 | 需配置 PostgreSQL/SQLite checkpointer |
+| 部署方式                    | 持久化 | 说明                                  |
+| --------------------------- | ------ | ------------------------------------- |
+| **LangGraph Studio (本地)** | ❌ 否  | 仅内存存储，重启后丢失                |
+| **LangGraph Platform**      | ✅ 是  | 自动持久化到数据库                    |
+| **自定义 + Checkpointer**   | ✅ 是  | 需配置 PostgreSQL/SQLite checkpointer |
 
 ### 如何启用持久化
 
@@ -67,7 +68,7 @@ title:
   enabled: true
   max_words: 6
   max_chars: 60
-  model_name: null  # 使用默认模型
+  model_name: null # 使用默认模型
 ```
 
 或在代码中配置：
@@ -89,14 +90,14 @@ set_title_config(TitleConfig(
 ```typescript
 // 方式1: 从 thread state 获取
 const state = await client.threads.getState(threadId);
-const title = state.values.title || "New Conversation";
+const title = state.values.title || 'New Conversation';
 
 // 方式2: 监听 stream 事件
 for await (const chunk of client.runs.stream(threadId, assistantId, {
-  input: { messages: [{ role: "user", content: "Hello" }] }
+  input: { messages: [{ role: 'user', content: 'Hello' }] },
 })) {
-  if (chunk.event === "values" && chunk.data.title) {
-    console.log("Title:", chunk.data.title);
+  if (chunk.event === 'values' && chunk.data.title) {
+    console.log('Title:', chunk.data.title);
   }
 }
 ```
@@ -111,19 +112,19 @@ function ConversationList() {
   useEffect(() => {
     async function loadThreads() {
       const allThreads = await client.threads.list();
-      
+
       // 获取每个 thread 的 state 来读取 title
       const threadsWithTitles = await Promise.all(
         allThreads.map(async (t) => {
           const state = await client.threads.getState(t.thread_id);
           return {
             id: t.thread_id,
-            title: state.values.title || "New Conversation",
+            title: state.values.title || 'New Conversation',
             updatedAt: t.updated_at,
           };
-        })
+        }),
       );
-      
+
       setThreads(threadsWithTitles);
     }
     loadThreads();
@@ -131,7 +132,7 @@ function ConversationList() {
 
   return (
     <ul>
-      {threads.map(thread => (
+      {threads.map((thread) => (
         <li key={thread.id}>
           <a href={`/chat/${thread.id}`}>{thread.title}</a>
         </li>
@@ -173,7 +174,7 @@ sequenceDiagram
 ✅ **自动触发** - 首次对话后自动生成  
 ✅ **可配置** - 支持自定义长度、模型等  
 ✅ **容错性强** - 失败时使用 fallback 策略  
-✅ **架构一致** - 与现有 SandboxMiddleware 保持一致  
+✅ **架构一致** - 与现有 SandboxMiddleware 保持一致
 
 ## 注意事项
 
@@ -218,13 +219,13 @@ def test_title_generation():
 
 ### 为什么使用 State 而非 Metadata？
 
-| 特性 | State | Metadata |
-|------|-------|----------|
-| **持久化** | ✅ 自动（通过 checkpointer） | ⚠️ 取决于实现 |
-| **版本控制** | ✅ 支持时间旅行 | ❌ 不支持 |
-| **类型安全** | ✅ TypedDict 定义 | ❌ 任意字典 |
-| **可追溯** | ✅ 每次更新都记录 | ⚠️ 只有最新值 |
-| **标准化** | ✅ LangGraph 核心机制 | ⚠️ 扩展功能 |
+| 特性         | State                        | Metadata      |
+| ------------ | ---------------------------- | ------------- |
+| **持久化**   | ✅ 自动（通过 checkpointer） | ⚠️ 取决于实现 |
+| **版本控制** | ✅ 支持时间旅行              | ❌ 不支持     |
+| **类型安全** | ✅ TypedDict 定义            | ❌ 任意字典   |
+| **可追溯**   | ✅ 每次更新都记录            | ⚠️ 只有最新值 |
+| **标准化**   | ✅ LangGraph 核心机制        | ⚠️ 扩展功能   |
 
 ### 实现细节
 
@@ -236,10 +237,10 @@ def after_agent(self, state: TitleMiddlewareState, runtime: Runtime) -> dict | N
     if self._should_generate_title(state, runtime):
         title = self._generate_title(runtime)
         print(f"Generated thread title: {title}")
-        
+
         # ✅ 返回 state 更新，会被 checkpointer 自动持久化
         return {"title": title}
-    
+
     return None
 ```
 

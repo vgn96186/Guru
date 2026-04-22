@@ -76,7 +76,7 @@ export default function ChatPage() {
     (message: PromptInputMessage) => {
       void sendMessage(threadId, message);
     },
-    [sendMessage, threadId],
+    [sendMessage, threadId]
   );
   const handleStop = useCallback(async () => {
     await thread.stop();
@@ -96,7 +96,7 @@ export default function ChatPage() {
               "absolute top-0 right-0 left-0 z-30 flex h-12 shrink-0 items-center px-4",
               isNewThread
                 ? "bg-background/0 backdrop-blur-none"
-                : "bg-background/80 shadow-xs backdrop-blur",
+                : "bg-background/80 shadow-xs backdrop-blur"
             )}
           >
             <div className="flex w-full items-center text-sm font-medium">
@@ -124,7 +124,7 @@ export default function ChatPage() {
                   isNewThread && "-translate-y-[calc(50vh-96px)]",
                   isNewThread
                     ? "max-w-(--container-width-sm)"
-                    : "max-w-(--container-width-md)",
+                    : "max-w-(--container-width-md)"
                 )}
               >
                 <div className="absolute -top-4 right-0 left-0 z-0">
@@ -148,8 +148,8 @@ export default function ChatPage() {
                       thread.error
                         ? "error"
                         : thread.isLoading
-                          ? "streaming"
-                          : "ready"
+                        ? "streaming"
+                        : "ready"
                     }
                     context={settings.context}
                     extraHeader={
@@ -170,7 +170,7 @@ export default function ChatPage() {
                   <div
                     aria-hidden="true"
                     className={cn(
-                      "bg-background/5 h-32 w-full -translate-y-4 rounded-2xl border",
+                      "bg-background/5 h-32 w-full -translate-y-4 rounded-2xl border"
                     )}
                   />
                 )}

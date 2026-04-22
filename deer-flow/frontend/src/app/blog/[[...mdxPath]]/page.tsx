@@ -24,7 +24,7 @@ function isBlogLang(value: string): value is BlogLang {
 
 const loadBlogPage = cache(async function loadBlogPage(
   mdxPath: string[] | undefined,
-  preferredLang?: (typeof BLOG_LANGS)[number],
+  preferredLang?: (typeof BLOG_LANGS)[number]
 ) {
   const slug = mdxPath ?? [];
   const matches = await Promise.all(
@@ -37,11 +37,11 @@ const loadBlogPage = cache(async function loadBlogPage(
       } catch {
         return null;
       }
-    }),
+    })
   );
 
   const availableMatches = matches.filter(
-    (match): match is NonNullable<(typeof matches)[number]> => match !== null,
+    (match): match is NonNullable<(typeof matches)[number]> => match !== null
   );
 
   if (availableMatches.length === 0) {

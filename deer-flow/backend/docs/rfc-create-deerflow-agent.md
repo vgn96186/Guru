@@ -19,13 +19,13 @@ make_lead_agent
 
 ### 对比
 
-| | `langchain.create_agent` | `make_lead_agent` | `DeerFlowClient`（增强后） |
-|---|---|---|---|
-| 定位 | 底层原语 | 内部工厂 | **唯一公开 API** |
-| 配置来源 | 纯参数 | YAML 文件 | **参数优先，config fallback** |
-| 内置能力 | 无 | Sandbox/Memory/Skills/Subagent/... | **按需组合 + 管理 API** |
-| 用户接口 | `graph.invoke(state)` | 内部使用 | **`client.chat("hello")`** |
-| 适合谁 | 写 LangChain 的人 | 内部使用 | **所有 DeerFlow 用户** |
+|          | `langchain.create_agent` | `make_lead_agent`                  | `DeerFlowClient`（增强后）    |
+| -------- | ------------------------ | ---------------------------------- | ----------------------------- |
+| 定位     | 底层原语                 | 内部工厂                           | **唯一公开 API**              |
+| 配置来源 | 纯参数                   | YAML 文件                          | **参数优先，config fallback** |
+| 内置能力 | 无                       | Sandbox/Memory/Skills/Subagent/... | **按需组合 + 管理 API**       |
+| 用户接口 | `graph.invoke(state)`    | 内部使用                           | **`client.chat("hello")`**    |
+| 适合谁   | 写 LangChain 的人        | 内部使用                           | **所有 DeerFlow 用户**        |
 
 ## 2. 设计原则
 
@@ -57,11 +57,11 @@ make_lead_agent
 
 用户通过 `DeerFlowClient` 三个参数控制行为：
 
-| 参数 | 类型 | 职责 |
-|------|------|------|
-| `config` | `dict` | 覆盖 config.yaml 的任意配置项 |
-| `features` | `RuntimeFeatures` | 替换内置 middleware 实现 |
-| `extra_middleware` | `list[AgentMiddleware]` | 新增用户 middleware |
+| 参数               | 类型                    | 职责                          |
+| ------------------ | ----------------------- | ----------------------------- |
+| `config`           | `dict`                  | 覆盖 config.yaml 的任意配置项 |
+| `features`         | `RuntimeFeatures`       | 替换内置 middleware 实现      |
+| `extra_middleware` | `list[AgentMiddleware]` | 新增用户 middleware           |
 
 不传参数 → 读 config.yaml（现有行为，完全兼容）。
 
@@ -165,11 +165,11 @@ class RuntimeFeatures:
     auto_title: bool | AgentMiddleware = False
 ```
 
-| 值 | 含义 |
-|---|---|
-| `True` | 使用默认 middleware（参数从 config 读） |
-| `False` | 关闭该功能 |
-| `AgentMiddleware` 实例 | 替换整个实现 |
+| 值                     | 含义                                    |
+| ---------------------- | --------------------------------------- |
+| `True`                 | 使用默认 middleware（参数从 config 读） |
+| `False`                | 关闭该功能                              |
+| `AgentMiddleware` 实例 | 替换整个实现                            |
 
 不再有 `MemoryOptions`、`TitleOptions` 等。参数调整走 `config` dict：
 
@@ -309,6 +309,7 @@ after_agent 反序 ←   [N] → [N-1] → ... → [0]
 **不是洋葱，是管道。** 11 个 middleware 中只有 SandboxMiddleware 有 before/after 对称（获取/释放），其余只用一个钩子。
 
 硬依赖只有 2 处：
+
 1. **ThreadData 在 Sandbox 之前** — sandbox 需要线程目录
 2. **Clarification 在列表最后** — after_model 反序时最先执行，第一个拦截 `ask_clarification`
 
@@ -389,11 +390,11 @@ client = DeerFlowClient(
 
 当前实现中以下 middleware 内部仍读 `config.yaml`，SDK 用户需注意：
 
-| Middleware | 读取内容 | Phase 2 解决方案 |
-|------------|---------|-----------------|
-| TitleMiddleware | `get_title_config()` + `create_chat_model()` | `TitleOptions(model=...)` 参数覆盖 |
-| MemoryMiddleware | `get_memory_config()` | `MemoryOptions(...)` 参数覆盖 |
-| SandboxMiddleware | `get_sandbox_provider()` | `SandboxProvider` 实例直传 |
+| Middleware        | 读取内容                                     | Phase 2 解决方案                   |
+| ----------------- | -------------------------------------------- | ---------------------------------- |
+| TitleMiddleware   | `get_title_config()` + `create_chat_model()` | `TitleOptions(model=...)` 参数覆盖 |
+| MemoryMiddleware  | `get_memory_config()`                        | `MemoryOptions(...)` 参数覆盖      |
+| SandboxMiddleware | `get_sandbox_provider()`                     | `SandboxProvider` 实例直传         |
 
 Phase 1 中 `auto_title` 默认为 `False` 以避免无 config 时崩溃。其他有 config 依赖的 feature 默认也为 `False`。
 
@@ -419,16 +420,16 @@ Phase 3:
 
 ## 8. 设计决议
 
-| 问题 | 决议 | 理由 |
-|------|------|------|
-| 公开 API | `DeerFlowClient` 唯一入口 | 自顶向下，先改现有 API 再抽底层 |
-| create_deerflow_agent | 内部实现，不公开 | 用户不需要接触 CompiledStateGraph |
-| 配置覆盖 | `config` dict，和 config.yaml 结构一致 | 无新概念，deep merge 覆盖 |
-| middleware 替换 | `features=RuntimeFeatures(memory=MyMW())` | bool 开关 + 实例替换 |
-| middleware 扩展 | `extra_middleware` 独立参数 | 和内置 features 分开 |
-| middleware 定位 | `@Next/@Prev` 装饰器 | 类型安全，不暴露排序细节 |
-| 排序机制 | 顺序 append + @Next/@Prev | priority 数字无功能意义 |
-| 运行时开关 | 保留 `RunnableConfig` | plan_mode、thread_id 等按请求切换 |
+| 问题                  | 决议                                      | 理由                              |
+| --------------------- | ----------------------------------------- | --------------------------------- |
+| 公开 API              | `DeerFlowClient` 唯一入口                 | 自顶向下，先改现有 API 再抽底层   |
+| create_deerflow_agent | 内部实现，不公开                          | 用户不需要接触 CompiledStateGraph |
+| 配置覆盖              | `config` dict，和 config.yaml 结构一致    | 无新概念，deep merge 覆盖         |
+| middleware 替换       | `features=RuntimeFeatures(memory=MyMW())` | bool 开关 + 实例替换              |
+| middleware 扩展       | `extra_middleware` 独立参数               | 和内置 features 分开              |
+| middleware 定位       | `@Next/@Prev` 装饰器                      | 类型安全，不暴露排序细节          |
+| 排序机制              | 顺序 append + @Next/@Prev                 | priority 数字无功能意义           |
+| 运行时开关            | 保留 `RunnableConfig`                     | plan_mode、thread_id 等按请求切换 |
 
 ## 9. 附录：Middleware 链
 
@@ -473,6 +474,7 @@ graph TB
 ```
 
 硬依赖：
+
 - ThreadData → Uploads → Sandbox（before_agent 阶段）
 - Clarification 必须在列表最后（after_model 反序时最先执行）
 
@@ -480,24 +482,25 @@ graph TB
 
 主 agent 和 subagent 共享基础 middleware 链（`_build_runtime_middlewares`），subagent 在此基础上做精简：
 
-| Middleware | 主 Agent | Subagent | 说明 |
-|------------|:-------:|:--------:|------|
-| ThreadDataMiddleware | ✓ | ✓ | 共享：创建线程目录 |
-| UploadsMiddleware | ✓ | ✗ | 主 agent 独有：扫描上传文件 |
-| SandboxMiddleware | ✓ | ✓ | 共享：获取/释放沙箱 |
-| DanglingToolCallMiddleware | ✓ | ✗ | 主 agent 独有：补缺失 ToolMessage |
-| GuardrailMiddleware | ✓ | ✓ | 共享：工具调用授权（可选） |
-| ToolErrorHandlingMiddleware | ✓ | ✓ | 共享：工具异常处理 |
-| SummarizationMiddleware | ✓ | ✗ | |
-| TodoMiddleware | ✓ | ✗ | |
-| TitleMiddleware | ✓ | ✗ | |
-| MemoryMiddleware | ✓ | ✗ | |
-| ViewImageMiddleware | ✓ | ✗ | |
-| SubagentLimitMiddleware | ✓ | ✗ | |
-| LoopDetectionMiddleware | ✓ | ✗ | |
-| ClarificationMiddleware | ✓ | ✗ | |
+| Middleware                  | 主 Agent | Subagent | 说明                              |
+| --------------------------- | :------: | :------: | --------------------------------- |
+| ThreadDataMiddleware        |    ✓     |    ✓     | 共享：创建线程目录                |
+| UploadsMiddleware           |    ✓     |    ✗     | 主 agent 独有：扫描上传文件       |
+| SandboxMiddleware           |    ✓     |    ✓     | 共享：获取/释放沙箱               |
+| DanglingToolCallMiddleware  |    ✓     |    ✗     | 主 agent 独有：补缺失 ToolMessage |
+| GuardrailMiddleware         |    ✓     |    ✓     | 共享：工具调用授权（可选）        |
+| ToolErrorHandlingMiddleware |    ✓     |    ✓     | 共享：工具异常处理                |
+| SummarizationMiddleware     |    ✓     |    ✗     |                                   |
+| TodoMiddleware              |    ✓     |    ✗     |                                   |
+| TitleMiddleware             |    ✓     |    ✗     |                                   |
+| MemoryMiddleware            |    ✓     |    ✗     |                                   |
+| ViewImageMiddleware         |    ✓     |    ✗     |                                   |
+| SubagentLimitMiddleware     |    ✓     |    ✗     |                                   |
+| LoopDetectionMiddleware     |    ✓     |    ✗     |                                   |
+| ClarificationMiddleware     |    ✓     |    ✗     |                                   |
 
 **设计原则**：
+
 - `RuntimeFeatures`、`@Next/@Prev`、排序机制只作用于**主 agent**
 - Subagent 链短且固定（4 个），不需要动态组装
 - `extra_middleware` 当前只影响主 agent，不传递给 subagent

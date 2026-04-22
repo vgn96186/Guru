@@ -28,28 +28,28 @@ async function proxyRequest(request: NextRequest, pathname: string) {
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ path: string[] }> },
+  { params }: { params: Promise<{ path: string[] }> }
 ) {
   return proxyRequest(request, `/api/memory/${(await params).path.join("/")}`);
 }
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: Promise<{ path: string[] }> },
+  { params }: { params: Promise<{ path: string[] }> }
 ) {
   return proxyRequest(request, `/api/memory/${(await params).path.join("/")}`);
 }
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: Promise<{ path: string[] }> },
+  { params }: { params: Promise<{ path: string[] }> }
 ) {
   return proxyRequest(request, `/api/memory/${(await params).path.join("/")}`);
 }
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: Promise<{ path: string[] }> },
+  { params }: { params: Promise<{ path: string[] }> }
 ) {
   return proxyRequest(request, `/api/memory/${(await params).path.join("/")}`);
 }

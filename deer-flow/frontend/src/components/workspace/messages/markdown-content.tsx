@@ -50,7 +50,7 @@ export function MarkdownContent({
             {...rest}
             className={cn(
               "text-primary decoration-primary/30 hover:decoration-primary/60 underline underline-offset-2 transition-colors",
-              className,
+              className
             )}
             target={target ?? (external ? "_blank" : undefined)}
             rel={rel ?? (external ? "noopener noreferrer" : undefined)}

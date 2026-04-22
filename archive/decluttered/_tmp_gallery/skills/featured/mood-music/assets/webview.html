@@ -16,7 +16,7 @@ limitations under the License.
 ==============================================================================
 -->
 
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
@@ -43,7 +43,7 @@ limitations under the License.
       }
 
       body {
-        font-family: "Outfit", sans-serif;
+        font-family: 'Outfit', sans-serif;
         background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
         height: 100vh;
         display: flex;
@@ -96,7 +96,7 @@ limitations under the License.
       }
 
       .artwork-container::before {
-        content: "";
+        content: '';
         position: absolute;
         width: 140%;
         height: 140%;
@@ -184,9 +184,7 @@ limitations under the License.
         align-items: center;
         cursor: pointer;
         box-shadow: 0 10px 25px rgba(255, 255, 255, 0.2);
-        transition:
-          transform 0.2s,
-          box-shadow 0.2s;
+        transition: transform 0.2s, box-shadow 0.2s;
       }
 
       .btn-play:hover {
@@ -299,83 +297,83 @@ limitations under the License.
 
     <script>
       const params = new URLSearchParams(window.location.search);
-      const audioUrl = params.get("url");
-      const genre = params.get("genre") || "Ambient";
+      const audioUrl = params.get('url');
+      const genre = params.get('genre') || 'Ambient';
 
-      const player = document.getElementById("player");
-      const title = document.getElementById("track-title");
-      const statusText = document.getElementById("track-status");
-      const playBtn = document.getElementById("btn-play");
-      const playIconPath = document.getElementById("play-path");
-      const audio = document.getElementById("audio-element");
-      const progressBar = document.getElementById("progress-bar");
-      const progressFill = document.getElementById("progress-fill");
-      const currentTimeEl = document.getElementById("current-time");
-      const totalTimeEl = document.getElementById("total-time");
+      const player = document.getElementById('player');
+      const title = document.getElementById('track-title');
+      const statusText = document.getElementById('track-status');
+      const playBtn = document.getElementById('btn-play');
+      const playIconPath = document.getElementById('play-path');
+      const audio = document.getElementById('audio-element');
+      const progressBar = document.getElementById('progress-bar');
+      const progressFill = document.getElementById('progress-fill');
+      const currentTimeEl = document.getElementById('current-time');
+      const totalTimeEl = document.getElementById('total-time');
 
       title.textContent = `Vibe: ${genre}`;
-      statusText.textContent = audioUrl ? "Ready to play" : "Demo Track (No URL provided)";
+      statusText.textContent = audioUrl ? 'Ready to play' : 'Demo Track (No URL provided)';
 
       if (audioUrl) {
         audio.src = audioUrl;
       } else {
         // Fallback for demo if no URL is provided
-        audio.src = "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3";
+        audio.src = 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3';
         title.textContent = `Vibe: Demo (Fallback)`;
-        statusText.textContent = "Playing Demo Stream";
+        statusText.textContent = 'Playing Demo Stream';
       }
 
-      playBtn.addEventListener("click", () => {
+      playBtn.addEventListener('click', () => {
         if (audio.paused) {
           audio
             .play()
             .then(() => {
-              player.classList.add("playing");
+              player.classList.add('playing');
               // Change icon to pause
-              playIconPath.setAttribute("d", "M6 19h4V5H6v14zm8-14v14h4V5h-4z");
-              statusText.textContent = "Now Playing";
+              playIconPath.setAttribute('d', 'M6 19h4V5H6v14zm8-14v14h4V5h-4z');
+              statusText.textContent = 'Now Playing';
             })
             .catch((e) => {
-              console.error("Playback failed", e);
-              statusText.textContent = "Playback Error (CORS or Invalid URL)";
+              console.error('Playback failed', e);
+              statusText.textContent = 'Playback Error (CORS or Invalid URL)';
             });
         } else {
           audio.pause();
-          player.classList.remove("playing");
+          player.classList.remove('playing');
           // Change icon back to play
-          playIconPath.setAttribute("d", "M8 5v14l11-7z");
-          statusText.textContent = "Paused";
+          playIconPath.setAttribute('d', 'M8 5v14l11-7z');
+          statusText.textContent = 'Paused';
         }
       });
 
-      audio.addEventListener("timeupdate", () => {
+      audio.addEventListener('timeupdate', () => {
         const percent = (audio.currentTime / audio.duration) * 100;
         progressFill.style.width = `${percent}%`;
         currentTimeEl.textContent = formatTime(audio.currentTime);
       });
 
-      audio.addEventListener("loadedmetadata", () => {
+      audio.addEventListener('loadedmetadata', () => {
         totalTimeEl.textContent = formatTime(audio.duration);
       });
 
-      progressBar.addEventListener("click", (e) => {
+      progressBar.addEventListener('click', (e) => {
         const rect = progressBar.getBoundingClientRect();
         const offset = e.clientX - rect.left;
         const percent = offset / rect.width;
         audio.currentTime = percent * audio.duration;
       });
 
-      audio.addEventListener("ended", () => {
-        player.classList.remove("playing");
-        playIconPath.setAttribute("d", "M8 5v14l11-7z");
-        statusText.textContent = "Ended";
+      audio.addEventListener('ended', () => {
+        player.classList.remove('playing');
+        playIconPath.setAttribute('d', 'M8 5v14l11-7z');
+        statusText.textContent = 'Ended';
       });
 
       function formatTime(seconds) {
-        if (isNaN(seconds)) return "0:00";
+        if (isNaN(seconds)) return '0:00';
         const m = Math.floor(seconds / 60);
         const s = Math.floor(seconds % 60);
-        return `${m}:${s < 10 ? "0" : ""}${s}`;
+        return `${m}:${s < 10 ? '0' : ''}${s}`;
       }
     </script>
   </body>

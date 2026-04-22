@@ -11,7 +11,7 @@ test("identifies Finder-style .app bundle uploads as unsupported", () => {
     isLikelyMacOSAppBundle({
       name: "Vibe Island.app",
       type: "application/octet-stream",
-    }),
+    })
   ).toBe(true);
 });
 

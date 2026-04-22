@@ -74,7 +74,7 @@ export function CodeEditor({
     <div
       className={cn(
         "flex cursor-text flex-col overflow-hidden rounded-md",
-        className,
+        className
       )}
     >
       {isLoading ? (
@@ -82,7 +82,7 @@ export function CodeEditor({
           className={cn(
             "h-full overflow-auto font-mono [&_.cm-editor]:h-full [&_.cm-focused]:outline-none!",
             "resize-none p-4! [&_.cm-line]:px-2! [&_.cm-line]:py-0!",
-            "border-none",
+            "border-none"
           )}
           readOnly
           value={value}
@@ -93,7 +93,7 @@ export function CodeEditor({
           placeholder={placeholder}
           className={cn(
             "h-full overflow-auto font-mono [&_.cm-editor]:h-full [&_.cm-focused]:outline-none!",
-            "px-2 py-0! [&_.cm-line]:px-2! [&_.cm-line]:py-0!",
+            "px-2 py-0! [&_.cm-line]:px-2! [&_.cm-line]:py-0!"
           )}
           theme={resolvedTheme === "dark" ? customDarkTheme : customLightTheme}
           extensions={extensions}

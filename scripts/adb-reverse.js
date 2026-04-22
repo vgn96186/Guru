@@ -61,9 +61,11 @@ function ensureHealthyAdb() {
       return;
     }
 
-    log(attempt === 1
-      ? 'ADB not responding. Killing stale processes and restarting...'
-      : `ADB retry ${attempt}/${MAX_RETRIES}...`);
+    log(
+      attempt === 1
+        ? 'ADB not responding. Killing stale processes and restarting...'
+        : `ADB retry ${attempt}/${MAX_RETRIES}...`,
+    );
     restartAdb();
   }
 
@@ -110,7 +112,11 @@ function ensureDevice() {
     if (REQUESTED_DEVICE_SERIAL) {
       const match = devices.find((d) => d.serial === REQUESTED_DEVICE_SERIAL);
       if (!match) {
-        fail(`Device "${REQUESTED_DEVICE_SERIAL}" not found. Available: ${devices.map((d) => d.serial).join(', ')}`);
+        fail(
+          `Device "${REQUESTED_DEVICE_SERIAL}" not found. Available: ${devices
+            .map((d) => d.serial)
+            .join(', ')}`,
+        );
       }
       activeDeviceSerial = match.serial;
     } else {
@@ -142,4 +148,3 @@ function ensureReverse() {
 ensureHealthyAdb();
 ensureDevice();
 ensureReverse();
-

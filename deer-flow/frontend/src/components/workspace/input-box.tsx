@@ -87,7 +87,7 @@ type InputMode = "flash" | "thinking" | "pro" | "ultra";
 
 function getResolvedMode(
   mode: InputMode | undefined,
-  supportsThinking: boolean,
+  supportsThinking: boolean
 ): InputMode {
   if (!supportsThinking && mode !== "flash") {
     return "flash";
@@ -135,7 +135,7 @@ export function InputBox({
     > & {
       mode: "flash" | "thinking" | "pro" | "ultra" | undefined;
       reasoning_effort?: "minimal" | "low" | "medium" | "high";
-    },
+    }
   ) => void;
   onFollowupsVisibilityChange?: (visible: boolean) => void;
   onSubmit?: (message: PromptInputMessage) => void;
@@ -157,7 +157,7 @@ export function InputBox({
 
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [pendingSuggestion, setPendingSuggestion] = useState<string | null>(
-    null,
+    null
   );
 
   useEffect(() => {
@@ -192,12 +192,12 @@ export function InputBox({
 
   const supportThinking = useMemo(
     () => selectedModel?.supports_thinking ?? false,
-    [selectedModel],
+    [selectedModel]
   );
 
   const supportReasoningEffort = useMemo(
     () => selectedModel?.supports_reasoning_effort ?? false,
-    [selectedModel],
+    [selectedModel]
   );
 
   const handleModelSelect = useCallback(
@@ -214,7 +214,7 @@ export function InputBox({
       });
       setModelDialogOpen(false);
     },
-    [onContextChange, context, models],
+    [onContextChange, context, models]
   );
 
   const handleModeSelect = useCallback(
@@ -226,13 +226,13 @@ export function InputBox({
           mode === "ultra"
             ? "high"
             : mode === "pro"
-              ? "medium"
-              : mode === "thinking"
-                ? "low"
-                : "minimal",
+            ? "medium"
+            : mode === "thinking"
+            ? "low"
+            : "minimal",
       });
     },
-    [onContextChange, context, supportThinking],
+    [onContextChange, context, supportThinking]
   );
 
   const handleReasoningEffortSelect = useCallback(
@@ -242,7 +242,7 @@ export function InputBox({
         reasoning_effort: effort,
       });
     },
-    [onContextChange, context],
+    [onContextChange, context]
   );
 
   const handleSubmit = useCallback(
@@ -266,7 +266,7 @@ export function InputBox({
           model_name: resolvedModelName,
           mode: getResolvedMode(
             context.mode,
-            selectedModel?.supports_thinking ?? false,
+            selectedModel?.supports_thinking ?? false
           ),
         });
         setTimeout(() => onSubmit?.(message), 0);
@@ -283,7 +283,7 @@ export function InputBox({
       resolvedModelName,
       selectedModel?.supports_thinking,
       status,
-    ],
+    ]
   );
 
   const requestFormSubmit = useCallback(() => {
@@ -306,7 +306,7 @@ export function InputBox({
       setFollowupsHidden(true);
       setTimeout(() => requestFormSubmit(), 0);
     },
-    [requestFormSubmit, status, textInput],
+    [requestFormSubmit, status, textInput]
   );
 
   const confirmReplaceAndSend = useCallback(() => {
@@ -464,7 +464,7 @@ export function InputBox({
       <PromptInput
         className={cn(
           "bg-background/85 rounded-2xl backdrop-blur-sm transition-all duration-300 ease-out *:data-[slot='input-group']:rounded-2xl",
-          className,
+          className
         )}
         disabled={disabled}
         globalDrop
@@ -530,7 +530,7 @@ export function InputBox({
                   <div
                     className={cn(
                       "text-xs font-normal",
-                      context.mode === "ultra" ? "golden-text" : "",
+                      context.mode === "ultra" ? "golden-text" : ""
                     )}
                   >
                     {(context.mode === "flash" && t.inputBox.flashMode) ||
@@ -551,7 +551,7 @@ export function InputBox({
                       className={cn(
                         context.mode === "flash"
                           ? "text-accent-foreground"
-                          : "text-muted-foreground/65",
+                          : "text-muted-foreground/65"
                       )}
                       onSelect={() => handleModeSelect("flash")}
                     >
@@ -561,7 +561,7 @@ export function InputBox({
                             className={cn(
                               "mr-2 size-4",
                               context.mode === "flash" &&
-                                "text-accent-foreground",
+                                "text-accent-foreground"
                             )}
                           />
                           {t.inputBox.flashMode}
@@ -581,7 +581,7 @@ export function InputBox({
                         className={cn(
                           context.mode === "thinking"
                             ? "text-accent-foreground"
-                            : "text-muted-foreground/65",
+                            : "text-muted-foreground/65"
                         )}
                         onSelect={() => handleModeSelect("thinking")}
                       >
@@ -591,7 +591,7 @@ export function InputBox({
                               className={cn(
                                 "mr-2 size-4",
                                 context.mode === "thinking" &&
-                                  "text-accent-foreground",
+                                  "text-accent-foreground"
                               )}
                             />
                             {t.inputBox.reasoningMode}
@@ -611,7 +611,7 @@ export function InputBox({
                       className={cn(
                         context.mode === "pro"
                           ? "text-accent-foreground"
-                          : "text-muted-foreground/65",
+                          : "text-muted-foreground/65"
                       )}
                       onSelect={() => handleModeSelect("pro")}
                     >
@@ -620,8 +620,7 @@ export function InputBox({
                           <GraduationCapIcon
                             className={cn(
                               "mr-2 size-4",
-                              context.mode === "pro" &&
-                                "text-accent-foreground",
+                              context.mode === "pro" && "text-accent-foreground"
                             )}
                           />
                           {t.inputBox.proMode}
@@ -640,7 +639,7 @@ export function InputBox({
                       className={cn(
                         context.mode === "ultra"
                           ? "text-accent-foreground"
-                          : "text-muted-foreground/65",
+                          : "text-muted-foreground/65"
                       )}
                       onSelect={() => handleModeSelect("ultra")}
                     >
@@ -649,12 +648,12 @@ export function InputBox({
                           <RocketIcon
                             className={cn(
                               "mr-2 size-4",
-                              context.mode === "ultra" && "text-[#dabb5e]",
+                              context.mode === "ultra" && "text-[#dabb5e]"
                             )}
                           />
                           <div
                             className={cn(
-                              context.mode === "ultra" && "golden-text",
+                              context.mode === "ultra" && "golden-text"
                             )}
                           >
                             {t.inputBox.ultraMode}
@@ -699,7 +698,7 @@ export function InputBox({
                         className={cn(
                           context.reasoning_effort === "minimal"
                             ? "text-accent-foreground"
-                            : "text-muted-foreground/65",
+                            : "text-muted-foreground/65"
                         )}
                         onSelect={() => handleReasoningEffortSelect("minimal")}
                       >
@@ -721,7 +720,7 @@ export function InputBox({
                         className={cn(
                           context.reasoning_effort === "low"
                             ? "text-accent-foreground"
-                            : "text-muted-foreground/65",
+                            : "text-muted-foreground/65"
                         )}
                         onSelect={() => handleReasoningEffortSelect("low")}
                       >
@@ -744,7 +743,7 @@ export function InputBox({
                           context.reasoning_effort === "medium" ||
                             !context.reasoning_effort
                             ? "text-accent-foreground"
-                            : "text-muted-foreground/65",
+                            : "text-muted-foreground/65"
                         )}
                         onSelect={() => handleReasoningEffortSelect("medium")}
                       >
@@ -767,7 +766,7 @@ export function InputBox({
                         className={cn(
                           context.reasoning_effort === "high"
                             ? "text-accent-foreground"
-                            : "text-muted-foreground/65",
+                            : "text-muted-foreground/65"
                         )}
                         onSelect={() => handleReasoningEffortSelect("high")}
                       >
@@ -883,7 +882,7 @@ function SuggestionList() {
       textInput.setInput(prompt);
       setTimeout(() => {
         const textarea = document.querySelector<HTMLTextAreaElement>(
-          "textarea[name='message']",
+          "textarea[name='message']"
         );
         if (textarea) {
           const selStart = prompt.indexOf("[");
@@ -895,7 +894,7 @@ function SuggestionList() {
         }
       }, 500);
     },
-    [textInput],
+    [textInput]
   );
   return (
     <Suggestions className="min-h-16 w-fit items-start">
@@ -934,7 +933,7 @@ function SuggestionList() {
                     {suggestion.suggestion}
                   </DropdownMenuItem>
                 )
-              ),
+              )
             )}
           </DropdownMenuGroup>
         </DropdownMenuContent>

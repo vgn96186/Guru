@@ -12,7 +12,7 @@ type ThreadRouteTarget =
 
 export function pathOfThread(
   thread: ThreadRouteTarget,
-  context?: Pick<AgentThreadContext, "agent_name"> | null,
+  context?: Pick<AgentThreadContext, "agent_name"> | null
 ) {
   const threadId = typeof thread === "string" ? thread : thread.thread_id;
   let agentName: string | undefined;

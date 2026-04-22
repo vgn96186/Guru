@@ -28,6 +28,7 @@ Round 4: "{topic} issues", "{topic} roadmap", "site:github.com {topic}"
 ```
 
 **Source Prioritization**:
+
 1. Official docs/repos (highest weight)
 2. Technical blogs (Medium, Dev.to)
 3. News articles (verified outlets)
@@ -38,6 +39,7 @@ Round 4: "{topic} issues", "{topic} roadmap", "site:github.com {topic}"
 
 **Round 1 - GitHub API**
 Directly execute `scripts/github_api.py` without `read_file()`:
+
 ```bash
 python /path/to/skill/scripts/github_api.py <owner> <repo> summary
 python /path/to/skill/scripts/github_api.py <owner> <repo> readme
@@ -45,6 +47,7 @@ python /path/to/skill/scripts/github_api.py <owner> <repo> tree
 ```
 
 **Available commands (the last argument of `github_api.py`):**
+
 - summary
 - info
 - readme
@@ -57,17 +60,20 @@ python /path/to/skill/scripts/github_api.py <owner> <repo> tree
 - releases
 
 **Round 2 - Discovery (3-5 web_search)**
+
 - Get overview and identify key terms
 - Find official website/repo
 - Identify main players/competitors
 
 **Round 3 - Deep Investigation (5-10 web_search + web_fetch)**
+
 - Technical architecture details
 - Timeline of key events
 - Community sentiment
 - Use web_fetch on valuable URLs for full content
 
 **Round 4 - Deep Dive**
+
 - Analyze commit history for timeline
 - Review issues/PRs for feature evolution
 - Check contributor activity
@@ -91,6 +97,7 @@ Follow template in `assets/report_template.md`:
 Include diagrams where helpful:
 
 **Timeline (Gantt)**:
+
 ```mermaid
 gantt
     title Project Timeline
@@ -102,6 +109,7 @@ gantt
 ```
 
 **Architecture (Flowchart)**:
+
 ```mermaid
 flowchart TD
     A[User] --> B[Coordinator]
@@ -111,6 +119,7 @@ flowchart TD
 ```
 
 **Comparison (Pie/Bar)**:
+
 ```mermaid
 pie title Market Share
     "Project A" : 45
@@ -122,11 +131,11 @@ pie title Market Share
 
 Assign confidence based on source quality:
 
-| Confidence | Criteria |
-|------------|----------|
-| High (90%+) | Official docs, GitHub data, multiple corroborating sources |
-| Medium (70-89%) | Single reliable source, recent articles |
-| Low (50-69%) | Social media, unverified claims, outdated info |
+| Confidence      | Criteria                                                   |
+| --------------- | ---------------------------------------------------------- |
+| High (90%+)     | Official docs, GitHub data, multiple corroborating sources |
+| Medium (70-89%) | Single reliable source, recent articles                    |
+| Low (50-69%)    | Social media, unverified claims, outdated info             |
 
 ## Output
 
@@ -154,12 +163,14 @@ Save report as: `research_{topic}_{YYYYMMDD}.md`
 ### Citation Examples
 
 **Good - With inline citations:**
+
 ```markdown
 The project gained 10,000 stars within 3 months of launch [citation:GitHub Stats](https://github.com/owner/repo).
 The architecture uses LangGraph for workflow orchestration [citation:LangGraph Docs](https://langchain.com/langgraph).
 ```
 
 **Bad - Without citations:**
+
 ```markdown
 The project gained 10,000 stars within 3 months of launch.
 The architecture uses LangGraph for workflow orchestration.

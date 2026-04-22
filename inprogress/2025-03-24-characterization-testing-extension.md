@@ -4,13 +4,15 @@
 
 **Goal:** Extend characterization tests to cover all hooks, stores, navigation components, and UI components in the specified directories.
 
-**Architecture:** 
+**Architecture:**
+
 - Identify all public exports (functions, hooks, components) in each file.
 - Create or expand `.unit.test.ts` or `.test.tsx` files.
 - Follow the 4-step workflow: Understand -> Characterize -> Edge Cases -> Summarize.
 - Use `react-hooks-testing-library` for hooks and `react-test-renderer` or `@testing-library/react-native` for components.
 
-**Tech Stack:** 
+**Tech Stack:**
+
 - Jest
 - ts-jest
 - react-hooks-testing-library
@@ -21,6 +23,7 @@
 ### Task 1: src/hooks/ Directory
 
 **Files:**
+
 - `src/hooks/useLectureTranscription.ts`
 - `src/hooks/useGuruPresence.ts`
 - `src/hooks/useFaceTracking.ts`
@@ -56,6 +59,7 @@
 ### Task 2: src/store/ Directory
 
 **Files:**
+
 - `src/store/useSessionStore.ts`
 - `src/store/splitSessionStorage.ts`
 - `src/store/useAppStore.ts`
@@ -70,6 +74,7 @@
 ### Task 3: src/navigation/ Directory
 
 **Files:**
+
 - `src/navigation/navigationRef.ts`
 - `src/navigation/linking.ts`
 - `src/navigation/types.ts`
@@ -88,6 +93,7 @@
 ### Task 4: src/components/ Directory
 
 **Files:**
+
 - All files in `src/components/` and its subdirectories.
 
 - [ ] **Step 1: Batch cover all components in `src/components/settings/`**

@@ -22,7 +22,7 @@ export function getLangGraphBaseURL(isMock?: boolean) {
   if (env.NEXT_PUBLIC_LANGGRAPH_BASE_URL) {
     return new URL(
       env.NEXT_PUBLIC_LANGGRAPH_BASE_URL,
-      getBaseOrigin(),
+      getBaseOrigin()
     ).toString();
   } else if (isMock) {
     if (typeof window !== "undefined") {

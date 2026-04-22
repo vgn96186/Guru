@@ -33,7 +33,7 @@ export function Welcome({
     <div
       className={cn(
         "mx-auto flex w-full flex-col items-center justify-center gap-2 px-8 py-4 text-center",
-        className,
+        className
       )}
     >
       <div className="text-2xl font-bold">

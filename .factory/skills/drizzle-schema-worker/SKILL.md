@@ -10,6 +10,7 @@ NOTE: Startup and cleanup are handled by `worker-base`. This skill defines the W
 ## When to Use This Skill
 
 Use this worker for migrating SQL table definitions to Drizzle ORM schema in `drizzleSchema.ts`. Handles:
+
 - Adding new table definitions to `src/db/drizzleSchema.ts`
 - Updating Drizzle schema parity tests
 - Generating baseline migration SQL
@@ -22,17 +23,20 @@ None - this is a TypeScript/Jest testing and code modification task.
 ## Work Procedure
 
 ### Phase 1: Investigation & Planning
+
 1. **Analyze the target table**: Read the existing CREATE TABLE statement from `src/db/schema.ts`
 2. **Check dependencies**: Identify foreign key relationships and table dependencies
 3. **Review existing queries**: Look at how the table is used in `src/db/queries/` files
 4. **Plan the migration**: Note any complex constraints, indexes, or unique requirements
 
 ### Phase 2: Test-First Development
+
 5. **Run existing parity test**: `npm run test:unit -- --testPathPattern=drizzleSchemaParity` to see current state
 6. **Write failing parity test**: Update `DRIZZLE_TABLE_MAP` in parity test to include new table
 7. **Verify test fails**: Run parity test again - should fail because table not in Drizzle schema
 
 ### Phase 3: Implementation
+
 8. **Add Drizzle schema definition**: Add table to `src/db/drizzleSchema.ts` using correct Drizzle types
 9. **Handle special cases**:
    - Boolean columns: Use `integer('column', { mode: 'boolean' })`
@@ -42,6 +46,7 @@ None - this is a TypeScript/Jest testing and code modification task.
 10. **Add type exports**: Include `$inferSelect` and `$inferInsert` types if needed
 
 ### Phase 4: Verification
+
 11. **Run parity test**: `npm run test:unit -- --testPathPattern=drizzleSchemaParity` - should pass for new table
 12. **Run type checking**: `npm run typecheck` - fix any TypeScript errors
 13. **Run linting**: `npm run lint` - fix any lint errors
@@ -49,6 +54,7 @@ None - this is a TypeScript/Jest testing and code modification task.
 15. **Generate baseline migration**: `npx drizzle-kit generate` to create SQL in `src/db/drizzle-migrations/`
 
 ### Phase 5: Manual Verification
+
 16. **Inspect generated SQL**: Check `src/db/drizzle-migrations/` for the new table SQL
 17. **Verify column mapping**: Ensure every SQL column has corresponding Drizzle column
 18. **Test with actual queries**: Write a small test script or use existing queries to verify

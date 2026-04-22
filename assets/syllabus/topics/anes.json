@@ -1,300 +1,1854 @@
 [
-  [18,"General Anesthesia",9,50],
-  [18,"Pre-anesthetic Evaluation",8,35,"General Anesthesia"],
-  [18,"ASA Physical Status Classification — Grades I–VI & Clinical Examples",8,12,"Pre-anesthetic Evaluation"],
-  [18,"ASA Physical Status Classification — Grades I–VI",8,6,"ASA Physical Status Classification — Grades I–VI & Clinical Examples"],
-  [18,"ASA Physical Status Classification — Grades I–VI - Basic Principles & Physics",8,5,"ASA Physical Status Classification — Grades I–VI"],
-  [18,"ASA Physical Status Classification — Grades I–VI - Indications & Patient Selection",8,5,"ASA Physical Status Classification — Grades I–VI"],
-  [18,"ASA Physical Status Classification — Grades I–VI - Technique & Procedure",8,5,"ASA Physical Status Classification — Grades I–VI"],
-  [18,"ASA Physical Status Classification — Grades I–VI - Interpretation of Results",8,5,"ASA Physical Status Classification — Grades I–VI"],
-  [18,"ASA Physical Status Classification — Grades I–VI - Complications & Management",8,5,"ASA Physical Status Classification — Grades I–VI"],
-  [18,"ASA Physical Status Classification — Clinical Examples",8,6,"ASA Physical Status Classification — Grades I–VI & Clinical Examples"],
-  [18,"ASA Physical Status Classification — Clinical Examples - Basic Principles & Physics",8,5,"ASA Physical Status Classification — Clinical Examples"],
-  [18,"ASA Physical Status Classification — Clinical Examples - Indications & Patient Selection",8,5,"ASA Physical Status Classification — Clinical Examples"],
-  [18,"ASA Physical Status Classification — Clinical Examples - Technique & Procedure",8,5,"ASA Physical Status Classification — Clinical Examples"],
-  [18,"ASA Physical Status Classification — Clinical Examples - Interpretation of Results",8,5,"ASA Physical Status Classification — Clinical Examples"],
-  [18,"ASA Physical Status Classification — Clinical Examples - Complications & Management",8,5,"ASA Physical Status Classification — Clinical Examples"],
-  [18,"PAE — Airway Assessment (Mallampati), Investigations & Fasting Guidelines",8,18,"Pre-anesthetic Evaluation"],
-  [18,"PAE — Airway Assessment (Mallampati), Investigations",8,9,"PAE — Airway Assessment (Mallampati), Investigations & Fasting Guidelines"],
-  [18,"PAE — Airway Assessment (Mallampati), Investigations - Basic Principles & Physics",8,5,"PAE — Airway Assessment (Mallampati), Investigations"],
-  [18,"PAE — Airway Assessment (Mallampati), Investigations - Indications & Patient Selection",8,5,"PAE — Airway Assessment (Mallampati), Investigations"],
-  [18,"PAE — Airway Assessment (Mallampati), Investigations - Technique & Procedure",8,5,"PAE — Airway Assessment (Mallampati), Investigations"],
-  [18,"PAE — Airway Assessment (Mallampati), Investigations - Interpretation of Results",8,5,"PAE — Airway Assessment (Mallampati), Investigations"],
-  [18,"PAE — Airway Assessment (Mallampati), Investigations - Complications & Management",8,5,"PAE — Airway Assessment (Mallampati), Investigations"],
-  [18,"PAE — Fasting Guidelines",8,9,"PAE — Airway Assessment (Mallampati), Investigations & Fasting Guidelines"],
-  [18,"PAE — Fasting Guidelines - Basic Principles & Physics",8,5,"PAE — Fasting Guidelines"],
-  [18,"PAE — Fasting Guidelines - Indications & Patient Selection",8,5,"PAE — Fasting Guidelines"],
-  [18,"PAE — Fasting Guidelines - Technique & Procedure",8,5,"PAE — Fasting Guidelines"],
-  [18,"PAE — Fasting Guidelines - Interpretation of Results",8,5,"PAE — Fasting Guidelines"],
-  [18,"PAE — Fasting Guidelines - Complications & Management",8,5,"PAE — Fasting Guidelines"],
-  [18,"Premedication — Aims, Drugs (BZD, Anticholinergics, Antacids) & Routes",8,12,"Pre-anesthetic Evaluation"],
-  [18,"Premedication — Aims, Drugs (BZD, Anticholinergics, Antacids)",8,6,"Premedication — Aims, Drugs (BZD, Anticholinergics, Antacids) & Routes"],
-  [18,"Premedication — Aims, Drugs (BZD, Anticholinergics, Antacids) - Basic Principles & Physics",8,5,"Premedication — Aims, Drugs (BZD, Anticholinergics, Antacids)"],
-  [18,"Premedication — Aims, Drugs (BZD, Anticholinergics, Antacids) - Indications & Patient Selection",8,5,"Premedication — Aims, Drugs (BZD, Anticholinergics, Antacids)"],
-  [18,"Premedication — Aims, Drugs (BZD, Anticholinergics, Antacids) - Technique & Procedure",8,5,"Premedication — Aims, Drugs (BZD, Anticholinergics, Antacids)"],
-  [18,"Premedication — Aims, Drugs (BZD, Anticholinergics, Antacids) - Interpretation of Results",8,5,"Premedication — Aims, Drugs (BZD, Anticholinergics, Antacids)"],
-  [18,"Premedication — Aims, Drugs (BZD, Anticholinergics, Antacids) - Complications & Management",8,5,"Premedication — Aims, Drugs (BZD, Anticholinergics, Antacids)"],
-  [18,"Premedication — Routes",8,6,"Premedication — Aims, Drugs (BZD, Anticholinergics, Antacids) & Routes"],
-  [18,"Premedication — Routes - Basic Principles & Physics",8,5,"Premedication — Routes"],
-  [18,"Premedication — Routes - Indications & Patient Selection",8,5,"Premedication — Routes"],
-  [18,"Premedication — Routes - Technique & Procedure",8,5,"Premedication — Routes"],
-  [18,"Premedication — Routes - Interpretation of Results",8,5,"Premedication — Routes"],
-  [18,"Premedication — Routes - Complications & Management",8,5,"Premedication — Routes"],
-  [18,"Intravenous Anesthetics",9,40,"General Anesthesia"],
-  [18,"Thiopentone & Propofol — Mechanism, Uses, Advantages & Side Effects",9,18,"Intravenous Anesthetics"],
-  [18,"Thiopentone & Propofol — Mechanism, Uses, Advantages",9,9,"Thiopentone & Propofol — Mechanism, Uses, Advantages & Side Effects"],
-  [18,"Thiopentone & Propofol — Mechanism, Uses, Advantages - Basic Principles & Physics",9,5,"Thiopentone & Propofol — Mechanism, Uses, Advantages"],
-  [18,"Thiopentone & Propofol — Mechanism, Uses, Advantages - Indications & Patient Selection",9,5,"Thiopentone & Propofol — Mechanism, Uses, Advantages"],
-  [18,"Thiopentone & Propofol — Mechanism, Uses, Advantages - Technique & Procedure",9,5,"Thiopentone & Propofol — Mechanism, Uses, Advantages"],
-  [18,"Thiopentone & Propofol — Mechanism, Uses, Advantages - Interpretation of Results",9,5,"Thiopentone & Propofol — Mechanism, Uses, Advantages"],
-  [18,"Thiopentone & Propofol — Mechanism, Uses, Advantages - Complications & Management",9,5,"Thiopentone & Propofol — Mechanism, Uses, Advantages"],
-  [18,"Thiopentone & Propofol — Side Effects",9,9,"Thiopentone & Propofol — Mechanism, Uses, Advantages & Side Effects"],
-  [18,"Thiopentone & Propofol — Side Effects - Basic Principles & Physics",9,5,"Thiopentone & Propofol — Side Effects"],
-  [18,"Thiopentone & Propofol — Side Effects - Indications & Patient Selection",9,5,"Thiopentone & Propofol — Side Effects"],
-  [18,"Thiopentone & Propofol — Side Effects - Technique & Procedure",9,5,"Thiopentone & Propofol — Side Effects"],
-  [18,"Thiopentone & Propofol — Side Effects - Interpretation of Results",9,5,"Thiopentone & Propofol — Side Effects"],
-  [18,"Thiopentone & Propofol — Side Effects - Complications & Management",9,5,"Thiopentone & Propofol — Side Effects"],
-  [18,"Ketamine — Dissociative Anesthesia, Analgesia, TIVA & Contraindications",9,15,"Intravenous Anesthetics"],
-  [18,"Ketamine — Dissociative Anesthesia, Analgesia, TIVA",9,7,"Ketamine — Dissociative Anesthesia, Analgesia, TIVA & Contraindications"],
-  [18,"Ketamine — Dissociative Anesthesia, Analgesia, TIVA - Basic Principles & Physics",9,5,"Ketamine — Dissociative Anesthesia, Analgesia, TIVA"],
-  [18,"Ketamine — Dissociative Anesthesia, Analgesia, TIVA - Indications & Patient Selection",9,5,"Ketamine — Dissociative Anesthesia, Analgesia, TIVA"],
-  [18,"Ketamine — Dissociative Anesthesia, Analgesia, TIVA - Technique & Procedure",9,5,"Ketamine — Dissociative Anesthesia, Analgesia, TIVA"],
-  [18,"Ketamine — Dissociative Anesthesia, Analgesia, TIVA - Interpretation of Results",9,5,"Ketamine — Dissociative Anesthesia, Analgesia, TIVA"],
-  [18,"Ketamine — Dissociative Anesthesia, Analgesia, TIVA - Complications & Management",9,5,"Ketamine — Dissociative Anesthesia, Analgesia, TIVA"],
-  [18,"Ketamine — Contraindications",9,8,"Ketamine — Dissociative Anesthesia, Analgesia, TIVA & Contraindications"],
-  [18,"Ketamine — Contraindications - Basic Principles & Physics",9,5,"Ketamine — Contraindications"],
-  [18,"Ketamine — Contraindications - Indications & Patient Selection",9,5,"Ketamine — Contraindications"],
-  [18,"Ketamine — Contraindications - Technique & Procedure",9,5,"Ketamine — Contraindications"],
-  [18,"Ketamine — Contraindications - Interpretation of Results",9,5,"Ketamine — Contraindications"],
-  [18,"Ketamine — Contraindications - Complications & Management",9,5,"Ketamine — Contraindications"],
-  [18,"Inhalational Anesthetics",9,40,"General Anesthesia"],
-  [18,"Minimum Alveolar Concentration (MAC) — Concept, Factors Affecting & Comparison",9,18,"Inhalational Anesthetics"],
-  [18,"Minimum Alveolar Concentration (MAC) — Concept, Factors Affecting",9,9,"Minimum Alveolar Concentration (MAC) — Concept, Factors Affecting & Comparison"],
-  [18,"Minimum Alveolar Concentration (MAC) — Concept, Factors Affecting - Basic Principles & Physics",9,5,"Minimum Alveolar Concentration (MAC) — Concept, Factors Affecting"],
-  [18,"Minimum Alveolar Concentration (MAC) — Concept, Factors Affecting - Indications & Patient Selection",9,5,"Minimum Alveolar Concentration (MAC) — Concept, Factors Affecting"],
-  [18,"Minimum Alveolar Concentration (MAC) — Concept, Factors Affecting - Technique & Procedure",9,5,"Minimum Alveolar Concentration (MAC) — Concept, Factors Affecting"],
-  [18,"Minimum Alveolar Concentration (MAC) — Concept, Factors Affecting - Interpretation of Results",9,5,"Minimum Alveolar Concentration (MAC) — Concept, Factors Affecting"],
-  [18,"Minimum Alveolar Concentration (MAC) — Concept, Factors Affecting - Complications & Management",9,5,"Minimum Alveolar Concentration (MAC) — Concept, Factors Affecting"],
-  [18,"Minimum Alveolar Concentration (MAC) — Comparison",9,9,"Minimum Alveolar Concentration (MAC) — Concept, Factors Affecting & Comparison"],
-  [18,"Minimum Alveolar Concentration (MAC) — Comparison - Basic Principles & Physics",9,5,"Minimum Alveolar Concentration (MAC) — Comparison"],
-  [18,"Minimum Alveolar Concentration (MAC) — Comparison - Indications & Patient Selection",9,5,"Minimum Alveolar Concentration (MAC) — Comparison"],
-  [18,"Minimum Alveolar Concentration (MAC) — Comparison - Technique & Procedure",9,5,"Minimum Alveolar Concentration (MAC) — Comparison"],
-  [18,"Minimum Alveolar Concentration (MAC) — Comparison - Interpretation of Results",9,5,"Minimum Alveolar Concentration (MAC) — Comparison"],
-  [18,"Minimum Alveolar Concentration (MAC) — Comparison - Complications & Management",9,5,"Minimum Alveolar Concentration (MAC) — Comparison"],
-  [18,"Halothane, Isoflurane, Sevoflurane & Desflurane — Properties & Hepatotoxicity",9,18,"Inhalational Anesthetics"],
-  [18,"Halothane, Isoflurane, Sevoflurane & Desflurane — Properties",9,9,"Halothane, Isoflurane, Sevoflurane & Desflurane — Properties & Hepatotoxicity"],
-  [18,"Halothane, Isoflurane, Sevoflurane & Desflurane — Properties - Basic Principles & Physics",9,5,"Halothane, Isoflurane, Sevoflurane & Desflurane — Properties"],
-  [18,"Halothane, Isoflurane, Sevoflurane & Desflurane — Properties - Indications & Patient Selection",9,5,"Halothane, Isoflurane, Sevoflurane & Desflurane — Properties"],
-  [18,"Halothane, Isoflurane, Sevoflurane & Desflurane — Properties - Technique & Procedure",9,5,"Halothane, Isoflurane, Sevoflurane & Desflurane — Properties"],
-  [18,"Halothane, Isoflurane, Sevoflurane & Desflurane — Properties - Interpretation of Results",9,5,"Halothane, Isoflurane, Sevoflurane & Desflurane — Properties"],
-  [18,"Halothane, Isoflurane, Sevoflurane & Desflurane — Properties - Complications & Management",9,5,"Halothane, Isoflurane, Sevoflurane & Desflurane — Properties"],
-  [18,"Halothane, Isoflurane, Sevoflurane & Desflurane — Hepatotoxicity",9,9,"Halothane, Isoflurane, Sevoflurane & Desflurane — Properties & Hepatotoxicity"],
-  [18,"Halothane, Isoflurane, Sevoflurane & Desflurane — Hepatotoxicity - Basic Principles & Physics",9,5,"Halothane, Isoflurane, Sevoflurane & Desflurane — Hepatotoxicity"],
-  [18,"Halothane, Isoflurane, Sevoflurane & Desflurane — Hepatotoxicity - Indications & Patient Selection",9,5,"Halothane, Isoflurane, Sevoflurane & Desflurane — Hepatotoxicity"],
-  [18,"Halothane, Isoflurane, Sevoflurane & Desflurane — Hepatotoxicity - Technique & Procedure",9,5,"Halothane, Isoflurane, Sevoflurane & Desflurane — Hepatotoxicity"],
-  [18,"Halothane, Isoflurane, Sevoflurane & Desflurane — Hepatotoxicity - Interpretation of Results",9,5,"Halothane, Isoflurane, Sevoflurane & Desflurane — Hepatotoxicity"],
-  [18,"Halothane, Isoflurane, Sevoflurane & Desflurane — Hepatotoxicity - Complications & Management",9,5,"Halothane, Isoflurane, Sevoflurane & Desflurane — Hepatotoxicity"],
-  [18,"Muscle Relaxants",9,35,"General Anesthesia"],
-  [18,"Depolarizing NMBDs — Succinylcholine: Mechanism, Phase II Block & Contraindications",9,18,"Muscle Relaxants"],
-  [18,"Depolarizing NMBDs — Succinylcholine: Mechanism, Phase II Block",9,9,"Depolarizing NMBDs — Succinylcholine: Mechanism, Phase II Block & Contraindications"],
-  [18,"Depolarizing NMBDs — Succinylcholine: Mechanism, Phase II Block - Basic Principles & Physics",9,5,"Depolarizing NMBDs — Succinylcholine: Mechanism, Phase II Block"],
-  [18,"Depolarizing NMBDs — Succinylcholine: Mechanism, Phase II Block - Indications & Patient Selection",9,5,"Depolarizing NMBDs — Succinylcholine: Mechanism, Phase II Block"],
-  [18,"Depolarizing NMBDs — Succinylcholine: Mechanism, Phase II Block - Technique & Procedure",9,5,"Depolarizing NMBDs — Succinylcholine: Mechanism, Phase II Block"],
-  [18,"Depolarizing NMBDs — Succinylcholine: Mechanism, Phase II Block - Interpretation of Results",9,5,"Depolarizing NMBDs — Succinylcholine: Mechanism, Phase II Block"],
-  [18,"Depolarizing NMBDs — Succinylcholine: Mechanism, Phase II Block - Complications & Management",9,5,"Depolarizing NMBDs — Succinylcholine: Mechanism, Phase II Block"],
-  [18,"Depolarizing NMBDs — Contraindications",9,9,"Depolarizing NMBDs — Succinylcholine: Mechanism, Phase II Block & Contraindications"],
-  [18,"Depolarizing NMBDs — Contraindications - Basic Principles & Physics",9,5,"Depolarizing NMBDs — Contraindications"],
-  [18,"Depolarizing NMBDs — Contraindications - Indications & Patient Selection",9,5,"Depolarizing NMBDs — Contraindications"],
-  [18,"Depolarizing NMBDs — Contraindications - Technique & Procedure",9,5,"Depolarizing NMBDs — Contraindications"],
-  [18,"Depolarizing NMBDs — Contraindications - Interpretation of Results",9,5,"Depolarizing NMBDs — Contraindications"],
-  [18,"Depolarizing NMBDs — Contraindications - Complications & Management",9,5,"Depolarizing NMBDs — Contraindications"],
-  [18,"Non-depolarizing NMBDs — Rocuronium, Vecuronium & Reversal (Neostigmine/Sugammadex)",9,15,"Muscle Relaxants"],
-  [18,"Non-depolarizing NMBDs — Rocuronium, Vecuronium",9,7,"Non-depolarizing NMBDs — Rocuronium, Vecuronium & Reversal (Neostigmine/Sugammadex)"],
-  [18,"Non-depolarizing NMBDs — Rocuronium, Vecuronium - Basic Principles & Physics",9,5,"Non-depolarizing NMBDs — Rocuronium, Vecuronium"],
-  [18,"Non-depolarizing NMBDs — Rocuronium, Vecuronium - Indications & Patient Selection",9,5,"Non-depolarizing NMBDs — Rocuronium, Vecuronium"],
-  [18,"Non-depolarizing NMBDs — Rocuronium, Vecuronium - Technique & Procedure",9,5,"Non-depolarizing NMBDs — Rocuronium, Vecuronium"],
-  [18,"Non-depolarizing NMBDs — Rocuronium, Vecuronium - Interpretation of Results",9,5,"Non-depolarizing NMBDs — Rocuronium, Vecuronium"],
-  [18,"Non-depolarizing NMBDs — Rocuronium, Vecuronium - Complications & Management",9,5,"Non-depolarizing NMBDs — Rocuronium, Vecuronium"],
-  [18,"Non-depolarizing NMBDs — Reversal (Neostigmine/Sugammadex)",9,8,"Non-depolarizing NMBDs — Rocuronium, Vecuronium & Reversal (Neostigmine/Sugammadex)"],
-  [18,"Non-depolarizing NMBDs — Reversal (Neostigmine/Sugammadex) - Basic Principles & Physics",9,5,"Non-depolarizing NMBDs — Reversal (Neostigmine/Sugammadex)"],
-  [18,"Non-depolarizing NMBDs — Reversal (Neostigmine/Sugammadex) - Indications & Patient Selection",9,5,"Non-depolarizing NMBDs — Reversal (Neostigmine/Sugammadex)"],
-  [18,"Non-depolarizing NMBDs — Reversal (Neostigmine/Sugammadex) - Technique & Procedure",9,5,"Non-depolarizing NMBDs — Reversal (Neostigmine/Sugammadex)"],
-  [18,"Non-depolarizing NMBDs — Reversal (Neostigmine/Sugammadex) - Interpretation of Results",9,5,"Non-depolarizing NMBDs — Reversal (Neostigmine/Sugammadex)"],
-  [18,"Non-depolarizing NMBDs — Reversal (Neostigmine/Sugammadex) - Complications & Management",9,5,"Non-depolarizing NMBDs — Reversal (Neostigmine/Sugammadex)"],
-  [18,"Airway Management & Equipment",10,45,"General Anesthesia"],
-  [18,"Airway Devices — OPA, NPA, LMA Types & Indications",10,15,"Airway Management & Equipment"],
-  [18,"Airway Devices — OPA, NPA, LMA Types",10,7,"Airway Devices — OPA, NPA, LMA Types & Indications"],
-  [18,"Airway Devices — OPA, NPA, LMA Types - Basic Principles & Physics",10,5,"Airway Devices — OPA, NPA, LMA Types"],
-  [18,"Airway Devices — OPA, NPA, LMA Types - Indications & Patient Selection",10,5,"Airway Devices — OPA, NPA, LMA Types"],
-  [18,"Airway Devices — OPA, NPA, LMA Types - Technique & Procedure",10,5,"Airway Devices — OPA, NPA, LMA Types"],
-  [18,"Airway Devices — OPA, NPA, LMA Types - Interpretation of Results",10,5,"Airway Devices — OPA, NPA, LMA Types"],
-  [18,"Airway Devices — OPA, NPA, LMA Types - Complications & Management",10,5,"Airway Devices — OPA, NPA, LMA Types"],
-  [18,"Airway Devices — Indications",10,8,"Airway Devices — OPA, NPA, LMA Types & Indications"],
-  [18,"Airway Devices — Indications - Basic Principles & Physics",10,5,"Airway Devices — Indications"],
-  [18,"Airway Devices — Indications - Indications & Patient Selection",10,5,"Airway Devices — Indications"],
-  [18,"Airway Devices — Indications - Technique & Procedure",10,5,"Airway Devices — Indications"],
-  [18,"Airway Devices — Indications - Interpretation of Results",10,5,"Airway Devices — Indications"],
-  [18,"Airway Devices — Indications - Complications & Management",10,5,"Airway Devices — Indications"],
-  [18,"Endotracheal Intubation — Laryngoscope Blades, Cormack-Lehane Grades & Difficult Airway",10,18,"Airway Management & Equipment"],
-  [18,"Endotracheal Intubation — Laryngoscope Blades, Cormack-Lehane Grades",10,9,"Endotracheal Intubation — Laryngoscope Blades, Cormack-Lehane Grades & Difficult Airway"],
-  [18,"Endotracheal Intubation — Laryngoscope Blades, Cormack-Lehane Grades - Basic Principles & Physics",10,5,"Endotracheal Intubation — Laryngoscope Blades, Cormack-Lehane Grades"],
-  [18,"Endotracheal Intubation — Laryngoscope Blades, Cormack-Lehane Grades - Indications & Patient Selection",10,5,"Endotracheal Intubation — Laryngoscope Blades, Cormack-Lehane Grades"],
-  [18,"Endotracheal Intubation — Laryngoscope Blades, Cormack-Lehane Grades - Technique & Procedure",10,5,"Endotracheal Intubation — Laryngoscope Blades, Cormack-Lehane Grades"],
-  [18,"Endotracheal Intubation — Laryngoscope Blades, Cormack-Lehane Grades - Interpretation of Results",10,5,"Endotracheal Intubation — Laryngoscope Blades, Cormack-Lehane Grades"],
-  [18,"Endotracheal Intubation — Laryngoscope Blades, Cormack-Lehane Grades - Complications & Management",10,5,"Endotracheal Intubation — Laryngoscope Blades, Cormack-Lehane Grades"],
-  [18,"Endotracheal Intubation — Difficult Airway",10,9,"Endotracheal Intubation — Laryngoscope Blades, Cormack-Lehane Grades & Difficult Airway"],
-  [18,"Endotracheal Intubation — Difficult Airway - Basic Principles & Physics",10,5,"Endotracheal Intubation — Difficult Airway"],
-  [18,"Endotracheal Intubation — Difficult Airway - Indications & Patient Selection",10,5,"Endotracheal Intubation — Difficult Airway"],
-  [18,"Endotracheal Intubation — Difficult Airway - Technique & Procedure",10,5,"Endotracheal Intubation — Difficult Airway"],
-  [18,"Endotracheal Intubation — Difficult Airway - Interpretation of Results",10,5,"Endotracheal Intubation — Difficult Airway"],
-  [18,"Endotracheal Intubation — Difficult Airway - Complications & Management",10,5,"Endotracheal Intubation — Difficult Airway"],
-  [18,"Failed Intubation — Can't Intubate Can't Oxygenate (CICO) & Front of Neck Access",10,12,"Airway Management & Equipment"],
-  [18,"Failed Intubation — Can't Intubate Can't Oxygenate (CICO)",10,6,"Failed Intubation — Can't Intubate Can't Oxygenate (CICO) & Front of Neck Access"],
-  [18,"Failed Intubation — Can't Intubate Can't Oxygenate (CICO) - Basic Principles & Physics",10,5,"Failed Intubation — Can't Intubate Can't Oxygenate (CICO)"],
-  [18,"Failed Intubation — Can't Intubate Can't Oxygenate (CICO) - Indications & Patient Selection",10,5,"Failed Intubation — Can't Intubate Can't Oxygenate (CICO)"],
-  [18,"Failed Intubation — Can't Intubate Can't Oxygenate (CICO) - Technique & Procedure",10,5,"Failed Intubation — Can't Intubate Can't Oxygenate (CICO)"],
-  [18,"Failed Intubation — Can't Intubate Can't Oxygenate (CICO) - Interpretation of Results",10,5,"Failed Intubation — Can't Intubate Can't Oxygenate (CICO)"],
-  [18,"Failed Intubation — Can't Intubate Can't Oxygenate (CICO) - Complications & Management",10,5,"Failed Intubation — Can't Intubate Can't Oxygenate (CICO)"],
-  [18,"Failed Intubation — Front of Neck Access",10,6,"Failed Intubation — Can't Intubate Can't Oxygenate (CICO) & Front of Neck Access"],
-  [18,"Failed Intubation — Front of Neck Access - Basic Principles & Physics",10,5,"Failed Intubation — Front of Neck Access"],
-  [18,"Failed Intubation — Front of Neck Access - Indications & Patient Selection",10,5,"Failed Intubation — Front of Neck Access"],
-  [18,"Failed Intubation — Front of Neck Access - Technique & Procedure",10,5,"Failed Intubation — Front of Neck Access"],
-  [18,"Failed Intubation — Front of Neck Access - Interpretation of Results",10,5,"Failed Intubation — Front of Neck Access"],
-  [18,"Failed Intubation — Front of Neck Access - Complications & Management",10,5,"Failed Intubation — Front of Neck Access"],
-  [18,"Regional Anesthesia",9,45],
-  [18,"Spinal & Epidural Anesthesia",10,45,"Regional Anesthesia"],
-  [18,"Spinal Anesthesia — Level, Drugs (Bupivacaine, Fentanyl), Complications & Contraindications",10,18,"Spinal & Epidural Anesthesia"],
-  [18,"Spinal Anesthesia — Level, Drugs (Bupivacaine, Fentanyl), Complications",10,9,"Spinal Anesthesia — Level, Drugs (Bupivacaine, Fentanyl), Complications & Contraindications"],
-  [18,"Spinal Anesthesia — Level, Drugs (Bupivacaine, Fentanyl), Complications - Basic Principles & Physics",10,5,"Spinal Anesthesia — Level, Drugs (Bupivacaine, Fentanyl), Complications"],
-  [18,"Spinal Anesthesia — Level, Drugs (Bupivacaine, Fentanyl), Complications - Indications & Patient Selection",10,5,"Spinal Anesthesia — Level, Drugs (Bupivacaine, Fentanyl), Complications"],
-  [18,"Spinal Anesthesia — Level, Drugs (Bupivacaine, Fentanyl), Complications - Technique & Procedure",10,5,"Spinal Anesthesia — Level, Drugs (Bupivacaine, Fentanyl), Complications"],
-  [18,"Spinal Anesthesia — Level, Drugs (Bupivacaine, Fentanyl), Complications - Interpretation of Results",10,5,"Spinal Anesthesia — Level, Drugs (Bupivacaine, Fentanyl), Complications"],
-  [18,"Spinal Anesthesia — Level, Drugs (Bupivacaine, Fentanyl), Complications - Complications & Management",10,5,"Spinal Anesthesia — Level, Drugs (Bupivacaine, Fentanyl), Complications"],
-  [18,"Spinal Anesthesia — Contraindications",10,9,"Spinal Anesthesia — Level, Drugs (Bupivacaine, Fentanyl), Complications & Contraindications"],
-  [18,"Spinal Anesthesia — Contraindications - Basic Principles & Physics",10,5,"Spinal Anesthesia — Contraindications"],
-  [18,"Spinal Anesthesia — Contraindications - Indications & Patient Selection",10,5,"Spinal Anesthesia — Contraindications"],
-  [18,"Spinal Anesthesia — Contraindications - Technique & Procedure",10,5,"Spinal Anesthesia — Contraindications"],
-  [18,"Spinal Anesthesia — Contraindications - Interpretation of Results",10,5,"Spinal Anesthesia — Contraindications"],
-  [18,"Spinal Anesthesia — Contraindications - Complications & Management",10,5,"Spinal Anesthesia — Contraindications"],
-  [18,"Epidural Anesthesia — Technique, Loss of Resistance & Catheter Uses (Labour, Postop)",10,18,"Spinal & Epidural Anesthesia"],
-  [18,"Epidural Anesthesia — Technique, Loss of Resistance",10,9,"Epidural Anesthesia — Technique, Loss of Resistance & Catheter Uses (Labour, Postop)"],
-  [18,"Epidural Anesthesia — Technique, Loss of Resistance - Basic Principles & Physics",10,5,"Epidural Anesthesia — Technique, Loss of Resistance"],
-  [18,"Epidural Anesthesia — Technique, Loss of Resistance - Indications & Patient Selection",10,5,"Epidural Anesthesia — Technique, Loss of Resistance"],
-  [18,"Epidural Anesthesia — Technique, Loss of Resistance - Technique & Procedure",10,5,"Epidural Anesthesia — Technique, Loss of Resistance"],
-  [18,"Epidural Anesthesia — Technique, Loss of Resistance - Interpretation of Results",10,5,"Epidural Anesthesia — Technique, Loss of Resistance"],
-  [18,"Epidural Anesthesia — Technique, Loss of Resistance - Complications & Management",10,5,"Epidural Anesthesia — Technique, Loss of Resistance"],
-  [18,"Epidural Anesthesia — Catheter Uses (Labour, Postop)",10,9,"Epidural Anesthesia — Technique, Loss of Resistance & Catheter Uses (Labour, Postop)"],
-  [18,"Epidural Anesthesia — Catheter Uses (Labour, Postop) - Basic Principles & Physics",10,5,"Epidural Anesthesia — Catheter Uses (Labour, Postop)"],
-  [18,"Epidural Anesthesia — Catheter Uses (Labour, Postop) - Indications & Patient Selection",10,5,"Epidural Anesthesia — Catheter Uses (Labour, Postop)"],
-  [18,"Epidural Anesthesia — Catheter Uses (Labour, Postop) - Technique & Procedure",10,5,"Epidural Anesthesia — Catheter Uses (Labour, Postop)"],
-  [18,"Epidural Anesthesia — Catheter Uses (Labour, Postop) - Interpretation of Results",10,5,"Epidural Anesthesia — Catheter Uses (Labour, Postop)"],
-  [18,"Epidural Anesthesia — Catheter Uses (Labour, Postop) - Complications & Management",10,5,"Epidural Anesthesia — Catheter Uses (Labour, Postop)"],
-  [18,"Spinal vs Epidural — Key Differences: Onset, Volume, Dural Tap & PDPH Management",10,12,"Spinal & Epidural Anesthesia"],
-  [18,"Spinal vs Epidural — Key Differences: Onset, Volume, Dural Tap",10,6,"Spinal vs Epidural — Key Differences: Onset, Volume, Dural Tap & PDPH Management"],
-  [18,"Spinal vs Epidural — Key Differences: Onset, Volume, Dural Tap - Basic Principles & Physics",10,5,"Spinal vs Epidural — Key Differences: Onset, Volume, Dural Tap"],
-  [18,"Spinal vs Epidural — Key Differences: Onset, Volume, Dural Tap - Indications & Patient Selection",10,5,"Spinal vs Epidural — Key Differences: Onset, Volume, Dural Tap"],
-  [18,"Spinal vs Epidural — Key Differences: Onset, Volume, Dural Tap - Technique & Procedure",10,5,"Spinal vs Epidural — Key Differences: Onset, Volume, Dural Tap"],
-  [18,"Spinal vs Epidural — Key Differences: Onset, Volume, Dural Tap - Interpretation of Results",10,5,"Spinal vs Epidural — Key Differences: Onset, Volume, Dural Tap"],
-  [18,"Spinal vs Epidural — Key Differences: Onset, Volume, Dural Tap - Complications & Management",10,5,"Spinal vs Epidural — Key Differences: Onset, Volume, Dural Tap"],
-  [18,"Spinal vs Epidural — PDPH Management",10,6,"Spinal vs Epidural — Key Differences: Onset, Volume, Dural Tap & PDPH Management"],
-  [18,"Spinal vs Epidural — PDPH Management - Basic Principles & Physics",10,5,"Spinal vs Epidural — PDPH Management"],
-  [18,"Spinal vs Epidural — PDPH Management - Indications & Patient Selection",10,5,"Spinal vs Epidural — PDPH Management"],
-  [18,"Spinal vs Epidural — PDPH Management - Technique & Procedure",10,5,"Spinal vs Epidural — PDPH Management"],
-  [18,"Spinal vs Epidural — PDPH Management - Interpretation of Results",10,5,"Spinal vs Epidural — PDPH Management"],
-  [18,"Spinal vs Epidural — PDPH Management - Complications & Management",10,5,"Spinal vs Epidural — PDPH Management"],
-  [18,"Local Anesthetics",9,35,"Regional Anesthesia"],
-  [18,"LA Mechanism — Na+ Channel Blockade, Ester vs Amide & Allergic Reactions",9,15,"Local Anesthetics"],
-  [18,"LA Mechanism — Na+ Channel Blockade, Ester vs Amide",9,7,"LA Mechanism — Na+ Channel Blockade, Ester vs Amide & Allergic Reactions"],
-  [18,"LA Mechanism — Na+ Channel Blockade, Ester vs Amide - Basic Principles & Physics",9,5,"LA Mechanism — Na+ Channel Blockade, Ester vs Amide"],
-  [18,"LA Mechanism — Na+ Channel Blockade, Ester vs Amide - Indications & Patient Selection",9,5,"LA Mechanism — Na+ Channel Blockade, Ester vs Amide"],
-  [18,"LA Mechanism — Na+ Channel Blockade, Ester vs Amide - Technique & Procedure",9,5,"LA Mechanism — Na+ Channel Blockade, Ester vs Amide"],
-  [18,"LA Mechanism — Na+ Channel Blockade, Ester vs Amide - Interpretation of Results",9,5,"LA Mechanism — Na+ Channel Blockade, Ester vs Amide"],
-  [18,"LA Mechanism — Na+ Channel Blockade, Ester vs Amide - Complications & Management",9,5,"LA Mechanism — Na+ Channel Blockade, Ester vs Amide"],
-  [18,"LA Mechanism — Allergic Reactions",9,8,"LA Mechanism — Na+ Channel Blockade, Ester vs Amide & Allergic Reactions"],
-  [18,"LA Mechanism — Allergic Reactions - Basic Principles & Physics",9,5,"LA Mechanism — Allergic Reactions"],
-  [18,"LA Mechanism — Allergic Reactions - Indications & Patient Selection",9,5,"LA Mechanism — Allergic Reactions"],
-  [18,"LA Mechanism — Allergic Reactions - Technique & Procedure",9,5,"LA Mechanism — Allergic Reactions"],
-  [18,"LA Mechanism — Allergic Reactions - Interpretation of Results",9,5,"LA Mechanism — Allergic Reactions"],
-  [18,"LA Mechanism — Allergic Reactions - Complications & Management",9,5,"LA Mechanism — Allergic Reactions"],
-  [18,"LA Toxicity — CNS (First) vs CVS Toxicity, Max Doses & Intralipid Rescue",9,18,"Local Anesthetics"],
-  [18,"LA Toxicity — CNS (First) vs CVS Toxicity, Max Doses",9,9,"LA Toxicity — CNS (First) vs CVS Toxicity, Max Doses & Intralipid Rescue"],
-  [18,"LA Toxicity — CNS (First) vs CVS Toxicity, Max Doses - Basic Principles & Physics",9,5,"LA Toxicity — CNS (First) vs CVS Toxicity, Max Doses"],
-  [18,"LA Toxicity — CNS (First) vs CVS Toxicity, Max Doses - Indications & Patient Selection",9,5,"LA Toxicity — CNS (First) vs CVS Toxicity, Max Doses"],
-  [18,"LA Toxicity — CNS (First) vs CVS Toxicity, Max Doses - Technique & Procedure",9,5,"LA Toxicity — CNS (First) vs CVS Toxicity, Max Doses"],
-  [18,"LA Toxicity — CNS (First) vs CVS Toxicity, Max Doses - Interpretation of Results",9,5,"LA Toxicity — CNS (First) vs CVS Toxicity, Max Doses"],
-  [18,"LA Toxicity — CNS (First) vs CVS Toxicity, Max Doses - Complications & Management",9,5,"LA Toxicity — CNS (First) vs CVS Toxicity, Max Doses"],
-  [18,"LA Toxicity — Intralipid Rescue",9,9,"LA Toxicity — CNS (First) vs CVS Toxicity, Max Doses & Intralipid Rescue"],
-  [18,"LA Toxicity — Intralipid Rescue - Basic Principles & Physics",9,5,"LA Toxicity — Intralipid Rescue"],
-  [18,"LA Toxicity — Intralipid Rescue - Indications & Patient Selection",9,5,"LA Toxicity — Intralipid Rescue"],
-  [18,"LA Toxicity — Intralipid Rescue - Technique & Procedure",9,5,"LA Toxicity — Intralipid Rescue"],
-  [18,"LA Toxicity — Intralipid Rescue - Interpretation of Results",9,5,"LA Toxicity — Intralipid Rescue"],
-  [18,"LA Toxicity — Intralipid Rescue - Complications & Management",9,5,"LA Toxicity — Intralipid Rescue"],
-  [18,"Critical Care & Resuscitation",9,45],
-  [18,"CPR & BLS/ACLS",10,45,"Critical Care & Resuscitation"],
-  [18,"BLS — CAB Sequence, Compression-Ventilation Ratio & AED Use",10,15,"CPR & BLS/ACLS"],
-  [18,"BLS — CAB Sequence, Compression-Ventilation Ratio",10,7,"BLS — CAB Sequence, Compression-Ventilation Ratio & AED Use"],
-  [18,"BLS — CAB Sequence, Compression-Ventilation Ratio - Basic Principles & Physics",10,5,"BLS — CAB Sequence, Compression-Ventilation Ratio"],
-  [18,"BLS — CAB Sequence, Compression-Ventilation Ratio - Indications & Patient Selection",10,5,"BLS — CAB Sequence, Compression-Ventilation Ratio"],
-  [18,"BLS — CAB Sequence, Compression-Ventilation Ratio - Technique & Procedure",10,5,"BLS — CAB Sequence, Compression-Ventilation Ratio"],
-  [18,"BLS — CAB Sequence, Compression-Ventilation Ratio - Interpretation of Results",10,5,"BLS — CAB Sequence, Compression-Ventilation Ratio"],
-  [18,"BLS — CAB Sequence, Compression-Ventilation Ratio - Complications & Management",10,5,"BLS — CAB Sequence, Compression-Ventilation Ratio"],
-  [18,"BLS — AED Use",10,8,"BLS — CAB Sequence, Compression-Ventilation Ratio & AED Use"],
-  [18,"BLS — AED Use - Basic Principles & Physics",10,5,"BLS — AED Use"],
-  [18,"BLS — AED Use - Indications & Patient Selection",10,5,"BLS — AED Use"],
-  [18,"BLS — AED Use - Technique & Procedure",10,5,"BLS — AED Use"],
-  [18,"BLS — AED Use - Interpretation of Results",10,5,"BLS — AED Use"],
-  [18,"BLS — AED Use - Complications & Management",10,5,"BLS — AED Use"],
-  [18,"ACLS — Shockable (VF/VT) vs Non-shockable (PEA/Asystole) Algorithms",10,18,"CPR & BLS/ACLS"],
-  [18,"ACLS — Basics",10,9,"ACLS — Shockable (VF/VT) vs Non-shockable (PEA/Asystole) Algorithms"],
-  [18,"ACLS — Basics - Basic Principles & Physics",10,5,"ACLS — Basics"],
-  [18,"ACLS — Basics - Indications & Patient Selection",10,5,"ACLS — Basics"],
-  [18,"ACLS — Basics - Technique & Procedure",10,5,"ACLS — Basics"],
-  [18,"ACLS — Basics - Interpretation of Results",10,5,"ACLS — Basics"],
-  [18,"ACLS — Basics - Complications & Management",10,5,"ACLS — Basics"],
-  [18,"ACLS — Details",10,9,"ACLS — Shockable (VF/VT) vs Non-shockable (PEA/Asystole) Algorithms"],
-  [18,"ACLS — Details - Basic Principles & Physics",10,5,"ACLS — Details"],
-  [18,"ACLS — Details - Indications & Patient Selection",10,5,"ACLS — Details"],
-  [18,"ACLS — Details - Technique & Procedure",10,5,"ACLS — Details"],
-  [18,"ACLS — Details - Interpretation of Results",10,5,"ACLS — Details"],
-  [18,"ACLS — Details - Complications & Management",10,5,"ACLS — Details"],
-  [18,"Post-resuscitation Care — Target Temperature Management & Coronary Angiography",10,12,"CPR & BLS/ACLS"],
-  [18,"Post-resuscitation Care — Target Temperature Management",10,6,"Post-resuscitation Care — Target Temperature Management & Coronary Angiography"],
-  [18,"Post-resuscitation Care — Target Temperature Management - Basic Principles & Physics",10,5,"Post-resuscitation Care — Target Temperature Management"],
-  [18,"Post-resuscitation Care — Target Temperature Management - Indications & Patient Selection",10,5,"Post-resuscitation Care — Target Temperature Management"],
-  [18,"Post-resuscitation Care — Target Temperature Management - Technique & Procedure",10,5,"Post-resuscitation Care — Target Temperature Management"],
-  [18,"Post-resuscitation Care — Target Temperature Management - Interpretation of Results",10,5,"Post-resuscitation Care — Target Temperature Management"],
-  [18,"Post-resuscitation Care — Target Temperature Management - Complications & Management",10,5,"Post-resuscitation Care — Target Temperature Management"],
-  [18,"Post-resuscitation Care — Coronary Angiography",10,6,"Post-resuscitation Care — Target Temperature Management & Coronary Angiography"],
-  [18,"Post-resuscitation Care — Coronary Angiography - Basic Principles & Physics",10,5,"Post-resuscitation Care — Coronary Angiography"],
-  [18,"Post-resuscitation Care — Coronary Angiography - Indications & Patient Selection",10,5,"Post-resuscitation Care — Coronary Angiography"],
-  [18,"Post-resuscitation Care — Coronary Angiography - Technique & Procedure",10,5,"Post-resuscitation Care — Coronary Angiography"],
-  [18,"Post-resuscitation Care — Coronary Angiography - Interpretation of Results",10,5,"Post-resuscitation Care — Coronary Angiography"],
-  [18,"Post-resuscitation Care — Coronary Angiography - Complications & Management",10,5,"Post-resuscitation Care — Coronary Angiography"],
-  [18,"Oxygen Therapy & Monitoring",8,35,"Critical Care & Resuscitation"],
-  [18,"Oxygen Delivery Systems — Low-flow (NC, Mask) vs High-flow (Venturi, HFNC)",8,15,"Oxygen Therapy & Monitoring"],
-  [18,"Oxygen Delivery Systems — Low-flow (NC",8,7,"Oxygen Delivery Systems — Low-flow (NC, Mask) vs High-flow (Venturi, HFNC)"],
-  [18,"Oxygen Delivery Systems — Low-flow (NC - Basic Principles & Physics",8,5,"Oxygen Delivery Systems — Low-flow (NC"],
-  [18,"Oxygen Delivery Systems — Low-flow (NC - Indications & Patient Selection",8,5,"Oxygen Delivery Systems — Low-flow (NC"],
-  [18,"Oxygen Delivery Systems — Low-flow (NC - Technique & Procedure",8,5,"Oxygen Delivery Systems — Low-flow (NC"],
-  [18,"Oxygen Delivery Systems — Low-flow (NC - Interpretation of Results",8,5,"Oxygen Delivery Systems — Low-flow (NC"],
-  [18,"Oxygen Delivery Systems — Low-flow (NC - Complications & Management",8,5,"Oxygen Delivery Systems — Low-flow (NC"],
-  [18,"Oxygen Delivery Systems — Mask) vs High-flow (Venturi, HFNC)",8,8,"Oxygen Delivery Systems — Low-flow (NC, Mask) vs High-flow (Venturi, HFNC)"],
-  [18,"Oxygen Delivery Systems — Mask) vs High-flow (Venturi, HFNC) - Basic Principles & Physics",8,5,"Oxygen Delivery Systems — Mask) vs High-flow (Venturi, HFNC)"],
-  [18,"Oxygen Delivery Systems — Mask) vs High-flow (Venturi, HFNC) - Indications & Patient Selection",8,5,"Oxygen Delivery Systems — Mask) vs High-flow (Venturi, HFNC)"],
-  [18,"Oxygen Delivery Systems — Mask) vs High-flow (Venturi, HFNC) - Technique & Procedure",8,5,"Oxygen Delivery Systems — Mask) vs High-flow (Venturi, HFNC)"],
-  [18,"Oxygen Delivery Systems — Mask) vs High-flow (Venturi, HFNC) - Interpretation of Results",8,5,"Oxygen Delivery Systems — Mask) vs High-flow (Venturi, HFNC)"],
-  [18,"Oxygen Delivery Systems — Mask) vs High-flow (Venturi, HFNC) - Complications & Management",8,5,"Oxygen Delivery Systems — Mask) vs High-flow (Venturi, HFNC)"],
-  [18,"ICU Monitoring — Invasive BP, CVP, SpO2, EtCO2 & BIS (Depth of Anesthesia)",8,18,"Oxygen Therapy & Monitoring"],
-  [18,"ICU Monitoring — Invasive BP, CVP, SpO2, EtCO2",8,9,"ICU Monitoring — Invasive BP, CVP, SpO2, EtCO2 & BIS (Depth of Anesthesia)"],
-  [18,"ICU Monitoring — Invasive BP, CVP, SpO2, EtCO2 - Basic Principles & Physics",8,5,"ICU Monitoring — Invasive BP, CVP, SpO2, EtCO2"],
-  [18,"ICU Monitoring — Invasive BP, CVP, SpO2, EtCO2 - Indications & Patient Selection",8,5,"ICU Monitoring — Invasive BP, CVP, SpO2, EtCO2"],
-  [18,"ICU Monitoring — Invasive BP, CVP, SpO2, EtCO2 - Technique & Procedure",8,5,"ICU Monitoring — Invasive BP, CVP, SpO2, EtCO2"],
-  [18,"ICU Monitoring — Invasive BP, CVP, SpO2, EtCO2 - Interpretation of Results",8,5,"ICU Monitoring — Invasive BP, CVP, SpO2, EtCO2"],
-  [18,"ICU Monitoring — Invasive BP, CVP, SpO2, EtCO2 - Complications & Management",8,5,"ICU Monitoring — Invasive BP, CVP, SpO2, EtCO2"],
-  [18,"ICU Monitoring — BIS (Depth of Anesthesia)",8,9,"ICU Monitoring — Invasive BP, CVP, SpO2, EtCO2 & BIS (Depth of Anesthesia)"],
-  [18,"ICU Monitoring — BIS (Depth of Anesthesia) - Basic Principles & Physics",8,5,"ICU Monitoring — BIS (Depth of Anesthesia)"],
-  [18,"ICU Monitoring — BIS (Depth of Anesthesia) - Indications & Patient Selection",8,5,"ICU Monitoring — BIS (Depth of Anesthesia)"],
-  [18,"ICU Monitoring — BIS (Depth of Anesthesia) - Technique & Procedure",8,5,"ICU Monitoring — BIS (Depth of Anesthesia)"],
-  [18,"ICU Monitoring — BIS (Depth of Anesthesia) - Interpretation of Results",8,5,"ICU Monitoring — BIS (Depth of Anesthesia)"],
-  [18,"ICU Monitoring — BIS (Depth of Anesthesia) - Complications & Management",8,5,"ICU Monitoring — BIS (Depth of Anesthesia)"]
+  [18, "General Anesthesia", 9, 50],
+  [18, "Pre-anesthetic Evaluation", 8, 35, "General Anesthesia"],
+  [
+    18,
+    "ASA Physical Status Classification — Grades I–VI & Clinical Examples",
+    8,
+    12,
+    "Pre-anesthetic Evaluation"
+  ],
+  [
+    18,
+    "ASA Physical Status Classification — Grades I–VI",
+    8,
+    6,
+    "ASA Physical Status Classification — Grades I–VI & Clinical Examples"
+  ],
+  [
+    18,
+    "ASA Physical Status Classification — Grades I–VI - Basic Principles & Physics",
+    8,
+    5,
+    "ASA Physical Status Classification — Grades I–VI"
+  ],
+  [
+    18,
+    "ASA Physical Status Classification — Grades I–VI - Indications & Patient Selection",
+    8,
+    5,
+    "ASA Physical Status Classification — Grades I–VI"
+  ],
+  [
+    18,
+    "ASA Physical Status Classification — Grades I–VI - Technique & Procedure",
+    8,
+    5,
+    "ASA Physical Status Classification — Grades I–VI"
+  ],
+  [
+    18,
+    "ASA Physical Status Classification — Grades I–VI - Interpretation of Results",
+    8,
+    5,
+    "ASA Physical Status Classification — Grades I–VI"
+  ],
+  [
+    18,
+    "ASA Physical Status Classification — Grades I–VI - Complications & Management",
+    8,
+    5,
+    "ASA Physical Status Classification — Grades I–VI"
+  ],
+  [
+    18,
+    "ASA Physical Status Classification — Clinical Examples",
+    8,
+    6,
+    "ASA Physical Status Classification — Grades I–VI & Clinical Examples"
+  ],
+  [
+    18,
+    "ASA Physical Status Classification — Clinical Examples - Basic Principles & Physics",
+    8,
+    5,
+    "ASA Physical Status Classification — Clinical Examples"
+  ],
+  [
+    18,
+    "ASA Physical Status Classification — Clinical Examples - Indications & Patient Selection",
+    8,
+    5,
+    "ASA Physical Status Classification — Clinical Examples"
+  ],
+  [
+    18,
+    "ASA Physical Status Classification — Clinical Examples - Technique & Procedure",
+    8,
+    5,
+    "ASA Physical Status Classification — Clinical Examples"
+  ],
+  [
+    18,
+    "ASA Physical Status Classification — Clinical Examples - Interpretation of Results",
+    8,
+    5,
+    "ASA Physical Status Classification — Clinical Examples"
+  ],
+  [
+    18,
+    "ASA Physical Status Classification — Clinical Examples - Complications & Management",
+    8,
+    5,
+    "ASA Physical Status Classification — Clinical Examples"
+  ],
+  [
+    18,
+    "PAE — Airway Assessment (Mallampati), Investigations & Fasting Guidelines",
+    8,
+    18,
+    "Pre-anesthetic Evaluation"
+  ],
+  [
+    18,
+    "PAE — Airway Assessment (Mallampati), Investigations",
+    8,
+    9,
+    "PAE — Airway Assessment (Mallampati), Investigations & Fasting Guidelines"
+  ],
+  [
+    18,
+    "PAE — Airway Assessment (Mallampati), Investigations - Basic Principles & Physics",
+    8,
+    5,
+    "PAE — Airway Assessment (Mallampati), Investigations"
+  ],
+  [
+    18,
+    "PAE — Airway Assessment (Mallampati), Investigations - Indications & Patient Selection",
+    8,
+    5,
+    "PAE — Airway Assessment (Mallampati), Investigations"
+  ],
+  [
+    18,
+    "PAE — Airway Assessment (Mallampati), Investigations - Technique & Procedure",
+    8,
+    5,
+    "PAE — Airway Assessment (Mallampati), Investigations"
+  ],
+  [
+    18,
+    "PAE — Airway Assessment (Mallampati), Investigations - Interpretation of Results",
+    8,
+    5,
+    "PAE — Airway Assessment (Mallampati), Investigations"
+  ],
+  [
+    18,
+    "PAE — Airway Assessment (Mallampati), Investigations - Complications & Management",
+    8,
+    5,
+    "PAE — Airway Assessment (Mallampati), Investigations"
+  ],
+  [
+    18,
+    "PAE — Fasting Guidelines",
+    8,
+    9,
+    "PAE — Airway Assessment (Mallampati), Investigations & Fasting Guidelines"
+  ],
+  [18, "PAE — Fasting Guidelines - Basic Principles & Physics", 8, 5, "PAE — Fasting Guidelines"],
+  [
+    18,
+    "PAE — Fasting Guidelines - Indications & Patient Selection",
+    8,
+    5,
+    "PAE — Fasting Guidelines"
+  ],
+  [18, "PAE — Fasting Guidelines - Technique & Procedure", 8, 5, "PAE — Fasting Guidelines"],
+  [18, "PAE — Fasting Guidelines - Interpretation of Results", 8, 5, "PAE — Fasting Guidelines"],
+  [18, "PAE — Fasting Guidelines - Complications & Management", 8, 5, "PAE — Fasting Guidelines"],
+  [
+    18,
+    "Premedication — Aims, Drugs (BZD, Anticholinergics, Antacids) & Routes",
+    8,
+    12,
+    "Pre-anesthetic Evaluation"
+  ],
+  [
+    18,
+    "Premedication — Aims, Drugs (BZD, Anticholinergics, Antacids)",
+    8,
+    6,
+    "Premedication — Aims, Drugs (BZD, Anticholinergics, Antacids) & Routes"
+  ],
+  [
+    18,
+    "Premedication — Aims, Drugs (BZD, Anticholinergics, Antacids) - Basic Principles & Physics",
+    8,
+    5,
+    "Premedication — Aims, Drugs (BZD, Anticholinergics, Antacids)"
+  ],
+  [
+    18,
+    "Premedication — Aims, Drugs (BZD, Anticholinergics, Antacids) - Indications & Patient Selection",
+    8,
+    5,
+    "Premedication — Aims, Drugs (BZD, Anticholinergics, Antacids)"
+  ],
+  [
+    18,
+    "Premedication — Aims, Drugs (BZD, Anticholinergics, Antacids) - Technique & Procedure",
+    8,
+    5,
+    "Premedication — Aims, Drugs (BZD, Anticholinergics, Antacids)"
+  ],
+  [
+    18,
+    "Premedication — Aims, Drugs (BZD, Anticholinergics, Antacids) - Interpretation of Results",
+    8,
+    5,
+    "Premedication — Aims, Drugs (BZD, Anticholinergics, Antacids)"
+  ],
+  [
+    18,
+    "Premedication — Aims, Drugs (BZD, Anticholinergics, Antacids) - Complications & Management",
+    8,
+    5,
+    "Premedication — Aims, Drugs (BZD, Anticholinergics, Antacids)"
+  ],
+  [
+    18,
+    "Premedication — Routes",
+    8,
+    6,
+    "Premedication — Aims, Drugs (BZD, Anticholinergics, Antacids) & Routes"
+  ],
+  [18, "Premedication — Routes - Basic Principles & Physics", 8, 5, "Premedication — Routes"],
+  [18, "Premedication — Routes - Indications & Patient Selection", 8, 5, "Premedication — Routes"],
+  [18, "Premedication — Routes - Technique & Procedure", 8, 5, "Premedication — Routes"],
+  [18, "Premedication — Routes - Interpretation of Results", 8, 5, "Premedication — Routes"],
+  [18, "Premedication — Routes - Complications & Management", 8, 5, "Premedication — Routes"],
+  [18, "Intravenous Anesthetics", 9, 40, "General Anesthesia"],
+  [
+    18,
+    "Thiopentone & Propofol — Mechanism, Uses, Advantages & Side Effects",
+    9,
+    18,
+    "Intravenous Anesthetics"
+  ],
+  [
+    18,
+    "Thiopentone & Propofol — Mechanism, Uses, Advantages",
+    9,
+    9,
+    "Thiopentone & Propofol — Mechanism, Uses, Advantages & Side Effects"
+  ],
+  [
+    18,
+    "Thiopentone & Propofol — Mechanism, Uses, Advantages - Basic Principles & Physics",
+    9,
+    5,
+    "Thiopentone & Propofol — Mechanism, Uses, Advantages"
+  ],
+  [
+    18,
+    "Thiopentone & Propofol — Mechanism, Uses, Advantages - Indications & Patient Selection",
+    9,
+    5,
+    "Thiopentone & Propofol — Mechanism, Uses, Advantages"
+  ],
+  [
+    18,
+    "Thiopentone & Propofol — Mechanism, Uses, Advantages - Technique & Procedure",
+    9,
+    5,
+    "Thiopentone & Propofol — Mechanism, Uses, Advantages"
+  ],
+  [
+    18,
+    "Thiopentone & Propofol — Mechanism, Uses, Advantages - Interpretation of Results",
+    9,
+    5,
+    "Thiopentone & Propofol — Mechanism, Uses, Advantages"
+  ],
+  [
+    18,
+    "Thiopentone & Propofol — Mechanism, Uses, Advantages - Complications & Management",
+    9,
+    5,
+    "Thiopentone & Propofol — Mechanism, Uses, Advantages"
+  ],
+  [
+    18,
+    "Thiopentone & Propofol — Side Effects",
+    9,
+    9,
+    "Thiopentone & Propofol — Mechanism, Uses, Advantages & Side Effects"
+  ],
+  [
+    18,
+    "Thiopentone & Propofol — Side Effects - Basic Principles & Physics",
+    9,
+    5,
+    "Thiopentone & Propofol — Side Effects"
+  ],
+  [
+    18,
+    "Thiopentone & Propofol — Side Effects - Indications & Patient Selection",
+    9,
+    5,
+    "Thiopentone & Propofol — Side Effects"
+  ],
+  [
+    18,
+    "Thiopentone & Propofol — Side Effects - Technique & Procedure",
+    9,
+    5,
+    "Thiopentone & Propofol — Side Effects"
+  ],
+  [
+    18,
+    "Thiopentone & Propofol — Side Effects - Interpretation of Results",
+    9,
+    5,
+    "Thiopentone & Propofol — Side Effects"
+  ],
+  [
+    18,
+    "Thiopentone & Propofol — Side Effects - Complications & Management",
+    9,
+    5,
+    "Thiopentone & Propofol — Side Effects"
+  ],
+  [
+    18,
+    "Ketamine — Dissociative Anesthesia, Analgesia, TIVA & Contraindications",
+    9,
+    15,
+    "Intravenous Anesthetics"
+  ],
+  [
+    18,
+    "Ketamine — Dissociative Anesthesia, Analgesia, TIVA",
+    9,
+    7,
+    "Ketamine — Dissociative Anesthesia, Analgesia, TIVA & Contraindications"
+  ],
+  [
+    18,
+    "Ketamine — Dissociative Anesthesia, Analgesia, TIVA - Basic Principles & Physics",
+    9,
+    5,
+    "Ketamine — Dissociative Anesthesia, Analgesia, TIVA"
+  ],
+  [
+    18,
+    "Ketamine — Dissociative Anesthesia, Analgesia, TIVA - Indications & Patient Selection",
+    9,
+    5,
+    "Ketamine — Dissociative Anesthesia, Analgesia, TIVA"
+  ],
+  [
+    18,
+    "Ketamine — Dissociative Anesthesia, Analgesia, TIVA - Technique & Procedure",
+    9,
+    5,
+    "Ketamine — Dissociative Anesthesia, Analgesia, TIVA"
+  ],
+  [
+    18,
+    "Ketamine — Dissociative Anesthesia, Analgesia, TIVA - Interpretation of Results",
+    9,
+    5,
+    "Ketamine — Dissociative Anesthesia, Analgesia, TIVA"
+  ],
+  [
+    18,
+    "Ketamine — Dissociative Anesthesia, Analgesia, TIVA - Complications & Management",
+    9,
+    5,
+    "Ketamine — Dissociative Anesthesia, Analgesia, TIVA"
+  ],
+  [
+    18,
+    "Ketamine — Contraindications",
+    9,
+    8,
+    "Ketamine — Dissociative Anesthesia, Analgesia, TIVA & Contraindications"
+  ],
+  [
+    18,
+    "Ketamine — Contraindications - Basic Principles & Physics",
+    9,
+    5,
+    "Ketamine — Contraindications"
+  ],
+  [
+    18,
+    "Ketamine — Contraindications - Indications & Patient Selection",
+    9,
+    5,
+    "Ketamine — Contraindications"
+  ],
+  [
+    18,
+    "Ketamine — Contraindications - Technique & Procedure",
+    9,
+    5,
+    "Ketamine — Contraindications"
+  ],
+  [
+    18,
+    "Ketamine — Contraindications - Interpretation of Results",
+    9,
+    5,
+    "Ketamine — Contraindications"
+  ],
+  [
+    18,
+    "Ketamine — Contraindications - Complications & Management",
+    9,
+    5,
+    "Ketamine — Contraindications"
+  ],
+  [18, "Inhalational Anesthetics", 9, 40, "General Anesthesia"],
+  [
+    18,
+    "Minimum Alveolar Concentration (MAC) — Concept, Factors Affecting & Comparison",
+    9,
+    18,
+    "Inhalational Anesthetics"
+  ],
+  [
+    18,
+    "Minimum Alveolar Concentration (MAC) — Concept, Factors Affecting",
+    9,
+    9,
+    "Minimum Alveolar Concentration (MAC) — Concept, Factors Affecting & Comparison"
+  ],
+  [
+    18,
+    "Minimum Alveolar Concentration (MAC) — Concept, Factors Affecting - Basic Principles & Physics",
+    9,
+    5,
+    "Minimum Alveolar Concentration (MAC) — Concept, Factors Affecting"
+  ],
+  [
+    18,
+    "Minimum Alveolar Concentration (MAC) — Concept, Factors Affecting - Indications & Patient Selection",
+    9,
+    5,
+    "Minimum Alveolar Concentration (MAC) — Concept, Factors Affecting"
+  ],
+  [
+    18,
+    "Minimum Alveolar Concentration (MAC) — Concept, Factors Affecting - Technique & Procedure",
+    9,
+    5,
+    "Minimum Alveolar Concentration (MAC) — Concept, Factors Affecting"
+  ],
+  [
+    18,
+    "Minimum Alveolar Concentration (MAC) — Concept, Factors Affecting - Interpretation of Results",
+    9,
+    5,
+    "Minimum Alveolar Concentration (MAC) — Concept, Factors Affecting"
+  ],
+  [
+    18,
+    "Minimum Alveolar Concentration (MAC) — Concept, Factors Affecting - Complications & Management",
+    9,
+    5,
+    "Minimum Alveolar Concentration (MAC) — Concept, Factors Affecting"
+  ],
+  [
+    18,
+    "Minimum Alveolar Concentration (MAC) — Comparison",
+    9,
+    9,
+    "Minimum Alveolar Concentration (MAC) — Concept, Factors Affecting & Comparison"
+  ],
+  [
+    18,
+    "Minimum Alveolar Concentration (MAC) — Comparison - Basic Principles & Physics",
+    9,
+    5,
+    "Minimum Alveolar Concentration (MAC) — Comparison"
+  ],
+  [
+    18,
+    "Minimum Alveolar Concentration (MAC) — Comparison - Indications & Patient Selection",
+    9,
+    5,
+    "Minimum Alveolar Concentration (MAC) — Comparison"
+  ],
+  [
+    18,
+    "Minimum Alveolar Concentration (MAC) — Comparison - Technique & Procedure",
+    9,
+    5,
+    "Minimum Alveolar Concentration (MAC) — Comparison"
+  ],
+  [
+    18,
+    "Minimum Alveolar Concentration (MAC) — Comparison - Interpretation of Results",
+    9,
+    5,
+    "Minimum Alveolar Concentration (MAC) — Comparison"
+  ],
+  [
+    18,
+    "Minimum Alveolar Concentration (MAC) — Comparison - Complications & Management",
+    9,
+    5,
+    "Minimum Alveolar Concentration (MAC) — Comparison"
+  ],
+  [
+    18,
+    "Halothane, Isoflurane, Sevoflurane & Desflurane — Properties & Hepatotoxicity",
+    9,
+    18,
+    "Inhalational Anesthetics"
+  ],
+  [
+    18,
+    "Halothane, Isoflurane, Sevoflurane & Desflurane — Properties",
+    9,
+    9,
+    "Halothane, Isoflurane, Sevoflurane & Desflurane — Properties & Hepatotoxicity"
+  ],
+  [
+    18,
+    "Halothane, Isoflurane, Sevoflurane & Desflurane — Properties - Basic Principles & Physics",
+    9,
+    5,
+    "Halothane, Isoflurane, Sevoflurane & Desflurane — Properties"
+  ],
+  [
+    18,
+    "Halothane, Isoflurane, Sevoflurane & Desflurane — Properties - Indications & Patient Selection",
+    9,
+    5,
+    "Halothane, Isoflurane, Sevoflurane & Desflurane — Properties"
+  ],
+  [
+    18,
+    "Halothane, Isoflurane, Sevoflurane & Desflurane — Properties - Technique & Procedure",
+    9,
+    5,
+    "Halothane, Isoflurane, Sevoflurane & Desflurane — Properties"
+  ],
+  [
+    18,
+    "Halothane, Isoflurane, Sevoflurane & Desflurane — Properties - Interpretation of Results",
+    9,
+    5,
+    "Halothane, Isoflurane, Sevoflurane & Desflurane — Properties"
+  ],
+  [
+    18,
+    "Halothane, Isoflurane, Sevoflurane & Desflurane — Properties - Complications & Management",
+    9,
+    5,
+    "Halothane, Isoflurane, Sevoflurane & Desflurane — Properties"
+  ],
+  [
+    18,
+    "Halothane, Isoflurane, Sevoflurane & Desflurane — Hepatotoxicity",
+    9,
+    9,
+    "Halothane, Isoflurane, Sevoflurane & Desflurane — Properties & Hepatotoxicity"
+  ],
+  [
+    18,
+    "Halothane, Isoflurane, Sevoflurane & Desflurane — Hepatotoxicity - Basic Principles & Physics",
+    9,
+    5,
+    "Halothane, Isoflurane, Sevoflurane & Desflurane — Hepatotoxicity"
+  ],
+  [
+    18,
+    "Halothane, Isoflurane, Sevoflurane & Desflurane — Hepatotoxicity - Indications & Patient Selection",
+    9,
+    5,
+    "Halothane, Isoflurane, Sevoflurane & Desflurane — Hepatotoxicity"
+  ],
+  [
+    18,
+    "Halothane, Isoflurane, Sevoflurane & Desflurane — Hepatotoxicity - Technique & Procedure",
+    9,
+    5,
+    "Halothane, Isoflurane, Sevoflurane & Desflurane — Hepatotoxicity"
+  ],
+  [
+    18,
+    "Halothane, Isoflurane, Sevoflurane & Desflurane — Hepatotoxicity - Interpretation of Results",
+    9,
+    5,
+    "Halothane, Isoflurane, Sevoflurane & Desflurane — Hepatotoxicity"
+  ],
+  [
+    18,
+    "Halothane, Isoflurane, Sevoflurane & Desflurane — Hepatotoxicity - Complications & Management",
+    9,
+    5,
+    "Halothane, Isoflurane, Sevoflurane & Desflurane — Hepatotoxicity"
+  ],
+  [18, "Muscle Relaxants", 9, 35, "General Anesthesia"],
+  [
+    18,
+    "Depolarizing NMBDs — Succinylcholine: Mechanism, Phase II Block & Contraindications",
+    9,
+    18,
+    "Muscle Relaxants"
+  ],
+  [
+    18,
+    "Depolarizing NMBDs — Succinylcholine: Mechanism, Phase II Block",
+    9,
+    9,
+    "Depolarizing NMBDs — Succinylcholine: Mechanism, Phase II Block & Contraindications"
+  ],
+  [
+    18,
+    "Depolarizing NMBDs — Succinylcholine: Mechanism, Phase II Block - Basic Principles & Physics",
+    9,
+    5,
+    "Depolarizing NMBDs — Succinylcholine: Mechanism, Phase II Block"
+  ],
+  [
+    18,
+    "Depolarizing NMBDs — Succinylcholine: Mechanism, Phase II Block - Indications & Patient Selection",
+    9,
+    5,
+    "Depolarizing NMBDs — Succinylcholine: Mechanism, Phase II Block"
+  ],
+  [
+    18,
+    "Depolarizing NMBDs — Succinylcholine: Mechanism, Phase II Block - Technique & Procedure",
+    9,
+    5,
+    "Depolarizing NMBDs — Succinylcholine: Mechanism, Phase II Block"
+  ],
+  [
+    18,
+    "Depolarizing NMBDs — Succinylcholine: Mechanism, Phase II Block - Interpretation of Results",
+    9,
+    5,
+    "Depolarizing NMBDs — Succinylcholine: Mechanism, Phase II Block"
+  ],
+  [
+    18,
+    "Depolarizing NMBDs — Succinylcholine: Mechanism, Phase II Block - Complications & Management",
+    9,
+    5,
+    "Depolarizing NMBDs — Succinylcholine: Mechanism, Phase II Block"
+  ],
+  [
+    18,
+    "Depolarizing NMBDs — Contraindications",
+    9,
+    9,
+    "Depolarizing NMBDs — Succinylcholine: Mechanism, Phase II Block & Contraindications"
+  ],
+  [
+    18,
+    "Depolarizing NMBDs — Contraindications - Basic Principles & Physics",
+    9,
+    5,
+    "Depolarizing NMBDs — Contraindications"
+  ],
+  [
+    18,
+    "Depolarizing NMBDs — Contraindications - Indications & Patient Selection",
+    9,
+    5,
+    "Depolarizing NMBDs — Contraindications"
+  ],
+  [
+    18,
+    "Depolarizing NMBDs — Contraindications - Technique & Procedure",
+    9,
+    5,
+    "Depolarizing NMBDs — Contraindications"
+  ],
+  [
+    18,
+    "Depolarizing NMBDs — Contraindications - Interpretation of Results",
+    9,
+    5,
+    "Depolarizing NMBDs — Contraindications"
+  ],
+  [
+    18,
+    "Depolarizing NMBDs — Contraindications - Complications & Management",
+    9,
+    5,
+    "Depolarizing NMBDs — Contraindications"
+  ],
+  [
+    18,
+    "Non-depolarizing NMBDs — Rocuronium, Vecuronium & Reversal (Neostigmine/Sugammadex)",
+    9,
+    15,
+    "Muscle Relaxants"
+  ],
+  [
+    18,
+    "Non-depolarizing NMBDs — Rocuronium, Vecuronium",
+    9,
+    7,
+    "Non-depolarizing NMBDs — Rocuronium, Vecuronium & Reversal (Neostigmine/Sugammadex)"
+  ],
+  [
+    18,
+    "Non-depolarizing NMBDs — Rocuronium, Vecuronium - Basic Principles & Physics",
+    9,
+    5,
+    "Non-depolarizing NMBDs — Rocuronium, Vecuronium"
+  ],
+  [
+    18,
+    "Non-depolarizing NMBDs — Rocuronium, Vecuronium - Indications & Patient Selection",
+    9,
+    5,
+    "Non-depolarizing NMBDs — Rocuronium, Vecuronium"
+  ],
+  [
+    18,
+    "Non-depolarizing NMBDs — Rocuronium, Vecuronium - Technique & Procedure",
+    9,
+    5,
+    "Non-depolarizing NMBDs — Rocuronium, Vecuronium"
+  ],
+  [
+    18,
+    "Non-depolarizing NMBDs — Rocuronium, Vecuronium - Interpretation of Results",
+    9,
+    5,
+    "Non-depolarizing NMBDs — Rocuronium, Vecuronium"
+  ],
+  [
+    18,
+    "Non-depolarizing NMBDs — Rocuronium, Vecuronium - Complications & Management",
+    9,
+    5,
+    "Non-depolarizing NMBDs — Rocuronium, Vecuronium"
+  ],
+  [
+    18,
+    "Non-depolarizing NMBDs — Reversal (Neostigmine/Sugammadex)",
+    9,
+    8,
+    "Non-depolarizing NMBDs — Rocuronium, Vecuronium & Reversal (Neostigmine/Sugammadex)"
+  ],
+  [
+    18,
+    "Non-depolarizing NMBDs — Reversal (Neostigmine/Sugammadex) - Basic Principles & Physics",
+    9,
+    5,
+    "Non-depolarizing NMBDs — Reversal (Neostigmine/Sugammadex)"
+  ],
+  [
+    18,
+    "Non-depolarizing NMBDs — Reversal (Neostigmine/Sugammadex) - Indications & Patient Selection",
+    9,
+    5,
+    "Non-depolarizing NMBDs — Reversal (Neostigmine/Sugammadex)"
+  ],
+  [
+    18,
+    "Non-depolarizing NMBDs — Reversal (Neostigmine/Sugammadex) - Technique & Procedure",
+    9,
+    5,
+    "Non-depolarizing NMBDs — Reversal (Neostigmine/Sugammadex)"
+  ],
+  [
+    18,
+    "Non-depolarizing NMBDs — Reversal (Neostigmine/Sugammadex) - Interpretation of Results",
+    9,
+    5,
+    "Non-depolarizing NMBDs — Reversal (Neostigmine/Sugammadex)"
+  ],
+  [
+    18,
+    "Non-depolarizing NMBDs — Reversal (Neostigmine/Sugammadex) - Complications & Management",
+    9,
+    5,
+    "Non-depolarizing NMBDs — Reversal (Neostigmine/Sugammadex)"
+  ],
+  [18, "Airway Management & Equipment", 10, 45, "General Anesthesia"],
+  [
+    18,
+    "Airway Devices — OPA, NPA, LMA Types & Indications",
+    10,
+    15,
+    "Airway Management & Equipment"
+  ],
+  [
+    18,
+    "Airway Devices — OPA, NPA, LMA Types",
+    10,
+    7,
+    "Airway Devices — OPA, NPA, LMA Types & Indications"
+  ],
+  [
+    18,
+    "Airway Devices — OPA, NPA, LMA Types - Basic Principles & Physics",
+    10,
+    5,
+    "Airway Devices — OPA, NPA, LMA Types"
+  ],
+  [
+    18,
+    "Airway Devices — OPA, NPA, LMA Types - Indications & Patient Selection",
+    10,
+    5,
+    "Airway Devices — OPA, NPA, LMA Types"
+  ],
+  [
+    18,
+    "Airway Devices — OPA, NPA, LMA Types - Technique & Procedure",
+    10,
+    5,
+    "Airway Devices — OPA, NPA, LMA Types"
+  ],
+  [
+    18,
+    "Airway Devices — OPA, NPA, LMA Types - Interpretation of Results",
+    10,
+    5,
+    "Airway Devices — OPA, NPA, LMA Types"
+  ],
+  [
+    18,
+    "Airway Devices — OPA, NPA, LMA Types - Complications & Management",
+    10,
+    5,
+    "Airway Devices — OPA, NPA, LMA Types"
+  ],
+  [18, "Airway Devices — Indications", 10, 8, "Airway Devices — OPA, NPA, LMA Types & Indications"],
+  [
+    18,
+    "Airway Devices — Indications - Basic Principles & Physics",
+    10,
+    5,
+    "Airway Devices — Indications"
+  ],
+  [
+    18,
+    "Airway Devices — Indications - Indications & Patient Selection",
+    10,
+    5,
+    "Airway Devices — Indications"
+  ],
+  [
+    18,
+    "Airway Devices — Indications - Technique & Procedure",
+    10,
+    5,
+    "Airway Devices — Indications"
+  ],
+  [
+    18,
+    "Airway Devices — Indications - Interpretation of Results",
+    10,
+    5,
+    "Airway Devices — Indications"
+  ],
+  [
+    18,
+    "Airway Devices — Indications - Complications & Management",
+    10,
+    5,
+    "Airway Devices — Indications"
+  ],
+  [
+    18,
+    "Endotracheal Intubation — Laryngoscope Blades, Cormack-Lehane Grades & Difficult Airway",
+    10,
+    18,
+    "Airway Management & Equipment"
+  ],
+  [
+    18,
+    "Endotracheal Intubation — Laryngoscope Blades, Cormack-Lehane Grades",
+    10,
+    9,
+    "Endotracheal Intubation — Laryngoscope Blades, Cormack-Lehane Grades & Difficult Airway"
+  ],
+  [
+    18,
+    "Endotracheal Intubation — Laryngoscope Blades, Cormack-Lehane Grades - Basic Principles & Physics",
+    10,
+    5,
+    "Endotracheal Intubation — Laryngoscope Blades, Cormack-Lehane Grades"
+  ],
+  [
+    18,
+    "Endotracheal Intubation — Laryngoscope Blades, Cormack-Lehane Grades - Indications & Patient Selection",
+    10,
+    5,
+    "Endotracheal Intubation — Laryngoscope Blades, Cormack-Lehane Grades"
+  ],
+  [
+    18,
+    "Endotracheal Intubation — Laryngoscope Blades, Cormack-Lehane Grades - Technique & Procedure",
+    10,
+    5,
+    "Endotracheal Intubation — Laryngoscope Blades, Cormack-Lehane Grades"
+  ],
+  [
+    18,
+    "Endotracheal Intubation — Laryngoscope Blades, Cormack-Lehane Grades - Interpretation of Results",
+    10,
+    5,
+    "Endotracheal Intubation — Laryngoscope Blades, Cormack-Lehane Grades"
+  ],
+  [
+    18,
+    "Endotracheal Intubation — Laryngoscope Blades, Cormack-Lehane Grades - Complications & Management",
+    10,
+    5,
+    "Endotracheal Intubation — Laryngoscope Blades, Cormack-Lehane Grades"
+  ],
+  [
+    18,
+    "Endotracheal Intubation — Difficult Airway",
+    10,
+    9,
+    "Endotracheal Intubation — Laryngoscope Blades, Cormack-Lehane Grades & Difficult Airway"
+  ],
+  [
+    18,
+    "Endotracheal Intubation — Difficult Airway - Basic Principles & Physics",
+    10,
+    5,
+    "Endotracheal Intubation — Difficult Airway"
+  ],
+  [
+    18,
+    "Endotracheal Intubation — Difficult Airway - Indications & Patient Selection",
+    10,
+    5,
+    "Endotracheal Intubation — Difficult Airway"
+  ],
+  [
+    18,
+    "Endotracheal Intubation — Difficult Airway - Technique & Procedure",
+    10,
+    5,
+    "Endotracheal Intubation — Difficult Airway"
+  ],
+  [
+    18,
+    "Endotracheal Intubation — Difficult Airway - Interpretation of Results",
+    10,
+    5,
+    "Endotracheal Intubation — Difficult Airway"
+  ],
+  [
+    18,
+    "Endotracheal Intubation — Difficult Airway - Complications & Management",
+    10,
+    5,
+    "Endotracheal Intubation — Difficult Airway"
+  ],
+  [
+    18,
+    "Failed Intubation — Can't Intubate Can't Oxygenate (CICO) & Front of Neck Access",
+    10,
+    12,
+    "Airway Management & Equipment"
+  ],
+  [
+    18,
+    "Failed Intubation — Can't Intubate Can't Oxygenate (CICO)",
+    10,
+    6,
+    "Failed Intubation — Can't Intubate Can't Oxygenate (CICO) & Front of Neck Access"
+  ],
+  [
+    18,
+    "Failed Intubation — Can't Intubate Can't Oxygenate (CICO) - Basic Principles & Physics",
+    10,
+    5,
+    "Failed Intubation — Can't Intubate Can't Oxygenate (CICO)"
+  ],
+  [
+    18,
+    "Failed Intubation — Can't Intubate Can't Oxygenate (CICO) - Indications & Patient Selection",
+    10,
+    5,
+    "Failed Intubation — Can't Intubate Can't Oxygenate (CICO)"
+  ],
+  [
+    18,
+    "Failed Intubation — Can't Intubate Can't Oxygenate (CICO) - Technique & Procedure",
+    10,
+    5,
+    "Failed Intubation — Can't Intubate Can't Oxygenate (CICO)"
+  ],
+  [
+    18,
+    "Failed Intubation — Can't Intubate Can't Oxygenate (CICO) - Interpretation of Results",
+    10,
+    5,
+    "Failed Intubation — Can't Intubate Can't Oxygenate (CICO)"
+  ],
+  [
+    18,
+    "Failed Intubation — Can't Intubate Can't Oxygenate (CICO) - Complications & Management",
+    10,
+    5,
+    "Failed Intubation — Can't Intubate Can't Oxygenate (CICO)"
+  ],
+  [
+    18,
+    "Failed Intubation — Front of Neck Access",
+    10,
+    6,
+    "Failed Intubation — Can't Intubate Can't Oxygenate (CICO) & Front of Neck Access"
+  ],
+  [
+    18,
+    "Failed Intubation — Front of Neck Access - Basic Principles & Physics",
+    10,
+    5,
+    "Failed Intubation — Front of Neck Access"
+  ],
+  [
+    18,
+    "Failed Intubation — Front of Neck Access - Indications & Patient Selection",
+    10,
+    5,
+    "Failed Intubation — Front of Neck Access"
+  ],
+  [
+    18,
+    "Failed Intubation — Front of Neck Access - Technique & Procedure",
+    10,
+    5,
+    "Failed Intubation — Front of Neck Access"
+  ],
+  [
+    18,
+    "Failed Intubation — Front of Neck Access - Interpretation of Results",
+    10,
+    5,
+    "Failed Intubation — Front of Neck Access"
+  ],
+  [
+    18,
+    "Failed Intubation — Front of Neck Access - Complications & Management",
+    10,
+    5,
+    "Failed Intubation — Front of Neck Access"
+  ],
+  [18, "Regional Anesthesia", 9, 45],
+  [18, "Spinal & Epidural Anesthesia", 10, 45, "Regional Anesthesia"],
+  [
+    18,
+    "Spinal Anesthesia — Level, Drugs (Bupivacaine, Fentanyl), Complications & Contraindications",
+    10,
+    18,
+    "Spinal & Epidural Anesthesia"
+  ],
+  [
+    18,
+    "Spinal Anesthesia — Level, Drugs (Bupivacaine, Fentanyl), Complications",
+    10,
+    9,
+    "Spinal Anesthesia — Level, Drugs (Bupivacaine, Fentanyl), Complications & Contraindications"
+  ],
+  [
+    18,
+    "Spinal Anesthesia — Level, Drugs (Bupivacaine, Fentanyl), Complications - Basic Principles & Physics",
+    10,
+    5,
+    "Spinal Anesthesia — Level, Drugs (Bupivacaine, Fentanyl), Complications"
+  ],
+  [
+    18,
+    "Spinal Anesthesia — Level, Drugs (Bupivacaine, Fentanyl), Complications - Indications & Patient Selection",
+    10,
+    5,
+    "Spinal Anesthesia — Level, Drugs (Bupivacaine, Fentanyl), Complications"
+  ],
+  [
+    18,
+    "Spinal Anesthesia — Level, Drugs (Bupivacaine, Fentanyl), Complications - Technique & Procedure",
+    10,
+    5,
+    "Spinal Anesthesia — Level, Drugs (Bupivacaine, Fentanyl), Complications"
+  ],
+  [
+    18,
+    "Spinal Anesthesia — Level, Drugs (Bupivacaine, Fentanyl), Complications - Interpretation of Results",
+    10,
+    5,
+    "Spinal Anesthesia — Level, Drugs (Bupivacaine, Fentanyl), Complications"
+  ],
+  [
+    18,
+    "Spinal Anesthesia — Level, Drugs (Bupivacaine, Fentanyl), Complications - Complications & Management",
+    10,
+    5,
+    "Spinal Anesthesia — Level, Drugs (Bupivacaine, Fentanyl), Complications"
+  ],
+  [
+    18,
+    "Spinal Anesthesia — Contraindications",
+    10,
+    9,
+    "Spinal Anesthesia — Level, Drugs (Bupivacaine, Fentanyl), Complications & Contraindications"
+  ],
+  [
+    18,
+    "Spinal Anesthesia — Contraindications - Basic Principles & Physics",
+    10,
+    5,
+    "Spinal Anesthesia — Contraindications"
+  ],
+  [
+    18,
+    "Spinal Anesthesia — Contraindications - Indications & Patient Selection",
+    10,
+    5,
+    "Spinal Anesthesia — Contraindications"
+  ],
+  [
+    18,
+    "Spinal Anesthesia — Contraindications - Technique & Procedure",
+    10,
+    5,
+    "Spinal Anesthesia — Contraindications"
+  ],
+  [
+    18,
+    "Spinal Anesthesia — Contraindications - Interpretation of Results",
+    10,
+    5,
+    "Spinal Anesthesia — Contraindications"
+  ],
+  [
+    18,
+    "Spinal Anesthesia — Contraindications - Complications & Management",
+    10,
+    5,
+    "Spinal Anesthesia — Contraindications"
+  ],
+  [
+    18,
+    "Epidural Anesthesia — Technique, Loss of Resistance & Catheter Uses (Labour, Postop)",
+    10,
+    18,
+    "Spinal & Epidural Anesthesia"
+  ],
+  [
+    18,
+    "Epidural Anesthesia — Technique, Loss of Resistance",
+    10,
+    9,
+    "Epidural Anesthesia — Technique, Loss of Resistance & Catheter Uses (Labour, Postop)"
+  ],
+  [
+    18,
+    "Epidural Anesthesia — Technique, Loss of Resistance - Basic Principles & Physics",
+    10,
+    5,
+    "Epidural Anesthesia — Technique, Loss of Resistance"
+  ],
+  [
+    18,
+    "Epidural Anesthesia — Technique, Loss of Resistance - Indications & Patient Selection",
+    10,
+    5,
+    "Epidural Anesthesia — Technique, Loss of Resistance"
+  ],
+  [
+    18,
+    "Epidural Anesthesia — Technique, Loss of Resistance - Technique & Procedure",
+    10,
+    5,
+    "Epidural Anesthesia — Technique, Loss of Resistance"
+  ],
+  [
+    18,
+    "Epidural Anesthesia — Technique, Loss of Resistance - Interpretation of Results",
+    10,
+    5,
+    "Epidural Anesthesia — Technique, Loss of Resistance"
+  ],
+  [
+    18,
+    "Epidural Anesthesia — Technique, Loss of Resistance - Complications & Management",
+    10,
+    5,
+    "Epidural Anesthesia — Technique, Loss of Resistance"
+  ],
+  [
+    18,
+    "Epidural Anesthesia — Catheter Uses (Labour, Postop)",
+    10,
+    9,
+    "Epidural Anesthesia — Technique, Loss of Resistance & Catheter Uses (Labour, Postop)"
+  ],
+  [
+    18,
+    "Epidural Anesthesia — Catheter Uses (Labour, Postop) - Basic Principles & Physics",
+    10,
+    5,
+    "Epidural Anesthesia — Catheter Uses (Labour, Postop)"
+  ],
+  [
+    18,
+    "Epidural Anesthesia — Catheter Uses (Labour, Postop) - Indications & Patient Selection",
+    10,
+    5,
+    "Epidural Anesthesia — Catheter Uses (Labour, Postop)"
+  ],
+  [
+    18,
+    "Epidural Anesthesia — Catheter Uses (Labour, Postop) - Technique & Procedure",
+    10,
+    5,
+    "Epidural Anesthesia — Catheter Uses (Labour, Postop)"
+  ],
+  [
+    18,
+    "Epidural Anesthesia — Catheter Uses (Labour, Postop) - Interpretation of Results",
+    10,
+    5,
+    "Epidural Anesthesia — Catheter Uses (Labour, Postop)"
+  ],
+  [
+    18,
+    "Epidural Anesthesia — Catheter Uses (Labour, Postop) - Complications & Management",
+    10,
+    5,
+    "Epidural Anesthesia — Catheter Uses (Labour, Postop)"
+  ],
+  [
+    18,
+    "Spinal vs Epidural — Key Differences: Onset, Volume, Dural Tap & PDPH Management",
+    10,
+    12,
+    "Spinal & Epidural Anesthesia"
+  ],
+  [
+    18,
+    "Spinal vs Epidural — Key Differences: Onset, Volume, Dural Tap",
+    10,
+    6,
+    "Spinal vs Epidural — Key Differences: Onset, Volume, Dural Tap & PDPH Management"
+  ],
+  [
+    18,
+    "Spinal vs Epidural — Key Differences: Onset, Volume, Dural Tap - Basic Principles & Physics",
+    10,
+    5,
+    "Spinal vs Epidural — Key Differences: Onset, Volume, Dural Tap"
+  ],
+  [
+    18,
+    "Spinal vs Epidural — Key Differences: Onset, Volume, Dural Tap - Indications & Patient Selection",
+    10,
+    5,
+    "Spinal vs Epidural — Key Differences: Onset, Volume, Dural Tap"
+  ],
+  [
+    18,
+    "Spinal vs Epidural — Key Differences: Onset, Volume, Dural Tap - Technique & Procedure",
+    10,
+    5,
+    "Spinal vs Epidural — Key Differences: Onset, Volume, Dural Tap"
+  ],
+  [
+    18,
+    "Spinal vs Epidural — Key Differences: Onset, Volume, Dural Tap - Interpretation of Results",
+    10,
+    5,
+    "Spinal vs Epidural — Key Differences: Onset, Volume, Dural Tap"
+  ],
+  [
+    18,
+    "Spinal vs Epidural — Key Differences: Onset, Volume, Dural Tap - Complications & Management",
+    10,
+    5,
+    "Spinal vs Epidural — Key Differences: Onset, Volume, Dural Tap"
+  ],
+  [
+    18,
+    "Spinal vs Epidural — PDPH Management",
+    10,
+    6,
+    "Spinal vs Epidural — Key Differences: Onset, Volume, Dural Tap & PDPH Management"
+  ],
+  [
+    18,
+    "Spinal vs Epidural — PDPH Management - Basic Principles & Physics",
+    10,
+    5,
+    "Spinal vs Epidural — PDPH Management"
+  ],
+  [
+    18,
+    "Spinal vs Epidural — PDPH Management - Indications & Patient Selection",
+    10,
+    5,
+    "Spinal vs Epidural — PDPH Management"
+  ],
+  [
+    18,
+    "Spinal vs Epidural — PDPH Management - Technique & Procedure",
+    10,
+    5,
+    "Spinal vs Epidural — PDPH Management"
+  ],
+  [
+    18,
+    "Spinal vs Epidural — PDPH Management - Interpretation of Results",
+    10,
+    5,
+    "Spinal vs Epidural — PDPH Management"
+  ],
+  [
+    18,
+    "Spinal vs Epidural — PDPH Management - Complications & Management",
+    10,
+    5,
+    "Spinal vs Epidural — PDPH Management"
+  ],
+  [18, "Local Anesthetics", 9, 35, "Regional Anesthesia"],
+  [
+    18,
+    "LA Mechanism — Na+ Channel Blockade, Ester vs Amide & Allergic Reactions",
+    9,
+    15,
+    "Local Anesthetics"
+  ],
+  [
+    18,
+    "LA Mechanism — Na+ Channel Blockade, Ester vs Amide",
+    9,
+    7,
+    "LA Mechanism — Na+ Channel Blockade, Ester vs Amide & Allergic Reactions"
+  ],
+  [
+    18,
+    "LA Mechanism — Na+ Channel Blockade, Ester vs Amide - Basic Principles & Physics",
+    9,
+    5,
+    "LA Mechanism — Na+ Channel Blockade, Ester vs Amide"
+  ],
+  [
+    18,
+    "LA Mechanism — Na+ Channel Blockade, Ester vs Amide - Indications & Patient Selection",
+    9,
+    5,
+    "LA Mechanism — Na+ Channel Blockade, Ester vs Amide"
+  ],
+  [
+    18,
+    "LA Mechanism — Na+ Channel Blockade, Ester vs Amide - Technique & Procedure",
+    9,
+    5,
+    "LA Mechanism — Na+ Channel Blockade, Ester vs Amide"
+  ],
+  [
+    18,
+    "LA Mechanism — Na+ Channel Blockade, Ester vs Amide - Interpretation of Results",
+    9,
+    5,
+    "LA Mechanism — Na+ Channel Blockade, Ester vs Amide"
+  ],
+  [
+    18,
+    "LA Mechanism — Na+ Channel Blockade, Ester vs Amide - Complications & Management",
+    9,
+    5,
+    "LA Mechanism — Na+ Channel Blockade, Ester vs Amide"
+  ],
+  [
+    18,
+    "LA Mechanism — Allergic Reactions",
+    9,
+    8,
+    "LA Mechanism — Na+ Channel Blockade, Ester vs Amide & Allergic Reactions"
+  ],
+  [
+    18,
+    "LA Mechanism — Allergic Reactions - Basic Principles & Physics",
+    9,
+    5,
+    "LA Mechanism — Allergic Reactions"
+  ],
+  [
+    18,
+    "LA Mechanism — Allergic Reactions - Indications & Patient Selection",
+    9,
+    5,
+    "LA Mechanism — Allergic Reactions"
+  ],
+  [
+    18,
+    "LA Mechanism — Allergic Reactions - Technique & Procedure",
+    9,
+    5,
+    "LA Mechanism — Allergic Reactions"
+  ],
+  [
+    18,
+    "LA Mechanism — Allergic Reactions - Interpretation of Results",
+    9,
+    5,
+    "LA Mechanism — Allergic Reactions"
+  ],
+  [
+    18,
+    "LA Mechanism — Allergic Reactions - Complications & Management",
+    9,
+    5,
+    "LA Mechanism — Allergic Reactions"
+  ],
+  [
+    18,
+    "LA Toxicity — CNS (First) vs CVS Toxicity, Max Doses & Intralipid Rescue",
+    9,
+    18,
+    "Local Anesthetics"
+  ],
+  [
+    18,
+    "LA Toxicity — CNS (First) vs CVS Toxicity, Max Doses",
+    9,
+    9,
+    "LA Toxicity — CNS (First) vs CVS Toxicity, Max Doses & Intralipid Rescue"
+  ],
+  [
+    18,
+    "LA Toxicity — CNS (First) vs CVS Toxicity, Max Doses - Basic Principles & Physics",
+    9,
+    5,
+    "LA Toxicity — CNS (First) vs CVS Toxicity, Max Doses"
+  ],
+  [
+    18,
+    "LA Toxicity — CNS (First) vs CVS Toxicity, Max Doses - Indications & Patient Selection",
+    9,
+    5,
+    "LA Toxicity — CNS (First) vs CVS Toxicity, Max Doses"
+  ],
+  [
+    18,
+    "LA Toxicity — CNS (First) vs CVS Toxicity, Max Doses - Technique & Procedure",
+    9,
+    5,
+    "LA Toxicity — CNS (First) vs CVS Toxicity, Max Doses"
+  ],
+  [
+    18,
+    "LA Toxicity — CNS (First) vs CVS Toxicity, Max Doses - Interpretation of Results",
+    9,
+    5,
+    "LA Toxicity — CNS (First) vs CVS Toxicity, Max Doses"
+  ],
+  [
+    18,
+    "LA Toxicity — CNS (First) vs CVS Toxicity, Max Doses - Complications & Management",
+    9,
+    5,
+    "LA Toxicity — CNS (First) vs CVS Toxicity, Max Doses"
+  ],
+  [
+    18,
+    "LA Toxicity — Intralipid Rescue",
+    9,
+    9,
+    "LA Toxicity — CNS (First) vs CVS Toxicity, Max Doses & Intralipid Rescue"
+  ],
+  [
+    18,
+    "LA Toxicity — Intralipid Rescue - Basic Principles & Physics",
+    9,
+    5,
+    "LA Toxicity — Intralipid Rescue"
+  ],
+  [
+    18,
+    "LA Toxicity — Intralipid Rescue - Indications & Patient Selection",
+    9,
+    5,
+    "LA Toxicity — Intralipid Rescue"
+  ],
+  [
+    18,
+    "LA Toxicity — Intralipid Rescue - Technique & Procedure",
+    9,
+    5,
+    "LA Toxicity — Intralipid Rescue"
+  ],
+  [
+    18,
+    "LA Toxicity — Intralipid Rescue - Interpretation of Results",
+    9,
+    5,
+    "LA Toxicity — Intralipid Rescue"
+  ],
+  [
+    18,
+    "LA Toxicity — Intralipid Rescue - Complications & Management",
+    9,
+    5,
+    "LA Toxicity — Intralipid Rescue"
+  ],
+  [18, "Critical Care & Resuscitation", 9, 45],
+  [18, "CPR & BLS/ACLS", 10, 45, "Critical Care & Resuscitation"],
+  [18, "BLS — CAB Sequence, Compression-Ventilation Ratio & AED Use", 10, 15, "CPR & BLS/ACLS"],
+  [
+    18,
+    "BLS — CAB Sequence, Compression-Ventilation Ratio",
+    10,
+    7,
+    "BLS — CAB Sequence, Compression-Ventilation Ratio & AED Use"
+  ],
+  [
+    18,
+    "BLS — CAB Sequence, Compression-Ventilation Ratio - Basic Principles & Physics",
+    10,
+    5,
+    "BLS — CAB Sequence, Compression-Ventilation Ratio"
+  ],
+  [
+    18,
+    "BLS — CAB Sequence, Compression-Ventilation Ratio - Indications & Patient Selection",
+    10,
+    5,
+    "BLS — CAB Sequence, Compression-Ventilation Ratio"
+  ],
+  [
+    18,
+    "BLS — CAB Sequence, Compression-Ventilation Ratio - Technique & Procedure",
+    10,
+    5,
+    "BLS — CAB Sequence, Compression-Ventilation Ratio"
+  ],
+  [
+    18,
+    "BLS — CAB Sequence, Compression-Ventilation Ratio - Interpretation of Results",
+    10,
+    5,
+    "BLS — CAB Sequence, Compression-Ventilation Ratio"
+  ],
+  [
+    18,
+    "BLS — CAB Sequence, Compression-Ventilation Ratio - Complications & Management",
+    10,
+    5,
+    "BLS — CAB Sequence, Compression-Ventilation Ratio"
+  ],
+  [18, "BLS — AED Use", 10, 8, "BLS — CAB Sequence, Compression-Ventilation Ratio & AED Use"],
+  [18, "BLS — AED Use - Basic Principles & Physics", 10, 5, "BLS — AED Use"],
+  [18, "BLS — AED Use - Indications & Patient Selection", 10, 5, "BLS — AED Use"],
+  [18, "BLS — AED Use - Technique & Procedure", 10, 5, "BLS — AED Use"],
+  [18, "BLS — AED Use - Interpretation of Results", 10, 5, "BLS — AED Use"],
+  [18, "BLS — AED Use - Complications & Management", 10, 5, "BLS — AED Use"],
+  [
+    18,
+    "ACLS — Shockable (VF/VT) vs Non-shockable (PEA/Asystole) Algorithms",
+    10,
+    18,
+    "CPR & BLS/ACLS"
+  ],
+  [
+    18,
+    "ACLS — Basics",
+    10,
+    9,
+    "ACLS — Shockable (VF/VT) vs Non-shockable (PEA/Asystole) Algorithms"
+  ],
+  [18, "ACLS — Basics - Basic Principles & Physics", 10, 5, "ACLS — Basics"],
+  [18, "ACLS — Basics - Indications & Patient Selection", 10, 5, "ACLS — Basics"],
+  [18, "ACLS — Basics - Technique & Procedure", 10, 5, "ACLS — Basics"],
+  [18, "ACLS — Basics - Interpretation of Results", 10, 5, "ACLS — Basics"],
+  [18, "ACLS — Basics - Complications & Management", 10, 5, "ACLS — Basics"],
+  [
+    18,
+    "ACLS — Details",
+    10,
+    9,
+    "ACLS — Shockable (VF/VT) vs Non-shockable (PEA/Asystole) Algorithms"
+  ],
+  [18, "ACLS — Details - Basic Principles & Physics", 10, 5, "ACLS — Details"],
+  [18, "ACLS — Details - Indications & Patient Selection", 10, 5, "ACLS — Details"],
+  [18, "ACLS — Details - Technique & Procedure", 10, 5, "ACLS — Details"],
+  [18, "ACLS — Details - Interpretation of Results", 10, 5, "ACLS — Details"],
+  [18, "ACLS — Details - Complications & Management", 10, 5, "ACLS — Details"],
+  [
+    18,
+    "Post-resuscitation Care — Target Temperature Management & Coronary Angiography",
+    10,
+    12,
+    "CPR & BLS/ACLS"
+  ],
+  [
+    18,
+    "Post-resuscitation Care — Target Temperature Management",
+    10,
+    6,
+    "Post-resuscitation Care — Target Temperature Management & Coronary Angiography"
+  ],
+  [
+    18,
+    "Post-resuscitation Care — Target Temperature Management - Basic Principles & Physics",
+    10,
+    5,
+    "Post-resuscitation Care — Target Temperature Management"
+  ],
+  [
+    18,
+    "Post-resuscitation Care — Target Temperature Management - Indications & Patient Selection",
+    10,
+    5,
+    "Post-resuscitation Care — Target Temperature Management"
+  ],
+  [
+    18,
+    "Post-resuscitation Care — Target Temperature Management - Technique & Procedure",
+    10,
+    5,
+    "Post-resuscitation Care — Target Temperature Management"
+  ],
+  [
+    18,
+    "Post-resuscitation Care — Target Temperature Management - Interpretation of Results",
+    10,
+    5,
+    "Post-resuscitation Care — Target Temperature Management"
+  ],
+  [
+    18,
+    "Post-resuscitation Care — Target Temperature Management - Complications & Management",
+    10,
+    5,
+    "Post-resuscitation Care — Target Temperature Management"
+  ],
+  [
+    18,
+    "Post-resuscitation Care — Coronary Angiography",
+    10,
+    6,
+    "Post-resuscitation Care — Target Temperature Management & Coronary Angiography"
+  ],
+  [
+    18,
+    "Post-resuscitation Care — Coronary Angiography - Basic Principles & Physics",
+    10,
+    5,
+    "Post-resuscitation Care — Coronary Angiography"
+  ],
+  [
+    18,
+    "Post-resuscitation Care — Coronary Angiography - Indications & Patient Selection",
+    10,
+    5,
+    "Post-resuscitation Care — Coronary Angiography"
+  ],
+  [
+    18,
+    "Post-resuscitation Care — Coronary Angiography - Technique & Procedure",
+    10,
+    5,
+    "Post-resuscitation Care — Coronary Angiography"
+  ],
+  [
+    18,
+    "Post-resuscitation Care — Coronary Angiography - Interpretation of Results",
+    10,
+    5,
+    "Post-resuscitation Care — Coronary Angiography"
+  ],
+  [
+    18,
+    "Post-resuscitation Care — Coronary Angiography - Complications & Management",
+    10,
+    5,
+    "Post-resuscitation Care — Coronary Angiography"
+  ],
+  [18, "Oxygen Therapy & Monitoring", 8, 35, "Critical Care & Resuscitation"],
+  [
+    18,
+    "Oxygen Delivery Systems — Low-flow (NC, Mask) vs High-flow (Venturi, HFNC)",
+    8,
+    15,
+    "Oxygen Therapy & Monitoring"
+  ],
+  [
+    18,
+    "Oxygen Delivery Systems — Low-flow (NC",
+    8,
+    7,
+    "Oxygen Delivery Systems — Low-flow (NC, Mask) vs High-flow (Venturi, HFNC)"
+  ],
+  [
+    18,
+    "Oxygen Delivery Systems — Low-flow (NC - Basic Principles & Physics",
+    8,
+    5,
+    "Oxygen Delivery Systems — Low-flow (NC"
+  ],
+  [
+    18,
+    "Oxygen Delivery Systems — Low-flow (NC - Indications & Patient Selection",
+    8,
+    5,
+    "Oxygen Delivery Systems — Low-flow (NC"
+  ],
+  [
+    18,
+    "Oxygen Delivery Systems — Low-flow (NC - Technique & Procedure",
+    8,
+    5,
+    "Oxygen Delivery Systems — Low-flow (NC"
+  ],
+  [
+    18,
+    "Oxygen Delivery Systems — Low-flow (NC - Interpretation of Results",
+    8,
+    5,
+    "Oxygen Delivery Systems — Low-flow (NC"
+  ],
+  [
+    18,
+    "Oxygen Delivery Systems — Low-flow (NC - Complications & Management",
+    8,
+    5,
+    "Oxygen Delivery Systems — Low-flow (NC"
+  ],
+  [
+    18,
+    "Oxygen Delivery Systems — Mask) vs High-flow (Venturi, HFNC)",
+    8,
+    8,
+    "Oxygen Delivery Systems — Low-flow (NC, Mask) vs High-flow (Venturi, HFNC)"
+  ],
+  [
+    18,
+    "Oxygen Delivery Systems — Mask) vs High-flow (Venturi, HFNC) - Basic Principles & Physics",
+    8,
+    5,
+    "Oxygen Delivery Systems — Mask) vs High-flow (Venturi, HFNC)"
+  ],
+  [
+    18,
+    "Oxygen Delivery Systems — Mask) vs High-flow (Venturi, HFNC) - Indications & Patient Selection",
+    8,
+    5,
+    "Oxygen Delivery Systems — Mask) vs High-flow (Venturi, HFNC)"
+  ],
+  [
+    18,
+    "Oxygen Delivery Systems — Mask) vs High-flow (Venturi, HFNC) - Technique & Procedure",
+    8,
+    5,
+    "Oxygen Delivery Systems — Mask) vs High-flow (Venturi, HFNC)"
+  ],
+  [
+    18,
+    "Oxygen Delivery Systems — Mask) vs High-flow (Venturi, HFNC) - Interpretation of Results",
+    8,
+    5,
+    "Oxygen Delivery Systems — Mask) vs High-flow (Venturi, HFNC)"
+  ],
+  [
+    18,
+    "Oxygen Delivery Systems — Mask) vs High-flow (Venturi, HFNC) - Complications & Management",
+    8,
+    5,
+    "Oxygen Delivery Systems — Mask) vs High-flow (Venturi, HFNC)"
+  ],
+  [
+    18,
+    "ICU Monitoring — Invasive BP, CVP, SpO2, EtCO2 & BIS (Depth of Anesthesia)",
+    8,
+    18,
+    "Oxygen Therapy & Monitoring"
+  ],
+  [
+    18,
+    "ICU Monitoring — Invasive BP, CVP, SpO2, EtCO2",
+    8,
+    9,
+    "ICU Monitoring — Invasive BP, CVP, SpO2, EtCO2 & BIS (Depth of Anesthesia)"
+  ],
+  [
+    18,
+    "ICU Monitoring — Invasive BP, CVP, SpO2, EtCO2 - Basic Principles & Physics",
+    8,
+    5,
+    "ICU Monitoring — Invasive BP, CVP, SpO2, EtCO2"
+  ],
+  [
+    18,
+    "ICU Monitoring — Invasive BP, CVP, SpO2, EtCO2 - Indications & Patient Selection",
+    8,
+    5,
+    "ICU Monitoring — Invasive BP, CVP, SpO2, EtCO2"
+  ],
+  [
+    18,
+    "ICU Monitoring — Invasive BP, CVP, SpO2, EtCO2 - Technique & Procedure",
+    8,
+    5,
+    "ICU Monitoring — Invasive BP, CVP, SpO2, EtCO2"
+  ],
+  [
+    18,
+    "ICU Monitoring — Invasive BP, CVP, SpO2, EtCO2 - Interpretation of Results",
+    8,
+    5,
+    "ICU Monitoring — Invasive BP, CVP, SpO2, EtCO2"
+  ],
+  [
+    18,
+    "ICU Monitoring — Invasive BP, CVP, SpO2, EtCO2 - Complications & Management",
+    8,
+    5,
+    "ICU Monitoring — Invasive BP, CVP, SpO2, EtCO2"
+  ],
+  [
+    18,
+    "ICU Monitoring — BIS (Depth of Anesthesia)",
+    8,
+    9,
+    "ICU Monitoring — Invasive BP, CVP, SpO2, EtCO2 & BIS (Depth of Anesthesia)"
+  ],
+  [
+    18,
+    "ICU Monitoring — BIS (Depth of Anesthesia) - Basic Principles & Physics",
+    8,
+    5,
+    "ICU Monitoring — BIS (Depth of Anesthesia)"
+  ],
+  [
+    18,
+    "ICU Monitoring — BIS (Depth of Anesthesia) - Indications & Patient Selection",
+    8,
+    5,
+    "ICU Monitoring — BIS (Depth of Anesthesia)"
+  ],
+  [
+    18,
+    "ICU Monitoring — BIS (Depth of Anesthesia) - Technique & Procedure",
+    8,
+    5,
+    "ICU Monitoring — BIS (Depth of Anesthesia)"
+  ],
+  [
+    18,
+    "ICU Monitoring — BIS (Depth of Anesthesia) - Interpretation of Results",
+    8,
+    5,
+    "ICU Monitoring — BIS (Depth of Anesthesia)"
+  ],
+  [
+    18,
+    "ICU Monitoring — BIS (Depth of Anesthesia) - Complications & Management",
+    8,
+    5,
+    "ICU Monitoring — BIS (Depth of Anesthesia)"
+  ]
 ]

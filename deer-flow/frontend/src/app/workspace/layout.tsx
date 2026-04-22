@@ -7,7 +7,7 @@ import { CommandPalette } from "@/components/workspace/command-palette";
 import { WorkspaceSidebar } from "@/components/workspace/workspace-sidebar";
 
 function parseSidebarOpenCookie(
-  value: string | undefined,
+  value: string | undefined
 ): boolean | undefined {
   if (value === "true") return true;
   if (value === "false") return false;
@@ -19,7 +19,7 @@ export default async function WorkspaceLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   const cookieStore = await cookies();
   const initialSidebarOpen = parseSidebarOpenCookie(
-    cookieStore.get("sidebar_state")?.value,
+    cookieStore.get("sidebar_state")?.value
   );
 
   return (

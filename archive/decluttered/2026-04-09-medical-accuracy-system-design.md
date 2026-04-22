@@ -174,6 +174,7 @@ function extractMedicalEntities(content: AIContent): ExtractedEntities {
 ### Trusted Sources
 
 1. **DBMCI One / BTR lecture transcripts** (primary — "gold standard" for NEET-PG)
+
    - Source: `lecture_notes` table with `appName = 'DBMCI One'` or `appName = 'BTR'`
    - Query: `getLectureTranscriptsBySubject()` + filter by topic similarity
 
@@ -569,11 +570,13 @@ MedTE (Medical Text Embedding) is the state-of-the-art medical embedding model w
 ### Unit Tests
 
 1. **Entity extraction accuracy:**
+
    - Input: AI-generated quiz with known drug names, diseases, dosages
    - Expected: All entities extracted correctly
    - Test: `extractMedicalEntities()` returns correct lists
 
 2. **Similarity calculation:**
+
    - Input: Two similar medical texts
    - Expected: Jaccard similarity score in reasonable range (0.3-0.8)
    - Test: `calculateTextSimilarity()` returns expected scores
@@ -586,6 +589,7 @@ MedTE (Medical Text Embedding) is the state-of-the-art medical embedding model w
 ### Integration Tests
 
 1. **Fact-check pipeline:**
+
    - Generate content → trigger background check → verify flag status
    - Test: Content with known errors gets auto-flagged
 
@@ -596,6 +600,7 @@ MedTE (Medical Text Embedding) is the state-of-the-art medical embedding model w
 ### E2E Tests (Detox)
 
 1. **Flag button interaction:**
+
    - Navigate to topic → view keypoints → tap flag button → select reason → submit → verify notification
 
 2. **Flagged Content screen:**

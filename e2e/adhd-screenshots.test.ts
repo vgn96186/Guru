@@ -53,7 +53,7 @@ describe('ADHD Screenshots: Decision Points', () => {
 
   it('05 — Tools expanded', async () => {
     await element(by.id('tools-library-header')).tap();
-    await new Promise(resolve => setTimeout(resolve, 500));
+    await new Promise((resolve) => setTimeout(resolve, 500));
     await device.takeScreenshot('05-home-tools-expanded');
   });
 
@@ -64,7 +64,7 @@ describe('ADHD Screenshots: Decision Points', () => {
       .whileElement(by.id('home-scroll'))
       .scroll(200, 'down');
     await element(by.id('challenges-header')).tap();
-    await new Promise(resolve => setTimeout(resolve, 500));
+    await new Promise((resolve) => setTimeout(resolve, 500));
     await device.takeScreenshot('06-home-challenges-expanded');
   });
 
@@ -95,7 +95,7 @@ describe('ADHD Screenshots: Decision Points', () => {
 
   it('09 — Topic detail', async () => {
     await element(by.text('Anatomy')).tap();
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    await new Promise((resolve) => setTimeout(resolve, 1000));
     await device.takeScreenshot('09-topic-detail-anatomy');
   });
 

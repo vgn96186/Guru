@@ -94,8 +94,8 @@ flowchart TD
 
 ### Key Metrics
 
-| Metric | Value | Assessment |
-|--------|-------|------------|
+| Metric     | Value     | Assessment     |
+| ---------- | --------- | -------------- |
 | {METRIC_1} | {VALUE_1} | {ASSESSMENT_1} |
 | {METRIC_2} | {VALUE_2} | {ASSESSMENT_2} |
 | {METRIC_3} | {VALUE_3} | {ASSESSMENT_3} |
@@ -106,11 +106,11 @@ flowchart TD
 
 ### Feature Comparison
 
-| Feature | {SUBJECT} | {COMPETITOR_1} | {COMPETITOR_2} |
-|---------|-----------|----------------|----------------|
-| {FEATURE_1} | {SUBJ_F1} | {COMP1_F1} | {COMP2_F1} |
-| {FEATURE_2} | {SUBJ_F2} | {COMP1_F2} | {COMP2_F2} |
-| {FEATURE_3} | {SUBJ_F3} | {COMP1_F3} | {COMP2_F3} |
+| Feature     | {SUBJECT} | {COMPETITOR_1} | {COMPETITOR_2} |
+| ----------- | --------- | -------------- | -------------- |
+| {FEATURE_1} | {SUBJ_F1} | {COMP1_F1}     | {COMP2_F1}     |
+| {FEATURE_2} | {SUBJ_F2} | {COMP1_F2}     | {COMP2_F2}     |
+| {FEATURE_3} | {SUBJ_F3} | {COMP1_F3}     | {COMP2_F3}     |
 
 ### Market Positioning
 

@@ -176,12 +176,8 @@
         "maxTokens": 1024,
         "accelerators": "cpu"
       },
-      "taskTypes": [
-        "llm_tiny_garden"
-      ],
-      "bestForTaskTypes": [
-        "llm_tiny_garden"
-      ]
+      "taskTypes": ["llm_tiny_garden"],
+      "bestForTaskTypes": ["llm_tiny_garden"]
     },
     {
       "name": "MobileActions-270M",
@@ -198,12 +194,8 @@
         "maxTokens": 1024,
         "accelerators": "cpu"
       },
-      "taskTypes": [
-        "llm_mobile_actions"
-      ],
-      "bestForTaskTypes": [
-        "llm_mobile_actions"
-      ]
+      "taskTypes": ["llm_mobile_actions"],
+      "bestForTaskTypes": ["llm_mobile_actions"]
     }
   ]
 }

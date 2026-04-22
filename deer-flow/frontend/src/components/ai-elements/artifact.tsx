@@ -17,7 +17,7 @@ export const Artifact = ({ className, ...props }: ArtifactProps) => (
   <div
     className={cn(
       "bg-background flex flex-col overflow-hidden rounded-lg border shadow-lg",
-      className,
+      className
     )}
     {...props}
   />
@@ -32,7 +32,7 @@ export const ArtifactHeader = ({
   <div
     className={cn(
       "bg-muted/50 flex items-center justify-between border-b px-4 py-3",
-      className,
+      className
     )}
     {...props}
   />
@@ -50,7 +50,7 @@ export const ArtifactClose = ({
   <Button
     className={cn(
       "text-muted-foreground hover:text-foreground size-8 p-0",
-      className,
+      className
     )}
     size={size}
     type="button"
@@ -109,7 +109,7 @@ export const ArtifactAction = ({
     <Button
       className={cn(
         "text-muted-foreground hover:text-foreground size-8 p-0",
-        className,
+        className
       )}
       size={size}
       type="button"

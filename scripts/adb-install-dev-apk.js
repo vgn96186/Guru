@@ -24,7 +24,16 @@ const {
 } = require('./android-tooling');
 
 const ROOT = path.join(__dirname, '..');
-const DEFAULT_APK = path.join(ROOT, 'android', 'app', 'build', 'outputs', 'apk', 'debug', 'app-debug.apk');
+const DEFAULT_APK = path.join(
+  ROOT,
+  'android',
+  'app',
+  'build',
+  'outputs',
+  'apk',
+  'debug',
+  'app-debug.apk',
+);
 const REQUESTED_DEVICE_SERIAL = process.env.GURU_ANDROID_SERIAL?.trim() || '';
 const IF_MISSING = process.argv.includes('--if-missing');
 const ADB_CMD = resolveAdbCommand();
@@ -81,7 +90,9 @@ function ensureDeviceConnected() {
     const found = ready.find((row) => row.serial === REQUESTED_DEVICE_SERIAL);
     if (!found) {
       fail(
-        `Requested device "${REQUESTED_DEVICE_SERIAL}" not found. Available: ${ready.map((r) => r.serial).join(', ')}`,
+        `Requested device "${REQUESTED_DEVICE_SERIAL}" not found. Available: ${ready
+          .map((r) => r.serial)
+          .join(', ')}`,
       );
     }
     activeDeviceSerial = found.serial;
@@ -109,7 +120,11 @@ function uninstallPackage(packageName) {
     log(`Successfully uninstalled ${packageName}`);
   } else {
     // It's okay if uninstall fails (package might not exist)
-    log(`Package ${packageName} not installed or couldn't be uninstalled: ${result.stderr || 'unknown error'}`);
+    log(
+      `Package ${packageName} not installed or couldn't be uninstalled: ${
+        result.stderr || 'unknown error'
+      }`,
+    );
   }
 }
 
@@ -161,12 +176,14 @@ function main() {
   log(`Installing ${apkPath} → ${activeDeviceSerial || 'default device'} ...`);
   const result = runDeviceSync(['install', '-r', apkPath], { stdio: 'inherit' });
   if (result.status !== 0) {
-    fail('adb install failed. Check USB debugging, storage space, and that the APK matches this device ABI.');
+    fail(
+      'adb install failed. Check USB debugging, storage space, and that the APK matches this device ABI.',
+    );
   }
   // Check if either the debug package or production package is installed
   const debugInstalled = isAndroidPackageInstalled(ADB_CMD, activeDeviceSerial, GURU_DEBUG_PACKAGE);
   const prodInstalled = isAndroidPackageInstalled(ADB_CMD, activeDeviceSerial, PRODUCTION_PACKAGE);
-  
+
   if (!debugInstalled && !prodInstalled) {
     fail(
       [
@@ -177,9 +194,11 @@ function main() {
       ].join('\n'),
     );
   }
-  
+
   const installedPackage = debugInstalled ? GURU_DEBUG_PACKAGE : PRODUCTION_PACKAGE;
-  log(`Install finished (package: ${installedPackage}). You can use Open Dev Client or Doctor next.`);
+  log(
+    `Install finished (package: ${installedPackage}). You can use Open Dev Client or Doctor next.`,
+  );
 }
 
 main();

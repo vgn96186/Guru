@@ -387,3 +387,59 @@ export async function startSPenListening(): Promise<boolean> {
 export async function stopSPenListening(): Promise<boolean> {
   return GuruAppLauncher.stopSPenListening();
 }
+
+// ---------------------------------------------------------------------------
+// Samsung Performance SDK bridge (perfsdk-v1.0.0)
+// ---------------------------------------------------------------------------
+
+/** Mirrors `com.samsung.sdk.sperf.PerformanceManager` preset constants. */
+export const SamsungPerfPreset = {
+  CPU: 0,
+  GPU: 1,
+  BUS: 2,
+} as const;
+export type SamsungPerfPresetType = (typeof SamsungPerfPreset)[keyof typeof SamsungPerfPreset];
+
+/** Mirrors `com.samsung.sdk.sperf.CustomParams` TYPE_* constants. */
+export const SamsungPerfCustomType = {
+  CPU_MIN: 0,
+  CPU_MAX: 1,
+  GPU_MIN: 2,
+  GPU_MAX: 3,
+  BUS_MIN: 4,
+  BUS_MAX: 5,
+  CPU_CORE_NUM_MIN: 6,
+  CPU_CORE_NUM_MAX: 7,
+  CPU_AWAKE: 8,
+  TASK_PRIORITY: 9,
+  TASK_AFFINITY: 10,
+} as const;
+
+export type SamsungPerfCustomTriple = [type: number, value: number, durationMs: number];
+
+export const samsungPerf = {
+  /** Initialise SPerf. Returns true only on Samsung devices where init succeeded. */
+  init(): Promise<boolean> {
+    return withTimeout(GuruAppLauncher.samsungPerfInit(), 3_000, 'samsungPerfInit');
+  },
+  isSamsung(): Promise<boolean> {
+    return GuruAppLauncher.samsungPerfIsSamsung();
+  },
+  /** Returns a boostId (>=0) or -1 on failure. */
+  startPreset(preset: SamsungPerfPresetType, durationMs: number): Promise<number> {
+    return GuruAppLauncher.samsungPerfStartPreset(preset, durationMs);
+  },
+  /** Returns 0 on success, negative on failure. */
+  startCustom(params: SamsungPerfCustomTriple[]): Promise<number> {
+    return GuruAppLauncher.samsungPerfStartCustom(params);
+  },
+  stop(boostId: number): Promise<number> {
+    return GuruAppLauncher.samsungPerfStop(boostId);
+  },
+  stopAll(): Promise<number> {
+    return GuruAppLauncher.samsungPerfStopAll();
+  },
+  shutdown(): Promise<boolean> {
+    return GuruAppLauncher.samsungPerfShutdown();
+  },
+};

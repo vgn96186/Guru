@@ -32,6 +32,7 @@ android {
     defaultConfig {
         minSdkVersion safeExtGet("minSdkVersion", 24)
         targetSdkVersion safeExtGet("targetSdkVersion", 36)
+        consumerProguardFiles 'proguard-rules.pro'
     }
 
     compileOptions {

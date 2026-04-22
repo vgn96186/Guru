@@ -4,8 +4,8 @@ import LoadingOrb from '../components/LoadingOrb';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { MenuStackParamList } from '../navigation/types';
-import { getFlaggedContentReview, resolveContentFlags } from '../db/queries/contentFlags';
-import type { FlaggedContentItem } from '../db/queries/contentFlags';
+import { contentFlagsRepositoryDrizzle } from '../db/repositories';
+import type { FlaggedContentItem } from '../db/repositories/contentFlagsRepository.drizzle';
 import { clearSpecificContentCache } from '../db/queries/aiCache';
 import { fetchContent } from '../services/ai/content';
 import { getDb } from '../db/database';
@@ -34,7 +34,7 @@ export default function FlaggedContentScreen() {
   const loadFlagged = useCallback(async () => {
     setLoading(true);
     try {
-      const items = await getFlaggedContentReview();
+      const items = await contentFlagsRepositoryDrizzle.getFlaggedContentReview();
       setFlaggedItems(items);
     } catch (_err) {
       if (__DEV__) console.error('[FlaggedContent] Failed to load:', _err);
@@ -99,7 +99,7 @@ export default function FlaggedContentScreen() {
           await fetchContent(topicWithProgress, item.contentType);
         }
 
-        await resolveContentFlags(item.topicId, item.contentType);
+        await contentFlagsRepositoryDrizzle.resolveContentFlags(item.topicId, item.contentType);
         await loadFlagged();
       } finally {
         setProcessing(null);
@@ -110,7 +110,7 @@ export default function FlaggedContentScreen() {
 
   const [dismiss] = useAsyncAction(
     async (item: FlaggedContentItem) => {
-      await resolveContentFlags(item.topicId, item.contentType);
+      await contentFlagsRepositoryDrizzle.resolveContentFlags(item.topicId, item.contentType);
       await loadFlagged();
     },
     { fallbackMessage: 'Failed to dismiss flag.' },

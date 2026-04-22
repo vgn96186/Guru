@@ -14,6 +14,7 @@ import { linearTheme as n } from '../theme/linearTheme';
 import LinearSurface from '../components/primitives/LinearSurface';
 import { emphasizeHighYieldMarkdown } from '../utils/highlightMarkdown';
 import { Ionicons } from '@expo/vector-icons';
+import { useSPen } from '../hooks/useSPen';
 
 type Nav = NativeStackNavigationProp<RootStackParamList, 'PomodoroQuiz'>;
 type QuizRoute = RouteProp<RootStackParamList, 'PomodoroQuiz'>;
@@ -102,6 +103,14 @@ export default function PomodoroQuizScreen() {
     }
     setIsDone(true);
   }
+
+  useSPen({
+    onButton: () => {
+      if (selected !== null) {
+        handleNext();
+      }
+    },
+  });
 
   function handleReturn() {
     navigation.goBack();

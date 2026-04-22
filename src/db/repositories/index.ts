@@ -15,7 +15,7 @@ export {
   type FlaggedContentItem,
   type FlagReason,
 } from './contentFlagsRepository.drizzle';
-export { externalAppLogsRepositoryDrizzle } from './externalAppLogsRepository.drizzle';
+export { externalLogsRepositoryDrizzle } from './externalLogsRepository.drizzle';
 export { aiCacheRepositoryDrizzle } from './aiCacheRepository.drizzle';
 export { brainDumpsRepositoryDrizzle } from './brainDumpsRepository.drizzle';
 export { generatedStudyImagesRepositoryDrizzle } from './generatedStudyImagesRepository.drizzle';

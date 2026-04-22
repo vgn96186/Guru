@@ -32,6 +32,7 @@ export type RootStackParamList = {
   WakeUp: undefined;
   LocalModel: undefined;
   PomodoroQuiz: { breakPayload?: PomodoroBreakPayload } | undefined;
+  SamsungBatterySheet: undefined;
 };
 
 export type HomeStackParamList = {

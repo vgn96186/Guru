@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Alert, Modal, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { flagContentWithReason, type FlagReason } from '../db/queries/contentFlags';
+import { contentFlagsRepositoryDrizzle, type FlagReason } from '../db/repositories';
 import type { ContentType } from '../types';
 import { linearTheme as n } from '../theme/linearTheme';
 import LinearButton from './primitives/LinearButton';
@@ -33,7 +33,12 @@ export function ContentFlagButton({ topicId, contentType }: ContentFlagButtonPro
 
     setFlagging(true);
     try {
-      await flagContentWithReason(topicId, contentType, selectedReason, note || undefined);
+      await contentFlagsRepositoryDrizzle.flagContentWithReason(
+        topicId,
+        contentType,
+        selectedReason,
+        note || undefined,
+      );
       setShowModal(false);
       setSelectedReason(null);
       setNote('');

@@ -67,6 +67,7 @@ import {
   whiteAlpha,
   blackAlpha,
 } from '../../../theme/colorUtils';
+import { useSPen } from '../../../hooks/useSPen';
 
 // ── Key Points ────────────────────────────────────────────────────
 // ── Must Know & Most Tested ──────────────────────────────────────
@@ -235,9 +236,18 @@ export function QuizCard({
     } else {
       const finalScore = Math.max(scoreRef.current, score);
       onQuizComplete?.(finalScore, validQuestions.length);
-      setKeepQuizzing(true); // show Keep Quizzing / Done choice
     }
   }
+
+  useSPen({
+    onButton: () => {
+      if (selected !== null) {
+        handleNext();
+      } else {
+        handleSelect(q.correctIndex);
+      }
+    },
+  });
 
   function handleFinishQuiz() {
     const finalScore = Math.max(scoreRef.current, score);

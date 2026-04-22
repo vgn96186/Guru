@@ -1114,7 +1114,12 @@ DROP TABLE ai_cache_old;`,
     sql: `ALTER TABLE user_profile ADD COLUMN loading_orb_style TEXT NOT NULL DEFAULT 'classic'`,
     description: 'Add loading orb style preference',
   },
+  {
+    version: 169,
+    sql: `ALTER TABLE user_profile ADD COLUMN samsungBatteryPromptShownAt INTEGER DEFAULT 0`,
+    description: 'Track if Samsung battery optimization prompt was shown',
+  },
 ];
 
 /** Latest schema version. Bump when adding new migrations. */
-export const LATEST_VERSION = 168;
+export const LATEST_VERSION = 169;

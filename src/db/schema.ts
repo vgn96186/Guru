@@ -225,6 +225,8 @@ CREATE TABLE IF NOT EXISTS user_profile (
   , jina_api_key TEXT NOT NULL DEFAULT ''
   , auto_repair_legacy_notes_enabled INTEGER NOT NULL DEFAULT 0
   , scan_orphaned_transcripts_enabled INTEGER NOT NULL DEFAULT 0
+  , loading_orb_style TEXT NOT NULL DEFAULT 'classic'
+  , samsungBatteryPromptShownAt INTEGER DEFAULT 0
 )`;
 
 export const CREATE_GURU_CHAT_SESSION_MEMORY = `

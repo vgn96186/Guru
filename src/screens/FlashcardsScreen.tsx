@@ -32,6 +32,7 @@ import LoadingOrb from '../components/LoadingOrb';
 import { linearTheme as n } from '../theme/linearTheme';
 import { ResponsiveContainer } from '../hooks/useResponsive';
 import ScreenHeader from '../components/ScreenHeader';
+import { useSPen } from '../hooks/useSPen';
 
 /** Flashcard image that hides gracefully when loading fails */
 const FlashcardImage = React.memo(function FlashcardImage({

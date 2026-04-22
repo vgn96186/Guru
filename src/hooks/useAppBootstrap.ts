@@ -18,6 +18,8 @@ import { tryCompleteGitLabDuoOAuth } from '../services/ai/gitlab';
 import { validateAiProvidersOnBoot } from '../services/ai/bootProviderValidation';
 import { shouldRunAutoBackup, runAutoBackup } from '../services/unifiedBackupService';
 import { reportStartupHealth } from '../services/startupHealth';
+import { maybePromptSamsungBattery } from '../services/samsungBatteryPrompt';
+import '../services/fgsBlockedListener';
 
 /**
  * Master initialization hook.
@@ -113,6 +115,12 @@ export function useAppBootstrap(onFatalError?: (message: string) => void): void 
       void refreshAccountabilityNotificationsSafely((e) =>
         console.error('[Notifications] Refresh failed:', e),
       );
+
+      maybePromptSamsungBattery(() => {
+        if (navigationRef.isReady()) {
+          navigationRef.navigate('SamsungBatterySheet');
+        }
+      }).catch((e) => console.warn('[SamsungPrompt] failed:', e));
 
       // 4. Auto-backup check (deferred, non-blocking)
       backupTimerRef.current = setTimeout(() => {

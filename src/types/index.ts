@@ -250,6 +250,8 @@ export interface UserProfile {
   autoRepairLegacyNotesEnabled?: boolean;
   /** Toggle for scan orphaned transcripts feature (may create duplicates). */
   scanOrphanedTranscriptsEnabled?: boolean;
+  samsungBatteryPromptShownAt?: number;
+  useSPenControls?: boolean;
 }
 
 export type ProviderId =

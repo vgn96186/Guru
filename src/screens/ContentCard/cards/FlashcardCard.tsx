@@ -61,6 +61,7 @@ import { extractMedicalConcepts } from '../utils/extractMedicalConcepts';
 import { isQuizImageHttpUrl } from '../utils/isQuizImageHttpUrl';
 import { stripImageFraming } from '../utils/stripImageFraming';
 import { compactLines } from '../utils/compactLines';
+import { useSPen } from '../../../hooks/useSPen';
 import {
   captureFillAlpha,
   captureBorderAlpha,
@@ -140,6 +141,14 @@ export function FlashcardCard({
     );
     onDone(confidence);
   }
+
+  useSPen({
+    onButton: () => handleFlip(),
+    onAirMotion: (dx) => {
+      if (Math.abs(dx) < 0.6) return;
+      if (dx > 0 && !isLastCard) handleNext();
+    },
+  });
 
   return (
     <View style={s.flashcardContainer}>

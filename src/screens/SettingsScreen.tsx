@@ -134,8 +134,13 @@ import { formatGuruChatModelChipLabel } from '../services/ai/guruChatModelPrefer
 import { useLiveGuruChatModels } from '../hooks/useLiveGuruChatModels';
 import { getLocalLlmRamWarning, isLocalLlmAllowedOnThisDevice } from '../services/deviceMemory';
 import ScreenHeader from '../components/ScreenHeader';
-import AccountSections from './settings/sections/AccountSections';
-import StudySections from './settings/sections/StudySections';
+import { GeneralOverviewSection } from './settings/sections/GeneralOverviewSection';
+import { InterventionsSection } from './settings/sections/InterventionsSection';
+import { AppIntegrationsSection } from './settings/sections/AppIntegrationsSection';
+import { PlanningAlertsSection } from './settings/sections/PlanningAlertsSection';
+import { DeviceSyncSection } from './settings/sections/DeviceSyncSection';
+import { DataStorageSection } from './settings/sections/DataStorageSection';
+import { DashboardOverview } from './settings/sections/DashboardOverview';
 import StorageSections from './settings/sections/StorageSections';
 import AiProvidersSection from './settings/sections/AiProvidersSection';
 import {
@@ -151,7 +156,61 @@ import {
   cleanupOldBackups,
   type AutoBackupFrequency,
 } from '../services/unifiedBackupService';
+import { isSamsungDevice, isIgnoringBatteryOptimizations } from '../../modules/app-launcher';
 import { profileRepository } from '../db/repositories';
+
+function SamsungBackgroundRow() {
+  const [isSamsung, setIsSamsung] = useState(false);
+  const [isIgnoring, setIsIgnoring] = useState(false);
+  const navigation = useNavigation<any>();
+  const isFocused = useIsFocused();
+
+  useEffect(() => {
+    if (isFocused) {
+      isSamsungDevice().then(setIsSamsung);
+      isIgnoringBatteryOptimizations().then(setIsIgnoring);
+    }
+  }, [isFocused]);
+
+  if (!isSamsung) return null;
+
+  return (
+    <LinearSurface compact style={{ marginBottom: n.spacing.md }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+        <View style={{ flex: 1 }}>
+          <LinearText variant="meta" tone="accent" style={{ letterSpacing: 1.1 }}>
+            SAMSUNG DEVICE
+          </LinearText>
+          <LinearText variant="label" style={{ marginTop: 4 }}>
+            Background reliability
+          </LinearText>
+          <LinearText
+            variant="caption"
+            tone={isIgnoring ? 'success' : 'warning'}
+            style={{ marginTop: 2 }}
+          >
+            {isIgnoring ? '✓ Whitelisted (Never sleeping)' : '⚠ May be killed in background'}
+          </LinearText>
+        </View>
+        <TouchableOpacity
+          style={{
+            backgroundColor: n.colors.card,
+            paddingHorizontal: 12,
+            paddingVertical: 8,
+            borderRadius: 8,
+            borderWidth: 1,
+            borderColor: n.colors.borderHighlight,
+          }}
+          onPress={() => navigation.navigate('SamsungBatterySheet')}
+        >
+          <LinearText variant="chip" tone="accent">
+            Configure
+          </LinearText>
+        </TouchableOpacity>
+      </View>
+    </LinearSurface>
+  );
+}
 
 function hasValue(value: string | null | undefined): boolean {
   return Boolean(value?.trim());
@@ -291,11 +350,11 @@ async function _importBackup(): Promise<{ ok: boolean; message: string }> {
   await runInTransaction(async (tx) => {
     const validStatuses = new Set(['unseen', 'seen', 'reviewed', 'mastered']);
 
-    for (const [index, row] of (backup.topic_progress ?? []).entries()) {
+    Array.from(backup.topic_progress ?? []).forEach((row, index) => {
       const typedRow = row as Record<string, unknown>;
       if (!typedRow.topic_id || typeof typedRow.status === 'undefined') {
         if (__DEV__) console.warn('Skipping invalid topic_progress row:', typedRow);
-        continue;
+        return;
       }
 
       const status =
@@ -305,7 +364,7 @@ async function _importBackup(): Promise<{ ok: boolean; message: string }> {
       const confidence =
         typeof typedRow.confidence === 'number' ? Math.min(5, Math.max(0, typedRow.confidence)) : 0;
 
-      await tx.runAsync(
+      tx.runSync(
         `INSERT OR REPLACE INTO topic_progress
          (topic_id, status, confidence, last_studied_at, times_studied, xp_earned, next_review_date, user_notes)
          VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
@@ -321,18 +380,16 @@ async function _importBackup(): Promise<{ ok: boolean; message: string }> {
         ],
       );
       restoredTopics++;
+    });
 
-      if ((index + 1) % 50 === 0) await yieldToUi();
-    }
-
-    for (const [index, row] of (backup.daily_log ?? []).entries()) {
+    Array.from(backup.daily_log ?? []).forEach((row, index) => {
       const typedRow = row as Record<string, unknown>;
       if (!typedRow.date) {
         if (__DEV__) console.warn('Skipping invalid daily_log row:', typedRow);
-        continue;
+        return;
       }
 
-      await tx.runAsync(
+      tx.runSync(
         `INSERT OR REPLACE INTO daily_log (date, checked_in, mood, total_minutes, xp_earned, session_count)
          VALUES (?, ?, ?, ?, ?, ?)`,
         [
@@ -345,9 +402,7 @@ async function _importBackup(): Promise<{ ok: boolean; message: string }> {
         ],
       );
       restoredLogs++;
-
-      if ((index + 1) % 50 === 0) await yieldToUi();
-    }
+    });
 
     const p = backup.user_profile as Record<string, unknown> | null;
     if (p) {
@@ -2134,29 +2189,13 @@ export default function SettingsScreen() {
             refreshProfile={refreshProfile}
             clearProviderValidated={clearProviderValidated}
           />
-          <AccountSections
+          <GeneralOverviewSection
             styles={styles}
             SectionToggle={SectionToggle}
             navigation={navigation}
-            permStatus={permStatus}
-            onRequestNotifications={onRequestNotifications}
-            onRequestMic={onRequestMic}
-            onRequestLocalFiles={onRequestLocalFiles}
-            onRequestOverlay={onRequestOverlay}
-            onOpenSystemSettings={onOpenSystemSettings}
-            onOpenDevConsole={onOpenDevConsole}
-            name={name}
-            setName={setName}
-            inicetDate={inicetDate}
-            setInicetDate={setInicetDate}
-            neetDate={neetDate}
-            setNeetDate={setNeetDate}
-            handleAutoFetchDates={handleAutoFetchDates}
-            fetchingDates={fetchingDates}
-            fetchDatesMsg={fetchDatesMsg}
           />
 
-          <StudySections
+          <PlanningAlertsSection
             styles={styles}
             SectionToggle={SectionToggle}
             dbmciClassStartDate={dbmciClassStartDate}
@@ -2169,15 +2208,20 @@ export default function SettingsScreen() {
             setSessionLength={setSessionLength}
             dailyGoal={dailyGoal}
             setDailyGoal={setDailyGoal}
-            strictMode={strictMode}
-            setStrictMode={setStrictMode}
             notifs={notifs}
             setNotifs={setNotifs}
             notifHour={notifHour}
             setNotifHour={setNotifHour}
+            testNotification={testNotification}
             guruFrequency={guruFrequency}
             setGuruFrequency={setGuruFrequency}
-            testNotification={testNotification}
+          />
+
+          <InterventionsSection
+            styles={styles}
+            SectionToggle={SectionToggle}
+            strictMode={strictMode}
+            setStrictMode={setStrictMode}
             bodyDoubling={bodyDoubling}
             setBodyDoubling={setBodyDoubling}
             blockedTypes={blockedTypes}
@@ -2198,12 +2242,9 @@ export default function SettingsScreen() {
             requestPomodoroOverlay={requestPomodoroOverlay}
             pomodoroInterval={pomodoroInterval}
             setPomodoroInterval={setPomodoroInterval}
-            autoRepairLegacyNotes={autoRepairLegacyNotes}
-            setAutoRepairLegacyNotes={setAutoRepairLegacyNotes}
-            scanOrphanedTranscripts={scanOrphanedTranscripts}
-            setScanOrphanedTranscripts={setScanOrphanedTranscripts}
           />
 
+          <SamsungBackgroundRow />
           <StorageSections
             styles={styles}
             SectionToggle={SectionToggle}

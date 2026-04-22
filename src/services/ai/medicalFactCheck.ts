@@ -3,7 +3,7 @@ import { InteractionManager } from 'react-native';
 import { extractMedicalEntities, extractClaims } from './medicalEntities';
 import { getLectureHistory } from '../../db/queries/aiCache';
 import { searchLatestMedicalSources } from './medicalSearch';
-import { logFactCheckResult } from '../../db/queries/contentFlags';
+import { contentFlagsRepositoryDrizzle } from '../../db/repositories';
 
 const SIMILARITY_THRESHOLD = 0.3;
 
@@ -206,26 +206,46 @@ export async function runMedicalFactCheck(
     const claims = extractClaims(contentText, entities.drugs, entities.diseases);
 
     if (entities.drugs.length === 0 && entities.diseases.length === 0) {
-      await logFactCheckResult(topicId, contentType, 'inconclusive', []);
+      await contentFlagsRepositoryDrizzle.logFactCheckResult(
+        topicId,
+        contentType,
+        'inconclusive',
+        [],
+      );
       return;
     }
 
     const trustedSources = await getTrustedSources(entities, subjectName);
 
     if (trustedSources.length === 0) {
-      await logFactCheckResult(topicId, contentType, 'inconclusive', []);
+      await contentFlagsRepositoryDrizzle.logFactCheckResult(
+        topicId,
+        contentType,
+        'inconclusive',
+        [],
+      );
       return;
     }
 
     const contradictions = detectContradictions(claims, trustedSources);
 
     const status = contradictions.length > 0 ? 'failed' : 'passed';
-    await logFactCheckResult(topicId, contentType, status, contradictions);
+    await contentFlagsRepositoryDrizzle.logFactCheckResult(
+      topicId,
+      contentType,
+      status,
+      contradictions,
+    );
   } catch (err) {
     if (__DEV__) {
       console.warn('[FactCheck] Error during fact-check:', err);
     }
-    await logFactCheckResult(topicId, contentType, 'inconclusive', []);
+    await contentFlagsRepositoryDrizzle.logFactCheckResult(
+      topicId,
+      contentType,
+      'inconclusive',
+      [],
+    );
   }
 }
 

@@ -1,30 +1,41 @@
-import { getDb, nowTs, runInTransaction, SQL_AI_CACHE } from '../database';
-import { getAiCacheDb } from '../aiCacheDatabase';
 import type { AIContent, ContentType } from '../../types';
+import {
+  aiCacheRepositoryDrizzle,
+  type MockQuestion,
+  type FlaggedItem,
+} from '../repositories/aiCacheRepository.drizzle';
+import {
+  lectureNotesRepositoryDrizzle,
+  type LectureNoteRecord,
+} from '../repositories/lectureNotesRepository.drizzle';
+import {
+  guruChatRepositoryDrizzle,
+  type GuruChatThread,
+  type ChatHistoryMessage,
+} from '../repositories/guruChatRepository.drizzle';
+import { contentFlagsRepositoryDrizzle } from '../repositories/contentFlagsRepository.drizzle';
+import { getDrizzleDb } from '../drizzle';
+import { eq, sql, desc, or, like, and } from 'drizzle-orm';
+import {
+  lectureNotes,
+  subjects,
+  chatHistory,
+  guruChatSessionMemory,
+  guruChatThreads,
+  externalAppLogs,
+} from '../drizzleSchema';
 import { embeddingToBlob } from '../../services/ai/embeddingService';
 import { saveTranscriptToFile } from '../../services/transcriptStorage';
+import { safeJsonParse } from '../../utils/safeJsonParse';
+
+export type { MockQuestion, FlaggedItem };
+export type { GuruChatThread, ChatHistoryMessage };
 
 export async function getCachedContent(
   topicId: number,
   contentType: ContentType,
 ): Promise<AIContent | null> {
-  const db = getAiCacheDb();
-  const r = await db.getFirstAsync<{ content_json: string; model_used: string | null }>(
-    `SELECT content_json, model_used FROM ${SQL_AI_CACHE} WHERE topic_id = ? AND content_type = ?`,
-    [topicId, contentType],
-  );
-  if (!r) return null;
-  try {
-    const parsed = JSON.parse(r.content_json) as AIContent;
-    const fromColumn = (r.model_used ?? '').trim();
-    // model_used lives in a dedicated column; legacy cache JSON may omit modelUsed.
-    const modelUsed =
-      (typeof parsed.modelUsed === 'string' && parsed.modelUsed.trim()) || fromColumn || undefined;
-    return { ...parsed, ...(modelUsed ? { modelUsed } : {}) };
-  } catch (err) {
-    if (__DEV__) console.warn('[aiCache] Failed to parse cached content:', err);
-    return null;
-  }
+  return aiCacheRepositoryDrizzle.getCachedContent(topicId, contentType);
 }
 
 export async function setCachedContent(
@@ -33,141 +44,19 @@ export async function setCachedContent(
   content: AIContent,
   modelUsed: string,
 ): Promise<void> {
-  const db = getAiCacheDb();
-  await db.runAsync(
-    `INSERT INTO ${SQL_AI_CACHE} (topic_id, content_type, content_json, model_used, created_at)
-     VALUES (?, ?, ?, ?, ?)
-     ON CONFLICT(topic_id, content_type) DO UPDATE SET
-       content_json = excluded.content_json,
-       model_used = excluded.model_used,
-       created_at = excluded.created_at`,
-    [topicId, contentType, JSON.stringify(content), modelUsed, nowTs()],
-  );
-}
-
-export interface MockQuestion {
-  question: string;
-  options: [string, string, string, string];
-  correctIndex: number;
-  explanation: string;
-  topicName: string;
-  subjectName: string;
-}
-
-function parseMockQuestionsFromRows(
-  rows: Array<{
-    content_json: string;
-    topic_name: string;
-    subject_name: string;
-  }>,
-  limit?: number,
-): MockQuestion[] {
-  const all: MockQuestion[] = [];
-  for (const row of rows) {
-    try {
-      const quiz = JSON.parse(row.content_json) as {
-        questions: Array<{
-          question: string;
-          options: [string, string, string, string];
-          correctIndex: number;
-          explanation: string;
-        }>;
-      };
-      for (const q of quiz.questions ?? []) {
-        all.push({ ...q, topicName: row.topic_name, subjectName: row.subject_name });
-        if (limit && all.length >= limit) {
-          return all;
-        }
-      }
-    } catch (err) {
-      if (__DEV__) console.warn('[aiCache] Skipping malformed quiz row:', err);
-    }
-  }
-  return all;
-}
-
-function shuffleQuestions(questions: MockQuestion[]): MockQuestion[] {
-  for (let i = questions.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [questions[i], questions[j]] = [questions[j], questions[i]];
-  }
-  return questions;
+  return aiCacheRepositoryDrizzle.setCachedContent(topicId, contentType, content, modelUsed);
 }
 
 export async function getCachedQuestionCount(): Promise<number> {
-  const db = getAiCacheDb();
-  try {
-    const row = await db.getFirstAsync<{ count: number }>(
-      `SELECT COALESCE(SUM(json_array_length(content_json, '$.questions')), 0) AS count
-       FROM ${SQL_AI_CACHE}
-       WHERE content_type = 'quiz'`,
-    );
-    return row?.count ?? 0;
-  } catch (err) {
-    if (__DEV__) console.warn('[aiCache] Falling back to JS question counting:', err);
-    const all = await getAllCachedQuestions();
-    return all.length;
-  }
+  return aiCacheRepositoryDrizzle.getCachedQuestionCount();
 }
 
 export async function getMockQuestions(limit: number): Promise<MockQuestion[]> {
-  if (limit <= 0) return [];
-
-  const cacheDb = getAiCacheDb();
-  const mainDb = getDb();
-  const rowIds = await cacheDb.getAllAsync<{ id: number }>(
-    `SELECT id
-     FROM ${SQL_AI_CACHE}
-     WHERE content_type = 'quiz'
-     ORDER BY RANDOM()`,
-  );
-  if (rowIds.length === 0) return [];
-
-  const selectedIds: number[] = [];
-  const batchSize = Math.min(Math.max(Math.ceil(limit / 3), 8), 24);
-  let offset = 0;
-  let parsedQuestions: MockQuestion[] = [];
-
-  while (offset < rowIds.length && parsedQuestions.length < limit) {
-    const ids = rowIds.slice(offset, offset + batchSize).map((row: { id: number }) => row.id);
-    offset += batchSize;
-    if (ids.length === 0) break;
-
-    const placeholders = ids.map(() => '?').join(',');
-    const rows = await mainDb.getAllAsync<{
-      content_json: string;
-      topic_name: string;
-      subject_name: string;
-    }>(
-      `SELECT c.content_json, t.name AS topic_name, s.name AS subject_name
-       FROM ${SQL_AI_CACHE} c
-       JOIN topics t ON c.topic_id = t.id
-       JOIN subjects s ON t.subject_id = s.id
-       WHERE c.id IN (${placeholders})`,
-      ids,
-    );
-    parsedQuestions = parsedQuestions.concat(
-      parseMockQuestionsFromRows(rows, limit - parsedQuestions.length),
-    );
-  }
-
-  return shuffleQuestions(parsedQuestions).slice(0, limit);
+  return aiCacheRepositoryDrizzle.getMockQuestions(limit);
 }
 
 export async function getAllCachedQuestions(): Promise<MockQuestion[]> {
-  const db = getDb();
-  const rows = await db.getAllAsync<{
-    content_json: string;
-    topic_name: string;
-    subject_name: string;
-  }>(
-    `SELECT c.content_json, t.name as topic_name, s.name as subject_name
-     FROM ${SQL_AI_CACHE} c
-     JOIN topics t ON c.topic_id = t.id
-     JOIN subjects s ON t.subject_id = s.id
-     WHERE c.content_type = 'quiz'`,
-  );
-  return shuffleQuestions(parseMockQuestionsFromRows(rows));
+  return aiCacheRepositoryDrizzle.getAllCachedQuestions();
 }
 
 export async function setContentFlagged(
@@ -175,28 +64,15 @@ export async function setContentFlagged(
   contentType: ContentType,
   flagged: boolean,
 ): Promise<void> {
-  const db = getAiCacheDb();
-  await db.runAsync(
-    `UPDATE ${SQL_AI_CACHE} SET is_flagged = ? WHERE topic_id = ? AND content_type = ?`,
-    [flagged ? 1 : 0, topicId, contentType],
-  );
+  return aiCacheRepositoryDrizzle.setContentFlagged(topicId, contentType, flagged);
 }
 
 export async function flagTopicForReview(topicId: number, topicName: string): Promise<ContentType> {
-  const db = getAiCacheDb();
-  const existing = await db.getFirstAsync<{ content_type: ContentType }>(
-    `SELECT content_type
-     FROM ${SQL_AI_CACHE}
-     WHERE topic_id = ?
-     ORDER BY created_at DESC
-     LIMIT 1`,
-    [topicId],
-  );
-
-  const contentType = existing?.content_type ?? 'keypoints';
+  const existing = await aiCacheRepositoryDrizzle.getCachedContent(topicId, 'keypoints');
+  const contentType = existing?.type ?? 'keypoints';
 
   if (!existing) {
-    await setCachedContent(
+    await aiCacheRepositoryDrizzle.setCachedContent(
       topicId,
       contentType,
       {
@@ -212,7 +88,7 @@ export async function flagTopicForReview(topicId: number, topicName: string): Pr
     );
   }
 
-  await setContentFlagged(topicId, contentType, true);
+  await aiCacheRepositoryDrizzle.setContentFlagged(topicId, contentType, true);
   return contentType;
 }
 
@@ -220,83 +96,40 @@ export async function isContentFlagged(
   topicId: number,
   contentType: ContentType,
 ): Promise<boolean> {
-  const db = getAiCacheDb();
-  const row = await db.getFirstAsync<{ is_flagged: number }>(
-    `SELECT is_flagged FROM ${SQL_AI_CACHE} WHERE topic_id = ? AND content_type = ?`,
-    [topicId, contentType],
-  );
-  return (row?.is_flagged ?? 0) === 1;
-}
-
-export interface FlaggedItem {
-  topicId: number;
-  topicName: string;
-  subjectName: string;
-  contentType: ContentType;
-  content: AIContent;
-  modelUsed: string;
-  createdAt: number;
+  return aiCacheRepositoryDrizzle.isContentFlagged(topicId, contentType);
 }
 
 export async function getFlaggedContent(): Promise<FlaggedItem[]> {
-  const db = getDb();
-  const rows = await db.getAllAsync<{
-    topic_id: number;
-    topic_name: string;
-    subject_name: string;
-    content_type: string;
-    content_json: string;
-    model_used: string;
-    created_at: number;
-  }>(
-    `SELECT c.topic_id, t.name AS topic_name, s.name AS subject_name,
-            c.content_type, c.content_json, c.model_used, c.created_at
-     FROM ${SQL_AI_CACHE} c
-     JOIN topics t ON c.topic_id = t.id
-     JOIN subjects s ON t.subject_id = s.id
-     WHERE c.is_flagged = 1
-     ORDER BY c.created_at DESC`,
-  );
-  return rows.map((r) => ({
-    topicId: r.topic_id,
-    topicName: r.topic_name,
-    subjectName: r.subject_name,
-    contentType: r.content_type as ContentType,
-    content: JSON.parse(r.content_json) as AIContent,
-    modelUsed: r.model_used,
-    createdAt: r.created_at,
-  }));
+  return aiCacheRepositoryDrizzle.getFlaggedContent();
 }
 
 export async function clearTopicCache(topicId: number): Promise<void> {
-  const db = getAiCacheDb();
-  await db.runAsync(`DELETE FROM ${SQL_AI_CACHE} WHERE topic_id = ?`, [topicId]);
+  return aiCacheRepositoryDrizzle.clearTopicCache(topicId);
 }
 
 export async function clearSpecificContentCache(
   topicId: number,
   contentType: ContentType,
 ): Promise<void> {
-  const db = getAiCacheDb();
-  await db.runAsync(`DELETE FROM ${SQL_AI_CACHE} WHERE topic_id = ? AND content_type = ?`, [
-    topicId,
-    contentType,
-  ]);
+  return aiCacheRepositoryDrizzle.clearSpecificContentCache(topicId, contentType);
 }
+
+// ── Lecture Notes ────────────────────────────────────────────────
 
 export async function saveLectureNote(
   subjectId: number | null,
   note: string,
   embedding?: number[] | null,
 ): Promise<void> {
-  const db = getDb();
-  await db.runAsync(
-    'INSERT INTO lecture_notes (subject_id, note, created_at, embedding) VALUES (?, ?, ?, ?)',
-    [subjectId, note, nowTs(), embedding ? embeddingToBlob(embedding) : null],
-  );
+  const db = getDrizzleDb();
+  await db.insert(lectureNotes).values({
+    subjectId,
+    note,
+    createdAt: Date.now(),
+    embedding: embedding ? embeddingToBlob(embedding) : null,
+  });
 }
 
-/** Extended lecture note with full transcript data */
 export interface LectureNoteData {
   subjectId: number | null;
   subjectName?: string | null;
@@ -313,47 +146,43 @@ export interface LectureNoteData {
 export async function saveLectureTranscript(
   data: LectureNoteData & { embedding?: number[] | null },
 ): Promise<number> {
-  const db = getDb();
   const transcriptValue = data.transcript
     ? await saveTranscriptToFile(data.transcript, {
         subjectName: data.subjectName,
         topics: data.topics,
       })
     : null;
-  const result = await db.runAsync(
-    `INSERT INTO lecture_notes (
-       subject_id, note, created_at, transcript, summary, topics_json, app_name,
-       duration_minutes, confidence, embedding, recording_path
-     )
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-    [
-      data.subjectId,
-      data.note,
-      nowTs(),
-      transcriptValue,
-      data.summary ?? null,
-      data.topics ? JSON.stringify(data.topics) : null,
-      data.appName ?? null,
-      data.durationMinutes ?? null,
-      data.confidence ?? 2,
-      data.embedding ? embeddingToBlob(data.embedding) : null,
-      data.recordingPath ?? null,
-    ],
-  );
-  return result.lastInsertRowId as number;
+
+  const db = getDrizzleDb();
+  const rows = await db
+    .insert(lectureNotes)
+    .values({
+      subjectId: data.subjectId ?? null,
+      note: data.note,
+      createdAt: Date.now(),
+      transcript: transcriptValue,
+      summary: data.summary ?? null,
+      topicsJson: data.topics ? JSON.stringify(data.topics) : null,
+      appName: data.appName ?? null,
+      durationMinutes: data.durationMinutes ?? null,
+      confidence: data.confidence ?? 2,
+      embedding: data.embedding ? embeddingToBlob(data.embedding) : null,
+      recordingPath: data.recordingPath ?? null,
+    })
+    .returning({ id: lectureNotes.id });
+  return rows[0].id;
 }
 
 export async function updateLectureTranscriptNote(noteId: number, note: string): Promise<void> {
-  const db = getDb();
-  await db.runAsync('UPDATE lecture_notes SET note = ? WHERE id = ?', [note, noteId]);
+  const db = getDrizzleDb();
+  await db.update(lectureNotes).set({ note }).where(eq(lectureNotes.id, noteId));
 }
 
 export async function updateLectureTranscriptSummary(
   noteId: number,
   summary: string | null,
 ): Promise<void> {
-  const db = getDb();
-  await db.runAsync('UPDATE lecture_notes SET summary = ? WHERE id = ?', [summary, noteId]);
+  return lectureNotesRepositoryDrizzle.updateLectureNoteSummary(noteId, summary);
 }
 
 export async function updateLectureAnalysisMetadata(
@@ -365,22 +194,16 @@ export async function updateLectureAnalysisMetadata(
     confidence?: number;
   },
 ): Promise<void> {
-  const db = getDb();
-  await db.runAsync(
-    `UPDATE lecture_notes
-     SET subject_id = COALESCE(?, subject_id),
-         summary = ?,
-         topics_json = ?,
-         confidence = COALESCE(?, confidence)
-     WHERE id = ?`,
-    [
-      data.subjectId ?? null,
-      data.summary ?? null,
-      data.topics ? JSON.stringify(data.topics) : null,
-      data.confidence ?? null,
-      noteId,
-    ],
-  );
+  const db = getDrizzleDb();
+  await db
+    .update(lectureNotes)
+    .set({
+      subjectId: data.subjectId ?? sql`subject_id`,
+      summary: data.summary ?? null,
+      topicsJson: data.topics ? JSON.stringify(data.topics) : null,
+      confidence: data.confidence ?? sql`confidence`,
+    })
+    .where(eq(lectureNotes.id, noteId));
 }
 
 export async function updateLectureTranscriptArtifacts(
@@ -394,37 +217,25 @@ export async function updateLectureTranscriptArtifacts(
     confidence?: number;
   },
 ): Promise<void> {
-  const db = getDb();
-  await db.runAsync(
-    `UPDATE lecture_notes
-     SET note = ?,
-         transcript = ?,
-         subject_id = COALESCE(?, subject_id),
-         summary = ?,
-         topics_json = ?,
-         confidence = COALESCE(?, confidence)
-     WHERE id = ?`,
-    [
-      data.note,
-      data.transcript,
-      data.subjectId ?? null,
-      data.summary ?? null,
-      data.topics ? JSON.stringify(data.topics) : null,
-      data.confidence ?? null,
-      noteId,
-    ],
-  );
+  const db = getDrizzleDb();
+  await db
+    .update(lectureNotes)
+    .set({
+      note: data.note,
+      transcript: data.transcript,
+      subjectId: data.subjectId ?? sql`subject_id`,
+      summary: data.summary ?? null,
+      topicsJson: data.topics ? JSON.stringify(data.topics) : null,
+      confidence: data.confidence ?? sql`confidence`,
+    })
+    .where(eq(lectureNotes.id, noteId));
 }
 
 export async function updateLectureRecordingPath(
   noteId: number,
   recordingPath: string | null,
 ): Promise<void> {
-  const db = getDb();
-  await db.runAsync('UPDATE lecture_notes SET recording_path = ? WHERE id = ?', [
-    recordingPath,
-    noteId,
-  ]);
+  return lectureNotesRepositoryDrizzle.updateLectureNoteRecordingPath(noteId, recordingPath);
 }
 
 export interface LectureHistoryItem {
@@ -443,331 +254,258 @@ export interface LectureHistoryItem {
 }
 
 export async function getLectureNoteById(noteId: number): Promise<LectureHistoryItem | null> {
-  const db = getDb();
-  const row = await db.getFirstAsync<{
-    id: number;
-    subject_id: number | null;
-    subject_name: string | null;
-    note: string;
-    transcript: string | null;
-    summary: string | null;
-    topics_json: string | null;
-    app_name: string | null;
-    duration_minutes: number | null;
-    confidence: number | null;
-    created_at: number;
-    recording_path: string | null;
-  }>(
-    `SELECT ln.id, ln.subject_id, s.name as subject_name, ln.note, ln.transcript, ln.summary, ln.topics_json, ln.app_name, ln.duration_minutes, ln.confidence, ln.created_at, ln.recording_path
-     FROM lecture_notes ln
-     LEFT JOIN subjects s ON ln.subject_id = s.id
-     WHERE ln.id = ?
-     LIMIT 1`,
-    [noteId],
-  );
+  const db = getDrizzleDb();
+  const rows = await db
+    .select({
+      id: lectureNotes.id,
+      subjectId: lectureNotes.subjectId,
+      subjectName: subjects.name,
+      note: lectureNotes.note,
+      transcript: lectureNotes.transcript,
+      summary: lectureNotes.summary,
+      topicsJson: lectureNotes.topicsJson,
+      appName: lectureNotes.appName,
+      durationMinutes: lectureNotes.durationMinutes,
+      confidence: lectureNotes.confidence,
+      createdAt: lectureNotes.createdAt,
+      recordingPath: lectureNotes.recordingPath,
+    })
+    .from(lectureNotes)
+    .leftJoin(subjects, eq(lectureNotes.subjectId, subjects.id))
+    .where(eq(lectureNotes.id, noteId))
+    .limit(1);
 
-  if (!row) return null;
-
+  if (rows.length === 0) return null;
+  const row = rows[0];
   return {
     id: row.id,
-    subjectId: row.subject_id,
-    subjectName: row.subject_name,
+    subjectId: row.subjectId,
+    subjectName: row.subjectName,
     note: row.note,
     transcript: row.transcript,
     summary: row.summary,
-    topics: row.topics_json ? JSON.parse(row.topics_json) : [],
-    appName: row.app_name,
-    durationMinutes: row.duration_minutes,
+    topics: safeJsonParse(row.topicsJson, []),
+    appName: row.appName,
+    durationMinutes: row.durationMinutes,
     confidence: row.confidence ?? 2,
-    createdAt: row.created_at,
-    recordingPath: row.recording_path,
+    createdAt: row.createdAt,
+    recordingPath: row.recordingPath,
   };
 }
 
 export async function getLectureHistory(limit = 50): Promise<LectureHistoryItem[]> {
-  const db = getDb();
-  const rows = await db.getAllAsync<{
-    id: number;
-    subject_id: number | null;
-    subject_name: string | null;
-    note: string;
-    transcript: string | null;
-    summary: string | null;
-    topics_json: string | null;
-    app_name: string | null;
-    duration_minutes: number | null;
-    confidence: number | null;
-    created_at: number;
-    recording_path: string | null;
-  }>(
-    `SELECT ln.id, ln.subject_id, s.name as subject_name, ln.note, ln.transcript, ln.summary, ln.topics_json, ln.app_name, ln.duration_minutes, ln.confidence, ln.created_at, ln.recording_path
-     FROM lecture_notes ln
-     LEFT JOIN subjects s ON ln.subject_id = s.id
-     ORDER BY ln.created_at DESC
-     LIMIT ?`,
-    [limit],
-  );
+  const db = getDrizzleDb();
+  const rows = await db
+    .select({
+      id: lectureNotes.id,
+      subjectId: lectureNotes.subjectId,
+      subjectName: subjects.name,
+      note: lectureNotes.note,
+      transcript: lectureNotes.transcript,
+      summary: lectureNotes.summary,
+      topicsJson: lectureNotes.topicsJson,
+      appName: lectureNotes.appName,
+      durationMinutes: lectureNotes.durationMinutes,
+      confidence: lectureNotes.confidence,
+      createdAt: lectureNotes.createdAt,
+      recordingPath: lectureNotes.recordingPath,
+    })
+    .from(lectureNotes)
+    .leftJoin(subjects, eq(lectureNotes.subjectId, subjects.id))
+    .orderBy(desc(lectureNotes.createdAt))
+    .limit(limit);
 
-  return rows.map((r) => ({
-    id: r.id,
-    subjectId: r.subject_id,
-    subjectName: r.subject_name,
-    note: r.note,
-    transcript: r.transcript,
-    summary: r.summary,
-    topics: r.topics_json ? JSON.parse(r.topics_json) : [],
-    appName: r.app_name,
-    durationMinutes: r.duration_minutes,
-    confidence: r.confidence ?? 2,
-    createdAt: r.created_at,
-    recordingPath: r.recording_path,
+  return rows.map((row) => ({
+    id: row.id,
+    subjectId: row.subjectId,
+    subjectName: row.subjectName,
+    note: row.note,
+    transcript: row.transcript,
+    summary: row.summary,
+    topics: safeJsonParse(row.topicsJson, []),
+    appName: row.appName,
+    durationMinutes: row.durationMinutes,
+    confidence: row.confidence ?? 2,
+    createdAt: row.createdAt,
+    recordingPath: row.recordingPath,
   }));
 }
 
 export async function searchLectureNotes(query: string, limit = 20): Promise<LectureHistoryItem[]> {
-  const db = getDb();
+  const db = getDrizzleDb();
   const likeQuery = `%${query}%`;
-  const rows = await db.getAllAsync<{
-    id: number;
-    subject_id: number | null;
-    subject_name: string | null;
-    note: string;
-    transcript: string | null;
-    summary: string | null;
-    topics_json: string | null;
-    app_name: string | null;
-    duration_minutes: number | null;
-    confidence: number | null;
-    created_at: number;
-    recording_path: string | null;
-  }>(
-    `SELECT ln.id, ln.subject_id, s.name as subject_name, ln.note, ln.transcript, ln.summary, ln.topics_json, ln.app_name, ln.duration_minutes, ln.confidence, ln.created_at, ln.recording_path
-     FROM lecture_notes ln
-     LEFT JOIN subjects s ON ln.subject_id = s.id
-     WHERE ln.note LIKE ? OR ln.transcript LIKE ? OR ln.summary LIKE ? OR ln.topics_json LIKE ?
-     ORDER BY ln.created_at DESC
-     LIMIT ?`,
-    [likeQuery, likeQuery, likeQuery, likeQuery, limit],
-  );
+  const rows = await db
+    .select({
+      id: lectureNotes.id,
+      subjectId: lectureNotes.subjectId,
+      subjectName: subjects.name,
+      note: lectureNotes.note,
+      transcript: lectureNotes.transcript,
+      summary: lectureNotes.summary,
+      topicsJson: lectureNotes.topicsJson,
+      appName: lectureNotes.appName,
+      durationMinutes: lectureNotes.durationMinutes,
+      confidence: lectureNotes.confidence,
+      createdAt: lectureNotes.createdAt,
+      recordingPath: lectureNotes.recordingPath,
+    })
+    .from(lectureNotes)
+    .leftJoin(subjects, eq(lectureNotes.subjectId, subjects.id))
+    .where(
+      or(
+        like(lectureNotes.note, likeQuery),
+        like(lectureNotes.transcript, likeQuery),
+        like(lectureNotes.summary, likeQuery),
+        like(lectureNotes.topicsJson, likeQuery),
+      ),
+    )
+    .orderBy(desc(lectureNotes.createdAt))
+    .limit(limit);
 
-  return rows.map((r) => ({
-    id: r.id,
-    subjectId: r.subject_id,
-    subjectName: r.subject_name,
-    note: r.note,
-    transcript: r.transcript,
-    summary: r.summary,
-    topics: r.topics_json ? JSON.parse(r.topics_json) : [],
-    appName: r.app_name,
-    durationMinutes: r.duration_minutes,
-    confidence: r.confidence ?? 2,
-    createdAt: r.created_at,
-    recordingPath: r.recording_path,
+  return rows.map((row) => ({
+    id: row.id,
+    subjectId: row.subjectId,
+    subjectName: row.subjectName,
+    note: row.note,
+    transcript: row.transcript,
+    summary: row.summary,
+    topics: safeJsonParse(row.topicsJson, []),
+    appName: row.appName,
+    durationMinutes: row.durationMinutes,
+    confidence: row.confidence ?? 2,
+    createdAt: row.createdAt,
+    recordingPath: row.recordingPath,
   }));
 }
 
 export async function getLegacyLectureNotes(limit = 5): Promise<LectureHistoryItem[]> {
-  const db = getDb();
-  // Legacy notes are ones that:
-  // 1. Don't have the 🎯 Subject marker (meaning they use old format)
-  // 2. OR have a transcript but no summary/topics (meaning they were never fully analyzed)
-  const rows = await db.getAllAsync<{
-    id: number;
-    subject_id: number | null;
-    subject_name: string | null;
-    note: string;
-    transcript: string | null;
-    summary: string | null;
-    topics_json: string | null;
-    app_name: string | null;
-    duration_minutes: number | null;
-    confidence: number | null;
-    created_at: number;
-  }>(
-    `SELECT ln.id, ln.subject_id, s.name as subject_name, ln.note, ln.transcript, ln.summary, ln.topics_json, ln.app_name, ln.duration_minutes, ln.confidence, ln.created_at
-     FROM lecture_notes ln
-     LEFT JOIN subjects s ON ln.subject_id = s.id
-     WHERE (ln.note NOT LIKE '🎯 %' AND ln.transcript IS NOT NULL)
-        OR (ln.transcript IS NOT NULL AND ln.summary IS NULL)
-     ORDER BY ln.created_at DESC
-     LIMIT ?`,
-    [limit],
-  );
+  const db = getDrizzleDb();
+  const rows = await db
+    .select({
+      id: lectureNotes.id,
+      subjectId: lectureNotes.subjectId,
+      subjectName: subjects.name,
+      note: lectureNotes.note,
+      transcript: lectureNotes.transcript,
+      summary: lectureNotes.summary,
+      topicsJson: lectureNotes.topicsJson,
+      appName: lectureNotes.appName,
+      durationMinutes: lectureNotes.durationMinutes,
+      confidence: lectureNotes.confidence,
+      createdAt: lectureNotes.createdAt,
+    })
+    .from(lectureNotes)
+    .leftJoin(subjects, eq(lectureNotes.subjectId, subjects.id))
+    .where(
+      or(
+        and(sql`${lectureNotes.note} NOT LIKE '🎯 %'`, sql`${lectureNotes.transcript} IS NOT NULL`),
+        and(sql`${lectureNotes.transcript} IS NOT NULL`, sql`${lectureNotes.summary} IS NULL`),
+      ),
+    )
+    .orderBy(desc(lectureNotes.createdAt))
+    .limit(limit);
 
-  return rows.map((r) => ({
-    id: r.id,
-    subjectId: r.subject_id,
-    subjectName: r.subject_name,
-    note: r.note,
-    transcript: r.transcript,
-    summary: r.summary,
-    topics: r.topics_json ? JSON.parse(r.topics_json) : [],
-    appName: r.app_name,
-    durationMinutes: r.duration_minutes,
-    confidence: r.confidence ?? 2,
-    createdAt: r.created_at,
+  return rows.map((row) => ({
+    id: row.id,
+    subjectId: row.subjectId,
+    subjectName: row.subjectName,
+    note: row.note,
+    transcript: row.transcript,
+    summary: row.summary,
+    topics: safeJsonParse(row.topicsJson, []),
+    appName: row.appName,
+    durationMinutes: row.durationMinutes,
+    confidence: row.confidence ?? 2,
+    createdAt: row.createdAt,
   }));
 }
 
 export async function deleteLectureNote(id: number): Promise<void> {
-  const db = getDb();
-  // Try 'dismissed' first (post-migration 112), fall back to 'no_audio' for old schemas
-  try {
-    await db.runAsync(
-      "UPDATE external_app_logs SET lecture_note_id = NULL, transcription_status = 'dismissed' WHERE lecture_note_id = ?",
-      [id],
-    );
-  } catch {
-    await db.runAsync(
-      "UPDATE external_app_logs SET lecture_note_id = NULL, transcription_status = 'no_audio' WHERE lecture_note_id = ?",
-      [id],
-    );
-  }
-  await db.runAsync('DELETE FROM lecture_notes WHERE id = ?', [id]);
+  const db = getDrizzleDb();
+  await db
+    .update(externalAppLogs)
+    .set({ lectureNoteId: null, transcriptionStatus: 'dismissed' })
+    .where(eq(externalAppLogs.lectureNoteId, id));
+  await db.delete(lectureNotes).where(eq(lectureNotes.id, id));
 }
 
 export async function getLectureTranscriptsBySubject(
   subjectId: number,
 ): Promise<LectureHistoryItem[]> {
-  const db = getDb();
-  const rows = await db.getAllAsync<{
-    id: number;
-    subject_id: number | null;
-    subject_name: string | null;
-    note: string;
-    transcript: string | null;
-    summary: string | null;
-    topics_json: string | null;
-    app_name: string | null;
-    duration_minutes: number | null;
-    confidence: number | null;
-    created_at: number;
-  }>(
-    `SELECT ln.id, ln.subject_id, s.name as subject_name, ln.note, ln.transcript, ln.summary, ln.topics_json, ln.app_name, ln.duration_minutes, ln.confidence, ln.created_at
-     FROM lecture_notes ln
-     LEFT JOIN subjects s ON ln.subject_id = s.id
-     WHERE ln.subject_id = ?
-     ORDER BY ln.created_at DESC`,
-    [subjectId],
-  );
+  const db = getDrizzleDb();
+  const rows = await db
+    .select({
+      id: lectureNotes.id,
+      subjectId: lectureNotes.subjectId,
+      subjectName: subjects.name,
+      note: lectureNotes.note,
+      transcript: lectureNotes.transcript,
+      summary: lectureNotes.summary,
+      topicsJson: lectureNotes.topicsJson,
+      appName: lectureNotes.appName,
+      durationMinutes: lectureNotes.durationMinutes,
+      confidence: lectureNotes.confidence,
+      createdAt: lectureNotes.createdAt,
+    })
+    .from(lectureNotes)
+    .leftJoin(subjects, eq(lectureNotes.subjectId, subjects.id))
+    .where(eq(lectureNotes.subjectId, subjectId))
+    .orderBy(desc(lectureNotes.createdAt));
 
-  return rows.map((r) => ({
-    id: r.id,
-    subjectId: r.subject_id,
-    subjectName: r.subject_name,
-    note: r.note,
-    transcript: r.transcript,
-    summary: r.summary,
-    topics: r.topics_json ? JSON.parse(r.topics_json) : [],
-    appName: r.app_name,
-    durationMinutes: r.duration_minutes,
-    confidence: r.confidence ?? 2,
-    createdAt: r.created_at,
+  return rows.map((row) => ({
+    id: row.id,
+    subjectId: row.subjectId,
+    subjectName: row.subjectName,
+    note: row.note,
+    transcript: row.transcript,
+    summary: row.summary,
+    topics: safeJsonParse(row.topicsJson, []),
+    appName: row.appName,
+    durationMinutes: row.durationMinutes,
+    confidence: row.confidence ?? 2,
+    createdAt: row.createdAt,
   }));
 }
 
 // ── Chat History ──────────────────────────────────────────────────
-
-export interface ChatHistoryMessage {
-  id: number;
-  threadId: number | null;
-  topicName: string;
-  role: 'user' | 'guru';
-  message: string;
-  timestamp: number;
-  sourcesJson?: string;
-  modelUsed?: string;
-}
-
-export interface GuruChatThread {
-  id: number;
-  topicName: string;
-  syllabusTopicId: number | null;
-  title: string;
-  createdAt: number;
-  updatedAt: number;
-  lastMessageAt: number;
-  lastMessagePreview: string;
-}
-
-function buildThreadTitle(topicName: string, message?: string | null): string {
-  const trimmed = (message ?? '').replace(/\s+/g, ' ').trim();
-  if (!trimmed) return topicName;
-  const clipped = trimmed.slice(0, 56).trim();
-  return clipped.length < trimmed.length ? `${clipped}...` : clipped;
-}
-
-function buildThreadPreview(message: string): string {
-  const trimmed = message.replace(/\s+/g, ' ').trim();
-  const clipped = trimmed.slice(0, 96).trim();
-  return clipped.length < trimmed.length ? `${clipped}...` : clipped;
-}
 
 export async function createGuruChatThread(
   topicName: string,
   syllabusTopicId?: number | null,
   title?: string | null,
 ): Promise<GuruChatThread> {
-  const db = getDb();
-  const ts = nowTs();
-  const normalizedTitle = (title ?? '').trim() || topicName;
-  const result = await db.runAsync(
-    `INSERT INTO guru_chat_threads
-      (topic_name, syllabus_topic_id, title, created_at, updated_at, last_message_at, last_message_preview)
-     VALUES (?, ?, ?, ?, ?, ?, ?)`,
-    [topicName, syllabusTopicId ?? null, normalizedTitle, ts, ts, ts, ''],
-  );
-  const id = Number(result.lastInsertRowId ?? 0);
-  const row = await getGuruChatThreadById(id);
-  if (!row) {
-    throw new Error('Failed to create Guru chat thread');
-  }
-  return row;
+  return guruChatRepositoryDrizzle.createGuruChatThread(topicName, syllabusTopicId, title);
 }
 
 export async function getGuruChatThreadById(threadId: number): Promise<GuruChatThread | null> {
-  const db = getDb();
-  const row = await db.getFirstAsync<{
-    id: number;
-    topic_name: string;
-    syllabus_topic_id: number | null;
-    title: string;
-    created_at: number;
-    updated_at: number;
-    last_message_at: number;
-    last_message_preview: string;
-  }>('SELECT * FROM guru_chat_threads WHERE id = ?', [threadId]);
-  if (!row) return null;
-  return {
-    id: row.id,
-    topicName: row.topic_name,
-    syllabusTopicId: row.syllabus_topic_id ?? null,
-    title: row.title,
-    createdAt: row.created_at,
-    updatedAt: row.updated_at,
-    lastMessageAt: row.last_message_at,
-    lastMessagePreview: row.last_message_preview,
-  };
+  return guruChatRepositoryDrizzle.getGuruChatThreadById(threadId);
 }
 
 export async function getLatestGuruChatThread(
   topicName: string,
   syllabusTopicId?: number | null,
 ): Promise<GuruChatThread | null> {
-  const db = getDb();
-  const row = await db.getFirstAsync<{
-    id: number;
-  }>(
-    `SELECT id
-     FROM guru_chat_threads
-     WHERE topic_name = ?
-       AND (? IS NULL OR syllabus_topic_id = ? OR syllabus_topic_id IS NULL)
-     ORDER BY last_message_at DESC, updated_at DESC, id DESC
-     LIMIT 1`,
-    [topicName, syllabusTopicId ?? null, syllabusTopicId ?? null],
-  );
-  if (!row?.id) return null;
-  return getGuruChatThreadById(row.id);
+  const db = getDrizzleDb();
+  const rows = await db
+    .select({ id: guruChatThreads.id })
+    .from(guruChatThreads)
+    .where(
+      and(
+        eq(guruChatThreads.topicName, topicName),
+        syllabusTopicId
+          ? eq(guruChatThreads.syllabusTopicId, syllabusTopicId)
+          : sql`${guruChatThreads.syllabusTopicId} IS NULL`,
+      ),
+    )
+    .orderBy(
+      desc(guruChatThreads.lastMessageAt),
+      desc(guruChatThreads.updatedAt),
+      desc(guruChatThreads.id),
+    )
+    .limit(1);
+
+  if (rows.length === 0) return null;
+  return getGuruChatThreadById(rows[0].id);
 }
 
 export async function getOrCreateLatestGuruChatThread(
@@ -780,51 +518,25 @@ export async function getOrCreateLatestGuruChatThread(
 }
 
 export async function listGuruChatThreads(limit = 40): Promise<GuruChatThread[]> {
-  const db = getDb();
-  const rows = await db.getAllAsync<{
-    id: number;
-    topic_name: string;
-    syllabus_topic_id: number | null;
-    title: string;
-    created_at: number;
-    updated_at: number;
-    last_message_at: number;
-    last_message_preview: string;
-  }>(
-    `SELECT *
-     FROM guru_chat_threads
-     ORDER BY last_message_at DESC, updated_at DESC, id DESC
-     LIMIT ?`,
-    [limit],
-  );
-  return rows.map((row) => ({
-    id: row.id,
-    topicName: row.topic_name,
-    syllabusTopicId: row.syllabus_topic_id ?? null,
-    title: row.title,
-    createdAt: row.created_at,
-    updatedAt: row.updated_at,
-    lastMessageAt: row.last_message_at,
-    lastMessagePreview: row.last_message_preview,
-  }));
+  return guruChatRepositoryDrizzle.listGuruChatThreads(limit);
 }
 
 export async function renameGuruChatThread(threadId: number, title: string): Promise<void> {
-  const db = getDb();
+  const db = getDrizzleDb();
   const normalized = title.trim();
   if (!normalized) return;
-  await db.runAsync('UPDATE guru_chat_threads SET title = ?, updated_at = ? WHERE id = ?', [
-    normalized,
-    nowTs(),
-    threadId,
-  ]);
+  await db
+    .update(guruChatThreads)
+    .set({ title: normalized, updatedAt: Date.now() })
+    .where(eq(guruChatThreads.id, threadId));
 }
 
 export async function deleteGuruChatThread(threadId: number): Promise<void> {
-  await runInTransaction(async (db) => {
-    await db.runAsync('DELETE FROM chat_history WHERE thread_id = ?', [threadId]);
-    await db.runAsync('DELETE FROM guru_chat_session_memory WHERE thread_id = ?', [threadId]);
-    await db.runAsync('DELETE FROM guru_chat_threads WHERE id = ?', [threadId]);
+  const db = getDrizzleDb();
+  await db.transaction(async (tx) => {
+    await tx.delete(chatHistory).where(eq(chatHistory.threadId, threadId));
+    await tx.delete(guruChatSessionMemory).where(eq(guruChatSessionMemory.threadId, threadId));
+    await tx.delete(guruChatThreads).where(eq(guruChatThreads.id, threadId));
   });
 }
 
@@ -837,71 +549,35 @@ export async function saveChatMessage(
   sourcesJson?: string,
   modelUsed?: string,
 ): Promise<void> {
-  const db = getDb();
-  await db.runAsync(
-    `INSERT INTO chat_history
-      (thread_id, topic_name, role, message, timestamp, sources_json, model_used)
-     VALUES (?, ?, ?, ?, ?, ?, ?)`,
-    [threadId, topicName, role, message, timestamp, sourcesJson ?? null, modelUsed ?? null],
-  );
-  const preview = buildThreadPreview(message);
-  const title = role === 'user' ? buildThreadTitle(topicName, message) : topicName;
-  await db.runAsync(
-    `UPDATE guru_chat_threads
-     SET updated_at = ?,
-         last_message_at = ?,
-         last_message_preview = ?,
-         title = CASE
-           WHEN COALESCE(NULLIF(TRIM(title), ''), '') = ''
-             OR title = topic_name
-           THEN ?
-           ELSE title
-         END
-     WHERE id = ?`,
-    [timestamp, timestamp, preview, title, threadId],
+  return guruChatRepositoryDrizzle.saveChatMessage(
+    threadId,
+    topicName,
+    role,
+    message,
+    timestamp,
+    sourcesJson,
+    modelUsed,
   );
 }
 
 export async function getChatMessageCount(threadId: number): Promise<number> {
-  const db = getDb();
-  const r = await db.getFirstAsync<{ c: number }>(
-    'SELECT COUNT(*) as c FROM chat_history WHERE thread_id = ?',
-    [threadId],
-  );
-  return r?.c ?? 0;
+  const db = getDrizzleDb();
+  const result = await db
+    .select({ count: sql<number>`COUNT(*)` })
+    .from(chatHistory)
+    .where(eq(chatHistory.threadId, threadId));
+  return result[0]?.count ?? 0;
 }
 
 export async function getChatHistory(threadId: number, limit = 20): Promise<ChatHistoryMessage[]> {
-  const db = getDb();
-  const rows = await db.getAllAsync<{
-    id: number;
-    thread_id: number | null;
-    topic_name: string;
-    role: string;
-    message: string;
-    timestamp: number;
-    sources_json: string | null;
-    model_used: string | null;
-  }>('SELECT * FROM chat_history WHERE thread_id = ? ORDER BY timestamp ASC LIMIT ?', [
-    threadId,
-    limit,
-  ]);
-  return rows.map((r) => ({
-    id: r.id,
-    threadId: r.thread_id ?? null,
-    topicName: r.topic_name,
-    role: r.role as 'user' | 'guru',
-    message: r.message,
-    timestamp: r.timestamp,
-    sourcesJson: r.sources_json ?? undefined,
-    modelUsed: r.model_used ?? undefined,
-  }));
+  return guruChatRepositoryDrizzle.getChatHistory(threadId, limit);
 }
 
 export async function clearChatHistory(topicName: string): Promise<void> {
-  await runInTransaction(async (db) => {
-    await db.runAsync('DELETE FROM chat_history WHERE topic_name = ?', [topicName]);
-    await db.runAsync('DELETE FROM guru_chat_session_memory WHERE topic_name = ?', [topicName]);
-    await db.runAsync('DELETE FROM guru_chat_threads WHERE topic_name = ?', [topicName]);
+  const db = getDrizzleDb();
+  await db.transaction(async (tx) => {
+    await tx.delete(chatHistory).where(eq(chatHistory.topicName, topicName));
+    await tx.delete(guruChatSessionMemory).where(eq(guruChatSessionMemory.topicName, topicName));
+    await tx.delete(guruChatThreads).where(eq(guruChatThreads.topicName, topicName));
   });
 }

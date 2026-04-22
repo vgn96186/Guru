@@ -31,6 +31,7 @@ import android.content.IntentFilter
 class AppLauncherModule : Module() {
     private var fgsReceiver: BroadcastReceiver? = null
     private var spen: SPenController? = null
+    private var perf: SamsungPerfController? = null
 
     private var currentRecordingPath: String? = null
     private var currentLiveTranscriptPath: String? = null
@@ -241,7 +242,13 @@ class AppLauncherModule : Module() {
 
     override fun definition() = ModuleDefinition {
         Name("GuruAppLauncher")
-        Events("guru.fgs.blocked", "onSPenButton", "onSPenAirMotion")
+        Events(
+            "guru.fgs.blocked",
+            "onSPenButton",
+            "onSPenAirMotion",
+            "onSamsungPerfWarning",
+            "onSamsungPerfReleased"
+        )
 
         OnCreate {
             val context = appContext.reactContext ?: return@OnCreate
@@ -451,6 +458,49 @@ class AppLauncherModule : Module() {
         AsyncFunction("stopSPenListening") {
             spen?.disconnect()
             spen = null
+            true
+        }
+
+        AsyncFunction("samsungPerfInit") {
+            val ctx = appContext.reactContext ?: return@AsyncFunction false
+            val c = perf ?: SamsungPerfController(ctx).also { perf = it }
+            c.onThermalWarning = { level ->
+                sendEvent("onSamsungPerfWarning", mapOf("level" to level))
+            }
+            c.onReleasedByTimeout = {
+                sendEvent("onSamsungPerfReleased", mapOf("ts" to System.currentTimeMillis()))
+            }
+            c.init()
+        }
+
+        AsyncFunction("samsungPerfIsSamsung") {
+            val ctx = appContext.reactContext ?: return@AsyncFunction false
+            (perf ?: SamsungPerfController(ctx).also { perf = it }).isSamsung()
+        }
+
+        AsyncFunction("samsungPerfStartPreset") { presetType: Int, durationMs: Int ->
+            perf?.startPresetBoost(presetType, durationMs) ?: -1
+        }
+
+        AsyncFunction("samsungPerfStartCustom") { pairs: List<List<Int>> ->
+            // Expect [[type, value, duration], ...]
+            val triples = pairs.mapNotNull { p ->
+                if (p.size >= 3) Triple(p[0], p[1], p[2]) else null
+            }
+            perf?.startCustomBoost(triples) ?: -1
+        }
+
+        AsyncFunction("samsungPerfStop") { boostId: Int ->
+            perf?.stopBoost(boostId) ?: -1
+        }
+
+        AsyncFunction("samsungPerfStopAll") {
+            perf?.stopAllBoosts() ?: -1
+        }
+
+        AsyncFunction("samsungPerfShutdown") {
+            perf?.shutdown()
+            perf = null
             true
         }
 

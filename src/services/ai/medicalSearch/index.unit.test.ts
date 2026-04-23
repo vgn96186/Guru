@@ -1,8 +1,8 @@
-jest.mock('./v2/generateText', () => ({
+jest.mock('../v2/generateText', () => ({
   generateText: jest.fn(),
 }));
 
-jest.mock('./v2/providers/guruFallback', () => ({
+jest.mock('../v2/providers/guruFallback', () => ({
   createGuruFallbackModel: jest.fn().mockReturnValue({
     provider: 'groq',
     modelId: 'test-model',
@@ -17,12 +17,14 @@ import {
   dedupeGroundingSources,
   renderSourcesForPrompt,
   searchLatestMedicalSources,
+} from './index';
+import {
   extractQueryTerms,
   scoreGroundingSource,
   rankGroundingSources,
   scoreWikimediaRelevance,
-} from './medicalSearch';
-import type { MedicalGroundingSource } from './types';
+} from './ranking';
+import type { MedicalGroundingSource } from '../types';
 
 type MockJsonResponse = {
   ok: boolean;

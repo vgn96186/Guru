@@ -7,16 +7,16 @@ import type { AiProvidersProps } from '../types';
 export default function ApiKeysSection({
   apiKeys,
   clearProviderValidated,
-  SubSectionToggle,
+  SectionToggle,
   styles,
 }: {
   apiKeys: AiProvidersProps['apiKeys'];
   clearProviderValidated: AiProvidersProps['clearProviderValidated'];
-  SubSectionToggle: any;
+  SectionToggle: any;
   styles: any;
 }) {
   return (
-    <SubSectionToggle id="ai_api_keys" title="API KEYS">
+    <SectionToggle id="ai_keys" title="API Keys" icon="key" tint="#F59E0B">
       <ApiKeyRow
         {...apiKeys.groq}
         label="Groq"
@@ -94,6 +94,6 @@ export default function ApiKeysSection({
         clearProviderValidated={clearProviderValidated}
         providerId="vertex"
       />
-    </SubSectionToggle>
+    </SectionToggle>
   );
 }

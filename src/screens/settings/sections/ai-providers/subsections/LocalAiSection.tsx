@@ -8,7 +8,7 @@ interface Props {
   localAi: LocalAiState;
   profile: any;
   updateUserProfile: (p: any) => Promise<void>;
-  SubSectionToggle: any;
+  SectionToggle: any;
   styles: any;
 }
 
@@ -16,14 +16,14 @@ export default function LocalAiSection({
   localAi,
   profile,
   updateUserProfile,
-  SubSectionToggle,
+  SectionToggle,
   styles,
 }: Props) {
   const { llmReady, llmFileName, whisperReady, whisperFileName, llmAllowed, llmWarning, useNano } =
     localAi;
 
   return (
-    <SubSectionToggle id="ai_local_ai" title="LOCAL AI">
+    <SectionToggle id="ai_local" title="Local Inference" icon="hardware-chip" tint="#6366F1">
       {/* ── Gemini Nano (AICore) ── */}
       <LocalAiCard
         title="Gemini Nano"
@@ -81,6 +81,6 @@ export default function LocalAiSection({
       <Text style={[styles.hint, { marginTop: 16 }]}>
         To download or change models, open Guru Chat and tap the model chip.
       </Text>
-    </SubSectionToggle>
+    </SectionToggle>
   );
 }

@@ -12,11 +12,11 @@ import type { GitLabDuoState } from '../types';
 
 interface Props {
   gitlabDuo: GitLabDuoState;
-  SubSectionToggle: any;
+  SectionToggle: any;
   styles: any;
 }
 
-export default function GitlabDuoSection({ gitlabDuo, SubSectionToggle, styles }: Props) {
+export default function GitlabDuoSection({ gitlabDuo, SectionToggle, styles }: Props) {
   const {
     connecting,
     connected,
@@ -40,7 +40,7 @@ export default function GitlabDuoSection({ gitlabDuo, SubSectionToggle, styles }
   } = gitlabDuo;
 
   return (
-    <SubSectionToggle id="gitlab_duo_oauth" title="GITLAB DUO (OAUTH)">
+    <SectionToggle id="gitlab_duo_oauth" title="GITLAB DUO (OAUTH)">
       <Text style={styles.hint}>
         Connect your GitLab account to use GitLab Duo models. Requires a GitLab Duo Pro or
         Enterprise subscription.
@@ -169,6 +169,6 @@ export default function GitlabDuoSection({ gitlabDuo, SubSectionToggle, styles }
         submitting={pasteSubmitting}
         styles={styles}
       />
-    </SubSectionToggle>
+    </SectionToggle>
   );
 }

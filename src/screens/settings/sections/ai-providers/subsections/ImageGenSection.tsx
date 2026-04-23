@@ -17,7 +17,7 @@ interface Props {
   testFalKey: () => void;
   testingFalKey: boolean;
   clearProviderValidated: (id: any) => void;
-  SubSectionToggle: any;
+  SectionToggle: any;
   styles: any;
 }
 
@@ -30,13 +30,13 @@ export default function ImageGenSection({
   testFalKey,
   testingFalKey,
   clearProviderValidated,
-  SubSectionToggle,
+  SectionToggle,
   styles,
 }: Props) {
   const { options, model, setModel } = imageGen;
 
   return (
-    <SubSectionToggle id="ai_image_gen" title="IMAGE GENERATION">
+    <SectionToggle id="ai_image" title="Image Generation" icon="image" tint="#8B5CF6">
       <Text style={styles.hint}>
         Diagrams and study images. fal uses a separate API key and does not reuse ChatGPT Plus
         login.
@@ -108,6 +108,6 @@ export default function ImageGenSection({
         </TouchableOpacity>
       </View>
       <Text style={styles.hint}>Validate your fal API key with fal's model catalog endpoint.</Text>
-    </SubSectionToggle>
+    </SectionToggle>
   );
 }

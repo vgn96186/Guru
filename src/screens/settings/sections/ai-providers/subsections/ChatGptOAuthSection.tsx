@@ -5,15 +5,15 @@ import type { ChatGptSlotState } from '../types';
 
 interface Props {
   chatgpt: ChatGptSlotState;
-  SubSectionToggle: any;
+  SectionToggle: any;
   styles: any;
 }
 
-export default function ChatGptOAuthSection({ chatgpt, SubSectionToggle, styles }: Props) {
+export default function ChatGptOAuthSection({ chatgpt, SectionToggle, styles }: Props) {
   const { connectingSlot, deviceCode, accounts, setAccounts, connect, disconnect } = chatgpt;
 
   return (
-    <SubSectionToggle id="chatgpt_oauth" title="CHATGPT (OAUTH)">
+    <SectionToggle id="chatgpt_oauth" title="CHATGPT (OAUTH)">
       <Text style={styles.hint}>
         Link your ChatGPT account (Plus or Free) for transcription and live chat using your own
         quota.
@@ -62,6 +62,6 @@ export default function ChatGptOAuthSection({ chatgpt, SubSectionToggle, styles 
           </View>
         );
       })}
-    </SubSectionToggle>
+    </SectionToggle>
   );
 }

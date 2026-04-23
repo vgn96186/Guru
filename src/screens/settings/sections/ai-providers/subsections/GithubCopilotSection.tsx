@@ -7,15 +7,15 @@ import type { CopilotState } from '../types';
 
 interface Props {
   githubCopilot: CopilotState;
-  SubSectionToggle: any;
+  SectionToggle: any;
   styles: any;
 }
 
-export default function GithubCopilotSection({ githubCopilot, SubSectionToggle, styles }: Props) {
+export default function GithubCopilotSection({ githubCopilot, SectionToggle, styles }: Props) {
   const { connected, preferredModel, setPreferredModel } = githubCopilot;
 
   return (
-    <SubSectionToggle id="github_copilot_oauth" title="GITHUB COPILOT">
+    <SectionToggle id="github_copilot_oauth" title="GITHUB COPILOT">
       <Text style={styles.hint}>
         Connect your GitHub Copilot account. Requires an active Copilot subscription.
       </Text>
@@ -35,6 +35,6 @@ export default function GithubCopilotSection({ githubCopilot, SubSectionToggle, 
           </View>
         ) : null}
       </OAuthCard>
-    </SubSectionToggle>
+    </SectionToggle>
   );
 }

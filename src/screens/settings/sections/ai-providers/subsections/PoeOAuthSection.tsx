@@ -5,18 +5,18 @@ import type { OAuthSlot } from '../types';
 
 interface Props {
   poe: OAuthSlot;
-  SubSectionToggle: any;
+  SectionToggle: any;
   styles: any;
 }
 
-export default function PoeOAuthSection({ poe, SubSectionToggle, styles }: Props) {
+export default function PoeOAuthSection({ poe, SectionToggle, styles }: Props) {
   return (
-    <SubSectionToggle id="poe_oauth" title="POE OAUTH">
+    <SectionToggle id="poe_oauth" title="POE OAUTH">
       <Text style={styles.hint}>
         Connect your Poe account to access claude-3-opus, gpt-4, and millions of community bots.
         Supports both free and subscribed Poe accounts.
       </Text>
       <OAuthCard title="Poe Account" slot={poe} styles={styles} />
-    </SubSectionToggle>
+    </SectionToggle>
   );
 }

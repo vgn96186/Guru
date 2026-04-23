@@ -15,7 +15,7 @@ interface Props {
   sanitizeProviderOrder: (order: ProviderId[]) => ProviderId[];
   updateUserProfile: (patch: any) => Promise<void>;
   refreshProfile: () => Promise<void>;
-  SubSectionToggle: any;
+  SectionToggle: any;
   styles: any;
 }
 
@@ -25,13 +25,13 @@ export default function RoutingSection({
   sanitizeProviderOrder,
   updateUserProfile,
   refreshProfile,
-  SubSectionToggle,
+  SectionToggle,
   styles,
 }: Props) {
   const { providerOrder, moveProvider, setProviderOrder } = routing;
 
   return (
-    <SubSectionToggle id="ai_routing" title="PROVIDER ROUTING">
+    <SectionToggle id="ai_routing" title="Cloud Routing Priority" icon="git-network" tint="#3B82F6">
       <Text style={styles.hint}>
         Drag to reorder. Guru uses the highest available provider for generation.
       </Text>
@@ -146,6 +146,6 @@ export default function RoutingSection({
           <Text style={styles.testBtnText}>Reset to Default Order</Text>
         </TouchableOpacity>
       </View>
-    </SubSectionToggle>
+    </SectionToggle>
   );
 }

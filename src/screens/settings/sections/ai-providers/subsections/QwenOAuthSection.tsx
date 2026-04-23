@@ -6,15 +6,15 @@ import type { OAuthSlot } from '../types';
 
 interface Props {
   qwen: OAuthSlot;
-  SubSectionToggle: any;
+  SectionToggle: any;
   styles: any;
 }
 
-export default function QwenOAuthSection({ qwen, SubSectionToggle, styles }: Props) {
+export default function QwenOAuthSection({ qwen, SectionToggle, styles }: Props) {
   const { connecting, deviceCode, connected, connect, disconnect } = qwen;
 
   return (
-    <SubSectionToggle id="qwen_oauth" title="QWEN (FREE OAUTH)">
+    <SectionToggle id="qwen_oauth" title="QWEN (FREE OAUTH)">
       <Text style={styles.hint}>
         Connect your Qwen.ai account for free access to qwen-coder-plus, qwen-coder-flash, and
         qwen-vl-plus. 1,000 requests/day, 60 req/min. No API key needed.
@@ -131,6 +131,6 @@ export default function QwenOAuthSection({ qwen, SubSectionToggle, styles }: Pro
           )}
         </View>
       )}
-    </SubSectionToggle>
+    </SectionToggle>
   );
 }

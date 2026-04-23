@@ -76,7 +76,7 @@ export default function StorageSections(props: any) {
       <LinearText variant="sectionTitle" tone="muted" style={styles.categoryLabel}>
         STORAGE
       </LinearText>
-      <SectionToggle id="data" title="Data" icon="trash-outline" tint="#F44336">
+      <SectionToggle id="storage_data" title="Data Management" icon="trash-outline" tint="#F44336">
         <TouchableOpacity
           style={styles.dangerBtn}
           onPress={() => handleClearAiCache(clearAiCache)}
@@ -124,8 +124,8 @@ export default function StorageSections(props: any) {
       </SectionToggle>
 
       <SectionToggle
-        id="unified_backup"
-        title="Unified Backup & Restore"
+        id="storage_backup"
+        title="Unified Backup"
         icon="archive-outline"
         tint="#4CAF50"
       >
@@ -181,72 +181,78 @@ export default function StorageSections(props: any) {
           </TouchableOpacity>
         </View>
 
-        <View style={styles.subSectionDivider} />
-        <LinearText variant="label" style={styles.subSectionLabel}>
-          Auto-Backup Frequency
-        </LinearText>
-        <LinearText variant="body" tone="muted" style={styles.hint}>
-          Automatically create backups when the app starts.
-        </LinearText>
-        <View style={styles.frequencyRow}>
-          {(['off', 'daily', '3days', 'weekly', 'monthly'] as AutoBackupFrequency[]).map((freq) => (
-            <TouchableOpacity
-              key={freq}
-              style={[
-                styles.frequencyChip,
-                autoBackupFrequency === freq && styles.frequencyChipActive,
-              ]}
-              onPress={() => setAutoBackupFrequency(freq)}
-              activeOpacity={0.8}
-            >
-              <LinearText
-                variant="body"
-                style={[
-                  styles.frequencyChipText,
-                  autoBackupFrequency === freq && styles.frequencyChipTextActive,
-                ]}
-              >
-                {freq === 'off'
-                  ? 'Off'
-                  : freq === '3days'
-                  ? '3 Days'
-                  : freq.charAt(0).toUpperCase() + freq.slice(1)}
-              </LinearText>
-            </TouchableOpacity>
-          ))}
+        <View style={{ marginTop: 24 }}>
+          <LinearText variant="label" style={styles.switchLabel}>
+            Auto-Backup Frequency
+          </LinearText>
+          <LinearText variant="body" tone="muted" style={[styles.hint, { marginBottom: 12 }]}>
+            Automatically create backups when the app starts.
+          </LinearText>
+          <View style={styles.frequencyRow}>
+            {(['off', 'daily', '3days', 'weekly', 'monthly'] as AutoBackupFrequency[]).map(
+              (freq) => (
+                <TouchableOpacity
+                  key={freq}
+                  style={[
+                    styles.frequencyChip,
+                    autoBackupFrequency === freq && styles.frequencyChipActive,
+                  ]}
+                  onPress={() => setAutoBackupFrequency(freq)}
+                  activeOpacity={0.8}
+                >
+                  <LinearText
+                    variant="body"
+                    style={[
+                      styles.frequencyChipText,
+                      autoBackupFrequency === freq && styles.frequencyChipTextActive,
+                    ]}
+                  >
+                    {freq === 'off'
+                      ? 'Off'
+                      : freq === '3days'
+                        ? '3 Days'
+                        : freq.charAt(0).toUpperCase() + freq.slice(1)}
+                  </LinearText>
+                </TouchableOpacity>
+              ),
+            )}
+          </View>
+          <TouchableOpacity
+            style={[styles.maintenanceBtn, backupBusy && styles.saveBtnDisabled]}
+            disabled={backupBusy}
+            activeOpacity={0.8}
+            onPress={() =>
+              handleRunAutoBackupNow({
+                setBackupBusy,
+                runAutoBackup,
+                profileRepository,
+                refreshProfile,
+              })
+            }
+          >
+            <LinearText variant="body" style={styles.maintenanceBtnText}>
+              Run Auto-Backup Now
+            </LinearText>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.maintenanceBtn, backupBusy && styles.saveBtnDisabled]}
+            disabled={backupBusy}
+            activeOpacity={0.8}
+            onPress={() => handleCleanupOldBackups({ setBackupBusy, cleanupOldBackups })}
+          >
+            <LinearText variant="body" style={styles.maintenanceBtnText}>
+              Clean Up Old Backups
+            </LinearText>
+          </TouchableOpacity>
         </View>
-        <TouchableOpacity
-          style={[styles.maintenanceBtn, backupBusy && styles.saveBtnDisabled]}
-          disabled={backupBusy}
-          activeOpacity={0.8}
-          onPress={() =>
-            handleRunAutoBackupNow({
-              setBackupBusy,
-              runAutoBackup,
-              profileRepository,
-              refreshProfile,
-            })
-          }
-        >
-          <LinearText variant="body" style={styles.maintenanceBtnText}>
-            Run Auto-Backup Now
-          </LinearText>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.maintenanceBtn, backupBusy && styles.saveBtnDisabled]}
-          disabled={backupBusy}
-          activeOpacity={0.8}
-          onPress={() => handleCleanupOldBackups({ setBackupBusy, cleanupOldBackups })}
-        >
-          <LinearText variant="body" style={styles.maintenanceBtnText}>
-            Clean Up Old Backups
-          </LinearText>
-        </TouchableOpacity>
+      </SectionToggle>
 
-        <View style={styles.subSectionDivider} />
-        <LinearText variant="label" style={styles.subSectionLabel}>
-          Google Drive Sync
-        </LinearText>
+      <SectionToggle
+        id="storage_gdrive"
+        title="Google Drive Sync"
+        icon="logo-google"
+        tint="#4285F4"
+      >
         <LinearText variant="body" tone="muted" style={styles.hint}>
           Back up to Google Drive to sync between devices and survive app reinstalls.
         </LinearText>
@@ -368,9 +374,9 @@ export default function StorageSections(props: any) {
       </SectionToggle>
 
       <SectionToggle
-        id="advanced"
+        id="storage_maintenance"
         title="Library Maintenance"
-        icon="construct-outline"
+        icon="construct"
         tint="#8080A0"
       >
         <LinearText variant="body" tone="muted" style={styles.hint}>
@@ -384,9 +390,8 @@ export default function StorageSections(props: any) {
             runMaintenanceTask(
               'retry',
               async () => {
-                const { retryFailedTasks } = await import(
-                  '../../../services/lecture/lectureSessionMonitor'
-                );
+                const { retryFailedTasks } =
+                  await import('../../../services/lecture/lectureSessionMonitor');
                 const activeProfile = await getUserProfile();
                 return retryFailedTasks(activeProfile?.groqApiKey || undefined);
               },
@@ -414,9 +419,8 @@ export default function StorageSections(props: any) {
             runMaintenanceTask(
               'legacy',
               async () => {
-                const { autoRepairLegacyNotes } = await import(
-                  '../../../services/lecture/lectureSessionMonitor'
-                );
+                const { autoRepairLegacyNotes } =
+                  await import('../../../services/lecture/lectureSessionMonitor');
                 return autoRepairLegacyNotes();
               },
               {
@@ -443,9 +447,8 @@ export default function StorageSections(props: any) {
             runMaintenanceTask(
               'transcripts',
               async () => {
-                const { scanAndRecoverOrphanedTranscripts } = await import(
-                  '../../../services/lecture/lectureSessionMonitor'
-                );
+                const { scanAndRecoverOrphanedTranscripts } =
+                  await import('../../../services/lecture/lectureSessionMonitor');
                 return scanAndRecoverOrphanedTranscripts();
               },
               {
@@ -472,9 +475,8 @@ export default function StorageSections(props: any) {
             runMaintenanceTask(
               'recordings',
               async () => {
-                const { scanAndRecoverOrphanedRecordings } = await import(
-                  '../../../services/lecture/lectureSessionMonitor'
-                );
+                const { scanAndRecoverOrphanedRecordings } =
+                  await import('../../../services/lecture/lectureSessionMonitor');
                 return scanAndRecoverOrphanedRecordings();
               },
               {
@@ -501,9 +503,8 @@ export default function StorageSections(props: any) {
             runMaintenanceTask(
               'cleanup_artifacts',
               async () => {
-                const { cleanupFailedArtifacts } = await import(
-                  '../../../services/lecture/lectureSessionMonitor'
-                );
+                const { cleanupFailedArtifacts } =
+                  await import('../../../services/lecture/lectureSessionMonitor');
                 return cleanupFailedArtifacts();
               },
               {

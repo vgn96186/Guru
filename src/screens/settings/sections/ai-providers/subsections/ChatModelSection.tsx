@@ -8,7 +8,7 @@ interface Props {
   guruChat: GuruChatState;
   useLocalModel: boolean;
   localModelPath: string | null;
-  SubSectionToggle: any;
+  SectionToggle: any;
   styles: any;
 }
 
@@ -16,7 +16,7 @@ export default function ChatModelSection({
   guruChat,
   useLocalModel,
   localModelPath,
-  SubSectionToggle,
+  SectionToggle,
   styles,
 }: Props) {
   const {
@@ -27,7 +27,7 @@ export default function ChatModelSection({
   } = guruChat;
 
   return (
-    <SubSectionToggle id="ai_chat_model" title="CHAT MODEL">
+    <SectionToggle id="ai_chat_model" title="Chat Model" icon="chatbubbles" tint="#6C63FF">
       <Text style={styles.hint}>Default model for Guru Chat (changeable per session).</Text>
       <View style={styles.liveModelsRefreshRow}>
         <TouchableOpacity
@@ -115,6 +115,6 @@ export default function ChatModelSection({
           })),
         ]}
       />
-    </SubSectionToggle>
+    </SectionToggle>
   );
 }

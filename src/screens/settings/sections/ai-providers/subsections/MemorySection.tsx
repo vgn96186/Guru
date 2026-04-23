@@ -5,15 +5,15 @@ import LinearTextInput from '../../../../../components/primitives/LinearTextInpu
 
 interface Props {
   guruMemory: { notes: string; setNotes: (s: string) => void };
-  SubSectionToggle: any;
+  SectionToggle: any;
   styles: any;
 }
 
-export default function MemorySection({ guruMemory, SubSectionToggle, styles }: Props) {
+export default function MemorySection({ guruMemory, SectionToggle, styles }: Props) {
   const { notes, setNotes } = guruMemory;
 
   return (
-    <SubSectionToggle id="ai_memory" title="GURU MEMORY">
+    <SectionToggle id="ai_memory" title="Guru Memory" icon="brain" tint="#EC4899">
       <Text style={styles.hint}>
         Persistent notes Guru uses in every chat. Session memory is built automatically.
       </Text>
@@ -28,6 +28,6 @@ export default function MemorySection({ guruMemory, SubSectionToggle, styles }: 
         autoCapitalize="sentences"
         autoCorrect={true}
       />
-    </SubSectionToggle>
+    </SectionToggle>
   );
 }

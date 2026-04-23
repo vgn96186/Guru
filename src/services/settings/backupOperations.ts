@@ -2,9 +2,7 @@ import {
   confirmDestructive,
   showDialog,
   showError,
-  showInfo,
   showSuccess,
-  showWarning,
 } from '../../components/dialogService';
 import { showToast } from '../../components/Toast';
 

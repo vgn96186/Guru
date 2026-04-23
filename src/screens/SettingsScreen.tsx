@@ -24,8 +24,6 @@ import {
 } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { MenuStackParamList, RootStackParamList } from '../navigation/types';
-import * as FileSystem from 'expo-file-system/legacy';
-import { pickDocumentOnce } from '../services/documentPicker';
 import * as Notifications from 'expo-notifications';
 import { Audio } from 'expo-av';
 import { canDrawOverlays, requestOverlayPermission } from '../../modules/app-launcher';
@@ -49,7 +47,6 @@ import {
   requestNotificationPermissions,
   refreshAccountabilityNotifications,
 } from '../services/notificationService';
-import { runInTransaction } from '../db/database';
 import { fetchExamDates } from '../services/aiService';
 import {
   testGroqConnection,
@@ -141,7 +138,6 @@ import { InterventionsSection } from './settings/sections/InterventionsSection';
 import { AppIntegrationsSection } from './settings/sections/AppIntegrationsSection';
 import { PlanningAlertsSection } from './settings/sections/PlanningAlertsSection';
 import { DeviceSyncSection } from './settings/sections/DeviceSyncSection';
-import { DataStorageSection } from './settings/sections/DataStorageSection';
 import { DashboardOverview } from './settings/sections/DashboardOverview';
 import StorageSections from './settings/sections/StorageSections';
 import AiProvidersSection from './settings/sections/ai-providers';
@@ -290,22 +286,6 @@ function fingerprintSecret(secret: string): string {
   return `fp_${(hash >>> 0).toString(16)}`;
 }
 
-function yieldToUi(): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, 0));
-}
-
-function asNumber(value: unknown, fallback = 0): number {
-  return typeof value === 'number' && Number.isFinite(value) ? value : fallback;
-}
-
-function asString(value: unknown, fallback = ''): string {
-  return typeof value === 'string' ? value : fallback;
-}
-
-function asNullableString(value: unknown): string | null {
-  return typeof value === 'string' ? value : null;
-}
-
 function sanitizeApiValidationState(value: unknown): ApiValidationState {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return {};
   return value as ApiValidationState;
@@ -406,8 +386,8 @@ export default function SettingsScreen() {
   const [focusSubjectIds, setFocusSubjectIds] = useState<number[]>([]);
   const [subjects, setSubjects] = useState<Subject[]>([]);
 
-  const [fetchingDates, setFetchingDates] = useState(false);
-  const [fetchDatesMsg, setFetchDatesMsg] = useState('');
+  const [, setFetchingDates] = useState(false);
+  const [, setFetchDatesMsg] = useState('');
   const [testingGroqKey, setTestingGroqKey] = useState(false);
   const [groqKeyTestResult, setGroqKeyTestResult] = useState<'ok' | 'fail' | null>(null);
   const [_testingQwenKey, _setTestingQwenKey] = useState(false);
@@ -1223,7 +1203,7 @@ export default function SettingsScreen() {
     _setTestingGoogleCustomSearchKey(false);
   }
 
-  async function handleAutoFetchDates() {
+  async function _handleAutoFetchDates() {
     setFetchingDates(true);
     setFetchDatesMsg('');
     try {
@@ -2195,8 +2175,6 @@ export default function SettingsScreen() {
               onRequestMic={onRequestMic}
               onRequestLocalFiles={onRequestLocalFiles}
               onRequestOverlay={onRequestOverlay}
-              onOpenSystemSettings={onOpenSystemSettings}
-              onOpenDevConsole={onOpenDevConsole}
             />
             <SamsungBackgroundRow />
           </View>
@@ -2226,7 +2204,7 @@ export default function SettingsScreen() {
           />
         );
       case 'sync':
-        return <DeviceSyncSection />;
+        return <DeviceSyncSection SectionToggle={SectionToggle} />;
       case 'storage':
         return (
           <StorageSections
@@ -2256,6 +2234,34 @@ export default function SettingsScreen() {
             runMaintenanceTask={runMaintenanceTask}
             getUserProfile={getUserProfile}
           />
+        );
+      case 'advanced':
+        return (
+          <View style={styles.categoryStack}>
+            <SectionToggle
+              id="adv_developer"
+              title="Developer Options"
+              icon="code-slash"
+              tint="#ef4444"
+            >
+              <LinearText variant="body" tone="secondary" style={{ marginBottom: 16 }}>
+                Internal debugging tools and unstable experiments. Proceed with caution.
+              </LinearText>
+              <TouchableOpacity style={styles.testBtn} onPress={onOpenSystemSettings}>
+                <LinearText variant="body" style={styles.testBtnText}>
+                  Open System Settings
+                </LinearText>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.testBtn, { marginTop: 8 }]}
+                onPress={onOpenDevConsole}
+              >
+                <LinearText variant="body" style={styles.testBtnText}>
+                  Open Dev Console
+                </LinearText>
+              </TouchableOpacity>
+            </SectionToggle>
+          </View>
         );
       default:
         return null;

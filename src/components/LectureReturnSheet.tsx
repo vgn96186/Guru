@@ -12,20 +12,18 @@
  */
 
 import React from 'react';
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  ScrollView,
-  StyleSheet,
-  ActivityIndicator,
-} from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
+import { styles } from './lectureReturn/LectureReturnSheet.styles';
 import { Ionicons } from '@expo/vector-icons';
 import { linearTheme as n } from '../theme/linearTheme';
-import { CONFIDENCE_LABELS, CONFIDENCE_LABELS_WITH_EMOJI } from '../constants/gamification';
+
 import { type LecturePipelineStage } from '../services/lecture/lectureSessionMonitor';
 import { useLecturePipeline } from '../hooks/useLecturePipeline';
 import { MarkdownRender } from './MarkdownRender';
+import { LectureReturnActionButtons } from './lectureReturn/LectureReturnActionButtons';
+import { LectureReturnCompactBubble } from './lectureReturn/LectureReturnCompactBubble';
+import { LectureReturnTopicRow } from './lectureReturn/LectureReturnTopicRow';
+import { LectureReturnConfidenceSelector } from './lectureReturn/LectureReturnConfidenceSelector';
 import SubjectSelectionCard from './SubjectSelectionCard';
 
 interface Props {
@@ -203,67 +201,19 @@ export default function LectureReturnSheet(props: Props) {
   return (
     <View pointerEvents="box-none" style={styles.layer}>
       {showCompactCard ? (
-        <View pointerEvents="box-none" style={styles.bubbleDock}>
-          <View style={[styles.bubblePositioner, { paddingBottom: bottomOffset }]}>
-            <TouchableOpacity
-              style={[
-                styles.bubbleRow,
-                phase === 'error' && styles.bubbleError,
-                phase === 'results' && styles.bubbleReady,
-              ]}
-              onPress={() => setIsExpanded(true)}
-              activeOpacity={0.85}
-            >
-              <View style={styles.bubbleIconWrap}>
-                <Ionicons
-                  name={
-                    phase === 'error'
-                      ? 'alert-circle'
-                      : phase === 'results' || phase === 'quiz' || phase === 'quiz_done'
-                      ? 'checkmark-circle'
-                      : 'mic'
-                  }
-                  size={18}
-                  color={
-                    phase === 'error'
-                      ? n.colors.error
-                      : phase === 'results' || phase === 'quiz' || phase === 'quiz_done'
-                      ? n.colors.success
-                      : n.colors.accent
-                  }
-                />
-                {isWorkingPhase ? (
-                  <ActivityIndicator
-                    style={styles.bubbleSpinner}
-                    color={n.colors.accent}
-                    size="small"
-                  />
-                ) : null}
-              </View>
-              <View style={styles.bubbleTextWrap}>
-                <Text style={styles.bubbleTitle}>
-                  {isWorkingPhase ? stageMessage || getCompactTitle() : getCompactTitle()}
-                </Text>
-                <Text style={styles.bubbleSub}>
-                  {isWorkingPhase && progressLabel
-                    ? `${progressLabel}${progressProvider ? ` · ${progressProvider}` : ''}`
-                    : isIntroPhase
-                    ? 'Tap to start transcription'
-                    : getCompactSubtitle()}
-                </Text>
-              </View>
-              {!isWorkingPhase && (
-                <TouchableOpacity
-                  style={styles.bubbleDismiss}
-                  onPress={() => void cleanupAndClose()}
-                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                >
-                  <Text style={styles.bubbleDismissText}>{'×'}</Text>
-                </TouchableOpacity>
-              )}
-            </TouchableOpacity>
-          </View>
-        </View>
+        <LectureReturnCompactBubble
+          bottomOffset={bottomOffset}
+          phase={phase}
+          isWorkingPhase={isWorkingPhase}
+          isIntroPhase={isIntroPhase}
+          stageMessage={stageMessage}
+          progressLabel={progressLabel}
+          progressProvider={progressProvider}
+          compactTitle={getCompactTitle()}
+          compactSubtitle={getCompactSubtitle()}
+          setIsExpanded={setIsExpanded}
+          cleanupAndClose={cleanupAndClose}
+        />
       ) : (
         <View pointerEvents="box-none" style={styles.overlay}>
           <View style={styles.sheet}>
@@ -334,8 +284,8 @@ export default function LectureReturnSheet(props: Props) {
                             stage === 'transcribing'
                               ? 'Transcribe'
                               : stage === 'analyzing'
-                              ? 'Analyze'
-                              : 'Save';
+                                ? 'Analyze'
+                                : 'Save';
 
                           return (
                             <View
@@ -445,32 +395,16 @@ export default function LectureReturnSheet(props: Props) {
                 )}
 
                 {analysis.topics.length > 0 && (
-                  <View style={styles.section}>
-                    <Text style={styles.sectionLabel}>TOPICS DETECTED</Text>
-                    <View style={styles.topicRow}>
-                      {analysis.topics.map((t: string, i: number) => (
-                        <TouchableOpacity
-                          key={`${t}-${i}`}
-                          style={styles.topicPillEditable}
-                          onPress={() => {
-                            // Toggle topic removal/addition
-                            if (!analysis) return;
-                            const newTopics = analysis.topics.includes(t)
-                              ? analysis.topics.filter((topic: string) => topic !== t)
-                              : [...analysis.topics, t];
-                            setAnalysis({ ...analysis, topics: newTopics });
-                          }}
-                          activeOpacity={0.6}
-                          accessibilityRole="button"
-                          accessibilityLabel={`Remove topic: ${t}`}
-                        >
-                          <Text style={styles.topicPillText}>{t}</Text>
-                          <Text style={styles.topicRemoveIcon}>×</Text>
-                        </TouchableOpacity>
-                      ))}
-                    </View>
-                    <Text style={styles.topicHint}>Tap a topic to remove it</Text>
-                  </View>
+                  <LectureReturnTopicRow
+                    topics={analysis.topics}
+                    onToggleTopic={(t) => {
+                      if (!analysis) return;
+                      const newTopics = analysis.topics.includes(t)
+                        ? analysis.topics.filter((topic: string) => topic !== t)
+                        : [...analysis.topics, t];
+                      setAnalysis({ ...analysis, topics: newTopics });
+                    }}
+                  />
                 )}
 
                 {analysis.topics.length > 0 && analysis.keyConcepts.length > 0 && (
@@ -485,49 +419,11 @@ export default function LectureReturnSheet(props: Props) {
                 )}
 
                 {analysis.topics.length > 0 && (
-                  <View style={styles.confidenceSection}>
-                    <Text style={styles.sectionLabel}>YOUR CONFIDENCE LEVEL</Text>
-                    <View style={styles.confidenceSelector}>
-                      {([1, 2, 3] as const).map((level) => {
-                        const isSelected =
-                          (userConfidence ?? analysis.estimatedConfidence) === level;
-                        const colors = {
-                          1: n.colors.error,
-                          2: n.colors.warning,
-                          3: n.colors.success,
-                        };
-                        return (
-                          <TouchableOpacity
-                            key={level}
-                            style={[
-                              styles.confidenceOption,
-                              isSelected && {
-                                backgroundColor: colors[level] + '33',
-                                borderColor: colors[level],
-                              },
-                            ]}
-                            onPress={() => setUserConfidence(level)}
-                            activeOpacity={0.7}
-                          >
-                            <Text
-                              style={[
-                                styles.confidenceOptionText,
-                                isSelected && { color: colors[level] },
-                              ]}
-                            >
-                              {CONFIDENCE_LABELS_WITH_EMOJI[level]}
-                            </Text>
-                          </TouchableOpacity>
-                        );
-                      })}
-                    </View>
-                    {userConfidence && userConfidence !== analysis.estimatedConfidence && (
-                      <Text style={styles.confidenceOverrideNote}>
-                        AI detected "{CONFIDENCE_LABELS[analysis.estimatedConfidence as 1 | 2 | 3]}"
-                        — you're overriding to your selection
-                      </Text>
-                    )}
-                  </View>
+                  <LectureReturnConfidenceSelector
+                    userConfidence={userConfidence}
+                    estimatedConfidence={analysis.estimatedConfidence}
+                    setUserConfidence={setUserConfidence}
+                  />
                 )}
 
                 {analysis.topics.length === 0 && (
@@ -653,16 +549,16 @@ export default function LectureReturnSheet(props: Props) {
                     score === quizQuestions.length
                       ? 'trophy'
                       : score >= quizQuestions.length / 2
-                      ? 'ribbon'
-                      : 'book-outline'
+                        ? 'ribbon'
+                        : 'book-outline'
                   }
                   size={40}
                   color={
                     score === quizQuestions.length
                       ? n.colors.warning
                       : score >= quizQuestions.length / 2
-                      ? n.colors.success
-                      : n.colors.accent
+                        ? n.colors.success
+                        : n.colors.accent
                   }
                   style={styles.returnIcon}
                 />
@@ -673,8 +569,8 @@ export default function LectureReturnSheet(props: Props) {
                   {score === quizQuestions.length
                     ? 'Perfect! You nailed it.'
                     : score >= quizQuestions.length / 2
-                    ? 'Good effort. Review the misses.'
-                    : 'Rewatch this section soon.'}
+                      ? 'Good effort. Review the misses.'
+                      : 'Rewatch this section soon.'}
                 </Text>
                 {score > 0 && (
                   <View style={styles.xpBonusBox}>
@@ -708,727 +604,31 @@ export default function LectureReturnSheet(props: Props) {
             )}
 
             {/* Actions */}
-            <View style={styles.actions}>
-              {/* Results phase: simplified to 2 CTAs */}
-              {phase === 'results' && analysis && analysis.topics.length > 0 && (
-                <>
-                  <TouchableOpacity
-                    style={styles.primaryBtn}
-                    onPress={handleMarkAndQuiz}
-                    disabled={isSaving || (subjectSelectionRequired && !selectedSubjectName)}
-                    activeOpacity={0.85}
-                    accessibilityRole="button"
-                    accessibilityLabel={
-                      isSaving
-                        ? 'Saving'
-                        : quizLoading
-                        ? 'Loading quiz'
-                        : 'Mark as studied and take quick quiz'
-                    }
-                  >
-                    {isSaving ? (
-                      <Text style={styles.primaryBtnText}>
-                        {isSaving
-                          ? 'Saving lecture summary'
-                          : quizLoading
-                          ? 'Loading Quiz'
-                          : 'Mark as Studied + Quick Quiz'}
-                      </Text>
-                    ) : (
-                      <View
-                        style={{
-                          flexDirection: 'row',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                        }}
-                      >
-                        <Ionicons
-                          name="hardware-chip-outline"
-                          size={18}
-                          color={n.colors.textPrimary}
-                          style={{ marginRight: 6 }}
-                        />
-                        <Text style={styles.primaryBtnText}>
-                          {quizLoading ? 'Loading Quiz' : 'Mark as Studied + Quick Quiz'}
-                        </Text>
-                      </View>
-                    )}
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={styles.outlineBtn}
-                    onPress={() => handleMarkStudied()}
-                    disabled={isSaving || (subjectSelectionRequired && !selectedSubjectName)}
-                    activeOpacity={0.85}
-                    accessibilityRole="button"
-                    accessibilityLabel={`Just mark as studied, ${analysis.topics.length * 8} XP`}
-                  >
-                    <Text style={styles.outlineBtnText}>
-                      ✓ Just Mark as Studied (+{analysis.topics.length * 8} XP)
-                    </Text>
-                  </TouchableOpacity>
-                  {props.onCreateMindMap && (
-                    <TouchableOpacity
-                      style={styles.outlineBtn}
-                      onPress={() => {
-                        const topic = analysis.subject || analysis.topics[0] || appName;
-                        props.onCreateMindMap!(topic);
-                      }}
-                      activeOpacity={0.85}
-                    >
-                      <Text style={styles.outlineBtnText}>🧠 Create Mind Map</Text>
-                    </TouchableOpacity>
-                  )}
-                </>
-              )}
-
-              {/* Results phase: no topics detected */}
-              {phase === 'results' && analysis && analysis.topics.length === 0 && (
-                <TouchableOpacity
-                  style={styles.primaryBtn}
-                  onPress={handleSaveAndClose}
-                  disabled={isSaving || (subjectSelectionRequired && !selectedSubjectName)}
-                  activeOpacity={0.85}
-                >
-                  <Text style={styles.primaryBtnText}>Save & Done</Text>
-                </TouchableOpacity>
-              )}
-
-              {/* Quiz phase: next / finish */}
-              {phase === 'quiz' && selected !== null && q && (
-                <TouchableOpacity
-                  style={styles.primaryBtn}
-                  onPress={handleNextQuestion}
-                  activeOpacity={0.85}
-                >
-                  <Text style={styles.primaryBtnText}>
-                    {currentQ < quizQuestions.length - 1 ? 'Next Question →' : 'See My Score'}
-                  </Text>
-                </TouchableOpacity>
-              )}
-
-              {/* Quiz phase: skip if no questions or stuck loading */}
-              {phase === 'quiz' && !quizLoading && !q && (
-                <TouchableOpacity
-                  style={styles.primaryBtn}
-                  onPress={cleanupAndClose}
-                  activeOpacity={0.85}
-                >
-                  <Text style={styles.primaryBtnText}>Close</Text>
-                </TouchableOpacity>
-              )}
-
-              {/* Quiz done */}
-              {phase === 'quiz_done' && (
-                <TouchableOpacity
-                  style={styles.primaryBtn}
-                  onPress={cleanupAndClose}
-                  activeOpacity={0.85}
-                >
-                  <Text style={styles.primaryBtnText}>Done</Text>
-                </TouchableOpacity>
-              )}
-
-              {/* Dismiss / Skip always available (except quiz_done which has its own Done) */}
-              {phase !== 'quiz_done' && !isWorkingPhase && !isIntroPhase && (
-                <TouchableOpacity
-                  style={styles.secondaryBtn}
-                  onPress={handleSkip}
-                  activeOpacity={0.7}
-                  accessibilityRole="button"
-                  accessibilityLabel="Skip and dismiss"
-                >
-                  <Text style={styles.secondaryBtnText}>
-                    {phase === 'results' ? 'Skip' : phase === 'quiz' ? 'End Quiz' : 'Dismiss'}
-                  </Text>
-                </TouchableOpacity>
-              )}
-            </View>
+            <LectureReturnActionButtons
+              phase={phase}
+              analysis={analysis}
+              appName={appName}
+              isSaving={isSaving}
+              quizLoading={quizLoading}
+              subjectSelectionRequired={subjectSelectionRequired}
+              selectedSubjectName={selectedSubjectName}
+              isWorkingPhase={isWorkingPhase}
+              isIntroPhase={isIntroPhase}
+              selected={selected}
+              hasQuestion={!!q}
+              currentQ={currentQ}
+              totalQuestions={quizQuestions.length}
+              handleMarkAndQuiz={handleMarkAndQuiz}
+              handleMarkStudied={handleMarkStudied}
+              onCreateMindMap={props.onCreateMindMap}
+              handleSaveAndClose={handleSaveAndClose}
+              handleNextQuestion={handleNextQuestion}
+              cleanupAndClose={cleanupAndClose}
+              handleSkip={handleSkip}
+            />
           </View>
         </View>
       )}
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  layer: {
-    ...StyleSheet.absoluteFillObject,
-    justifyContent: 'flex-end',
-  },
-  overlay: {
-    flex: 1,
-    justifyContent: 'flex-end',
-    paddingHorizontal: 12,
-    paddingBottom: 12,
-    backgroundColor: 'rgba(1, 2, 4, 0.64)',
-  },
-  bubbleDock: {
-    position: 'absolute',
-    bottom: 0,
-    right: 0,
-    left: 0,
-    alignItems: 'flex-end',
-    paddingHorizontal: 14,
-  },
-  bubblePositioner: {
-    alignItems: 'flex-end',
-  },
-  bubbleRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 10,
-    backgroundColor: 'rgba(8, 10, 14, 0.84)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.14)',
-    borderRadius: 28,
-    paddingLeft: 6,
-    paddingRight: 14,
-    paddingVertical: 8,
-    maxWidth: 320,
-    elevation: 6,
-    shadowColor: n.colors.background,
-    shadowOpacity: 0.28,
-    shadowRadius: 16,
-    shadowOffset: { width: 0, height: 8 },
-  },
-  bubbleReady: {
-    borderColor: n.colors.success + '66',
-  },
-  bubbleError: {
-    borderColor: n.colors.error + '66',
-  },
-  bubbleIconWrap: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: 'rgba(255,255,255,0.08)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  bubbleSpinner: {
-    position: 'absolute',
-  },
-  bubbleTextWrap: {
-    flex: 1,
-    minWidth: 0,
-  },
-  bubbleTitle: {
-    color: n.colors.textPrimary,
-    fontSize: 12,
-    fontWeight: '700',
-    flexShrink: 1,
-    lineHeight: 17,
-    paddingBottom: 1,
-  },
-  bubbleSub: {
-    color: n.colors.textMuted,
-    fontSize: 10,
-    fontWeight: '600',
-    marginTop: 1,
-    flexShrink: 1,
-    lineHeight: 14,
-    paddingBottom: 1,
-  },
-  bubbleDismiss: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    backgroundColor: n.colors.border,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginLeft: 2,
-  },
-  bubbleDismissText: {
-    color: n.colors.textMuted,
-    fontSize: 13,
-    fontWeight: '700',
-    marginTop: -1,
-  },
-  sheet: {
-    backgroundColor: 'rgba(6, 8, 12, 0.94)',
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    paddingTop: 18,
-    paddingHorizontal: 20,
-    paddingBottom: 22,
-    maxHeight: '85%',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.14)',
-    elevation: 10,
-    shadowColor: n.colors.background,
-    shadowOpacity: 0.36,
-    shadowRadius: 24,
-    shadowOffset: { width: 0, height: 14 },
-  },
-  sheetTopRow: {
-    alignItems: 'center',
-    marginBottom: 18,
-  },
-  handle: {
-    width: 40,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: 'rgba(255,255,255,0.22)',
-    alignSelf: 'center',
-  },
-  minimizeBtn: {
-    position: 'absolute',
-    right: 0,
-    top: -8,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 999,
-    backgroundColor: 'rgba(255,255,255,0.08)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.16)',
-  },
-  minimizeBtnText: {
-    color: n.colors.textSecondary,
-    fontSize: 12,
-    fontWeight: '700',
-  },
-  centeredBlock: { alignItems: 'center', paddingVertical: 12 },
-  returnIcon: { marginBottom: 10 },
-  returnTitle: {
-    color: n.colors.textPrimary,
-    fontSize: 20,
-    fontWeight: '800',
-    textAlign: 'center',
-    lineHeight: 26,
-    paddingBottom: 2,
-  },
-  returnSub: {
-    color: n.colors.textMuted,
-    fontSize: 14,
-    marginTop: 4,
-    textAlign: 'center',
-    lineHeight: 20,
-    paddingBottom: 2,
-  },
-  spinnerText: { color: n.colors.accent, fontSize: 13, flexShrink: 1 },
-  processingCard: {
-    width: '100%',
-    marginTop: 20,
-    paddingHorizontal: 16,
-    paddingVertical: 16,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: n.colors.border,
-    backgroundColor: 'rgba(255,255,255,0.06)',
-    alignItems: 'center',
-    gap: 8,
-  },
-  progressHeaderRow: {
-    width: '100%',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    gap: 12,
-  },
-  processingTitle: {
-    color: n.colors.textPrimary,
-    fontSize: 16,
-    fontWeight: '800',
-    flex: 1,
-  },
-  progressPercentText: {
-    color: n.colors.accent,
-    fontSize: 15,
-    fontWeight: '800',
-  },
-  progressBarTrack: {
-    width: '100%',
-    height: 8,
-    borderRadius: 999,
-    backgroundColor: 'rgba(255,255,255,0.1)',
-    overflow: 'hidden',
-  },
-  progressBarFill: {
-    height: '100%',
-    borderRadius: 999,
-    backgroundColor: n.colors.accent,
-  },
-  stageRow: {
-    width: '100%',
-    flexDirection: 'row',
-    gap: 8,
-    justifyContent: 'center',
-    flexWrap: 'wrap',
-  },
-  stagePill: {
-    borderRadius: 999,
-    borderWidth: 1,
-    borderColor: n.colors.borderLight,
-    backgroundColor: 'rgba(255,255,255,0.06)',
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-  },
-  stagePillActive: {
-    borderColor: n.colors.accent,
-    backgroundColor: n.colors.primaryTintSoft,
-  },
-  stagePillDone: {
-    borderColor: n.colors.success,
-    backgroundColor: n.colors.successSurface,
-  },
-  stagePillText: {
-    color: n.colors.textMuted,
-    fontSize: 12,
-    fontWeight: '700',
-  },
-  stagePillTextActive: {
-    color: n.colors.accent,
-  },
-  stagePillTextDone: {
-    color: n.colors.success,
-  },
-  processingHint: {
-    color: n.colors.textSecondary,
-    fontSize: 13,
-    lineHeight: 19,
-    textAlign: 'center',
-  },
-  processingMeta: {
-    color: n.colors.textMuted,
-    fontSize: 12,
-    lineHeight: 18,
-    textAlign: 'center',
-  },
-  progressFactsRow: {
-    width: '100%',
-    flexDirection: 'row',
-    gap: 8,
-    justifyContent: 'center',
-    flexWrap: 'wrap',
-  },
-  progressFactPill: {
-    borderRadius: 999,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    backgroundColor: 'rgba(255,255,255,0.06)',
-    borderWidth: 1,
-    borderColor: n.colors.borderLight,
-  },
-  progressFactText: {
-    color: n.colors.textSecondary,
-    fontSize: 11,
-    fontWeight: '700',
-  },
-  timelineCard: {
-    width: '100%',
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: n.colors.borderLight,
-    backgroundColor: 'rgba(255,255,255,0.06)',
-    paddingHorizontal: 12,
-    paddingVertical: 12,
-    gap: 10,
-  },
-  timelineLabel: {
-    color: n.colors.textMuted,
-    fontSize: 11,
-    fontWeight: '800',
-    letterSpacing: 0.8,
-  },
-  timelineRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 10,
-  },
-  timelineDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    marginTop: 5,
-    backgroundColor: n.colors.accent,
-  },
-  timelineTextWrap: {
-    flex: 1,
-    gap: 2,
-  },
-  timelineTitle: {
-    color: n.colors.textPrimary,
-    fontSize: 12,
-    fontWeight: '700',
-  },
-  timelineDetail: {
-    color: n.colors.textSecondary,
-    fontSize: 12,
-    lineHeight: 17,
-  },
-  cancelProcessingBtn: {
-    marginTop: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: n.colors.error,
-    backgroundColor: n.colors.errorSurface,
-  },
-  cancelProcessingBtnText: {
-    color: n.colors.error,
-    fontSize: 12,
-    fontWeight: '700',
-  },
-  inlineStatusCard: {
-    marginBottom: 14,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: n.colors.border,
-    backgroundColor: 'rgba(255,255,255,0.06)',
-    paddingHorizontal: 14,
-    paddingVertical: 14,
-    alignItems: 'center',
-    gap: 8,
-  },
-  inlineStatusTitle: {
-    color: n.colors.textPrimary,
-    fontSize: 14,
-    fontWeight: '800',
-    textAlign: 'center',
-  },
-  inlineStatusHint: {
-    color: n.colors.textSecondary,
-    fontSize: 12,
-    lineHeight: 18,
-    textAlign: 'center',
-  },
-  resultsHeader: { marginBottom: 14 },
-  subjectChip: {
-    alignSelf: 'flex-start',
-    borderWidth: 1,
-    borderRadius: 8,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    marginBottom: 8,
-  },
-  subjectChipText: { fontSize: 13, lineHeight: 18, fontWeight: '800' },
-  summaryText: {
-    color: n.colors.textSecondary,
-    fontSize: 13,
-    lineHeight: 20,
-    paddingBottom: 2,
-  },
-  section: { marginBottom: 14 },
-  sectionLabel: {
-    color: n.colors.textMuted,
-    fontSize: 11,
-    fontWeight: '700',
-    letterSpacing: 0.8,
-    marginBottom: 6,
-  },
-  topicRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  topicPill: {
-    backgroundColor: n.colors.primaryTintSoft,
-    borderWidth: 1,
-    borderColor: n.colors.borderHighlight,
-    borderRadius: 8,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-  },
-  topicPillEditable: {
-    backgroundColor: 'rgba(94,106,210,0.18)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.16)',
-    borderRadius: 8,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    alignSelf: 'flex-start',
-    maxWidth: '100%',
-    minHeight: 34,
-  },
-  topicRemoveIcon: { color: n.colors.accent, fontSize: 16, fontWeight: '700' },
-  topicHint: { color: n.colors.textMuted, fontSize: 11, marginTop: 6, fontStyle: 'italic' },
-  topicPillText: {
-    color: n.colors.accent,
-    fontSize: 13,
-    lineHeight: 18,
-    fontWeight: '600',
-    flexShrink: 1,
-    paddingBottom: 1,
-  },
-  conceptItem: { color: n.colors.textSecondary, fontSize: 12, lineHeight: 20 },
-  confidenceBadgeRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 4,
-    marginBottom: 16,
-  },
-  confidenceLabel: { color: n.colors.textMuted, fontSize: 12 },
-  confidenceVal: { color: n.colors.textPrimary, fontSize: 12, fontWeight: '700' },
-  confidenceSection: { marginBottom: 16 },
-  confidenceSelector: { flexDirection: 'row', gap: 8, marginTop: 4 },
-  confidenceOption: {
-    flex: 1,
-    paddingVertical: 10,
-    paddingHorizontal: 8,
-    borderRadius: 10,
-    borderWidth: 1.5,
-    borderColor: n.colors.border,
-    backgroundColor: 'rgba(255,255,255,0.06)',
-    alignItems: 'center',
-  },
-  confidenceOptionText: {
-    color: n.colors.textSecondary,
-    fontSize: 11,
-    fontWeight: '600',
-    textAlign: 'center',
-  },
-  confidenceOverrideNote: {
-    color: n.colors.textMuted,
-    fontSize: 11,
-    marginTop: 8,
-    fontStyle: 'italic',
-  },
-  noContentNote: {
-    color: n.colors.textMuted,
-    fontSize: 12,
-    fontStyle: 'italic',
-    textAlign: 'center',
-    marginVertical: 12,
-  },
-  noTopicsCard: {
-    alignItems: 'center',
-    paddingVertical: 32,
-    paddingHorizontal: 24,
-    gap: 8,
-  },
-  noTopicsIcon: { fontSize: 40 },
-  noTopicsTitle: {
-    color: n.colors.textPrimary,
-    fontSize: 16,
-    fontWeight: '700',
-    textAlign: 'center',
-  },
-  noTopicsHint: {
-    color: n.colors.textMuted,
-    fontSize: 13,
-    textAlign: 'center',
-    lineHeight: 20,
-  },
-  generateTopicsBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    marginTop: 16,
-    backgroundColor: n.colors.accent + '18',
-    borderColor: n.colors.accent,
-    borderWidth: 1,
-    borderRadius: 12,
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    alignSelf: 'center',
-  },
-  generateTopicsBtnText: {
-    color: n.colors.accent,
-    fontSize: 14,
-    fontWeight: '700',
-  },
-  errorDetail: {
-    color: n.colors.error,
-    fontSize: 12,
-    textAlign: 'center',
-    marginTop: 8,
-    marginBottom: 16,
-  },
-  retryBtn: {
-    backgroundColor: 'rgba(255,255,255,0.06)',
-    borderWidth: 1,
-    borderColor: n.colors.accent,
-    borderRadius: 10,
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    marginTop: 8,
-  },
-  retryBtnText: { color: n.colors.accent, fontWeight: '700', lineHeight: 18, paddingBottom: 1 },
-
-  // Quiz
-  quizProgress: {
-    color: n.colors.textMuted,
-    fontSize: 11,
-    fontWeight: '700',
-    textTransform: 'uppercase',
-    letterSpacing: 0.8,
-    marginBottom: 10,
-  },
-  questionText: {
-    color: n.colors.textPrimary,
-    fontSize: 15,
-    lineHeight: 23,
-    fontWeight: '600',
-    marginBottom: 14,
-    paddingBottom: 2,
-  },
-  optionsContainer: { gap: 8, marginBottom: 8 },
-  optionBtn: {
-    borderWidth: 1.5,
-    borderRadius: 10,
-    padding: 12,
-  },
-  optionText: { color: n.colors.textSecondary, fontSize: 14, lineHeight: 20 },
-  explBox: {
-    borderWidth: 1,
-    borderRadius: 10,
-    padding: 12,
-    marginTop: 8,
-    marginBottom: 4,
-    backgroundColor: 'rgba(255,255,255,0.06)',
-  },
-  explLabel: { fontSize: 13, fontWeight: '800', marginBottom: 4 },
-  explText: { color: n.colors.textMuted, fontSize: 12, lineHeight: 18 },
-
-  // XP bonus
-  xpBonusBox: {
-    marginTop: 16,
-    backgroundColor: 'rgba(63,185,80,0.12)',
-    borderWidth: 1,
-    borderColor: n.colors.success + '55',
-    borderRadius: 12,
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-  },
-  xpBonusText: { color: n.colors.success, fontWeight: '800', fontSize: 15 },
-
-  // Actions
-  actions: { marginTop: 12, gap: 8 },
-  primaryBtn: {
-    backgroundColor: n.colors.accent,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.12)',
-    paddingVertical: 14,
-    paddingHorizontal: 14,
-    alignItems: 'center',
-  },
-  primaryBtnText: {
-    color: n.colors.textPrimary,
-    fontWeight: '800',
-    fontSize: 15,
-    lineHeight: 20,
-    textAlign: 'center',
-    paddingBottom: 1,
-  },
-  outlineBtn: {
-    borderWidth: 1.5,
-    borderColor: 'rgba(255,255,255,0.18)',
-    backgroundColor: 'rgba(255,255,255,0.05)',
-    borderRadius: 12,
-    paddingVertical: 12,
-    paddingHorizontal: 14,
-    alignItems: 'center',
-  },
-  outlineBtnText: {
-    color: n.colors.textPrimary,
-    fontWeight: '700',
-    fontSize: 14,
-    lineHeight: 19,
-    textAlign: 'center',
-    paddingBottom: 1,
-  },
-  secondaryBtn: { alignItems: 'center', paddingVertical: 12 },
-  secondaryBtnText: { color: n.colors.textMuted, fontSize: 14, fontWeight: '600' },
-});

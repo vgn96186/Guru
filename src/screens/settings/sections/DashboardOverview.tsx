@@ -12,7 +12,6 @@ export function DashboardOverview(props: any) {
   const {
     isTablet,
     providerOrder,
-    localLlmReady,
     setActiveCategory,
     localModel,
     setLocalModel,
@@ -20,11 +19,10 @@ export function DashboardOverview(props: any) {
     setFaceTracking,
     strictMode,
     setStrictMode,
-    dailyGoal,
-    setDailyGoal,
+
   } = props;
 
-  const { data: profile } = useProfileQuery();
+  void useProfileQuery();
 
   const topProviders = (providerOrder || ['groq', 'openrouter', 'deepseek']).slice(0, 3);
 

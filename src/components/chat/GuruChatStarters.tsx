@@ -3,7 +3,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import LinearText from '../primitives/LinearText';
 import { linearTheme as n } from '../../theme/linearTheme';
-import { whiteAlpha, accentAlpha } from '../../theme/colorUtils';
+import { whiteAlpha } from '../../theme/colorUtils';
 
 interface StarterItem {
   icon: string;

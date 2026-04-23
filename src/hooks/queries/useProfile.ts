@@ -10,12 +10,14 @@
 import { useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { profileRepositoryDrizzle } from '../../db/repositories/profileRepository.drizzle';
+import { queryKeys } from './keys';
 import { getLevelInfo } from '../../services/xpService';
 import { getLocalLlmRamWarning, isLocalLlmAllowedOnThisDevice } from '../../services/deviceMemory';
+import { clearWarmupState } from '../../services/ai/llmRouting';
 import { showToast } from '../../components/Toast';
 import type { UserProfile, LevelInfo, StudyResourceMode } from '../../types';
 
-export const PROFILE_QUERY_KEY = ['profile'] as const;
+export const PROFILE_QUERY_KEY = queryKeys.profile;
 
 // ─── Read ─────────────────────────────────────────────────────────────────────
 
@@ -32,7 +34,8 @@ export function useProfileQuery() {
  * Returns null until the profile is loaded.
  */
 export function useLevelInfo(): LevelInfo | null {
-  const { data: profile } = useProfileQuery();
+  const profileQuery = useProfileQuery();
+  const profile = profileQuery?.data;
   if (!profile) return null;
   return getLevelInfo(profile.totalXp, profile.currentLevel);
 }
@@ -90,7 +93,8 @@ export function useRefreshProfile(): () => Promise<void> {
 // ─── Convenience mutations (replaces useAppStore toggle actions) ───────────────
 
 export function useProfileActions() {
-  const { data: profile } = useProfileQuery();
+  const profileQuery = useProfileQuery();
+  const profile = profileQuery?.data;
   const { mutate: updateProfile } = useUpdateProfileMutation();
 
   return {
@@ -132,6 +136,8 @@ export function useProfileActions() {
     },
 
     setLocalModelPath: (path: string | null) => {
+      // Clear warmup state when model path changes - prevents stale warmup
+      clearWarmupState();
       updateProfile(
         { localModelPath: path },
         { onError: () => showToast('Failed to update model path', 'error') },

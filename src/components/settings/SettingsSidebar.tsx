@@ -1,16 +1,17 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, ScrollView } from 'react-native';
 import { SidebarNavItem } from './SidebarNavItem';
-import { linearTheme } from '../../theme/linearTheme';
 
 export type SettingsCategory =
-  | 'general'
-  | 'ai'
-  | 'interventions'
-  | 'integrations'
+  | 'dashboard'
+  | 'profile'
   | 'planning'
+  | 'interventions'
+  | 'ai'
+  | 'integrations'
   | 'sync'
-  | 'storage';
+  | 'storage'
+  | 'advanced';
 
 export const SETTINGS_CATEGORIES: {
   id: SettingsCategory;
@@ -18,13 +19,15 @@ export const SETTINGS_CATEGORIES: {
   badge?: string;
   iconName: string;
 }[] = [
-  { id: 'general', label: 'General Overview', iconName: 'grid-outline' },
-  { id: 'ai', label: 'AI & Inference', iconName: 'sparkles-outline' },
-  { id: 'interventions', label: 'Interventions', badge: 'Active', iconName: 'shield-outline' },
-  { id: 'integrations', label: 'App Integrations', iconName: 'apps-outline' },
-  { id: 'planning', label: 'Planning & Alerts', iconName: 'calendar-outline' },
+  { id: 'dashboard', label: 'Dashboard', iconName: 'grid-outline' },
+  { id: 'profile', label: 'Profile & Experience', iconName: 'person-outline' },
+  { id: 'planning', label: 'Goals & Timeline', iconName: 'flag-outline' },
+  { id: 'interventions', label: 'Focus & Rules', iconName: 'shield-half-outline' },
+  { id: 'ai', label: 'AI Intelligence', iconName: 'sparkles-outline' },
+  { id: 'integrations', label: 'Integrations & OS', iconName: 'apps-outline' },
   { id: 'sync', label: 'Device Sync', iconName: 'sync-outline' },
   { id: 'storage', label: 'Data & Storage', iconName: 'server-outline' },
+  { id: 'advanced', label: 'Advanced Settings', iconName: 'settings-outline' },
 ];
 
 interface SettingsSidebarProps {

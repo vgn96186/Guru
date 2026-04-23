@@ -61,7 +61,8 @@ export default function TabNavigator() {
   const navigation = useNavigation<any>();
   const insets = useSafeAreaInsets();
   const { width: windowWidth, height: windowHeight } = useWindowDimensions();
-  const { data: profile } = useProfileQuery();
+  const profileQuery = useProfileQuery();
+  const profile = profileQuery?.data;
   const refreshProfile = useRefreshProfile();
   const faceTrackingEnabled = profile?.faceTrackingEnabled ?? false;
   const groqKey = (profile?.groqApiKey || BUNDLED_GROQ_KEY || '').trim();
@@ -577,7 +578,10 @@ export default function TabNavigator() {
           onDone={() => setReturnSheet(null)}
           onCreateMindMap={(topicName) => {
             setReturnSheet(null);
-            navigation.navigate('MenuTab', { screen: 'MindMap', params: { topicName } });
+            navigation.navigate('Tabs', {
+              screen: 'MenuTab',
+              params: { screen: 'MindMap', params: { topicName } },
+            });
           }}
         />
       ) : null}

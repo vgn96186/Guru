@@ -10,9 +10,6 @@ import {
 } from 'react-native';
 import LinearText from '../components/primitives/LinearText';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import type { RootStackParamList } from '../navigation/types';
 import { dailyLogRepository } from '../db/repositories';
 import * as Haptics from 'expo-haptics';
 import { ResponsiveContainer } from '../hooks/useResponsive';
@@ -23,13 +20,14 @@ import { accentAlpha, errorAlpha, whiteAlpha } from '../theme/colorUtils';
 import { confirmDestructive } from '../components/dialogService';
 import { Ionicons } from '@expo/vector-icons';
 
+import { RootNav } from '../navigation/typedHooks';
 const MAX_OPENS_BEFORE_SHAME = 3;
 const DELAY_SECONDS = 30;
 
 export default function DoomscrollInterceptor() {
-  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const navigation = RootNav.useNav();
   const { width: screenWidth } = useWindowDimensions();
-  const route = useRoute<RouteProp<RootStackParamList, 'DoomscrollInterceptor'>>();
+  const route = RootNav.useRoute<'DoomscrollInterceptor'>();
   const [doomscrollAttempts, setDoomscrollAttempts] = useState(0);
   const [isBlocking, setIsBlocking] = useState(false);
   const [blockAppName, setBlockAppName] = useState('');

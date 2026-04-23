@@ -1,5 +1,5 @@
 import { PermissionsAndroid } from 'react-native';
-import type { ChatGptAccountSlot, ContentType, ProviderId } from '../../types';
+import type { ContentType, ProviderId } from '../../types';
 
 export const ALL_CONTENT_TYPES: { type: ContentType; label: string }[] = [
   { type: 'keypoints', label: 'Key Points' },

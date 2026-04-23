@@ -4,7 +4,6 @@ import {
   __resetStorageStartupPromptForTests,
   maybeHandleStorageAccessOnStartup,
   STORAGE_MODEL_TOAST_KEY,
-  STORAGE_STARTUP_PROMPT_KEY,
 } from './storageStartupPrompt';
 import {
   findLocalModelFiles,

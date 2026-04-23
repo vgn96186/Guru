@@ -60,7 +60,8 @@ export function useLecturePipeline({
   groqKey,
   onDone,
 }: UseLecturePipelineProps) {
-  const { data: profile } = useProfileQuery();
+  const profileQuery = useProfileQuery();
+  const profile = profileQuery?.data;
   const [phase, setPhase] = useState<Phase>('intro');
   const [analysis, setAnalysis] = useState<LectureAnalysis | null>(null);
   const [errorMsg, setErrorMsg] = useState('');
@@ -105,7 +106,14 @@ export function useLecturePipeline({
 
   const hasLocalWhisper = !!(profile?.useLocalWhisper && profile?.localWhisperPath);
   const hasHuggingFace = !!(profile?.huggingFaceToken?.trim() || BUNDLED_HF_TOKEN);
-  const canTranscribe = !!(recordingPath && (groqKey || hasHuggingFace || hasLocalWhisper));
+  const hasCloudflare = !!(
+    profile?.cloudflareAccountId?.trim() && profile?.cloudflareApiToken?.trim()
+  );
+  const hasDeepgram = !!profile?.deepgramApiKey?.trim();
+  const canTranscribe = !!(
+    recordingPath &&
+    (groqKey || hasHuggingFace || hasLocalWhisper || hasCloudflare || hasDeepgram)
+  );
 
   const cleanupAndClose = useCallback(async () => {
     if (!sessionSaved && transcriptionCompleted) {

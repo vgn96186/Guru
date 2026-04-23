@@ -22,6 +22,7 @@
 import { DEFAULT_PROVIDER_ORDER, type ProviderId, type UserProfile } from '../../../../types';
 import type { LanguageModelV2 } from '../spec';
 import { createFallbackModel } from './fallback';
+import { withMiddleware, createLoggingMiddleware } from '../middleware';
 import {
   createGroqModel,
   createOpenRouterModel,
@@ -162,8 +163,10 @@ export function createGuruFallbackModel(opts: GuruFallbackOptions): LanguageMode
         'createGuruFallbackModel: local model selected but no local model is configured.',
       );
     }
+    const loggingMw = createLoggingMiddleware();
+    const wrappedModels = models.map((m) => withMiddleware(m, loggingMw));
     return createFallbackModel({
-      models,
+      models: wrappedModels,
       onProviderError: opts.onProviderError,
       onProviderSuccess: opts.onProviderSuccess,
     });
@@ -193,8 +196,13 @@ export function createGuruFallbackModel(opts: GuruFallbackOptions): LanguageMode
     );
   }
 
+  // Wrap every model with centralized logging middleware so all providers
+  // get consistent request/stream/error tracing without manual logStreamEvent calls.
+  const loggingMw = createLoggingMiddleware();
+  const wrappedModels = models.map((m) => withMiddleware(m, loggingMw));
+
   return createFallbackModel({
-    models,
+    models: wrappedModels,
     onProviderError: opts.onProviderError,
     onProviderSuccess: opts.onProviderSuccess,
   });

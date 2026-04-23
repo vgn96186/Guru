@@ -1,5 +1,5 @@
 import type { ProviderId, UserProfile } from '../../../types';
-import { createGuruFallbackModel } from '../providers/guruFallback';
+import { createGuruFallbackModel } from '../v2/providers/guruFallback';
 import type { GroundingDecision } from './types';
 
 const NON_TOOL_CAPABLE_PROVIDERS = new Set<ProviderId>(['gitlab_duo', 'poe']);

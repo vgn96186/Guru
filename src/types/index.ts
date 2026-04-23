@@ -141,6 +141,7 @@ export interface UserProfile {
   transcriptionProvider?: 'auto' | 'groq' | 'huggingface' | 'cloudflare' | 'deepgram' | 'local';
   notificationsEnabled: boolean;
   strictModeEnabled: boolean;
+  doomscrollShieldEnabled?: boolean;
   bodyDoublingEnabled: boolean;
   blockedContentTypes: ContentType[];
   idleTimeoutMinutes: number;
@@ -256,6 +257,8 @@ export interface UserProfile {
   autoRepairLegacyNotesEnabled?: boolean;
   /** Toggle for scan orphaned transcripts feature (may create duplicates). */
   scanOrphanedTranscriptsEnabled?: boolean;
+  /** Orb animation variant stored in user_profile.orb_effect. */
+  orbEffect?: string;
   samsungBatteryPromptShownAt?: number;
   useSPenControls?: boolean;
 }

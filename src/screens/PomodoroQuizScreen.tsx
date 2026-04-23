@@ -3,9 +3,6 @@ import { View, TouchableOpacity, StyleSheet, StatusBar, ScrollView } from 'react
 import LinearText from '../components/primitives/LinearText';
 import LoadingOrb from '../components/LoadingOrb';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation, useRoute, type RouteProp } from '@react-navigation/native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { RootStackParamList } from '../navigation/types';
 import { getTopicsDueForReview, getWeakestTopics } from '../db/queries/topics';
 import { fetchContent } from '../services/ai';
 import type { QuizContent, TopicWithProgress } from '../types';
@@ -15,13 +12,10 @@ import LinearSurface from '../components/primitives/LinearSurface';
 import { emphasizeHighYieldMarkdown } from '../utils/highlightMarkdown';
 import { Ionicons } from '@expo/vector-icons';
 import { useSPen } from '../hooks/useSPen';
-
-type Nav = NativeStackNavigationProp<RootStackParamList, 'PomodoroQuiz'>;
-type QuizRoute = RouteProp<RootStackParamList, 'PomodoroQuiz'>;
-
+import { RootNav } from '../navigation/typedHooks';
 export default function PomodoroQuizScreen() {
-  const navigation = useNavigation<Nav>();
-  const route = useRoute<QuizRoute>();
+  const navigation = RootNav.useNav<'PomodoroQuiz'>();
+  const route = RootNav.useRoute<'PomodoroQuiz'>();
   const breakPayload = route.params?.breakPayload;
   const precomputedQuestions = useMemo(
     () => breakPayload?.questions ?? [],

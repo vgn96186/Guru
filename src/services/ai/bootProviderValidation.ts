@@ -51,17 +51,27 @@ async function timed<T>(fn: () => Promise<T>): Promise<{ result: T; ms: number }
   return { result, ms: Date.now() - t0 };
 }
 
-/** Wrap a check promise so it never rejects — errors become BootCheck with the correct provider ID. */
-function safeCheck(id: ProviderId, p: Promise<BootCheck>): Promise<BootCheck> {
-  return p.catch(
-    (err): BootCheck => ({
-      id,
-      ok: false,
-      status: 0,
-      message: err instanceof Error ? err.message : String(err),
-      ms: 0,
-    }),
-  );
+/** Wrap a check promise so it never rejects — errors become BootCheck with the correct provider ID. Also adds a timeout. */
+function safeCheck(id: ProviderId, p: Promise<BootCheck>, timeoutMs = 5000): Promise<BootCheck> {
+  return new Promise<BootCheck>((resolve) => {
+    const timer = setTimeout(() => {
+      resolve({ id, ok: false, status: 408, message: 'timeout', ms: timeoutMs });
+    }, timeoutMs);
+
+    p.then((res) => {
+      clearTimeout(timer);
+      resolve(res);
+    }).catch((err) => {
+      clearTimeout(timer);
+      resolve({
+        id,
+        ok: false,
+        status: 0,
+        message: err instanceof Error ? err.message : String(err),
+        ms: 0,
+      });
+    });
+  });
 }
 
 export async function validateAiProvidersOnBoot(): Promise<void> {
@@ -159,6 +169,7 @@ export async function validateAiProvidersOnBoot(): Promise<void> {
         ...result,
         ms,
       })),
+      3000 // 3s timeout since we do this on boot and it can be slow
     ),
   );
 

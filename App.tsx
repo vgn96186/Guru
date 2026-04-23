@@ -1,6 +1,6 @@
 import './global.css';
 import React, { useState, useEffect, useLayoutEffect } from 'react';
-import { View, StyleSheet, DevSettings, Text, TextInput, LogBox } from 'react-native';
+import { View, StyleSheet, DevSettings, Text, TextInput } from 'react-native';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { NavigationContainer, DarkTheme } from '@react-navigation/native';
 import * as Notifications from 'expo-notifications';

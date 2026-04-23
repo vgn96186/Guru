@@ -23,7 +23,6 @@ import { stripFileUri } from './fileUri';
 import { cleanupStaleCheckpointDirs } from './lecture/transcription';
 import {
   autoRepairLegacyNotes,
-  scanAndRecoverOrphanedRecordings,
   scanAndRecoverOrphanedTranscripts,
 } from './lecture/lectureSessionMonitor';
 import {
@@ -219,13 +218,18 @@ async function runOptionalStartupStep(
   label: string,
   fn: () => Promise<void> | void,
 ): Promise<void> {
+  const start = Date.now();
   try {
     await fn();
+    const duration = Date.now() - start;
+    if (__DEV__) console.log(`[AppBootstrap] ✓ ${label} (${duration}ms)`);
   } catch (e) {
+    const duration = Date.now() - start;
     if (isSkippableOptionalStartupError(e)) {
-      console.warn(`[AppBootstrap] Skipping ${label}:`, e);
+      console.warn(`[AppBootstrap] ⚠ Skipping ${label} (${duration}ms):`, e);
       return;
     }
+    console.error(`[AppBootstrap] ✗ Failed ${label} (${duration}ms):`, e);
     throw e;
   }
 }
@@ -274,59 +278,66 @@ export async function runAppBootstrap(): Promise<BootstrapOutcome> {
     }
 
     // Dispatch maintenance tasks without awaiting to keep startup snappy.
-    void (async () => {
-      await runOptionalStartupStep('orphan cleanup', async () => {
-        const db = getDb();
-        await db.runAsync(
-          `UPDATE external_app_logs SET transcription_status = 'dismissed'
-           WHERE transcription_status IN ('pending', 'failed', 'recording', 'transcribing')
-              OR (transcription_status = 'completed' AND lecture_note_id IS NULL)`,
-        );
-      }).catch((e) => console.warn('[AppBootstrap] Orphan cleanup failed:', e));
-    })();
+    void runOptionalStartupStep('orphan cleanup (background)', async () => {
+      const db = getDb();
+      await db.runAsync(
+        `UPDATE external_app_logs SET transcription_status = 'dismissed'
+         WHERE transcription_status IN ('recording', 'transcribing')`,
+      );
+    }).catch((e) => console.warn('[AppBootstrap] Orphan cleanup failed:', e));
 
     // Heavy background tasks: only on devices with >= 3 GB RAM
     if (isBackgroundRecoveryAllowed()) {
-      startMissingTopicEmbeddingSeed(); // Non-blocking async queue
-      void bootstrapLocalModels().catch((e: unknown) =>
-        console.warn('[AppBootstrap] Local model bootstrap skipped:', e),
-      );
+      // Delay pre-seeding by 15s to keep critical startup path fast
+      setTimeout(() => {
+        runOptionalStartupStep('topic embedding seed (background)', async () => {
+          startMissingTopicEmbeddingSeed(); // Non-blocking async queue
+        });
+      }, 15000);
+      void runOptionalStartupStep('local model bootstrap (background)', async () => {
+        await bootstrapLocalModels();
+      });
+      // Warm up Gemma LiteRT on supported devices with local model enabled
+      void runOptionalStartupStep('Local LLM warmup (background)', async () => {
+        try {
+          const { warmupLocalModelOnBootstrap } = await import('./ai/llmRouting');
+          const profile = await profileRepository.getProfile();
+          if (profile?.useLocalModel && profile.localModelPath) {
+            await warmupLocalModelOnBootstrap(profile.localModelPath);
+          }
+        } catch (e) {
+          console.warn('[Bootstrap] Local LLM warmup skipped:', e);
+        }
+      });
       // Warm up Gemini Nano (AICore) on supported devices — no model file needed
-      void (async () => {
+      void runOptionalStartupStep('Gemini Nano warmup (background)', async () => {
         try {
           const { ensureNanoReady } = await import('./ai/llmRouting');
           const result = await ensureNanoReady();
           if (result.status === 'AVAILABLE') {
             console.log('[AppBootstrap] Gemini Nano warmed up');
-          } else if (__DEV__) {
-            console.log(`[AppBootstrap] Gemini Nano status: ${result.status}`);
           }
         } catch {
           // Not available on this device — fine
         }
-      })();
-      void cleanupStaleCheckpointDirs().catch((e: unknown) =>
-        console.warn('[AppBootstrap] Checkpoint cleanup failed:', e),
-      );
+      });
+      void runOptionalStartupStep('checkpoint cleanup (background)', async () => {
+        await cleanupStaleCheckpointDirs();
+      });
 
       // Lecture maintenance tasks based on user settings
-      void (async () => {
-        try {
-          const profile = await profileRepository.getProfile();
-          if (profile.autoRepairLegacyNotesEnabled) {
-            console.log('[AppBootstrap] Running auto-repair legacy notes...');
-            const repaired = await autoRepairLegacyNotes();
-            console.log(`[AppBootstrap] Auto-repaired ${repaired} legacy notes`);
-          }
-          if (profile.scanOrphanedTranscriptsEnabled) {
-            console.log('[AppBootstrap] Scanning for orphaned transcripts...');
-            const recovered = await scanAndRecoverOrphanedTranscripts();
-            console.log(`[AppBootstrap] Recovered ${recovered} orphaned transcripts`);
-          }
-        } catch (e) {
-          console.warn('[AppBootstrap] Lecture maintenance failed:', e);
+      void runOptionalStartupStep('lecture maintenance (background)', async () => {
+        const profile = await profileRepository.getProfile();
+        if (profile.autoRepairLegacyNotesEnabled) {
+          const repaired = await autoRepairLegacyNotes();
+          if (repaired > 0) console.log(`[AppBootstrap] Auto-repaired ${repaired} legacy notes`);
         }
-      })();
+        if (profile.scanOrphanedTranscriptsEnabled) {
+          const recovered = await scanAndRecoverOrphanedTranscripts();
+          if (recovered > 0)
+            console.log(`[AppBootstrap] Recovered ${recovered} orphaned transcripts`);
+        }
+      });
     } else if (__DEV__) {
       console.log('[AppBootstrap] Skipping heavy background tasks — low RAM device.');
     }

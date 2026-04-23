@@ -1,13 +1,11 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import {
   View,
-  Text,
   StyleSheet,
   StatusBar,
   FlatList,
   TouchableOpacity,
   ActivityIndicator,
-  InteractionManager,
   ScrollView,
 } from 'react-native';
 import { showInfo } from '../components/dialogService';
@@ -19,9 +17,7 @@ import ReAnimated, {
 } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { useNavigation, useIsFocused } from '@react-navigation/native';
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import type { SyllabusStackParamList } from '../navigation/types';
+import { useIsFocused } from '@react-navigation/native';
 import {
   approveTopicSuggestion,
   getAllSubjects,
@@ -30,7 +26,7 @@ import {
   rejectTopicSuggestion,
   type TopicSuggestion,
 } from '../db/queries/topics';
-import { syncVaultSeedTopics, getDb } from '../db/database';
+import { getDb, syncVaultSeedTopics } from '../db/database';
 import { dbEvents, DB_EVENT_KEYS } from '../services/databaseEvents';
 import SubjectCard from '../components/SubjectCard';
 import { showDialog } from '../components/dialogService';
@@ -46,10 +42,8 @@ import { linearTheme as n } from '../theme/linearTheme';
 import { errorAlpha, warningAlpha } from '../theme/colorUtils';
 import ScreenHeader from '../components/ScreenHeader';
 import LinearSurface from '../components/primitives/LinearSurface';
-import LinearBadge from '../components/primitives/LinearBadge';
 import LinearText from '../components/primitives/LinearText';
-type Nav = NativeStackNavigationProp<SyllabusStackParamList, 'Syllabus'>;
-
+import { SyllabusNav } from '../navigation/typedHooks';
 type SubjectSortMode = 'weight' | 'due' | 'coverage' | 'high_yield';
 
 interface SubjectMetrics {
@@ -148,7 +142,7 @@ export default function SyllabusScreen() {
 }
 
 function SyllabusScreenContent() {
-  const navigation = useNavigation<Nav>();
+  const navigation = SyllabusNav.useNav<'Syllabus'>();
   const isFocused = useIsFocused();
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [coverage, setCoverage] = useState<Map<number, { total: number; seen: number }>>(new Map());
@@ -164,12 +158,22 @@ function SyllabusScreenContent() {
   const [suggestionBusyId, setSuggestionBusyId] = useState<number | null>(null);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
   const [entryComplete, setEntryComplete] = useState(false);
+  // Pre-computed aggregates — computed once in loadData, not on every render
+  const [aggregateStats, setAggregateStats] = useState<{
+    totalTopics: number;
+    seenTopics: number;
+    totalDue: number;
+    totalHighYield: number;
+    totalWithNotes: number;
+  }>({ totalTopics: 0, seenTopics: 0, totalDue: 0, totalHighYield: 0, totalWithNotes: 0 });
   const isFocusedRef = useRef(isFocused);
   const entryCompleteRef = useRef(entryComplete);
   const lastLoadedAtRef = useRef(0);
   const lastLoadedSortModeRef = useRef<SubjectSortMode>(sortMode);
   const navLockRef = useRef(false);
   const navUnlockTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Debounce ref for event listeners
+  const eventLoadDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const unlockNavigation = useCallback(() => {
     navLockRef.current = false;
@@ -197,33 +201,13 @@ function SyllabusScreenContent() {
     entryCompleteRef.current = entryComplete;
   }, [entryComplete]);
 
-  const loadData = useCallback(async () => {
-    const [subs, combinedRows, suggestions] = await Promise.all([
-      getAllSubjects(),
-      getSubjectStatsAggregated(),
-      getPendingTopicSuggestions(),
-    ]);
-
-    const map = new Map<number, { total: number; seen: number }>();
-    const metricMap = new Map<number, SubjectMetrics>();
-
-    for (const row of combinedRows) {
-      const sId = Number(row.subjectId);
-      map.set(sId, { total: row.total ?? 0, seen: row.seen ?? 0 });
-      metricMap.set(sId, {
-        due: row.due ?? 0,
-        highYield: row.highYield ?? 0,
-        unseen: row.unseen ?? 0,
-        withNotes: row.withNotes ?? 0,
-        weak: row.weak ?? 0,
-      });
-    }
-
-    const sortedSubjects = [...subs].sort((a, b) => {
-      const aCoverage = map.get(a.id) ?? { total: 0, seen: 0 };
-      const bCoverage = map.get(b.id) ?? { total: 0, seen: 0 };
-      const aMetrics = metricMap.get(a.id) ?? EMPTY_METRICS;
-      const bMetrics = metricMap.get(b.id) ?? EMPTY_METRICS;
+  // Stable sort comparator — memoized, only recomputes when maps change
+  const subjectSortComparator = useMemo(() => {
+    return (a: Subject, b: Subject): number => {
+      const aCoverage = coverage.get(a.id) ?? EMPTY_COVERAGE;
+      const bCoverage = coverage.get(b.id) ?? EMPTY_COVERAGE;
+      const aMetrics = subjectMetrics.get(a.id) ?? EMPTY_METRICS;
+      const bMetrics = subjectMetrics.get(b.id) ?? EMPTY_METRICS;
       const aPct = aCoverage.total > 0 ? aCoverage.seen / aCoverage.total : 0;
       const bPct = bCoverage.total > 0 ? bCoverage.seen / bCoverage.total : 0;
 
@@ -244,17 +228,57 @@ function SyllabusScreenContent() {
         default:
           return b.inicetWeight - a.inicetWeight || bMetrics.due - aMetrics.due;
       }
-    });
+    };
+  }, [coverage, subjectMetrics, sortMode]);
+
+  const loadData = useCallback(async () => {
+    const [subs, combinedRows, suggestions] = await Promise.all([
+      getAllSubjects(),
+      getSubjectStatsAggregated(),
+      getPendingTopicSuggestions(),
+    ]);
+
+    const map = new Map<number, { total: number; seen: number }>();
+    const metricMap = new Map<number, SubjectMetrics>();
+    let totalT = 0, seenT = 0, dueT = 0, hyT = 0, notesT = 0;
+
+    for (const row of combinedRows) {
+      const sId = Number(row.subjectId);
+      const total = row.total ?? 0;
+      const seen = row.seen ?? 0;
+      map.set(sId, { total, seen });
+      metricMap.set(sId, {
+        due: row.due ?? 0,
+        highYield: row.highYield ?? 0,
+        unseen: row.unseen ?? 0,
+        withNotes: row.withNotes ?? 0,
+        weak: row.weak ?? 0,
+      });
+      totalT += total;
+      seenT += seen;
+      dueT += row.due ?? 0;
+      hyT += row.highYield ?? 0;
+      notesT += row.withNotes ?? 0;
+    }
+
+    const sortedSubjects = [...subs].sort(subjectSortComparator);
 
     if (!isFocusedRef.current) return;
     setSubjects(sortedSubjects);
     setCoverage(map);
     setSubjectMetrics(metricMap);
+    setAggregateStats({
+      totalTopics: totalT,
+      seenTopics: seenT,
+      totalDue: dueT,
+      totalHighYield: hyT,
+      totalWithNotes: notesT,
+    });
     setPendingSuggestions(suggestions);
     setIsInitialLoad(false);
     lastLoadedAtRef.current = Date.now();
     lastLoadedSortModeRef.current = sortMode;
-  }, [sortMode]);
+  }, [subjectSortComparator, sortMode]);
 
   useEffect(() => {
     if (isFocused) {
@@ -283,16 +307,22 @@ function SyllabusScreenContent() {
 
   useEffect(() => {
     const onProgressOrLecture = () => {
-      const timer = setTimeout(() => {
+      // Debounce rapid-fire events — prevents multiple loadData() in quick succession
+      if (eventLoadDebounceRef.current) {
+        clearTimeout(eventLoadDebounceRef.current);
+      }
+      eventLoadDebounceRef.current = setTimeout(() => {
         void loadData();
-      }, 150);
-      return timer;
+      }, 300);
     };
     dbEvents.on(DB_EVENT_KEYS.PROGRESS_UPDATED, onProgressOrLecture);
     dbEvents.on(DB_EVENT_KEYS.LECTURE_SAVED, onProgressOrLecture);
     return () => {
       dbEvents.off(DB_EVENT_KEYS.PROGRESS_UPDATED, onProgressOrLecture);
       dbEvents.off(DB_EVENT_KEYS.LECTURE_SAVED, onProgressOrLecture);
+      if (eventLoadDebounceRef.current) {
+        clearTimeout(eventLoadDebounceRef.current);
+      }
     };
   }, [loadData]);
 
@@ -315,14 +345,11 @@ function SyllabusScreenContent() {
     const timer = setTimeout(() => {
       const db = getDb();
       void Promise.all([
-        db.getAllAsync<{
-          subject_id: number;
-          c: number;
-        }>(
+        (db.getAllAsync as any)(
           `SELECT subject_id, COUNT(*) as c FROM topics WHERE LOWER(name) LIKE ? GROUP BY subject_id`,
           [`%${searchLower}%`],
         ),
-        db.getAllAsync<TopicSearchResult>(
+        (db.getAllAsync as any)(
           `SELECT t.id, t.name, t.subject_id, s.name as subject_name, s.color_hex
          FROM topics t
          JOIN subjects s ON t.subject_id = s.id
@@ -333,8 +360,8 @@ function SyllabusScreenContent() {
         ),
       ]).then(([rows, topics]) => {
         if (!isFocusedRef.current) return;
-        setSearchMatchIds(new Set(rows.map((r) => r.subject_id)));
-        setSearchMatchCounts(new Map(rows.map((r) => [r.subject_id, r.c])));
+        setSearchMatchIds(new Set((rows as any[]).map((r: any) => r.subject_id)));
+        setSearchMatchCounts(new Map((rows as any[]).map((r: any) => [r.subject_id, r.c])));
         setTopicResults(topics);
       });
     }, 250);
@@ -421,12 +448,14 @@ function SyllabusScreenContent() {
   }
 
   async function _runDiagnostics() {
+    const { getDb } = require('../db/database');
     const db = getDb();
+    
     const [countRow, subjects, coverage] = await Promise.all([
-      db.getFirstAsync<{ c: number }>('SELECT COUNT(*) as c FROM topics'),
-      db.getAllAsync<any>('SELECT id, name FROM subjects'),
-      db.getAllAsync<any>('SELECT subject_id, COUNT(*) as c FROM topics GROUP BY subject_id'),
-    ]);
+        (db.getFirstAsync as any)('SELECT COUNT(*) as c FROM topics'),
+        (db.getAllAsync as any)('SELECT id, name FROM subjects'),
+        (db.getAllAsync as any)('SELECT subject_id, COUNT(*) as c FROM topics GROUP BY subject_id'),
+      ]);
     const count = countRow?.c;
     const subjectMap = new Map(subjects.map((s: any) => [s.id, s.name]));
     const summary = coverage
@@ -446,18 +475,9 @@ function SyllabusScreenContent() {
     showInfo('Database State', diag);
   }
 
-  const totalTopics = Array.from(coverage.values()).reduce((s, v) => s + v.total, 0);
-  const seenTopics = Array.from(coverage.values()).reduce((s, v) => s + v.seen, 0);
+  // Use pre-computed aggregates from loadData — avoids repeated Map.reduce on every render
+  const { totalTopics, seenTopics, totalDue, totalHighYield, totalWithNotes } = aggregateStats;
   const overallPct = totalTopics > 0 ? Math.round((seenTopics / totalTopics) * 100) : 0;
-  const totalDue = Array.from(subjectMetrics.values()).reduce((sum, item) => sum + item.due, 0);
-  const totalHighYield = Array.from(subjectMetrics.values()).reduce(
-    (sum, item) => sum + item.highYield,
-    0,
-  );
-  const totalWithNotes = Array.from(subjectMetrics.values()).reduce(
-    (sum, item) => sum + item.withNotes,
-    0,
-  );
 
   const searchLower = searchQuery.trim().toLowerCase();
   const filteredSubjects = useMemo(
@@ -534,6 +554,7 @@ function SyllabusScreenContent() {
     );
   }, []);
 
+  // listHeaderComponent — stable reference, no handleTopicResultPress in deps
   const listHeaderComponent = useMemo(() => {
     if (searchLower.length < 2 || topicResults.length === 0) return null;
     return (
@@ -568,7 +589,7 @@ function SyllabusScreenContent() {
         </LinearText>
       </View>
     );
-  }, [searchLower.length, topicResults, handleTopicResultPress]);
+  }, [searchLower.length, topicResults]);
 
   // Animated progress
   const progressWidth = useSharedValue(0);
@@ -817,10 +838,15 @@ function SyllabusScreenContent() {
               keyboardDismissMode="on-drag"
               contentContainerStyle={styles.list}
               removeClippedSubviews={true}
-              initialNumToRender={6}
-              maxToRenderPerBatch={6}
-              windowSize={5}
-              updateCellsBatchingPeriod={50}
+              initialNumToRender={8}
+              maxToRenderPerBatch={8}
+              windowSize={7}
+              updateCellsBatchingPeriod={40}
+              getItemLayout={(_, index) => ({
+                length: 90,
+                offset: 90 * index,
+                index,
+              })}
               onRefresh={async () => {
                 setRefreshing(true);
                 await loadData();

@@ -1,9 +1,9 @@
 import React from 'react';
-import { View, TextInput, StyleSheet, Switch } from 'react-native';
-import { linearTheme as n } from '../../theme/linearTheme';
+import { View, StyleSheet, Switch } from 'react-native';
 import LinearButton from '../primitives/LinearButton';
 import LinearChipButton from '../primitives/LinearChipButton';
 import LinearText from '../primitives/LinearText';
+import TextField from './TextField';
 
 interface NotificationSectionProps {
   enabled: boolean;
@@ -40,20 +40,13 @@ function NotificationSection({
         <Switch value={enabled} onValueChange={onEnabledChange} />
       </View>
 
-      <LinearText variant="label" style={styles.label}>
-        Reminder hour (0-23, e.g. 7 = 7:30 AM)
-      </LinearText>
-      <TextInput
-        style={[styles.input, !!error && styles.inputError]}
+      <TextField
+        label="Reminder hour (0-23, e.g. 7 = 7:30 AM)"
         value={hour}
         onChangeText={onHourChange}
         keyboardType="number-pad"
+        error={error}
       />
-      {!!error && (
-        <LinearText variant="caption" tone="error" style={styles.errorText}>
-          {error}
-        </LinearText>
-      )}
 
       <LinearText variant="label" style={styles.label}>
         Guru presence frequency
@@ -95,19 +88,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 8,
   },
-  label: { color: n.colors.textPrimary, fontSize: 13, fontWeight: '700' },
-  hint: { color: n.colors.textSecondary, fontSize: 11, marginTop: 2 },
-  input: {
-    backgroundColor: n.colors.surface,
-    color: n.colors.textPrimary,
-    borderRadius: 10,
-    padding: 12,
-    borderWidth: 1,
-    borderColor: n.colors.border,
-    fontSize: 14,
-  },
-  inputError: { borderColor: n.colors.error },
-  errorText: { color: n.colors.error, fontSize: 11 },
+  label: { color: '#F2F2F2', fontSize: 13, fontWeight: '700' },
+  hint: { color: '#A0A0A5', fontSize: 11, marginTop: 2 },
   frequencyRow: { flexDirection: 'row', gap: 8 },
   freqBtn: {
     flex: 1,
@@ -115,8 +97,8 @@ const styles = StyleSheet.create({
     borderRadius: 10,
   },
   freqBtnActive: {},
-  freqText: { color: n.colors.textSecondary, fontSize: 12, fontWeight: '600' },
-  freqTextActive: { color: n.colors.accent, fontWeight: '700' },
+  freqText: { color: '#A0A0A5', fontSize: 12, fontWeight: '600' },
+  freqTextActive: { color: '#5E6AD2', fontWeight: '700' },
   testBtn: { marginTop: 8 },
   testBtnText: { fontSize: 13 },
 });

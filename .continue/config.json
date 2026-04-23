@@ -84,9 +84,42 @@
       "name": "vexp-context",
       "description": "Get vexp context for current task",
       "prompt": "{{{ input }}}\n\nFirst, call run_pipeline with the above task description."
+    },
+    {
+      "name": "vexp-context",
+      "description": "Get vexp context for current task",
+      "prompt": "{{{ input }}}\n\nFirst, call run_pipeline with the above task description."
+    },
+    {
+      "name": "vexp-context",
+      "description": "Get vexp context for current task",
+      "prompt": "{{{ input }}}\n\nFirst, call run_pipeline with the above task description."
+    },
+    {
+      "name": "vexp-context",
+      "description": "Get vexp context for current task",
+      "prompt": "{{{ input }}}\n\nFirst, call run_pipeline with the above task description."
     }
   ],
   "contextProviders": [
+    {
+      "name": "vexp",
+      "params": {
+        "mcpUrl": "http://localhost:7821"
+      }
+    },
+    {
+      "name": "vexp",
+      "params": {
+        "mcpUrl": "http://localhost:7821"
+      }
+    },
+    {
+      "name": "vexp",
+      "params": {
+        "mcpUrl": "http://localhost:7821"
+      }
+    },
     {
       "name": "vexp",
       "params": {
@@ -324,6 +357,30 @@
       "command": "/Users/vishnugnair/.nvm/versions/node/v22.22.2/bin/node",
       "args": [
         "/Users/vishnugnair/.vscode/extensions/vexp.vexp-vscode-2.0.12-darwin-arm64/dist/mcp-server.cjs"
+      ],
+      "type": "stdio"
+    },
+    {
+      "name": "vexp",
+      "command": "/Applications/Trae.app/Contents/Frameworks/Trae Helper (Plugin).app/Contents/MacOS/Trae Helper (Plugin)",
+      "args": [
+        "/Users/vishnugnair/.trae/extensions/vexp.vexp-vscode-2.0.12-darwin-arm64/dist/mcp-server.cjs"
+      ],
+      "type": "stdio"
+    },
+    {
+      "name": "vexp",
+      "command": "/Applications/Trae.app/Contents/Frameworks/Trae Helper (Plugin).app/Contents/MacOS/Trae Helper (Plugin)",
+      "args": [
+        "/Users/vishnugnair/.trae/extensions/vexp.vexp-vscode-2.0.12-darwin-arm64/dist/mcp-server.cjs"
+      ],
+      "type": "stdio"
+    },
+    {
+      "name": "vexp",
+      "command": "/Applications/Trae.app/Contents/Frameworks/Trae Helper (Plugin).app/Contents/MacOS/Trae Helper (Plugin)",
+      "args": [
+        "/Users/vishnugnair/.trae/extensions/vexp.vexp-vscode-2.0.12-darwin-arm64/dist/mcp-server.cjs"
       ],
       "type": "stdio"
     }

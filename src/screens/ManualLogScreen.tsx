@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { ScrollView, StatusBar, StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
@@ -6,10 +6,6 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { Controller, useForm } from 'react-hook-form';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
-import { useNavigation, useRoute } from '@react-navigation/native';
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import type { RouteProp } from '@react-navigation/native';
-import type { HomeStackParamList } from '../navigation/types';
 import { z } from 'zod';
 import { getAllSubjects, getTopicsBySubject, updateTopicProgress } from '../db/queries/topics';
 import { createSession, endSession } from '../db/queries/sessions';
@@ -20,12 +16,10 @@ import { useRefreshProfile } from '../hooks/queries/useProfile';
 import { EXTERNAL_APPS } from '../constants/externalApps';
 import type { Subject, TopicWithProgress } from '../types';
 import { ResponsiveContainer } from '../hooks/useResponsive';
+import { useAsyncData, useAsyncEffect } from '../hooks/useAsyncData';
 import LinearButton from '../components/primitives/LinearButton';
 import LinearText from '../components/primitives/LinearText';
-
-type Nav = NativeStackNavigationProp<HomeStackParamList, 'ManualLog'>;
-type Route = RouteProp<HomeStackParamList, 'ManualLog'>;
-
+import { HomeNav } from '../navigation/typedHooks';
 const ManualLogFormSchema = z.object({
   topicName: z
     .string()
@@ -46,10 +40,10 @@ const ManualLogFormSchema = z.object({
 type ManualLogFormValues = z.infer<typeof ManualLogFormSchema>;
 
 export default function ManualLogScreen() {
-  const navigation = useNavigation<Nav>();
-  const route = useRoute<Route>();
+  const navigation = HomeNav.useNav<'ManualLog'>();
+  const route = HomeNav.useRoute<'ManualLog'>();
   const refreshProfile = useRefreshProfile();
-  const [subjects, setSubjects] = useState<Subject[]>([]);
+  const { data: subjects = [] } = useAsyncData<Subject[]>(getAllSubjects, [], { initial: [] });
   const [selectedAppId, setSelectedAppId] = useState<string | null>(route.params?.appId ?? null);
   const [selectedSubjectId, setSelectedSubjectId] = useState<number | null>(null);
   const [selectedTopicId, setSelectedTopicId] = useState<number | null>(null);
@@ -72,36 +66,20 @@ export default function ManualLogScreen() {
   const duration = watch('duration') ?? '0';
   const projectedXp = (Number.parseInt(duration, 10) || 0) * 10;
 
-  useEffect(() => {
-    let active = true;
-    void getAllSubjects().then((res) => {
-      if (active) setSubjects(res);
-    });
-    return () => {
-      active = false;
-    };
-  }, []);
-
-  useEffect(() => {
-    let active = true;
-    if (!selectedSubjectId) {
-      setSubjectTopics([]);
-      setSelectedTopicId(null);
-      return () => {
-        active = false;
-      };
-    }
-
-    void getTopicsBySubject(selectedSubjectId).then((topics) => {
-      if (!active) return;
+  useAsyncEffect(
+    async (isActive) => {
+      if (!selectedSubjectId) {
+        setSubjectTopics([]);
+        setSelectedTopicId(null);
+        return;
+      }
+      const topics = await getTopicsBySubject(selectedSubjectId);
+      if (!isActive()) return;
       setSubjectTopics(topics.filter((topic) => !topic.parentTopicId).slice(0, 8));
       setSelectedTopicId(null);
-    });
-
-    return () => {
-      active = false;
-    };
-  }, [selectedSubjectId]);
+    },
+    [selectedSubjectId],
+  );
 
   async function handleValidSubmit(values: ManualLogFormValues) {
     const mins = Number.parseInt(values.duration, 10) || 0;

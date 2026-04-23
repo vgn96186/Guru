@@ -20,7 +20,6 @@ import {
   processQueue,
 } from './offlineQueue';
 import { getDb, nowTs } from '../db/database';
-import { AppState } from 'react-native';
 
 describe('offlineQueue', () => {
   let mockDb: any;

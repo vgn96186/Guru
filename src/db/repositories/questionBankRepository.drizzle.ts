@@ -1,6 +1,7 @@
 import { and, asc, desc, eq, isNull, like, lte, notInArray, or, sql } from 'drizzle-orm';
 import type { QuestionBankItem, QuestionFilters, SaveQuestionInput } from '../../types';
 import { getDrizzleDb } from '../drizzle';
+import { runInTransaction } from '../database';
 import { questionBank } from '../drizzleSchema';
 
 const SR_INTERVALS = [
@@ -121,7 +122,7 @@ export const questionBankRepositoryDrizzle = {
     if (questions.length === 0) return 0;
 
     const db = getDrizzleDb();
-    return db.transaction(async (tx) => {
+    return runInTransaction(async (tx: any) => {
       let saved = 0;
 
       for (const question of questions) {
@@ -167,7 +168,7 @@ export const questionBankRepositoryDrizzle = {
     const db = getDrizzleDb();
     const now = Date.now();
 
-    await db.transaction(async (tx) => {
+    await runInTransaction(async (tx: any) => {
       const rows = await tx
         .select({
           timesSeen: questionBank.timesSeen,

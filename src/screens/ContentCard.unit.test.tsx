@@ -61,12 +61,18 @@ describe('ContentCard Ask Guru context', () => {
       <ContentCard content={quizContent} onDone={jest.fn()} onSkip={jest.fn()} />,
     );
 
+    fireEvent.press(
+      getByText('A1').parent?.parent?.parent?.parent?.findByProps
+        ? getByText('A1')
+        : getByText('A1'),
+    );
+    fireEvent.press(getByLabelTextFallback(getByText, 'Ask Guru about this topic'));
+
     await waitFor(() => {
       expect(getByTestId('guru-context').props.children).toContain('First question stem');
       expect(getByTestId('guru-context').props.children).not.toContain('Second question stem');
     });
 
-    fireEvent.press(getByText('A1'));
     fireEvent.press(getByText('Next Question →'));
 
     await waitFor(() => {
@@ -116,6 +122,11 @@ describe('ContentCard Ask Guru context', () => {
     });
   });
 });
+
+function getByLabelTextFallback(getByText: (text: string | RegExp) => any, label: string) {
+  const { screen } = require('@testing-library/react-native');
+  return screen.getByLabelText(label);
+}
 
 import type { AIContent } from '../types';
 

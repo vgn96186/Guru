@@ -4,7 +4,13 @@
 
 import { z } from 'zod';
 import { tool } from '../tool';
-import { getDb } from '../../../../db/database';
+import { getDrizzleDb } from '../../../../db/drizzle';
+import {
+  topics,
+  questionBank,
+  aiCache,
+} from '../../../../db/drizzleSchema';
+import { sql, like, eq } from 'drizzle-orm';
 
 /**
  * create_quiz — Generate a custom quiz for a specific topic or subject.
@@ -27,39 +33,41 @@ export const createQuizTool = tool({
       .describe('Difficulty level of the questions'),
   }),
   execute: async ({ topicName, questionCount = 3, difficulty = 'medium' }) => {
-    const db = await getDb();
+    const db = getDrizzleDb();
 
     // Find the topic ID
-    const topicRow = await db.getFirstAsync<{ id: number; name: string }>(
-      `
-      SELECT id, name FROM topics
-      WHERE lower(name) LIKE lower(?)
-      ORDER BY LENGTH(name) ASC LIMIT 1
-    `,
-      [`%${topicName}%`],
-    );
+    const rows = await db
+      .select({ id: topics.id, name: topics.name })
+      .from(topics)
+      .where(like(sql`lower(${topics.name})`, `%${topicName.toLowerCase()}%`))
+      .orderBy(sql`LENGTH(${topics.name}) ASC`)
+      .limit(1);
+    const topicRow = rows[0];
 
     if (!topicRow) {
       return { error: `Topic not found matching "${topicName}"` };
     }
 
     // Fetch questions from the question bank
-    const questions = await db.getAllAsync<{
-      id: number;
-      stem: string;
-      options_json: string;
-      correct_index: number;
-      explanation: string | null;
-    }>(
-      `
-      SELECT id, stem, options_json, correct_index, explanation
-      FROM question_bank
-      WHERE topic_id = ?
-      ORDER BY RANDOM()
-      LIMIT ?
-    `,
-      [topicRow.id, questionCount],
-    );
+    const questionsRaw = await db
+      .select({
+        id: questionBank.id,
+        stem: questionBank.question,
+        options_json: questionBank.options,
+        correct_index: questionBank.correctIndex,
+        explanation: questionBank.explanation,
+      })
+      .from(questionBank)
+      .where(eq(questionBank.topicId, topicRow.id))
+      .orderBy(sql`RANDOM()`)
+      .limit(questionCount);
+    const questions = questionsRaw.map((q) => ({
+      id: q.id,
+      stem: q.stem,
+      options_json: q.options_json ?? '[]',
+      correct_index: q.correct_index,
+      explanation: q.explanation,
+    }));
 
     if (questions.length === 0) {
       return { error: `No questions available for topic "${topicRow.name}"` };
@@ -94,33 +102,30 @@ export const fetchContentTool = tool({
       .describe('Type of content to fetch'),
   }),
   execute: async ({ topicName, contentType = 'summary' }) => {
-    const db = await getDb();
+    const db = getDrizzleDb();
 
     // Find the topic
-    const topicRow = await db.getFirstAsync<{
-      id: number;
-      name: string;
-      description: string | null;
-    }>(
-      `
-      SELECT id, name, description FROM topics
-      WHERE lower(name) LIKE lower(?)
-      ORDER BY LENGTH(name) ASC LIMIT 1
-    `,
-      [`%${topicName}%`],
-    );
+    const rows = await db
+      .select({ id: topics.id, name: topics.name })
+      .from(topics)
+      .where(like(sql`lower(${topics.name})`, `%${topicName.toLowerCase()}%`))
+      .orderBy(sql`LENGTH(${topics.name}) ASC`)
+      .limit(1);
+    const topicRow = rows[0];
 
     if (!topicRow) {
       return { error: `Topic not found matching "${topicName}"` };
     }
 
     // Try to fetch from ai_cache for keypoints (mapped to key_points)
-    let content = topicRow.description || '';
+    let content = '';
     if (contentType === 'key_points') {
-      const cachedContent = await db.getFirstAsync<{ content_json: string }>(
-        `SELECT content_json FROM guru_aicache.ai_cache WHERE topic_id = ? AND content_type = 'keypoints'`,
-        [topicRow.id],
-      );
+      const cacheRows = await db
+        .select({ content_json: aiCache.contentJson })
+        .from(aiCache)
+        .where(sql`${aiCache.topicId} = ${topicRow.id} AND ${aiCache.contentType} = 'keypoints'`)
+        .limit(1);
+      const cachedContent = cacheRows[0];
       if (cachedContent) {
         try {
           const parsed = JSON.parse(cachedContent.content_json);
@@ -174,25 +179,27 @@ export const generateKeypointsTool = tool({
     topicName: z.string().describe('The medical topic to generate key points for'),
   }),
   execute: async ({ topicName }) => {
-    const { getDb } = await import('../../../../db/database');
+    const { getDrizzleDb } = await import('../../../../db/drizzle');
+    const { topics, topicProgress, subjects } = await import('../../../../db/drizzleSchema');
+    const { sql, like, eq } = await import('drizzle-orm');
     const { fetchContent } = await import('../../contentGeneration');
-    const db = await getDb();
+    const db = getDrizzleDb();
 
-    const topicRow = await db.getFirstAsync<{
-      id: number;
-      name: string;
-      subjectName: string;
-      status: string | null;
-      confidence: number | null;
-    }>(
-      `SELECT t.id, t.name, s.name as subjectName, p.status, p.confidence
-       FROM topics t
-       JOIN subjects s ON t.subject_id = s.id
-       LEFT JOIN topic_progress p ON p.topic_id = t.id
-       WHERE lower(t.name) LIKE lower(?)
-       ORDER BY LENGTH(t.name) ASC LIMIT 1`,
-      [`%${topicName}%`],
-    );
+    const rows = await db
+      .select({
+        id: topics.id,
+        name: topics.name,
+        subjectName: subjects.name,
+        status: topicProgress.status,
+        confidence: topicProgress.confidence,
+      })
+      .from(topics)
+      .innerJoin(subjects, eq(topics.subjectId, subjects.id))
+      .leftJoin(topicProgress, eq(topicProgress.topicId, topics.id))
+      .where(like(sql`lower(${topics.name})`, `%${topicName.toLowerCase()}%`))
+      .orderBy(sql`LENGTH(${topics.name}) ASC`)
+      .limit(1);
+    const topicRow = rows[0];
 
     if (!topicRow) {
       return { error: `Topic not found matching "${topicName}"` };
@@ -234,25 +241,27 @@ export const generateMustKnowTool = tool({
     topicName: z.string().describe('The medical topic to generate must-know facts for'),
   }),
   execute: async ({ topicName }) => {
-    const { getDb } = await import('../../../../db/database');
+    const { getDrizzleDb } = await import('../../../../db/drizzle');
+    const { topics, topicProgress, subjects } = await import('../../../../db/drizzleSchema');
+    const { sql, like, eq } = await import('drizzle-orm');
     const { fetchContent } = await import('../../contentGeneration');
-    const db = await getDb();
+    const db = getDrizzleDb();
 
-    const topicRow = await db.getFirstAsync<{
-      id: number;
-      name: string;
-      subjectName: string;
-      status: string | null;
-      confidence: number | null;
-    }>(
-      `SELECT t.id, t.name, s.name as subjectName, p.status, p.confidence
-       FROM topics t
-       JOIN subjects s ON t.subject_id = s.id
-       LEFT JOIN topic_progress p ON p.topic_id = t.id
-       WHERE lower(t.name) LIKE lower(?)
-       ORDER BY LENGTH(t.name) ASC LIMIT 1`,
-      [`%${topicName}%`],
-    );
+    const rows = await db
+      .select({
+        id: topics.id,
+        name: topics.name,
+        subjectName: subjects.name,
+        status: topicProgress.status,
+        confidence: topicProgress.confidence,
+      })
+      .from(topics)
+      .innerJoin(subjects, eq(topics.subjectId, subjects.id))
+      .leftJoin(topicProgress, eq(topicProgress.topicId, topics.id))
+      .where(like(sql`lower(${topics.name})`, `%${topicName.toLowerCase()}%`))
+      .orderBy(sql`LENGTH(${topics.name}) ASC`)
+      .limit(1);
+    const topicRow = rows[0];
 
     if (!topicRow) {
       return { error: `Topic not found matching "${topicName}"` };
@@ -295,25 +304,27 @@ export const generateStoryTool = tool({
     topicName: z.string().describe('The medical topic to create a story for'),
   }),
   execute: async ({ topicName }) => {
-    const { getDb } = await import('../../../../db/database');
+    const { getDrizzleDb } = await import('../../../../db/drizzle');
+    const { topics, topicProgress, subjects } = await import('../../../../db/drizzleSchema');
+    const { sql, like, eq } = await import('drizzle-orm');
     const { fetchContent } = await import('../../contentGeneration');
-    const db = await getDb();
+    const db = getDrizzleDb();
 
-    const topicRow = await db.getFirstAsync<{
-      id: number;
-      name: string;
-      subjectName: string;
-      status: string | null;
-      confidence: number | null;
-    }>(
-      `SELECT t.id, t.name, s.name as subjectName, p.status, p.confidence
-       FROM topics t
-       JOIN subjects s ON t.subject_id = s.id
-       LEFT JOIN topic_progress p ON p.topic_id = t.id
-       WHERE lower(t.name) LIKE lower(?)
-       ORDER BY LENGTH(t.name) ASC LIMIT 1`,
-      [`%${topicName}%`],
-    );
+    const rows = await db
+      .select({
+        id: topics.id,
+        name: topics.name,
+        subjectName: subjects.name,
+        status: topicProgress.status,
+        confidence: topicProgress.confidence,
+      })
+      .from(topics)
+      .innerJoin(subjects, eq(topics.subjectId, subjects.id))
+      .leftJoin(topicProgress, eq(topicProgress.topicId, topics.id))
+      .where(like(sql`lower(${topics.name})`, `%${topicName.toLowerCase()}%`))
+      .orderBy(sql`LENGTH(${topics.name}) ASC`)
+      .limit(1);
+    const topicRow = rows[0];
 
     if (!topicRow) {
       return { error: `Topic not found matching "${topicName}"` };
@@ -355,25 +366,27 @@ export const generateMnemonicTool = tool({
     topicName: z.string().describe('The medical topic to create a mnemonic for'),
   }),
   execute: async ({ topicName }) => {
-    const { getDb } = await import('../../../../db/database');
+    const { getDrizzleDb } = await import('../../../../db/drizzle');
+    const { topics, topicProgress, subjects } = await import('../../../../db/drizzleSchema');
+    const { sql, like, eq } = await import('drizzle-orm');
     const { fetchContent } = await import('../../contentGeneration');
-    const db = await getDb();
+    const db = getDrizzleDb();
 
-    const topicRow = await db.getFirstAsync<{
-      id: number;
-      name: string;
-      subjectName: string;
-      status: string | null;
-      confidence: number | null;
-    }>(
-      `SELECT t.id, t.name, s.name as subjectName, p.status, p.confidence
-       FROM topics t
-       JOIN subjects s ON t.subject_id = s.id
-       LEFT JOIN topic_progress p ON p.topic_id = t.id
-       WHERE lower(t.name) LIKE lower(?)
-       ORDER BY LENGTH(t.name) ASC LIMIT 1`,
-      [`%${topicName}%`],
-    );
+    const rows = await db
+      .select({
+        id: topics.id,
+        name: topics.name,
+        subjectName: subjects.name,
+        status: topicProgress.status,
+        confidence: topicProgress.confidence,
+      })
+      .from(topics)
+      .innerJoin(subjects, eq(topics.subjectId, subjects.id))
+      .leftJoin(topicProgress, eq(topicProgress.topicId, topics.id))
+      .where(like(sql`lower(${topics.name})`, `%${topicName.toLowerCase()}%`))
+      .orderBy(sql`LENGTH(${topics.name}) ASC`)
+      .limit(1);
+    const topicRow = rows[0];
 
     if (!topicRow) {
       return { error: `Topic not found matching "${topicName}"` };
@@ -416,25 +429,27 @@ export const generateTeachBackTool = tool({
     topicName: z.string().describe('The medical topic for the teach-back challenge'),
   }),
   execute: async ({ topicName }) => {
-    const { getDb } = await import('../../../../db/database');
+    const { getDrizzleDb } = await import('../../../../db/drizzle');
+    const { topics, topicProgress, subjects } = await import('../../../../db/drizzleSchema');
+    const { sql, like, eq } = await import('drizzle-orm');
     const { fetchContent } = await import('../../contentGeneration');
-    const db = await getDb();
+    const db = getDrizzleDb();
 
-    const topicRow = await db.getFirstAsync<{
-      id: number;
-      name: string;
-      subjectName: string;
-      status: string | null;
-      confidence: number | null;
-    }>(
-      `SELECT t.id, t.name, s.name as subjectName, p.status, p.confidence
-       FROM topics t
-       JOIN subjects s ON t.subject_id = s.id
-       LEFT JOIN topic_progress p ON p.topic_id = t.id
-       WHERE lower(t.name) LIKE lower(?)
-       ORDER BY LENGTH(t.name) ASC LIMIT 1`,
-      [`%${topicName}%`],
-    );
+    const rows = await db
+      .select({
+        id: topics.id,
+        name: topics.name,
+        subjectName: subjects.name,
+        status: topicProgress.status,
+        confidence: topicProgress.confidence,
+      })
+      .from(topics)
+      .innerJoin(subjects, eq(topics.subjectId, subjects.id))
+      .leftJoin(topicProgress, eq(topicProgress.topicId, topics.id))
+      .where(like(sql`lower(${topics.name})`, `%${topicName.toLowerCase()}%`))
+      .orderBy(sql`LENGTH(${topics.name}) ASC`)
+      .limit(1);
+    const topicRow = rows[0];
 
     if (!topicRow) {
       return { error: `Topic not found matching "${topicName}"` };
@@ -477,25 +492,27 @@ export const generateErrorHuntTool = tool({
     topicName: z.string().describe('The medical topic for the error hunt'),
   }),
   execute: async ({ topicName }) => {
-    const { getDb } = await import('../../../../db/database');
+    const { getDrizzleDb } = await import('../../../../db/drizzle');
+    const { topics, topicProgress, subjects } = await import('../../../../db/drizzleSchema');
+    const { sql, like, eq } = await import('drizzle-orm');
     const { fetchContent } = await import('../../contentGeneration');
-    const db = await getDb();
+    const db = getDrizzleDb();
 
-    const topicRow = await db.getFirstAsync<{
-      id: number;
-      name: string;
-      subjectName: string;
-      status: string | null;
-      confidence: number | null;
-    }>(
-      `SELECT t.id, t.name, s.name as subjectName, p.status, p.confidence
-       FROM topics t
-       JOIN subjects s ON t.subject_id = s.id
-       LEFT JOIN topic_progress p ON p.topic_id = t.id
-       WHERE lower(t.name) LIKE lower(?)
-       ORDER BY LENGTH(t.name) ASC LIMIT 1`,
-      [`%${topicName}%`],
-    );
+    const rows = await db
+      .select({
+        id: topics.id,
+        name: topics.name,
+        subjectName: subjects.name,
+        status: topicProgress.status,
+        confidence: topicProgress.confidence,
+      })
+      .from(topics)
+      .innerJoin(subjects, eq(topics.subjectId, subjects.id))
+      .leftJoin(topicProgress, eq(topicProgress.topicId, topics.id))
+      .where(like(sql`lower(${topics.name})`, `%${topicName.toLowerCase()}%`))
+      .orderBy(sql`LENGTH(${topics.name}) ASC`)
+      .limit(1);
+    const topicRow = rows[0];
 
     if (!topicRow) {
       return { error: `Topic not found matching "${topicName}"` };
@@ -537,25 +554,27 @@ export const generateDetectiveTool = tool({
     topicName: z.string().describe('The medical topic for the detective game'),
   }),
   execute: async ({ topicName }) => {
-    const { getDb } = await import('../../../../db/database');
+    const { getDrizzleDb } = await import('../../../../db/drizzle');
+    const { topics, topicProgress, subjects } = await import('../../../../db/drizzleSchema');
+    const { sql, like, eq } = await import('drizzle-orm');
     const { fetchContent } = await import('../../contentGeneration');
-    const db = await getDb();
+    const db = getDrizzleDb();
 
-    const topicRow = await db.getFirstAsync<{
-      id: number;
-      name: string;
-      subjectName: string;
-      status: string | null;
-      confidence: number | null;
-    }>(
-      `SELECT t.id, t.name, s.name as subjectName, p.status, p.confidence
-       FROM topics t
-       JOIN subjects s ON t.subject_id = s.id
-       LEFT JOIN topic_progress p ON p.topic_id = t.id
-       WHERE lower(t.name) LIKE lower(?)
-       ORDER BY LENGTH(t.name) ASC LIMIT 1`,
-      [`%${topicName}%`],
-    );
+    const rows = await db
+      .select({
+        id: topics.id,
+        name: topics.name,
+        subjectName: subjects.name,
+        status: topicProgress.status,
+        confidence: topicProgress.confidence,
+      })
+      .from(topics)
+      .innerJoin(subjects, eq(topics.subjectId, subjects.id))
+      .leftJoin(topicProgress, eq(topicProgress.topicId, topics.id))
+      .where(like(sql`lower(${topics.name})`, `%${topicName.toLowerCase()}%`))
+      .orderBy(sql`LENGTH(${topics.name}) ASC`)
+      .limit(1);
+    const topicRow = rows[0];
 
     if (!topicRow) {
       return { error: `Topic not found matching "${topicName}"` };
@@ -598,25 +617,27 @@ export const generateSocraticTool = tool({
     topicName: z.string().describe('The medical topic for the Socratic drill'),
   }),
   execute: async ({ topicName }) => {
-    const { getDb } = await import('../../../../db/database');
+    const { getDrizzleDb } = await import('../../../../db/drizzle');
+    const { topics, topicProgress, subjects } = await import('../../../../db/drizzleSchema');
+    const { sql, like, eq } = await import('drizzle-orm');
     const { fetchContent } = await import('../../contentGeneration');
-    const db = await getDb();
+    const db = getDrizzleDb();
 
-    const topicRow = await db.getFirstAsync<{
-      id: number;
-      name: string;
-      subjectName: string;
-      status: string | null;
-      confidence: number | null;
-    }>(
-      `SELECT t.id, t.name, s.name as subjectName, p.status, p.confidence
-       FROM topics t
-       JOIN subjects s ON t.subject_id = s.id
-       LEFT JOIN topic_progress p ON p.topic_id = t.id
-       WHERE lower(t.name) LIKE lower(?)
-       ORDER BY LENGTH(t.name) ASC LIMIT 1`,
-      [`%${topicName}%`],
-    );
+    const rows = await db
+      .select({
+        id: topics.id,
+        name: topics.name,
+        subjectName: subjects.name,
+        status: topicProgress.status,
+        confidence: topicProgress.confidence,
+      })
+      .from(topics)
+      .innerJoin(subjects, eq(topics.subjectId, subjects.id))
+      .leftJoin(topicProgress, eq(topicProgress.topicId, topics.id))
+      .where(like(sql`lower(${topics.name})`, `%${topicName.toLowerCase()}%`))
+      .orderBy(sql`LENGTH(${topics.name}) ASC`)
+      .limit(1);
+    const topicRow = rows[0];
 
     if (!topicRow) {
       return { error: `Topic not found matching "${topicName}"` };

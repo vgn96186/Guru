@@ -4,13 +4,16 @@
  * Tracks which lecture the user has completed in each coaching batch
  * (BTR, DBMCI One). The next lecture = first un-completed in the batch.
  */
-import { getDb } from '../database';
 import {
   LECTURE_BATCHES,
   getBatchById,
   type LectureBatchId,
   type LectureEntry,
 } from '../../constants/lectureSchedule';
+import { lectureScheduleRepositoryDrizzle } from '../repositories/lectureScheduleRepository.drizzle';
+import { getDrizzleDb } from '../drizzle';
+import { topicProgress, topics } from '../drizzleSchema';
+import { isNotNull, sql, ne } from 'drizzle-orm';
 
 export interface LectureProgress {
   batchId: string;
@@ -34,12 +37,7 @@ export interface NextLectureInfo {
  * Get all completed lecture indices for a batch.
  */
 export async function getCompletedLectures(batchId: LectureBatchId): Promise<number[]> {
-  const db = getDb();
-  const rows = await db.getAllAsync<{ lecture_index: number }>(
-    `SELECT lecture_index FROM lecture_schedule_progress WHERE batch_id = ? ORDER BY lecture_index`,
-    [batchId],
-  );
-  return rows.map((r) => r.lecture_index);
+  return lectureScheduleRepositoryDrizzle.getCompletedLectures(batchId);
 }
 
 /**
@@ -49,12 +47,7 @@ export async function markLectureCompleted(
   batchId: LectureBatchId,
   lectureIndex: number,
 ): Promise<void> {
-  const db = getDb();
-  await db.runAsync(
-    `INSERT OR IGNORE INTO lecture_schedule_progress (batch_id, lecture_index, completed_at)
-     VALUES (?, ?, ?)`,
-    [batchId, lectureIndex, Date.now()],
-  );
+  return lectureScheduleRepositoryDrizzle.markLectureCompleted(batchId, lectureIndex);
 }
 
 /**
@@ -64,22 +57,18 @@ export async function unmarkLectureCompleted(
   batchId: LectureBatchId,
   lectureIndex: number,
 ): Promise<void> {
-  const db = getDb();
-  await db.runAsync(
-    `DELETE FROM lecture_schedule_progress WHERE batch_id = ? AND lecture_index = ?`,
-    [batchId, lectureIndex],
-  );
+  return lectureScheduleRepositoryDrizzle.unmarkLectureCompleted(batchId, lectureIndex);
 }
 
 export async function getTouchedSubjectIds(): Promise<Set<number>> {
-  const db = getDb();
-  const rows = await db.getAllAsync<{ subject_id: number }>(
-    `SELECT DISTINCT t.subject_id 
-     FROM topic_progress tp 
-     JOIN topics t ON tp.topic_id = t.id 
-     WHERE tp.status != 'unseen'`,
-  );
-  return new Set(rows.map((r) => r.subject_id));
+  const db = getDrizzleDb();
+  const rows = await db
+    .selectDistinct({ subjectId: topics.subjectId })
+    .from(topicProgress)
+    .innerJoin(topics, sql`${topicProgress.topicId} = ${topics.id}`)
+    .where(ne(topicProgress.status, 'unseen'));
+
+  return new Set(rows.map((r) => r.subjectId).filter((id): id is number => id !== null));
 }
 
 /**
@@ -87,39 +76,36 @@ export async function getTouchedSubjectIds(): Promise<Set<number>> {
  * Returns one NextLectureInfo per batch that has remaining lectures.
  *
  * Auto-advancement is NON-LINEAR: each subject is checked independently.
- * A lecture is auto-completed if ≥90% of its subject's leaf topics are
+ * A lecture is auto-completed if >=90% of its subject's leaf topics are
  * non-unseen (catches bulk "Mark Watched" actions at 100% while ignoring
  * scattered MCQ/session activity which is typically <20%).
  */
 export async function getNextLectures(): Promise<NextLectureInfo[]> {
   const results: NextLectureInfo[] = [];
-  const db = getDb();
+  const db = getDrizzleDb();
 
   // Per-subject: count leaf topics and how many are non-unseen
-  const stats = await db.getAllAsync<{
-    subject_id: number;
-    total: number;
-    studied: number;
-  }>(`
-    SELECT t.subject_id,
-           COUNT(*) as total,
-           SUM(CASE WHEN COALESCE(tp.status, 'unseen') != 'unseen' THEN 1 ELSE 0 END) as studied
-    FROM topics t
-    LEFT JOIN topic_progress tp ON tp.topic_id = t.id
-    WHERE t.parent_topic_id IS NOT NULL
-    GROUP BY t.subject_id
-  `);
+  const stats = await db
+    .select({
+      subjectId: topics.subjectId,
+      total: sql<number>`CAST(COUNT(*) AS INTEGER)`,
+      studied: sql<number>`CAST(SUM(CASE WHEN COALESCE(${topicProgress.status}, 'unseen') != 'unseen' THEN 1 ELSE 0 END) AS INTEGER)`,
+    })
+    .from(topics)
+    .leftJoin(topicProgress, sql`${topicProgress.topicId} = ${topics.id}`)
+    .where(isNotNull(topics.parentTopicId))
+    .groupBy(topics.subjectId);
 
   const AUTO_COMPLETE_THRESHOLD = 0.9;
   const watchedSubjectIds = new Set<number>();
   for (const s of stats) {
-    if (s.total > 0 && s.studied / s.total >= AUTO_COMPLETE_THRESHOLD) {
-      watchedSubjectIds.add(s.subject_id);
+    if (s.subjectId != null && s.total > 0 && s.studied / s.total >= AUTO_COMPLETE_THRESHOLD) {
+      watchedSubjectIds.add(s.subjectId);
     }
   }
 
   for (const batch of LECTURE_BATCHES) {
-    const explicitCompleted = await getCompletedLectures(batch.id);
+    const explicitCompleted = await lectureScheduleRepositoryDrizzle.getCompletedLectures(batch.id);
     const completedSet = new Set<number>(explicitCompleted);
 
     // Non-linear: independently check each lecture's subject.
@@ -170,6 +156,6 @@ export async function getBatchProgress(batchId: LectureBatchId): Promise<{
   completed: Set<number>;
 }> {
   const batch = getBatchById(batchId);
-  const completedArr = await getCompletedLectures(batchId);
+  const completedArr = await lectureScheduleRepositoryDrizzle.getCompletedLectures(batchId);
   return { batch, completed: new Set(completedArr) };
 }

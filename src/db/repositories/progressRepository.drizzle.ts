@@ -1,5 +1,4 @@
-import { eq, sql, isNotNull, and, desc, lt, lte, gt } from 'drizzle-orm';
-import type { SQLiteDatabase } from 'expo-sqlite';
+import { eq, sql, isNotNull, and, desc, gt } from 'drizzle-orm';
 import { getDrizzleDb } from '../drizzle';
 import { getDb, runInTransaction, todayStr, dateStr, SQL_AI_CACHE } from '../database';
 import { getAiCacheDb } from '../aiCacheDatabase';
@@ -10,7 +9,7 @@ import { notifyDbUpdate, DB_EVENT_KEYS } from '../../services/databaseEvents';
 import { showToast } from '../../components/Toast';
 import { profileRepositoryDrizzle } from './profileRepository.drizzle';
 import { dailyLogRepositoryDrizzle } from './dailyLogRepository.drizzle';
-import type { DailyLog, Mood, UserProfile } from '../../types';
+import type { DailyLog, Mood } from '../../types';
 
 export const progressRepositoryDrizzle = {
   // Re-exporting profile methods to maintain exactly the same surface area
@@ -112,7 +111,6 @@ export const progressRepositoryDrizzle = {
   },
 
   async addXpInTx(
-    _tx: any,
     amount: number,
   ): Promise<{ newTotal: number; leveledUp: boolean; newLevel: number }> {
     const db = getDrizzleDb();
@@ -352,13 +350,24 @@ export const progressRepositoryDrizzle = {
 
     if (updates.length === 0) return { decayed: 0 };
 
-    await runInTransaction(async () => {
-      for (const u of updates) {
-        await db
-          .update(topicProgress)
-          .set({ confidence: u.newConf, status: u.newStatus })
-          .where(eq(topicProgress.topicId, u.topicId));
-      }
+    // Bulk update using a single raw SQL statement with CASE expressions
+    // instead of N individual Drizzle UPDATE round-trips
+    await runInTransaction(async (txDb) => {
+      const idList = updates.map((u) => u.topicId);
+      const confCases = updates
+        .map((u) => `WHEN ${u.topicId} THEN ${u.newConf}`)
+        .join(' ');
+      const statusCases = updates
+        .map((u) => `WHEN ${u.topicId} THEN '${u.newStatus}'`)
+        .join(' ');
+      const idPlaceholders = idList.map(() => '?').join(',');
+      await txDb.runAsync(
+        `UPDATE topic_progress
+         SET confidence = CASE topic_id ${confCases} END,
+             status = CASE topic_id ${statusCases} END
+         WHERE topic_id IN (${idPlaceholders})`,
+        idList,
+      );
     });
 
     notifyDbUpdate(DB_EVENT_KEYS.PROGRESS_UPDATED);

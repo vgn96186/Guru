@@ -121,16 +121,16 @@ export default function GitlabDuoSection({ gitlabDuo, SubSectionToggle, styles }
                         testResult === true
                           ? 'checkmark-circle'
                           : testResult === false
-                            ? 'close-circle'
-                            : 'flash-outline'
+                          ? 'close-circle'
+                          : 'flash-outline'
                       }
                       size={18}
                       color={
                         testResult === true
                           ? linearTheme.colors.success
                           : testResult === false
-                            ? linearTheme.colors.error
-                            : linearTheme.colors.accent
+                          ? linearTheme.colors.error
+                          : linearTheme.colors.accent
                       }
                     />
                     <Text
@@ -139,8 +139,8 @@ export default function GitlabDuoSection({ gitlabDuo, SubSectionToggle, styles }
                           testResult === true
                             ? linearTheme.colors.success
                             : testResult === false
-                              ? linearTheme.colors.error
-                              : linearTheme.colors.accent,
+                            ? linearTheme.colors.error
+                            : linearTheme.colors.accent,
                         fontWeight: '600',
                         fontSize: 13,
                       }}
@@ -148,8 +148,8 @@ export default function GitlabDuoSection({ gitlabDuo, SubSectionToggle, styles }
                       {testResult === true
                         ? 'Valid'
                         : testResult === false
-                          ? 'Invalid'
-                          : 'Test Connection'}
+                        ? 'Invalid'
+                        : 'Test Connection'}
                     </Text>
                   </View>
                 )}

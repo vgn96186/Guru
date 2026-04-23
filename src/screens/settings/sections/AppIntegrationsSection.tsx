@@ -3,6 +3,7 @@ import { View, TouchableOpacity, Platform } from 'react-native';
 import SettingsPermissionRow from '../components/SettingsPermissionRow';
 import LinearText from '../../../components/primitives/LinearText';
 import { BentoCard } from '../../../components/settings/BentoCard';
+import { useProfileQuery } from '../../../hooks/queries/useProfile';
 
 export function AppIntegrationsSection(props: any) {
   const {
@@ -15,6 +16,7 @@ export function AppIntegrationsSection(props: any) {
     onOpenSystemSettings,
     onOpenDevConsole,
   } = props;
+  const { data: profile } = useProfileQuery();
 
   return (
     <>
@@ -22,12 +24,16 @@ export function AppIntegrationsSection(props: any) {
         {/* Placeholder for DBMCI/BTR links/Drive Sync like in mockup */}
         <View className="mb-2 p-3 rounded-lg border border-[rgba(255, 255, 255, 0.08)] bg-[rgba(255, 255, 255, 0.03)]">
           <LinearText variant="body" tone="primary">
-            DBMCI One (Not linked)
+            {profile?.dbmciClassStartDate
+              ? `DBMCI One (Linked: ${profile.dbmciClassStartDate})`
+              : 'DBMCI One (Not linked)'}
           </LinearText>
         </View>
         <View className="p-3 rounded-lg border border-[rgba(255, 255, 255, 0.08)] bg-[rgba(255, 255, 255, 0.03)]">
           <LinearText variant="body" tone="primary">
-            BTR App (Not linked)
+            {profile?.btrStartDate
+              ? `BTR App (Linked: ${profile.btrStartDate})`
+              : 'BTR App (Not linked)'}
           </LinearText>
         </View>
       </BentoCard>

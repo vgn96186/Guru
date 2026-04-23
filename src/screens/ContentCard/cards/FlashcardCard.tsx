@@ -1,73 +1,26 @@
-import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import React, { useState } from 'react';
 import {
   View,
-  ScrollView,
   TouchableOpacity,
-  TextInput,
-  StyleSheet,
-  ActivityIndicator,
-  Image,
-  Modal,
-  Pressable,
-  useWindowDimensions,
-  Platform,
-  Animated,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { motion } from '../../../motion/presets';
 import * as Haptics from 'expo-haptics';
 import LinearText from '../../../components/primitives/LinearText';
-import LinearSurface from '../../../components/primitives/LinearSurface';
-import StudyMarkdown from '../../../components/StudyMarkdown';
-import { emphasizeHighYieldMarkdown } from '../../../utils/highlightMarkdown';
-import { fetchWikipediaImage } from '../../../services/imageService';
-import {
-  explainMostTestedRationale,
-  explainTopicDeeper,
-  explainQuizConcept,
-  askGuru,
-  generateEscalatingQuiz,
-} from '../../../services/ai';
+
+
 import { ContentFlagButton } from '../../../components/ContentFlagButton';
 import { s, FLASHCARD_RATINGS } from '../styles';
 import { linearTheme as n } from '../../../theme/linearTheme';
-import { Props, ContextUpdater } from '../types';
+import { Props } from '../types';
 import type {
-  KeyPointsContent,
-  MustKnowContent,
-  QuizContent,
-  StoryContent,
-  MnemonicContent,
-  TeachBackContent,
-  ErrorHuntContent,
-  DetectiveContent,
-  ManualContent,
-  SocraticContent,
   FlashcardsContent,
 } from '../../../types';
-import { TopicImage } from '../shared/TopicImage';
 import { QuestionImage } from '../shared/QuestionImage';
-import { ConfidenceRating } from '../shared/ConfidenceRating';
-import { ExplainablePoint } from '../shared/ExplainablePoint';
-import { ConceptChip } from '../shared/ConceptChip';
-import { DeepExplanationBlock } from '../shared/DeepExplanationBlock';
-import { QuizOptionBtn } from '../shared/QuizOptionBtn';
-import {
-  useCardScrollPaddingBottom,
-  useCardScrollContentStyle,
-} from '../hooks/useCardScrollPadding';
-import { formatQuizExplanation } from '../utils/formatQuizExplanation';
-import { extractMedicalConcepts } from '../utils/extractMedicalConcepts';
-import { isQuizImageHttpUrl } from '../utils/isQuizImageHttpUrl';
-import { stripImageFraming } from '../utils/stripImageFraming';
-import { compactLines } from '../utils/compactLines';
+
+
 import { useSPen } from '../../../hooks/useSPen';
-import {
-  captureFillAlpha,
-  captureBorderAlpha,
-  whiteAlpha,
-  blackAlpha,
-} from '../../../theme/colorUtils';
+
+
 
 // ── Key Points ────────────────────────────────────────────────────
 // ── Must Know & Most Tested ──────────────────────────────────────
@@ -91,44 +44,17 @@ export function FlashcardCard({
 }: { content: FlashcardsContent } & Omit<Props, 'content'>) {
   const [cardIdx, setCardIdx] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
-
-  if (content.cards.length === 0) {
-    return (
-      <View style={s.flashcardContainer}>
-        <Ionicons name="alert-circle-outline" size={48} color={n.colors.textMuted} />
-        <LinearText style={s.flashcardEmpty} variant="body" tone="muted">
-          AI generated 0 flashcards for this topic.
-        </LinearText>
-        <TouchableOpacity style={s.flashcardDoneBtn} onPress={() => onSkip()}>
-          <LinearText style={s.flashcardDoneText}>Skip</LinearText>
-        </TouchableOpacity>
-      </View>
-    );
-  }
-
   const card = content.cards[cardIdx];
-  if (!card) {
-    return (
-      <View style={s.flashcardContainer}>
-        <Ionicons name="alert-circle-outline" size={48} color={n.colors.textMuted} />
-        <LinearText style={s.flashcardEmpty} variant="body" tone="muted">
-          No flashcards available
-        </LinearText>
-        <TouchableOpacity style={s.flashcardDoneBtn} onPress={() => onSkip()}>
-          <LinearText style={s.flashcardDoneText}>Skip</LinearText>
-        </TouchableOpacity>
-      </View>
-    );
-  }
-
   const isLastCard = cardIdx === content.cards.length - 1;
 
   function handleFlip() {
+    if (!card) return;
     setIsFlipped((prev) => !prev);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
   }
 
   function handleNext() {
+    if (!card || isLastCard) return;
     setCardIdx((i) => i + 1);
     setIsFlipped(false);
   }
@@ -143,13 +69,42 @@ export function FlashcardCard({
   }
 
   useSPen({
-    onButton: () => handleFlip(),
+    onButton: () => {
+      if (!card) return;
+      handleFlip();
+    },
     onAirMotion: (dx) => {
-      if (Math.abs(dx) < 0.6) return;
+      if (!card || Math.abs(dx) < 0.6) return;
       if (dx > 0 && !isLastCard) handleNext();
     },
   });
 
+  if (content.cards.length === 0) {
+    return (
+      <View style={s.flashcardContainer}>
+        <Ionicons name="alert-circle-outline" size={48} color={n.colors.textMuted} />
+        <LinearText style={s.flashcardEmpty} variant="body" tone="muted">
+          AI generated 0 flashcards for this topic.
+        </LinearText>
+        <TouchableOpacity style={s.flashcardDoneBtn} onPress={() => onSkip()}>
+          <LinearText style={s.flashcardDoneText}>Skip</LinearText>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+  if (!card) {
+    return (
+      <View style={s.flashcardContainer}>
+        <Ionicons name="alert-circle-outline" size={48} color={n.colors.textMuted} />
+        <LinearText style={s.flashcardEmpty} variant="body" tone="muted">
+          No flashcards available
+        </LinearText>
+        <TouchableOpacity style={s.flashcardDoneBtn} onPress={() => onSkip()}>
+          <LinearText style={s.flashcardDoneText}>Skip</LinearText>
+        </TouchableOpacity>
+      </View>
+    );
+  }
   return (
     <View style={s.flashcardContainer}>
       <View style={s.cardHeader}>

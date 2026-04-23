@@ -1,6 +1,5 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import { View, ScrollView, TouchableOpacity, StyleSheet, StatusBar } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
 import LinearText from '../components/primitives/LinearText';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { getFlaggedContent, setContentFlagged, type FlaggedItem } from '../db/queries/aiCache';
@@ -14,6 +13,7 @@ import ScreenHeader from '../components/ScreenHeader';
 import LinearSurface from '../components/primitives/LinearSurface';
 import { EmptyState } from '../components/primitives';
 import { confirmDestructive } from '../components/dialogService';
+import { useAsyncEffect } from '../hooks/useAsyncData';
 
 function renderPreview(item: FlaggedItem) {
   const c = item.content;
@@ -130,18 +130,13 @@ export default function FlaggedReviewScreen() {
   const [items, setItems] = useState<FlaggedItem[]>([]);
   const [expanded, setExpanded] = useState<string | null>(null);
 
-  useEffect(() => {
-    let active = true;
-    getFlaggedContent()
-      .then((nextItems) => {
-        if (active) setItems(nextItems);
-      })
-      .catch(() => {
-        if (active) setItems([]);
-      });
-    return () => {
-      active = false;
-    };
+  useAsyncEffect(async (isActive) => {
+    try {
+      const nextItems = await getFlaggedContent();
+      if (isActive()) setItems(nextItems);
+    } catch {
+      if (isActive()) setItems([]);
+    }
   }, []);
 
   const handleUnflag = useCallback(async (item: FlaggedItem) => {

@@ -40,7 +40,7 @@ import { useLevelInfo, useProfileQuery, useRefreshProfile } from '../hooks/queri
 import { linearTheme as n } from '../theme/linearTheme';
 import { motion } from '../motion/presets';
 import { DEFAULT_INICET_DATE, DEFAULT_NEET_DATE } from '../config/appConfig';
-import type { Mood, UserProfile, TopicWithProgress } from '../types';
+import type { Mood, TopicWithProgress } from '../types';
 import HomeSectionHeader from '../components/home/HomeSectionHeader';
 import NextLectureSection from '../components/home/NextLectureSection';
 import {

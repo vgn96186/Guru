@@ -2,22 +2,42 @@ import React from 'react';
 import { View, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import SettingsToggleRow from '../components/SettingsToggleRow';
+import SettingsField from '../components/SettingsField';
 import LinearText from '../../../components/primitives/LinearText';
 import { linearTheme } from '../../../theme/linearTheme';
 import { ALL_CONTENT_TYPES } from '../types';
-import { BentoCard } from '../../../components/settings/BentoCard';
-import { useSettingsState } from '../../../hooks/useSettingsState';
 
 export function InterventionsSection(props: any) {
-  const { styles, subjects } = props;
+  const { styles, subjects, SectionToggle } = props;
 
-  const [strictMode, setStrictMode] = useSettingsState('strictModeEnabled', false);
-  const [blockedTypes, setBlockedTypes] = useSettingsState('blockedContentTypes', []);
-  const [focusSubjectIds, setFocusSubjectIds] = useSettingsState('focusSubjectIds', []);
+  const {
+    strictMode,
+    setStrictMode,
+    doomscrollShield,
+    setDoomscrollShield,
+    faceTracking,
+    setFaceTracking,
+    blockedTypes,
+    setBlockedTypes,
+    focusSubjectIds,
+    setFocusSubjectIds,
+    idleTimeout,
+    setIdleTimeout,
+    breakDuration,
+    setBreakDuration,
+    pomodoroEnabled,
+    setPomodoroEnabled,
+    pomodoroInterval,
+    setPomodoroInterval,
+  } = props;
+
+  const idleTimeoutStr = String(idleTimeout);
+  const breakDurationStr = String(breakDuration);
+  const pomodoroIntervalStr = String(pomodoroInterval);
 
   return (
     <>
-      <BentoCard title="Interventions & Study Flow" className="mb-4">
+      <SectionToggle id="interv_flow" title="Interventions & Study Flow" icon="shield" tint="#F87171">
         <SettingsToggleRow
           label="Strict Mode (Punishment Mode)"
           hint="Nag you instantly if you leave the app or are idle. Idle time won't count towards session duration."
@@ -28,24 +48,144 @@ export function InterventionsSection(props: any) {
             <Ionicons name="shield-checkmark" size={16} color={linearTheme.colors.error} />
           }
         />
-        {/* Doomscroll Shield & Face Tracking placeholders per mockup */}
         <SettingsToggleRow
           label="Doomscroll Shield"
           hint="Detect app switching via AppState"
-          value={true}
-          onValueChange={() => {}}
+          value={doomscrollShield}
+          onValueChange={setDoomscrollShield}
           style={{ marginTop: 16 }}
         />
         <SettingsToggleRow
           label="Face Tracking (ML Kit)"
           hint="Alert if absent/drowsy during lectures"
-          value={true}
-          onValueChange={() => {}}
+          value={faceTracking}
+          onValueChange={setFaceTracking}
           style={{ marginTop: 16 }}
         />
-      </BentoCard>
+      </SectionToggle>
 
-      <BentoCard title="Focus Subjects" className="mb-4">
+      <SectionToggle id="interv_breaks" title="Session Rules & Breaks" icon="cafe" tint="#60A5FA">
+        <SettingsField
+          label="Idle timeout (minutes before auto-pause)"
+          value={idleTimeoutStr}
+          onChangeText={(val) => setIdleTimeout(parseInt(val, 10) || 2)}
+          keyboardType="number-pad"
+          placeholderTextColor={linearTheme.colors.textMuted}
+        />
+        <SettingsField
+          label="Break duration between topics (minutes)"
+          value={breakDurationStr}
+          onChangeText={(val) => setBreakDuration(parseInt(val, 10) || 5)}
+          keyboardType="number-pad"
+          placeholderTextColor={linearTheme.colors.textMuted}
+        />
+      </SectionToggle>
+
+      <SectionToggle id="interv_pomodoro" title="Pomodoro (Lecture Overlay)" icon="timer" tint="#FB923C">
+        <SettingsToggleRow
+          label="Enable Pomodoro Suggestion"
+          hint="Auto-expand the external lecture overlay every interval to suggest a break."
+          value={pomodoroEnabled ?? true}
+          onValueChange={(val) => setPomodoroEnabled(val)}
+        />
+        <LinearText
+          style={[
+            styles.hint,
+            {
+              color:
+                props.pomodoroLectureQuizReady ?? false
+                  ? linearTheme.colors.success
+                  : pomodoroEnabled
+                  ? linearTheme.colors.error
+                  : linearTheme.colors.textMuted,
+            },
+          ]}
+          variant="body"
+          tone="muted"
+        >
+          {props.pomodoroLectureQuizReady
+            ? 'Lecture-aware break quizzes are ready.'
+            : pomodoroEnabled
+            ? 'Requires overlay permission, Groq, and Deepgram to be fully featured.'
+            : 'Pomodoro break suggestions are off.'}
+        </LinearText>
+        {!props.hasPomodoroOverlayPermission && (
+          <TouchableOpacity
+            style={[
+              styles.validateBtn,
+              { alignSelf: 'flex-start', paddingHorizontal: 14, marginTop: 6 },
+            ]}
+            onPress={props.requestPomodoroOverlay}
+            activeOpacity={0.8}
+          >
+            <LinearText style={styles.testBtnText} variant="body">
+              Grant Overlay Permission
+            </LinearText>
+          </TouchableOpacity>
+        )}
+        <View style={[styles.chipGrid, { marginTop: 10 }]}>
+          {[
+            { label: 'Overlay', ready: props.hasPomodoroOverlayPermission },
+            { label: 'Groq', ready: props.hasPomodoroGroqKey },
+            { label: 'Deepgram', ready: props.hasPomodoroDeepgramKey },
+          ].map((item) => (
+            <View
+              key={item.label}
+              style={[
+                styles.typeChip,
+                {
+                  backgroundColor: item.ready
+                    ? linearTheme.colors.success + '18'
+                    : linearTheme.colors.error + '12',
+                  borderColor: item.ready ? linearTheme.colors.success : linearTheme.colors.error,
+                },
+              ]}
+            >
+              <LinearText
+                style={[
+                  styles.typeChipText,
+                  { color: item.ready ? linearTheme.colors.success : linearTheme.colors.error },
+                ]}
+                variant="body"
+              >
+                {item.label}
+              </LinearText>
+            </View>
+          ))}
+        </View>
+        <SettingsField
+          label="Pomodoro interval (minutes)"
+          value={pomodoroIntervalStr}
+          onChangeText={(val) => setPomodoroInterval(parseInt(val, 10) || 20)}
+          keyboardType="number-pad"
+          placeholderTextColor={linearTheme.colors.textMuted}
+          editable={pomodoroEnabled}
+        />
+        <View style={styles.modelChipRow}>
+          {['5', '10', '20', '25', '30', '40'].map((value) => (
+            <TouchableOpacity
+              key={value}
+              style={[styles.freqBtn, pomodoroIntervalStr === value && styles.freqBtnActive]}
+              onPress={() => setPomodoroInterval(parseInt(value, 10))}
+              disabled={!pomodoroEnabled}
+              activeOpacity={0.8}
+            >
+              <LinearText
+                style={[
+                  styles.freqText,
+                  pomodoroIntervalStr === value && styles.freqTextActive,
+                  !pomodoroEnabled && { opacity: 0.45 },
+                ]}
+                variant="body"
+              >
+                {value}m
+              </LinearText>
+            </TouchableOpacity>
+          ))}
+        </View>
+      </SectionToggle>
+
+      <SectionToggle id="interv_subjects" title="Focus Subjects" icon="book" tint="#34D399">
         <LinearText style={styles.hint} variant="body" tone="muted">
           Pin subjects to limit sessions to those areas only. Clear all to study everything.
         </LinearText>
@@ -85,9 +225,9 @@ export function InterventionsSection(props: any) {
             </LinearText>
           </TouchableOpacity>
         )}
-      </BentoCard>
+      </SectionToggle>
 
-      <BentoCard title="Content Type Preferences" className="mb-4">
+      <SectionToggle id="interv_content" title="Content Type Preferences" icon="layers" tint="#A78BFA">
         <LinearText style={styles.hint} variant="body" tone="muted">
           Block card types you don't want in sessions. Keypoints can't be blocked.
         </LinearText>
@@ -129,7 +269,7 @@ export function InterventionsSection(props: any) {
             );
           })}
         </View>
-      </BentoCard>
+      </SectionToggle>
     </>
   );
 }

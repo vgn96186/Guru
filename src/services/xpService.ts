@@ -85,7 +85,7 @@ export async function calculateAndAwardSessionXp(
         [totalQuizCorrect],
       );
     }
-    return addXpInTx(db, total);
+    return addXpInTx(total);
   });
 
   const levelInfo = LEVELS.find((l) => l.level === newLevel) ?? LEVELS[0];

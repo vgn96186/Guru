@@ -3,7 +3,6 @@ import { View } from 'react-native';
 import LinearText from '../../../../../components/primitives/LinearText';
 import LinearSurface from '../../../../../components/primitives/LinearSurface';
 import { PROVIDER_DISPLAY_NAMES } from '../../../../../types';
-import type { ProviderId } from '../../../../../types';
 import { sanitizeProviderOrder } from '../../../../../utils/providerOrder';
 import type { AiProvidersProps } from '../types';
 import { isChatGptEnabled } from '../../../utils';

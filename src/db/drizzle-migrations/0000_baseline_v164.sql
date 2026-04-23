@@ -1,4 +1,4 @@
-CREATE TABLE `ai_cache` (
+CREATE TABLE IF NOT EXISTS `ai_cache` (
 	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
 	`topic_id` integer NOT NULL,
 	`content_type` text NOT NULL,
@@ -8,15 +8,15 @@ CREATE TABLE `ai_cache` (
 	`is_flagged` integer DEFAULT 0 NOT NULL
 );
 --> statement-breakpoint
-CREATE INDEX `idx_ai_cache_lookup` ON `ai_cache` (`topic_id`,`content_type`);--> statement-breakpoint
-CREATE UNIQUE INDEX `idx_ai_cache_unique` ON `ai_cache` (`topic_id`,`content_type`);--> statement-breakpoint
-CREATE TABLE `brain_dumps` (
+CREATE INDEX IF NOT EXISTS `idx_ai_cache_lookup` ON `ai_cache` (`topic_id`,`content_type`);--> statement-breakpoint
+CREATE UNIQUE INDEX IF NOT EXISTS `idx_ai_cache_unique` ON `ai_cache` (`topic_id`,`content_type`);--> statement-breakpoint
+CREATE TABLE IF NOT EXISTS `brain_dumps` (
 	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
 	`note` text NOT NULL,
 	`created_at` integer NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE `chat_history` (
+CREATE TABLE IF NOT EXISTS `chat_history` (
 	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
 	`thread_id` integer,
 	`topic_name` text NOT NULL,
@@ -28,8 +28,8 @@ CREATE TABLE `chat_history` (
 	FOREIGN KEY (`thread_id`) REFERENCES `guru_chat_threads`(`id`) ON UPDATE no action ON DELETE cascade
 );
 --> statement-breakpoint
-CREATE INDEX `idx_chat_history_thread` ON `chat_history` (`thread_id`,`timestamp`);--> statement-breakpoint
-CREATE TABLE `content_fact_checks` (
+CREATE INDEX IF NOT EXISTS `idx_chat_history_thread` ON `chat_history` (`thread_id`,`timestamp`);--> statement-breakpoint
+CREATE TABLE IF NOT EXISTS `content_fact_checks` (
 	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
 	`topic_id` integer NOT NULL,
 	`content_type` text NOT NULL,
@@ -39,7 +39,7 @@ CREATE TABLE `content_fact_checks` (
 	FOREIGN KEY (`topic_id`) REFERENCES `topics`(`id`) ON UPDATE no action ON DELETE cascade
 );
 --> statement-breakpoint
-CREATE TABLE `daily_agenda` (
+CREATE TABLE IF NOT EXISTS `daily_agenda` (
 	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
 	`date` text NOT NULL,
 	`plan_json` text NOT NULL,
@@ -48,9 +48,9 @@ CREATE TABLE `daily_agenda` (
 	`updated_at` integer NOT NULL
 );
 --> statement-breakpoint
-CREATE UNIQUE INDEX `daily_agenda_date_unique` ON `daily_agenda` (`date`);--> statement-breakpoint
-CREATE INDEX `idx_daily_agenda_date` ON `daily_agenda` (`date`);--> statement-breakpoint
-CREATE TABLE `daily_log` (
+CREATE UNIQUE INDEX IF NOT EXISTS `daily_agenda_date_unique` ON `daily_agenda` (`date`);--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS `idx_daily_agenda_date` ON `daily_agenda` (`date`);--> statement-breakpoint
+CREATE TABLE IF NOT EXISTS `daily_log` (
 	`date` text PRIMARY KEY NOT NULL,
 	`checked_in` integer DEFAULT 0 NOT NULL,
 	`mood` text,
@@ -59,7 +59,7 @@ CREATE TABLE `daily_log` (
 	`session_count` integer DEFAULT 0 NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE `external_app_logs` (
+CREATE TABLE IF NOT EXISTS `external_app_logs` (
 	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
 	`app_name` text NOT NULL,
 	`launched_at` integer NOT NULL,
@@ -75,9 +75,9 @@ CREATE TABLE `external_app_logs` (
 	FOREIGN KEY (`lecture_note_id`) REFERENCES `lecture_notes`(`id`) ON UPDATE no action ON DELETE set null
 );
 --> statement-breakpoint
-CREATE INDEX `idx_ext_logs_active` ON `external_app_logs` (`returned_at`);--> statement-breakpoint
-CREATE INDEX `idx_ext_logs_retry` ON `external_app_logs` (`transcription_status`,`returned_at`);--> statement-breakpoint
-CREATE TABLE `generated_study_images` (
+CREATE INDEX IF NOT EXISTS `idx_ext_logs_active` ON `external_app_logs` (`returned_at`);--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS `idx_ext_logs_retry` ON `external_app_logs` (`transcription_status`,`returned_at`);--> statement-breakpoint
+CREATE TABLE IF NOT EXISTS `generated_study_images` (
 	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
 	`context_type` text NOT NULL,
 	`context_key` text NOT NULL,
@@ -98,9 +98,9 @@ CREATE TABLE `generated_study_images` (
 	FOREIGN KEY (`lecture_note_id`) REFERENCES `lecture_notes`(`id`) ON UPDATE no action ON DELETE cascade
 );
 --> statement-breakpoint
-CREATE INDEX `idx_generated_study_images_context` ON `generated_study_images` (`context_type`,`context_key`,`created_at`);--> statement-breakpoint
-CREATE INDEX `idx_generated_study_images_topic` ON `generated_study_images` (`topic_name`,`context_type`,`created_at`);--> statement-breakpoint
-CREATE TABLE `guru_chat_session_memory` (
+CREATE INDEX IF NOT EXISTS `idx_generated_study_images_context` ON `generated_study_images` (`context_type`,`context_key`,`created_at`);--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS `idx_generated_study_images_topic` ON `generated_study_images` (`topic_name`,`context_type`,`created_at`);--> statement-breakpoint
+CREATE TABLE IF NOT EXISTS `guru_chat_session_memory` (
 	`thread_id` integer PRIMARY KEY NOT NULL,
 	`topic_name` text NOT NULL,
 	`summary_text` text DEFAULT '' NOT NULL,
@@ -110,8 +110,8 @@ CREATE TABLE `guru_chat_session_memory` (
 	FOREIGN KEY (`thread_id`) REFERENCES `guru_chat_threads`(`id`) ON UPDATE no action ON DELETE cascade
 );
 --> statement-breakpoint
-CREATE UNIQUE INDEX `idx_guru_chat_session_memory_thread` ON `guru_chat_session_memory` (`thread_id`);--> statement-breakpoint
-CREATE TABLE `guru_chat_threads` (
+CREATE UNIQUE INDEX IF NOT EXISTS `idx_guru_chat_session_memory_thread` ON `guru_chat_session_memory` (`thread_id`);--> statement-breakpoint
+CREATE TABLE IF NOT EXISTS `guru_chat_threads` (
 	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
 	`topic_name` text NOT NULL,
 	`syllabus_topic_id` integer,
@@ -123,9 +123,9 @@ CREATE TABLE `guru_chat_threads` (
 	FOREIGN KEY (`syllabus_topic_id`) REFERENCES `topics`(`id`) ON UPDATE no action ON DELETE set null
 );
 --> statement-breakpoint
-CREATE INDEX `idx_guru_chat_threads_last_message` ON `guru_chat_threads` (`last_message_at`,`updated_at`);--> statement-breakpoint
-CREATE INDEX `idx_guru_chat_threads_topic` ON `guru_chat_threads` (`topic_name`,`syllabus_topic_id`,`last_message_at`);--> statement-breakpoint
-CREATE TABLE `lecture_learned_topics` (
+CREATE INDEX IF NOT EXISTS `idx_guru_chat_threads_last_message` ON `guru_chat_threads` (`last_message_at`,`updated_at`);--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS `idx_guru_chat_threads_topic` ON `guru_chat_threads` (`topic_name`,`syllabus_topic_id`,`last_message_at`);--> statement-breakpoint
+CREATE TABLE IF NOT EXISTS `lecture_learned_topics` (
 	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
 	`lecture_note_id` integer NOT NULL,
 	`topic_id` integer NOT NULL,
@@ -135,10 +135,10 @@ CREATE TABLE `lecture_learned_topics` (
 	FOREIGN KEY (`topic_id`) REFERENCES `topics`(`id`) ON UPDATE no action ON DELETE cascade
 );
 --> statement-breakpoint
-CREATE INDEX `idx_lecture_learned_topics_lecture` ON `lecture_learned_topics` (`lecture_note_id`);--> statement-breakpoint
-CREATE INDEX `idx_lecture_learned_topics_topic` ON `lecture_learned_topics` (`topic_id`);--> statement-breakpoint
-CREATE UNIQUE INDEX `idx_lecture_learned_topics_unique` ON `lecture_learned_topics` (`lecture_note_id`,`topic_id`);--> statement-breakpoint
-CREATE TABLE `lecture_notes` (
+CREATE INDEX IF NOT EXISTS `idx_lecture_learned_topics_lecture` ON `lecture_learned_topics` (`lecture_note_id`);--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS `idx_lecture_learned_topics_topic` ON `lecture_learned_topics` (`topic_id`);--> statement-breakpoint
+CREATE UNIQUE INDEX IF NOT EXISTS `idx_lecture_learned_topics_unique` ON `lecture_learned_topics` (`lecture_note_id`,`topic_id`);--> statement-breakpoint
+CREATE TABLE IF NOT EXISTS `lecture_notes` (
 	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
 	`subject_id` integer,
 	`note` text NOT NULL,
@@ -159,23 +159,23 @@ CREATE TABLE `lecture_notes` (
 	FOREIGN KEY (`subject_id`) REFERENCES `subjects`(`id`) ON UPDATE no action ON DELETE no action
 );
 --> statement-breakpoint
-CREATE INDEX `idx_lecture_notes_created` ON `lecture_notes` (`created_at`);--> statement-breakpoint
-CREATE INDEX `idx_lecture_notes_subject` ON `lecture_notes` (`subject_id`);--> statement-breakpoint
-CREATE TABLE `lecture_schedule_progress` (
+CREATE INDEX IF NOT EXISTS `idx_lecture_notes_created` ON `lecture_notes` (`created_at`);--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS `idx_lecture_notes_subject` ON `lecture_notes` (`subject_id`);--> statement-breakpoint
+CREATE TABLE IF NOT EXISTS `lecture_schedule_progress` (
 	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
 	`batch_id` text NOT NULL,
 	`lecture_index` integer NOT NULL,
 	`completed_at` integer NOT NULL
 );
 --> statement-breakpoint
-CREATE UNIQUE INDEX `idx_lecture_schedule_progress_unique` ON `lecture_schedule_progress` (`batch_id`,`lecture_index`);--> statement-breakpoint
-CREATE TABLE `migration_history` (
+CREATE UNIQUE INDEX IF NOT EXISTS `idx_lecture_schedule_progress_unique` ON `lecture_schedule_progress` (`batch_id`,`lecture_index`);--> statement-breakpoint
+CREATE TABLE IF NOT EXISTS `migration_history` (
 	`version` integer PRIMARY KEY NOT NULL,
 	`applied_at` integer NOT NULL,
 	`description` text
 );
 --> statement-breakpoint
-CREATE TABLE `mind_map_edges` (
+CREATE TABLE IF NOT EXISTS `mind_map_edges` (
 	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
 	`map_id` integer NOT NULL,
 	`source_node_id` integer NOT NULL,
@@ -188,10 +188,10 @@ CREATE TABLE `mind_map_edges` (
 	FOREIGN KEY (`target_node_id`) REFERENCES `mind_map_nodes`(`id`) ON UPDATE no action ON DELETE cascade
 );
 --> statement-breakpoint
-CREATE INDEX `idx_mind_map_edges_map` ON `mind_map_edges` (`map_id`);--> statement-breakpoint
-CREATE INDEX `idx_mind_map_edges_source` ON `mind_map_edges` (`source_node_id`);--> statement-breakpoint
-CREATE INDEX `idx_mind_map_edges_target` ON `mind_map_edges` (`target_node_id`);--> statement-breakpoint
-CREATE TABLE `mind_map_node_links` (
+CREATE INDEX IF NOT EXISTS `idx_mind_map_edges_map` ON `mind_map_edges` (`map_id`);--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS `idx_mind_map_edges_source` ON `mind_map_edges` (`source_node_id`);--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS `idx_mind_map_edges_target` ON `mind_map_edges` (`target_node_id`);--> statement-breakpoint
+CREATE TABLE IF NOT EXISTS `mind_map_node_links` (
 	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
 	`node_id` integer NOT NULL,
 	`resource_type` text NOT NULL,
@@ -200,7 +200,7 @@ CREATE TABLE `mind_map_node_links` (
 	FOREIGN KEY (`node_id`) REFERENCES `mind_map_nodes`(`id`) ON UPDATE no action ON DELETE cascade
 );
 --> statement-breakpoint
-CREATE TABLE `mind_map_nodes` (
+CREATE TABLE IF NOT EXISTS `mind_map_nodes` (
 	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
 	`map_id` integer NOT NULL,
 	`topic_id` integer,
@@ -216,8 +216,8 @@ CREATE TABLE `mind_map_nodes` (
 	FOREIGN KEY (`topic_id`) REFERENCES `topics`(`id`) ON UPDATE no action ON DELETE set null
 );
 --> statement-breakpoint
-CREATE INDEX `idx_mind_map_nodes_map` ON `mind_map_nodes` (`map_id`);--> statement-breakpoint
-CREATE TABLE `mind_maps` (
+CREATE INDEX IF NOT EXISTS `idx_mind_map_nodes_map` ON `mind_map_nodes` (`map_id`);--> statement-breakpoint
+CREATE TABLE IF NOT EXISTS `mind_maps` (
 	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
 	`title` text NOT NULL,
 	`subject_id` integer,
@@ -229,7 +229,7 @@ CREATE TABLE `mind_maps` (
 	FOREIGN KEY (`topic_id`) REFERENCES `topics`(`id`) ON UPDATE no action ON DELETE set null
 );
 --> statement-breakpoint
-CREATE TABLE `offline_ai_queue` (
+CREATE TABLE IF NOT EXISTS `offline_ai_queue` (
 	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
 	`request_type` text NOT NULL,
 	`payload` text NOT NULL,
@@ -240,8 +240,8 @@ CREATE TABLE `offline_ai_queue` (
 	`error_message` text
 );
 --> statement-breakpoint
-CREATE INDEX `idx_offline_ai_queue_status` ON `offline_ai_queue` (`status`,`attempts`,`created_at`);--> statement-breakpoint
-CREATE TABLE `plan_events` (
+CREATE INDEX IF NOT EXISTS `idx_offline_ai_queue_status` ON `offline_ai_queue` (`status`,`attempts`,`created_at`);--> statement-breakpoint
+CREATE TABLE IF NOT EXISTS `plan_events` (
 	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
 	`date` text NOT NULL,
 	`event_type` text NOT NULL,
@@ -249,8 +249,8 @@ CREATE TABLE `plan_events` (
 	`created_at` integer NOT NULL
 );
 --> statement-breakpoint
-CREATE INDEX `idx_plan_events_date` ON `plan_events` (`date`);--> statement-breakpoint
-CREATE TABLE `question_bank` (
+CREATE INDEX IF NOT EXISTS `idx_plan_events_date` ON `plan_events` (`date`);--> statement-breakpoint
+CREATE TABLE IF NOT EXISTS `question_bank` (
 	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
 	`question` text NOT NULL,
 	`options` text NOT NULL,
@@ -273,12 +273,12 @@ CREATE TABLE `question_bank` (
 	FOREIGN KEY (`topic_id`) REFERENCES `topics`(`id`) ON UPDATE no action ON DELETE set null
 );
 --> statement-breakpoint
-CREATE UNIQUE INDEX `idx_qb_dedup` ON `question_bank` (`question`);--> statement-breakpoint
-CREATE INDEX `idx_qb_subject` ON `question_bank` (`subject_name`);--> statement-breakpoint
-CREATE INDEX `idx_qb_topic` ON `question_bank` (`topic_id`);--> statement-breakpoint
-CREATE INDEX `idx_qb_review` ON `question_bank` (`next_review_at`,`is_mastered`);--> statement-breakpoint
-CREATE INDEX `idx_qb_bookmarked` ON `question_bank` (`is_bookmarked`);--> statement-breakpoint
-CREATE TABLE `semantic_links` (
+CREATE UNIQUE INDEX IF NOT EXISTS `idx_qb_dedup` ON `question_bank` (`question`);--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS `idx_qb_subject` ON `question_bank` (`subject_name`);--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS `idx_qb_topic` ON `question_bank` (`topic_id`);--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS `idx_qb_review` ON `question_bank` (`next_review_at`,`is_mastered`);--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS `idx_qb_bookmarked` ON `question_bank` (`is_bookmarked`);--> statement-breakpoint
+CREATE TABLE IF NOT EXISTS `semantic_links` (
 	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
 	`source_type` text NOT NULL,
 	`source_id` integer NOT NULL,
@@ -288,8 +288,8 @@ CREATE TABLE `semantic_links` (
 	`created_at` integer NOT NULL
 );
 --> statement-breakpoint
-CREATE UNIQUE INDEX `idx_semantic_links_unique` ON `semantic_links` (`source_type`,`source_id`,`target_type`,`target_id`);--> statement-breakpoint
-CREATE TABLE `sessions` (
+CREATE UNIQUE INDEX IF NOT EXISTS `idx_semantic_links_unique` ON `semantic_links` (`source_type`,`source_id`,`target_type`,`target_id`);--> statement-breakpoint
+CREATE TABLE IF NOT EXISTS `sessions` (
 	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
 	`started_at` integer NOT NULL,
 	`ended_at` integer,
@@ -304,8 +304,8 @@ CREATE TABLE `sessions` (
 	`notes` text
 );
 --> statement-breakpoint
-CREATE INDEX `idx_sessions_started_at` ON `sessions` (`started_at`);--> statement-breakpoint
-CREATE TABLE `subjects` (
+CREATE INDEX IF NOT EXISTS `idx_sessions_started_at` ON `sessions` (`started_at`);--> statement-breakpoint
+CREATE TABLE IF NOT EXISTS `subjects` (
 	`id` integer PRIMARY KEY NOT NULL,
 	`name` text NOT NULL,
 	`short_code` text NOT NULL,
@@ -315,7 +315,7 @@ CREATE TABLE `subjects` (
 	`display_order` integer NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE `topic_notes` (
+CREATE TABLE IF NOT EXISTS `topic_notes` (
 	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
 	`topic_id` integer NOT NULL,
 	`content` text NOT NULL,
@@ -324,7 +324,7 @@ CREATE TABLE `topic_notes` (
 	FOREIGN KEY (`topic_id`) REFERENCES `topics`(`id`) ON UPDATE no action ON DELETE cascade
 );
 --> statement-breakpoint
-CREATE TABLE `topic_progress` (
+CREATE TABLE IF NOT EXISTS `topic_progress` (
 	`topic_id` integer PRIMARY KEY NOT NULL,
 	`status` text DEFAULT 'unseen' NOT NULL,
 	`confidence` integer DEFAULT 0 NOT NULL,
@@ -347,8 +347,8 @@ CREATE TABLE `topic_progress` (
 	FOREIGN KEY (`topic_id`) REFERENCES `topics`(`id`) ON UPDATE no action ON DELETE cascade
 );
 --> statement-breakpoint
-CREATE INDEX `idx_tp_status_fsrs_due` ON `topic_progress` (`status`,`fsrs_due`,`confidence`);--> statement-breakpoint
-CREATE TABLE `topic_suggestions` (
+CREATE INDEX IF NOT EXISTS `idx_tp_status_fsrs_due` ON `topic_progress` (`status`,`fsrs_due`,`confidence`);--> statement-breakpoint
+CREATE TABLE IF NOT EXISTS `topic_suggestions` (
 	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
 	`subject_id` integer NOT NULL,
 	`name` text NOT NULL,
@@ -363,9 +363,9 @@ CREATE TABLE `topic_suggestions` (
 	FOREIGN KEY (`approved_topic_id`) REFERENCES `topics`(`id`) ON UPDATE no action ON DELETE set null
 );
 --> statement-breakpoint
-CREATE INDEX `idx_topic_suggestions_status` ON `topic_suggestions` (`status`,`subject_id`,`last_detected_at`);--> statement-breakpoint
-CREATE UNIQUE INDEX `idx_topic_suggestions_unique` ON `topic_suggestions` (`subject_id`,`normalized_name`);--> statement-breakpoint
-CREATE TABLE `topics` (
+CREATE INDEX IF NOT EXISTS `idx_topic_suggestions_status` ON `topic_suggestions` (`status`,`subject_id`,`last_detected_at`);--> statement-breakpoint
+CREATE UNIQUE INDEX IF NOT EXISTS `idx_topic_suggestions_unique` ON `topic_suggestions` (`subject_id`,`normalized_name`);--> statement-breakpoint
+CREATE TABLE IF NOT EXISTS `topics` (
 	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
 	`subject_id` integer NOT NULL,
 	`parent_topic_id` integer,
@@ -377,10 +377,10 @@ CREATE TABLE `topics` (
 	FOREIGN KEY (`parent_topic_id`) REFERENCES `topics`(`id`) ON UPDATE no action ON DELETE set null
 );
 --> statement-breakpoint
-CREATE INDEX `idx_topics_parent` ON `topics` (`parent_topic_id`);--> statement-breakpoint
-CREATE INDEX `idx_topics_subject` ON `topics` (`subject_id`);--> statement-breakpoint
-CREATE UNIQUE INDEX `idx_topics_subject_name` ON `topics` (`subject_id`,`name`);--> statement-breakpoint
-CREATE TABLE `user_content_flags` (
+CREATE INDEX IF NOT EXISTS `idx_topics_parent` ON `topics` (`parent_topic_id`);--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS `idx_topics_subject` ON `topics` (`subject_id`);--> statement-breakpoint
+CREATE UNIQUE INDEX IF NOT EXISTS `idx_topics_subject_name` ON `topics` (`subject_id`,`name`);--> statement-breakpoint
+CREATE TABLE IF NOT EXISTS `user_content_flags` (
 	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
 	`topic_id` integer NOT NULL,
 	`content_type` text NOT NULL,
@@ -392,7 +392,7 @@ CREATE TABLE `user_content_flags` (
 	FOREIGN KEY (`topic_id`) REFERENCES `topics`(`id`) ON UPDATE no action ON DELETE cascade
 );
 --> statement-breakpoint
-CREATE TABLE `user_profile` (
+CREATE TABLE IF NOT EXISTS `user_profile` (
 	`id` integer PRIMARY KEY DEFAULT 1 NOT NULL,
 	`display_name` text DEFAULT 'Doctor' NOT NULL,
 	`total_xp` integer DEFAULT 0 NOT NULL,

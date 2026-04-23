@@ -1,33 +1,9 @@
-import React, { useCallback, useEffect, useState } from 'react';
-import {     
-  View } from      'react-native';
+import React from 'react';
+import { View } from 'react-native';
 
-import { type DailyPlan,
-  type StudyPlanSummary,
-  type PlanMode,
- } from  '../services/studyPlanner';
-import { type NavigationProp  } from  '@react-navigation/native';
-import type { TabParamList, HomeStackParamList } from '../navigation/types';
-
-
-
-
-import { linearTheme as n } from '../theme/linearTheme';
-
-
-
-
-
-
-
-
-import type { TopicWithProgress, StudyResourceMode } from '../types';
-
-
-
-
-
-import LinearText from '../components/primitives/LinearText';
+import { type StudyPlanSummary } from '../../../services/studyPlanner';
+import { linearTheme as n } from '../../../theme/linearTheme';
+import LinearText from '../../../components/primitives/LinearText';
 
 
 
@@ -38,10 +14,17 @@ function BacklogBanner({ summary }: { summary: StudyPlanSummary }) {
   if (summary.overdueBacklogDays < 2) return null;
   const severe = summary.overdueBacklogDays > 4;
   return (
-    <View style={masteryStyles.backlogBanner}>
+    <View
+      style={{
+        backgroundColor: severe ? 'rgba(224,82,82,0.15)' : 'rgba(240,180,50,0.15)',
+        borderRadius: n.radius.sm,
+        padding: n.spacing.md,
+        marginBottom: n.spacing.md,
+      }}
+    >
       <LinearText
         style={[
-          masteryStyles.backlogBannerText,
+          { fontSize: 13, fontWeight: '700' },
           { color: severe ? n.colors.error : n.colors.warning },
         ]}
       >

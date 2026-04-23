@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { View, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { linearTheme } from '../../../../../theme/linearTheme';
 import LinearTextInput from '../../../../../components/primitives/LinearTextInput';
@@ -81,16 +81,16 @@ export default function CloudflareKeyRow({
                 validationStatus === 'valid'
                   ? 'checkmark-circle'
                   : validationStatus === 'invalid'
-                    ? 'close-circle'
-                    : 'flash-outline'
+                  ? 'close-circle'
+                  : 'flash-outline'
               }
               size={20}
               color={
                 validationStatus === 'valid'
                   ? linearTheme.colors.success
                   : validationStatus === 'invalid'
-                    ? linearTheme.colors.error
-                    : linearTheme.colors.accent
+                  ? linearTheme.colors.error
+                  : linearTheme.colors.accent
               }
             />
           )}

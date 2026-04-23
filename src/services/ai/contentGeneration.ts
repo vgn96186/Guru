@@ -11,7 +11,8 @@ import { getCachedContent, setCachedContent } from '../../db/queries/aiCache';
 import { saveBulkQuestions } from '../../db/queries/questionBank';
 import { AIContentSchema, QuizSchema } from './schemas';
 import { generateObject } from 'ai';
-import { createGuruFallbackModel } from './providers/guruFallback';
+import type { LanguageModel } from '@ai-sdk/provider';
+import { createGuruFallbackModel } from './v2/providers/guruFallback';
 import { profileRepository } from '../../db/repositories/profileRepository';
 import { searchMedicalImages } from './medicalSearch';
 import type { Message as CoreMessage } from './types';
@@ -226,7 +227,7 @@ export async function fetchContent(
       { role: 'user', content: userPrompt },
     ];
     const profile = await profileRepository.getProfile();
-    const model = createGuruFallbackModel({ profile });
+    const model = createGuruFallbackModel({ profile }) as unknown as LanguageModel;
     let modelUsed = '';
     let contentWithMeta: AIContent | null = null;
 
@@ -444,7 +445,7 @@ export async function generateEscalatingQuiz(
     { role: 'user', content: userPrompt },
   ];
   const profile = await profileRepository.getProfile();
-  const model = createGuruFallbackModel({ profile });
+  const model = createGuruFallbackModel({ profile }) as unknown as LanguageModel;
   const generated = await generateObject({ model, messages, schema: QuizSchema });
   const modelUsed = `${model.provider}/${model.modelId}`;
   return { ...generated.object, modelUsed } as QuizContent;

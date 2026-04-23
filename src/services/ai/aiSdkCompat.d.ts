@@ -14,8 +14,6 @@ import type {
   LanguageModelV2ToolCallPart as _LMV2ToolCall,
   LanguageModelV2FinishReason as _LMV2Finish,
   LanguageModelV2Usage as _LMV2Usage,
-  LanguageModelV3GenerateResult as _LMV3Gen,
-  LanguageModelV3StreamResult as _LMV3Stream,
 } from '@ai-sdk/provider';
 
 declare module '@ai-sdk/provider' {

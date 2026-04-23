@@ -1,4 +1,4 @@
-import { getDb, nowTs } from '../database';
+import { mindMapsRepositoryDrizzle } from '../repositories/mindMapsRepository.drizzle';
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -42,208 +42,84 @@ export interface MindMapFull {
   edges: MindMapEdge[];
 }
 
-// ── Row mappers ────────────────────────────────────────────────────────────
-
-function toMap(row: any): MindMap {
-  return {
-    id: row.id,
-    title: row.title,
-    subjectId: row.subject_id,
-    topicId: row.topic_id,
-    viewportJson: row.viewport_json,
-    createdAt: row.created_at,
-    updatedAt: row.updated_at,
-  };
-}
-
-function toNode(row: any): MindMapNode {
-  return {
-    id: row.id,
-    mapId: row.map_id,
-    topicId: row.topic_id,
-    label: row.label,
-    x: row.x,
-    y: row.y,
-    color: row.color,
-    isCenter: !!row.is_center,
-    aiGenerated: !!row.ai_generated,
-    explanation: row.explanation ?? null,
-    createdAt: row.created_at,
-  };
-}
-
-function toEdge(row: any): MindMapEdge {
-  return {
-    id: row.id,
-    mapId: row.map_id,
-    sourceNodeId: row.source_node_id,
-    targetNodeId: row.target_node_id,
-    label: row.label,
-    isCrossLink: !!row.is_cross_link,
-    createdAt: row.created_at,
-  };
-}
-
 // ── Queries ────────────────────────────────────────────────────────────────
 
-export async function listMindMaps(): Promise<MindMap[]> {
-  const db = getDb();
-  const rows = await db.getAllAsync('SELECT * FROM mind_maps ORDER BY updated_at DESC');
-  return rows.map(toMap);
+export function listMindMaps() {
+  return mindMapsRepositoryDrizzle.listMindMaps();
 }
 
-export async function createMindMap(
-  title: string,
-  subjectId?: number | null,
-  topicId?: number | null,
-): Promise<number> {
-  const db = getDb();
-  const now = nowTs();
-  const result = await db.runAsync(
-    'INSERT INTO mind_maps (title, subject_id, topic_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?)',
-    [title, subjectId ?? null, topicId ?? null, now, now],
-  );
-  return result.lastInsertRowId;
+export function createMindMap(title: string, subjectId?: number | null, topicId?: number | null) {
+  return mindMapsRepositoryDrizzle.createMindMap(title, subjectId, topicId);
 }
 
-export async function deleteMindMap(mapId: number): Promise<void> {
-  const db = getDb();
-  await db.runAsync('DELETE FROM mind_maps WHERE id = ?', [mapId]);
+export function deleteMindMap(mapId: number) {
+  return mindMapsRepositoryDrizzle.deleteMindMap(mapId);
 }
 
-export async function touchMindMap(mapId: number): Promise<void> {
-  const db = getDb();
-  await db.runAsync('UPDATE mind_maps SET updated_at = ? WHERE id = ?', [nowTs(), mapId]);
+export function touchMindMap(mapId: number) {
+  return mindMapsRepositoryDrizzle.touchMindMap(mapId);
 }
 
-export async function saveViewport(mapId: number, viewportJson: string): Promise<void> {
-  const db = getDb();
-  await db.runAsync('UPDATE mind_maps SET viewport_json = ?, updated_at = ? WHERE id = ?', [
-    viewportJson,
-    nowTs(),
-    mapId,
-  ]);
+export function saveViewport(mapId: number, viewportJson: string) {
+  return mindMapsRepositoryDrizzle.saveViewport(mapId, viewportJson);
 }
 
-export async function addNode(
+export function addNode(
   mapId: number,
   label: string,
   x: number,
   y: number,
   opts?: { topicId?: number; color?: string; isCenter?: boolean; aiGenerated?: boolean },
-): Promise<number> {
-  const db = getDb();
-  const now = nowTs();
-  const result = await db.runAsync(
-    `INSERT INTO mind_map_nodes (map_id, topic_id, label, x, y, color, is_center, ai_generated, created_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-    [
-      mapId,
-      opts?.topicId ?? null,
-      label,
-      x,
-      y,
-      opts?.color ?? null,
-      opts?.isCenter ? 1 : 0,
-      opts?.aiGenerated ? 1 : 0,
-      now,
-    ],
-  );
-  await touchMindMap(mapId);
-  return result.lastInsertRowId;
+) {
+  return mindMapsRepositoryDrizzle.addNode(mapId, label, x, y, opts);
 }
 
-export async function updateNodePosition(nodeId: number, x: number, y: number): Promise<void> {
-  const db = getDb();
-  await db.runAsync('UPDATE mind_map_nodes SET x = ?, y = ? WHERE id = ?', [x, y, nodeId]);
+export function updateNodePosition(nodeId: number, x: number, y: number) {
+  return mindMapsRepositoryDrizzle.updateNodePosition(nodeId, x, y);
 }
 
-export async function bulkUpdateNodePositions(
+export function bulkUpdateNodePositions(
   mapId: number,
   positions: Array<{ id: number; x: number; y: number }>,
-): Promise<void> {
-  if (positions.length === 0) return;
-
-  const db = getDb();
-  for (const position of positions) {
-    await db.runAsync('UPDATE mind_map_nodes SET x = ?, y = ? WHERE id = ? AND map_id = ?', [
-      position.x,
-      position.y,
-      position.id,
-      mapId,
-    ]);
-  }
-  await touchMindMap(mapId);
+) {
+  return mindMapsRepositoryDrizzle.bulkUpdateNodePositions(mapId, positions);
 }
 
-export async function updateNodeLabel(nodeId: number, label: string): Promise<void> {
-  const db = getDb();
-  await db.runAsync('UPDATE mind_map_nodes SET label = ? WHERE id = ?', [label, nodeId]);
+export function updateNodeLabel(nodeId: number, label: string) {
+  return mindMapsRepositoryDrizzle.updateNodeLabel(nodeId, label);
 }
 
-export async function updateNodeExplanation(nodeId: number, explanation: string): Promise<void> {
-  const db = getDb();
-  await db.runAsync('UPDATE mind_map_nodes SET explanation = ? WHERE id = ?', [
-    explanation,
-    nodeId,
-  ]);
+export function updateNodeExplanation(nodeId: number, explanation: string) {
+  return mindMapsRepositoryDrizzle.updateNodeExplanation(nodeId, explanation);
 }
 
-export async function deleteNode(nodeId: number): Promise<void> {
-  const db = getDb();
-  await db.runAsync('DELETE FROM mind_map_nodes WHERE id = ?', [nodeId]);
+export function deleteNode(nodeId: number) {
+  return mindMapsRepositoryDrizzle.deleteNode(nodeId);
 }
 
-export async function addEdge(
+export function addEdge(
   mapId: number,
   sourceNodeId: number,
   targetNodeId: number,
   label?: string,
   isCrossLink?: boolean,
-): Promise<number> {
-  const db = getDb();
-  const now = nowTs();
-  const result = await db.runAsync(
-    'INSERT INTO mind_map_edges (map_id, source_node_id, target_node_id, label, is_cross_link, created_at) VALUES (?, ?, ?, ?, ?, ?)',
-    [mapId, sourceNodeId, targetNodeId, label ?? null, isCrossLink ? 1 : 0, now],
-  );
-  await touchMindMap(mapId);
-  return result.lastInsertRowId;
+) {
+  return mindMapsRepositoryDrizzle.addEdge(mapId, sourceNodeId, targetNodeId, label, isCrossLink);
 }
 
-export async function deleteEdge(edgeId: number): Promise<void> {
-  const db = getDb();
-  await db.runAsync('DELETE FROM mind_map_edges WHERE id = ?', [edgeId]);
+export function deleteEdge(edgeId: number) {
+  return mindMapsRepositoryDrizzle.deleteEdge(edgeId);
 }
 
-export async function loadFullMindMap(mapId: number): Promise<MindMapFull | null> {
-  const db = getDb();
-  const mapRow = await db.getFirstAsync('SELECT * FROM mind_maps WHERE id = ?', [mapId]);
-  if (!mapRow) return null;
-  const nodeRows = await db.getAllAsync(
-    'SELECT * FROM mind_map_nodes WHERE map_id = ? ORDER BY created_at',
-    [mapId],
-  );
-  const edgeRows = await db.getAllAsync(
-    'SELECT * FROM mind_map_edges WHERE map_id = ? ORDER BY created_at',
-    [mapId],
-  );
-  return {
-    map: toMap(mapRow),
-    nodes: nodeRows.map(toNode),
-    edges: edgeRows.map(toEdge),
-  };
+export function loadFullMindMap(mapId: number) {
+  return mindMapsRepositoryDrizzle.loadFullMindMap(mapId);
 }
 
-/** Delete all nodes and edges for a map (used before regeneration). */
-export async function clearMindMapContents(mapId: number): Promise<void> {
-  const db = getDb();
-  await db.runAsync('DELETE FROM mind_map_edges WHERE map_id = ?', [mapId]);
-  await db.runAsync('DELETE FROM mind_map_nodes WHERE map_id = ?', [mapId]);
+export function clearMindMapContents(mapId: number) {
+  return mindMapsRepositoryDrizzle.clearMindMapContents(mapId);
 }
 
-/** Bulk insert nodes + edges from AI generation. Returns inserted node IDs. */
-export async function bulkInsertNodesAndEdges(
+export function bulkInsertNodesAndEdges(
   mapId: number,
   nodes: Array<{
     label: string;
@@ -254,47 +130,10 @@ export async function bulkInsertNodesAndEdges(
     topicId?: number;
   }>,
   edges: Array<{ sourceIndex: number; targetIndex: number; label?: string; isCrossLink?: boolean }>,
-): Promise<number[]> {
-  const db = getDb();
-  const now = nowTs();
-  const nodeIds: number[] = [];
-
-  for (const n of nodes) {
-    const result = await db.runAsync(
-      `INSERT INTO mind_map_nodes (map_id, topic_id, label, x, y, color, is_center, ai_generated, created_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, 1, ?)`,
-      [mapId, n.topicId ?? null, n.label, n.x, n.y, n.color ?? null, n.isCenter ? 1 : 0, now],
-    );
-    nodeIds.push(result.lastInsertRowId);
-  }
-
-  for (const e of edges) {
-    const srcId = nodeIds[e.sourceIndex];
-    const tgtId = nodeIds[e.targetIndex];
-    if (srcId != null && tgtId != null) {
-      await db.runAsync(
-        'INSERT INTO mind_map_edges (map_id, source_node_id, target_node_id, label, is_cross_link, created_at) VALUES (?, ?, ?, ?, ?, ?)',
-        [mapId, srcId, tgtId, e.label ?? null, e.isCrossLink ? 1 : 0, now],
-      );
-    }
-  }
-
-  await touchMindMap(mapId);
-  return nodeIds;
+) {
+  return mindMapsRepositoryDrizzle.bulkInsertNodesAndEdges(mapId, nodes, edges);
 }
 
-/** Find syllabus topic IDs matching a label (fuzzy). Returns up to 3 matches. */
-export async function findTopicsByLabel(
-  label: string,
-): Promise<Array<{ id: number; name: string; subjectName: string }>> {
-  const db = getDb();
-  const rows = await db.getAllAsync<{ id: number; name: string; subject_name: string }>(
-    `SELECT t.id, t.name, s.name as subject_name
-     FROM topics t JOIN subjects s ON t.subject_id = s.id
-     WHERE LOWER(t.name) LIKE ?
-     ORDER BY t.inicet_priority DESC
-     LIMIT 3`,
-    [`%${label.toLowerCase()}%`],
-  );
-  return rows.map((r) => ({ id: r.id, name: r.name, subjectName: r.subject_name }));
+export function findTopicsByLabel(label: string) {
+  return mindMapsRepositoryDrizzle.findTopicsByLabel(label);
 }

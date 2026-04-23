@@ -5,7 +5,6 @@ import {
   TouchableOpacity,
   ScrollView,
   StyleSheet,
-  ActivityIndicator,
   StatusBar,
 } from 'react-native';
 import LinearText from '../components/primitives/LinearText';

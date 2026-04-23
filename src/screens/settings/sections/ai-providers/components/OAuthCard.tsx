@@ -1,6 +1,5 @@
 import React from 'react';
 import { View, TouchableOpacity, ActivityIndicator } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
 import { linearTheme } from '../../../../../theme/linearTheme';
 import LinearText from '../../../../../components/primitives/LinearText';
 import LinearSurface from '../../../../../components/primitives/LinearSurface';

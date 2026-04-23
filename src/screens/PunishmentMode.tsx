@@ -3,9 +3,6 @@ import { View, TouchableOpacity, StyleSheet, StatusBar, Vibration, Animated } fr
 import { confirmDestructive } from '../components/dialogService';
 import LinearText from '../components/primitives/LinearText';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation } from '@react-navigation/native';
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import type { RootStackParamList } from '../navigation/types';
 import * as Haptics from 'expo-haptics';
 import { useProfileQuery } from '../hooks/queries/useProfile';
 import { dailyLogRepository } from '../db/repositories';
@@ -16,11 +13,12 @@ import LinearButton from '../components/primitives/LinearButton';
 import LinearSurface from '../components/primitives/LinearSurface';
 import { Ionicons } from '@expo/vector-icons';
 
+import { RootNav } from '../navigation/typedHooks';
 const HARASSMENT_INTERVAL = 5 * 60 * 1000; // Every 5 minutes
 const GUILT_CHECK_INTERVAL = 60 * 1000; // Check every minute
 
 export default function PunishmentMode() {
-  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const navigation = RootNav.useNav();
   const { data: profile } = useProfileQuery();
   const [isActive, setIsActive] = useState(true);
   const [minutesIdle, setMinutesIdle] = useState(0);

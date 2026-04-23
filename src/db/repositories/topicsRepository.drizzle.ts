@@ -8,14 +8,13 @@ import {
   inArray,
   isNotNull,
   or,
-  notExists,
   gte,
   lt,
-  sum,
   count,
   SQL,
 } from 'drizzle-orm';
 import { getDrizzleDb } from '../drizzle';
+import { getDb } from '../database';
 import { subjects, topics, topicProgress, topicSuggestions } from '../drizzleSchema';
 import type { Subject, TopicWithProgress, TopicProgress } from '../../types';
 import { getInitialCard, reviewCardFromConfidence } from '../../services/fsrsService';
@@ -78,7 +77,7 @@ export interface TopicProgressUpdate {
 // Helpers
 function mapTopicRow(r: any): TopicWithProgress {
   const tid = r.id;
-  const tname = r.name || 'Unnamed Topic';
+  const tname = r.topicName || r.name || 'Unnamed Topic';
   const sname = r.subjectName || 'Unknown';
   const scode = r.subjectCode || '???';
   const scolor = r.subjectColor || '#555';
@@ -121,7 +120,7 @@ function mapTopicRow(r: any): TopicWithProgress {
   };
 }
 
-const buildTopicsQuery = (
+const buildTopicsQuery = async (
   whereClause?: SQL<unknown>,
   limitCount?: number,
   orderClauses?: SQL<unknown>[],
@@ -129,34 +128,34 @@ const buildTopicsQuery = (
   const db = getDrizzleDb();
   let query = db
     .select({
-      id: topics.id,
-      subjectId: topics.subjectId,
-      parentTopicId: topics.parentTopicId,
-      name: topics.name,
-      estimatedMinutes: topics.estimatedMinutes,
-      inicetPriority: topics.inicetPriority,
-      status: topicProgress.status,
-      confidence: topicProgress.confidence,
-      lastStudiedAt: topicProgress.lastStudiedAt,
-      timesStudied: topicProgress.timesStudied,
-      xpEarned: topicProgress.xpEarned,
-      nextReviewDate: topicProgress.nextReviewDate,
-      userNotes: topicProgress.userNotes,
-      fsrsDue: topicProgress.fsrsDue,
-      fsrsStability: topicProgress.fsrsStability,
-      fsrsDifficulty: topicProgress.fsrsDifficulty,
-      fsrsElapsedDays: topicProgress.fsrsElapsedDays,
-      fsrsScheduledDays: topicProgress.fsrsScheduledDays,
-      fsrsReps: topicProgress.fsrsReps,
-      fsrsLapses: topicProgress.fsrsLapses,
-      fsrsState: topicProgress.fsrsState,
-      fsrsLastReview: topicProgress.fsrsLastReview,
-      wrongCount: topicProgress.wrongCount,
-      isNemesis: topicProgress.isNemesis,
-      subjectName: subjects.name,
-      subjectCode: subjects.shortCode,
-      subjectColor: subjects.colorHex,
-      childCount: sql<number>`(SELECT COUNT(*) FROM topics c WHERE c.parent_topic_id = topics.id)`,
+      id: sql<number>`${topics.id} AS id`,
+      subjectId: sql<number>`${topics.subjectId} AS subjectId`,
+      parentTopicId: sql<number | null>`${topics.parentTopicId} AS parentTopicId`,
+      name: sql<string>`${topics.name} AS name`,
+      estimatedMinutes: sql<number>`${topics.estimatedMinutes} AS estimatedMinutes`,
+      inicetPriority: sql<number>`${topics.inicetPriority} AS inicetPriority`,
+      status: sql<string>`${topicProgress.status} AS status`,
+      confidence: sql<number>`${topicProgress.confidence} AS confidence`,
+      lastStudiedAt: sql<number | null>`${topicProgress.lastStudiedAt} AS lastStudiedAt`,
+      timesStudied: sql<number>`${topicProgress.timesStudied} AS timesStudied`,
+      xpEarned: sql<number>`${topicProgress.xpEarned} AS xpEarned`,
+      nextReviewDate: sql<string | null>`${topicProgress.nextReviewDate} AS nextReviewDate`,
+      userNotes: sql<string>`${topicProgress.userNotes} AS userNotes`,
+      fsrsDue: sql<string | null>`${topicProgress.fsrsDue} AS fsrsDue`,
+      fsrsStability: sql<number | null>`${topicProgress.fsrsStability} AS fsrsStability`,
+      fsrsDifficulty: sql<number | null>`${topicProgress.fsrsDifficulty} AS fsrsDifficulty`,
+      fsrsElapsedDays: sql<number | null>`${topicProgress.fsrsElapsedDays} AS fsrsElapsedDays`,
+      fsrsScheduledDays: sql<number | null>`${topicProgress.fsrsScheduledDays} AS fsrsScheduledDays`,
+      fsrsReps: sql<number | null>`${topicProgress.fsrsReps} AS fsrsReps`,
+      fsrsLapses: sql<number | null>`${topicProgress.fsrsLapses} AS fsrsLapses`,
+      fsrsState: sql<number | null>`${topicProgress.fsrsState} AS fsrsState`,
+      fsrsLastReview: sql<string | null>`${topicProgress.fsrsLastReview} AS fsrsLastReview`,
+      wrongCount: sql<number>`${topicProgress.wrongCount} AS wrongCount`,
+      isNemesis: sql<number>`${topicProgress.isNemesis} AS isNemesis`,
+      subjectName: sql<string>`${subjects.name} AS subjectName`,
+      subjectCode: sql<string>`${subjects.shortCode} AS subjectCode`,
+      subjectColor: sql<string>`${subjects.colorHex} AS subjectColor`,
+      childCount: sql<number>`(SELECT COUNT(*) FROM topics c WHERE c.parent_topic_id = topics.id) AS childCount`,
     })
     .from(topics)
     .innerJoin(subjects, eq(topics.subjectId, subjects.id))
@@ -165,16 +164,18 @@ const buildTopicsQuery = (
   if (whereClause) {
     query = query.where(whereClause) as any;
   }
-
   if (orderClauses && orderClauses.length > 0) {
     query = query.orderBy(...orderClauses) as any;
   }
-
   if (limitCount !== undefined) {
     query = query.limit(limitCount) as any;
   }
 
-  return query;
+  const { sql: sqlString, params } = query.toSQL();
+  const rawDb = getDb();
+  const rawRows = await rawDb.getAllAsync<any>(sqlString, params as string[]);
+  
+  return rawRows;
 };
 
 // Repository implementation
@@ -197,26 +198,36 @@ export const topicsRepositoryDrizzle = {
   },
 
   async searchTopicsByName(query: string, limitCount = 50): Promise<TopicWithProgress[]> {
-    const trimmed = query.trim();
+    const trimmed = query.trim().toLowerCase();
     if (!trimmed) return [];
-
-    const rows = await buildTopicsQuery(
-      sql`${topics.name} LIKE ${'%' + trimmed + '%'}`,
-      limitCount,
-      [desc(topics.inicetPriority), asc(topics.name)],
-    );
+    const rawDb = getDb();
+    const rows = await rawDb.getAllAsync<any>(`
+      SELECT 
+        t.id, t.subject_id as subjectId, t.parent_topic_id as parentTopicId, t.name as topicName, t.estimated_minutes as estimatedMinutes, t.inicet_priority as inicetPriority,
+        p.status, p.confidence, p.last_studied_at as lastStudiedAt, p.times_studied as timesStudied, p.xp_earned as xpEarned, p.next_review_date as nextReviewDate,
+        p.user_notes as userNotes, p.fsrs_due as fsrsDue, p.fsrs_stability as fsrsStability, p.fsrs_difficulty as fsrsDifficulty, p.fsrs_elapsed_days as fsrsElapsedDays,
+        p.fsrs_scheduled_days as fsrsScheduledDays, p.fsrs_reps as fsrsReps, p.fsrs_lapses as fsrsLapses, p.fsrs_state as fsrsState, p.fsrs_last_review as fsrsLastReview,
+        p.wrong_count as wrongCount, p.is_nemesis as isNemesis,
+        s.name as subjectName, s.short_code as subjectCode, s.color_hex as subjectColor,
+        (SELECT COUNT(*) FROM topics c WHERE c.parent_topic_id = t.id) as childCount
+      FROM topics t
+      INNER JOIN subjects s ON t.subject_id = s.id
+      LEFT JOIN topic_progress p ON t.id = p.topic_id
+      WHERE LOWER(t.name) LIKE ?
+      ORDER BY t.inicet_priority DESC, t.name ASC
+      LIMIT ?
+    `, [`%${trimmed}%`, limitCount]);
     return rows.map(mapTopicRow);
   },
 
   async getAllSubjects(): Promise<Subject[]> {
-    const db = getDrizzleDb();
-    const rows = await db.select().from(subjects).orderBy(subjects.displayOrder);
-    return rows.map((r) => ({
-      ...r,
-      inicetWeight: r.inicetWeight,
-      neetWeight: r.neetWeight,
-      displayOrder: r.displayOrder,
-    }));
+    const rawDb = getDb();
+    const rows = await rawDb.getAllAsync<any>(`
+      SELECT id, name, short_code as shortCode, color_hex as colorHex, inicet_weight as inicetWeight, neet_weight as neetWeight, display_order as displayOrder
+      FROM subjects
+      ORDER BY display_order ASC
+    `);
+    return rows;
   },
 
   async getSubjectByName(name: string): Promise<Subject | null> {
@@ -384,18 +395,41 @@ export const topicsRepositoryDrizzle = {
   async getTopicsBySubject(subjectId: number | string): Promise<TopicWithProgress[]> {
     const id = Number(subjectId);
     if (isNaN(id)) return [];
-
-    const rows = await buildTopicsQuery(eq(topics.subjectId, id), undefined, [
-      sql`COALESCE(${topics.parentTopicId}, ${topics.id})`,
-      sql`CASE WHEN ${topics.parentTopicId} IS NULL THEN 0 ELSE 1 END`,
-      desc(topics.inicetPriority),
-      asc(topics.name),
-    ]);
+    const rawDb = getDb();
+    const rows = await rawDb.getAllAsync<any>(`
+      SELECT 
+        t.id, t.subject_id as subjectId, t.parent_topic_id as parentTopicId, t.name as topicName, t.estimated_minutes as estimatedMinutes, t.inicet_priority as inicetPriority,
+        p.status, p.confidence, p.last_studied_at as lastStudiedAt, p.times_studied as timesStudied, p.xp_earned as xpEarned, p.next_review_date as nextReviewDate,
+        p.user_notes as userNotes, p.fsrs_due as fsrsDue, p.fsrs_stability as fsrsStability, p.fsrs_difficulty as fsrsDifficulty, p.fsrs_elapsed_days as fsrsElapsedDays,
+        p.fsrs_scheduled_days as fsrsScheduledDays, p.fsrs_reps as fsrsReps, p.fsrs_lapses as fsrsLapses, p.fsrs_state as fsrsState, p.fsrs_last_review as fsrsLastReview,
+        p.wrong_count as wrongCount, p.is_nemesis as isNemesis,
+        s.name as subjectName, s.short_code as subjectCode, s.color_hex as subjectColor,
+        (SELECT COUNT(*) FROM topics c WHERE c.parent_topic_id = t.id) as childCount
+      FROM topics t
+      INNER JOIN subjects s ON t.subject_id = s.id
+      LEFT JOIN topic_progress p ON t.id = p.topic_id
+      WHERE t.subject_id = ?
+      ORDER BY COALESCE(t.parent_topic_id, t.id), CASE WHEN t.parent_topic_id IS NULL THEN 0 ELSE 1 END, t.inicet_priority DESC, t.name ASC
+    `, [id]);
     return rows.map(mapTopicRow);
   },
 
   async getAllTopicsWithProgress(): Promise<TopicWithProgress[]> {
-    const rows = await buildTopicsQuery(undefined, undefined, [desc(topics.inicetPriority)]);
+    const rawDb = getDb();
+    const rows = await rawDb.getAllAsync<any>(`
+      SELECT 
+        t.id, t.subject_id as subjectId, t.parent_topic_id as parentTopicId, t.name as topicName, t.estimated_minutes as estimatedMinutes, t.inicet_priority as inicetPriority,
+        p.status, p.confidence, p.last_studied_at as lastStudiedAt, p.times_studied as timesStudied, p.xp_earned as xpEarned, p.next_review_date as nextReviewDate,
+        p.user_notes as userNotes, p.fsrs_due as fsrsDue, p.fsrs_stability as fsrsStability, p.fsrs_difficulty as fsrsDifficulty, p.fsrs_elapsed_days as fsrsElapsedDays,
+        p.fsrs_scheduled_days as fsrsScheduledDays, p.fsrs_reps as fsrsReps, p.fsrs_lapses as fsrsLapses, p.fsrs_state as fsrsState, p.fsrs_last_review as fsrsLastReview,
+        p.wrong_count as wrongCount, p.is_nemesis as isNemesis,
+        s.name as subjectName, s.short_code as subjectCode, s.color_hex as subjectColor,
+        (SELECT COUNT(*) FROM topics c WHERE c.parent_topic_id = t.id) as childCount
+      FROM topics t
+      INNER JOIN subjects s ON t.subject_id = s.id
+      LEFT JOIN topic_progress p ON t.id = p.topic_id
+      ORDER BY t.inicet_priority DESC
+    `);
     return rows.map(mapTopicRow);
   },
 
@@ -569,22 +603,34 @@ export const topicsRepositoryDrizzle = {
   },
 
   async getSubjectStatsAggregated(): Promise<SubjectStatsRow[]> {
-    const db = getDrizzleDb();
-    const rows = await db
-      .select({
-        subjectId: topics.subjectId,
-        total: count(topics.id),
-        seen: sql<number>`SUM(CASE WHEN ${topicProgress.status} IN ('seen','reviewed','mastered') THEN 1 ELSE 0 END)`,
-        due: sql<number>`SUM(CASE WHEN COALESCE(${topicProgress.status}, 'unseen') != 'unseen' AND (${topicProgress.fsrsDue} IS NULL OR DATE(${topicProgress.fsrsDue}) <= DATE('now')) THEN 1 ELSE 0 END)`,
-        highYield: sql<number>`SUM(CASE WHEN ${topics.inicetPriority} >= 8 THEN 1 ELSE 0 END)`,
-        unseen: sql<number>`SUM(CASE WHEN COALESCE(${topicProgress.status}, 'unseen') = 'unseen' THEN 1 ELSE 0 END)`,
-        withNotes: sql<number>`SUM(CASE WHEN TRIM(COALESCE(${topicProgress.userNotes}, '')) <> '' THEN 1 ELSE 0 END)`,
-        weak: sql<number>`SUM(CASE WHEN COALESCE(${topicProgress.timesStudied}, 0) > 0 AND COALESCE(${topicProgress.confidence}, 0) < 3 THEN 1 ELSE 0 END)`,
-      })
-      .from(topics)
-      .leftJoin(topicProgress, eq(topics.id, topicProgress.topicId))
-      .where(sql`NOT EXISTS (SELECT 1 FROM topics c WHERE c.parent_topic_id = topics.id)`)
-      .groupBy(topics.subjectId);
+    const rawDb = getDb();
+    const rawRows = await rawDb.getAllAsync<any>(`
+      SELECT 
+        t.subject_id as subjectId, 
+        COUNT(t.id) as total,
+        SUM(CASE WHEN p.status IN ('seen','reviewed','mastered') THEN 1 ELSE 0 END) as seen,
+        SUM(CASE WHEN COALESCE(p.status, 'unseen') != 'unseen' AND (p.fsrs_due IS NULL OR DATE(p.fsrs_due) <= DATE('now')) THEN 1 ELSE 0 END) as due,
+        SUM(CASE WHEN t.inicet_priority >= 8 THEN 1 ELSE 0 END) as highYield,
+        SUM(CASE WHEN COALESCE(p.status, 'unseen') = 'unseen' THEN 1 ELSE 0 END) as unseen,
+        SUM(CASE WHEN TRIM(COALESCE(p.user_notes, '')) <> '' THEN 1 ELSE 0 END) as withNotes,
+        SUM(CASE WHEN COALESCE(p.times_studied, 0) > 0 AND COALESCE(p.confidence, 0) < 3 THEN 1 ELSE 0 END) as weak
+      FROM topics t
+      LEFT JOIN topic_progress p ON t.id = p.topic_id
+      WHERE NOT EXISTS (SELECT 1 FROM topics c WHERE c.parent_topic_id = t.id)
+      GROUP BY t.subject_id
+    `);
+
+    const rows = rawRows.map((r: any) => ({
+      subjectId: r.subjectId !== null ? Number(r.subjectId) : null,
+      total: Number(r.total) || 0,
+      seen: Number(r.seen) || 0,
+      due: Number(r.due) || 0,
+      highYield: Number(r.highYield) || 0,
+      unseen: Number(r.unseen) || 0,
+      withNotes: Number(r.withNotes) || 0,
+      weak: Number(r.weak) || 0,
+    })) as SubjectStatsRow[];
+
     return rows;
   },
 

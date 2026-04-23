@@ -1,7 +1,6 @@
 import React from 'react';
 import { View, Text } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { linearTheme } from '../../../../../theme/linearTheme';
 import SettingsToggleRow from '../../../components/SettingsToggleRow';
 
 interface Props {

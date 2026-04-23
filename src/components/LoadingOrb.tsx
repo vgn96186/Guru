@@ -93,12 +93,9 @@ export default React.memo(function LoadingOrb({
   message = 'Hey there! Let me think...',
   size = 180,
 }: Props) {
-  const { data: profile } = useProfileQuery();
-  const isTurbulent = profile?.loadingOrbStyle === 'turbulent';
-
-  if (isTurbulent) {
-    return <TurbulentOrb message={message} size={size} />;
-  }
+  const profileQuery = useProfileQuery();
+  const profile = profileQuery?.data;
+  const isTurbulent = profile ? profile.loadingOrbStyle !== 'classic' : true;
 
   const [displayMessage, setDisplayMessage] = React.useState(message);
   const lastMessageRef = useRef(message);
@@ -215,6 +212,10 @@ export default React.memo(function LoadingOrb({
     transform: [{ translateY: highlightTranslateY.value }],
     opacity: highlightOpacity.value,
   }));
+
+  if (isTurbulent) {
+    return <TurbulentOrb message={message} size={size} />;
+  }
 
   return (
     <View style={styles.container}>

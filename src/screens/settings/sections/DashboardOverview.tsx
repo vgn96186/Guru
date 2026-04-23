@@ -1,19 +1,30 @@
 import React from 'react';
 import { View, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { BentoCard } from '../../../components/settings/BentoCard';
+import LinearSurface from '../../../components/primitives/LinearSurface';
 import LinearText from '../../../components/primitives/LinearText';
 import SettingsToggleRow from '../components/SettingsToggleRow';
-import { linearTheme } from '../../../theme/linearTheme';
-import { useSettingsState } from '../../../hooks/useSettingsState';
+import { useProfileQuery } from '../../../hooks/queries/useProfile';
+import { SettingsActionButton } from '../../../components/settings/SettingsActionButton';
+import { SettingsChip } from '../../../components/settings/SettingsChip';
 
 export function DashboardOverview(props: any) {
-  const { isTablet, providerOrder, localLlmReady, setActiveCategory } = props;
+  const {
+    isTablet,
+    providerOrder,
+    localLlmReady,
+    setActiveCategory,
+    localModel,
+    setLocalModel,
+    faceTracking,
+    setFaceTracking,
+    strictMode,
+    setStrictMode,
+    dailyGoal,
+    setDailyGoal,
+  } = props;
 
-  const [localModel, setLocalModel] = useSettingsState('useLocalModel', true);
-  const [faceTracking, setFaceTracking] = useSettingsState('faceTrackingEnabled', true);
-  const [strictMode, setStrictMode] = useSettingsState('strictModeEnabled', false);
-  const [dailyGoal, setDailyGoal] = useSettingsState('dailyGoalMinutes', 120);
+  const { data: profile } = useProfileQuery();
 
   const topProviders = (providerOrder || ['groq', 'openrouter', 'deepseek']).slice(0, 3);
 
@@ -27,10 +38,13 @@ export function DashboardOverview(props: any) {
     <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 24, alignItems: 'stretch' }}>
       {/* 1. AI & Inference */}
       <View style={{ flexBasis: isTablet ? '48%' : '100%', flexGrow: 1 }}>
-        <BentoCard
-          title="AI & Inference"
-          icon={<Ionicons name="sparkles" size={16} color="#5E6AD2" />}
-        >
+        <LinearSurface compact style={{ flex: 1 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 16 }}>
+            <Ionicons name="sparkles" size={16} color="#5E6AD2" />
+            <LinearText variant="title" style={{ fontSize: 16, color: '#E8E8E8' }}>
+              AI Intelligence
+            </LinearText>
+          </View>
           <View style={{ gap: 16 }}>
             <View
               style={{
@@ -56,28 +70,7 @@ export function DashboardOverview(props: any) {
                     >
                       Local Model
                     </LinearText>
-                    <View
-                      style={{
-                        paddingHorizontal: 6,
-                        paddingVertical: 2,
-                        backgroundColor: 'rgba(94, 106, 210, 0.15)',
-                        borderRadius: 4,
-                        borderWidth: 1,
-                        borderColor: 'rgba(94,106,210,0.2)',
-                      }}
-                    >
-                      <LinearText
-                        variant="meta"
-                        style={{
-                          fontSize: 10,
-                          color: '#5E6AD2',
-                          fontWeight: '500',
-                          textTransform: 'uppercase',
-                        }}
-                      >
-                        Ready
-                      </LinearText>
-                    </View>
+                    <SettingsChip label="READY" active />
                   </View>
                   <LinearText
                     variant="meta"
@@ -165,15 +158,18 @@ export function DashboardOverview(props: any) {
               </LinearText>
             </TouchableOpacity>
           </View>
-        </BentoCard>
+        </LinearSurface>
       </View>
 
       {/* 2. Interventions */}
       <View style={{ flexBasis: isTablet ? '48%' : '100%', flexGrow: 1 }}>
-        <BentoCard
-          title="Interventions"
-          icon={<Ionicons name="shield" size={16} color="#F87171" />}
-        >
+        <LinearSurface compact style={{ flex: 1 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 16 }}>
+            <Ionicons name="shield" size={16} color="#F87171" />
+            <LinearText variant="title" style={{ fontSize: 16, color: '#E8E8E8' }}>
+              Focus & Rules
+            </LinearText>
+          </View>
           <View style={{ gap: 16 }}>
             <SettingsToggleRow
               label="Doomscroll Shield"
@@ -208,15 +204,18 @@ export function DashboardOverview(props: any) {
               style={{ paddingVertical: 8, borderBottomWidth: 0 }}
             />
           </View>
-        </BentoCard>
+        </LinearSurface>
       </View>
 
       {/* 3. App Integrations */}
       <View style={{ flexBasis: isTablet ? '48%' : '100%', flexGrow: 1 }}>
-        <BentoCard
-          title="App Integrations"
-          icon={<Ionicons name="apps" size={16} color="#10B981" />}
-        >
+        <LinearSurface compact style={{ flex: 1 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 16 }}>
+            <Ionicons name="apps" size={16} color="#10B981" />
+            <LinearText variant="title" style={{ fontSize: 16, color: '#E8E8E8' }}>
+              Integrations & OS
+            </LinearText>
+          </View>
           <View style={{ gap: 12 }}>
             <View
               style={{
@@ -257,20 +256,7 @@ export function DashboardOverview(props: any) {
                   </LinearText>
                 </View>
               </View>
-              <TouchableOpacity
-                style={{
-                  paddingHorizontal: 12,
-                  paddingVertical: 6,
-                  backgroundColor: 'rgba(255,255,255,0.05)',
-                  borderRadius: 6,
-                  borderWidth: 1,
-                  borderColor: 'rgba(255,255,255,0.1)',
-                }}
-              >
-                <LinearText variant="body" style={{ fontSize: 12, color: '#E8E8E8' }}>
-                  Link
-                </LinearText>
-              </TouchableOpacity>
+              <SettingsActionButton label="Link" onPress={() => {}} />
             </View>
 
             <View
@@ -312,20 +298,7 @@ export function DashboardOverview(props: any) {
                   </LinearText>
                 </View>
               </View>
-              <TouchableOpacity
-                style={{
-                  paddingHorizontal: 12,
-                  paddingVertical: 6,
-                  backgroundColor: 'rgba(255,255,255,0.05)',
-                  borderRadius: 6,
-                  borderWidth: 1,
-                  borderColor: 'rgba(255,255,255,0.1)',
-                }}
-              >
-                <LinearText variant="body" style={{ fontSize: 12, color: '#E8E8E8' }}>
-                  Link
-                </LinearText>
-              </TouchableOpacity>
+              <SettingsActionButton label="Link" onPress={() => {}} />
             </View>
             <TouchableOpacity
               onPress={() => setActiveCategory('integrations')}
@@ -348,15 +321,18 @@ export function DashboardOverview(props: any) {
               </LinearText>
             </TouchableOpacity>
           </View>
-        </BentoCard>
+        </LinearSurface>
       </View>
 
       {/* 4. Planning & Alerts */}
       <View style={{ flexBasis: isTablet ? '48%' : '100%', flexGrow: 1 }}>
-        <BentoCard
-          title="Planning & Alerts"
-          icon={<Ionicons name="calendar" size={16} color="#F6AD55" />}
-        >
+        <LinearSurface compact style={{ flex: 1 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 16 }}>
+            <Ionicons name="calendar" size={16} color="#F6AD55" />
+            <LinearText variant="title" style={{ fontSize: 16, color: '#E8E8E8' }}>
+              Goals & Timeline
+            </LinearText>
+          </View>
           <View style={{ gap: 16 }}>
             <View>
               <LinearText
@@ -390,23 +366,7 @@ export function DashboardOverview(props: any) {
                 >
                   NEET-PG Target
                 </LinearText>
-                <View
-                  style={{
-                    backgroundColor: 'rgba(94, 106, 210, 0.1)',
-                    paddingHorizontal: 8,
-                    paddingVertical: 2,
-                    borderRadius: 4,
-                    borderWidth: 1,
-                    borderColor: 'rgba(94, 106, 210, 0.2)',
-                  }}
-                >
-                  <LinearText
-                    variant="meta"
-                    style={{ fontSize: 11, fontWeight: '500', color: '#5E6AD2' }}
-                  >
-                    Active
-                  </LinearText>
-                </View>
+                <SettingsChip label="ACTIVE" active />
               </View>
             </View>
 
@@ -425,23 +385,7 @@ export function DashboardOverview(props: any) {
                 >
                   Morning Wake Up
                 </LinearText>
-                <View
-                  style={{
-                    backgroundColor: 'rgba(255,255,255,0.05)',
-                    paddingHorizontal: 8,
-                    paddingVertical: 2,
-                    borderRadius: 4,
-                    borderWidth: 1,
-                    borderColor: 'rgba(255, 255, 255, 0.08)',
-                  }}
-                >
-                  <LinearText
-                    variant="body"
-                    style={{ fontSize: 13, fontWeight: '600', color: '#E8E8E8' }}
-                  >
-                    06:30 AM
-                  </LinearText>
-                </View>
+                <SettingsChip label="06:30 AM" />
               </View>
               <View
                 style={{
@@ -468,7 +412,7 @@ export function DashboardOverview(props: any) {
               </LinearText>
             </TouchableOpacity>
           </View>
-        </BentoCard>
+        </LinearSurface>
       </View>
     </View>
   );

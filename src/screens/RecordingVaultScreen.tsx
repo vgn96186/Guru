@@ -668,6 +668,14 @@ export default function RecordingVaultScreen() {
             renderItem={renderItem}
             contentContainerStyle={[styles.list, recordings.length === 0 && { flex: 1 }]}
             showsVerticalScrollIndicator={false}
+            getItemLayout={(_, index) => ({
+              length: 152,
+              offset: 152 * index,
+              index,
+            })}
+            initialNumToRender={8}
+            maxToRenderPerBatch={10}
+            windowSize={8}
             ListEmptyComponent={
               <EmptyState
                 icon="mic-off-outline"

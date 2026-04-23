@@ -3,17 +3,15 @@ import { StyleSheet, BackHandler, StatusBar } from 'react-native';
 import { confirmDestructive } from '../components/dialogService';
 import LinearText from '../components/primitives/LinearText';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import type { RootStackParamList } from '../navigation/types';
 import * as Haptics from 'expo-haptics';
 import { ResponsiveContainer } from '../hooks/useResponsive';
 import { linearTheme as n } from '../theme/linearTheme';
 import LinearButton from '../components/primitives/LinearButton';
 
+import { RootNav } from '../navigation/typedHooks';
 export default function LockdownScreen() {
-  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-  const route = useRoute<RouteProp<RootStackParamList, 'Lockdown'>>();
+  const navigation = RootNav.useNav();
+  const route = RootNav.useRoute<'Lockdown'>();
   const [timeLeft, setTimeLeft] = useState(route.params.duration ?? 300); // 5 mins default
   const [attempts, setAttempts] = useState(0);
 

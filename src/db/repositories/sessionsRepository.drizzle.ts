@@ -4,6 +4,7 @@ import { safeJsonParse } from '../../utils/safeJsonParse';
 import { MS_PER_DAY } from '../../constants/time';
 import { dateStr, todayStr } from '../database';
 import { getDrizzleDb } from '../drizzle';
+import { runInTransaction } from '../database';
 import { dailyLog, sessions, topics } from '../drizzleSchema';
 
 type SessionRow = typeof sessions.$inferSelect;
@@ -95,7 +96,7 @@ export const sessionsRepositoryDrizzle = {
     notes?: string,
   ): Promise<void> {
     const db = getDrizzleDb();
-    await db.transaction(async (tx) => {
+    await runInTransaction(async (tx: any) => {
       const row = await tx
         .select({ endedAt: sessions.endedAt })
         .from(sessions)
@@ -144,7 +145,7 @@ export const sessionsRepositoryDrizzle = {
     const today = todayStr();
     const db = getDrizzleDb();
 
-    await db.transaction(async (tx) => {
+    await runInTransaction(async (tx: any) => {
       const prevRows = await tx
         .select({
           durationMinutes: sessions.durationMinutes,

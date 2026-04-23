@@ -2,10 +2,10 @@
  * Local LLM adapter — wraps Guru's custom `local-llm` Expo module (Kotlin
  * LiteRT runtime adapted from Edge Gallery / PokéClaw) into a LanguageModelV2.
  *
- * Uses blocking native `chat` (mutex via `chatWithLocalNative` in
- * llmRouting), then chunks output into stream parts. LiteRT-LM OpenAPI tools
- * are registered natively (`automaticToolCalling = false`); tool execution
- * stays in JS (`streamText` loop).
+ * Uses true native streaming via chatStream + event listeners when available,
+ * with fallback to blocking chat + simulated chunking for tools mode.
+ * LiteRT-LM OpenAPI tools are registered natively (`automaticToolCalling = false`);
+ * tool execution stays in JS (`streamText` loop).
  */
 
 import type {
@@ -20,7 +20,9 @@ import type {
 import { chatWithLocalNative } from '../../llmRouting';
 import * as samsungPerf from '../../../samsungPerf';
 import type { ChatMessage } from 'local-llm';
+import * as LocalLlm from 'local-llm';
 import type { Message as LegacyMessage } from '../../types';
+import { STREAM_TIMEOUT_MS } from '../../constants';
 
 export interface LocalLlmConfig {
   modelPath: string;
@@ -66,6 +68,7 @@ export function createLocalLlmModel(config: LocalLlmConfig): LanguageModelV2 {
       const chatMessages = modelMessagesToChatMaps(options.prompt);
       const systemText = extractSystemText(options.prompt);
       const modelPath = config.modelPath;
+      const useTools = !!toolsJson;
 
       const queue: LanguageModelV2StreamPart[] = [];
       let resolveNext: ((v: IteratorResult<LanguageModelV2StreamPart>) => void) | null = null;
@@ -91,68 +94,164 @@ export function createLocalLlmModel(config: LocalLlmConfig): LanguageModelV2 {
 
       const textId = 'text-0';
 
-      void (async () => {
-        try {
-          const native = await samsungPerf.runBoosted('llm_inference', () =>
-            chatWithLocalNative({
-              chatMessages,
-              modelPath,
-              systemInstruction: systemText || undefined,
-              toolsJson,
-            }),
-          );
-          const toolCalls = parseLiteRtToolCallsJson(native.toolCallsJson);
-          for (const tc of toolCalls) {
-            push({
-              type: 'tool-call',
-              toolCallId: tc.toolCallId,
-              toolName: tc.toolName,
-              input: tc.input,
-            });
-          }
-          const text = native.text ?? '';
-          if (text.trim()) {
-            const CHUNK_SIZE = 12;
-            for (let i = 0; i < text.length; i += CHUNK_SIZE) {
-              const delta = text.slice(i, i + CHUNK_SIZE);
-              push({ type: 'text-delta', id: textId, delta });
-            }
-          }
-          const finishReason =
-            toolCalls.length > 0
-              ? ('tool-calls' as const)
-              : text.trim()
-                ? ('stop' as const)
-                : ('error' as const);
-          if (finishReason === 'error' && __DEV__) {
-            console.warn('[v2/localLlm] Native call returned empty text and no tool calls.');
-          }
-          push({ type: 'finish', finishReason, usage: {} });
-          end();
-        } catch (err) {
-          if (__DEV__) {
-            console.warn(
-              '[v2/localLlm] Synchronous call error:',
-              err instanceof Error ? err.message : err,
-            );
-          }
-          push({ type: 'error', error: err });
-          push({ type: 'finish', finishReason: 'error', usage: {} });
-          end();
-        }
-      })();
+      // Use true native streaming when no tools are enabled (tools require blocking chat)
+      if (!useTools) {
+        // Subscription refs stored in a mutable container so abort handler can access them
+        const subs = { token: null as { remove: () => void } | null, complete: null as { remove: () => void } | null, error: null as { remove: () => void } | null };
+        let completionReceived = false;
+        let safetyTimeoutId: ReturnType<typeof setTimeout> | null = null;
+        let aborted = false; // Track if abort fired before subscriptions created
 
-      // Respect abort.
+        const cleanup = () => {
+          if (safetyTimeoutId !== null) {
+            clearTimeout(safetyTimeoutId);
+            safetyTimeoutId = null;
+          }
+          subs.token?.remove();
+          subs.complete?.remove();
+          subs.error?.remove();
+        };
+
+        void (async () => {
+          // Early exit if aborted before subscriptions were created
+          if (aborted) {
+            push({ type: 'finish', finishReason: 'stop', usage: {} });
+            end();
+            return;
+          }
+
+          try {
+            const cleanPath = modelPath.replace(/^file:\/\//, '');
+
+            // Set up event listeners for native streaming
+            subs.token = LocalLlm.addLlmTokenListener(({ token }) => {
+              push({ type: 'text-delta', id: textId, delta: token });
+            });
+
+            subs.complete = LocalLlm.addLlmCompleteListener(({ text, toolCallsJson }) => {
+              completionReceived = true;
+              cleanup();
+
+              // Handle any tool calls returned
+              const toolCalls = parseLiteRtToolCallsJson(toolCallsJson);
+              for (const tc of toolCalls) {
+                push({
+                  type: 'tool-call',
+                  toolCallId: tc.toolCallId,
+                  toolName: tc.toolName,
+                  input: tc.input,
+                });
+              }
+
+              const finishReason = toolCalls.length > 0 ? 'tool-calls' : 'stop';
+              push({ type: 'finish', finishReason, usage: {} });
+              end();
+            });
+
+            subs.error = LocalLlm.addLlmErrorListener(({ error }) => {
+              completionReceived = true;
+              cleanup();
+              push({ type: 'error', error: new Error(error) });
+              push({ type: 'finish', finishReason: 'error', usage: {} });
+              end();
+            });
+
+            // Start native streaming with SamsungPerf boost
+            await samsungPerf.runBoosted('llm_inference', () =>
+              LocalLlm.chatStream(chatMessages, {
+                modelPath: cleanPath,
+                systemInstruction: systemText || undefined,
+                temperature: 0.7,
+                topP: 0.9,
+              })
+            );
+
+            // Safety timeout - if no completion received, end stream
+            safetyTimeoutId = setTimeout(() => {
+              if (!completionReceived) {
+                cleanup();
+                push({ type: 'finish', finishReason: 'stop', usage: {} });
+                end();
+              }
+            }, STREAM_TIMEOUT_MS);
+
+          } catch (err) {
+            cleanup();
+            if (__DEV__) {
+              console.warn('[v2/localLlm] Native stream error:', err instanceof Error ? err.message : err);
+            }
+            push({ type: 'error', error: err });
+            push({ type: 'finish', finishReason: 'error', usage: {} });
+            end();
+          }
+        })();
+
+      // Register abort handler (uses `subs` closure, not external refs)
       options.abortSignal?.addEventListener('abort', () => {
+        aborted = true; // Mark aborted before cleanup to prevent race
+        cleanup();
         void (async () => {
           try {
-            const { cancel } = await import('local-llm');
-            await cancel();
+            await LocalLlm.cancel();
           } catch {
             // ignore
           }
         })();
       });
+      } else {
+        // With tools enabled, fall back to blocking chat + simulated streaming
+        void (async () => {
+          try {
+            const native = await samsungPerf.runBoosted('llm_inference', () =>
+              chatWithLocalNative({
+                chatMessages,
+                modelPath,
+                systemInstruction: systemText || undefined,
+                toolsJson,
+              }),
+            );
+            const toolCalls = parseLiteRtToolCallsJson(native.toolCallsJson);
+            for (const tc of toolCalls) {
+              push({
+                type: 'tool-call',
+                toolCallId: tc.toolCallId,
+                toolName: tc.toolName,
+                input: tc.input,
+              });
+            }
+            const text = native.text ?? '';
+            if (text.trim()) {
+              // Simulate streaming with 12-char chunks for tools mode
+              const CHUNK_SIZE = 12;
+              for (let i = 0; i < text.length; i += CHUNK_SIZE) {
+                const delta = text.slice(i, i + CHUNK_SIZE);
+                push({ type: 'text-delta', id: textId, delta });
+              }
+            }
+            const finishReason =
+              toolCalls.length > 0
+                ? ('tool-calls' as const)
+                : text.trim()
+                  ? ('stop' as const)
+                  : ('error' as const);
+            if (finishReason === 'error' && __DEV__) {
+              console.warn('[v2/localLlm] Native call returned empty text and no tool calls.');
+            }
+            push({ type: 'finish', finishReason, usage: {} });
+            end();
+          } catch (err) {
+            if (__DEV__) {
+              console.warn(
+                '[v2/localLlm] Synchronous call error:',
+                err instanceof Error ? err.message : err,
+              );
+            }
+            push({ type: 'error', error: err });
+            push({ type: 'finish', finishReason: 'error', usage: {} });
+            end();
+          }
+        })();
+      }
 
       const stream: AsyncIterable<LanguageModelV2StreamPart> = {
         [Symbol.asyncIterator]() {

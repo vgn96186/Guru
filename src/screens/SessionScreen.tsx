@@ -8,9 +8,6 @@ import { View, TouchableOpacity, Pressable, StatusBar, ScrollView, Animated } fr
 import * as Haptics from 'expo-haptics';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import type { RouteProp } from '@react-navigation/native';
-import type { HomeStackParamList } from '../navigation/types';
 import { incrementWrongCount, markTopicNeedsAttention } from '../db/queries/topics';
 import { setContentFlagged } from '../db/queries/aiCache';
 import { useProfileQuery } from '../hooks/queries/useProfile';
@@ -32,7 +29,6 @@ import { useSessionController } from '../hooks/session/useSessionController';
 import { WarmUpMomentumScreen } from './session/WarmUpMomentumScreen';
 import { SessionDoneScreen } from './session/SessionDoneScreen';
 import { HomeNav } from '../navigation/typedHooks';
-import ScreenShell from '../components/ScreenShell';
 
 export default function SessionScreen() {
   const navigation = HomeNav.useNav<'Session'>();

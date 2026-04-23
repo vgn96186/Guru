@@ -26,7 +26,7 @@ import {
 import { startRecordingHealthCheck, stopRecordingHealthCheck } from './health';
 import { getRecordingInfo } from './transcription';
 import { saveLecturePersistence } from './persistence';
-import { notifyTranscriptionFailure, notifyTranscriptionRecovered } from '../notificationService';
+import { notifyTranscriptionFailure } from '../notificationService';
 import { getTranscriptText, backupNoteToPublic } from '../transcriptStorage';
 import { generateEmbedding } from '../ai/embeddingService';
 import { profileRepository } from '../../db/repositories';
@@ -305,6 +305,9 @@ export async function transcribeLectureWithRecovery(opts: {
         completionProvider = 'groq';
       } else if (result.modelUsed?.toLowerCase().includes('deepgram')) {
         completionProvider = 'deepgram';
+      }
+      if (!result.transcript && liveTranscript.length >= 120) {
+        throw new Error('Primary transcription returned no transcript text');
       }
     } catch (error) {
       if (liveTranscript.length < 120) {

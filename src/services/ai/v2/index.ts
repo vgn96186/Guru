@@ -42,7 +42,7 @@ export type { GenerateObjectOptions, GenerateObjectResult } from './generateObje
 export { streamObject } from './streamObject';
 export type { StreamObjectOptions, StreamObjectResult } from './streamObject';
 
-export { withMiddleware } from './middleware';
+export { withMiddleware, createLoggingMiddleware } from './middleware';
 export type { Middleware } from './middleware';
 
 // Providers

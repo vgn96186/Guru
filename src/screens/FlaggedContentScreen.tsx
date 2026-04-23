@@ -1,9 +1,7 @@
 import React, { useCallback, useState } from 'react';
 import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import LoadingOrb from '../components/LoadingOrb';
-import { useNavigation, useFocusEffect } from '@react-navigation/native';
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import type { MenuStackParamList } from '../navigation/types';
+import { useFocusEffect } from '@react-navigation/native';
 import { contentFlagsRepositoryDrizzle } from '../db/repositories';
 import type { FlaggedContentItem } from '../db/repositories/contentFlagsRepository.drizzle';
 import { clearSpecificContentCache } from '../db/queries/aiCache';
@@ -15,6 +13,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useAsyncAction } from '../hooks/useAsyncAction';
 import { EmptyState } from '../components/primitives';
 
+import { MenuNav } from '../navigation/typedHooks';
 const FLAG_REASON_LABELS: Record<string, string> = {
   incorrect_fact: 'Incorrect medical fact',
   outdated_info: 'Outdated information',
@@ -26,7 +25,7 @@ const FLAG_REASON_LABELS: Record<string, string> = {
 
 export default function FlaggedContentScreen() {
   const navigation =
-    useNavigation<NativeStackNavigationProp<MenuStackParamList, 'FlaggedContent'>>();
+    MenuNav.useNav<'FlaggedContent'>();
   const [flaggedItems, setFlaggedItems] = useState<FlaggedContentItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState<number | null>(null);
@@ -183,6 +182,14 @@ export default function FlaggedContentScreen() {
           renderItem={renderItem}
           keyExtractor={(item) => `${item.topicId}-${item.contentType}`}
           contentContainerStyle={[styles.listContent, flaggedItems.length === 0 && { flex: 1 }]}
+          getItemLayout={(_, index) => ({
+            length: 148,
+            offset: 148 * index,
+            index,
+          })}
+          initialNumToRender={8}
+          maxToRenderPerBatch={10}
+          windowSize={8}
           ListEmptyComponent={
             <EmptyState
               icon="checkmark-circle"

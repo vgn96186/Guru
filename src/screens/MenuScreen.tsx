@@ -3,16 +3,13 @@ import { Dimensions, Pressable, ScrollView, StatusBar, StyleSheet, View } from '
 import LinearText from '../components/primitives/LinearText';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { useNavigation, type NavigationProp } from '@react-navigation/native';
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { type NavigationProp } from '@react-navigation/native';
 import type { MenuStackParamList, TabParamList } from '../navigation/types';
 import { ResponsiveContainer } from '../hooks/useResponsive';
 import { linearTheme as n } from '../theme/linearTheme';
 import ScreenHeader from '../components/ScreenHeader';
 import LinearSurface from '../components/primitives/LinearSurface';
-
-type Nav = NativeStackNavigationProp<MenuStackParamList, 'MenuHome'>;
-
+import { MenuNav } from '../navigation/typedHooks';
 const PRIMARY_DESTINATIONS: Array<{
   route: keyof Omit<MenuStackParamList, 'MenuHome'>;
   title: string;
@@ -52,8 +49,43 @@ const PRIMARY_DESTINATIONS: Array<{
 
 const TABLET_BREAKPOINT = 600;
 
+type DestinationItem = (typeof PRIMARY_DESTINATIONS)[number];
+
+function MenuItem({ item, onPress }: { item: DestinationItem; onPress: () => void }) {
+  return (
+    <Pressable
+      style={({ pressed }) => [pressed && styles.cardPressed, styles.menuItem]}
+      android_ripple={{ color: `${item.tint}22` }}
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={item.title}
+    >
+      <LinearSurface compact padded={false} style={styles.listItemSurface}>
+        <View style={styles.listItem}>
+          <View
+            style={[
+              styles.listIconWrap,
+              { backgroundColor: `${item.tint}18`, borderColor: `${item.tint}55` },
+            ]}
+          >
+            <Ionicons name={item.icon} size={22} color={item.tint} />
+          </View>
+          <View style={styles.listTextContent}>
+            <LinearText variant="label" style={styles.listTitle}>
+              {item.title}
+            </LinearText>
+          </View>
+          <View style={styles.chevronWrap}>
+            <Ionicons name="chevron-forward" size={18} color={n.colors.textMuted} />
+          </View>
+        </View>
+      </LinearSurface>
+    </Pressable>
+  );
+}
+
 export default function MenuScreen() {
-  const navigation = useNavigation<Nav>();
+  const navigation = MenuNav.useNav<'MenuHome'>();
   const tabsNavigation = navigation.getParent<NavigationProp<TabParamList>>();
   const [isTablet, setIsTablet] = useState(() => {
     const { width, height } = Dimensions.get('window');
@@ -85,40 +117,14 @@ export default function MenuScreen() {
             <LinearText variant="meta" tone="muted" style={styles.destinationsLabel}>
               DESTINATIONS
             </LinearText>
-            <View style={[styles.grid, isTablet && styles.gridTwoColumn]}>
+            <View style={[styles.grid, isTablet && styles.gridTablet]}>
               {PRIMARY_DESTINATIONS.map((item) => (
-                <Pressable
+                <View
                   key={item.route}
-                  style={({ pressed }) => [
-                    pressed && styles.cardPressed,
-                    isTablet && styles.gridItem,
-                  ]}
-                  android_ripple={{ color: `${item.tint}22` }}
-                  onPress={() => navigation.navigate(item.route as never)}
-                  accessibilityRole="button"
-                  accessibilityLabel={item.title}
+                  style={isTablet ? styles.gridItemTablet : styles.gridItemPhone}
                 >
-                  <LinearSurface compact padded={false} style={styles.listItemSurface}>
-                    <View style={styles.listItem}>
-                      <View
-                        style={[
-                          styles.listIconWrap,
-                          { backgroundColor: `${item.tint}18`, borderColor: `${item.tint}55` },
-                        ]}
-                      >
-                        <Ionicons name={item.icon} size={22} color={item.tint} />
-                      </View>
-                      <View style={styles.listTextContent}>
-                        <LinearText variant="label" style={styles.listTitle}>
-                          {item.title}
-                        </LinearText>
-                      </View>
-                      <View style={styles.chevronWrap}>
-                        <Ionicons name="chevron-forward" size={18} color={n.colors.textMuted} />
-                      </View>
-                    </View>
-                  </LinearSurface>
-                </Pressable>
+                  <MenuItem item={item} onPress={() => navigation.navigate(item.route as never)} />
+                </View>
               ))}
             </View>
           </View>
@@ -150,15 +156,22 @@ const styles = StyleSheet.create({
     paddingHorizontal: 2,
   },
   grid: {
+    flexDirection: 'column',
     gap: n.spacing.sm,
   },
-  gridTwoColumn: {
+  gridTablet: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'space-between',
   },
-  gridItem: {
-    width: '49%',
+  gridItemPhone: {
+    width: '100%',
+  },
+  gridItemTablet: {
+    width: '48.5%', // Leaves space for gap
+  },
+  menuItem: {
+    flex: 1,
   },
   cardPressed: {
     opacity: n.alpha.pressed,

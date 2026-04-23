@@ -10,6 +10,7 @@ import expo.modules.kotlin.Promise
 
 class LocalLlmModule : Module() {
     private val scope = CoroutineScope(Dispatchers.Default)
+    private var lastPreferredBackend: String = "auto"
 
     override fun definition() = ModuleDefinition {
         Name("LocalLlm")
@@ -29,8 +30,14 @@ class LocalLlmModule : Module() {
                         promise.reject("ERR_LOCAL_LLM_INIT", "modelPath is required but was null or empty", null)
                         return@launch
                     }
-                    val preferCpu = options.preferredBackend?.equals("cpu", ignoreCase = true) ?: false
-                    // Pre-warm the engine
+                    lastPreferredBackend = options.preferredBackend ?: "auto"
+                    
+                    // Store max tokens preference
+                    options.maxNumTokens?.let { maxTokens ->
+                        LocalBackendPrefs.setMaxNumTokens(maxTokens)
+                    }
+                    
+                    val preferCpu = lastPreferredBackend.equals("cpu", ignoreCase = true)
                     val lease = LocalModelRuntime.acquireSharedEngine(context, modelPath, preferCpu)
                     promise.resolve(mapOf("backend" to lease.backendLabel))
                 } catch (t: Throwable) {
@@ -51,6 +58,8 @@ class LocalLlmModule : Module() {
             scope.launch {
                 try {
                     val context = appContext.reactContext ?: throw Exception("React context not available")
+                    // Respect the backend preference from initialization
+                    val preferCpu = lastPreferredBackend.equals("cpu", ignoreCase = true)
                     
                     val result = LocalModelRuntime.runChat(
                         context = context,
@@ -58,7 +67,7 @@ class LocalLlmModule : Module() {
                         systemPrompt = options.systemInstruction ?: "",
                         messages = messages,
                         temperature = options.temperature?.toDouble() ?: 0.7,
-                        preferCpu = false,
+                        preferCpu = preferCpu,
                         toolsJson = options.toolsJson,
                     )
                     promise.resolve(mapOf(
@@ -77,6 +86,7 @@ class LocalLlmModule : Module() {
             scope.launch {
                 try {
                     val context = appContext.reactContext ?: throw Exception("React context not available")
+                    val preferCpu = lastPreferredBackend.equals("cpu", ignoreCase = true)
                     
                     LocalModelRuntime.runChatStream(
                         context = context,
@@ -84,7 +94,7 @@ class LocalLlmModule : Module() {
                         systemPrompt = options.systemInstruction ?: "",
                         messages = messages,
                         temperature = options.temperature?.toDouble() ?: 0.7,
-                        preferCpu = false,
+                        preferCpu = preferCpu,
                         toolsJson = options.toolsJson,
                         onToken = { token ->
                             sendEvent("onLlmToken", mapOf("token" to token))
@@ -193,6 +203,37 @@ class LocalLlmModule : Module() {
                     ))
                 } catch (t: Throwable) {
                     promise.reject("ERR_NANO_GRADE", t.message, t)
+                }
+            }
+        }
+
+        // ── Gemma LiteRT Warmup ───────────────────────────────────────────
+        AsyncFunction("warmup") { modelPath: String, promise: Promise ->
+            scope.launch {
+                try {
+                    val context = appContext.reactContext ?: throw Exception("React context not available")
+                    if (modelPath.isBlank()) {
+                        promise.reject("ERR_WARMUP", "modelPath is required", null)
+                        return@launch
+                    }
+                    val preferCpu = lastPreferredBackend.equals("cpu", ignoreCase = true)
+                    val lease = LocalModelRuntime.acquireSharedEngine(context, modelPath, preferCpu)
+                    // Run a dummy inference to warm up KV cache and tokenizer
+                    LocalModelRuntime.runChat(
+                        context = context,
+                        modelPath = modelPath,
+                        systemPrompt = "You are a helpful assistant.",
+                        messages = listOf(mapOf("role" to "user", "content" to "Hi")),
+                        temperature = 0.1,
+                        preferCpu = preferCpu,
+                        toolsJson = null,
+                    )
+                    promise.resolve(mapOf(
+                        "backend" to lease.backendLabel,
+                        "warmedUp" to true,
+                    ))
+                } catch (t: Throwable) {
+                    promise.reject("ERR_WARMUP", t.message, t)
                 }
             }
         }

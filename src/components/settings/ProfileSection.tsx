@@ -1,8 +1,8 @@
 import React from 'react';
-import { View, TextInput, StyleSheet } from 'react-native';
-import { linearTheme as n } from '../../theme/linearTheme';
+import { View, StyleSheet } from 'react-native';
 import LinearButton from '../primitives/LinearButton';
 import LinearText from '../primitives/LinearText';
+import TextField from './TextField';
 
 interface ProfileSectionProps {
   name: string;
@@ -35,15 +35,14 @@ function ProfileSection({
         textStyle={[styles.linkBtnText, !isSyncAvailable && styles.disabledText]}
       />
 
-      <LinearText variant="label" style={styles.label}>
-        Your Name
-      </LinearText>
-      <TextInput
-        style={styles.input}
+      <TextField
+        label="Your Name"
         value={name}
         onChangeText={onNameChange}
         placeholder="Dr. ..."
-        placeholderTextColor={n.colors.textMuted}
+        autoCapitalize="words"
+        autoCorrect={false}
+        containerStyle={styles.nameField}
       />
     </View>
   );
@@ -53,19 +52,10 @@ export default React.memo(ProfileSection);
 
 const styles = StyleSheet.create({
   container: { gap: 12 },
-  syncWarning: { color: n.colors.error, fontSize: 12, marginBottom: 8 },
+  syncWarning: { color: '#F14C4C', fontSize: 12, marginBottom: 8 },
   linkBtn: { marginBottom: 8 },
   disabledBtn: { opacity: 0.5 },
   linkBtnText: { fontSize: 14 },
-  disabledText: { color: n.colors.textSecondary },
-  label: { color: n.colors.textPrimary, fontSize: 13, fontWeight: '700' },
-  input: {
-    backgroundColor: n.colors.surface,
-    color: n.colors.textPrimary,
-    borderRadius: 10,
-    padding: 12,
-    borderWidth: 1,
-    borderColor: n.colors.border,
-    fontSize: 14,
-  },
+  disabledText: { color: '#A0A0A5' },
+  nameField: { marginBottom: 0 },
 });

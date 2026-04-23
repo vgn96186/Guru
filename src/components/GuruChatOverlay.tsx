@@ -133,7 +133,8 @@ export default function GuruChatOverlay({
   onClose,
 }: Props) {
   const { width: viewportWidth } = useWindowDimensions();
-  const { data: profile } = useProfileQuery();
+  const profileQuery = useProfileQuery();
+  const profile = profileQuery?.data;
   const [isInitializing, setIsInitializing] = useState(false);
   const [input, setInput] = useState('');
   const [bannerVisible, setBannerVisible] = useState(true);

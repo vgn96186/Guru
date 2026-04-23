@@ -127,6 +127,8 @@ export interface LanguageModelV2 {
   readonly specificationVersion: 'v2';
   readonly provider: string;
   readonly modelId: string;
+  /** Optional URL patterns this model supports (for grounding). Maps provider names to RegExp patterns or a promise for them. */
+  readonly supportedUrls?: Record<string, RegExp[]> | PromiseLike<Record<string, RegExp[]>>;
   doGenerate(options: LanguageModelV2CallOptions): Promise<LanguageModelV2GenerateResult>;
   doStream(options: LanguageModelV2CallOptions): Promise<LanguageModelV2StreamResult>;
 }

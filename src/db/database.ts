@@ -1,7 +1,7 @@
 import * as SQLite from 'expo-sqlite';
 import * as FileSystem from 'expo-file-system/legacy';
-import { ALL_SCHEMAS, DB_INDEXES } from './schema';
-import { LATEST_VERSION, MIGRATIONS } from './migrations';
+import { migrate } from 'drizzle-orm/expo-sqlite/migrator';
+import migrations from './drizzle-migrations/migrations';
 import { SUBJECTS_SEED } from '../constants/syllabus';
 import { VAULT_TOPICS_SEED } from '../constants/vaultTopics';
 import { MS_PER_DAY } from '../constants/time';
@@ -82,6 +82,9 @@ export function resetDbSingleton(): void {
   _db = null;
   _globalDb.__GURU_DB__ = undefined;
   _globalDb.__GURU_DB_INIT_QUEUE__ = Promise.resolve();
+  // Also reset the Drizzle singleton so it doesn't hold a stale connection
+  // Lazy import to avoid circular dependency at module load time
+  require('./drizzle').resetDrizzleDb();
 }
 
 /**
@@ -174,40 +177,27 @@ async function initDatabaseInternal(forceSeed = false): Promise<void> {
   // Enable Foreign Key constraints
   await db.execAsync('PRAGMA foreign_keys = ON');
 
-  // Create all tables
-  for (const sql of ALL_SCHEMAS) {
-    await db.execAsync(sql);
-  }
-
-  // Create performance indexes (IF NOT EXISTS — safe for existing installs)
-  const staleIndexes = [
-    'DROP INDEX IF EXISTS idx_tp_status_review',
-    'DROP INDEX IF EXISTS idx_sessions_date',
-  ];
-  for (const sql of staleIndexes) {
-    try {
-      await db.execAsync(sql);
-    } catch (err) {
-      if (__DEV__) console.warn('[DB] Failed to drop stale index:', sql, err);
-    }
-  }
-
-  for (const sql of DB_INDEXES) {
-    try {
-      await db.execAsync(sql);
-    } catch (err) {
-      if (__DEV__) console.warn('[DB] Failed to create index:', sql, err);
-    }
-  }
-
   // Check topic count BEFORE seeding subjects (to detect fresh install)
   const topicCountRes = await db.getFirstAsync<{ count: number }>(
-    'SELECT COUNT(*) as count FROM topics',
+    "SELECT COUNT(*) as count FROM sqlite_master WHERE type='table' AND name='topics'",
   );
-  const topicCount = topicCountRes?.count ?? 0;
+  const isFresh = topicCountRes?.count === 0;
+
+  // Run Drizzle migrations
+  try {
+    const { getDrizzleDb } = require('./drizzle');
+    await migrate(getDrizzleDb(), migrations);
+  } catch (migErr) {
+    console.error('[DB] Drizzle migration failed:', migErr);
+  }
 
   // Ensure all subjects exist on every boot (safe due to INSERT OR IGNORE)
   await seedSubjects(db);
+
+  const topicCountValRes = await db.getFirstAsync<{ count: number }>(
+    'SELECT COUNT(*) as count FROM topics',
+  );
+  const topicCount = topicCountValRes?.count ?? 0;
 
   if (topicCount === 0 || forceSeed) {
     if (forceSeed) {
@@ -225,56 +215,12 @@ async function initDatabaseInternal(forceSeed = false): Promise<void> {
   // Always seed vault topics (idempotent — INSERT OR IGNORE)
   await seedVaultTopics(db);
 
-  // Versioned migrations — only run pending ones; fresh installs skip entirely
-  const versionRow = await db.getFirstAsync<{ user_version: number }>('PRAGMA user_version');
-  const currentVersion = versionRow?.user_version ?? 0;
-
-  if (topicCount === 0) {
-    // Fresh install: schema already complete from CREATE TABLE; mark as up-to-date
-    await db.execAsync(`PRAGMA user_version = ${LATEST_VERSION}`);
-  } else {
-    for (const m of MIGRATIONS) {
-      if (m.version > currentVersion) {
-        try {
-          await db.execAsync(m.sql);
-        } catch (err: any) {
-          const msg = err?.message || '';
-          if (msg.includes('duplicate column name')) {
-            if (__DEV__)
-              console.log(`[DB] Migration ${m.version} column already exists, skipping.`);
-          } else if (
-            m.version === 76 &&
-            m.sql.includes('RENAME TO daily_agenda') &&
-            msg.includes('already another table or index with this name')
-          ) {
-            if (__DEV__)
-              console.log(
-                `[DB] Migration ${m.version} already applied (daily_agenda exists), skipping.`,
-              );
-          } else {
-            if (__DEV__) console.error('[DB] Migration failed:', m.version, m.sql, err);
-            throw err;
-          }
-        }
-        await db.execAsync(`PRAGMA user_version = ${m.version}`);
-        try {
-          await db.runAsync(
-            'INSERT INTO migration_history (version, applied_at, description) VALUES (?, ?, ?)',
-            [m.version, Math.floor(nowTs() / 1000), m.description ?? ''],
-          );
-        } catch {
-          // migration_history exists only from v59 onward
-        }
-      }
-    }
+  // Defensive column check for edge cases (only when DB version is older than expected)
+  const currentVersion = await db.getFirstAsync<{ user_version: number }>('PRAGMA user_version');
+  const DRIZZLE_MIGRATION_VERSION = 7;
+  if ((currentVersion?.user_version ?? 0) < DRIZZLE_MIGRATION_VERSION) {
+    await ensureCriticalColumns(db);
   }
-
-  // ── Defensive column verification ──────────────────────────────────────────
-  // Handles desync caused by backup restores: the PRAGMA user_version may be
-  // up-to-date while the actual schema is missing columns that the migration
-  // runner would have added. We introspect all critical tables and add any
-  // missing columns that the current schema expects.
-  await ensureCriticalColumns(db);
 
   // Repair legacy rows before enforcing foreign keys on the shared connection.
   const integrityRepairs = [
@@ -416,44 +362,41 @@ export async function seedTopics(_db: SQLite.SQLiteDatabase): Promise<void> {
 
 async function seedVaultTopics(_db: SQLite.SQLiteDatabase): Promise<void> {
   await runInTransaction(async (db) => {
-    const vaultTopicIds: number[] = [];
+    // Batch insert all vault topics in one statement
+    if (VAULT_TOPICS_SEED.length === 0) return;
 
-    for (const [subjectId, name, priority, minutes] of VAULT_TOPICS_SEED) {
-      const topicResult = await db.runAsync(
-        `INSERT OR IGNORE INTO topics (subject_id, name, inicet_priority, estimated_minutes) VALUES (?, ?, ?, ?)`,
-        [subjectId, name, priority, minutes],
-      );
+    const placeholders = VAULT_TOPICS_SEED.map(() => '(?, ?, ?, ?)').join(',');
+    const values = VAULT_TOPICS_SEED.flatMap(([subjectId, name, priority, minutes]) => [
+      subjectId,
+      name,
+      priority,
+      minutes,
+    ]);
+    await db.runAsync(
+      `INSERT OR IGNORE INTO topics (subject_id, name, inicet_priority, estimated_minutes) VALUES ${placeholders}`,
+      values,
+    );
 
-      let topicId = topicResult.lastInsertRowId;
-      if (topicResult.changes === 0) {
-        const existingTopic = await db.getFirstAsync<{ id: number }>(
-          `SELECT id FROM topics WHERE subject_id = ? AND name = ?`,
-          [subjectId, name],
-        );
-        if (existingTopic) {
-          topicId = existingTopic.id;
-        } else {
-          continue; // Neither inserted nor found — skip to avoid pushing undefined
-        }
-      }
-
-      if (topicId) {
-        vaultTopicIds.push(topicId);
-        await db.runAsync(`INSERT OR IGNORE INTO topic_progress (topic_id) VALUES (?)`, [topicId]);
-      }
-    }
-
-    if (vaultTopicIds.length > 0) {
-      const placeholders = vaultTopicIds.map(() => '?').join(',');
-      await db.runAsync(
-        `UPDATE topic_progress SET status = 'seen' WHERE topic_id IN (${placeholders}) AND status = 'unseen'`,
-        vaultTopicIds,
-      );
-      await db.runAsync(
-        `UPDATE topic_progress SET confidence = 1 WHERE topic_id IN (${placeholders}) AND confidence = 0`,
-        vaultTopicIds,
-      );
-    }
+    // Create topic_progress rows for vault topics that don't have one yet.
+    // Use a temp table of (subject_id, name) pairs to match exactly.
+    await db.execAsync(
+      `CREATE TEMP TABLE IF NOT EXISTS tmp_vault_keys (subject_id INTEGER NOT NULL, name TEXT NOT NULL)`,
+    );
+    await db.execAsync(`DELETE FROM tmp_vault_keys`);
+    const keyPlaceholders = VAULT_TOPICS_SEED.map(() => '(?, ?)').join(',');
+    const keyValues = VAULT_TOPICS_SEED.flatMap(([subjectId, name]) => [subjectId, name]);
+    await db.runAsync(
+      `INSERT INTO tmp_vault_keys (subject_id, name) VALUES ${keyPlaceholders}`,
+      keyValues,
+    );
+    await db.runAsync(
+      `INSERT OR IGNORE INTO topic_progress (topic_id, status, confidence)
+       SELECT t.id, 'seen', 1
+       FROM topics t
+       INNER JOIN tmp_vault_keys vk ON vk.subject_id = t.subject_id AND vk.name = t.name
+       WHERE NOT EXISTS (SELECT 1 FROM topic_progress tp WHERE tp.topic_id = t.id)`,
+    );
+    await db.execAsync(`DROP TABLE tmp_vault_keys`);
   });
 }
 
@@ -474,6 +417,7 @@ async function ensureCriticalColumns(db: SQLite.SQLiteDatabase): Promise<void> {
   const tables: Record<string, [string, string][]> = {
     user_profile: [
       ['strict_mode_enabled', 'INTEGER DEFAULT 0'],
+      ['doomscroll_shield_enabled', 'INTEGER NOT NULL DEFAULT 1'],
       ['streak_shield_available', 'INTEGER DEFAULT 1'],
       ['openrouter_key', "TEXT NOT NULL DEFAULT ''"],
       ['body_doubling_enabled', 'INTEGER NOT NULL DEFAULT 1'],
@@ -544,10 +488,24 @@ async function ensureCriticalColumns(db: SQLite.SQLiteDatabase): Promise<void> {
       ['gdrive_email', "TEXT NOT NULL DEFAULT ''"],
       ['gdrive_last_sync_at', 'TEXT'],
       ['last_backup_device_id', "TEXT NOT NULL DEFAULT ''"],
+      ['dbmci_class_start_date', 'TEXT'],
+      ['btr_start_date', 'TEXT'],
+      ['home_novelty_cooldown_hours', 'INTEGER NOT NULL DEFAULT 6'],
+      ['disabled_providers', "TEXT NOT NULL DEFAULT '[]'"],
+      ['loading_orb_style', "TEXT NOT NULL DEFAULT 'turbulent'"],
+      ['vertex_ai_project', "TEXT NOT NULL DEFAULT ''"],
+      ['vertex_ai_location', "TEXT NOT NULL DEFAULT ''"],
+      ['vertex_ai_token', "TEXT NOT NULL DEFAULT ''"],
+      ['auto_repair_legacy_notes_enabled', 'INTEGER NOT NULL DEFAULT 0'],
+      ['scan_orphaned_transcripts_enabled', 'INTEGER NOT NULL DEFAULT 0'],
+      ['samsungBatteryPromptShownAt', 'INTEGER DEFAULT 0'],
+      ['orb_effect', "TEXT NOT NULL DEFAULT 'ripple'"],
     ],
     topics: [
       ['parent_topic_id', 'INTEGER REFERENCES topics(id) ON DELETE SET NULL'],
       ['embedding', 'BLOB'],
+      // Virtual index for search optimization — created at boot via ensureCriticalColumns
+      // (SQLite FTS is overkill for 15K rows; a simple computed index on LOWER(name) suffices)
     ],
     topic_progress: [
       ['next_review_date', 'TEXT'],
@@ -587,6 +545,12 @@ async function ensureCriticalColumns(db: SQLite.SQLiteDatabase): Promise<void> {
       ['note_enhancement_status', "TEXT DEFAULT 'pending'"],
       ['pipeline_metrics_json', 'TEXT'],
     ],
+    sessions: [
+      ['cards_created', 'INTEGER DEFAULT 0'],
+      ['nodes_created', 'INTEGER DEFAULT 0'],
+    ],
+    mind_map_nodes: [['explanation', 'TEXT']],
+    mind_map_edges: [['is_cross_link', 'INTEGER NOT NULL DEFAULT 0']],
     chat_history: [
       ['sources_json', 'TEXT'],
       ['model_used', 'TEXT'],
@@ -629,11 +593,33 @@ async function ensureCriticalColumns(db: SQLite.SQLiteDatabase): Promise<void> {
       }
     } catch (err) {
       if (__DEV__) console.error(`[DB] Error ensuring columns for ${tableName}:`, err);
-    }
-  }
+    }    }
 
   if (totalAdded > 0 && !__DEV__) {
     console.log(`[DB] Recovered ${totalAdded} missing column(s) across standard tables`);
+  }
+
+  // ─── Search Optimization Indexes ─────────────────────────────────────────────
+  // topics.name is queried with LOWER() LIKE — an index on subject_id+inicet_priority
+  // speeds the JOIN + ORDER BY in SyllabusScreen search queries.
+  // topics_search_subject_priority index covers:
+  //   WHERE LOWER(name) LIKE ? → subject_id filter (idx_topics_subject)
+  //   ORDER BY inicet_priority DESC → idx_topics_subject covers the subject scan
+  // We add the composite index on (subject_id, inicet_priority) if not present.
+  try {
+    const db = _db!;
+    const existingIndexes = await db.getAllAsync<{ name: string }>(
+      "SELECT name FROM sqlite_master WHERE type='index' AND tbl_name='topics'",
+    );
+    const existingSet = new Set(existingIndexes.map((r) => r.name));
+    if (!existingSet.has('idx_topics_subject_priority')) {
+      await db.execAsync(
+        'CREATE INDEX IF NOT EXISTS idx_topics_subject_priority ON topics (subject_id, inicet_priority)',
+      );
+      if (__DEV__) console.log('[DB] Added idx_topics_subject_priority for search optimization');
+    }
+  } catch (err) {
+    if (__DEV__) console.warn('[DB] Failed to add search index:', err);
   }
 }
 

@@ -49,7 +49,7 @@ import { getSubjectByName } from '../db/queries/topics';
 import type { TabParamList } from '../navigation/types';
 import { showInfo, showSuccess, confirm, confirmDestructive } from '../components/dialogService';
 
-import { aiRelabelNote, NoteLabelSchema } from '../services/vaults/relabelService';
+import { aiRelabelNote } from '../services/vaults/relabelService';
 
 function countWords(text: string): number {
   return text?.trim() ? text.trim().split(/\s+/).length : 0;

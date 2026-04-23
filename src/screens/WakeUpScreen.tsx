@@ -3,9 +3,6 @@ import { View, StyleSheet, TouchableOpacity, Animated, StatusBar } from 'react-n
 import { Ionicons } from '@expo/vector-icons';
 import LinearText from '../components/primitives/LinearText';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation } from '@react-navigation/native';
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import type { RootStackParamList } from '../navigation/types';
 import { linearTheme as n } from '../theme/linearTheme';
 import { motion } from '../motion/presets';
 import LinearSurface from '../components/primitives/LinearSurface';
@@ -13,8 +10,7 @@ import { dailyLogRepository } from '../db/repositories';
 import { useRefreshProfile } from '../hooks/queries/useProfile';
 import { useAppStore } from '../store/useAppStore';
 import { ResponsiveContainer } from '../hooks/useResponsive';
-
-type Nav = NativeStackNavigationProp<RootStackParamList, 'WakeUp'>;
+import { RootNav } from '../navigation/typedHooks';
 type WakeUpPhase = 'breathe' | 'ground' | 'fog_check' | 'done';
 
 const PHASE_LABELS: Record<WakeUpPhase, { label: string; step: number; total: number }> = {
@@ -25,7 +21,7 @@ const PHASE_LABELS: Record<WakeUpPhase, { label: string; step: number; total: nu
 };
 
 export default function WakeUpScreen() {
-  const navigation = useNavigation<Nav>();
+  const navigation = RootNav.useNav<'WakeUp'>();
   const refreshProfile = useRefreshProfile();
   const setDailyAvailability = useAppStore((s) => s.setDailyAvailability);
   const [phase, setPhase] = useState<WakeUpPhase>('breathe');

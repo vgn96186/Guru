@@ -1,5 +1,4 @@
 import { questionBankRepositoryDrizzle } from '../repositories/questionBankRepository.drizzle';
-import type { QuestionBankItem, SaveQuestionInput, QuestionFilters } from '../../types';
 
 export const saveQuestion = questionBankRepositoryDrizzle.saveQuestion;
 export const saveBulkQuestions = questionBankRepositoryDrizzle.saveBulkQuestions;

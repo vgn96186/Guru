@@ -2,10 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { View, TouchableOpacity, StyleSheet, Animated, StatusBar, ScrollView } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation } from '@react-navigation/native';
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
-import type { RootStackParamList } from '../navigation/types';
 import { profileRepository, dailyLogRepository } from '../db/repositories';
 import { useProfileQuery, useRefreshProfile } from '../hooks/queries/useProfile';
 import { useAppStore } from '../store/useAppStore';
@@ -21,9 +18,7 @@ import LinearBadge from '../components/primitives/LinearBadge';
 import LinearButton from '../components/primitives/LinearButton';
 import LinearSurface from '../components/primitives/LinearSurface';
 import LinearText from '../components/primitives/LinearText';
-
-type Nav = NativeStackNavigationProp<RootStackParamList, 'CheckIn'>;
-
+import { RootNav } from '../navigation/typedHooks';
 const MOODS: Mood[] = ['energetic', 'good', 'okay', 'tired', 'stressed', 'distracted'];
 
 const MOTIVATIONAL_MESSAGES = [
@@ -58,7 +53,7 @@ function getMotivationalMessage(): string {
 }
 
 export default function CheckInScreen() {
-  const navigation = useNavigation<Nav>();
+  const navigation = RootNav.useNav<'CheckIn'>();
   const refreshProfile = useRefreshProfile();
   const setDailyAvailability = useAppStore((s) => s.setDailyAvailability);
   const { data: profile } = useProfileQuery();

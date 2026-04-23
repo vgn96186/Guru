@@ -2,9 +2,8 @@ import React, { useState } from 'react';
 import { View, TouchableOpacity, StyleSheet, StatusBar } from 'react-native';
 import LinearText from '../components/primitives/LinearText';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation, type NavigationProp } from '@react-navigation/native';
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import type { MenuStackParamList, TabParamList } from '../navigation/types';
+import { type NavigationProp } from '@react-navigation/native';
+import type { TabParamList } from '../navigation/types';
 import { getDb } from '../db/database';
 import { getAllSubjects } from '../db/queries/topics';
 import {
@@ -22,6 +21,7 @@ import { EmptyState } from '../components/primitives';
 import ScreenHeader from '../components/ScreenHeader';
 import { confirmDestructive } from '../components/dialogService';
 
+import { MenuNav } from '../navigation/typedHooks';
 interface TopicNoteResult {
   type: 'topic';
   id: number;
@@ -38,7 +38,7 @@ interface LectureNoteResult {
 type SearchResult = TopicNoteResult | LectureNoteResult;
 
 export default function NotesSearchScreen() {
-  const navigation = useNavigation<NativeStackNavigationProp<MenuStackParamList>>();
+  const navigation = MenuNav.useNav();
   const tabsNavigation = navigation.getParent<NavigationProp<TabParamList>>();
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<SearchResult[]>([]);
@@ -142,10 +142,7 @@ export default function NotesSearchScreen() {
     );
     if (ok) {
       const db = getDb();
-      await db.runAsync('UPDATE topic_progress SET user_notes = ? WHERE topic_id = ?', [
-        '',
-        topicId,
-      ]);
+      await db.runAsync('UPDATE topic_progress SET user_notes = ? WHERE topic_id = ?', ['', topicId]);
       await search(query);
     }
   }
@@ -186,10 +183,7 @@ export default function NotesSearchScreen() {
         } else if (key.startsWith('topic-')) {
           const id = Number(key.replace('topic-', ''));
           if (!Number.isNaN(id)) {
-            await db.runAsync('UPDATE topic_progress SET user_notes = ? WHERE topic_id = ?', [
-              '',
-              id,
-            ]);
+            await db.runAsync('UPDATE topic_progress SET user_notes = ? WHERE topic_id = ?', ['', id]);
           }
         }
       }

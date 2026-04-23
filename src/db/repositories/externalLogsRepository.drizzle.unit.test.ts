@@ -1,7 +1,6 @@
 import { getDrizzleDb } from '../drizzle';
 import { externalAppLogs } from '../drizzleSchema';
 import { externalLogsRepositoryDrizzle } from './externalLogsRepository.drizzle';
-import { eq } from 'drizzle-orm';
 
 // Mock drizzle
 jest.mock('../drizzle', () => ({

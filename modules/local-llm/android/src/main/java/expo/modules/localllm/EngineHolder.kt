@@ -54,7 +54,7 @@ object EngineHolder {
             val engineConfig = EngineConfig(
                 modelPath = modelPath,
                 backend = backend,
-                maxNumTokens = 8192,
+                maxNumTokens = LocalBackendPrefs.getMaxNumTokens(),
                 cacheDir = cacheDir
             )
             if (backend is Backend.GPU) {

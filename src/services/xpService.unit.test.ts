@@ -1,6 +1,6 @@
 import { getLevelInfo, grantXp, calculateAndAwardSessionXp } from './xpService';
 import { profileRepository } from '../db/repositories';
-import { getDb, runInTransaction } from '../db/database';
+import { runInTransaction } from '../db/database';
 import { addXpInTx } from '../db/queries/progress';
 
 jest.mock('../db/repositories', () => ({
@@ -144,7 +144,7 @@ describe('xpService', () => {
         { label: 'Perfect quiz bonus!', amount: 50 },
         { label: 'Session complete', amount: 100 },
       ]);
-      expect(addXpInTx).toHaveBeenCalledWith(mockTxDb, 420);
+      expect(addXpInTx).toHaveBeenCalledWith(420);
       expect(mockTxDb.runAsync).toHaveBeenCalledWith(
         expect.stringContaining('UPDATE user_profile SET quiz_correct_count'),
         [2],
@@ -174,7 +174,7 @@ describe('xpService', () => {
       const result = await calculateAndAwardSessionXp([], [], false);
       expect(result.total).toBe(0);
       expect(result.breakdown).toEqual([]);
-      expect(addXpInTx).toHaveBeenCalledWith(mockTxDb, 0);
+      expect(addXpInTx).toHaveBeenCalledWith(0);
     });
 
     it('does not award perfect bonus if quiz has 0 questions', async () => {

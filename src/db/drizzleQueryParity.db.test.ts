@@ -23,8 +23,8 @@ jest.mock('./drizzle', () => ({
 }));
 
 import { resetDbSingleton, setDbForTests } from './database';
-import { ALL_SCHEMAS, DB_INDEXES } from './schema';
-import { LATEST_VERSION } from './migrations';
+import migrations from './drizzle-migrations/migrations';
+import { migrate } from 'drizzle-orm/expo-sqlite/migrator';
 import * as drizzleSchema from './drizzleSchema';
 import { wrapBetterSqliteToAsync } from './testing/betterSqliteAdapter';
 
@@ -50,21 +50,12 @@ describe('Drizzle query parity (in-memory SQLite)', () => {
   let rawDb: Database.Database | null = null;
   let dispose: (() => void) | null = null;
 
-  beforeEach(() => {
+  beforeEach(async () => {
     resetDbSingleton();
     rawDb = new Database(':memory:');
     rawDb.pragma('journal_mode = DELETE');
     rawDb.pragma('foreign_keys = ON');
-    for (const sql of ALL_SCHEMAS) {
-      rawDb.exec(sql);
-    }
-    for (const sql of DB_INDEXES) {
-      try {
-        rawDb.exec(sql);
-      } catch {
-        /* ignore duplicate index setup */
-      }
-    }
+
     rawDb.exec(`
       CREATE TABLE IF NOT EXISTS migration_history (
         version INTEGER PRIMARY KEY,
@@ -72,7 +63,6 @@ describe('Drizzle query parity (in-memory SQLite)', () => {
         description TEXT
       )
     `);
-    rawDb.exec(`PRAGMA user_version = ${LATEST_VERSION}`);
     rawDb.prepare(`INSERT OR IGNORE INTO user_profile (id) VALUES (1)`).run();
 
     const sqlite = wrapBetterSqliteToAsync(rawDb);
@@ -82,6 +72,7 @@ describe('Drizzle query parity (in-memory SQLite)', () => {
       rawDb = null;
     };
     setDbForTests(sqlite);
+    await migrate(mockDrizzleDb as any, migrations);
   });
 
   afterEach(() => {

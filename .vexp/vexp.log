@@ -10,3 +10,603 @@ dyld[55409]: Library not loaded: @rpath/libggml-base.0.dylib
   Referenced from: <445D509D-823C-3807-9446-3FC83B57264E> /Users/vishnugnair/.vscode/extensions/vexp.vexp-vscode-2.0.3-darwin-arm64/binaries/vexp-core-darwin-arm64/vexp-core
   Reason: no LC_RPATH's found
 [daemon] exited with code=null signal=SIGABRT
+
+--- vexp daemon start at 2026-04-23T07:47:43.267Z ---
+[2m2026-04-23T07:47:48.224914Z[0m [32m INFO[0m Updated vexp section in existing pre-commit hook
+[2m2026-04-23T07:47:48.225244Z[0m [32m INFO[0m Updated vexp section in existing post-merge hook
+[2m2026-04-23T07:47:48.225443Z[0m [32m INFO[0m Updated vexp section in existing post-checkout hook
+[2m2026-04-23T07:47:48.225750Z[0m [32m INFO[0m Created .vexp/.gitattributes
+[2m2026-04-23T07:47:48.225802Z[0m [32m INFO[0m vexp git hooks installed in /Users/vishnugnair/Guru/debug
+[2m2026-04-23T07:47:48.225839Z[0m [32m INFO[0m Opening database at /Users/vishnugnair/Guru/debug/.vexp/index.db
+[2m2026-04-23T07:47:48.233435Z[0m [32m INFO[0m Manifest found, running incremental sync
+[2m2026-04-23T07:47:48.233454Z[0m [32m INFO[0m Running checkout sync
+[2m2026-04-23T07:47:48.381438Z[0m [32m INFO[0m Syncing 234 changed files after checkout
+[2m2026-04-23T07:47:48.381785Z[0m [33m WARN[0m Node limit reached (2001/2000). Skipping remaining files. Upgrade your plan for more capacity.
+[2m2026-04-23T07:47:52.085576Z[0m [32m INFO[0m File watcher: monitorando /Users/vishnugnair/Guru/debug (741 directories)
+[2m2026-04-23T07:47:52.114719Z[0m [32m INFO[0m LLM compression not configured — rule compressor active
+[2m2026-04-23T07:47:52.114834Z[0m [32m INFO[0m vexp-core daemon started, watching for changes
+[2m2026-04-23T07:47:52.121023Z[0m [32m INFO[0m Socket server listening on /Users/vishnugnair/Guru/debug/.vexp/daemon.sock
+[2m2026-04-23T07:48:22.264286Z[0m [32m INFO[0m Received SIGTERM, shutting down gracefully
+[daemon] exited with code=0 signal=null
+
+--- vexp daemon start at 2026-04-23T07:48:25.890Z ---
+[2m2026-04-23T07:48:26.896535Z[0m [32m INFO[0m Updated vexp section in existing pre-commit hook
+[2m2026-04-23T07:48:26.897409Z[0m [32m INFO[0m Updated vexp section in existing post-merge hook
+[2m2026-04-23T07:48:26.897835Z[0m [32m INFO[0m Updated vexp section in existing post-checkout hook
+[2m2026-04-23T07:48:26.897938Z[0m [32m INFO[0m Created .vexp/.gitattributes
+[2m2026-04-23T07:48:26.897990Z[0m [32m INFO[0m vexp git hooks installed in /Users/vishnugnair/Guru/debug
+[2m2026-04-23T07:48:26.897999Z[0m [32m INFO[0m Opening database at /Users/vishnugnair/Guru/debug/.vexp/index.db
+[2m2026-04-23T07:48:27.478216Z[0m [32m INFO[0m Manifest found, running incremental sync
+[2m2026-04-23T07:48:27.478248Z[0m [32m INFO[0m Running checkout sync
+[2m2026-04-23T07:48:27.833523Z[0m [32m INFO[0m Syncing 234 changed files after checkout
+[2m2026-04-23T07:48:27.840090Z[0m [33m WARN[0m Node limit reached (2001/2000). Skipping remaining files. Upgrade your plan for more capacity.
+[2m2026-04-23T07:48:35.845309Z[0m [32m INFO[0m File watcher: monitorando /Users/vishnugnair/Guru/debug (741 directories)
+[2m2026-04-23T07:48:35.851039Z[0m [32m INFO[0m LLM compression not configured — rule compressor active
+[2m2026-04-23T07:48:35.851082Z[0m [32m INFO[0m vexp-core daemon started, watching for changes
+[2m2026-04-23T07:48:35.853282Z[0m [32m INFO[0m Socket server listening on /Users/vishnugnair/Guru/debug/.vexp/daemon.sock
+[mcp] singleton already running (pidfile match)
+[2m2026-04-23T07:54:50.508288Z[0m [32m INFO[0m Syncing file: test_queries.js
+[2m2026-04-23T07:55:58.405190Z[0m [32m INFO[0m Syncing file: test_drizzle_query.js
+[2m2026-04-23T07:56:12.055298Z[0m [32m INFO[0m Syncing file: test_drizzle_query.js
+[2m2026-04-23T07:58:30.157164Z[0m [33m WARN[0m Node limit reached (2001/2000). Skipping remaining files. Upgrade your plan for more capacity.
+[2m2026-04-23T08:00:11.308854Z[0m [32m INFO[0m Syncing file: test_queries2.js
+[2m2026-04-23T08:00:22.355604Z[0m [32m INFO[0m Syncing file: fix_subjects_query.js
+[2m2026-04-23T08:00:22.405827Z[0m [32m INFO[0m Syncing file: src/db/repositories/topicsRepository.drizzle.ts
+[2m2026-04-23T08:05:22.657014Z[0m [32m INFO[0m Syncing file: test_queries4.js
+[2m2026-04-23T08:05:55.055990Z[0m [32m INFO[0m Syncing file: test_drizzle_toSQL.js
+[2m2026-04-23T08:06:23.605909Z[0m [32m INFO[0m Syncing file: test_drizzle_alias.js
+[2m2026-04-23T08:06:53.808841Z[0m [32m INFO[0m Syncing file: rewrite_buildTopics.js
+[2m2026-04-23T08:06:53.858820Z[0m [32m INFO[0m Syncing file: src/db/repositories/topicsRepository.drizzle.ts
+[2m2026-04-23T08:07:12.960092Z[0m [32m INFO[0m Syncing file: test_queries5.js
+[2m2026-04-23T08:08:48.510048Z[0m [32m INFO[0m Syncing file: fix_raw_alias.js
+[2m2026-04-23T08:08:48.559582Z[0m [32m INFO[0m Syncing file: src/db/repositories/topicsRepository.drizzle.ts
+[2m2026-04-23T08:08:50.867620Z[0m [33m WARN[0m FK constraint error in correlator (1): error returned from database: (code: 787) FOREIGN KEY constraint failed
+[2m2026-04-23T08:09:36.709699Z[0m [32m INFO[0m Syncing file: fix_circular.js
+[2m2026-04-23T08:09:36.758883Z[0m [33m WARN[0m Node limit reached (2009/2000). Skipping remaining files. Upgrade your plan for more capacity.
+[2m2026-04-23T08:12:17.060427Z[0m [32m INFO[0m Syncing file: modules/local-llm/android/src/main/java/expo/modules/localllm/EngineHolder.kt
+[2m2026-04-23T08:13:01.309899Z[0m [32m INFO[0m Syncing file: modules/local-llm/android/src/main/java/expo/modules/localllm/LocalBackendPrefs.kt
+[2m2026-04-23T08:13:20.909851Z[0m [33m WARN[0m Node limit reached (2048/2000). Skipping remaining files. Upgrade your plan for more capacity.
+[2m2026-04-23T08:13:29.244939Z[0m [32m INFO[0m Received 2 LSP edges from extension
+[2m2026-04-23T08:13:29.887607Z[0m [32m INFO[0m Syncing file: src/services/ai/v2/providers/gitlabDuo.ts
+[2m2026-04-23T08:13:35.455487Z[0m [32m INFO[0m Received 5 LSP edges from extension
+[2m2026-04-23T08:13:37.210068Z[0m [32m INFO[0m Syncing file: src/services/ai/v2/providers/gitlabDuo.ts
+[2m2026-04-23T08:13:40.867064Z[0m [33m WARN[0m FK constraint error in correlator (1): error returned from database: (code: 787) FOREIGN KEY constraint failed
+[2m2026-04-23T08:13:43.910444Z[0m [32m INFO[0m Syncing file: modules/local-llm/android/src/main/java/expo/modules/localllm/LocalLlmModule.kt
+[2m2026-04-23T08:13:46.460408Z[0m [32m INFO[0m Syncing file: src/services/ai/v2/providers/gitlabDuo.ts
+[2m2026-04-23T08:13:50.874204Z[0m [33m WARN[0m FK constraint error in correlator (1): error returned from database: (code: 787) FOREIGN KEY constraint failed
+[2m2026-04-23T08:13:59.311042Z[0m [32m INFO[0m Syncing file: modules/local-llm/android/src/main/java/expo/modules/localllm/LocalLlmModule.kt
+[2m2026-04-23T08:14:00.866869Z[0m [33m WARN[0m FK constraint error in correlator (1): error returned from database: (code: 787) FOREIGN KEY constraint failed
+[2m2026-04-23T08:14:15.209251Z[0m [32m INFO[0m Syncing file: modules/local-llm/index.ts
+[2m2026-04-23T08:14:27.661440Z[0m [32m INFO[0m Syncing file: src/services/ai/llmRouting.ts
+[2m2026-04-23T08:14:43.859470Z[0m [32m INFO[0m Syncing file: src/services/ai/v2/providers/localLlm.ts
+[2m2026-04-23T08:15:01.261558Z[0m [32m INFO[0m Syncing file: src/services/ai/llmRouting.ts
+[2m2026-04-23T08:15:50.229632Z[0m [32m INFO[0m Syncing file: src/db/database.ts
+[2m2026-04-23T08:15:51.863524Z[0m [32m INFO[0m Syncing file: src/screens/settings/components/SettingsSectionAccordion.tsx
+[2m2026-04-23T08:15:52.210720Z[0m [32m INFO[0m Syncing file: src/services/appBootstrap.ts
+[2m2026-04-23T08:15:54.230942Z[0m [32m INFO[0m Syncing file: src/services/ai/bootProviderValidation.ts
+[2m2026-04-23T08:16:01.110111Z[0m [32m INFO[0m Syncing file: src/services/ai/v2/providers/localLlm.ts
+[2m2026-04-23T08:16:02.179374Z[0m [32m INFO[0m Received 141 LSP edges from extension
+[2m2026-04-23T08:16:04.087831Z[0m [32m INFO[0m Syncing file: src/services/ai/bootProviderValidation.ts
+[2m2026-04-23T08:16:05.020649Z[0m [32m INFO[0m Reconciled 3 LSP edges for src/services/ai/bootProviderValidation.ts
+[2m2026-04-23T08:16:17.929754Z[0m [32m INFO[0m Syncing file: src/services/ai/llmRouting.ts
+[2m2026-04-23T08:16:35.910971Z[0m [32m INFO[0m Syncing file: src/services/ai/llmRouting.ts
+[2m2026-04-23T08:16:52.088130Z[0m [32m INFO[0m Syncing file: src/services/ai/bootProviderValidation.ts
+[2m2026-04-23T08:16:53.154371Z[0m [32m INFO[0m Reconciled 3 LSP edges for src/services/ai/bootProviderValidation.ts
+[2m2026-04-23T08:16:56.771153Z[0m [32m INFO[0m Received 32 LSP edges from extension
+[2m2026-04-23T08:16:57.410359Z[0m [32m INFO[0m Syncing file: src/services/ai/llmRouting.ts
+[2m2026-04-23T08:17:01.129076Z[0m [33m WARN[0m FK constraint error in correlator (1): error returned from database: (code: 787) FOREIGN KEY constraint failed
+[2m2026-04-23T08:17:01.207941Z[0m [33m WARN[0m FK constraint error in correlator (2): error returned from database: (code: 787) FOREIGN KEY constraint failed
+[2m2026-04-23T08:17:13.561826Z[0m [32m INFO[0m Syncing file: src/services/ai/llmRouting.ts
+[2m2026-04-23T08:18:03.160732Z[0m [32m INFO[0m Syncing file: modules/local-llm/index.ts
+[2m2026-04-23T08:18:17.261020Z[0m [32m INFO[0m Syncing file: src/services/ai/llmRouting.ts
+[2m2026-04-23T08:18:20.871310Z[0m [33m WARN[0m FK constraint error in correlator (1): error returned from database: (code: 787) FOREIGN KEY constraint failed
+[2m2026-04-23T08:19:42.960855Z[0m [32m INFO[0m Syncing file: src/components/BootTransition.tsx
+[2m2026-04-23T08:20:02.630322Z[0m [32m INFO[0m Syncing file: src/services/jsonBackupService.ts
+[2m2026-04-23T08:20:04.760577Z[0m [32m INFO[0m Syncing file: src/services/jsonBackupService.ts
+[2m2026-04-23T08:20:04.910590Z[0m [32m INFO[0m Syncing file: src/components/BootTransition.tsx
+[2m2026-04-23T08:20:06.874910Z[0m [32m INFO[0m Received 27 LSP edges from extension
+[2m2026-04-23T08:20:08.769080Z[0m [32m INFO[0m Syncing file: src/services/lecture/persistence.ts
+[2m2026-04-23T08:20:10.530077Z[0m [32m INFO[0m Syncing file: src/services/lecture/persistence.ts
+[2m2026-04-23T08:20:11.663020Z[0m [32m INFO[0m Syncing file: src/services/lecture/persistence.ts
+[2m2026-04-23T08:20:17.985335Z[0m [32m INFO[0m Received 36 LSP edges from extension
+[2m2026-04-23T08:20:20.712618Z[0m [32m INFO[0m Syncing file: src/services/lecture/persistence.ts
+[2m2026-04-23T08:20:21.481371Z[0m [32m INFO[0m Reconciled 6 LSP edges for src/services/lecture/persistence.ts
+[2m2026-04-23T08:20:21.483708Z[0m [32m INFO[0m Syncing file: src/services/lecture/persistence.ts
+[2m2026-04-23T08:20:23.256045Z[0m [32m INFO[0m Reconciled 6 LSP edges for src/services/lecture/persistence.ts
+[2m2026-04-23T08:20:23.275097Z[0m [32m INFO[0m Syncing file: src/services/lecture/persistence.ts
+[2m2026-04-23T08:20:25.653964Z[0m [32m INFO[0m Reconciled 6 LSP edges for src/services/lecture/persistence.ts
+[2m2026-04-23T08:20:25.664534Z[0m [32m INFO[0m Syncing file: src/services/offlineQueueService.ts
+[2m2026-04-23T08:20:33.363460Z[0m [32m INFO[0m Syncing file: src/services/lecture/persistence.ts
+[2m2026-04-23T08:20:35.963394Z[0m [32m INFO[0m Reconciled 6 LSP edges for src/services/lecture/persistence.ts
+[2m2026-04-23T08:20:40.945803Z[0m [32m INFO[0m Received 58 LSP edges from extension
+[2m2026-04-23T08:20:48.991699Z[0m [32m INFO[0m Syncing file: src/services/offlineQueue.ts
+[2m2026-04-23T08:20:50.424018Z[0m [32m INFO[0m Reconciled 1 LSP edges for src/services/offlineQueue.ts
+[2m2026-04-23T08:21:03.979718Z[0m [32m INFO[0m Syncing file: src/components/BootTransition.tsx
+[2m2026-04-23T08:21:08.972186Z[0m [32m INFO[0m Syncing file: src/components/BootTransition.tsx
+[2m2026-04-23T08:21:10.919828Z[0m [33m WARN[0m FK constraint error in correlator (1): error returned from database: (code: 787) FOREIGN KEY constraint failed
+[2m2026-04-23T08:21:18.039617Z[0m [32m INFO[0m Received 32 LSP edges from extension
+[2m2026-04-23T08:21:42.269532Z[0m [32m INFO[0m Syncing file: src/services/lecture/persistence.ts
+[2m2026-04-23T08:21:42.496438Z[0m [32m INFO[0m Reconciled 6 LSP edges for src/services/lecture/persistence.ts
+[2m2026-04-23T08:21:47.055007Z[0m [32m INFO[0m Syncing file: src/services/lecture/persistence.ts
+[2m2026-04-23T08:21:47.109740Z[0m [32m INFO[0m Received 38 LSP edges from extension
+[2m2026-04-23T08:21:50.867855Z[0m [33m WARN[0m FK constraint error in correlator (1): error returned from database: (code: 787) FOREIGN KEY constraint failed
+[2m2026-04-23T08:21:59.412376Z[0m [32m INFO[0m Syncing file: src/components/BootTransition.tsx
+[2m2026-04-23T08:22:00.881410Z[0m [33m WARN[0m FK constraint error in correlator (1): error returned from database: (code: 787) FOREIGN KEY constraint failed
+[2m2026-04-23T08:22:24.916348Z[0m [32m INFO[0m Syncing file: src/services/lecture/persistence.ts
+[2m2026-04-23T08:22:25.375285Z[0m [32m INFO[0m Reconciled 6 LSP edges for src/services/lecture/persistence.ts
+[2m2026-04-23T08:22:28.611735Z[0m [32m INFO[0m Received 38 LSP edges from extension
+[2m2026-04-23T08:22:34.964847Z[0m [32m INFO[0m Syncing file: src/components/BootTransition.tsx
+[2m2026-04-23T08:22:36.047165Z[0m [32m INFO[0m Syncing file: src/services/lecture/persistence.ts
+[2m2026-04-23T08:22:36.920458Z[0m [32m INFO[0m Reconciled 6 LSP edges for src/services/lecture/persistence.ts
+[2m2026-04-23T08:22:38.321396Z[0m [32m INFO[0m Syncing file: src/services/lecture/persistence.ts
+[2m2026-04-23T08:22:38.995904Z[0m [32m INFO[0m Reconciled 6 LSP edges for src/services/lecture/persistence.ts
+[2m2026-04-23T08:22:41.353423Z[0m [33m WARN[0m FK constraint error in correlator (1): error returned from database: (code: 787) FOREIGN KEY constraint failed
+[2m2026-04-23T08:22:42.915294Z[0m [32m INFO[0m Received 44 LSP edges from extension
+[2m2026-04-23T08:22:48.937646Z[0m [32m INFO[0m Syncing file: src/services/appBootstrap.ts
+[2m2026-04-23T08:22:51.982921Z[0m [32m INFO[0m Reconciled 16 LSP edges for src/services/appBootstrap.ts
+[2m2026-04-23T08:22:51.999272Z[0m [32m INFO[0m Syncing file: src/services/appBootstrap.ts
+[2m2026-04-23T08:22:53.604007Z[0m [32m INFO[0m Reconciled 16 LSP edges for src/services/appBootstrap.ts
+[2m2026-04-23T08:22:55.753384Z[0m [32m INFO[0m Syncing file: src/services/appBootstrap.ts
+[2m2026-04-23T08:22:57.515053Z[0m [32m INFO[0m Reconciled 16 LSP edges for src/services/appBootstrap.ts
+[2m2026-04-23T08:23:02.112416Z[0m [32m INFO[0m Received 64 LSP edges from extension
+[2m2026-04-23T08:23:34.762221Z[0m [32m INFO[0m Syncing file: src/components/BootTransition.tsx
+[2m2026-04-23T08:23:42.962618Z[0m [32m INFO[0m Syncing file: src/db/repositories/questionBankRepository.drizzle.ts
+[2m2026-04-23T08:23:50.893219Z[0m [32m INFO[0m Received 76 LSP edges from extension
+[2m2026-04-23T08:23:53.516226Z[0m [32m INFO[0m Syncing file: src/db/repositories/questionBankRepository.drizzle.ts
+[2m2026-04-23T08:24:00.474827Z[0m [32m INFO[0m Syncing file: src/db/repositories/sessionsRepository.drizzle.ts
+[2m2026-04-23T08:24:00.966784Z[0m [32m INFO[0m Received 76 LSP edges from extension
+[2m2026-04-23T08:24:08.381214Z[0m [32m INFO[0m Received 69 LSP edges from extension
+[2m2026-04-23T08:24:09.225218Z[0m [32m INFO[0m Syncing file: src/db/repositories/questionBankRepository.drizzle.ts
+[2m2026-04-23T08:24:10.063072Z[0m [32m INFO[0m Syncing file: src/components/BootTransition.tsx
+[2m2026-04-23T08:24:10.815712Z[0m [32m INFO[0m Syncing file: src/components/BootTransition.tsx
+[2m2026-04-23T08:24:10.871461Z[0m [33m WARN[0m FK constraint error in correlator (1): error returned from database: (code: 787) FOREIGN KEY constraint failed
+[2m2026-04-23T08:24:10.874197Z[0m [33m WARN[0m FK constraint error in correlator (2): error returned from database: (code: 787) FOREIGN KEY constraint failed
+[2m2026-04-23T08:24:17.548121Z[0m [32m INFO[0m Received 76 LSP edges from extension
+[2m2026-04-23T08:24:24.310985Z[0m [32m INFO[0m Syncing file: src/db/repositories/questionBankRepository.drizzle.ts
+[2m2026-04-23T08:24:30.855581Z[0m [32m INFO[0m Received 76 LSP edges from extension
+[2m2026-04-23T08:24:38.964436Z[0m [32m INFO[0m Syncing file: src/db/drizzleSchema.ts
+[2m2026-04-23T08:24:44.413808Z[0m [32m INFO[0m Syncing file: src/screens/SettingsScreen.tsx
+[2m2026-04-23T08:24:49.521317Z[0m [32m INFO[0m Syncing file: src/db/testing/createTestDatabase.ts
+[2m2026-04-23T08:24:51.676433Z[0m [32m INFO[0m Received 105 LSP edges from extension
+[2m2026-04-23T08:24:58.615197Z[0m [32m INFO[0m Syncing file: src/screens/NotesHubScreen.tsx
+[2m2026-04-23T08:25:04.142385Z[0m [32m INFO[0m Received 41 LSP edges from extension
+[2m2026-04-23T08:25:04.432239Z[0m [32m INFO[0m Syncing file: src/screens/SyllabusScreen.tsx
+[2m2026-04-23T08:25:05.031766Z[0m [32m INFO[0m Syncing file: src/db/utils/drizzleProfileMapper.ts
+[2m2026-04-23T08:25:05.092717Z[0m [32m INFO[0m Syncing file: src/db/testing/drizzleSchemaParity.unit.test.ts
+[2m2026-04-23T08:25:05.765546Z[0m [32m INFO[0m Syncing file: src/db/utils/drizzleProfileMapper.ts
+[2m2026-04-23T08:25:10.299726Z[0m [32m INFO[0m Received 43 LSP edges from extension
+[2m2026-04-23T08:25:31.811395Z[0m [32m INFO[0m Syncing file: src/db/utils/drizzleProfileMapper.ts
+[2m2026-04-23T08:25:33.668270Z[0m [32m INFO[0m Syncing file: src/db/repositories/topicsRepository.drizzle.ts
+[2m2026-04-23T08:25:40.786857Z[0m [32m INFO[0m Syncing file: src/db/testing/createTestDatabase.ts
+[2m2026-04-23T08:25:40.885192Z[0m [32m INFO[0m Received 102 LSP edges from extension
+[2m2026-04-23T08:25:46.517171Z[0m [32m INFO[0m Received 7 LSP edges from extension
+[2m2026-04-23T08:26:09.210892Z[0m [32m INFO[0m Syncing file: src/screens/SyllabusScreen.tsx
+[2m2026-04-23T08:26:09.325430Z[0m [32m INFO[0m Reconciled 2 LSP edges for src/screens/SyllabusScreen.tsx
+[2m2026-04-23T08:26:10.868930Z[0m [33m WARN[0m FK constraint error in correlator (1): error returned from database: (code: 787) FOREIGN KEY constraint failed
+[2m2026-04-23T08:26:14.899960Z[0m [32m INFO[0m Received 41 LSP edges from extension
+[2m2026-04-23T08:26:30.261456Z[0m [32m INFO[0m Syncing file: src/db/testing/createTestDatabase.ts
+[2m2026-04-23T08:26:35.292929Z[0m [32m INFO[0m Received 7 LSP edges from extension
+[2m2026-04-23T08:26:51.414115Z[0m [33m WARN[0m Node limit reached (2273/2000). Skipping remaining files. Upgrade your plan for more capacity.
+[2m2026-04-23T08:27:34.611010Z[0m [32m INFO[0m Syncing file: src/db/repositories/questionBankRepository.drizzle.ts
+[2m2026-04-23T08:27:40.316346Z[0m [32m INFO[0m Received 76 LSP edges from extension
+[2m2026-04-23T08:27:51.772814Z[0m [32m INFO[0m Syncing file: src/db/repositories/questionBankRepository.drizzle.ts
+[2m2026-04-23T08:27:57.259863Z[0m [32m INFO[0m Received 19 LSP edges from extension
+[2m2026-04-23T08:28:03.672262Z[0m [32m INFO[0m Syncing file: src/db/repositories/questionBankRepository.drizzle.ts
+[2m2026-04-23T08:28:09.264728Z[0m [32m INFO[0m Received 76 LSP edges from extension
+[2m2026-04-23T08:28:12.036353Z[0m [32m INFO[0m Syncing file: src/db/repositories/sessionsRepository.drizzle.ts
+[2m2026-04-23T08:28:12.360305Z[0m [32m INFO[0m Syncing file: src/db/testing/createTestDatabase.ts
+[2m2026-04-23T08:28:17.686846Z[0m [32m INFO[0m Received 76 LSP edges from extension
+[2m2026-04-23T08:28:19.861006Z[0m [32m INFO[0m Syncing file: src/db/testing/drizzleSchemaParity.unit.test.ts
+[2m2026-04-23T08:28:21.112570Z[0m [32m INFO[0m Syncing file: src/db/repositories/sessionsRepository.drizzle.ts
+[2m2026-04-23T08:28:24.990951Z[0m [32m INFO[0m Received 2 LSP edges from extension
+[2m2026-04-23T08:28:56.000285Z[0m [32m INFO[0m Syncing file: src/db/testing/createTestDatabase.ts
+[2m2026-04-23T08:28:56.910627Z[0m [32m INFO[0m Syncing file: src/db/testing/drizzleSchemaParity.unit.test.ts
+[2m2026-04-23T08:29:02.370201Z[0m [32m INFO[0m Received 5 LSP edges from extension
+[2m2026-04-23T08:30:12.861197Z[0m [32m INFO[0m Syncing file: src/services/ai/llmRouting.ts
+[2m2026-04-23T08:30:21.510785Z[0m [32m INFO[0m Syncing file: src/screens/SyllabusScreen.tsx
+[2m2026-04-23T08:30:21.676953Z[0m [32m INFO[0m Reconciled 2 LSP edges for src/screens/SyllabusScreen.tsx
+[2m2026-04-23T08:30:27.250017Z[0m [32m INFO[0m Received 41 LSP edges from extension
+[2m2026-04-23T08:30:27.412657Z[0m [32m INFO[0m Syncing file: src/services/appBootstrap.ts
+[2m2026-04-23T08:30:27.686240Z[0m [32m INFO[0m Reconciled 16 LSP edges for src/services/appBootstrap.ts
+[2m2026-04-23T08:30:30.871304Z[0m [33m WARN[0m FK constraint error in correlator (1): error returned from database: (code: 787) FOREIGN KEY constraint failed
+[2m2026-04-23T08:30:41.812429Z[0m [32m INFO[0m Syncing file: src/services/lecture/persistence.ts
+[2m2026-04-23T08:30:41.949713Z[0m [32m INFO[0m Reconciled 6 LSP edges for src/services/lecture/persistence.ts
+[2m2026-04-23T08:30:42.660646Z[0m [32m INFO[0m Syncing file: src/services/ai/v2/providers/localLlm.ts
+[2m2026-04-23T08:30:45.054161Z[0m [32m INFO[0m Received 41 LSP edges from extension
+[2m2026-04-23T08:30:55.712464Z[0m [32m INFO[0m Syncing file: src/components/LoadingOrb.tsx
+[2m2026-04-23T08:30:59.165188Z[0m [32m INFO[0m Syncing file: src/services/ai/v2/providers/localLlm.ts
+[2m2026-04-23T08:31:04.711757Z[0m [32m INFO[0m Syncing file: src/services/offlineQueueService.ts
+[2m2026-04-23T08:31:04.807594Z[0m [32m INFO[0m Reconciled 2 LSP edges for src/services/offlineQueueService.ts
+[2m2026-04-23T08:31:08.507374Z[0m [32m INFO[0m Received 22 LSP edges from extension
+[2m2026-04-23T08:31:11.311771Z[0m [32m INFO[0m Syncing file: src/services/offlineQueue.ts
+[2m2026-04-23T08:31:11.382116Z[0m [32m INFO[0m Reconciled 17 LSP edges for src/services/offlineQueue.ts
+[2m2026-04-23T08:31:14.418891Z[0m [32m INFO[0m Received 32 LSP edges from extension
+[2m2026-04-23T08:31:17.211791Z[0m [32m INFO[0m Syncing file: src/services/lecture/persistence.ts
+[2m2026-04-23T08:31:17.274364Z[0m [32m INFO[0m Reconciled 6 LSP edges for src/services/lecture/persistence.ts
+[2m2026-04-23T08:31:17.461179Z[0m [32m INFO[0m Syncing file: src/services/lecture/persistence.ts
+[2m2026-04-23T08:31:17.515348Z[0m [32m INFO[0m Reconciled 6 LSP edges for src/services/lecture/persistence.ts
+[2m2026-04-23T08:31:20.571921Z[0m [32m INFO[0m Received 41 LSP edges from extension
+[2m2026-04-23T08:31:20.868476Z[0m [33m WARN[0m FK constraint error in correlator (1): error returned from database: (code: 787) FOREIGN KEY constraint failed
+[2m2026-04-23T08:31:20.868900Z[0m [33m WARN[0m FK constraint error in correlator (2): error returned from database: (code: 787) FOREIGN KEY constraint failed
+[2m2026-04-23T08:31:20.869198Z[0m [33m WARN[0m FK constraint error in correlator (3): error returned from database: (code: 787) FOREIGN KEY constraint failed
+[2m2026-04-23T08:31:20.869770Z[0m [33m WARN[0m Too many FK errors — rebuilding observation tables
+[2m2026-04-23T08:31:20.870040Z[0m [32m INFO[0m Rebuilt observation tables: 0 orphaned rows cleaned
+[2m2026-04-23T08:31:22.411801Z[0m [33m WARN[0m Failed to log file change: error returned from database: (code: 517) database is locked
+[2m2026-04-23T08:31:22.412340Z[0m [32m INFO[0m Syncing file: src/services/ai/v2/providers/localLlm.ts
+[2m2026-04-23T08:31:22.414980Z[0m [31mERROR[0m Sync error for /Users/vishnugnair/Guru/debug/src/services/ai/v2/providers/localLlm.ts: error returned from database: (code: 517) database is locked
+[2m2026-04-23T08:31:23.607315Z[0m [32m INFO[0m Syncing file: src/services/offlineQueueService.ts
+[2m2026-04-23T08:31:23.680303Z[0m [32m INFO[0m Reconciled 2 LSP edges for src/services/offlineQueueService.ts
+[2m2026-04-23T08:31:27.048816Z[0m [32m INFO[0m Received 22 LSP edges from extension
+[2m2026-04-23T08:31:27.111496Z[0m [32m INFO[0m Syncing file: src/services/offlineQueueService.ts
+[2m2026-04-23T08:31:27.164169Z[0m [32m INFO[0m Reconciled 2 LSP edges for src/services/offlineQueueService.ts
+[2m2026-04-23T08:31:30.876331Z[0m [33m WARN[0m FK constraint error in correlator (1): error returned from database: (code: 787) FOREIGN KEY constraint failed
+[2m2026-04-23T08:31:56.285775Z[0m [32m INFO[0m Syncing file: src/services/offlineQueue.ts
+[2m2026-04-23T08:31:56.525188Z[0m [32m INFO[0m Reconciled 17 LSP edges for src/services/offlineQueue.ts
+[2m2026-04-23T08:32:01.524879Z[0m [32m INFO[0m Received 32 LSP edges from extension
+[2m2026-04-23T08:32:04.545212Z[0m [32m INFO[0m Syncing file: src/screens/SyllabusScreen.tsx
+[2m2026-04-23T08:32:06.369381Z[0m [32m INFO[0m Reconciled 2 LSP edges for src/screens/SyllabusScreen.tsx
+[2m2026-04-23T08:32:06.386450Z[0m [32m INFO[0m Syncing file: src/screens/SyllabusScreen.tsx
+[2m2026-04-23T08:32:08.651969Z[0m [32m INFO[0m Reconciled 2 LSP edges for src/screens/SyllabusScreen.tsx
+[2m2026-04-23T08:32:10.926176Z[0m [33m WARN[0m FK constraint error in correlator (1): error returned from database: (code: 787) FOREIGN KEY constraint failed
+[2m2026-04-23T08:32:17.362014Z[0m [32m INFO[0m Received 41 LSP edges from extension
+[2m2026-04-23T08:32:23.512193Z[0m [32m INFO[0m Syncing file: src/components/BootTransition.tsx
+[2m2026-04-23T08:32:37.803295Z[0m [32m INFO[0m Syncing file: src/services/ai/localLlmBenchmark.ts
+[2m2026-04-23T08:32:46.403736Z[0m [32m INFO[0m Syncing file: src/db/repositories/topicsRepository.drizzle.ts
+[2m2026-04-23T08:32:49.177609Z[0m [32m INFO[0m Syncing file: src/services/offlineQueueService.ts
+[2m2026-04-23T08:32:51.110664Z[0m [33m WARN[0m FK constraint error in correlator (1): error returned from database: (code: 787) FOREIGN KEY constraint failed
+[2m2026-04-23T08:32:52.625565Z[0m [32m INFO[0m Reconciled 2 LSP edges for src/services/offlineQueueService.ts
+[2m2026-04-23T08:32:52.696444Z[0m [32m INFO[0m Syncing file: src/db/testing/createTestDatabase.ts
+[2m2026-04-23T08:32:53.145467Z[0m [32m INFO[0m Syncing file: src/db/testing/drizzleSchemaParity.unit.test.ts
+[2m2026-04-23T08:33:01.825688Z[0m [32m INFO[0m Received 133 LSP edges from extension
+[2m2026-04-23T08:33:03.526521Z[0m [32m INFO[0m Syncing file: src/services/offlineQueue.ts
+[2m2026-04-23T08:33:04.173803Z[0m [32m INFO[0m Reconciled 17 LSP edges for src/services/offlineQueue.ts
+[2m2026-04-23T08:33:08.509998Z[0m [32m INFO[0m Received 32 LSP edges from extension
+[2m2026-04-23T08:33:17.617985Z[0m [32m INFO[0m Syncing file: src/services/offlineQueueBootstrap.ts
+[2m2026-04-23T08:33:17.662232Z[0m [32m INFO[0m Reconciled 1 LSP edges for src/services/offlineQueueBootstrap.ts
+[2m2026-04-23T08:33:19.363730Z[0m [33m WARN[0m Node limit reached (2276/2000). Skipping remaining files. Upgrade your plan for more capacity.
+[2m2026-04-23T08:33:23.746589Z[0m [32m INFO[0m Received 3 LSP edges from extension
+[2m2026-04-23T08:33:26.421920Z[0m [32m INFO[0m Syncing file: src/screens/SyllabusScreen.tsx
+[2m2026-04-23T08:33:26.871174Z[0m [32m INFO[0m Reconciled 2 LSP edges for src/screens/SyllabusScreen.tsx
+[2m2026-04-23T08:33:29.487096Z[0m [32m INFO[0m Syncing file: src/services/offlineQueueService.ts
+[2m2026-04-23T08:33:29.647932Z[0m [32m INFO[0m Reconciled 2 LSP edges for src/services/offlineQueueService.ts
+[2m2026-04-23T08:33:30.868763Z[0m [33m WARN[0m FK constraint error in correlator (1): error returned from database: (code: 787) FOREIGN KEY constraint failed
+[2m2026-04-23T08:33:30.869314Z[0m [33m WARN[0m FK constraint error in correlator (2): error returned from database: (code: 787) FOREIGN KEY constraint failed
+[2m2026-04-23T08:33:33.691328Z[0m [32m INFO[0m Received 63 LSP edges from extension
+[2m2026-04-23T08:33:40.373341Z[0m [32m INFO[0m Syncing file: src/db/repositories/questionBankRepository.drizzle.ts
+[2m2026-04-23T08:33:47.702220Z[0m [32m INFO[0m Received 76 LSP edges from extension
+[2m2026-04-23T08:34:27.161764Z[0m [32m INFO[0m Syncing file: src/screens/SyllabusScreen.tsx
+[2m2026-04-23T08:34:27.266343Z[0m [32m INFO[0m Reconciled 2 LSP edges for src/screens/SyllabusScreen.tsx
+[2m2026-04-23T08:34:28.032961Z[0m [32m INFO[0m Syncing file: src/screens/SyllabusScreen.tsx
+[2m2026-04-23T08:34:28.258303Z[0m [32m INFO[0m Reconciled 2 LSP edges for src/screens/SyllabusScreen.tsx
+[2m2026-04-23T08:34:29.227791Z[0m [32m INFO[0m Syncing file: src/screens/SyllabusScreen.tsx
+[2m2026-04-23T08:34:29.571494Z[0m [32m INFO[0m Reconciled 2 LSP edges for src/screens/SyllabusScreen.tsx
+[2m2026-04-23T08:34:30.869627Z[0m [33m WARN[0m FK constraint error in correlator (1): error returned from database: (code: 787) FOREIGN KEY constraint failed
+[2m2026-04-23T08:34:30.870218Z[0m [33m WARN[0m FK constraint error in correlator (2): error returned from database: (code: 787) FOREIGN KEY constraint failed
+[2m2026-04-23T08:34:30.870753Z[0m [33m WARN[0m FK constraint error in correlator (3): error returned from database: (code: 787) FOREIGN KEY constraint failed
+[2m2026-04-23T08:34:30.870770Z[0m [33m WARN[0m Too many FK errors — rebuilding observation tables
+[2m2026-04-23T08:34:30.871129Z[0m [32m INFO[0m Rebuilt observation tables: 0 orphaned rows cleaned
+[2m2026-04-23T08:34:33.856436Z[0m [32m INFO[0m Received 41 LSP edges from extension
+[2m2026-04-23T08:34:37.412846Z[0m [32m INFO[0m Syncing file: src/screens/SyllabusScreen.tsx
+[2m2026-04-23T08:34:37.541880Z[0m [32m INFO[0m Reconciled 2 LSP edges for src/screens/SyllabusScreen.tsx
+[2m2026-04-23T08:34:40.870052Z[0m [33m WARN[0m FK constraint error in correlator (1): error returned from database: (code: 787) FOREIGN KEY constraint failed
+[2m2026-04-23T08:34:43.368820Z[0m [32m INFO[0m Received 41 LSP edges from extension
+[2m2026-04-23T08:34:43.612752Z[0m [32m INFO[0m Syncing file: src/db/drizzleSchema.ts
+[2m2026-04-23T08:34:50.710797Z[0m [32m INFO[0m Syncing file: src/db/testing/createTestDatabase.ts
+[2m2026-04-23T08:34:53.625504Z[0m [32m INFO[0m Syncing file: src/services/ai/v2/providers/localLlm.ts
+[2m2026-04-23T08:34:55.773175Z[0m [32m INFO[0m Received 7 LSP edges from extension
+[2m2026-04-23T08:35:20.816119Z[0m [32m INFO[0m Syncing file: src/db/testing/drizzleSchemaParity.unit.test.ts
+[2m2026-04-23T08:35:26.566875Z[0m [32m INFO[0m Received 2 LSP edges from extension
+[2m2026-04-23T08:35:29.184003Z[0m [32m INFO[0m Syncing file: src/db/testing/createTestDatabase.ts
+[2m2026-04-23T08:35:30.894514Z[0m [33m WARN[0m FK constraint error in correlator (1): error returned from database: (code: 787) FOREIGN KEY constraint failed
+[2m2026-04-23T08:35:34.725110Z[0m [32m INFO[0m Received 1 LSP edges from extension
+[2m2026-04-23T08:35:36.870884Z[0m [32m INFO[0m Syncing file: src/db/testing/drizzleSchemaParity.unit.test.ts
+[2m2026-04-23T08:35:41.829681Z[0m [32m INFO[0m Syncing file: src/services/ai/v2/providers/localLlm.ts
+[2m2026-04-23T08:35:44.477041Z[0m [32m INFO[0m Received 2 LSP edges from extension
+[2m2026-04-23T08:36:08.311024Z[0m [32m INFO[0m Syncing file: src/services/ai/localLlmBenchmark.ts
+[2m2026-04-23T08:36:10.868734Z[0m [33m WARN[0m FK constraint error in correlator (1): error returned from database: (code: 787) FOREIGN KEY constraint failed
+[2m2026-04-23T08:36:35.363581Z[0m [32m INFO[0m Syncing file: src/db/chatSession.db.test.ts
+[2m2026-04-23T08:36:35.822618Z[0m [32m INFO[0m Syncing file: src/db/repositories/mindMapsRepository.drizzle.ts
+[2m2026-04-23T08:36:36.161955Z[0m [32m INFO[0m Syncing file: src/db/seedTopics.db.test.ts
+[2m2026-04-23T08:36:37.212004Z[0m [32m INFO[0m Syncing file: src/db/testing/createTestDatabase.ts
+[2m2026-04-23T08:36:42.071555Z[0m [32m INFO[0m Received 106 LSP edges from extension
+[2m2026-04-23T08:36:50.611681Z[0m [32m INFO[0m Syncing file: src/db/testing/drizzleSchemaParity.unit.test.ts
+[2m2026-04-23T08:36:50.868479Z[0m [33m WARN[0m FK constraint error in correlator (1): error returned from database: (code: 787) FOREIGN KEY constraint failed
+[2m2026-04-23T08:36:56.279002Z[0m [32m INFO[0m Received 1 LSP edges from extension
+[2m2026-04-23T08:36:58.121740Z[0m [32m INFO[0m Syncing file: src/screens/SyllabusScreen.tsx
+[2m2026-04-23T08:36:58.463563Z[0m [32m INFO[0m Reconciled 2 LSP edges for src/screens/SyllabusScreen.tsx
+[2m2026-04-23T08:37:00.870009Z[0m [33m WARN[0m FK constraint error in correlator (1): error returned from database: (code: 787) FOREIGN KEY constraint failed
+[2m2026-04-23T08:37:03.834510Z[0m [32m INFO[0m Received 41 LSP edges from extension
+[2m2026-04-23T08:37:05.589882Z[0m [32m INFO[0m Syncing file: src/screens/SyllabusScreen.tsx
+[2m2026-04-23T08:37:06.771736Z[0m [32m INFO[0m Reconciled 2 LSP edges for src/screens/SyllabusScreen.tsx
+[2m2026-04-23T08:37:07.712557Z[0m [32m INFO[0m Syncing file: src/components/BootTransition.tsx
+[2m2026-04-23T08:37:08.564692Z[0m [32m INFO[0m Syncing file: src/screens/SyllabusScreen.tsx
+[2m2026-04-23T08:37:08.792052Z[0m [32m INFO[0m Reconciled 2 LSP edges for src/screens/SyllabusScreen.tsx
+[2m2026-04-23T08:37:10.869212Z[0m [33m WARN[0m FK constraint error in correlator (1): error returned from database: (code: 787) FOREIGN KEY constraint failed
+[2m2026-04-23T08:37:10.869781Z[0m [33m WARN[0m FK constraint error in correlator (2): error returned from database: (code: 787) FOREIGN KEY constraint failed
+[2m2026-04-23T08:37:27.061689Z[0m [32m INFO[0m Syncing file: src/screens/SyllabusScreen.tsx
+[2m2026-04-23T08:37:27.176779Z[0m [32m INFO[0m Reconciled 2 LSP edges for src/screens/SyllabusScreen.tsx
+[2m2026-04-23T08:37:27.177531Z[0m [32m INFO[0m Syncing file: src/services/ai/localLlmBenchmark.ts
+[2m2026-04-23T08:37:27.865178Z[0m [32m INFO[0m Syncing file: src/screens/SyllabusScreen.tsx
+[2m2026-04-23T08:37:27.980467Z[0m [32m INFO[0m Reconciled 2 LSP edges for src/screens/SyllabusScreen.tsx
+[2m2026-04-23T08:37:30.869621Z[0m [33m WARN[0m FK constraint error in correlator (1): error returned from database: (code: 787) FOREIGN KEY constraint failed
+[2m2026-04-23T08:37:30.869976Z[0m [33m WARN[0m FK constraint error in correlator (2): error returned from database: (code: 787) FOREIGN KEY constraint failed
+[2m2026-04-23T08:37:30.870235Z[0m [33m WARN[0m FK constraint error in correlator (3): error returned from database: (code: 787) FOREIGN KEY constraint failed
+[2m2026-04-23T08:37:30.870242Z[0m [33m WARN[0m Too many FK errors — rebuilding observation tables
+[2m2026-04-23T08:37:30.870433Z[0m [32m INFO[0m Rebuilt observation tables: 0 orphaned rows cleaned
+[2m2026-04-23T08:37:43.463223Z[0m [32m INFO[0m Syncing file: src/db/drizzleSchema.ts
+[2m2026-04-23T08:38:24.259950Z[0m [32m INFO[0m Syncing file: src/db/database.ts
+[2m2026-04-23T08:38:24.313871Z[0m [32m INFO[0m Reconciled 46 LSP edges for src/db/database.ts
+[2m2026-04-23T08:38:26.059012Z[0m [32m INFO[0m Syncing file: src/services/ai/v2/providers/localLlm.ts
+[2m2026-04-23T08:39:33.358817Z[0m [32m INFO[0m Syncing file: src/db/utils/drizzleProfileMapper.ts
+[2m2026-04-23T08:39:49.907692Z[0m [32m INFO[0m Syncing file: src/db/utils/drizzleProfileMapper.ts
+[2m2026-04-23T08:39:50.864699Z[0m [33m WARN[0m FK constraint error in correlator (1): error returned from database: (code: 787) FOREIGN KEY constraint failed
+[2m2026-04-23T08:40:09.957020Z[0m [32m INFO[0m Syncing file: src/db/utils/drizzleProfileMapper.ts
+[2m2026-04-23T08:40:23.157644Z[0m [32m INFO[0m Syncing file: src/components/TurbulentOrb.tsx
+[2m2026-04-23T08:40:37.407375Z[0m [32m INFO[0m Syncing file: src/types/index.ts
+[2m2026-04-23T08:40:57.607296Z[0m [32m INFO[0m Syncing file: src/db/utils/drizzleProfileMapper.ts
+[2m2026-04-23T08:41:00.864912Z[0m [33m WARN[0m FK constraint error in correlator (1): error returned from database: (code: 787) FOREIGN KEY constraint failed
+[2m2026-04-23T08:41:06.908017Z[0m [32m INFO[0m Syncing file: src/db/utils/drizzleProfileMapper.ts
+[2m2026-04-23T08:41:10.863790Z[0m [33m WARN[0m FK constraint error in correlator (1): error returned from database: (code: 787) FOREIGN KEY constraint failed
+[2m2026-04-23T08:41:19.107394Z[0m [32m INFO[0m Syncing file: src/db/utils/drizzleProfileMapper.ts
+[2m2026-04-23T08:41:19.907614Z[0m [32m INFO[0m Syncing file: src/components/TurbulentOrb.tsx
+[2m2026-04-23T08:41:30.358129Z[0m [32m INFO[0m Syncing file: src/db/utils/drizzleProfileMapper.ts
+[2m2026-04-23T08:41:30.864176Z[0m [33m WARN[0m FK constraint error in correlator (1): error returned from database: (code: 787) FOREIGN KEY constraint failed
+[2m2026-04-23T08:42:15.207316Z[0m [32m INFO[0m Syncing file: src/db/utils/drizzleProfileMapper.ts
+[2m2026-04-23T08:42:24.958153Z[0m [32m INFO[0m Syncing file: src/services/ai/llmRouting.ts
+[2m2026-04-23T08:42:36.207484Z[0m [32m INFO[0m Syncing file: src/components/BootTransition.tsx
+[2m2026-04-23T08:42:56.357343Z[0m [32m INFO[0m Syncing file: src/components/LoadingOrb.tsx
+[2m2026-04-23T08:44:29.907813Z[0m [32m INFO[0m Syncing file: src/db/repositories/progressRepository.drizzle.ts
+[2m2026-04-23T08:44:43.209601Z[0m [32m INFO[0m Syncing file: src/services/xpService.ts
+[2m2026-04-23T08:44:47.806998Z[0m [32m INFO[0m Syncing file: src/hooks/queries/useProfile.ts
+[2m2026-04-23T08:44:47.842413Z[0m [32m INFO[0m Reconciled 3 LSP edges for src/hooks/queries/useProfile.ts
+[2m2026-04-23T08:44:53.957396Z[0m [32m INFO[0m Syncing file: src/services/lecture/persistence.ts
+[2m2026-04-23T08:44:54.089232Z[0m [32m INFO[0m Reconciled 6 LSP edges for src/services/lecture/persistence.ts
+[2m2026-04-23T08:44:59.408255Z[0m [32m INFO[0m Syncing file: src/services/lecture/persistence.ts
+[2m2026-04-23T08:44:59.461581Z[0m [32m INFO[0m Reconciled 6 LSP edges for src/services/lecture/persistence.ts
+[2m2026-04-23T08:45:00.869322Z[0m [33m WARN[0m FK constraint error in correlator (1): error returned from database: (code: 787) FOREIGN KEY constraint failed
+[2m2026-04-23T08:45:06.857648Z[0m [32m INFO[0m Syncing file: src/services/ai/constants.ts
+[2m2026-04-23T08:45:11.259206Z[0m [32m INFO[0m Syncing file: src/services/xpService.unit.test.ts
+[2m2026-04-23T08:45:23.507896Z[0m [32m INFO[0m Syncing file: src/services/ai/v2/providers/localLlm.ts
+[2m2026-04-23T08:46:02.857346Z[0m [32m INFO[0m Syncing file: src/services/ai/localLlmBenchmark.ts
+[2m2026-04-23T08:46:03.907235Z[0m [32m INFO[0m Syncing file: src/db/database.ts
+[2m2026-04-23T08:46:03.957471Z[0m [32m INFO[0m Reconciled 46 LSP edges for src/db/database.ts
+[2m2026-04-23T08:46:10.870597Z[0m [33m WARN[0m FK constraint error in correlator (1): error returned from database: (code: 787) FOREIGN KEY constraint failed
+[2m2026-04-23T08:46:46.559042Z[0m [32m INFO[0m Syncing file: src/services/ai/v2/providers/localLlm.ts
+[2m2026-04-23T08:46:58.157079Z[0m [32m INFO[0m Syncing file: src/db/repositories/profileRepository.ts
+[2m2026-04-23T08:46:58.407449Z[0m [32m INFO[0m Syncing file: src/components/LoadingOrb.tsx
+[2m2026-04-23T08:46:58.833292Z[0m [32m INFO[0m Syncing file: src/hooks/useSPen.ts
+[2m2026-04-23T08:46:58.958231Z[0m [32m INFO[0m Syncing file: src/hooks/useSettingsState.ts
+[2m2026-04-23T08:46:59.157211Z[0m [32m INFO[0m Syncing file: src/hooks/queries/useProfile.ts
+[2m2026-04-23T08:46:59.194248Z[0m [32m INFO[0m Reconciled 3 LSP edges for src/hooks/queries/useProfile.ts
+[2m2026-04-23T08:46:59.307015Z[0m [32m INFO[0m Syncing file: src/navigation/TabNavigator.tsx
+[2m2026-04-23T08:46:59.556557Z[0m [32m INFO[0m Syncing file: src/screens/ContentCard/cards/FlashcardCard.tsx
+[2m2026-04-23T08:46:59.707896Z[0m [32m INFO[0m Syncing file: src/screens/ContentCard/cards/QuizCard.tsx
+[2m2026-04-23T08:47:00.910598Z[0m [33m WARN[0m FK constraint error in correlator (1): error returned from database: (code: 787) FOREIGN KEY constraint failed
+[2m2026-04-23T08:47:12.208529Z[0m [32m INFO[0m Syncing file: src/db/repositories/dailyLogRepository.ts
+[2m2026-04-23T08:47:33.369797Z[0m [32m INFO[0m Syncing file: src/db/repositories/dailyAgendaRepository.ts
+[2m2026-04-23T08:48:24.508036Z[0m [32m INFO[0m Syncing file: src/services/ai/llmRouting.ts
+[2m2026-04-23T08:49:27.658134Z[0m [32m INFO[0m Syncing file: src/navigation/TabNavigator.tsx
+[2m2026-04-23T08:49:28.313189Z[0m [32m INFO[0m Syncing file: src/components/GuruChatOverlay.tsx
+[2m2026-04-23T08:49:28.914714Z[0m [32m INFO[0m Syncing file: src/screens/GuruChatScreen.tsx
+[2m2026-04-23T08:49:29.566645Z[0m [32m INFO[0m Syncing file: src/hooks/useLecturePipeline.ts
+[2m2026-04-23T08:49:30.864457Z[0m [33m WARN[0m FK constraint error in correlator (1): error returned from database: (code: 787) FOREIGN KEY constraint failed
+[2m2026-04-23T08:49:37.927236Z[0m [32m INFO[0m Syncing file: src/db/database.ts
+[2m2026-04-23T08:49:38.099643Z[0m [32m INFO[0m Reconciled 46 LSP edges for src/db/database.ts
+[2m2026-04-23T08:49:40.865132Z[0m [33m WARN[0m FK constraint error in correlator (1): error returned from database: (code: 787) FOREIGN KEY constraint failed
+[2m2026-04-23T08:50:03.108790Z[0m [32m INFO[0m Syncing file: src/db/repositories/progressRepository.drizzle.ts
+[2m2026-04-23T08:50:36.757999Z[0m [32m INFO[0m Syncing file: src/db/database.ts
+[2m2026-04-23T08:50:36.823055Z[0m [32m INFO[0m Reconciled 46 LSP edges for src/db/database.ts
+[2m2026-04-23T08:50:38.607857Z[0m [32m INFO[0m Syncing file: src/components/BootTransition.tsx
+[2m2026-04-23T08:50:40.866678Z[0m [33m WARN[0m FK constraint error in correlator (1): error returned from database: (code: 787) FOREIGN KEY constraint failed
+[2m2026-04-23T08:50:40.867784Z[0m [33m WARN[0m Correlator error: error returned from database: (code: 517) database is locked
+[2m2026-04-23T08:51:14.257753Z[0m [32m INFO[0m Syncing file: src/components/TurbulentOrb.tsx
+[2m2026-04-23T08:51:16.507415Z[0m [32m INFO[0m Syncing file: src/services/ai/constants.ts
+[2m2026-04-23T08:51:17.009909Z[0m [32m INFO[0m Syncing file: src/db/database.ts
+[2m2026-04-23T08:51:17.064284Z[0m [32m INFO[0m Reconciled 46 LSP edges for src/db/database.ts
+[2m2026-04-23T08:51:20.868125Z[0m [33m WARN[0m FK constraint error in correlator (1): error returned from database: (code: 787) FOREIGN KEY constraint failed
+[2m2026-04-23T08:51:20.869552Z[0m [33m WARN[0m FK constraint error in correlator (2): error returned from database: (code: 787) FOREIGN KEY constraint failed
+[2m2026-04-23T08:51:31.057773Z[0m [32m INFO[0m Syncing file: src/components/BootTransition.tsx
+[2m2026-04-23T08:51:40.865624Z[0m [33m WARN[0m FK constraint error in correlator (1): error returned from database: (code: 787) FOREIGN KEY constraint failed
+[2m2026-04-23T08:51:47.459966Z[0m [32m INFO[0m Syncing file: src/db/drizzleSchema.ts
+[2m2026-04-23T08:51:48.465853Z[0m [32m INFO[0m Syncing file: src/db/utils/drizzleProfileMapper.ts
+[2m2026-04-23T08:51:49.359420Z[0m [32m INFO[0m Syncing file: src/db/database.ts
+[2m2026-04-23T08:51:49.472575Z[0m [32m INFO[0m Reconciled 46 LSP edges for src/db/database.ts
+[2m2026-04-23T08:51:50.864014Z[0m [32m INFO[0m Syncing file: src/db/database.ts
+[2m2026-04-23T08:51:50.867619Z[0m [33m WARN[0m FK constraint error in correlator (1): error returned from database: (code: 787) FOREIGN KEY constraint failed
+[2m2026-04-23T08:51:50.886931Z[0m [31mERROR[0m Sync error for /Users/vishnugnair/Guru/debug/src/db/database.ts: error returned from database: (code: 517) database is locked
+[2m2026-04-23T08:51:50.892342Z[0m [33m WARN[0m FK constraint error in correlator (2): error returned from database: (code: 787) FOREIGN KEY constraint failed
+[2m2026-04-23T08:51:58.131728Z[0m [32m INFO[0m Received 2 LSP edges from extension
+[2m2026-04-23T08:52:07.507176Z[0m [32m INFO[0m Syncing file: src/components/TurbulentOrb.tsx
+[2m2026-04-23T08:52:46.957139Z[0m [32m INFO[0m Syncing file: src/components/TurbulentOrb.tsx
+[2m2026-04-23T08:52:59.656790Z[0m [32m INFO[0m Syncing file: src/services/gdriveBackupService.ts
+[2m2026-04-23T08:52:59.676998Z[0m [32m INFO[0m Reconciled 3 LSP edges for src/services/gdriveBackupService.ts
+[2m2026-04-23T08:53:00.014463Z[0m [32m INFO[0m Syncing file: src/components/TurbulentOrb.tsx
+[2m2026-04-23T08:53:00.866080Z[0m [33m WARN[0m FK constraint error in correlator (1): error returned from database: (code: 787) FOREIGN KEY constraint failed
+[2m2026-04-23T08:54:08.158191Z[0m [32m INFO[0m Syncing file: src/components/BootTransition.tsx
+[2m2026-04-23T08:54:10.865756Z[0m [33m WARN[0m FK constraint error in correlator (1): error returned from database: (code: 787) FOREIGN KEY constraint failed
+[2m2026-04-23T08:54:28.458515Z[0m [32m INFO[0m Syncing file: src/components/BootTransition.tsx
+[2m2026-04-23T08:54:30.868112Z[0m [33m WARN[0m FK constraint error in correlator (1): error returned from database: (code: 787) FOREIGN KEY constraint failed
+[2m2026-04-23T08:54:47.409074Z[0m [32m INFO[0m Syncing file: src/components/BootTransition.tsx
+[2m2026-04-23T08:54:47.658482Z[0m [32m INFO[0m Syncing file: src/components/BootTransition.tsx
+[2m2026-04-23T08:54:50.865896Z[0m [33m WARN[0m FK constraint error in correlator (1): error returned from database: (code: 787) FOREIGN KEY constraint failed
+[2m2026-04-23T08:54:50.866193Z[0m [33m WARN[0m Correlator error: error returned from database: (code: 517) database is locked
+[2m2026-04-23T08:55:03.109511Z[0m [32m INFO[0m Syncing file: src/components/TurbulentOrb.tsx
+[2m2026-04-23T08:55:23.809472Z[0m [32m INFO[0m Syncing file: src/components/TurbulentOrb.tsx
+[2m2026-04-23T08:55:44.511286Z[0m [32m INFO[0m Syncing file: src/components/TurbulentOrb.tsx
+[2m2026-04-23T08:55:44.922573Z[0m [32m INFO[0m Syncing file: src/components/TurbulentOrb.tsx
+[2m2026-04-23T08:56:02.310086Z[0m [32m INFO[0m Syncing file: src/components/BootTransition.tsx
+[2m2026-04-23T08:56:19.860746Z[0m [32m INFO[0m Syncing file: src/components/LoadingOrb.tsx
+[2m2026-04-23T08:56:20.159815Z[0m [32m INFO[0m Syncing file: src/hooks/useSPen.ts
+[2m2026-04-23T08:56:20.868196Z[0m [33m WARN[0m FK constraint error in correlator (1): error returned from database: (code: 787) FOREIGN KEY constraint failed
+[2m2026-04-23T08:57:18.929619Z[0m [32m INFO[0m Received SIGTERM, shutting down gracefully
+[daemon] exited with code=0 signal=null
+
+--- vexp daemon start at 2026-04-23T08:57:49.669Z ---
+[2m2026-04-23T08:57:53.510112Z[0m [32m INFO[0m Updated vexp section in existing pre-commit hook
+[2m2026-04-23T08:57:53.510623Z[0m [32m INFO[0m Updated vexp section in existing post-merge hook
+[2m2026-04-23T08:57:53.510936Z[0m [32m INFO[0m Updated vexp section in existing post-checkout hook
+[2m2026-04-23T08:57:53.514406Z[0m [32m INFO[0m Created .vexp/.gitattributes
+[2m2026-04-23T08:57:53.514532Z[0m [32m INFO[0m vexp git hooks installed in /Users/vishnugnair/Guru/debug
+[2m2026-04-23T08:57:53.514603Z[0m [32m INFO[0m Opening database at /Users/vishnugnair/Guru/debug/.vexp/index.db
+[2m2026-04-23T08:57:54.693087Z[0m [32m INFO[0m Manifest found, running incremental sync
+[2m2026-04-23T08:57:54.693131Z[0m [32m INFO[0m Running checkout sync
+[2m2026-04-23T08:57:56.507900Z[0m [32m INFO[0m Syncing 234 changed files after checkout
+[2m2026-04-23T08:57:56.560156Z[0m [33m WARN[0m Node limit reached (2372/2000). Skipping remaining files. Upgrade your plan for more capacity.
+[daemon] Still waiting for socket... (10s elapsed)
+[daemon] Still waiting for socket... (20s elapsed)
+[daemon] Still waiting for socket... (30s elapsed)
+[2m2026-04-23T08:58:44.456942Z[0m [32m INFO[0m File watcher: monitorando /Users/vishnugnair/Guru/debug (741 directories)
+[2m2026-04-23T08:58:44.459526Z[0m [32m INFO[0m LLM compression not configured — rule compressor active
+[2m2026-04-23T08:58:44.459585Z[0m [32m INFO[0m vexp-core daemon started, watching for changes
+[2m2026-04-23T08:58:44.459794Z[0m [32m INFO[0m Socket server listening on /Users/vishnugnair/Guru/debug/.vexp/daemon.sock
+[mcp] singleton already running (pidfile match)
+[2m2026-04-23T08:58:55.930843Z[0m [32m INFO[0m Received 267 LSP edges from extension
+[2m2026-04-23T09:00:09.816599Z[0m [32m INFO[0m Syncing file: src/screens/ContentCard/index.tsx
+[2m2026-04-23T09:00:10.011466Z[0m [32m INFO[0m Syncing file: src/hooks/useGuruChatSession.ts
+[2m2026-04-23T09:00:10.162172Z[0m [33m WARN[0m Node limit reached (2377/2000). Skipping remaining files. Upgrade your plan for more capacity.
+[2m2026-04-23T09:00:10.462646Z[0m [32m INFO[0m Syncing file: src/services/appBootstrap.ts
+[2m2026-04-23T09:00:10.533567Z[0m [32m INFO[0m Reconciled 9 LSP edges for src/services/appBootstrap.ts
+[2m2026-04-23T09:00:10.919762Z[0m [32m INFO[0m Syncing file: src/services/appBootstrap.ts
+[2m2026-04-23T09:00:11.378972Z[0m [32m INFO[0m Reconciled 9 LSP edges for src/services/appBootstrap.ts
+[2m2026-04-23T09:00:11.382552Z[0m [32m INFO[0m Syncing file: src/services/lecture/lectureSessionMonitor.ts
+[2m2026-04-23T09:00:11.541635Z[0m [32m INFO[0m Reconciled 3 LSP edges for src/services/lecture/lectureSessionMonitor.ts
+[2m2026-04-23T09:00:12.277619Z[0m [32m INFO[0m Syncing file: src/hooks/useLecturePipeline.ts
+[2m2026-04-23T09:00:12.864921Z[0m [32m INFO[0m Syncing file: src/hooks/useLecturePipeline.ts
+[2m2026-04-23T09:00:19.508580Z[0m [33m WARN[0m FK constraint error in correlator (1): error returned from database: (code: 787) FOREIGN KEY constraint failed
+[2m2026-04-23T09:00:22.776773Z[0m [32m INFO[0m Received 77 LSP edges from extension
+[2m2026-04-23T09:00:49.962094Z[0m [32m INFO[0m Syncing file: src/components/TurbulentOrb.tsx
+[2m2026-04-23T09:00:50.111531Z[0m [32m INFO[0m Syncing file: src/components/TurbulentOrb.tsx
+[2m2026-04-23T09:01:00.512059Z[0m [32m INFO[0m Syncing file: src/components/TurbulentOrb.tsx
+[2m2026-04-23T09:01:14.712109Z[0m [32m INFO[0m Syncing file: src/components/TurbulentOrb.tsx
+[2m2026-04-23T09:01:14.860949Z[0m [32m INFO[0m Syncing file: src/components/TurbulentOrb.tsx
+[2m2026-04-23T09:01:38.211808Z[0m [32m INFO[0m Syncing file: src/components/BootTransition.tsx
+[2m2026-04-23T09:01:39.462542Z[0m [33m WARN[0m FK constraint error in correlator (1): error returned from database: (code: 787) FOREIGN KEY constraint failed
+[2m2026-04-23T09:01:52.310710Z[0m [32m INFO[0m Syncing file: src/services/ai/v2/providers/openaiCompatible.ts
+[2m2026-04-23T09:01:53.961890Z[0m [32m INFO[0m Syncing file: src/components/BootTransition.tsx
+[2m2026-04-23T09:01:54.161475Z[0m [32m INFO[0m Syncing file: src/components/BootTransition.tsx
+[2m2026-04-23T09:01:58.916437Z[0m [32m INFO[0m Syncing file: src/hooks/useGuruChatSession.ts
+[2m2026-04-23T09:01:59.463312Z[0m [33m WARN[0m FK constraint error in correlator (1): error returned from database: (code: 787) FOREIGN KEY constraint failed
+[2m2026-04-23T09:02:22.611438Z[0m [32m INFO[0m Syncing file: src/services/ai/providers/openaiCompatible.ts
+[2m2026-04-23T09:03:14.161629Z[0m [32m INFO[0m Syncing file: src/services/ai/v2/providers/streamBridge.ts
+[2m2026-04-23T09:03:29.761744Z[0m [32m INFO[0m Syncing file: src/services/ai/v2/providers/gitlabDuo.ts
+[2m2026-04-23T09:03:40.461954Z[0m [32m INFO[0m Syncing file: src/services/ai/v2/providers/gitlabDuo.ts
+[2m2026-04-23T09:03:58.812397Z[0m [32m INFO[0m Syncing file: src/services/ai/v2/providers/gitlabDuo.ts
+[2m2026-04-23T09:03:59.462447Z[0m [33m WARN[0m FK constraint error in correlator (1): error returned from database: (code: 787) FOREIGN KEY constraint failed
+[2m2026-04-23T09:04:07.311799Z[0m [32m INFO[0m Syncing file: src/services/ai/providers/gitlabDuo.ts
+[2m2026-04-23T09:04:08.617070Z[0m [32m INFO[0m Syncing file: src/screens/ContentCard/index.tsx
+[2m2026-04-23T09:04:08.911269Z[0m [32m INFO[0m Syncing file: src/screens/ContentCard.unit.test.tsx
+[2m2026-04-23T09:04:09.463706Z[0m [33m WARN[0m FK constraint error in correlator (1): error returned from database: (code: 787) FOREIGN KEY constraint failed
+[2m2026-04-23T09:04:14.712680Z[0m [32m INFO[0m Syncing file: src/services/ai/providers/gitlabDuo.ts
+[2m2026-04-23T09:04:33.161951Z[0m [32m INFO[0m Syncing file: src/services/ai/providers/gitlabDuo.ts
+[2m2026-04-23T09:04:39.467487Z[0m [33m WARN[0m FK constraint error in correlator (1): error returned from database: (code: 787) FOREIGN KEY constraint failed
+[2m2026-04-23T09:04:44.962605Z[0m [32m INFO[0m Syncing file: src/services/ai/providers/poe.ts
+[2m2026-04-23T09:04:58.562426Z[0m [32m INFO[0m Syncing file: src/services/ai/providers/poe.ts
+[2m2026-04-23T09:04:59.462665Z[0m [33m WARN[0m FK constraint error in correlator (1): error returned from database: (code: 787) FOREIGN KEY constraint failed
+[2m2026-04-23T09:05:20.317107Z[0m [32m INFO[0m Syncing file: src/services/ai/providers/poe.ts
+[2m2026-04-23T09:05:28.915297Z[0m [32m INFO[0m Syncing file: src/services/ai/providers/geminiNano.ts
+[2m2026-04-23T09:05:50.662015Z[0m [32m INFO[0m Syncing file: src/services/ai/providers/geminiNano.ts
+[2m2026-04-23T09:05:59.462771Z[0m [33m WARN[0m FK constraint error in correlator (1): error returned from database: (code: 787) FOREIGN KEY constraint failed
+[2m2026-04-23T09:06:09.062362Z[0m [32m INFO[0m Syncing file: src/services/ai/providers/geminiNano.ts
+[2m2026-04-23T09:06:09.501598Z[0m [33m WARN[0m FK constraint error in correlator (1): error returned from database: (code: 787) FOREIGN KEY constraint failed
+[2m2026-04-23T09:06:20.462648Z[0m [32m INFO[0m Syncing file: src/services/ai/providers/liteRtLm.ts
+[2m2026-04-23T09:06:32.460840Z[0m [32m INFO[0m Syncing file: src/services/ai/providers/liteRtLm.ts
+[2m2026-04-23T09:06:49.464464Z[0m [32m INFO[0m Syncing file: src/services/ai/providers/liteRtLm.ts
+[2m2026-04-23T09:06:59.468039Z[0m [33m WARN[0m FK constraint error in correlator (1): error returned from database: (code: 787) FOREIGN KEY constraint failed
+[2m2026-04-23T09:07:16.611437Z[0m [32m INFO[0m Syncing file: src/services/ai/v2/providers/streamBridge.ts
+[2m2026-04-23T09:07:30.463997Z[0m [32m INFO[0m Syncing file: src/services/ai/v2/providers/streamBridge.ts
+[2m2026-04-23T09:07:42.813690Z[0m [32m INFO[0m Syncing file: src/services/ai/v2/providers/gitlabDuo.ts
+[2m2026-04-23T09:07:50.473686Z[0m [32m INFO[0m Received 7 LSP edges from extension
+[2m2026-04-23T09:07:55.412733Z[0m [32m INFO[0m Syncing file: src/services/ai/v2/providers/gitlabDuo.ts
+[2m2026-04-23T09:08:07.211147Z[0m [32m INFO[0m Syncing file: src/services/ai/v2/providers/gitlabDuo.ts
+[2m2026-04-23T09:08:20.864391Z[0m [32m INFO[0m Syncing file: src/services/ai/providers/gitlabDuo.ts
+[2m2026-04-23T09:08:32.963130Z[0m [32m INFO[0m Syncing file: src/services/ai/providers/gitlabDuo.ts
+[2m2026-04-23T09:08:47.716974Z[0m [32m INFO[0m Syncing file: src/services/ai/providers/poe.ts
+[2m2026-04-23T09:09:02.113658Z[0m [32m INFO[0m Syncing file: src/services/ai/providers/poe.ts
+[2m2026-04-23T09:09:26.063495Z[0m [32m INFO[0m Syncing file: src/services/ai/v2/middleware.ts
+[2m2026-04-23T09:09:44.512168Z[0m [32m INFO[0m Syncing file: src/services/ai/v2/middleware.ts
+[2m2026-04-23T09:09:54.212879Z[0m [32m INFO[0m Syncing file: src/services/ai/v2/index.ts
+[2m2026-04-23T09:10:26.366403Z[0m [32m INFO[0m Syncing file: src/services/ai/v2/providers/guruFallback.ts
+[2m2026-04-23T09:10:52.064802Z[0m [32m INFO[0m Syncing file: src/services/ai/v2/providers/guruFallback.ts
+[2m2026-04-23T09:11:06.315129Z[0m [32m INFO[0m Syncing file: src/services/ai/v2/providers/guruFallback.ts
+[2m2026-04-23T09:11:09.467082Z[0m [33m WARN[0m FK constraint error in correlator (1): error returned from database: (code: 787) FOREIGN KEY constraint failed
+[2m2026-04-23T09:11:50.765978Z[0m [32m INFO[0m Syncing file: src/services/ai/providers/gitlabDuo.ts
+[2m2026-04-23T09:12:03.416588Z[0m [32m INFO[0m Syncing file: src/services/ai/providers/poe.ts
+[2m2026-04-23T09:22:17.227746Z[0m [32m INFO[0m Received 5 LSP edges from extension
+[2m2026-04-23T09:22:25.463725Z[0m [32m INFO[0m Received 240 LSP edges from extension
+[2m2026-04-23T09:22:29.345840Z[0m [32m INFO[0m Received 142 LSP edges from extension
+[2m2026-04-23T09:22:33.372876Z[0m [32m INFO[0m Received 5 LSP edges from extension
+[2m2026-04-23T09:22:37.816831Z[0m [32m INFO[0m Received 189 LSP edges from extension
+[2m2026-04-23T09:22:41.150610Z[0m [32m INFO[0m Received 51 LSP edges from extension
+[2m2026-04-23T09:29:51.868207Z[0m [32m INFO[0m Syncing file: src/services/ai/llmRouting.ts
+[2m2026-04-23T09:30:50.916451Z[0m [32m INFO[0m Syncing file: src/services/ai/llmRouting.ts
+[2m2026-04-23T09:31:27.766925Z[0m [32m INFO[0m Syncing file: src/services/ai/llmRouting.ts
+[2m2026-04-23T09:31:29.470014Z[0m [33m WARN[0m FK constraint error in correlator (1): error returned from database: (code: 787) FOREIGN KEY constraint failed
+[2m2026-04-23T09:32:07.569396Z[0m [32m INFO[0m Syncing file: src/services/ai/llmRouting.ts
+[2m2026-04-23T09:32:16.818674Z[0m [32m INFO[0m Syncing file: src/services/ai/llmRouting.ts
+[2m2026-04-23T09:32:19.467687Z[0m [33m WARN[0m FK constraint error in correlator (1): error returned from database: (code: 787) FOREIGN KEY constraint failed
+[2m2026-04-23T09:32:28.719600Z[0m [31mERROR[0m Sync error for /Users/vishnugnair/Guru/debug/src/services/ai/llmRouting.ts: Cannot hash file /Users/vishnugnair/Guru/debug/src/services/ai/llmRouting.ts
+[2m2026-04-23T09:34:36.816885Z[0m [32m INFO[0m Syncing file: src/services/ai/llmRouting.ts
+[2m2026-04-23T09:34:39.472422Z[0m [33m WARN[0m FK constraint error in correlator (1): error returned from database: (code: 787) FOREIGN KEY constraint failed
+[2m2026-04-23T09:34:48.667301Z[0m [33m WARN[0m Node limit reached (2410/2000). Skipping remaining files. Upgrade your plan for more capacity.
+[2m2026-04-23T09:34:56.116606Z[0m [33m WARN[0m Node limit reached (2410/2000). Skipping remaining files. Upgrade your plan for more capacity.
+[2m2026-04-23T09:35:09.431148Z[0m [32m INFO[0m Received 1 LSP edges from extension
+[2m2026-04-23T09:35:42.467928Z[0m [32m INFO[0m Syncing file: src/services/ai/contentGeneration.ts
+[2m2026-04-23T09:35:46.816089Z[0m [32m INFO[0m Syncing file: src/services/ai/autoTaggingService.ts
+[2m2026-04-23T09:35:58.517836Z[0m [32m INFO[0m Syncing file: src/services/ai/compat.ts
+[2m2026-04-23T09:36:07.218112Z[0m [32m INFO[0m Syncing file: src/services/ai/contentGeneration.unit.test.ts
+[2m2026-04-23T09:36:18.117957Z[0m [32m INFO[0m Syncing file: src/services/ai/grounding/modePolicy.ts
+[2m2026-04-23T09:36:35.416402Z[0m [33m WARN[0m Node limit reached (2427/2000). Skipping remaining files. Upgrade your plan for more capacity.
+[2m2026-04-23T09:38:10.015816Z[0m [33m WARN[0m Node limit reached (2427/2000). Skipping remaining files. Upgrade your plan for more capacity.
+[2m2026-04-23T09:38:47.266026Z[0m [31mERROR[0m Sync error for /Users/vishnugnair/Guru/debug/src/services/ai/llmRouting.unit.test.ts: Cannot hash file /Users/vishnugnair/Guru/debug/src/services/ai/llmRouting.unit.test.ts
+[2m2026-04-23T09:39:27.466652Z[0m [32m INFO[0m Syncing file: src/services/ai/llmRouting.unit.test.ts
+[2m2026-04-23T09:42:11.069252Z[0m [32m INFO[0m Syncing file: src/components/TurbulentOrb.tsx
+[2m2026-04-23T09:44:18.569706Z[0m [32m INFO[0m Syncing file: src/components/BootTransition.tsx
+[2m2026-04-23T09:44:19.470275Z[0m [33m WARN[0m FK constraint error in correlator (1): error returned from database: (code: 787) FOREIGN KEY constraint failed
+[2m2026-04-23T09:46:28.269786Z[0m [32m INFO[0m Syncing file: src/components/BootTransition.tsx
+[2m2026-04-23T09:46:29.472007Z[0m [33m WARN[0m FK constraint error in correlator (1): error returned from database: (code: 787) FOREIGN KEY constraint failed
+[2m2026-04-23T09:47:27.472357Z[0m [32m INFO[0m Syncing file: src/components/LoadingOrb.tsx
+[2m2026-04-23T09:48:17.970750Z[0m [32m INFO[0m Syncing file: src/navigation/typedHooks.ts
+[2m2026-04-23T09:48:52.121319Z[0m [32m INFO[0m Syncing file: scripts/codemod-typed-nav.js
+[2m2026-04-23T09:49:23.169547Z[0m [33m WARN[0m Node limit reached (2434/2000). Skipping remaining files. Upgrade your plan for more capacity.
+[2m2026-04-23T09:49:23.218779Z[0m [33m WARN[0m Node limit reached (2434/2000). Skipping remaining files. Upgrade your plan for more capacity.
+[2m2026-04-23T09:51:58.720656Z[0m [32m INFO[0m Syncing file: src/components/TurbulentOrb.tsx
+[2m2026-04-23T09:52:05.826576Z[0m [32m INFO[0m Syncing file: src/components/BootTransition.tsx
+[2m2026-04-23T10:04:11.423182Z[0m [32m INFO[0m Syncing file: src/components/TurbulentOrb.tsx
+[2m2026-04-23T10:04:20.321499Z[0m [32m INFO[0m Syncing file: src/components/BootTransition.tsx
+[2m2026-04-23T10:04:29.474947Z[0m [33m WARN[0m FK constraint error in correlator (1): error returned from database: (code: 787) FOREIGN KEY constraint failed
+[2m2026-04-23T10:05:23.321414Z[0m [32m INFO[0m Syncing file: scripts/codemod-typed-nav-cleanup.js
+[2m2026-04-23T10:05:31.521714Z[0m [33m WARN[0m Node limit reached (2436/2000). Skipping remaining files. Upgrade your plan for more capacity.
+[2m2026-04-23T10:05:31.569825Z[0m [33m WARN[0m Node limit reached (2436/2000). Skipping remaining files. Upgrade your plan for more capacity.
+[2m2026-04-23T10:06:03.172061Z[0m [32m INFO[0m Syncing file: scripts/codemod-typed-nav-cleanup.js
+[2m2026-04-23T10:06:09.771873Z[0m [33m WARN[0m Node limit reached (2436/2000). Skipping remaining files. Upgrade your plan for more capacity.
+[2m2026-04-23T10:06:09.820981Z[0m [33m WARN[0m Node limit reached (2436/2000). Skipping remaining files. Upgrade your plan for more capacity.
+[2m2026-04-23T10:09:01.224509Z[0m [32m INFO[0m Syncing file: src/components/TurbulentOrb.tsx
+[2m2026-04-23T10:10:28.672714Z[0m [32m INFO[0m Syncing file: src/components/TurbulentOrb.tsx
+[2m2026-04-23T10:11:17.022358Z[0m [32m INFO[0m Syncing file: src/components/BootTransition.tsx
+[2m2026-04-23T10:11:19.473130Z[0m [33m WARN[0m FK constraint error in correlator (1): error returned from database: (code: 787) FOREIGN KEY constraint failed
+[2m2026-04-23T10:11:39.875618Z[0m [32m INFO[0m Syncing file: src/components/BootTransition.tsx
+[2m2026-04-23T10:13:01.378857Z[0m [32m INFO[0m Syncing file: src/screens/MindMapScreen.tsx
+[2m2026-04-23T10:13:05.172996Z[0m [32m INFO[0m Syncing file: src/components/BootTransition.tsx
+[2m2026-04-23T10:18:35.574515Z[0m [32m INFO[0m Syncing file: src/hooks/useAsyncData.ts
+[2m2026-04-23T10:19:16.122746Z[0m [32m INFO[0m Syncing file: src/screens/ManualLogScreen.tsx
+[2m2026-04-23T10:19:30.772935Z[0m [32m INFO[0m Syncing file: src/screens/ManualLogScreen.tsx
+[2m2026-04-23T10:19:39.271437Z[0m [32m INFO[0m Syncing file: src/screens/FlaggedReviewScreen.tsx
+[2m2026-04-23T10:19:48.522359Z[0m [32m INFO[0m Syncing file: src/screens/FlaggedReviewScreen.tsx
+[2m2026-04-23T10:19:49.721463Z[0m [32m INFO[0m Syncing file: src/screens/FlaggedReviewScreen.tsx
+[2m2026-04-23T10:22:14.424355Z[0m [32m INFO[0m Syncing file: src/screens/SyllabusScreen.tsx
+[2m2026-04-23T10:22:14.698646Z[0m [32m INFO[0m Reconciled 2 LSP edges for src/screens/SyllabusScreen.tsx
+[2m2026-04-23T10:22:37.272954Z[0m [32m INFO[0m Syncing file: src/components/SubjectCard.tsx
+[2m2026-04-23T10:23:51.872623Z[0m [32m INFO[0m Syncing file: src/screens/SyllabusScreen.tsx
+[2m2026-04-23T10:23:51.970847Z[0m [32m INFO[0m Reconciled 2 LSP edges for src/screens/SyllabusScreen.tsx
+[2m2026-04-23T10:24:08.524905Z[0m [32m INFO[0m Syncing file: src/db/database.ts
+[2m2026-04-23T10:24:08.640711Z[0m [32m INFO[0m Reconciled 50 LSP edges for src/db/database.ts
+[2m2026-04-23T10:25:53.822521Z[0m [32m INFO[0m Syncing file: split_study_plan.js
+[2m2026-04-23T10:25:53.871958Z[0m [32m INFO[0m Syncing file: src/screens/StudyPlanScreen.temp.tsx
+[2m2026-04-23T10:26:17.821861Z[0m [32m INFO[0m Syncing file: extract.js
+[2m2026-04-23T10:26:18.021598Z[0m [32m INFO[0m Syncing file: src/screens/StudyPlanScreen.temp.tsx
+[2m2026-04-23T10:26:19.476431Z[0m [33m WARN[0m FK constraint error in correlator (1): error returned from database: (code: 787) FOREIGN KEY constraint failed
+[2m2026-04-23T10:26:31.173045Z[0m [32m INFO[0m Syncing file: extract2.js
+[2m2026-04-23T10:26:31.322642Z[0m [32m INFO[0m Syncing file: src/screens/StudyPlanScreen.tsx
+[2m2026-04-23T10:27:29.682562Z[0m [32m INFO[0m Received 242 LSP edges from extension
+[2m2026-04-23T10:28:07.274592Z[0m [33m WARN[0m Node limit reached (2478/2000). Skipping remaining files. Upgrade your plan for more capacity.
+[2m2026-04-23T10:28:39.922299Z[0m [32m INFO[0m Syncing file: cleanup_imports.js

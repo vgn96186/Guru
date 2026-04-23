@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useCallback, useMemo } from 'react';
 import {
   ActivityIndicator,
   Pressable,
@@ -6,6 +6,7 @@ import {
   type PressableProps,
 } from 'react-native';
 import { tv } from 'tailwind-variants';
+import * as Haptics from 'expo-haptics';
 
 export type LinearIconButtonVariant =
   | 'ghost'
@@ -33,6 +34,10 @@ interface LinearIconButtonProps extends Omit<PressableProps, 'style' | 'classNam
   /** @deprecated Use className instead */
   style?: PressableProps['style'];
   contentClassName?: string;
+  /** Callback when press starts - use for custom haptics or state changes */
+  onPressIn?: PressableProps['onPressIn'];
+  /** Callback when press ends */
+  onPressOut?: PressableProps['onPressOut'];
 }
 
 const iconButtonVariants = tv({
@@ -77,32 +82,62 @@ export default function LinearIconButton({
   style,
   contentClassName,
   accessibilityState,
+  onPressIn,
+  onPressOut,
   ...props
 }: LinearIconButtonProps) {
   const resolvedDisabled = disabled || loading;
   const finalSpinnerColor = spinnerColor ?? spinnerColorMap[variant];
 
+  // Memoize class to prevent re-renders
+  const buttonClassName = useMemo(
+    () =>
+      iconButtonVariants({
+        variant,
+        size,
+        shape,
+        disabled: resolvedDisabled,
+        className,
+      }),
+    [variant, size, shape, resolvedDisabled, className],
+  );
+
+  // Haptic feedback on press
+  const handlePressIn = useCallback(
+    (e: Parameters<NonNullable<PressableProps['onPressIn']>>[0]) => {
+      if (!resolvedDisabled) {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      }
+      onPressIn?.(e);
+    },
+    [resolvedDisabled, onPressIn],
+  );
+
+  // Memoize dynamic style function
+  const dynamicStyle = typeof style === 'function' ? style : null;
+
   return (
     <Pressable
       {...props}
       disabled={resolvedDisabled}
+      onPressIn={handlePressIn}
+      onPressOut={onPressOut}
       accessibilityRole="button"
       accessibilityState={{
         ...accessibilityState,
         disabled: resolvedDisabled,
         busy: loading || accessibilityState?.busy,
       }}
-      className={iconButtonVariants({
-        variant,
-        size,
-        shape,
-        disabled: resolvedDisabled,
-        className,
-      })}
-      style={({ pressed }) => [
-        { opacity: pressed ? 0.88 : 1 },
-        typeof style === 'function' ? style({ pressed }) : style,
-      ]}
+      className={buttonClassName}
+      // @ts-expect-error - Pressable style callback returning mixed array is valid RN pattern
+      style={({ pressed }) => {
+        const pressedOpacity = pressed ? 0.88 : resolvedDisabled ? 0.55 : 1;
+        const dynamicStyleFn = dynamicStyle;
+        return [
+          { opacity: pressedOpacity },
+          dynamicStyleFn ? dynamicStyleFn({ pressed }) : style,
+        ];
+      }}
     >
       <View className={`items-center justify-center ${contentClassName ?? ''}`}>
         {loading ? <ActivityIndicator size="small" color={finalSpinnerColor} /> : children}

@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import {
   View,
   TouchableOpacity,
@@ -27,21 +27,13 @@ import { MS_PER_DAY } from '../constants/time';
 import { Ionicons } from '@expo/vector-icons';
 import { getCompletedTopicIdsBetween } from '../db/queries/sessions';
 import { getTopicsDueForReview, getAllTopicsWithProgress } from '../db/queries/topics';
-import {
-  getCompletedLectures,
-  markLectureCompleted,
-  unmarkLectureCompleted,
-  getLectureIndexForSubject,
-} from '../db/queries/lectureSchedule';
-import { getDb } from '../db/database';
+
+
 import type { TopicWithProgress, StudyResourceMode } from '../types';
 import ScreenHeader from '../components/ScreenHeader';
-import { DBMCI_SUBJECT_ORDER, DBMCI_WORKLOAD_OVERRIDES } from '../services/studyPlannerBuckets';
 import { SUBJECTS_SEED } from '../constants/syllabus';
-import { getCurrentLecturePosition } from '../services/lecturePositionService';
 import LinearSurface from '../components/primitives/LinearSurface';
 import LinearText from '../components/primitives/LinearText';
-import { confirmDestructive } from '../components/dialogService';
 
 import { MenuNav } from '../navigation/typedHooks';
 import LiveClassBanner from './studyPlan/cards/LiveClassBanner';
@@ -319,19 +311,22 @@ export default function StudyPlanScreen() {
       tone: summary.overdueBacklogDays > 4 ? ('error' as const) : ('success' as const),
     },
   ];
-  const foundationToday =
-    todayPlan?.items
+  // Pre-compute aggregates once — map+filter over items on every render was expensive
+  const { foundationToday, watchedNeedingQuizToday } = useMemo(() => {
+    const items = todayPlan?.items ?? [];
+    const foundation = items
       .map((item) => item.topic)
       .filter(
         (topic) =>
           topic.progress.confidence <= 1 ||
           topic.progress.isNemesis ||
           (topic.progress.wrongCount ?? 0) >= 2,
-      ) ?? [];
-  const watchedNeedingQuizToday =
-    todayPlan?.items
+      );
+    const quizRecovery = items
       .filter((item) => item.topic.progress.status === 'seen' && item.topic.progress.confidence < 1)
-      .map((item) => item.topic) ?? [];
+      .map((item) => item.topic);
+    return { foundationToday: foundation, watchedNeedingQuizToday: quizRecovery };
+  }, [todayPlan]);
 
   return (
     <SafeAreaView style={styles.safe} testID="plan-screen">

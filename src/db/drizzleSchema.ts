@@ -64,6 +64,8 @@ export const sessions = sqliteTable('sessions', {
   completedTopics: text('completed_topics').notNull().default('[]'),
   totalXpEarned: integer('total_xp_earned').notNull().default(0),
   durationMinutes: integer('duration_minutes'),
+  cardsCreated: integer('cards_created').default(0),
+  nodesCreated: integer('nodes_created').default(0),
   mood: text('mood'),
   mode: text('mode').notNull().default('normal'),
   notes: text('notes'),
@@ -151,6 +153,7 @@ export const userProfile = sqliteTable('user_profile', {
   lastActiveDate: text('last_active_date'),
   syncCode: text('sync_code'),
   strictModeEnabled: integer('strict_mode_enabled').notNull().default(0),
+  doomscrollShieldEnabled: integer('doomscroll_shield_enabled').notNull().default(1),
   streakShieldAvailable: integer('streak_shield_available').notNull().default(1),
   bodyDoublingEnabled: integer('body_doubling_enabled').notNull().default(1),
   blockedContentTypes: text('blocked_content_types').notNull().default('[]'),
@@ -179,7 +182,8 @@ export const userProfile = sqliteTable('user_profile', {
   transcriptionProvider: text('transcription_provider').notNull().default('auto'),
   studyResourceMode: text('study_resource_mode').notNull().default('hybrid'),
   subjectLoadOverridesJson: text('subject_load_overrides_json').notNull().default('{}'),
-  loadingOrbStyle: text('loading_orb_style').notNull().default('classic'),
+  harassmentTone: text('harassment_tone').notNull().default('shame'),
+  loadingOrbStyle: text('loading_orb_style').notNull().default('turbulent'),
   backupDirectoryUri: text('backup_directory_uri'),
   pomodoroEnabled: integer('pomodoro_enabled').notNull().default(1),
   pomodoroIntervalMinutes: integer('pomodoro_interval_minutes').notNull().default(20),
@@ -230,6 +234,8 @@ export const userProfile = sqliteTable('user_profile', {
   vertexAiToken: text('vertex_ai_token').notNull().default(''),
   autoRepairLegacyNotesEnabled: integer('auto_repair_legacy_notes_enabled').notNull().default(0),
   scanOrphanedTranscriptsEnabled: integer('scan_orphaned_transcripts_enabled').notNull().default(0),
+  samsungBatteryPromptShownAt: integer('samsungBatteryPromptShownAt').default(0),
+  orbEffect: text('orb_effect').notNull().default('ripple'),
 });
 
 export const guruChatSessionMemory = sqliteTable('guru_chat_session_memory', {
@@ -314,14 +320,20 @@ export const offlineAiQueue = sqliteTable('offline_ai_queue', {
   errorMessage: text('error_message'),
 });
 
-export const dailyAgenda = sqliteTable('daily_agenda', {
-  id: integer('id').primaryKey({ autoIncrement: true }),
-  date: text('date').notNull(),
-  planJson: text('plan_json').notNull(),
-  source: text('source').default('guru'),
-  createdAt: integer('created_at').notNull(),
-  updatedAt: integer('updated_at').notNull(),
-});
+export const dailyAgenda = sqliteTable(
+  'daily_agenda',
+  {
+    id: integer('id').primaryKey({ autoIncrement: true }),
+    date: text('date').notNull(),
+    planJson: text('plan_json').notNull(),
+    source: text('source').default('guru'),
+    createdAt: integer('created_at').notNull(),
+    updatedAt: integer('updated_at').notNull(),
+  },
+  (table) => ({
+    dateUnique: uniqueIndex('daily_agenda_date_unique').on(table.date),
+  }),
+);
 
 export const planEvents = sqliteTable('plan_events', {
   id: integer('id').primaryKey({ autoIncrement: true }),
@@ -411,6 +423,7 @@ export const mindMapNodes = sqliteTable('mind_map_nodes', {
   color: text('color'),
   isCenter: integer('is_center').notNull().default(0),
   aiGenerated: integer('ai_generated').notNull().default(0),
+  explanation: text('explanation'),
   createdAt: integer('created_at').notNull(),
 });
 
@@ -420,6 +433,7 @@ export const mindMapEdges = sqliteTable('mind_map_edges', {
   sourceNodeId: integer('source_node_id').notNull(),
   targetNodeId: integer('target_node_id').notNull(),
   label: text('label'),
+  isCrossLink: integer('is_cross_link').notNull().default(0),
   createdAt: integer('created_at').notNull(),
 });
 
@@ -447,6 +461,43 @@ export const migrationHistory = sqliteTable('migration_history', {
   version: integer('version').primaryKey(),
   appliedAt: integer('applied_at').notNull(),
   description: text('description'),
+});
+
+export const semanticLinks = sqliteTable(
+  'semantic_links',
+  {
+    id: integer('id').primaryKey({ autoIncrement: true }),
+    sourceType: text('source_type').notNull(),
+    sourceId: integer('source_id').notNull(),
+    targetType: text('target_type').notNull(),
+    targetId: integer('target_id').notNull(),
+    relationship: text('relationship'),
+    createdAt: integer('created_at').notNull(),
+  },
+  (table) => ({
+    sourceTargetUnique: uniqueIndex('idx_semantic_links_unique').on(
+      table.sourceType,
+      table.sourceId,
+      table.targetType,
+      table.targetId,
+    ),
+  }),
+);
+
+export const topicNotes = sqliteTable('topic_notes', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  topicId: integer('topic_id').notNull(),
+  content: text('content').notNull(),
+  createdAt: integer('created_at').notNull(),
+  updatedAt: integer('updated_at').notNull(),
+});
+
+export const mindMapNodeLinks = sqliteTable('mind_map_node_links', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  nodeId: integer('node_id').notNull(),
+  resourceType: text('resource_type').notNull(),
+  resourceId: integer('resource_id').notNull(),
+  createdAt: integer('created_at').notNull(),
 });
 
 export type UserProfileRow = typeof userProfile.$inferSelect;

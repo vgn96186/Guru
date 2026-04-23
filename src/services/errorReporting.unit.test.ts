@@ -1,5 +1,3 @@
-import * as Sentry from '@sentry/react-native';
-import { logErrorToDatabase } from './errorLoggingService';
 
 jest.mock('@sentry/react-native', () => ({
   init: jest.fn(),

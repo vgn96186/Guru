@@ -1,21 +1,26 @@
 import React from 'react';
 import { ActivityIndicator, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import {
-  showDialog,
-  showError,
-  showSuccess,
-  showWarning,
-  showInfo,
-  confirmDestructive,
-} from '../../../components/dialogService';
-import { showToast } from '../../../components/Toast';
+import { showError, showSuccess, showWarning, showInfo } from '../../../components/dialogService';
 import SettingsField from '../components/SettingsField';
 import LinearText from '../../../components/primitives/LinearText';
 import { linearTheme } from '../../../theme/linearTheme';
 import type { AutoBackupFrequency } from '../../../services/unifiedBackupService';
 import type { UserProfile } from '../../../types';
 import { useSettingsState } from '../../../hooks/useSettingsState';
+
+import {
+  handleClearAiCache,
+  handleResetProgress,
+} from '../../../services/settings/dangerOperations';
+import {
+  handleExportBackup,
+  handleImportBackup,
+  handleRunAutoBackupNow,
+  handleCleanupOldBackups,
+  handleSyncGoogleDrive,
+  handleDisconnectGoogleDrive,
+} from '../../../services/settings/backupOperations';
 
 function getErrorMessage(error: unknown): string {
   if (error instanceof Error && error.message) return error.message;
@@ -74,32 +79,7 @@ export default function StorageSections(props: any) {
       <SectionToggle id="data" title="Data" icon="trash-outline" tint="#F44336">
         <TouchableOpacity
           style={styles.dangerBtn}
-          onPress={async () => {
-            const result = await showDialog({
-              title: 'Clear AI Cache?',
-              message: 'All cached content cards will be regenerated fresh on next use.',
-              variant: 'warning',
-              actions: [
-                { id: 'cancel', label: 'Cancel', variant: 'secondary' },
-                {
-                  id: 'clear-ai-cache',
-                  label: 'Clear',
-                  variant: 'destructive',
-                  isDestructive: true,
-                },
-              ],
-              allowDismiss: true,
-            });
-
-            if (result !== 'clear-ai-cache') return;
-
-            clearAiCache();
-            showToast({
-              title: 'Done',
-              message: 'AI cache cleared.',
-              variant: 'success',
-            });
-          }}
+          onPress={() => handleClearAiCache(clearAiCache)}
           activeOpacity={0.8}
         >
           <LinearText variant="body" style={styles.dangerBtnText}>
@@ -114,34 +94,7 @@ export default function StorageSections(props: any) {
             styles.dangerBtn,
             { borderColor: linearTheme.colors.error + '55', marginTop: 10 },
           ]}
-          onPress={async () => {
-            const result = await showDialog({
-              title: 'Reset all progress?',
-              message:
-                'This clears all topic progress, XP, streaks, and daily logs. This cannot be undone. Export a backup first.',
-              variant: 'destructive',
-              actions: [
-                { id: 'cancel', label: 'Cancel', variant: 'secondary' },
-                {
-                  id: 'reset-progress',
-                  label: 'Reset',
-                  variant: 'destructive',
-                  isDestructive: true,
-                },
-              ],
-              allowDismiss: true,
-            });
-
-            if (result !== 'reset-progress') return;
-
-            resetStudyProgress();
-            refreshProfile();
-            showToast({
-              title: 'Reset',
-              message: 'Progress has been wiped. Start fresh!',
-              variant: 'success',
-            });
-          }}
+          onPress={() => handleResetProgress(resetStudyProgress, refreshProfile)}
           activeOpacity={0.8}
         >
           <LinearText
@@ -190,21 +143,14 @@ export default function StorageSections(props: any) {
             style={[styles.backupBtn, backupBusy && styles.saveBtnDisabled]}
             disabled={backupBusy}
             activeOpacity={0.8}
-            onPress={async () => {
-              setBackupBusy(true);
-              try {
-                const success = await exportUnifiedBackup();
-                if (success) {
-                  const now = new Date().toISOString();
-                  updateUserProfile({ lastBackupDate: now });
-                  refreshProfile();
-                }
-              } catch (e: unknown) {
-                showError(e, 'Unknown error');
-              } finally {
-                setBackupBusy(false);
-              }
-            }}
+            onPress={() =>
+              handleExportBackup({
+                setBackupBusy,
+                exportUnifiedBackup,
+                updateUserProfile,
+                refreshProfile,
+              })
+            }
           >
             {backupBusy ? (
               <ActivityIndicator size="small" color={linearTheme.colors.textPrimary} />
@@ -222,29 +168,9 @@ export default function StorageSections(props: any) {
             ]}
             disabled={backupBusy}
             activeOpacity={0.8}
-            onPress={async () => {
-              const ok = await confirmDestructive(
-                'Restore from backup?',
-                'This will overwrite your current data with data from the .guru backup file. You can selectively restore settings, progress, transcripts, and images.',
-                { confirmLabel: 'Restore' },
-              );
-              if (!ok) return;
-
-              setBackupBusy(true);
-              try {
-                const res = await importUnifiedBackup();
-                if (res.ok) {
-                  showSuccess('Restored!', res.message);
-                  refreshProfile();
-                } else {
-                  showError(res.message, 'Import failed');
-                }
-              } catch (e: unknown) {
-                showError(e, 'Import failed');
-              } finally {
-                setBackupBusy(false);
-              }
-            }}
+            onPress={() =>
+              handleImportBackup({ setBackupBusy, importUnifiedBackup, refreshProfile })
+            }
           >
             <LinearText
               variant="body"
@@ -283,8 +209,8 @@ export default function StorageSections(props: any) {
                 {freq === 'off'
                   ? 'Off'
                   : freq === '3days'
-                    ? '3 Days'
-                    : freq.charAt(0).toUpperCase() + freq.slice(1)}
+                  ? '3 Days'
+                  : freq.charAt(0).toUpperCase() + freq.slice(1)}
               </LinearText>
             </TouchableOpacity>
           ))}
@@ -293,49 +219,14 @@ export default function StorageSections(props: any) {
           style={[styles.maintenanceBtn, backupBusy && styles.saveBtnDisabled]}
           disabled={backupBusy}
           activeOpacity={0.8}
-          onPress={async () => {
-            const result = await showDialog({
-              title: 'Run Auto-Backup Now?',
-              message: 'This will create an automatic backup regardless of your frequency setting.',
-              variant: 'focus',
-              actions: [
-                { id: 'cancel', label: 'Cancel', variant: 'secondary' },
-                { id: 'run-auto-backup', label: 'Run Backup', variant: 'primary' },
-              ],
-              allowDismiss: true,
-            });
-
-            if (result !== 'run-auto-backup') return;
-
-            setBackupBusy(true);
-            try {
-              const success = await runAutoBackup();
-              if (success) {
-                const now = new Date().toISOString();
-                await profileRepository.updateProfile({ lastAutoBackupAt: now });
-                refreshProfile();
-                showToast({
-                  title: 'Auto-backup complete',
-                  message: 'Automatic backup finished successfully.',
-                  variant: 'success',
-                });
-              } else {
-                showToast({
-                  title: 'Failed',
-                  message: 'Auto-backup failed. Check logs for details.',
-                  variant: 'error',
-                });
-              }
-            } catch (e: unknown) {
-              showToast({
-                title: 'Failed',
-                message: getErrorMessage(e),
-                variant: 'error',
-              });
-            } finally {
-              setBackupBusy(false);
-            }
-          }}
+          onPress={() =>
+            handleRunAutoBackupNow({
+              setBackupBusy,
+              runAutoBackup,
+              profileRepository,
+              refreshProfile,
+            })
+          }
         >
           <LinearText variant="body" style={styles.maintenanceBtnText}>
             Run Auto-Backup Now
@@ -345,25 +236,7 @@ export default function StorageSections(props: any) {
           style={[styles.maintenanceBtn, backupBusy && styles.saveBtnDisabled]}
           disabled={backupBusy}
           activeOpacity={0.8}
-          onPress={async () => {
-            setBackupBusy(true);
-            try {
-              await cleanupOldBackups(5);
-              showToast({
-                title: 'Cleanup complete',
-                message: 'Old backups have been cleaned up.',
-                variant: 'success',
-              });
-            } catch (e: unknown) {
-              showToast({
-                title: 'Cleanup failed',
-                message: getErrorMessage(e),
-                variant: 'error',
-              });
-            } finally {
-              setBackupBusy(false);
-            }
-          }}
+          onPress={() => handleCleanupOldBackups({ setBackupBusy, cleanupOldBackups })}
         >
           <LinearText variant="body" style={styles.maintenanceBtnText}>
             Clean Up Old Backups
@@ -411,22 +284,9 @@ export default function StorageSections(props: any) {
                 style={[styles.backupBtn, backupBusy && styles.saveBtnDisabled]}
                 disabled={backupBusy}
                 activeOpacity={0.8}
-                onPress={async () => {
-                  setBackupBusy(true);
-                  try {
-                    const success = await runAutoBackup();
-                    if (success) {
-                      refreshProfile();
-                      showSuccess('Synced', 'Backup uploaded to Google Drive.');
-                    } else {
-                      showError('Could not create or upload backup.', 'Sync failed');
-                    }
-                  } catch (e: unknown) {
-                    showError(e, 'Sync failed');
-                  } finally {
-                    setBackupBusy(false);
-                  }
-                }}
+                onPress={() =>
+                  handleSyncGoogleDrive({ setBackupBusy, runAutoBackup, refreshProfile })
+                }
               >
                 <LinearText variant="body" style={styles.backupBtnText}>
                   Sync Now
@@ -440,20 +300,7 @@ export default function StorageSections(props: any) {
                 ]}
                 disabled={backupBusy}
                 activeOpacity={0.8}
-                onPress={async () => {
-                  const ok = await confirmDestructive(
-                    'Disconnect Google Drive?',
-                    'Auto-sync will stop. Your existing backups on Drive will remain.',
-                    { confirmLabel: 'Disconnect' },
-                  );
-                  if (!ok) return;
-                  try {
-                    await signOutGDrive();
-                    refreshProfile();
-                  } catch (e: unknown) {
-                    showError(e, 'Failed to disconnect');
-                  }
-                }}
+                onPress={() => handleDisconnectGoogleDrive({ signOutGDrive, refreshProfile })}
               >
                 <LinearText
                   variant="body"
@@ -537,8 +384,9 @@ export default function StorageSections(props: any) {
             runMaintenanceTask(
               'retry',
               async () => {
-                const { retryFailedTasks } =
-                  await import('../../../services/lecture/lectureSessionMonitor');
+                const { retryFailedTasks } = await import(
+                  '../../../services/lecture/lectureSessionMonitor'
+                );
                 const activeProfile = await getUserProfile();
                 return retryFailedTasks(activeProfile?.groqApiKey || undefined);
               },
@@ -566,8 +414,9 @@ export default function StorageSections(props: any) {
             runMaintenanceTask(
               'legacy',
               async () => {
-                const { autoRepairLegacyNotes } =
-                  await import('../../../services/lecture/lectureSessionMonitor');
+                const { autoRepairLegacyNotes } = await import(
+                  '../../../services/lecture/lectureSessionMonitor'
+                );
                 return autoRepairLegacyNotes();
               },
               {
@@ -594,8 +443,9 @@ export default function StorageSections(props: any) {
             runMaintenanceTask(
               'transcripts',
               async () => {
-                const { scanAndRecoverOrphanedTranscripts } =
-                  await import('../../../services/lecture/lectureSessionMonitor');
+                const { scanAndRecoverOrphanedTranscripts } = await import(
+                  '../../../services/lecture/lectureSessionMonitor'
+                );
                 return scanAndRecoverOrphanedTranscripts();
               },
               {
@@ -622,8 +472,9 @@ export default function StorageSections(props: any) {
             runMaintenanceTask(
               'recordings',
               async () => {
-                const { scanAndRecoverOrphanedRecordings } =
-                  await import('../../../services/lecture/lectureSessionMonitor');
+                const { scanAndRecoverOrphanedRecordings } = await import(
+                  '../../../services/lecture/lectureSessionMonitor'
+                );
                 return scanAndRecoverOrphanedRecordings();
               },
               {
@@ -650,8 +501,9 @@ export default function StorageSections(props: any) {
             runMaintenanceTask(
               'cleanup_artifacts',
               async () => {
-                const { cleanupFailedArtifacts } =
-                  await import('../../../services/lecture/lectureSessionMonitor');
+                const { cleanupFailedArtifacts } = await import(
+                  '../../../services/lecture/lectureSessionMonitor'
+                );
                 return cleanupFailedArtifacts();
               },
               {

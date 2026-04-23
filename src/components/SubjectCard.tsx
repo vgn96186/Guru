@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { TouchableOpacity, View, StyleSheet } from 'react-native';
 import ReAnimated, {
   useSharedValue,
@@ -73,12 +73,32 @@ export default React.memo(function SubjectCard({
   const pct = coverage.total === 0 ? 0 : Math.round((coverage.seen / coverage.total) * 100);
 
   const progressWidth = useSharedValue(pct);
+  // Debounce animation — only fire when percentage meaningfully changes
+  const prevPctRef = useRef(pct);
+  const animTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
-    progressWidth.value = withTiming(pct, {
-      duration: 600,
-      easing: Easing.inOut(Easing.cubic),
-    });
+    // Skip if change is too small (< 2 percentage points)
+    if (Math.abs(pct - prevPctRef.current) < 2 && prevPctRef.current !== 0) {
+      return;
+    }
+    prevPctRef.current = pct;
+
+    if (animTimerRef.current) {
+      clearTimeout(animTimerRef.current);
+    }
+    animTimerRef.current = setTimeout(() => {
+      progressWidth.value = withTiming(pct, {
+        duration: 600,
+        easing: Easing.inOut(Easing.cubic),
+      });
+    }, 80);
+
+    return () => {
+      if (animTimerRef.current) {
+        clearTimeout(animTimerRef.current);
+      }
+    };
   }, [pct, progressWidth]);
 
   const progressAnimatedStyle = useAnimatedStyle(() => {

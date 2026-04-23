@@ -15,9 +15,6 @@ import ErrorBoundary from '../components/ErrorBoundary';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
-import { useRoute, useNavigation, type RouteProp } from '@react-navigation/native';
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import type { MenuStackParamList } from '../navigation/types';
 import {
   getTopicById,
   getTopicsDueForReview,
@@ -32,8 +29,8 @@ import LoadingOrb from '../components/LoadingOrb';
 import { linearTheme as n } from '../theme/linearTheme';
 import { ResponsiveContainer } from '../hooks/useResponsive';
 import ScreenHeader from '../components/ScreenHeader';
-import { useSPen } from '../hooks/useSPen';
 
+import { MenuNav } from '../navigation/typedHooks';
 /** Flashcard image that hides gracefully when loading fails */
 const FlashcardImage = React.memo(function FlashcardImage({
   url,
@@ -62,8 +59,8 @@ const RATINGS = [
 ];
 
 export default function FlashcardsScreen() {
-  const navigation = useNavigation<NativeStackNavigationProp<MenuStackParamList>>();
-  const route = useRoute<RouteProp<MenuStackParamList, 'Flashcards'>>();
+  const navigation = MenuNav.useNav();
+  const route = MenuNav.useRoute<'Flashcards'>();
   const refreshProfile = useRefreshProfile();
   const [queue, setQueue] = useState<TopicWithProgress[]>([]);
   const [currentIdx, setCurrentIdx] = useState(0);

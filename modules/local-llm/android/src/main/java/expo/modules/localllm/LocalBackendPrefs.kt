@@ -71,6 +71,8 @@ object LocalBackendPrefs {
     private const val KEY_PENDING_LOCAL_GPU_INIT_MODEL = "KEY_PENDING_LOCAL_GPU_INIT_MODEL"
     private const val KEY_PENDING_LOCAL_GPU_INIT_AT = "KEY_PENDING_LOCAL_GPU_INIT_AT"
     private const val KEY_PENDING_LOCAL_GPU_INIT_PID = "KEY_PENDING_LOCAL_GPU_INIT_PID"
+    private const val KEY_MAX_NUM_TOKENS = "KEY_MAX_NUM_TOKENS"
+    private const val DEFAULT_MAX_NUM_TOKENS = 4096
 
     fun getLocalBackendPreference(): String = getString(KEY_LOCAL_BACKEND_PREFERENCE, "")
     fun setLocalBackendPreference(value: String) = putString(KEY_LOCAL_BACKEND_PREFERENCE, value)
@@ -118,4 +120,8 @@ object LocalBackendPrefs {
             KEY_PENDING_LOCAL_GPU_INIT_PID,
         )
     }
+
+    // ==================== Max Output Tokens ====================
+    fun getMaxNumTokens(): Int = getInt(KEY_MAX_NUM_TOKENS, DEFAULT_MAX_NUM_TOKENS)
+    fun setMaxNumTokens(value: Int) = putInt(KEY_MAX_NUM_TOKENS, value)
 }

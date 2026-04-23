@@ -4,7 +4,7 @@ import { getRecentlyStudiedTopicNames } from '../db/queries/sessions';
 import { profileRepository } from '../db/repositories';
 import { planSessionWithAI } from './ai';
 import { getMoodContentTypes } from '../constants/prompts';
-import type { TopicWithProgress, Mood, ContentType } from '../types';
+import type { TopicWithProgress } from '../types';
 
 jest.mock('../db/queries/topics', () => ({
   getAllTopicsWithProgress: jest.fn(),

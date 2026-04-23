@@ -1,4 +1,7 @@
-import { getDb, nowTs } from '../database';
+import { generatedStudyImagesRepositoryDrizzle } from '../repositories/generatedStudyImagesRepository.drizzle';
+import { getDrizzleDb } from '../drizzle';
+import { generatedStudyImages } from '../drizzleSchema';
+import { and, desc, eq, inArray } from 'drizzle-orm';
 
 export type GeneratedStudyImageContextType = 'chat' | 'topic_note' | 'lecture_note';
 export type GeneratedStudyImageStyle = 'illustration' | 'chart';
@@ -39,123 +42,41 @@ export interface SaveGeneratedStudyImageInput {
   height?: number | null;
 }
 
-function mapRow(row: {
-  id: number;
-  context_type: GeneratedStudyImageContextType;
-  context_key: string;
-  topic_id: number | null;
-  topic_name: string;
-  lecture_note_id: number | null;
-  style: GeneratedStudyImageStyle;
-  prompt: string;
-  provider: string;
-  model_used: string;
-  mime_type: string;
-  local_uri: string;
-  remote_url: string | null;
-  width: number | null;
-  height: number | null;
-  created_at: number;
-}): GeneratedStudyImageRecord {
+function mapRow(row: typeof generatedStudyImages.$inferSelect): GeneratedStudyImageRecord {
   return {
     id: row.id,
-    contextType: row.context_type,
-    contextKey: row.context_key,
-    topicId: row.topic_id,
-    topicName: row.topic_name,
-    lectureNoteId: row.lecture_note_id,
-    style: row.style,
+    contextType: row.contextType as GeneratedStudyImageContextType,
+    contextKey: row.contextKey,
+    topicId: row.topicId,
+    topicName: row.topicName,
+    lectureNoteId: row.lectureNoteId,
+    style: row.style as GeneratedStudyImageStyle,
     prompt: row.prompt,
     provider: row.provider,
-    modelUsed: row.model_used,
-    mimeType: row.mime_type,
-    localUri: row.local_uri,
-    remoteUrl: row.remote_url,
+    modelUsed: row.modelUsed,
+    mimeType: row.mimeType,
+    localUri: row.localUri,
+    remoteUrl: row.remoteUrl,
     width: row.width,
     height: row.height,
-    createdAt: row.created_at,
+    createdAt: row.createdAt,
   };
 }
 
 export async function saveGeneratedStudyImage(
   input: SaveGeneratedStudyImageInput,
 ): Promise<GeneratedStudyImageRecord> {
-  const db = getDb();
-  const createdAt = nowTs();
-  const result = await db.runAsync(
-    `INSERT INTO generated_study_images (
-       context_type, context_key, topic_id, topic_name, lecture_note_id, style, prompt,
-       provider, model_used, mime_type, local_uri, remote_url, width, height, created_at
-     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-    [
-      input.contextType,
-      input.contextKey,
-      input.topicId ?? null,
-      input.topicName,
-      input.lectureNoteId ?? null,
-      input.style,
-      input.prompt,
-      input.provider,
-      input.modelUsed,
-      input.mimeType,
-      input.localUri,
-      input.remoteUrl ?? null,
-      input.width ?? null,
-      input.height ?? null,
-      createdAt,
-    ],
-  );
-
-  return {
-    id: Number(result.lastInsertRowId),
-    contextType: input.contextType,
-    contextKey: input.contextKey,
-    topicId: input.topicId ?? null,
-    topicName: input.topicName,
-    lectureNoteId: input.lectureNoteId ?? null,
-    style: input.style,
-    prompt: input.prompt,
-    provider: input.provider,
-    modelUsed: input.modelUsed,
-    mimeType: input.mimeType,
-    localUri: input.localUri,
-    remoteUrl: input.remoteUrl ?? null,
-    width: input.width ?? null,
-    height: input.height ?? null,
-    createdAt,
-  };
+  return generatedStudyImagesRepositoryDrizzle.saveGeneratedStudyImage(input);
 }
 
 export async function getGeneratedStudyImagesForContext(
   contextType: GeneratedStudyImageContextType,
   contextKey: string,
 ): Promise<GeneratedStudyImageRecord[]> {
-  const db = getDb();
-  const rows = await db.getAllAsync<{
-    id: number;
-    context_type: GeneratedStudyImageContextType;
-    context_key: string;
-    topic_id: number | null;
-    topic_name: string;
-    lecture_note_id: number | null;
-    style: GeneratedStudyImageStyle;
-    prompt: string;
-    provider: string;
-    model_used: string;
-    mime_type: string;
-    local_uri: string;
-    remote_url: string | null;
-    width: number | null;
-    height: number | null;
-    created_at: number;
-  }>(
-    `SELECT *
-     FROM generated_study_images
-     WHERE context_type = ? AND context_key = ?
-     ORDER BY created_at DESC`,
-    [contextType, contextKey],
+  return generatedStudyImagesRepositoryDrizzle.getGeneratedStudyImagesForContext(
+    contextType,
+    contextKey,
   );
-  return rows.map(mapRow);
 }
 
 export async function listGeneratedStudyImagesForContexts(
@@ -167,32 +88,18 @@ export async function listGeneratedStudyImagesForContexts(
     return [];
   }
 
-  const db = getDb();
-  const placeholders = normalizedKeys.map(() => '?').join(', ');
-  const rows = await db.getAllAsync<{
-    id: number;
-    context_type: GeneratedStudyImageContextType;
-    context_key: string;
-    topic_id: number | null;
-    topic_name: string;
-    lecture_note_id: number | null;
-    style: GeneratedStudyImageStyle;
-    prompt: string;
-    provider: string;
-    model_used: string;
-    mime_type: string;
-    local_uri: string;
-    remote_url: string | null;
-    width: number | null;
-    height: number | null;
-    created_at: number;
-  }>(
-    `SELECT *
-     FROM generated_study_images
-     WHERE context_type = ? AND context_key IN (${placeholders})
-     ORDER BY created_at DESC`,
-    [contextType, ...normalizedKeys],
-  );
+  const db = getDrizzleDb();
+  const rows = await db
+    .select()
+    .from(generatedStudyImages)
+    .where(
+      and(
+        eq(generatedStudyImages.contextType, contextType),
+        inArray(generatedStudyImages.contextKey, normalizedKeys),
+      ),
+    )
+    .orderBy(desc(generatedStudyImages.createdAt));
+
   return rows.map(mapRow);
 }
 
@@ -200,59 +107,21 @@ export async function listGeneratedStudyImagesForTopic(
   contextType: GeneratedStudyImageContextType,
   topicName: string,
 ): Promise<GeneratedStudyImageRecord[]> {
-  const db = getDb();
-  const rows = await db.getAllAsync<{
-    id: number;
-    context_type: GeneratedStudyImageContextType;
-    context_key: string;
-    topic_id: number | null;
-    topic_name: string;
-    lecture_note_id: number | null;
-    style: GeneratedStudyImageStyle;
-    prompt: string;
-    provider: string;
-    model_used: string;
-    mime_type: string;
-    local_uri: string;
-    remote_url: string | null;
-    width: number | null;
-    height: number | null;
-    created_at: number;
-  }>(
-    `SELECT *
-     FROM generated_study_images
-     WHERE context_type = ? AND topic_name = ?
-     ORDER BY created_at DESC`,
-    [contextType, topicName],
-  );
+  const db = getDrizzleDb();
+  const rows = await db
+    .select()
+    .from(generatedStudyImages)
+    .where(
+      and(
+        eq(generatedStudyImages.contextType, contextType),
+        eq(generatedStudyImages.topicName, topicName),
+      ),
+    )
+    .orderBy(desc(generatedStudyImages.createdAt));
+
   return rows.map(mapRow);
 }
 
 export async function listGeneratedStudyImages(limit = 500): Promise<GeneratedStudyImageRecord[]> {
-  const db = getDb();
-  const rows = await db.getAllAsync<{
-    id: number;
-    context_type: GeneratedStudyImageContextType;
-    context_key: string;
-    topic_id: number | null;
-    topic_name: string;
-    lecture_note_id: number | null;
-    style: GeneratedStudyImageStyle;
-    prompt: string;
-    provider: string;
-    model_used: string;
-    mime_type: string;
-    local_uri: string;
-    remote_url: string | null;
-    width: number | null;
-    height: number | null;
-    created_at: number;
-  }>(
-    `SELECT *
-     FROM generated_study_images
-     ORDER BY created_at DESC
-     LIMIT ?`,
-    [limit],
-  );
-  return rows.map(mapRow);
+  return generatedStudyImagesRepositoryDrizzle.listGeneratedStudyImages(limit);
 }

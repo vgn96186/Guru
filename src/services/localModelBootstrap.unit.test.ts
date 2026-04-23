@@ -1,6 +1,5 @@
 import * as FileSystem from 'expo-file-system/legacy';
 import { profileRepository } from '../db/repositories';
-import { useAppStore } from '../store/useAppStore';
 import { getLocalLlmRamWarning, isLocalLlmAllowedOnThisDevice } from './deviceMemory';
 import { showToast } from '../components/Toast';
 import { bootstrapLocalModels } from './localModelBootstrap';

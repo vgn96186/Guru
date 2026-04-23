@@ -7,7 +7,7 @@ import {
   refreshAccountabilityNotifications,
   cancelAllNotifications,
 } from './notificationService';
-import { generateAccountabilityMessages, generateBreakEndMessages } from './ai';
+import { generateAccountabilityMessages } from './ai';
 import { profileRepository, dailyLogRepository } from '../db/repositories';
 import {
   getWeakestTopics,

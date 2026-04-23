@@ -1,5 +1,4 @@
 import React from 'react';
-import { View, Text } from 'react-native';
 import ApiKeyRow from '../components/ApiKeyRow';
 import CloudflareKeyRow from '../components/CloudflareKeyRow';
 import VertexKeyRow from '../components/VertexKeyRow';

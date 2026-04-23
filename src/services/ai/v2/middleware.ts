@@ -17,6 +17,7 @@ import type {
   LanguageModelV2Usage,
   FinishReason,
 } from './spec';
+import { logStreamEvent } from '../runtimeDebug';
 
 export interface Middleware {
   onRequest?: (ctx: { provider: string; modelId: string; options: LanguageModelV2CallOptions }) => void;
@@ -96,6 +97,48 @@ export function withMiddleware(base: LanguageModelV2, mw: Middleware): LanguageM
       }
 
       return { stream: wrapped(), rawResponse: inner.rawResponse };
+    },
+  };
+}
+
+/**
+ * Convenience factory — creates a Middleware that logs all AI request
+ * lifecycle events via `logStreamEvent()`.
+ *
+ * Replaces the manual `logStreamEvent('sse_complete', ...)` /
+ * `logStreamEvent('no_body_fallback', ...)` calls that were scattered
+ * across each legacy provider. When wired into `withMiddleware()`,
+ * every provider gets consistent tracing for free.
+ *
+ * Usage:
+ *   const model = withMiddleware(baseModel, createLoggingMiddleware());
+ */
+export function createLoggingMiddleware(): Middleware {
+  return {
+    onStart({ provider, modelId, mode }) {
+      logStreamEvent('request_start', { provider, modelId, mode });
+    },
+    onFinish({ provider, modelId, mode, finishReason, usage, elapsedMs }) {
+      logStreamEvent('request_finish', {
+        provider,
+        modelId,
+        mode,
+        finishReason,
+        inputTokens: usage.inputTokens,
+        outputTokens: usage.outputTokens,
+        elapsedMs,
+      });
+    },
+    onError({ provider, modelId, mode, error }) {
+      const isRateLimit = error instanceof Error && error.name === 'RateLimitError';
+      logStreamEvent('request_error', {
+        provider,
+        modelId,
+        mode,
+        errorName: error instanceof Error ? error.name : 'unknown',
+        errorMessage: error instanceof Error ? error.message : String(error),
+        isRateLimit,
+      });
     },
   };
 }

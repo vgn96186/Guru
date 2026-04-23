@@ -16,7 +16,7 @@
  * Audio spec: 16,000 Hz sample rate, mono, 16-bit signed integer PCM.
  */
 
-import { Platform, PermissionsAndroid, Alert } from 'react-native';
+import { Platform, PermissionsAndroid } from 'react-native';
 import * as FileSystem from 'expo-file-system/legacy';
 import { RecordingState, TranscriptionError } from './types';
 

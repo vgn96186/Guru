@@ -5,6 +5,8 @@ const reactHooks = require('eslint-plugin-react-hooks');
 const jest = require('eslint-plugin-jest');
 const prettier = require('eslint-config-prettier');
 const globals = require('globals');
+const unusedImports = require('eslint-plugin-unused-imports');
+const guruPlugin = require('./tools/eslint-plugin-guru');
 
 module.exports = [
   {
@@ -35,6 +37,7 @@ module.exports = [
     plugins: {
       react,
       'react-hooks': reactHooks,
+      'unused-imports': unusedImports,
     },
     settings: {
       react: { version: 'detect' },
@@ -48,9 +51,13 @@ module.exports = [
       '@typescript-eslint/no-empty-object-type': 'off',
       '@typescript-eslint/no-explicit-any': 'warn',
       '@typescript-eslint/no-unused-expressions': 'warn',
-      '@typescript-eslint/no-unused-vars': [
+      // unused-imports plugin handles unused imports (auto-fix) + non-import vars;
+      // turn off the TS rule from tseslint.configs.recommended to avoid duplicates.
+      '@typescript-eslint/no-unused-vars': 'off',
+      'unused-imports/no-unused-imports': 'warn',
+      'unused-imports/no-unused-vars': [
         'warn',
-        { argsIgnorePattern: '^_', varsIgnorePattern: '^_' },
+        { argsIgnorePattern: '^_', varsIgnorePattern: '^_', caughtErrorsIgnorePattern: '^_' },
       ],
       'no-constant-condition': 'warn',
       'no-control-regex': 'warn',
@@ -92,6 +99,21 @@ module.exports = [
     files: ['**/*.{test,spec}.{ts,tsx}', '**/*.unit.test.{ts,tsx}'],
     rules: {
       '@typescript-eslint/no-explicit-any': 'off',
+    },
+  },
+
+  {
+    files: ['src/components/settings/**/*.{js,jsx,ts,tsx}'],
+    plugins: { guru: guruPlugin },
+    rules: {
+      'guru/prefer-settings-primitives': 'warn',
+    },
+  },
+  {
+    files: ['src/screens/**/*.{js,jsx,ts,tsx}'],
+    plugins: { guru: guruPlugin },
+    rules: {
+      'guru/prefer-screen-shell': 'warn',
     },
   },
 

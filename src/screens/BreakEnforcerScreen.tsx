@@ -2,9 +2,6 @@ import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { StyleSheet, BackHandler, TouchableOpacity, StatusBar } from 'react-native';
 import LinearText from '../components/primitives/LinearText';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import type { RootStackParamList } from '../navigation/types';
 import { linearTheme as n } from '../theme/linearTheme';
 import * as Haptics from 'expo-haptics';
 import { connectToRoom } from '../services/deviceSyncService';
@@ -12,9 +9,10 @@ import { scheduleBreakEndAlarms, cancelAllNotifications } from '../services/noti
 import { useProfileQuery } from '../hooks/queries/useProfile';
 import { ResponsiveContainer } from '../hooks/useResponsive';
 
+import { RootNav } from '../navigation/typedHooks';
 export default function BreakEnforcerScreen() {
-  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-  const route = useRoute<RouteProp<RootStackParamList, 'BreakEnforcer'>>();
+  const navigation = RootNav.useNav();
+  const route = RootNav.useRoute<'BreakEnforcer'>();
   const [timeLeft, setTimeLeft] = useState(route.params.durationSeconds ?? 300);
   const { data: profile } = useProfileQuery();
   const [isOver, setIsOver] = useState(false);

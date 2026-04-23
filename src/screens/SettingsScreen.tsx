@@ -239,18 +239,6 @@ const LOCAL_FILE_ACCESS_PERMISSION =
   PermissionsAndroid.PERMISSIONS.READ_MEDIA_AUDIO ??
   PermissionsAndroid.PERMISSIONS.READ_EXTERNAL_STORAGE;
 
-const BACKUP_VERSION = 1;
-type BackupRow = Record<string, unknown>;
-
-interface AppBackup {
-  version: number;
-  exportedAt: string;
-  user_profile: BackupRow | null;
-  topic_progress: BackupRow[];
-  daily_log: BackupRow[];
-  lecture_notes: BackupRow[];
-}
-
 type ValidationProviderId = ProviderId | 'deepgram' | 'fal' | 'brave' | 'google';
 type ApiValidationEntry = { verified: boolean; verifiedAt: number; fingerprint: string };
 type ApiValidationState = Partial<Record<ValidationProviderId, ApiValidationEntry>>;
@@ -329,112 +317,6 @@ function getErrorMessage(error: unknown): string {
   return 'Unknown error';
 }
 
-async function _importBackup(): Promise<{ ok: boolean; message: string }> {
-  const result = await pickDocumentOnce({
-    type: 'application/json',
-    copyToCacheDirectory: true,
-  });
-  if (result.canceled || !result.assets?.[0]) return { ok: false, message: 'Cancelled' };
-
-  const content = await FileSystem.readAsStringAsync(result.assets[0].uri);
-  let backup: AppBackup;
-  try {
-    backup = JSON.parse(content);
-  } catch {
-    return { ok: false, message: 'Invalid JSON file' };
-  }
-
-  if (!backup.version || !backup.topic_progress || !backup.user_profile) {
-    return { ok: false, message: 'Invalid backup format â€” missing required fields' };
-  }
-  if (backup.version > BACKUP_VERSION) {
-    return { ok: false, message: 'Backup was made with a newer version of the app' };
-  }
-
-  let restoredTopics = 0;
-  let restoredLogs = 0;
-
-  await runInTransaction(async (tx) => {
-    const validStatuses = new Set(['unseen', 'seen', 'reviewed', 'mastered']);
-
-    Array.from(backup.topic_progress ?? []).forEach((row, index) => {
-      const typedRow = row as Record<string, unknown>;
-      if (!typedRow.topic_id || typeof typedRow.status === 'undefined') {
-        if (__DEV__) console.warn('Skipping invalid topic_progress row:', typedRow);
-        return;
-      }
-
-      const status =
-        typeof typedRow.status === 'string' && validStatuses.has(typedRow.status)
-          ? typedRow.status
-          : 'unseen';
-      const confidence =
-        typeof typedRow.confidence === 'number' ? Math.min(5, Math.max(0, typedRow.confidence)) : 0;
-
-      tx.runSync(
-        `INSERT OR REPLACE INTO topic_progress
-         (topic_id, status, confidence, last_studied_at, times_studied, xp_earned, next_review_date, user_notes)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-        [
-          asNumber(typedRow.topic_id),
-          status,
-          confidence,
-          asNullableString(typedRow.last_studied_at),
-          asNumber(typedRow.times_studied),
-          asNumber(typedRow.xp_earned),
-          asNullableString(typedRow.next_review_date),
-          asString(typedRow.user_notes),
-        ],
-      );
-      restoredTopics++;
-    });
-
-    Array.from(backup.daily_log ?? []).forEach((row, index) => {
-      const typedRow = row as Record<string, unknown>;
-      if (!typedRow.date) {
-        if (__DEV__) console.warn('Skipping invalid daily_log row:', typedRow);
-        return;
-      }
-
-      tx.runSync(
-        `INSERT OR REPLACE INTO daily_log (date, checked_in, mood, total_minutes, xp_earned, session_count)
-         VALUES (?, ?, ?, ?, ?, ?)`,
-        [
-          asString(typedRow.date),
-          asNumber(typedRow.checked_in),
-          asNullableString(typedRow.mood),
-          asNumber(typedRow.total_minutes),
-          asNumber(typedRow.xp_earned),
-          asNumber(typedRow.session_count),
-        ],
-      );
-      restoredLogs++;
-    });
-
-    const p = backup.user_profile as Record<string, unknown> | null;
-    if (p) {
-      await tx.runAsync(
-        `UPDATE user_profile SET
-         display_name = ?, total_xp = ?, current_level = ?,
-         streak_current = ?, streak_best = ?,
-         daily_goal_minutes = ?, preferred_session_length = ?
-         WHERE id = 1`,
-        [
-          asString(p.display_name, 'Doctor'),
-          asNumber(p.total_xp),
-          asNumber(p.current_level, 1),
-          asNumber(p.streak_current),
-          asNumber(p.streak_best),
-          asNumber(p.daily_goal_minutes, 120),
-          asNumber(p.preferred_session_length, 45),
-        ],
-      );
-    }
-  });
-
-  return { ok: true, message: `Restored ${restoredTopics} topics, ${restoredLogs} log entries` };
-}
-
 export default function SettingsScreen() {
   const navigation =
     useNavigation<
@@ -448,7 +330,7 @@ export default function SettingsScreen() {
   const isFocused = useIsFocused();
   const { data: profile } = useProfileQuery();
   const refreshProfile = useRefreshProfile();
-  const [activeCategory, setActiveCategory] = useState<SettingsCategory>('general');
+  const [activeCategory, setActiveCategory] = useState<SettingsCategory>('dashboard');
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set());
 
   const toggleExpandedSection = useCallback((id: string) => {
@@ -1952,13 +1834,15 @@ export default function SettingsScreen() {
     SETTINGS_CATEGORIES[0];
 
   const categoryDescriptions: Record<SettingsCategory, string> = {
-    general: 'Identity, targets, appearance, and the settings control-room overview.',
+    dashboard: 'Identity, targets, appearance, and the settings control-room overview.',
+    profile: 'Profile setup and preferences.',
     ai: 'Provider keys, routing order, local inference, and Guru chat defaults.',
     interventions: 'Strict mode, focus guardrails, and break-enforcement controls.',
     integrations: 'Permissions, external app hooks, diagnostics, and Samsung reliability.',
     planning: 'Exam anchors, alerts, pacing, and notification timing.',
     sync: 'Body doubling and cross-device presence settings.',
     storage: 'Backups, vault maintenance, restore flows, and data housekeeping.',
+    advanced: 'Advanced diagnostics and app maintenance.',
   };
 
   function renderMobileCategoryNav() {
@@ -1990,7 +1874,7 @@ export default function SettingsScreen() {
 
   function renderActiveCategoryContent() {
     switch (activeCategory) {
-      case 'general':
+      case 'dashboard':
         return (
           <View style={styles.categoryStack}>
             <DashboardOverview

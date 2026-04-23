@@ -1,6 +1,18 @@
 import React from 'react';
-import { render } from '@testing-library/react-native';
+import { act, render } from '@testing-library/react-native';
 import LoadingOrb from './LoadingOrb';
+
+const lottieMock = jest.fn((props: any) =>
+  React.createElement('LottieView', { testID: 'loading-orb-lottie', ...props }),
+);
+
+jest.mock('lottie-react-native', () => {
+  const React = require('react');
+  return {
+    __esModule: true,
+    default: (props: any) => lottieMock(props),
+  };
+}, { virtual: true });
 
 jest.mock('react-native-reanimated', () => {
   const React = require('react');
@@ -41,6 +53,10 @@ jest.mock('react-native-svg', () => {
 });
 
 describe('LoadingOrb', () => {
+  beforeEach(() => {
+    lottieMock.mockClear();
+  });
+
   it('renders without crashing on mount', () => {
     const { root } = render(<LoadingOrb />);
     expect(root).toBeTruthy();
@@ -49,5 +65,25 @@ describe('LoadingOrb', () => {
   it('renders with custom size', () => {
     const { root } = render(<LoadingOrb size={120} />);
     expect(root).toBeTruthy();
+  });
+
+  it('renders the turbulent blob using lottie', () => {
+    render(<LoadingOrb />);
+    expect(lottieMock).toHaveBeenCalled();
+  });
+
+  it('switches from the intro segment to the smooth loop after the first animation finishes', () => {
+    render(<LoadingOrb />);
+
+    const initialProps = lottieMock.mock.calls.at(-1)?.[0];
+    expect(initialProps?.onAnimationFinish).toEqual(expect.any(Function));
+
+    act(() => {
+      initialProps.onAnimationFinish(false);
+    });
+
+    const updatedProps = lottieMock.mock.calls.at(-1)?.[0];
+    expect(lottieMock).toHaveBeenCalledTimes(2);
+    expect(updatedProps?.onAnimationFinish).toEqual(expect.any(Function));
   });
 });

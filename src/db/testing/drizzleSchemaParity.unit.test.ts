@@ -8,10 +8,8 @@
  * in-memory DB with the full schema, then introspects via PRAGMA table_info.
  */
 
-import Database from 'better-sqlite3';
-import { ALL_SCHEMAS, DB_INDEXES } from '../schema';
-import { LATEST_VERSION } from '../migrations';
 import * as schema from '../drizzleSchema';
+import Database from 'better-sqlite3';
 
 interface ColumnInfo {
   cid: number;
@@ -59,23 +57,7 @@ function createFreshDb(): Database.Database {
   const db = new Database(':memory:');
   db.pragma('journal_mode = DELETE');
   db.pragma('foreign_keys = ON');
-  for (const sql of ALL_SCHEMAS) db.exec(sql);
-  for (const sql of DB_INDEXES) {
-    try {
-      db.exec(sql);
-    } catch {
-      /* index may already exist */
-    }
-  }
-  // migration_history is created by migration v59, not in ALL_SCHEMAS
-  db.exec(`
-    CREATE TABLE IF NOT EXISTS migration_history (
-      version INTEGER PRIMARY KEY,
-      applied_at INTEGER NOT NULL,
-      description TEXT
-    )
-  `);
-  db.exec(`PRAGMA user_version = ${LATEST_VERSION}`);
+
   return db;
 }
 

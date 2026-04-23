@@ -4,12 +4,10 @@ import {
   notifyRecordingHealthIssue,
   notifyTranscriptionEvidenceOk,
   notifyTranscriptionEvidenceNoSpeech,
-  notifyTranscriptionEvidenceError,
 } from '../notificationService';
 import {
   transcribeRawWithGroq,
   transcribeRawWithHuggingFace,
-  transcribeRawWithLocalWhisper,
 } from '../transcription/engines';
 import { startRecordingHealthCheck, stopRecordingHealthCheck } from './health';
 

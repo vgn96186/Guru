@@ -8,7 +8,9 @@
 import { z } from 'zod';
 import { tool } from '../tool';
 import { searchLatestMedicalSources } from '../../medicalSearch';
-import { getDb } from '../../../../db/database';
+import { getDrizzleDb } from '../../../../db/drizzle';
+import { topics, topicProgress, questionBank } from '../../../../db/drizzleSchema';
+import { sql, like, eq } from 'drizzle-orm';
 
 /**
  * search_medical — PubMed / EuropePMC / Wikipedia / Brave (whichever are
@@ -52,23 +54,22 @@ export const lookupTopicTool = tool({
       .describe('Topic name as it would appear in the syllabus, e.g. "Diabetes mellitus"'),
   }),
   execute: async ({ name }) => {
-    const db = await getDb();
-    const row = await db.getFirstAsync<{
-      id: number;
-      name: string;
-      status: string;
-      confidence: number | null;
-      subject_id: number;
-      stability: number | null;
-    }>(
-      `SELECT t.id, t.name, p.status, p.confidence, t.subject_id, p.stability
-         FROM topics t
-         LEFT JOIN topic_progress p ON p.topic_id = t.id
-        WHERE lower(t.name) LIKE lower(?)
-        ORDER BY LENGTH(t.name) ASC
-        LIMIT 1`,
-      [`%${name}%`],
-    );
+    const db = getDrizzleDb();
+    const rows = await db
+      .select({
+        id: topics.id,
+        name: topics.name,
+        status: topicProgress.status,
+        confidence: topicProgress.confidence,
+        subject_id: topics.subjectId,
+        stability: topicProgress.fsrsStability,
+      })
+      .from(topics)
+      .leftJoin(topicProgress, eq(topicProgress.topicId, topics.id))
+      .where(like(sql`lower(${topics.name})`, `%${name.toLowerCase()}%`))
+      .orderBy(sql`LENGTH(${topics.name}) ASC`)
+      .limit(1);
+    const row = rows[0];
     if (!row) return { found: false, name };
     return {
       found: true,
@@ -96,21 +97,26 @@ export const getQuizQuestionsTool = tool({
     limit: z.number().optional(),
   }),
   execute: async ({ topicId, limit }) => {
-    const db = await getDb();
-    const rows = await db.getAllAsync<{
-      id: number;
-      stem: string;
-      options_json: string;
-      correct_index: number;
-      explanation: string | null;
-    }>(
-      `SELECT id, stem, options_json, correct_index, explanation
-         FROM question_bank
-        WHERE topic_id = ?
-        ORDER BY RANDOM()
-        LIMIT ?`,
-      [topicId, limit ?? 3],
-    );
+    const db = getDrizzleDb();
+    const rowsRaw = await db
+      .select({
+        id: questionBank.id,
+        stem: questionBank.question,
+        options_json: questionBank.options,
+        correct_index: questionBank.correctIndex,
+        explanation: questionBank.explanation,
+      })
+      .from(questionBank)
+      .where(eq(questionBank.topicId, topicId))
+      .orderBy(sql`RANDOM()`)
+      .limit(limit ?? 3);
+    const rows = rowsRaw.map((r) => ({
+      id: r.id,
+      stem: r.stem,
+      options_json: r.options_json ?? '[]',
+      correct_index: r.correct_index,
+      explanation: r.explanation,
+    }));
     return {
       questions: rows.map((r) => ({
         id: r.id,
@@ -175,13 +181,26 @@ export const saveToNotesTool = tool({
     content: z.string().describe('The markdown content to save as a note'),
   }),
   execute: async ({ topicId, content }) => {
-    const db = await getDb();
+    const db = getDrizzleDb();
     try {
-      await db.runAsync(
-        `INSERT INTO topic_notes (topic_id, content, created_at, updated_at)
-         VALUES (?, ?, ?, ?)`,
-        [topicId, content, Date.now(), Date.now()],
-      );
+      const existing = await db
+        .select({ notes: topicProgress.userNotes })
+        .from(topicProgress)
+        .where(eq(topicProgress.topicId, topicId))
+        .limit(1);
+
+      const newNotes = existing[0]?.notes
+        ? `${existing[0].notes}\n\n[Guru AI Note]:\n${content}`
+        : `[Guru AI Note]:\n${content}`;
+
+      await db
+        .insert(topicProgress)
+        .values({ topicId, userNotes: newNotes })
+        .onConflictDoUpdate({
+          target: topicProgress.topicId,
+          set: { userNotes: newNotes },
+        });
+
       return { success: true, message: 'Note saved successfully.' };
     } catch (error) {
       return { success: false, error: error instanceof Error ? error.message : String(error) };
@@ -207,14 +226,12 @@ export const markTopicReviewedTool = tool({
   }),
   needsApproval: true,
   execute: async ({ topicId, confidence }) => {
-    const db = await getDb();
+    const db = getDrizzleDb();
     try {
-      await db.runAsync(
-        `UPDATE topic_progress 
-         SET status = 'reviewed', confidence = ?, last_studied_at = ?
-         WHERE topic_id = ?`,
-        [confidence, Date.now(), topicId],
-      );
+      await db
+        .update(topicProgress)
+        .set({ status: 'reviewed', confidence, lastStudiedAt: Date.now() })
+        .where(eq(topicProgress.topicId, topicId));
       return { success: true, message: 'Topic marked as reviewed.' };
     } catch (error) {
       return { success: false, error: error instanceof Error ? error.message : String(error) };
@@ -331,7 +348,9 @@ export const generateMindmapTool = tool({
   description:
     'Generate a visual mind map for a medical topic. Creates hierarchical structure with center topic and branches covering etiology, pathophysiology, clinical features, investigations, management, etc. Saves to database for later viewing.',
   inputSchema: z.object({
-    topic: z.string().describe('The medical topic to create a mind map for, e.g. "Diabetes Mellitus"'),
+    topic: z
+      .string()
+      .describe('The medical topic to create a mind map for, e.g. "Diabetes Mellitus"'),
     subject: z.string().optional().describe('Optional subject context, e.g. "Medicine"'),
     depth: z
       .enum(['compact', 'rich'])
@@ -340,7 +359,8 @@ export const generateMindmapTool = tool({
   }),
   execute: async ({ topic, subject, depth = 'rich' }) => {
     const { generateMindMap } = await import('../../../mindMapAI');
-    const { createMindMap, bulkInsertNodesAndEdges } = await import('../../../../db/queries/mindMaps');
+    const { createMindMap, bulkInsertNodesAndEdges } =
+      await import('../../../../db/queries/mindMaps');
 
     try {
       // Generate the mind map layout
@@ -397,21 +417,20 @@ export const generateFlashcardsTool = tool({
       .describe('Content focus: high_yield for exam facts, comprehensive for full coverage'),
   }),
   execute: async ({ topicName, cardCount = 8, focus = 'high_yield' }) => {
-    const { getDb } = await import('../../../../db/database');
-    const db = await getDb();
+    const { getDrizzleDb } = await import('../../../../db/drizzle');
+    const { topics } = await import('../../../../db/drizzleSchema');
+    const { sql, like } = await import('drizzle-orm');
+    const db = getDrizzleDb();
 
     try {
       // Find the topic
-      const topicRow = await db.getFirstAsync<{
-        id: number;
-        name: string;
-        subject_id: number;
-      }>(
-        `SELECT t.id, t.name, t.subject_id FROM topics t
-         WHERE lower(t.name) LIKE lower(?)
-         ORDER BY LENGTH(t.name) ASC LIMIT 1`,
-        [`%${topicName}%`],
-      );
+      const rows = await db
+        .select({ id: topics.id, name: topics.name, subject_id: topics.subjectId })
+        .from(topics)
+        .where(like(sql`lower(${topics.name})`, `%${topicName.toLowerCase()}%`))
+        .orderBy(sql`LENGTH(${topics.name}) ASC`)
+        .limit(1);
+      const topicRow = rows[0];
 
       if (!topicRow) {
         return { error: `Topic not found matching "${topicName}"` };
@@ -419,12 +438,12 @@ export const generateFlashcardsTool = tool({
 
       // Generate flashcards via content generation
       const { generateObject } = await import('ai');
-      const { createGuruFallbackModel } = await import('../../providers/guruFallback');
+      const { createGuruFallbackModel } = await import('../providers/guruFallback');
       const { profileRepository } = await import('../../../../db/repositories/profileRepository');
       const { AIContentSchema } = await import('../../schemas');
 
       const profile = await profileRepository.getProfile();
-      const model = createGuruFallbackModel({ profile });
+      const model = createGuruFallbackModel({ profile }) as any;
 
       const focusPrompt =
         focus === 'high_yield'

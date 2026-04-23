@@ -1,9 +1,8 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { View, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
-import { useNavigation, type NavigationProp } from '@react-navigation/native';
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { type NavigationProp } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
-import type { HomeStackParamList, TabParamList } from '../../navigation/types';
+import type { TabParamList } from '../../navigation/types';
 import { linearTheme as n } from '../../theme/linearTheme';
 import LinearSurface from '../primitives/LinearSurface';
 import LinearText from '../primitives/LinearText';
@@ -14,6 +13,7 @@ import { dailyAgendaRepository } from '../../db/repositories';
 import type { DailyAgenda } from '../../services/ai';
 import { showToast } from '../Toast';
 
+import { HomeNav } from '../../navigation/typedHooks';
 /** Convert local planner tasks into the DailyAgenda shape for storage & display */
 function tasksToAgenda(tasks: TodayTask[]): DailyAgenda {
   return {
@@ -44,7 +44,7 @@ function tasksToAgenda(tasks: TodayTask[]): DailyAgenda {
 }
 
 export default function TodayPlanCard() {
-  const navigation = useNavigation<NativeStackNavigationProp<HomeStackParamList>>();
+  const navigation = HomeNav.useNav();
   const { data: profile } = useProfileQuery();
   const todayPlan = useAppStore((s) => s.todayPlan);
   const setTodayPlan = useAppStore((s) => s.setTodayPlan);
@@ -107,18 +107,56 @@ export default function TodayPlanCard() {
     );
   }
 
-  const studyBlocks = todayPlan.blocks.filter((b) => b.type !== 'break');
-  const nextTask = studyBlocks[0];
-  const remainingBlocks = studyBlocks.length;
-  const totalMinutes = studyBlocks.reduce((sum, b) => sum + b.durationMinutes, 0);
-  const typeLabel =
-    nextTask?.type === 'review' ? 'REVIEW' : nextTask?.type === 'test' ? 'TEST' : 'STUDY';
-  const typeColor =
-    nextTask?.type === 'review'
-      ? n.colors.warning
-      : nextTask?.type === 'test'
-        ? '#E05252'
-        : n.colors.accent;
+  // Pre-compute aggregates once — filter+reduce over blocks on every render was expensive
+  const { studyBlocks: _studyBlocks, nextTask, remainingBlocks, totalMinutes, typeLabel, typeColor } =
+    useMemo(() => {
+      const blocks = todayPlan.blocks.filter((b) => b.type !== 'break');
+      const first = blocks[0];
+      const remaining = blocks.length;
+      const minutes = blocks.reduce((sum, b) => sum + b.durationMinutes, 0);
+      const label =
+        first?.type === 'review' ? 'REVIEW' : first?.type === 'test' ? 'TEST' : 'STUDY';
+      const color =
+        first?.type === 'review'
+          ? n.colors.warning
+          : first?.type === 'test'
+            ? '#E05252'
+            : n.colors.accent;
+      return { studyBlocks: blocks, nextTask: first, remainingBlocks: remaining, totalMinutes: minutes, typeLabel: label, typeColor: color };
+    }, [todayPlan]);
+
+  // Don't render active state if no study blocks
+  if (!nextTask) {
+    return (
+      <LinearSurface style={styles.container} borderColor="rgba(255,255,255,0.10)">
+        <View style={styles.headerRow}>
+          <Ionicons name="compass-outline" size={18} color={n.colors.textMuted} />
+          <LinearText variant="chip" tone="muted" style={styles.label}>
+            TODAY'S MISSION
+          </LinearText>
+        </View>
+        <LinearText variant="bodySmall" tone="secondary" style={styles.subtitle}>
+          No tasks scheduled.
+        </LinearText>
+        <TouchableOpacity
+          style={styles.generateBtn}
+          onPress={handleGenerate}
+          disabled={isGenerating}
+          activeOpacity={0.8}
+          accessibilityRole="button"
+          accessibilityLabel="Generate daily plan"
+        >
+          {isGenerating ? (
+            <ActivityIndicator color={n.colors.textPrimary} size="small" />
+          ) : (
+            <LinearText variant="chip" style={styles.generateBtnText}>
+              GENERATE PLAN
+            </LinearText>
+          )}
+        </TouchableOpacity>
+      </LinearSurface>
+    );
+  }
 
   return (
     <LinearSurface

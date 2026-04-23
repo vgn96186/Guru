@@ -1,72 +1,29 @@
-import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   ScrollView,
   TouchableOpacity,
-  TextInput,
-  StyleSheet,
-  ActivityIndicator,
-  Image,
-  Modal,
-  Pressable,
-  useWindowDimensions,
-  Platform,
-  Animated,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { motion } from '../../../motion/presets';
-import * as Haptics from 'expo-haptics';
 import LinearText from '../../../components/primitives/LinearText';
-import LinearSurface from '../../../components/primitives/LinearSurface';
 import StudyMarkdown from '../../../components/StudyMarkdown';
 import { emphasizeHighYieldMarkdown } from '../../../utils/highlightMarkdown';
-import { fetchWikipediaImage } from '../../../services/imageService';
-import {
-  explainMostTestedRationale,
-  explainTopicDeeper,
-  explainQuizConcept,
-  askGuru,
-  generateEscalatingQuiz,
-} from '../../../services/ai';
+
+
 import { ContentFlagButton } from '../../../components/ContentFlagButton';
-import { s, FLASHCARD_RATINGS } from '../styles';
+import { s } from '../styles';
 import { linearTheme as n } from '../../../theme/linearTheme';
 import { Props, ContextUpdater } from '../types';
 import type {
-  KeyPointsContent,
-  MustKnowContent,
-  QuizContent,
-  StoryContent,
-  MnemonicContent,
-  TeachBackContent,
-  ErrorHuntContent,
   DetectiveContent,
-  ManualContent,
-  SocraticContent,
-  FlashcardsContent,
 } from '../../../types';
 import { TopicImage } from '../shared/TopicImage';
-import { QuestionImage } from '../shared/QuestionImage';
 import { ConfidenceRating } from '../shared/ConfidenceRating';
-import { ExplainablePoint } from '../shared/ExplainablePoint';
-import { ConceptChip } from '../shared/ConceptChip';
-import { DeepExplanationBlock } from '../shared/DeepExplanationBlock';
-import { QuizOptionBtn } from '../shared/QuizOptionBtn';
 import {
-  useCardScrollPaddingBottom,
   useCardScrollContentStyle,
 } from '../hooks/useCardScrollPadding';
-import { formatQuizExplanation } from '../utils/formatQuizExplanation';
-import { extractMedicalConcepts } from '../utils/extractMedicalConcepts';
-import { isQuizImageHttpUrl } from '../utils/isQuizImageHttpUrl';
-import { stripImageFraming } from '../utils/stripImageFraming';
 import { compactLines } from '../utils/compactLines';
-import {
-  captureFillAlpha,
-  captureBorderAlpha,
-  whiteAlpha,
-  blackAlpha,
-} from '../../../theme/colorUtils';
+
+
 
 // ── Key Points ────────────────────────────────────────────────────
 // ── Must Know & Most Tested ──────────────────────────────────────

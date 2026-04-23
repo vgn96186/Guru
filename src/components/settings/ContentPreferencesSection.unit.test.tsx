@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, fireEvent } from '@testing-library/react-native';
+import { renderWithProviders as render, fireEvent } from '../../test-utils/renderWrappers';
 import ContentPreferencesSection from './ContentPreferencesSection';
 import type { ContentType, Subject } from '../../types';
 

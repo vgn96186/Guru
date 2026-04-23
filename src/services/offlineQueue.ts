@@ -14,21 +14,22 @@
  *   await processQueue();
  */
 
-import { getDb, nowTs } from '../db/database';
+import { getDb } from '../db/database';
+import { nowTs } from '../db/database';
 import { INTERVALS } from '../constants/time';
 import { AppState, AppStateStatus } from 'react-native';
 
 export type OfflineRequestType = 'generate_json' | 'generate_text' | 'transcribe';
 
 export interface OfflineQueueItem {
-  id: number;
-  requestType: OfflineRequestType;
-  payload: Record<string, unknown>;
-  status: 'pending' | 'processing' | 'failed' | 'completed';
-  attempts: number;
+  id?: number;
+  requestType: string;
+  payload: any;
   createdAt: number;
-  lastAttemptAt: number | null;
-  errorMessage: string | null;
+  attempts: number;
+  lastAttemptAt?: number | null;
+  status: string; // 'pending' | 'processing' | 'completed' | 'failed'
+  errorMessage?: string | null;
 }
 
 const MAX_ATTEMPTS = 5;
@@ -44,13 +45,13 @@ function canonicalPayloadString(payload: Record<string, unknown>): string {
 }
 
 async function runQueueStatusUpdate(
-  sql: string,
-  params: Array<string | number | null>,
+  sqlQuery: string,
+  params: any[],
   failureLogPrefix: string,
 ): Promise<boolean> {
   try {
     const db = getDb();
-    const result = await db.runAsync(sql, params);
+    const result = await db.runAsync(sqlQuery, params);
     return result.changes > 0;
   } catch (err) {
     console.warn(failureLogPrefix, err);
@@ -59,46 +60,45 @@ async function runQueueStatusUpdate(
 }
 
 /** Enqueue a failed request for later retry. */
-export async function enqueueRequest(
-  requestType: OfflineRequestType,
-  payload: Record<string, unknown>,
-): Promise<void> {
+export async function enqueueRequest(requestType: string, payload: any): Promise<void> {
   try {
     const db = getDb();
-
-    // Check queue size before enqueueing
     const countRow = await db.getFirstAsync<{ count: number }>(
-      `SELECT COUNT(*) as count FROM offline_ai_queue WHERE status IN ('pending', 'processing')`,
+      "SELECT COUNT(*) as count FROM offline_ai_queue WHERE status IN ('pending', 'processing')"
     );
-    if (countRow && countRow.count >= MAX_QUEUE_SIZE) {
-      console.warn(
-        '[OfflineQueue] Queue full (max %d), dropping request of type: %s',
-        MAX_QUEUE_SIZE,
-        requestType,
-      );
+    const count = countRow?.count ?? 0;
+    if (count >= 100) {
+      console.warn('[OfflineQueue] Queue full, dropping request');
       return;
     }
 
-    // Check for recent duplicate (within dedupe window); use same canonical JSON as storage
-    const payloadStr = canonicalPayloadString(payload);
+    const sortedPayload =
+      typeof payload === 'object' && payload !== null
+        ? Object.keys(payload)
+            .sort()
+            .reduce(
+              (acc, key) => {
+                acc[key] = payload[key];
+                return acc;
+              },
+              {} as Record<string, any>,
+            )
+        : payload;
+    const payloadStr = JSON.stringify(sortedPayload);
+
     const recentRow = await db.getFirstAsync<{ id: number; created_at: number }>(
-      `SELECT id, created_at FROM offline_ai_queue 
-       WHERE request_type = ? AND payload = ? AND status IN ('pending', 'processing')
-       AND created_at > ?`,
-      [requestType, payloadStr, nowTs() - DEDUPE_WINDOW_MS],
+      "SELECT id, created_at FROM offline_ai_queue WHERE request_type = ? AND payload = ? AND status IN ('pending', 'processing') AND created_at > ?",
+      [requestType, payloadStr, nowTs() - DEDUPE_WINDOW_MS]
     );
 
     if (recentRow) {
-      console.debug(
-        '[OfflineQueue] Duplicate request detected (within dedupe window), skipping enqueue',
-      );
+      if (__DEV__) console.log('[OfflineQueue] Deduplicating identical request');
       return;
     }
 
     await db.runAsync(
-      `INSERT INTO offline_ai_queue (request_type, payload, status, attempts, created_at)
-       VALUES (?, ?, 'pending', 0, ?)`,
-      [requestType, payloadStr, nowTs()],
+      "INSERT INTO offline_ai_queue (request_type, payload, status, attempts, created_at) VALUES (?, ?, 'pending', 0, ?)",
+      [requestType, payloadStr, nowTs()]
     );
   } catch (err) {
     console.warn('[OfflineQueue] Failed to enqueue request:', err);
@@ -119,26 +119,19 @@ export async function getPendingRequests(): Promise<OfflineQueueItem[]> {
       last_attempt_at: number | null;
       error_message: string | null;
     }>(
-      `SELECT * FROM offline_ai_queue
-       WHERE status IN ('pending', 'failed') AND attempts < ?
-       ORDER BY 
-         CASE status 
-           WHEN 'failed' THEN 1  -- Process failed items first (they've already waited)
-           ELSE 0 
-         END,
-         created_at ASC
-       LIMIT 20`,
-      [MAX_ATTEMPTS],
+      "SELECT * FROM offline_ai_queue WHERE status IN ('pending', 'failed') AND attempts < ? ORDER BY CASE status WHEN 'failed' THEN 1 ELSE 0 END, created_at ASC LIMIT 20",
+      [MAX_ATTEMPTS]
     );
+
     return rows.map((r) => ({
       id: r.id,
-      requestType: r.request_type as OfflineRequestType,
+      requestType: r.request_type,
       payload: JSON.parse(r.payload),
-      status: r.status as OfflineQueueItem['status'],
-      attempts: r.attempts,
+      status: r.status as 'pending' | 'processing' | 'completed' | 'failed',
+      attempts: r.attempts ?? 0,
       createdAt: r.created_at,
-      lastAttemptAt: r.last_attempt_at,
-      errorMessage: r.error_message,
+      lastAttemptAt: r.last_attempt_at ?? null,
+      errorMessage: r.error_message ?? null,
     }));
   } catch (err) {
     console.error('[OfflineQueue] Failed to get pending requests:', err);
@@ -149,9 +142,7 @@ export async function getPendingRequests(): Promise<OfflineQueueItem[]> {
 /** Mark a queued item as processing (optimistic lock). */
 async function markProcessing(id: number): Promise<boolean> {
   return runQueueStatusUpdate(
-    `UPDATE offline_ai_queue 
-     SET status = 'processing', last_attempt_at = ?, attempts = attempts + 1
-     WHERE id = ? AND status IN ('pending', 'failed')`,
+    "UPDATE offline_ai_queue SET status = 'processing', last_attempt_at = ?, attempts = attempts + 1 WHERE id = ? AND status IN ('pending', 'failed')",
     [nowTs(), id],
     '[OfflineQueue] markProcessing failed:',
   );
@@ -160,7 +151,7 @@ async function markProcessing(id: number): Promise<boolean> {
 /** Mark an item as completed and remove it from the active queue. */
 export async function markCompleted(id: number): Promise<void> {
   await runQueueStatusUpdate(
-    `UPDATE offline_ai_queue SET status = 'completed' WHERE id = ?`,
+    "UPDATE offline_ai_queue SET status = 'completed' WHERE id = ?",
     [id],
     '[OfflineQueue] markCompleted failed:',
   );
@@ -169,7 +160,7 @@ export async function markCompleted(id: number): Promise<void> {
 /** Mark an item as failed with an error message. */
 export async function markFailed(id: number, errorMessage: string): Promise<void> {
   await runQueueStatusUpdate(
-    `UPDATE offline_ai_queue SET status = 'failed', error_message = ? WHERE id = ?`,
+    "UPDATE offline_ai_queue SET status = 'failed', error_message = ? WHERE id = ?",
     [errorMessage, id],
     '[OfflineQueue] markFailed failed:',
   );
@@ -189,13 +180,11 @@ export async function pruneCompletedItems(): Promise<void> {
   try {
     const db = getDb();
     const cutoff = nowTs() - INTERVALS.SEVEN_DAYS;
-    const result = await db.runAsync(
-      `DELETE FROM offline_ai_queue WHERE status = 'completed' AND created_at < ?`,
-      [cutoff],
+    await db.runAsync(
+      "DELETE FROM offline_ai_queue WHERE status = 'completed' AND created_at < ?",
+      [cutoff]
     );
-    if (result.changes > 0) {
-      if (__DEV__) console.log(`[OfflineQueue] Pruned ${result.changes} old completed items`);
-    }
+    if (__DEV__) console.log(`[OfflineQueue] Pruned old completed items`);
   } catch (error) {
     console.warn('[OfflineQueue] Failed to prune completed items:', error);
   }
@@ -251,7 +240,8 @@ export async function processQueue(): Promise<void> {
 
     // Process items one at a time (avoid parallel processing issues)
     for (const item of items) {
-      const processor = processorRegistry[item.requestType];
+      if (!item.id) continue;
+      const processor = processorRegistry[item.requestType as OfflineRequestType];
       if (!processor) {
         console.warn(`[OfflineQueue] No processor for type: ${item.requestType}`);
         await markFailed(item.id, `No processor registered for ${item.requestType}`);
@@ -279,10 +269,10 @@ export async function processQueue(): Promise<void> {
         await processor(item);
         await markCompleted(item.id);
         if (__DEV__) console.log(`[OfflineQueue] Successfully processed item ${item.id}`);
-      } catch (err: unknown) {
-        const errorMsg = err instanceof Error ? err.message : String(err);
+      } catch (error: unknown) {
+        const errorMsg = error instanceof Error ? error.message : String(error);
         await markFailed(item.id, errorMsg);
-        console.warn(`[OfflineQueue] Request ${item.id} failed (attempt ${item.attempts}):`, err);
+        console.warn(`[OfflineQueue] Request ${item.id} failed (attempt ${item.attempts}):`, error);
       }
     }
 

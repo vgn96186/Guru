@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState, useRef } from 'react';
+import React, { useEffect, useMemo, useState, useRef, useCallback } from 'react';
 import {
   View,
   FlatList,
@@ -12,15 +12,8 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import {
-  useRoute,
-  useNavigation,
-  useIsFocused,
-  type NavigationProp,
-  type RouteProp,
-} from '@react-navigation/native';
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import type { SyllabusStackParamList, TabParamList } from '../navigation/types';
+import { useIsFocused, type NavigationProp } from '@react-navigation/native';
+import type { TabParamList } from '../navigation/types';
 import { getTopicsBySubject, updateTopicNotes, updateTopicProgress } from '../db/queries/topics';
 import { clearTopicCache } from '../db/queries/aiCache';
 import { fetchWikipediaImage } from '../services/imageService';
@@ -42,7 +35,10 @@ import {
 } from '../db/queries/generatedStudyImages';
 import { generateStudyImage } from '../services/studyImageService';
 import { showInfo, showSuccess, showError, confirmDestructive } from '../components/dialogService';
+import { useHapticNotification } from '../hooks/useButtonFeedback';
+import LoadingOverlay from '../components/LoadingOverlay';
 
+import { SyllabusNav } from '../navigation/typedHooks';
 function TopicImage({ topicName }: { topicName: string }) {
   const [imageUrl, setImageUrl] = useState<string | null>(null);
 
@@ -54,31 +50,37 @@ function TopicImage({ topicName }: { topicName: string }) {
 
   return <Image source={{ uri: imageUrl }} style={styles.topicImage} resizeMode="contain" />;
 }
-
-type Route = RouteProp<SyllabusStackParamList, 'TopicDetail'>;
-type Nav = NativeStackNavigationProp<SyllabusStackParamList, 'TopicDetail'>;
-
-function MasterButton({ onPress }: { onPress: () => void }) {
+function MasterButton({ onPress, isLoading }: { onPress: () => void; isLoading?: boolean }) {
   const scale = useRef(new Animated.Value(1)).current;
   const [mastered, setMastered] = useState(false);
+  const lastPressTime = useRef(0);
+  const THROTTLE_MS = 500; // Prevent rapid taps
 
   return (
     <Animated.View style={{ transform: [{ scale }] }}>
       <TouchableOpacity
-        style={[styles.studyNowBtn, styles.masteredBtn]}
+        style={[styles.studyNowBtn, styles.masteredBtn, isLoading && styles.buttonLoading]}
         onPress={() => {
-          if (mastered) return;
+          if (mastered || isLoading) return;
+          // Throttle rapid taps
+          const now = Date.now();
+          if (now - lastPressTime.current < THROTTLE_MS) return;
+          lastPressTime.current = now;
+
           setMastered(true);
           const anim = motion.pulseScale(scale, { to: 1.08, duration: 300, loop: false });
           anim.start();
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
           onPress();
         }}
         activeOpacity={0.8}
+        disabled={mastered || isLoading}
         accessibilityRole="button"
         accessibilityLabel="Mark topic as mastered"
+        accessibilityState={{ busy: isLoading }}
       >
         <LinearText variant="label" tone="inverse" style={styles.studyNowText}>
-          {mastered ? 'Mastered!' : 'Mark as mastered'}
+          {isLoading ? 'Marking...' : mastered ? 'Mastered!' : 'Mark as mastered'}
         </LinearText>
       </TouchableOpacity>
     </Animated.View>
@@ -119,8 +121,8 @@ const FILTER_OPTIONS: Array<{ key: TopicFilter; label: string }> = [
 ];
 
 export default function TopicDetailScreen() {
-  const route = useRoute<Route>();
-  const navigation = useNavigation<Nav>();
+  const route = SyllabusNav.useRoute<'TopicDetail'>();
+  const navigation = SyllabusNav.useNav<'TopicDetail'>();
   const isFocused = useIsFocused();
   const { subjectId, subjectName, initialTopicId, initialSearchQuery } = route.params;
   const [allTopics, setAllTopics] = useState<TopicWithProgress[]>([]);
@@ -134,6 +136,10 @@ export default function TopicDetailScreen() {
   const [milestoneText, setMilestoneText] = useState('');
   const [noteImages, setNoteImages] = useState<Record<number, GeneratedStudyImageRecord[]>>({});
   const [imageJobKey, setImageJobKey] = useState<string | null>(null);
+  const [savingNoteId, setSavingNoteId] = useState<number | null>(null);
+  const [masteringTopicId, setMasteringTopicId] = useState<number | null>(null);
+  const [bulkOperationLoading, setBulkOperationLoading] = useState(false);
+  const hapticNotifications = useHapticNotification();
   const today = new Date().toISOString().slice(0, 10);
   const isSingleTopicView = initialTopicId != null;
   const childrenByParentId = useMemo(() => {
@@ -204,7 +210,9 @@ export default function TopicDetailScreen() {
     void loadTopicImages(topic.id);
   }, [allTopics, initialTopicId, isFocused]);
 
-  useEffect(() => {
+  // Debounced display list calculation
+  const displayListTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const calculateDisplayList = useCallback(() => {
     if (isSingleTopicView) {
       const topic = allTopics.find((item) => item.id === initialTopicId);
       setDisplayTopics(topic ? [topic] : []);
@@ -282,15 +290,25 @@ export default function TopicDetailScreen() {
     }
 
     setDisplayTopics(list);
-  }, [
-    activeFilter,
-    allTopics,
-    childrenByParentId,
-    collapsedParents,
-    initialTopicId,
-    isSingleTopicView,
-    searchQuery,
-  ]);
+  }, [allTopics, activeFilter, childrenByParentId, collapsedParents, initialTopicId, isSingleTopicView, searchQuery]);
+
+  // Debounce the display list calculation to prevent excessive re-renders
+  useEffect(() => {
+    if (displayListTimerRef.current) {
+      clearTimeout(displayListTimerRef.current);
+    }
+    displayListTimerRef.current = setTimeout(() => {
+      calculateDisplayList();
+      displayListTimerRef.current = null;
+    }, 150);
+
+    return () => {
+      if (displayListTimerRef.current) {
+        clearTimeout(displayListTimerRef.current);
+        displayListTimerRef.current = null;
+      }
+    };
+  }, [calculateDisplayList]);
 
   async function confirmDiscardUnsavedNotes(onDiscard: () => void) {
     const ok = await confirmDestructive('Discard changes?', 'You have unsaved notes.', {
@@ -347,13 +365,23 @@ export default function TopicDetailScreen() {
   }
 
   async function handleSaveNote(topicId: number) {
-    await updateTopicNotes(topicId, noteText.trim());
-    setAllTopics((prev) =>
-      prev.map((t) =>
-        t.id === topicId ? { ...t, progress: { ...t.progress, userNotes: noteText.trim() } } : t,
-      ),
-    );
-    setExpandedId(null);
+    if (savingNoteId === topicId) return; // Prevent double-save
+    setSavingNoteId(topicId);
+    try {
+      await updateTopicNotes(topicId, noteText.trim());
+      setAllTopics((prev) =>
+        prev.map((t) =>
+          t.id === topicId ? { ...t, progress: { ...t.progress, userNotes: noteText.trim() } } : t,
+        ),
+      );
+      hapticNotifications.success();
+      setExpandedId(null);
+    } catch (error) {
+      hapticNotifications.error();
+      await showError(error, 'Failed to save note');
+    } finally {
+      setSavingNoteId(null);
+    }
   }
 
   async function handleGenerateNoteImage(
@@ -377,7 +405,9 @@ export default function TopicDetailScreen() {
         ...prev,
         [topic.id]: [image, ...(prev[topic.id] ?? [])],
       }));
+      hapticNotifications.success();
     } catch (error) {
+      hapticNotifications.error();
       await showError(error, 'Image generation failed');
     } finally {
       setImageJobKey(null);
@@ -385,18 +415,26 @@ export default function TopicDetailScreen() {
   }
 
   async function markTopicMastered(topic: TopicWithProgress) {
-    await updateTopicProgress(topic.id, 'mastered', 5, 20);
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    setAllTopics((prev) =>
-      prev.map((t) =>
-        t.id === topic.id
-          ? { ...t, progress: { ...t.progress, status: 'mastered', confidence: 5 } }
-          : t,
-      ),
-    );
-    setTimeout(() => {
-      setExpandedId(null);
-    }, 300);
+    if (masteringTopicId === topic.id) return;
+    setMasteringTopicId(topic.id);
+    try {
+      await updateTopicProgress(topic.id, 'mastered', 5, 20);
+      hapticNotifications.success();
+      setAllTopics((prev) =>
+        prev.map((t) =>
+          t.id === topic.id
+            ? { ...t, progress: { ...t.progress, status: 'mastered', confidence: 5 } }
+            : t,
+        ),
+      );
+      setTimeout(() => {
+        setExpandedId(null);
+      }, 300);
+    } catch (error) {
+      hapticNotifications.error();
+      setMasteringTopicId(null); // Reset loading state on error
+      await showError(error, 'Failed to mark as mastered');
+    }
   }
 
   const leafTopics = useMemo(
@@ -466,6 +504,8 @@ export default function TopicDetailScreen() {
       void showInfo('Nothing to study', 'There are no matching topics in this bucket yet.');
       return;
     }
+    // Show loading overlay while preparing session
+    setBulkOperationLoading(true);
     navigation.getParent<NavigationProp<TabParamList>>()?.navigate('HomeTab', {
       screen: 'Session',
       params: {
@@ -475,6 +515,8 @@ export default function TopicDetailScreen() {
         preferredActionType: actionType,
       },
     });
+    // Hide overlay after navigation completes
+    setTimeout(() => setBulkOperationLoading(false), 500);
   }
 
   // Animated progress
@@ -538,6 +580,16 @@ export default function TopicDetailScreen() {
     <SafeAreaView style={styles.safe}>
       <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
       <ResponsiveContainer>
+        <LoadingOverlay
+          visible={bulkOperationLoading}
+          message={
+            activeFilter === 'due'
+              ? 'Building review session...'
+              : activeFilter === 'high_yield'
+                ? 'Preparing study session...'
+                : 'Setting up deep dive...'
+          }
+        />
         <ScreenHeader title={subjectName} titleNumberOfLines={1} showSettings>
           <View style={styles.headerCenter}>
             <View style={styles.progressRow}>
@@ -893,7 +945,10 @@ export default function TopicDetailScreen() {
                           Start focused session
                         </LinearText>
                       </TouchableOpacity>
-                      <MasterButton onPress={() => markTopicMastered(item)} />
+                      <MasterButton 
+                        onPress={() => markTopicMastered(item)} 
+                        isLoading={masteringTopicId === item.id}
+                      />
                       <LinearText variant="label" tone="accent" style={styles.notesLabel}>
                         Your Notes / Mnemonic
                       </LinearText>
@@ -954,13 +1009,18 @@ export default function TopicDetailScreen() {
                       ) : null}
                       <View style={styles.notesActions}>
                         <TouchableOpacity
-                          style={styles.notesSave}
+                          style={[
+                            styles.notesSave,
+                            savingNoteId === item.id && styles.buttonLoading,
+                          ]}
                           onPress={() => handleSaveNote(item.id)}
+                          disabled={savingNoteId === item.id}
                           accessibilityRole="button"
                           accessibilityLabel="Save note"
+                          accessibilityState={{ busy: savingNoteId === item.id }}
                         >
                           <LinearText variant="label" tone="inverse" style={styles.notesSaveText}>
-                            Save note
+                            {savingNoteId === item.id ? 'Saving...' : 'Save note'}
                           </LinearText>
                         </TouchableOpacity>
                         <TouchableOpacity
@@ -1264,6 +1324,9 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     borderWidth: 1,
     borderColor: `${n.colors.accent}66`,
+  },
+  buttonLoading: {
+    opacity: 0.65,
   },
   masteredBtn: {
     backgroundColor: n.colors.success,

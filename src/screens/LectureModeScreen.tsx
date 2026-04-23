@@ -14,7 +14,6 @@ import {
 } from 'react-native';
 import LinearText from '../components/primitives/LinearText';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation, useRoute } from '@react-navigation/native';
 import { useKeepAwake } from 'expo-keep-awake';
 import * as Haptics from 'expo-haptics';
 import { pickDocumentOnce } from '../services/documentPicker';
@@ -29,9 +28,6 @@ import { saveLectureChunk } from '../services/lecture/persistence';
 import { generateADHDNote } from '../services/transcription/noteGeneration';
 import type { LectureAnalysis } from '../services/transcriptionService';
 
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import type { RouteProp } from '@react-navigation/native';
-import type { HomeStackParamList } from '../navigation/types';
 import { STREAK_MIN_MINUTES } from '../constants/gamification';
 import { getAllSubjects, getTopicsBySubject } from '../db/queries/topics';
 import { saveLectureNote } from '../db/queries/aiCache';
@@ -52,9 +48,7 @@ import { getDb } from '../db/database';
 import { ResponsiveContainer } from '../hooks/useResponsive';
 import { BUNDLED_GROQ_KEY, BUNDLED_HF_TOKEN } from '../config/appConfig';
 import { showInfo, showSuccess, showError, confirmDestructive } from '../components/dialogService';
-
-type Nav = NativeStackNavigationProp<HomeStackParamList, 'LectureMode'>;
-type Route = RouteProp<HomeStackParamList, 'LectureMode'>;
+import { HomeNav } from '../navigation/typedHooks';
 const LECTURE_STATE_KEY = 'current_lecture_state';
 
 const PROOF_OF_LIFE_INTERVAL = 15 * 60; // 15 mins
@@ -67,8 +61,8 @@ const STATE_SAVE_CHECKPOINT = 30;
 export default function LectureModeScreen() {
   useKeepAwake(); // Keep phone screen on like a dashboard
 
-  const navigation = useNavigation<Nav>();
-  const route = useRoute<Route>();
+  const navigation = HomeNav.useNav<'LectureMode'>();
+  const route = HomeNav.useRoute<'LectureMode'>();
   const refreshProfile = useRefreshProfile();
   const { data: profile } = useProfileQuery();
 

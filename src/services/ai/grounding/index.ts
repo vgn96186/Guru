@@ -4,6 +4,7 @@ import { logGroundingEvent, previewText } from '../runtimeDebug';
 import { streamText } from 'ai';
 import type { 
   LanguageModelMessage as ModelMessage, 
+  LanguageModel,
 } from '@ai-sdk/provider';
 import type { ToolResultPart } from 'ai';
 import { analyzeTurn } from './analyzeTurn';
@@ -121,7 +122,7 @@ async function executeGroundedPass(
         error: error instanceof Error ? error.message : String(error),
       });
     },
-  });
+  }) as unknown as LanguageModel;
 
   const runPass = async (toolsEnabled: boolean) => {
     const result = streamText({

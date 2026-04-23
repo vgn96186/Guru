@@ -10,6 +10,7 @@
  */
 
 import { mapFinishReason, sseToStreamParts } from '../../openaiChatCompletionsSse';
+import { RateLimitError } from '../../schemas';
 import type {
   LanguageModelV2,
   LanguageModelV2CallOptions,
@@ -94,6 +95,9 @@ export function createOpenAICompatibleModel(
         body: JSON.stringify(buildBody(options, false)),
         signal: options.abortSignal,
       });
+      if (response.status === 429) {
+        throw new RateLimitError(`${config.provider} rate limit on ${config.modelId}`);
+      }
       if (!response.ok) {
         throw new Error(
           `[${config.provider}] ${response.status} ${response.statusText}: ${await response.text()}`,
@@ -112,6 +116,9 @@ export function createOpenAICompatibleModel(
         body: JSON.stringify(buildBody(options, true)),
         signal: options.abortSignal,
       });
+      if (response.status === 429) {
+        throw new RateLimitError(`${config.provider} rate limit on ${config.modelId}`);
+      }
       if (!response.ok) {
         throw new Error(
           `[${config.provider}] ${response.status} ${response.statusText}: ${await response.text()}`,

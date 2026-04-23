@@ -38,9 +38,7 @@ export interface UseGuruChatSessionReturn {
   renameThread: (threadId: number, newTitle: string) => Promise<void>;
 }
 
-export function useGuruChatSession(
-  options: UseGuruChatSessionOptions,
-): UseGuruChatSessionReturn {
+export function useGuruChatSession(options: UseGuruChatSessionOptions): UseGuruChatSessionReturn {
   const { topicName, syllabusTopicId, requestedThreadId } = options;
 
   const [currentThread, setCurrentThread] = useState<GuruChatThread | null>(null);
@@ -51,6 +49,15 @@ export function useGuruChatSession(
   const hasPersistedTopicProgressRef = useRef(false);
 
   const currentThreadId = currentThread?.id ?? null;
+
+  const refreshThreads = useCallback(async () => {
+    try {
+      const list = await listGuruChatThreads(60);
+      setThreads(list);
+    } catch {
+      setThreads([]);
+    }
+  }, []);
 
   // Hydrate thread on mount or when params change
   useEffect(() => {
@@ -64,7 +71,8 @@ export function useGuruChatSession(
             ? await getGuruChatThreadById(requestedThreadId)
             : await getLatestGuruChatThread(topicName, syllabusTopicId);
 
-        const finalThread = thread ?? (await getOrCreateLatestGuruChatThread(topicName, syllabusTopicId));
+        const finalThread =
+          thread ?? (await getOrCreateLatestGuruChatThread(topicName, syllabusTopicId));
 
         if (!cancelled) {
           setCurrentThread(finalThread);
@@ -85,35 +93,34 @@ export function useGuruChatSession(
     return () => {
       cancelled = true;
     };
-  }, [requestedThreadId, syllabusTopicId, topicName]);
+  }, [refreshThreads, requestedThreadId, syllabusTopicId, topicName]);
 
   // Load session memory when thread changes
   useEffect(() => {
+    let cancelled = false;
     if (!currentThreadId) {
       setSessionSummary('');
       setSessionStateJson('{}');
-      return;
+      return () => {
+        cancelled = true;
+      };
     }
 
     void getSessionMemoryRow(currentThreadId).then((row) => {
-      setSessionSummary(row?.summaryText ?? '');
-      setSessionStateJson(row?.stateJson ?? '{}');
+      if (!cancelled) {
+        setSessionSummary(row?.summaryText ?? '');
+        setSessionStateJson(row?.stateJson ?? '{}');
+      }
     });
+    return () => {
+      cancelled = true;
+    };
   }, [currentThreadId]);
 
   // Reset progress tracking when thread/topic changes
   useEffect(() => {
     hasPersistedTopicProgressRef.current = false;
   }, [currentThreadId, syllabusTopicId, topicName]);
-
-  const refreshThreads = useCallback(async () => {
-    try {
-      const list = await listGuruChatThreads(60);
-      setThreads(list);
-    } catch {
-      setThreads([]);
-    }
-  }, []);
 
   const createNewThread = useCallback(async (): Promise<GuruChatThread | null> => {
     try {
@@ -128,19 +135,12 @@ export function useGuruChatSession(
     }
   }, [refreshThreads, syllabusTopicId, topicName]);
 
-  const openThread = useCallback(
-    async (thread: GuruChatThread) => {
-      setCurrentThread(thread);
-      setSessionSummary('');
-      hasPersistedTopicProgressRef.current = false;
-      // Load new session memory
-      void getSessionMemoryRow(thread.id).then((row) => {
-        setSessionSummary(row?.summaryText ?? '');
-        setSessionStateJson(row?.stateJson ?? '{}');
-      });
-    },
-    [],
-  );
+  const openThread = useCallback(async (thread: GuruChatThread) => {
+    setCurrentThread(thread);
+    setSessionSummary('');
+    setSessionStateJson('{}');
+    hasPersistedTopicProgressRef.current = false;
+  }, []);
 
   const deleteThread = useCallback(
     async (thread: GuruChatThread) => {

@@ -3,94 +3,30 @@ import React, { useEffect, useState, useMemo, useCallback } from 'react';
 
 import {
   View,
-  ScrollView,
   TouchableOpacity,
-  TextInput,
-  StyleSheet,
-  ActivityIndicator,
-  Image,
-  Modal,
-  Pressable,
-  useWindowDimensions,
-  Platform,
-  Animated,
 } from 'react-native';
-import { motion } from '../../motion/presets';
 import LinearText from '../../components/primitives/LinearText';
 import { Ionicons } from '@expo/vector-icons';
-import * as Haptics from 'expo-haptics';
-import type {
-  AIContent,
-  KeyPointsContent,
-  MustKnowContent,
-  QuizContent,
-  StoryContent,
-  MnemonicContent,
-  TeachBackContent,
-  ErrorHuntContent,
-  DetectiveContent,
-  ManualContent,
-  SocraticContent,
-  FlashcardsContent,
-  ContentType,
-} from '../../types';
 
-import { ContentFlagButton } from '../../components/ContentFlagButton';
 
-import {
-  askGuru,
-  explainMostTestedRationale,
-  explainTopicDeeper,
-  generateEscalatingQuiz,
-  explainQuizConcept,
-} from '../../services/ai';
-import { fetchWikipediaImage } from '../../services/imageService';
+
+
+
+
 import { isContentFlagged, setContentFlagged } from '../../db/queries/aiCache';
 import GuruChatOverlay from '../../components/GuruChatOverlay';
 import ErrorBoundary from '../../components/ErrorBoundary';
-import StudyMarkdown from '../../components/StudyMarkdown';
 import { linearTheme as n } from '../../theme/linearTheme';
-import {
-  blackAlpha,
-  whiteAlpha,
-  captureFillAlpha,
-  captureBorderAlpha,
-} from '../../theme/colorUtils';
-import { emphasizeHighYieldMarkdown } from '../../utils/highlightMarkdown';
-import LinearSurface from '../../components/primitives/LinearSurface';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { showInfo } from '../../components/dialogService';
-import { s, FLASHCARD_RATINGS } from './styles';
-import { Props, ContextUpdater } from './types';
-import { compactLines } from './utils/compactLines';
-import { buildGuruContext } from './guruContext';
-import { extractMedicalConcepts } from './utils/extractMedicalConcepts';
-import { formatQuizExplanation } from './utils/formatQuizExplanation';
-import { stripImageFraming } from './utils/stripImageFraming';
-import { isQuizImageHttpUrl } from './utils/isQuizImageHttpUrl';
 
-import { TopicImage } from './shared/TopicImage';
-import { QuestionImage } from './shared/QuestionImage';
-import { ConfidenceRating } from './shared/ConfidenceRating';
-import { ExplainablePoint } from './shared/ExplainablePoint';
-import { ConceptChip } from './shared/ConceptChip';
-import { DeepExplanationBlock } from './shared/DeepExplanationBlock';
-import { QuizOptionBtn } from './shared/QuizOptionBtn';
-import {
-  useCardScrollPaddingBottom,
-  useCardScrollContentStyle,
-} from './hooks/useCardScrollPadding';
-import { KeyPointsCard } from './cards/KeyPointsCard';
-import { MustKnowCard } from './cards/MustKnowCard';
-import { QuizCard } from './cards/QuizCard';
-import { StoryCard } from './cards/StoryCard';
-import { MnemonicCard } from './cards/MnemonicCard';
-import { TeachBackCard } from './cards/TeachBackCard';
-import { ErrorHuntCard } from './cards/ErrorHuntCard';
-import { DetectiveCard } from './cards/DetectiveCard';
-import { ManualReviewCard } from './cards/ManualReviewCard';
-import { SocraticCard } from './cards/SocraticCard';
-import { FlashcardCard } from './cards/FlashcardCard';
+
+import LinearSurface from '../../components/primitives/LinearSurface';
+import { showInfo } from '../../components/dialogService';
+import { s } from './styles';
+import { Props } from './types';
+import { buildGuruContext } from './guruContext';
+
+
+
 
 interface TopicImageProps {
   topicName: string;
@@ -143,13 +79,15 @@ function ContentCard({
     let active = true;
     if (topicId) {
       void isContentFlagged(topicId, content.type).then((val) => {
-        if (active && val !== flagged) queueMicrotask(() => setFlagged(val));
+        if (active) queueMicrotask(() => setFlagged(val));
       });
+    } else if (active) {
+      setFlagged(false);
     }
     return () => {
       active = false;
     };
-  }, [topicId, content.type, flagged]);
+  }, [topicId, content.type]);
 
   function handleFlag() {
     if (!topicId) return;
@@ -214,13 +152,15 @@ function ContentCard({
         >
           <Ionicons name="sparkles" size={20} color={n.colors.textPrimary} />
         </TouchableOpacity>
-        <GuruChatOverlay
-          visible={chatOpen}
-          topicName={content.topicName}
-          syllabusTopicId={topicId ?? undefined}
-          contextText={guruContext}
-          onClose={() => setChatOpen(false)}
-        />
+        {chatOpen ? (
+          <GuruChatOverlay
+            visible={chatOpen}
+            topicName={content.topicName}
+            syllabusTopicId={topicId ?? undefined}
+            contextText={guruContext}
+            onClose={() => setChatOpen(false)}
+          />
+        ) : null}
       </View>
     </LinearSurface>
   );

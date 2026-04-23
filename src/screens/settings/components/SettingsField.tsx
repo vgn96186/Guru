@@ -1,22 +1,16 @@
 import React, { type ComponentProps } from 'react';
-import {
-  View,
-  Text,
-  TextInput,
-  type StyleProp,
-  type TextStyle,
-  type ViewStyle,
-} from 'react-native';
-import { linearTheme as n } from '../../../theme/linearTheme';
+import type { StyleProp, TextStyle, ViewStyle } from 'react-native';
+import TextField from '../../../components/settings/TextField';
+import type { LinearTextTone } from '../../../components/primitives/LinearText';
 
 interface SettingsFieldProps extends Omit<
-  ComponentProps<typeof TextInput>,
-  'style' | 'containerStyle'
+  ComponentProps<typeof TextField>,
+  'containerStyle' | 'helperTone'
 > {
   label: string;
   hint?: string;
   error?: string;
-  hintTone?: string;
+  hintTone?: LinearTextTone;
   hintStyle?: StyleProp<TextStyle>;
   inputStyle?: StyleProp<TextStyle>;
   inputContainerStyle?: StyleProp<ViewStyle>;
@@ -32,33 +26,16 @@ export default function SettingsField({
   inputContainerStyle,
   ...inputProps
 }: SettingsFieldProps) {
-  const helperText = error ?? hint;
-
   return (
-    <View style={{ marginBottom: 16 }}>
-      <Text style={{ fontSize: 13, fontWeight: '500', color: '#E8E8E8', marginBottom: 8 }}>
-        {label}
-      </Text>
-      <TextInput
-        style={{
-          width: '100%',
-          height: 44,
-          backgroundColor: 'rgba(255, 255, 255, 0.03)',
-          borderRadius: 8,
-          borderWidth: 1,
-          borderColor: 'rgba(255, 255, 255, 0.08)',
-          paddingHorizontal: 12,
-          color: '#E8E8E8',
-          fontSize: 15,
-        }}
-        placeholderTextColor="#5E626B"
-        {...inputProps}
-      />
-      {helperText ? (
-        <Text style={{ fontSize: 12, marginTop: 8, color: error ? '#F87171' : '#8A8F98' }}>
-          {helperText}
-        </Text>
-      ) : null}
-    </View>
+    <TextField
+      label={label}
+      hint={hint}
+      error={error}
+      helperTone={hintTone}
+      hintStyle={hintStyle}
+      inputStyle={inputStyle}
+      containerStyle={inputContainerStyle}
+      {...inputProps}
+    />
   );
 }

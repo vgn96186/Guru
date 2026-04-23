@@ -10,10 +10,9 @@ import {
 } from 'react-native';
 import ErrorBoundary from '../components/ErrorBoundary';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useFocusEffect, useNavigation, type NavigationProp } from '@react-navigation/native';
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { useFocusEffect, type NavigationProp } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
-import type { MenuStackParamList, TabParamList } from '../navigation/types';
+import type { TabParamList } from '../navigation/types';
 import { ResponsiveContainer } from '../hooks/useResponsive';
 import { useScrollRestoration } from '../hooks/useScrollRestoration';
 import { linearTheme as n } from '../theme/linearTheme';
@@ -25,7 +24,9 @@ import { EmptyState } from '../components/primitives';
 import LoadingOrb from '../components/LoadingOrb';
 import ScreenHeader from '../components/ScreenHeader';
 import { MS_PER_DAY } from '../constants/time';
-import { getDb } from '../db/database';
+import { getDrizzleDb } from '../db/drizzle';
+import { lectureNotes, topicProgress, topics, subjects } from '../db/drizzleSchema';
+import { sql, eq, desc } from 'drizzle-orm';
 import { getLectureHistory, type LectureHistoryItem } from '../db/queries/aiCache';
 import { buildLectureDisplayTitle } from '../services/lecture/lectureIdentity';
 import { resolveLectureSubjectRequirement } from '../services/lecture/lectureSubjectRequirement';
@@ -33,9 +34,7 @@ import ConfidenceSelector from '../components/ConfidenceSelector';
 import TopicPillRow from '../components/TopicPillRow';
 import SubjectChip from '../components/SubjectChip';
 import SubjectSelectionCard from '../components/SubjectSelectionCard';
-
-type Nav = NativeStackNavigationProp<MenuStackParamList, 'NotesHub'>;
-
+import { MenuNav } from '../navigation/typedHooks';
 interface TopicNotePreview {
   topicId: number;
   topicName: string;
@@ -103,7 +102,7 @@ import { Audio } from 'expo-av';
 import { showError, showWarning } from '../components/dialogService';
 
 export default function NotesHubScreen() {
-  const navigation = useNavigation<Nav>();
+  const navigation = MenuNav.useNav<'NotesHub'>();
   const tabsNavigation = navigation.getParent<NavigationProp<TabParamList>>();
   const { onScroll, onContentSizeChange } = useScrollRestoration('notes-hub');
   const refreshProfile = useRefreshProfile();
@@ -254,31 +253,32 @@ export default function NotesHubScreen() {
   const loadData = useCallback(async () => {
     setLoading(true);
     try {
-      const db = getDb();
-      const [lectureCountRow, topicNoteCountRow, recentTopicNotes, failed] = await Promise.all([
-        db.getFirstAsync<{ count: number }>('SELECT COUNT(*) AS count FROM lecture_notes'),
-        db.getFirstAsync<{ count: number }>(
-          `SELECT COUNT(*) AS count
-           FROM topic_progress
-           WHERE TRIM(COALESCE(user_notes, '')) <> ''`,
-        ),
-        db.getAllAsync<{
-          topic_id: number;
-          topic_name: string;
-          subject_id: number;
-          subject_name: string;
-          user_notes: string;
-        }>(
-          `SELECT t.id AS topic_id, t.name AS topic_name, s.id AS subject_id, s.name AS subject_name, p.user_notes
-           FROM topic_progress p
-           JOIN topics t ON t.id = p.topic_id
-           JOIN subjects s ON s.id = t.subject_id
-           WHERE TRIM(COALESCE(p.user_notes, '')) <> ''
-           ORDER BY COALESCE(p.last_studied_at, 0) DESC, t.name ASC
-           LIMIT 4`,
-        ),
+      const db = getDrizzleDb();
+      const [lectureCountRows, topicNoteCountRows, recentTopicNotes, failed] = await Promise.all([
+        db.select({ count: sql<number>`CAST(COUNT(*) AS INTEGER)` }).from(lectureNotes),
+        db
+          .select({ count: sql<number>`CAST(COUNT(*) AS INTEGER)` })
+          .from(topicProgress)
+          .where(sql`TRIM(COALESCE(${topicProgress.userNotes}, '')) <> ''`),
+        db
+          .select({
+            topic_id: topics.id,
+            topic_name: topics.name,
+            subject_id: subjects.id,
+            subject_name: subjects.name,
+            user_notes: topicProgress.userNotes,
+          })
+          .from(topicProgress)
+          .innerJoin(topics, eq(topics.id, topicProgress.topicId))
+          .innerJoin(subjects, eq(subjects.id, topics.subjectId))
+          .where(sql`TRIM(COALESCE(${topicProgress.userNotes}, '')) <> ''`)
+          .orderBy(desc(sql`COALESCE(${topicProgress.lastStudiedAt}, 0)`), topics.name)
+          .limit(4),
         getFailedOrPendingTranscriptions(),
       ]);
+
+      const lectureCountRow = lectureCountRows[0] as { count: number };
+      const topicNoteCountRow = topicNoteCountRows[0] as { count: number };
 
       setStats({
         lectureCount: lectureCountRow?.count ?? 0,

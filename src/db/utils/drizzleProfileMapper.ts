@@ -3,7 +3,13 @@
  */
 
 import type { UserProfileRow, NewUserProfileRow } from '../drizzleSchema';
-import type { UserProfile, ChatGptAccountsConfig, ContentType, ProviderId } from '../../types';
+import type {
+  UserProfile,
+  ChatGptAccountsConfig,
+  ContentType,
+  ProviderId,
+  HarassmentTone,
+} from '../../types';
 import { DEFAULT_INICET_DATE, DEFAULT_NEET_DATE } from '../../config/appConfig';
 import { sanitizeProviderOrder } from '../../utils/providerOrder';
 
@@ -23,6 +29,7 @@ const VALID_ENUMS: Record<string, { values: readonly string[]; fallback: string 
     fallback: 'hybrid',
   },
   examType: { values: ['INICET', 'NEET'] as const, fallback: 'INICET' },
+  harassmentTone: { values: ['shame', 'motivational', 'tough_love'] as const, fallback: 'shame' },
 };
 
 // ─── Helper functions copied from progress.ts ─────────────────────────────────
@@ -163,6 +170,7 @@ export function mapUserProfileRow(row: UserProfileRow | undefined): UserProfile 
         tp === 'groq' ||
         tp === 'huggingface' ||
         tp === 'cloudflare' ||
+        tp === 'deepgram' ||
         tp === 'local'
       ) {
         return tp;
@@ -173,6 +181,7 @@ export function mapUserProfileRow(row: UserProfileRow | undefined): UserProfile 
     lastActiveDate: row.lastActiveDate,
     syncCode: row.syncCode,
     strictModeEnabled: row.strictModeEnabled === 1,
+    doomscrollShieldEnabled: row.doomscrollShieldEnabled === 1,
     bodyDoublingEnabled: (row.bodyDoublingEnabled ?? 1) === 1,
     blockedContentTypes: (() => {
       try {
@@ -206,7 +215,7 @@ export function mapUserProfileRow(row: UserProfileRow | undefined): UserProfile 
     useNano: row.useNano === 1,
     quickStartStreak: row.quickStartStreak ?? 0,
     studyResourceMode: (row.studyResourceMode as UserProfile['studyResourceMode']) ?? 'hybrid',
-    harassmentTone: 'shame',
+    harassmentTone: (row.harassmentTone as HarassmentTone) ?? 'shame',
     customSubjectLoadMultipliers: (() => {
       try {
         return JSON.parse(row.subjectLoadOverridesJson ?? '{}');
@@ -215,7 +224,7 @@ export function mapUserProfileRow(row: UserProfileRow | undefined): UserProfile 
       }
     })() as Record<string, number>,
     backupDirectoryUri: row.backupDirectoryUri,
-    loadingOrbStyle: (row.loadingOrbStyle as 'classic' | 'turbulent') ?? 'classic',
+    loadingOrbStyle: (row.loadingOrbStyle as 'classic' | 'turbulent') ?? 'turbulent',
     pomodoroEnabled: row.pomodoroEnabled === 1,
     pomodoroIntervalMinutes: row.pomodoroIntervalMinutes ?? 20,
     cloudflareAccountId: row.cloudflareAccountId ?? '',
@@ -278,6 +287,8 @@ export function mapUserProfileRow(row: UserProfileRow | undefined): UserProfile 
         return [];
       }
     })() as ProviderId[],
+    samsungBatteryPromptShownAt: row.samsungBatteryPromptShownAt ?? undefined,
+    orbEffect: row.orbEffect ?? 'ripple',
   };
 }
 
@@ -308,6 +319,8 @@ export function mapToDrizzleUpdate(updates: Partial<UserProfile>): Partial<NewUs
     huggingfaceToken: 'huggingfaceToken',
     huggingfaceTranscriptionModel: 'huggingfaceTranscriptionModel',
     loadingOrbStyle: 'loadingOrbStyle',
+    orbEffect: 'orbEffect',
+    harassmentTone: 'harassmentTone',
     lastBackupDate: 'lastBackupDate',
     localModelPath: 'localModelPath',
     localWhisperPath: 'localWhisperPath',
@@ -335,12 +348,14 @@ export function mapToDrizzleUpdate(updates: Partial<UserProfile>): Partial<NewUs
     lastBackupDeviceId: 'lastBackupDeviceId',
     dbmciClassStartDate: 'dbmciClassStartDate',
     btrStartDate: 'btrStartDate',
+    samsungBatteryPromptShownAt: 'samsungBatteryPromptShownAt',
   };
 
   // Boolean fields that need conversion to 0/1
   const booleanFields: Record<string, keyof NewUserProfileRow> = {
     notificationsEnabled: 'notificationsEnabled',
     strictModeEnabled: 'strictModeEnabled',
+    doomscrollShieldEnabled: 'doomscrollShieldEnabled',
     bodyDoublingEnabled: 'bodyDoublingEnabled',
     focusAudioEnabled: 'focusAudioEnabled',
     visualTimersEnabled: 'visualTimersEnabled',
@@ -390,7 +405,8 @@ export function mapToDrizzleUpdate(updates: Partial<UserProfile>): Partial<NewUs
   for (const [userProfileKey, drizzleKey] of Object.entries(booleanFields)) {
     if (userProfileKey in updates) {
       const value = (updates as Record<string, unknown>)[userProfileKey];
-      (drizzleUpdate as Record<string, unknown>)[drizzleKey] = value === true ? 1 : 0;
+      (drizzleUpdate as Record<string, unknown>)[drizzleKey] =
+        value === true || value === 1 ? 1 : 0;
     }
   }
 
@@ -427,6 +443,9 @@ export function mapToDrizzleUpdate(updates: Partial<UserProfile>): Partial<NewUs
       'studyResourceMode',
       updates.studyResourceMode,
     ) as any;
+  }
+  if ('harassmentTone' in updates) {
+    drizzleUpdate.harassmentTone = sanitizeEnum('harassmentTone', updates.harassmentTone) as any;
   }
   // Process JSON fields
   if ('blockedContentTypes' in updates) {
@@ -496,6 +515,7 @@ export function createDefaultUserProfile(): UserProfile {
     lastActiveDate: null,
     syncCode: null,
     strictModeEnabled: false,
+    doomscrollShieldEnabled: true,
     bodyDoublingEnabled: true,
     blockedContentTypes: [],
     idleTimeoutMinutes: 2,
@@ -517,7 +537,7 @@ export function createDefaultUserProfile(): UserProfile {
     useNano: true,
     quickStartStreak: 0,
     studyResourceMode: 'hybrid',
-    loadingOrbStyle: 'classic',
+    loadingOrbStyle: 'turbulent',
     harassmentTone: 'shame',
     customSubjectLoadMultipliers: {},
     backupDirectoryUri: null,
@@ -563,5 +583,7 @@ export function createDefaultUserProfile(): UserProfile {
     vertexAiToken: '',
     qwenConnected: false,
     disabledProviders: [],
+    samsungBatteryPromptShownAt: undefined,
+    orbEffect: 'ripple',
   };
 }

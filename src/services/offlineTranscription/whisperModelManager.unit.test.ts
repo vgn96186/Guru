@@ -1,5 +1,3 @@
-import { getWhisperModelManager } from './whisperModelManager';
-import * as FileSystem from 'expo-file-system/legacy';
 
 // Mock FileSystem
 jest.mock('expo-file-system/legacy', () => ({

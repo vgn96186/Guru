@@ -34,7 +34,7 @@ import { fetchContent } from './contentGeneration';
 import { getCachedContent, setCachedContent } from '../../db/queries/aiCache';
 import { saveBulkQuestions } from '../../db/queries/questionBank';
 import { generateObject } from 'ai';
-import { createGuruFallbackModel } from './providers/guruFallback';
+import { createGuruFallbackModel } from './v2/providers/guruFallback';
 import { searchMedicalImages, generateVisualSearchQueries } from './medicalSearch';
 
 const mockGetCachedContent = getCachedContent as jest.MockedFunction<typeof getCachedContent>;

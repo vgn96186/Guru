@@ -1,41 +1,18 @@
-import React, { useCallback, useEffect, useState } from 'react';
-import {    
-  View,
-  TouchableOpacity } from     'react-native';
+import React from 'react';
+import { View, TouchableOpacity, StyleSheet } from 'react-native';
+import type { DailyPlan, StudyPlanSummary } from '../../../services/studyPlanner';
+import { linearTheme as n } from '../../../theme/linearTheme';
+import LinearText from '../../../components/primitives/LinearText';
 
-import { type DailyPlan,
-  type StudyPlanSummary,
-  type PlanMode,
- } from  '../services/studyPlanner';
-import { type NavigationProp  } from  '@react-navigation/native';
-import type { TabParamList, HomeStackParamList } from '../navigation/types';
+const styles = StyleSheet.create({
+  foundationActionRow: { flexDirection: 'row', gap: 8, marginBottom: n.spacing.sm },
+  foundationPrimaryBtn: { backgroundColor: n.colors.warning, borderRadius: n.radius.sm, paddingVertical: 10, paddingHorizontal: 16, flex: 1 },
+  foundationPrimaryBtnText: { color: '#000', fontSize: 12, fontWeight: '800', textAlign: 'center' },
+  foundationGhostBtn: { borderWidth: 1, borderColor: n.colors.warning, borderRadius: n.radius.sm, paddingVertical: 10, paddingHorizontal: 16 },
+  foundationGhostBtnText: { color: n.colors.warning, fontSize: 12, fontWeight: '700', textAlign: 'center' },
+});
 
-
-
-
-import { linearTheme as n } from '../theme/linearTheme';
-
-
-
-
-
-
-
-
-import type { TopicWithProgress, StudyResourceMode } from '../types';
-
-
-
-
-
-import LinearText from '../components/primitives/LinearText';
-
-
-
-
-
-export default /** Focus card to repair weak fundamentals before chasing more new topics. */
-function FoundationRepairQueueCard({
+export default function FoundationRepairQueueCard({
   summary,
   todayPlan,
   onStartFoundation,
@@ -58,23 +35,15 @@ function FoundationRepairQueueCard({
   if (!hasQueue) return null;
 
   return (
-    <View style={masteryStyles.foundationActionRow}>
-      <TouchableOpacity
-        style={masteryStyles.foundationPrimaryBtn}
-        onPress={onStartFoundation}
-        activeOpacity={0.8}
-      >
-        <LinearText style={masteryStyles.foundationPrimaryBtnText}>
+    <View style={styles.foundationActionRow}>
+      <TouchableOpacity style={styles.foundationPrimaryBtn} onPress={onStartFoundation} activeOpacity={0.8}>
+        <LinearText style={styles.foundationPrimaryBtnText}>
           Repair {foundationToday.length} weak
         </LinearText>
       </TouchableOpacity>
       {summary.seenNeedingQuizCount > 0 && (
-        <TouchableOpacity
-          style={masteryStyles.foundationGhostBtn}
-          onPress={onStartQuizRecovery}
-          activeOpacity={0.8}
-        >
-          <LinearText style={masteryStyles.foundationGhostBtnText}>
+        <TouchableOpacity style={styles.foundationGhostBtn} onPress={onStartQuizRecovery} activeOpacity={0.8}>
+          <LinearText style={styles.foundationGhostBtnText}>
             Quiz {summary.seenNeedingQuizCount} watched
           </LinearText>
         </TouchableOpacity>

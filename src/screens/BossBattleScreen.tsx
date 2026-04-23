@@ -3,9 +3,6 @@ import { View, TouchableOpacity, StyleSheet, StatusBar, Animated, ScrollView } f
 import { Ionicons } from '@expo/vector-icons';
 import LinearText from '../components/primitives/LinearText';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation } from '@react-navigation/native';
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import type { HomeStackParamList } from '../navigation/types';
 import { getAllCachedQuestions, type MockQuestion } from '../db/queries/aiCache';
 import { getAllSubjects, getTopicsBySubject } from '../db/queries/topics';
 import { fetchContent } from '../services/ai';
@@ -20,6 +17,7 @@ import { emphasizeHighYieldMarkdown } from '../utils/highlightMarkdown';
 import ScreenHeader from '../components/ScreenHeader';
 import { showInfo, confirmDestructive } from '../components/dialogService';
 
+import { HomeNav } from '../navigation/typedHooks';
 const BOSS_HP = 100;
 const PLAYER_HP = 3;
 const DAMAGE_PER_HIT = 10;
@@ -27,7 +25,7 @@ const DAMAGE_PER_HIT = 10;
 type Phase = 'select' | 'loading' | 'battle' | 'answer_feedback' | 'victory' | 'defeat';
 
 export default function BossBattleScreen() {
-  const navigation = useNavigation<NativeStackNavigationProp<HomeStackParamList>>();
+  const navigation = HomeNav.useNav();
   const refreshProfile = useRefreshProfile();
   const [phase, setPhase] = useState<Phase>('select');
   const [selectedSubject, setSelectedSubject] = useState<string | null>(null);

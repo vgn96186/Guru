@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, Switch, ActivityIndicator, Linking } from 'react-native';
+import { View, Text, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { linearTheme } from '../../../../../theme/linearTheme';
 import LinearTextInput from '../../../../../components/primitives/LinearTextInput';
@@ -92,16 +92,16 @@ export default function ImageGenSection({
                 falValidationStatus === 'ok'
                   ? 'checkmark-circle'
                   : falValidationStatus === 'fail'
-                    ? 'close-circle'
-                    : 'flash-outline'
+                  ? 'close-circle'
+                  : 'flash-outline'
               }
               size={20}
               color={
                 falValidationStatus === 'ok'
                   ? linearTheme.colors.success
                   : falValidationStatus === 'fail'
-                    ? linearTheme.colors.error
-                    : linearTheme.colors.accent
+                  ? linearTheme.colors.error
+                  : linearTheme.colors.accent
               }
             />
           )}

@@ -9,9 +9,6 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { HomeStackParamList } from '../navigation/types';
 import { getDb } from '../db/database';
 import { linearTheme as n } from '../theme/linearTheme';
 import { ResponsiveContainer } from '../hooks/useResponsive';
@@ -21,9 +18,7 @@ import { AppFlashList } from '../components/primitives/AppFlashList';
 import ScreenHeader from '../components/ScreenHeader';
 import LinearSurface from '../components/primitives/LinearSurface';
 import { EmptyState } from '../components/primitives';
-
-type Nav = NativeStackNavigationProp<HomeStackParamList, 'GlobalTopicSearch'>;
-
+import { HomeNav } from '../navigation/typedHooks';
 type SearchResult = {
   id: number;
   name: string;
@@ -32,7 +27,7 @@ type SearchResult = {
 };
 
 export default function GlobalTopicSearchScreen() {
-  const navigation = useNavigation<Nav>();
+  const navigation = HomeNav.useNav<'GlobalTopicSearch'>();
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<SearchResult[]>([]);
 

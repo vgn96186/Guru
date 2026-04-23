@@ -1,5 +1,4 @@
 import { z } from 'zod';
-import type { Message } from './ai';
 import { registerProcessor, markCompleted } from './offlineQueue';
 import { runFullTranscriptionPipeline } from './lecture/lectureSessionMonitor';
 import { profileRepository } from '../db/repositories';
@@ -23,6 +22,7 @@ export function registerOfflineQueueProcessors(): void {
   });
 
   registerProcessor('transcribe', async (item) => {
+    if (!item.id) return;
     const { audioFilePath, appName, durationMinutes, logId } = item.payload;
 
     if (typeof audioFilePath !== 'string' || !logId) {

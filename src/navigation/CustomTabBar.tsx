@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View, Animated } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import type { MaterialTopTabBarProps } from '@react-navigation/material-top-tabs';
 import LinearText from '../components/primitives/LinearText';
@@ -54,6 +54,23 @@ export function CustomTabBar({
   const { state, navigation } = tabBarProps;
   const activeLeafRouteName = useMemo(() => getDeepestFocusedRouteName(state), [state]);
   const actionHubEnabled = isActionHubAllowedForRoute(activeLeafRouteName);
+
+  // Animated rotation for the FAB icon
+  const rotationAnim = useMemo(() => new Animated.Value(isActionHubOpen ? 1 : 0), []);
+
+  useEffect(() => {
+    Animated.spring(rotationAnim, {
+      toValue: isActionHubOpen ? 1 : 0,
+      useNativeDriver: true,
+      friction: 8,
+      tension: 40,
+    }).start();
+  }, [isActionHubOpen, rotationAnim]);
+
+  const spin = rotationAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0deg', '135deg'],
+  });
 
   useEffect(() => {
     if (!actionHubEnabled && isActionHubOpen) {
@@ -135,11 +152,13 @@ export function CustomTabBar({
         accessibilityState={{ disabled: !actionHubEnabled }}
       >
         <View style={styles.fabButton}>
-          <Ionicons
-            name={isActionHubOpen ? 'close' : 'add'}
-            size={26}
-            color={actionHubEnabled ? n.colors.textPrimary : n.colors.textMuted}
-          />
+          <Animated.View style={{ transform: [{ rotate: spin }] }}>
+            <Ionicons
+              name="add"
+              size={26}
+              color={actionHubEnabled ? '#FFFFFF' : n.colors.textMuted}
+            />
+          </Animated.View>
         </View>
         <LinearText
           variant="caption"
@@ -184,18 +203,25 @@ const styles = StyleSheet.create({
     opacity: 0.45,
   },
   fabButton: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: n.colors.surfaceHover,
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    backgroundColor: n.colors.roles.brand,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: n.colors.borderHighlight,
+    // Subtle shadow for elevation
+    shadowColor: n.colors.roles.brand,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.4,
+    shadowRadius: 12,
+    elevation: 8,
+    // Inner border glow effect
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.25)',
   },
   fabLabel: {
     ...n.typography.meta,
-    color: n.colors.textSecondary,
+    color: n.colors.roles.brand,
     fontSize: 10,
     marginTop: 4,
     letterSpacing: 0,

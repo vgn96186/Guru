@@ -2,9 +2,6 @@ import React, { useState } from 'react';
 import { View, StyleSheet, ScrollView, TouchableOpacity, Platform, StatusBar } from 'react-native';
 import LinearText from '../components/primitives/LinearText';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation } from '@react-navigation/native';
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import type { RootStackParamList } from '../navigation/types';
 import * as Haptics from 'expo-haptics';
 import {
   scheduleHarassment,
@@ -19,6 +16,7 @@ import { linearTheme as n } from '../theme/linearTheme';
 import type { HarassmentTone } from '../types';
 import { Ionicons } from '@expo/vector-icons';
 
+import { RootNav } from '../navigation/typedHooks';
 const TONE_OPTIONS: { tone: HarassmentTone; icon: string; label: string }[] = [
   { tone: 'shame', icon: '😈', label: 'Shame' },
   { tone: 'motivational', icon: '💪', label: 'Motivational' },
@@ -26,7 +24,7 @@ const TONE_OPTIONS: { tone: HarassmentTone; icon: string; label: string }[] = [
 ];
 
 export default function DoomscrollGuideScreen() {
-  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const navigation = RootNav.useNav();
   const { data: profile } = useProfileQuery();
   const refreshProfile = useRefreshProfile();
   const [harassmentActive, setHarassmentActive] = useState(false);

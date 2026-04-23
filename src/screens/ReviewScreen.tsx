@@ -16,9 +16,6 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as Speech from 'expo-speech';
 import * as Haptics from 'expo-haptics';
-import { useNavigation } from '@react-navigation/native';
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import type { HomeStackParamList } from '../navigation/types';
 import { getTopicsDueForReview, updateTopicProgress } from '../db/queries/topics';
 import { profileRepository } from '../db/repositories';
 import { fetchContent } from '../services/ai';
@@ -32,6 +29,7 @@ import { ResponsiveContainer } from '../hooks/useResponsive';
 import { emphasizeHighYieldMarkdown } from '../utils/highlightMarkdown';
 import { Ionicons } from '@expo/vector-icons';
 
+import { HomeNav } from '../navigation/typedHooks';
 // Spaced Repetition Ratings
 const RATINGS = [
   { label: 'Again', days: 1, confidence: 1, color: n.colors.error },
@@ -53,7 +51,7 @@ function getAutoContentType(confidence: number): ContentType {
 }
 
 export default function ReviewScreen() {
-  const navigation = useNavigation<NativeStackNavigationProp<HomeStackParamList>>();
+  const navigation = HomeNav.useNav();
   const refreshProfile = useRefreshProfile();
   const [queue, setQueue] = useState<TopicWithProgress[]>([]);
   const [currentIdx, setCurrentIdx] = useState(0);

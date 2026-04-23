@@ -12,21 +12,19 @@ import { Ionicons } from '@expo/vector-icons';
 import { Accelerometer } from 'expo-sensors';
 import LinearText from '../components/primitives/LinearText';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation } from '@react-navigation/native';
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import type { RootStackParamList } from '../navigation/types';
 import * as Haptics from 'expo-haptics';
 import { linearTheme as n } from '../theme/linearTheme';
 import { ResponsiveContainer } from '../hooks/useResponsive';
 import { motion, useReducedMotion } from '../motion';
 import { confirmDestructive } from '../components/dialogService';
 
+import { RootNav } from '../navigation/typedHooks';
 const POSITION_CHECK_INTERVAL = 1000; // Check every second
 const STANDING_THRESHOLD = 0.7; // Z-axis value when standing (phone upright)
 const LYING_THRESHOLD = 0.3; // Z-axis value when lying down (phone flat)
 
 export default function BedLockScreen() {
-  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const navigation = RootNav.useNav();
   const [phase, setPhase] = useState<'detecting' | 'lying' | 'situp' | 'stand' | 'unlocked'>(
     'detecting',
   );

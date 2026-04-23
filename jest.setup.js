@@ -244,6 +244,41 @@ jest.mock('react-native', () => {
   };
 });
 
+jest.mock('react-native-gesture-handler', () => {
+  const React = require('react');
+  const View = ({ children, ...props }) => React['createElement']('View', props, children);
+  return {
+    __esModule: true,
+    Swipeable: View,
+    DrawerLayout: View,
+    State: {},
+    ScrollView: View,
+    Slider: View,
+    Switch: View,
+    TextInput: View,
+    ToolbarAndroid: View,
+    ViewPagerAndroid: View,
+    DrawerLayoutAndroid: View,
+    WebView: View,
+    NativeViewGestureHandler: View,
+    TapGestureHandler: View,
+    FlingGestureHandler: View,
+    ForceTouchGestureHandler: View,
+    LongPressGestureHandler: View,
+    PanGestureHandler: View,
+    PinchGestureHandler: View,
+    RotationGestureHandler: View,
+    RawButton: View,
+    BaseButton: View,
+    RectButton: View,
+    BorderlessButton: View,
+    FlatList: View,
+    gestureHandlerRootHOC: jest.fn((Component) => Component),
+    Directions: {},
+    GestureHandlerRootView: View,
+  };
+});
+
 jest.mock('react-native-safe-area-context', () => {
   const React = require('react');
   const inset = { top: 0, right: 0, bottom: 34, left: 0 };
@@ -359,6 +394,7 @@ jest.mock('@react-navigation/native', () => ({
     canGoBack: () => true,
     navigate: jest.fn(),
   }),
+  NavigationContainer: ({ children }) => children,
 }));
 
 jest.mock('@expo/vector-icons', () => ({

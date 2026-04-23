@@ -330,6 +330,9 @@ export default function QuestionBankScreen() {
             keyExtractor={keyExtractor}
             contentContainerStyle={[styles.list, questions.length === 0 && { flex: 1 }]}
             showsVerticalScrollIndicator={false}
+            initialNumToRender={8}
+            maxToRenderPerBatch={10}
+            windowSize={8}
             ListEmptyComponent={
               <EmptyState
                 icon="help-circle-outline"

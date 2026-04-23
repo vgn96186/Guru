@@ -3,20 +3,15 @@ import { View, StyleSheet, TouchableOpacity, Animated, Easing, StatusBar } from 
 import { motion } from '../motion/presets';
 import LinearText from '../components/primitives/LinearText';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation } from '@react-navigation/native';
 import { useKeepAwake } from 'expo-keep-awake';
 import { Accelerometer } from 'expo-sensors';
 import * as Haptics from 'expo-haptics';
 import { Audio } from 'expo-av';
 import * as Notifications from 'expo-notifications';
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import type { RootStackParamList } from '../navigation/types';
 import { ResponsiveContainer } from '../hooks/useResponsive';
 import { linearTheme as n } from '../theme/linearTheme';
 import { generateWakeUpMessage } from '../services/ai';
-
-type Nav = NativeStackNavigationProp<RootStackParamList, 'SleepMode'>;
-
+import { RootNav } from '../navigation/typedHooks';
 interface AccelerometerData {
   x: number;
   y: number;
@@ -29,7 +24,7 @@ interface Subscription {
 
 export default function SleepModeScreen() {
   useKeepAwake(); // Keep screen on all night
-  const navigation = useNavigation<Nav>();
+  const navigation = RootNav.useNav<'SleepMode'>();
 
   const [currentTime, setCurrentTime] = useState(new Date());
   const [alarmTime, setAlarmTime] = useState<Date | null>(null);

@@ -4,7 +4,9 @@
 
 import { z } from 'zod';
 import { tool } from '../tool';
-import { getDb } from '../../../../db/database';
+import { getDrizzleDb } from '../../../../db/drizzle';
+import { topics, topicProgress, subjects } from '../../../../db/drizzleSchema';
+import { sql, like, eq } from 'drizzle-orm';
 
 /**
  * plan_session — Generate an optimized study session plan for given topics.
@@ -26,8 +28,8 @@ export const planSessionTool = tool({
       .optional()
       .describe('Session focus, e.g. "high-yield review" or "deep understanding"'),
   }),
-  execute: async ({ topics, totalDurationMinutes, goals = 'balanced review' }) => {
-    const db = await getDb();
+  execute: async ({ topics: topicNames, totalDurationMinutes, goals = 'balanced review' }) => {
+    const db = getDrizzleDb();
 
     interface TopicProgress {
       name: string;
@@ -37,22 +39,22 @@ export const planSessionTool = tool({
     }
 
     // Query progress for each topic
-    const topicProgress = (await Promise.all(
-      topics.map(async (topicName) => {
-        const row = await db.getFirstAsync<{
-          name: string;
-          status: string | null;
-          confidence: number | null;
-          stability: number | null;
-        }>(
-          `
-          SELECT t.name, p.status, p.confidence, p.stability
-          FROM topics t LEFT JOIN topic_progress p ON p.topic_id = t.id
-          WHERE lower(t.name) LIKE lower(?)
-          ORDER BY LENGTH(t.name) ASC LIMIT 1
-        `,
-          [`%${topicName}%`],
-        );
+    const topicProgressArray = (await Promise.all(
+      topicNames.map(async (topicName) => {
+        const rows = await db
+          .select({
+            name: topics.name,
+            status: topicProgress.status,
+            confidence: topicProgress.confidence,
+            stability: topicProgress.fsrsStability,
+          })
+          .from(topics)
+          .leftJoin(topicProgress, eq(topicProgress.topicId, topics.id))
+          .where(like(sql`lower(${topics.name})`, `%${topicName.toLowerCase()}%`))
+          .orderBy(sql`LENGTH(${topics.name}) ASC`)
+          .limit(1);
+
+        const row = rows[0];
         return row
           ? {
               name: row.name,
@@ -65,9 +67,9 @@ export const planSessionTool = tool({
     )) as (TopicProgress | null)[];
 
     // Filter valid topics
-    const validTopics = topicProgress.filter((p): p is TopicProgress => p !== null);
+    const validTopics = topicProgressArray.filter((p): p is TopicProgress => p !== null);
     if (validTopics.length === 0) {
-      return { error: 'No matching topics found', topics };
+      return { error: 'No matching topics found', topics: topicNames };
     }
 
     // Simple allocation: prioritize low-confidence first
@@ -102,7 +104,7 @@ export const dailyAgendaTool = tool({
     mockTestDay: z.boolean().optional().describe('Prioritize mock test prep today?'),
   }),
   execute: async ({ startHour, endHour, mockTestDay = false }) => {
-    const db = await getDb();
+    const db = getDrizzleDb();
 
     // Get today's progress summary by subject
     interface SubjectProgress {
@@ -111,16 +113,22 @@ export const dailyAgendaTool = tool({
       urgentReviews: number;
     }
 
-    const subjectProgress = await db.getAllAsync<SubjectProgress>(`
-      SELECT 
-        s.name,
-        COALESCE(AVG(p.confidence), 0) as avgConfidence,
-        COUNT(CASE WHEN p.status = 'failed' THEN 1 END) as urgentReviews
-      FROM subjects s
-      LEFT JOIN topics t ON t.subject_id = s.id
-      LEFT JOIN topic_progress p ON p.topic_id = t.id
-      GROUP BY s.id, s.name
-    `);
+    const subjectProgressRows = await db
+      .select({
+        name: subjects.name,
+        avgConfidence: sql<number>`COALESCE(AVG(${topicProgress.confidence}), 0)`,
+        urgentReviews: sql<number>`CAST(SUM(CASE WHEN ${topicProgress.status} = 'failed' THEN 1 ELSE 0 END) AS INTEGER)`,
+      })
+      .from(subjects)
+      .leftJoin(topics, eq(topics.subjectId, subjects.id))
+      .leftJoin(topicProgress, eq(topicProgress.topicId, topics.id))
+      .groupBy(subjects.id, subjects.name);
+
+    const subjectProgress: SubjectProgress[] = subjectProgressRows.map((r) => ({
+      name: r.name,
+      avgConfidence: Number(r.avgConfidence),
+      urgentReviews: Number(r.urgentReviews),
+    }));
 
     // Simple agenda generation logic
     const agenda: Array<{ time: string; activity: string; subject?: string }> = [];

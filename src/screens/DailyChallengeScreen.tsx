@@ -2,9 +2,6 @@ import React, { useEffect, useRef, useState } from 'react';
 import { View, TouchableOpacity, StyleSheet, StatusBar, Animated } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation } from '@react-navigation/native';
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import type { HomeStackParamList } from '../navigation/types';
 import { useRefreshProfile } from '../hooks/queries/useProfile';
 import { getTopicsDueForReview, getWeakestTopics, updateTopicProgress } from '../db/queries/topics';
 import { createSession, endSession } from '../db/queries/sessions';
@@ -22,9 +19,7 @@ import LinearText from '../components/primitives/LinearText';
 import { EmptyState } from '../components/primitives';
 import LoadingOrb from '../components/LoadingOrb';
 import ScreenHeader from '../components/ScreenHeader';
-
-type Nav = NativeStackNavigationProp<HomeStackParamList, 'DailyChallenge'>;
-
+import { HomeNav } from '../navigation/typedHooks';
 interface ChallengeQuestion {
   topicId: number;
   topicName: string;
@@ -38,7 +33,7 @@ const QUESTION_COUNT = 5;
 const XP_PER_CORRECT = 60;
 
 export default function DailyChallengeScreen() {
-  const navigation = useNavigation<Nav>();
+  const navigation = HomeNav.useNav<'DailyChallenge'>();
   const refreshProfile = useRefreshProfile();
   const [questions, setQuestions] = useState<ChallengeQuestion[]>([]);
   const [loading, setLoading] = useState(true);

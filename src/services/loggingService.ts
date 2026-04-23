@@ -4,7 +4,6 @@
  * that can be fetched by the Gurulauncher.
  */
 
-import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export type LogLevel = 'debug' | 'info' | 'warn' | 'error' | 'log';

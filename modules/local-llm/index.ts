@@ -83,6 +83,7 @@ interface LocalLlmNativeModule extends NativeModule {
   chatStream(messages: ChatMessage[], options: GenerateOptions): Promise<{ status: string }>;
   cancel(): Promise<void>;
   release(): Promise<void>;
+  warmup(modelPath: string): Promise<{ backend: LocalLlmBackend; warmedUp: boolean }>;
   // Gemini Nano
   nanoCheckStatus(): Promise<NanoStatusResult>;
   nanoDownloadIfNeeded(): Promise<NanoStatusResult>;
@@ -162,6 +163,14 @@ export function nanoWarmup(): Promise<boolean> {
   return native.nanoWarmup();
 }
 
+/**
+ * Warm up Gemma LiteRT model for lower first-inference latency.
+ * Runs a dummy inference to pre-load weights and initialize KV cache.
+ */
+export function warmup(modelPath: string): Promise<{ backend: LocalLlmBackend; warmedUp: boolean }> {
+  return native.warmup(modelPath);
+}
+
 /** Generate text using Gemini Nano (max ~256 output tokens). */
 export function nanoGenerate(options: NanoGenerateOptions): Promise<GenerateResult> {
   return native.nanoGenerate(options);
@@ -188,4 +197,5 @@ export default {
   nanoWarmup,
   nanoGenerate,
   nanoGradeAnswer,
+  warmup,
 };

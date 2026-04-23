@@ -10,9 +10,6 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation } from '@react-navigation/native';
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import type { HomeStackParamList } from '../navigation/types';
 import * as Haptics from 'expo-haptics';
 import { fetchContent } from '../services/ai';
 import { fetchWikipediaImage } from '../services/imageService';
@@ -27,6 +24,7 @@ import { linearTheme as n } from '../theme/linearTheme';
 import { motion } from '../motion/presets';
 import type { DetectiveContent, TopicWithProgress } from '../types';
 
+import { HomeNav } from '../navigation/typedHooks';
 function TopicImage({ topicName }: { topicName: string }) {
   const [imageUrl, setImageUrl] = useState<string | null>(null);
 
@@ -42,7 +40,7 @@ function TopicImage({ topicName }: { topicName: string }) {
 type Phase = 'breathe' | 'sit_up_prompt' | 'fetching' | 'micro_win_bed' | 'micro_win' | 'pivot';
 
 export default function InertiaScreen() {
-  const navigation = useNavigation<NativeStackNavigationProp<HomeStackParamList>>();
+  const navigation = HomeNav.useNav();
   const [phase, setPhase] = useState<Phase>('breathe');
   const [breatheText, setBreatheText] = useState('Breathe in...');
   const [content, setContent] = useState<DetectiveContent | null>(null);

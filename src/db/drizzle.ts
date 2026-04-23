@@ -1,6 +1,6 @@
 import { drizzle } from 'drizzle-orm/expo-sqlite';
 import type { ExpoSQLiteDatabase } from 'drizzle-orm/expo-sqlite';
-import { getDb, resetDbSingleton } from './database';
+import { getDb } from './database';
 import * as schema from './drizzleSchema';
 
 type DrizzleDb = ExpoSQLiteDatabase<typeof schema>;
@@ -30,5 +30,4 @@ export function resetDrizzleDb(): void {
   _drizzleDb = null;
 }
 
-export { resetDbSingleton };
 export type { DrizzleDb };

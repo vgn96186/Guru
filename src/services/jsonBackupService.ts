@@ -1,6 +1,9 @@
 import * as FileSystem from 'expo-file-system/legacy';
 import type { SQLiteDatabase } from 'expo-sqlite';
 import { getDb } from '../db/database';
+import { getDrizzleDb } from '../db/drizzle';
+import { subjects, topics } from '../db/drizzleSchema';
+import { eq } from 'drizzle-orm';
 import { getAiCacheDb } from '../db/aiCacheDatabase';
 import { pickDocumentOnce } from './documentPicker';
 import { shareBackupFileOrAlert } from './backupShare';
@@ -115,21 +118,20 @@ function toBindValue(val: unknown): string | number | null {
 
 export async function exportJsonBackup(): Promise<boolean> {
   const db = getDb();
-  const [subjects, topics] = await Promise.all([
-    db.getAllAsync<{ id: number; name: string; short_code: string }>(
-      'SELECT id, name, short_code FROM subjects',
-    ),
-    db.getAllAsync<{ id: number; name: string; subject_id: number; short_code: string }>(
-      `SELECT t.id, t.name, t.subject_id, s.short_code
-         FROM topics t
-         JOIN subjects s ON t.subject_id = s.id`,
-    ),
+  const drizzle = getDrizzleDb();
+  const [subjectsRaw, topicsRaw] = await Promise.all([
+    drizzle.select({ id: subjects.id, name: subjects.name, short_code: subjects.shortCode }).from(subjects),
+    drizzle.select({ id: topics.id, name: topics.name, subject_id: topics.subjectId, short_code: subjects.shortCode })
+      .from(topics)
+      .innerJoin(subjects, eq(topics.subjectId, subjects.id)),
   ]);
+  const subjectsList = subjectsRaw;
+  const topicsList = topicsRaw as Array<{ id: number; name: string; subject_id: number; short_code: string }>;
   const subjectRefsById = new Map<number, SubjectBackupRef>(
-    subjects.map((subject) => [subject.id, { shortCode: subject.short_code, name: subject.name }]),
+    subjectsList.map((subject) => [subject.id, { shortCode: subject.short_code, name: subject.name }]),
   );
   const topicRefsById = new Map<number, TopicBackupRef>(
-    topics.map((topic) => [
+    topicsList.map((topic) => [
       topic.id,
       { subjectShortCode: topic.short_code, topicName: topic.name },
     ]),
@@ -249,22 +251,21 @@ export async function importJsonBackup(): Promise<{ ok: boolean; message: string
   }
 
   const db = getDb();
-  const [subjects, topics] = await Promise.all([
-    db.getAllAsync<{ id: number; name: string; short_code: string }>(
-      'SELECT id, name, short_code FROM subjects',
-    ),
-    db.getAllAsync<{ id: number; name: string; subject_id: number; short_code: string }>(
-      `SELECT t.id, t.name, t.subject_id, s.short_code
-         FROM topics t
-         JOIN subjects s ON t.subject_id = s.id`,
-    ),
+  const drizzle = getDrizzleDb();
+  const [subjectsRaw, topicsRaw] = await Promise.all([
+    drizzle.select({ id: subjects.id, name: subjects.name, short_code: subjects.shortCode }).from(subjects),
+    drizzle.select({ id: topics.id, name: topics.name, subject_id: topics.subjectId, short_code: subjects.shortCode })
+      .from(topics)
+      .innerJoin(subjects, eq(topics.subjectId, subjects.id)),
   ]);
+  const subjectsList = subjectsRaw;
+  const topicsList = topicsRaw as Array<{ id: number; name: string; subject_id: number; short_code: string }>;
 
   const subjectIdsByShortCode = new Map<string, number>(
-    subjects.map((subject) => [subject.short_code.toLowerCase(), subject.id]),
+    subjectsList.map((subject) => [subject.short_code.toLowerCase(), subject.id]),
   );
   const topicIdsByRefKey = new Map<string, number>(
-    topics.map((topic) => [
+    topicsList.map((topic) => [
       createTopicRefKey({ subjectShortCode: topic.short_code, topicName: topic.name }),
       topic.id,
     ]),
@@ -369,6 +370,7 @@ export async function importJsonBackup(): Promise<{ ok: boolean; message: string
       if (setCols.length > 0) {
         const setSql = setCols.map((c) => `${c} = ?`).join(', ');
         const values = setCols.map((c) => toBindValue(row[c]));
+        // For user profile, since fields are dynamic based on backup, continue using raw query, but use Drizzle's sql if we want, but expo-sqlite is fine.
         await db.runAsync(`UPDATE user_profile SET ${setSql} WHERE id = 1`, values);
       }
       restoredCounts.user_profile = 1;

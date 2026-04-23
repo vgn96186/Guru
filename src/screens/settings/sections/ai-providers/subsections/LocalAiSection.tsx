@@ -49,10 +49,10 @@ export default function LocalAiSection({
           !llmAllowed
             ? 'Device incompatible'
             : !llmReady
-              ? 'Model not downloaded'
-              : llmFileName
-                ? llmFileName
-                : 'Ready'
+            ? 'Model not downloaded'
+            : llmFileName
+            ? llmFileName
+            : 'Ready'
         }
         styles={styles}
       />

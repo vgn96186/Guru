@@ -1,72 +1,38 @@
-import React, { useCallback, useEffect, useState } from 'react';
-import {     
-  View } from      'react-native';
+import React from 'react';
+import { View, StyleSheet } from 'react-native';
+import type { StudyPlanSummary } from '../../../services/studyPlanner';
+import { linearTheme as n } from '../../../theme/linearTheme';
+import LinearText from '../../../components/primitives/LinearText';
 
-import { type DailyPlan,
-  type StudyPlanSummary,
-  type PlanMode,
- } from  '../services/studyPlanner';
-import { type NavigationProp  } from  '@react-navigation/native';
-import type { TabParamList, HomeStackParamList } from '../navigation/types';
+const funnelStyles = StyleSheet.create({
+  funnelCard: { marginBottom: n.spacing.sm },
+  funnelBar: { height: 12, backgroundColor: n.colors.border, borderRadius: 6, flexDirection: 'row', overflow: 'hidden' },
+  funnelSeg: { height: '100%', minWidth: 2 },
+  funnelLegendRow: { flexDirection: 'row', justifyContent: 'space-around', marginTop: 6 },
+  funnelLegendItem: { fontSize: 12, fontWeight: '700' },
+});
 
-
-
-
-import { linearTheme as n } from '../theme/linearTheme';
-
-
-
-
-
-
-
-
-import type { TopicWithProgress, StudyResourceMode } from '../types';
-
-
-
-
-
-import LinearText from '../components/primitives/LinearText';
-
-
-
-
-
-export default /** Mastery funnel summary — shown at top of plan for all modes. */
-function MasteryFunnelCard({ summary }: { summary: StudyPlanSummary }) {
-  const total =
-    summary.unseenCount +
-    summary.seenNeedingQuizCount +
-    summary.reviewedCount +
-    summary.masteredCount;
+export default function MasteryFunnelCard({ summary }: { summary: StudyPlanSummary }) {
+  const total = summary.unseenCount + summary.seenNeedingQuizCount + summary.reviewedCount + summary.masteredCount;
   if (total === 0) return null;
 
   const bar = (count: number, color: string) => (
-    <View style={[masteryStyles.funnelSeg, { flex: count, backgroundColor: color }]} />
+    <View style={[funnelStyles.funnelSeg, { flex: count, backgroundColor: color }]} />
   );
 
   return (
-    <View style={masteryStyles.funnelCard}>
-      <View style={masteryStyles.funnelBar}>
+    <View style={funnelStyles.funnelCard}>
+      <View style={funnelStyles.funnelBar}>
         {bar(summary.masteredCount, n.colors.success)}
         {bar(summary.reviewedCount, n.colors.warning)}
         {bar(summary.seenNeedingQuizCount, n.colors.accent)}
         {bar(summary.unseenCount, n.colors.border)}
       </View>
-      <View style={masteryStyles.funnelLegendRow}>
-        <LinearText style={[masteryStyles.funnelLegendItem, { color: n.colors.success }]}>
-          {summary.masteredCount}
-        </LinearText>
-        <LinearText style={[masteryStyles.funnelLegendItem, { color: n.colors.warning }]}>
-          {summary.reviewedCount}
-        </LinearText>
-        <LinearText style={[masteryStyles.funnelLegendItem, { color: n.colors.accent }]}>
-          {summary.seenNeedingQuizCount}
-        </LinearText>
-        <LinearText style={[masteryStyles.funnelLegendItem, { color: n.colors.textMuted }]}>
-          {summary.unseenCount}
-        </LinearText>
+      <View style={funnelStyles.funnelLegendRow}>
+        <LinearText style={[funnelStyles.funnelLegendItem, { color: n.colors.success }]}>{summary.masteredCount}</LinearText>
+        <LinearText style={[funnelStyles.funnelLegendItem, { color: n.colors.warning }]}>{summary.reviewedCount}</LinearText>
+        <LinearText style={[funnelStyles.funnelLegendItem, { color: n.colors.accent }]}>{summary.seenNeedingQuizCount}</LinearText>
+        <LinearText style={[funnelStyles.funnelLegendItem, { color: n.colors.textMuted }]}>{summary.unseenCount}</LinearText>
       </View>
     </View>
   );

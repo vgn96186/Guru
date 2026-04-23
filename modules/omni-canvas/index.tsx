@@ -55,7 +55,12 @@ export type FlashcardProps = {
 
 export type LoadingOrbProps = {
   size?: number;
+  /** @deprecated Use intensityMode instead */
   orbEffect?: 'ripple' | 'liquid';
+  /** Controls the turbulence intensity: 'calm' (resting), 'active' (default), or 'turbulent' (intense) */
+  intensityMode?: 'calm' | 'active' | 'turbulent';
+  /** Whether the orb animation is active (pauses when false) */
+  isActive?: boolean;
 } & ViewProps;
 
 export type SubjectProgressData = {
@@ -138,7 +143,9 @@ export type OmniOrbProps = {
     targetX?: number;
     targetY?: number;
     targetSize?: number;
+    /** @deprecated Use intensityMode instead */
     orbEffect?: 'ripple' | 'liquid';
+    intensityMode?: 'calm' | 'active' | 'turbulent';
   };
   onPress?: () => void;
 } & ViewProps;

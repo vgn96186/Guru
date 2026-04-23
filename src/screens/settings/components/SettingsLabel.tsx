@@ -1,6 +1,5 @@
 import React from 'react';
 import { StyleSheet } from 'react-native';
-import { linearTheme } from '../../../theme/linearTheme';
 import LinearText from '../../../components/primitives/LinearText';
 
 export default function SettingsLabel({ text }: { text: string }) {

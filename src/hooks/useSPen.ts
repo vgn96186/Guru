@@ -1,8 +1,19 @@
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import * as Launcher from '../../modules/app-launcher';
 import { useProfileQuery } from './queries/useProfile';
 import { requireNativeModule } from 'expo-modules-core';
-const GuruAppLauncher = requireNativeModule('GuruAppLauncher');
+
+type NativeListener = { remove: () => void };
+type GuruAppLauncherModule = {
+  addListener?: (eventName: string, listener: (...args: any[]) => void) => NativeListener;
+};
+
+let GuruAppLauncher: GuruAppLauncherModule | null = null;
+try {
+  GuruAppLauncher = requireNativeModule('GuruAppLauncher') as GuruAppLauncherModule;
+} catch {
+  GuruAppLauncher = null;
+}
 
 type Handlers = {
   onButton?: () => void;
@@ -10,29 +21,29 @@ type Handlers = {
 };
 
 export function useSPen({ onButton, onAirMotion }: Handlers) {
-  const { data: profile } = useProfileQuery();
+  const profileQuery = useProfileQuery();
+  const profile = profileQuery?.data;
   const enabled = profile?.useSPenControls ?? true;
 
   useEffect(() => {
     if (!enabled) return;
-    let active = true;
-    Launcher.startSPenListening().then((ok) => {
-      if (!ok) active = false;
-    });
+    void Launcher.startSPenListening().catch(() => undefined);
 
-    const sub1 = onButton ? GuruAppLauncher.addListener('onSPenButton', () => onButton()) : null;
+    const sub1 =
+      onButton && GuruAppLauncher?.addListener
+        ? GuruAppLauncher.addListener('onSPenButton', () => onButton())
+        : null;
 
     const sub2 = onAirMotion
-      ? GuruAppLauncher.addListener('onSPenAirMotion', (e: { dx: number; dy: number }) =>
+      ? GuruAppLauncher?.addListener?.('onSPenAirMotion', (e: { dx: number; dy: number }) =>
           onAirMotion(e.dx, e.dy),
         )
       : null;
 
     return () => {
-      active = false;
       sub1?.remove();
       sub2?.remove();
-      Launcher.stopSPenListening();
+      void Launcher.stopSPenListening?.().catch(() => undefined);
     };
   }, [onButton, onAirMotion, enabled]);
 }

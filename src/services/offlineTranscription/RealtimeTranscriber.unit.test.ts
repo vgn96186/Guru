@@ -1,6 +1,3 @@
-import { RealtimeTranscriptionController } from './realtimeTranscriber';
-import { getWhisperModelManager } from './whisperModelManager';
-import * as whisper from 'whisper.rn/index.js';
 
 jest.mock('./whisperModelManager', () => ({
   getWhisperModelManager: jest.fn(() => ({

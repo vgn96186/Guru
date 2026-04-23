@@ -7,7 +7,8 @@ export function useSettingsState<K extends keyof UserProfile>(
   key: K,
   defaultValue: UserProfile[K],
 ): [UserProfile[K], (val: UserProfile[K]) => void, boolean] {
-  const { data: profile } = useProfileQuery();
+  const profileQuery = useProfileQuery();
+  const profile = profileQuery?.data;
   const refreshProfile = useRefreshProfile();
 
   const [localValue, setLocalValue] = useState<UserProfile[K]>(

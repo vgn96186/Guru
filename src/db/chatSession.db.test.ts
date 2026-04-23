@@ -22,7 +22,8 @@ describe('DB integration (in-memory SQLite)', () => {
 
   beforeEach(() => {
     resetDbSingleton();
-    const { sqlite, dispose: d } = createTestDatabase();
+    const sqlite = createTestDatabase();
+    const d = () => {};
     dispose = d;
     setDbForTests(sqlite);
   });

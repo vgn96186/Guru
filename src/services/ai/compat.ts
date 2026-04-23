@@ -7,12 +7,13 @@
 
 import { generateText, generateObject, streamText } from 'ai';
 import { type CoreMessage, fromVercelMessage } from './v2/vercelCompat';
-import { createGuruFallbackModel } from './providers/guruFallback';
+import { createGuruFallbackModel } from './v2/providers/guruFallback';
 import { profileRepository } from '../../db/repositories/profileRepository';
+import type { LanguageModel } from '@ai-sdk/provider';
 
 export async function generateTextV2(messages: CoreMessage[], options?: Record<string, unknown>) {
   const profile = await profileRepository.getProfile();
-  const model = createGuruFallbackModel({ profile });
+  const model = createGuruFallbackModel({ profile }) as unknown as LanguageModel;
   return generateText({
     model,
     messages: messages.map(fromVercelMessage) as any,
@@ -26,7 +27,7 @@ export async function generateJSONV2(
   options?: Record<string, unknown>,
 ) {
   const profile = await profileRepository.getProfile();
-  const model = createGuruFallbackModel({ profile });
+  const model = createGuruFallbackModel({ profile }) as unknown as LanguageModel;
   return generateObject({
     model,
     schema: schema as any,
@@ -37,7 +38,7 @@ export async function generateJSONV2(
 
 export async function chatWithGuruV2(messages: CoreMessage[], options?: Record<string, unknown>) {
   const profile = await profileRepository.getProfile();
-  const model = createGuruFallbackModel({ profile });
+  const model = createGuruFallbackModel({ profile }) as unknown as LanguageModel;
   const result = await generateText({
     model,
     messages: messages.map(fromVercelMessage) as any,
@@ -54,7 +55,7 @@ export async function* chatWithGuruStreamV2(
   },
 ) {
   const profile = await profileRepository.getProfile();
-  const model = createGuruFallbackModel({ profile });
+  const model = createGuruFallbackModel({ profile }) as unknown as LanguageModel;
   const result = streamText({
     model,
     messages: messages.map(fromVercelMessage) as any,

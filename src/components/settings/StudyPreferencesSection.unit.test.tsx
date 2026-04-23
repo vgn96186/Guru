@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, fireEvent } from '@testing-library/react-native';
+import { renderWithProviders as render, fireEvent } from '../../test-utils/renderWrappers';
 import { Switch } from 'react-native';
 import StudyPreferencesSection from './StudyPreferencesSection';
 

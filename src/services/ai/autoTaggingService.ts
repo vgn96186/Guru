@@ -6,7 +6,8 @@
  */
 
 import { generateText } from 'ai';
-import { createGuruFallbackModel } from './providers/guruFallback';
+import type { LanguageModel } from '@ai-sdk/provider';
+import { createGuruFallbackModel } from './v2/providers/guruFallback';
 import { profileRepository } from '../../db/repositories';
 import { tagNoteTool } from './tools/noteLinkingTools';
 
@@ -18,7 +19,7 @@ export async function triggerAutoTagging(noteId: number, content: string, noteTy
       
       const profile = await profileRepository.getProfile();
       // createGuruFallbackModel will automatically prefer Gemini Nano if available/enabled
-      const model = createGuruFallbackModel({ profile, textMode: true });
+      const model = createGuruFallbackModel({ profile, textMode: true }) as unknown as LanguageModel;
 
       await generateText({
         model,

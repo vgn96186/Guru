@@ -1,4 +1,7 @@
-import { getDb, nowTs, runInTransaction } from '../../db/database';
+import { getDrizzleDb } from '../../db/drizzle';
+import { runInTransaction, nowTs } from '../../db/database';
+import { subjects, lectureNotes, externalAppLogs } from '../../db/drizzleSchema';
+import { sql, eq } from 'drizzle-orm';
 import { markTopicsFromLecture } from '../transcription/matching';
 import { renameRecordingToLectureIdentity, saveTranscriptToFile } from '../transcriptStorage';
 import { embeddingToBlob, generateEmbedding } from '../ai/embeddingService';
@@ -10,7 +13,6 @@ import {
   updateSessionRecordingPath,
 } from '../../db/queries/externalLogs';
 import { addXpInTx } from '../../db/queries/progress';
-import { getTopicsBySubject } from '../../db/queries/topics';
 import type { LectureAnalysis } from '../transcriptionService';
 
 /** Dictionary for fuzzy subject name mapping */
@@ -54,30 +56,22 @@ const SUBJECT_MAPPINGS: Record<string, string> = {
 };
 
 async function findSubjectId(name: string): Promise<number | null> {
-  const db = getDb();
+  const db = getDrizzleDb();
   const normalized = name.toLowerCase().trim();
 
   // 1. Direct match
-  let res = await db.getFirstAsync<{ id: number }>(
-    'SELECT id FROM subjects WHERE LOWER(name) = LOWER(?)',
-    [normalized],
-  );
+  let res = await db.select({ id: subjects.id }).from(subjects).where(sql`LOWER(${subjects.name}) = LOWER(${normalized})`).limit(1).then(r => r[0]);
   if (res) return res.id;
 
   // 2. Fuzzy mapping match
   const mapped = SUBJECT_MAPPINGS[normalized];
   if (mapped) {
-    res = await db.getFirstAsync<{ id: number }>(
-      'SELECT id FROM subjects WHERE LOWER(name) = LOWER(?)',
-      [mapped],
-    );
+    res = await db.select({ id: subjects.id }).from(subjects).where(sql`LOWER(${subjects.name}) = LOWER(${mapped})`).limit(1).then(r => r[0]);
     if (res) return res.id;
   }
 
   // 3. Partial substring match (fallback)
-  res = await db.getFirstAsync<{ id: number }>('SELECT id FROM subjects WHERE LOWER(name) LIKE ?', [
-    `%${normalized}%`,
-  ]);
+  res = await db.select({ id: subjects.id }).from(subjects).where(sql`LOWER(${subjects.name}) LIKE ${`%${normalized}%`}`).limit(1).then(r => r[0]);
   return res?.id ?? null;
 }
 
@@ -90,7 +84,7 @@ export async function saveLecturePersistence(opts: {
   embedding?: number[] | null;
   recordingPath?: string | null;
 }) {
-  const db = getDb();
+  const db = getDrizzleDb();
   const { analysis } = opts;
   const saveStageStartedAt = Date.now();
   const lectureIdentity = {
@@ -107,7 +101,10 @@ export async function saveLecturePersistence(opts: {
       embeddingForMatching = await generateEmbedding(analysis.lectureSummary);
     } catch (embErr) {
       if (__DEV__) {
-        console.log('[Persistence] generateEmbedding failed, proceeding without embedding:', embErr);
+        console.log(
+          '[Persistence] generateEmbedding failed, proceeding without embedding:',
+          embErr,
+        );
       }
       embeddingForMatching = null;
     }
@@ -139,10 +136,10 @@ export async function saveLecturePersistence(opts: {
 
     // Use runInTransaction instead of manual BEGIN/COMMIT to avoid
     // orphaned recording paths and ensure proper rollback on failure.
-    const noteId = await runInTransaction(async (tx) => {
+    const noteId = await runInTransaction(async (txDb) => {
       if (analysis.topics.length > 0 || analysis.lectureSummary) {
         await markTopicsFromLecture(
-          tx,
+          txDb as any, // Drizzle tx not perfectly typed with expo-sqlite interface here, but ok
           analysis.topics,
           analysis.estimatedConfidence,
           analysis.subject,
@@ -150,35 +147,32 @@ export async function saveLecturePersistence(opts: {
           embeddingForMatching,
         );
         if (analysis.topics.length > 0) {
-          await addXpInTx(tx, analysis.topics.length * 8);
+          await addXpInTx(analysis.topics.length * 8);
         }
       }
 
-      const result = await tx.runAsync(
-        `INSERT INTO lecture_notes (
-           subject_id, note, created_at, transcript, summary, topics_json, app_name,
-           duration_minutes, confidence, embedding, recording_path
-         )
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        [
-          subjectId,
-          opts.quickNote,
-          nowTs(),
-          transcriptUri ?? analysis.transcript ?? null,
-          analysis.lectureSummary,
-          analysis.topics ? JSON.stringify(analysis.topics) : null,
-          opts.appName,
-          opts.durationMinutes,
-          analysis.estimatedConfidence,
-          embeddingForMatching ? embeddingToBlob(embeddingForMatching) : null,
-          originalRecordingPath,
-        ],
-      );
-      const id = result.lastInsertRowId;
-      await tx.runAsync(
-        'UPDATE external_app_logs SET transcription_status = ?, lecture_note_id = ? WHERE id = ?',
-        ['completed', id, opts.logId],
-      );
+      const result = await (txDb as any)
+        .insert(lectureNotes)
+        .values({
+          subjectId: subjectId ?? null,
+          note: opts.quickNote,
+          createdAt: nowTs(),
+          transcript: transcriptUri ?? analysis.transcript ?? null,
+          summary: analysis.lectureSummary ?? null,
+          topicsJson: analysis.topics ? JSON.stringify(analysis.topics) : null,
+          appName: opts.appName,
+          durationMinutes: opts.durationMinutes,
+          confidence: analysis.estimatedConfidence,
+          embedding: embeddingForMatching ? embeddingToBlob(embeddingForMatching) : null,
+          recordingPath: originalRecordingPath,
+        })
+        .returning({ id: lectureNotes.id });
+      const id = result[0].id;
+
+      await getDrizzleDb()
+        .update(externalAppLogs)
+        .set({ transcriptionStatus: 'completed', lectureNoteId: id })
+        .where(eq(externalAppLogs.id, opts.logId));
       return id;
     });
 
@@ -191,10 +185,10 @@ export async function saveLecturePersistence(opts: {
           lectureIdentity,
         );
         if (renamedRecordingPath !== originalRecordingPath) {
-          await db.runAsync('UPDATE lecture_notes SET recording_path = ? WHERE id = ?', [
-            renamedRecordingPath,
-            noteId,
-          ]);
+          await getDrizzleDb()
+            .update(lectureNotes)
+            .set({ recordingPath: renamedRecordingPath })
+            .where(eq(lectureNotes.id, noteId));
           await updateSessionRecordingPath(opts.logId, renamedRecordingPath);
         }
       } catch (renameErr) {
@@ -276,7 +270,7 @@ export async function saveLectureChunk(opts: {
   embedding?: number[] | null;
   recordingPath?: string | null;
 }): Promise<{ noteId: number; topicsMatched: number; xpAwarded: number }> {
-  const db = getDb();
+  const db = getDrizzleDb();
   const { analysis } = opts;
 
   // Compute embedding before the transaction
@@ -301,13 +295,13 @@ export async function saveLectureChunk(opts: {
 
   const subjectId = opts.subjectId ?? (await findSubjectId(analysis.subject));
 
-  const result = await runInTransaction(async (tx) => {
+  const result = await runInTransaction(async (txDb) => {
     if (analysis.topics.length > 0 || analysis.lectureSummary) {
       // Use the same 5-level matching as Pipeline A:
       // 1. exact match in subject, 2. LIKE contains, 3. reverse contains,
       // 4. semantic/cosine similarity, 5. queue unmatched
       await markTopicsFromLecture(
-        tx,
+          txDb as any,
         analysis.topics,
         analysis.estimatedConfidence,
         analysis.subject,
@@ -317,31 +311,27 @@ export async function saveLectureChunk(opts: {
 
       // Award XP: same as Pipeline A (topics.length * 8)
       if (analysis.topics.length > 0) {
-        await addXpInTx(tx, analysis.topics.length * 8);
+        await addXpInTx(analysis.topics.length * 8);
       }
     }
 
-    const insertResult = await tx.runAsync(
-      `INSERT INTO lecture_notes (
-         subject_id, note, created_at, transcript_uri, summary, topics_json, app_name,
-         duration_minutes, confidence, embedding, recording_path
-       )
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [
-        subjectId,
-        opts.quickNote,
-        nowTs(),
-        transcriptUri,
-        analysis.lectureSummary,
-        analysis.topics ? JSON.stringify(analysis.topics) : null,
-        opts.appName ?? 'LectureMode',
-        opts.durationMinutes,
-        analysis.estimatedConfidence,
-        embeddingForMatching ? embeddingToBlob(embeddingForMatching) : null,
-        opts.recordingPath ?? null,
-      ],
-    );
-    const noteId = insertResult.lastInsertRowId;
+    const insertResult = await getDrizzleDb()
+      .insert(lectureNotes)
+      .values({
+        subjectId: subjectId ?? null,
+        note: opts.quickNote,
+        createdAt: nowTs(),
+        transcript: transcriptUri,
+        summary: analysis.lectureSummary ?? null,
+        topicsJson: analysis.topics ? JSON.stringify(analysis.topics) : null,
+        appName: opts.appName ?? 'LectureMode',
+        durationMinutes: opts.durationMinutes,
+        confidence: analysis.estimatedConfidence,
+        embedding: embeddingForMatching ? embeddingToBlob(embeddingForMatching) : null,
+        recordingPath: opts.recordingPath ?? null,
+      })
+      .returning({ id: lectureNotes.id });
+    const noteId = insertResult[0].id;
 
     return { noteId, topicsMatched: analysis.topics.length, xpAwarded: analysis.topics.length * 8 };
   });
@@ -354,10 +344,10 @@ export async function saveLectureChunk(opts: {
         lectureIdentity,
       );
       if (renamedPath !== opts.recordingPath) {
-        await db.runAsync('UPDATE lecture_notes SET recording_path = ? WHERE id = ?', [
-          renamedPath,
-          result.noteId,
-        ]);
+        await getDrizzleDb()
+          .update(lectureNotes)
+          .set({ recordingPath: renamedPath })
+          .where(eq(lectureNotes.id, result.noteId));
       }
     } catch (renameErr) {
       console.warn('[saveLectureChunk] Recording rename failed:', renameErr);

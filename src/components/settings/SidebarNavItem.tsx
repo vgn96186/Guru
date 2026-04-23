@@ -1,5 +1,5 @@
-import React, { useEffect, useRef } from 'react';
-import { TouchableOpacity, Text, View, Animated } from 'react-native';
+import React from 'react';
+import { TouchableOpacity, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 interface SidebarNavItemProps {

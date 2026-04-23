@@ -1,37 +1,25 @@
 /**
  * Profile repository — decouples Zustand store from persistence logic.
- * Delegates to db/queries/progress for implementation.
+ * Delegates to the Drizzle-backed progressRepositoryDrizzle for implementation.
  */
 import type { UserProfile } from '../../types';
-import {
-  getUserProfile,
-  updateUserProfile as updateUserProfileQuery,
-  addXp,
-  updateStreak,
-  useStreakShield,
-  getDaysToExam,
-  resetStudyProgress,
-  clearAiCache,
-  getReviewDueTopics,
-  getRecentTopics,
-  applyConfidenceDecay,
-} from '../queries/progress';
-import { getSubjectCoverage, getWeakestTopics } from '../queries/topics';
+import { progressRepositoryDrizzle } from './progressRepository.drizzle';
+import { topicsRepositoryDrizzle } from './topicsRepository.drizzle';
 
 export const profileRepository = {
-  getProfile: getUserProfile,
-  updateProfile: updateUserProfileQuery,
-  addXp,
-  updateStreak,
-  useStreakShield,
-  getDaysToExam,
-  resetStudyProgress,
-  clearAiCache,
-  getReviewDueTopics,
-  getRecentTopics,
-  getSubjectCoverage,
-  getWeakestTopics,
-  applyConfidenceDecay,
+  getProfile: progressRepositoryDrizzle.getProfile,
+  updateProfile: progressRepositoryDrizzle.updateProfile,
+  addXp: progressRepositoryDrizzle.addXp,
+  updateStreak: progressRepositoryDrizzle.updateStreak,
+  useStreakShield: progressRepositoryDrizzle.useStreakShield,
+  getDaysToExam: progressRepositoryDrizzle.getDaysToExam,
+  resetStudyProgress: progressRepositoryDrizzle.resetStudyProgress,
+  clearAiCache: progressRepositoryDrizzle.clearAiCache,
+  getReviewDueTopics: progressRepositoryDrizzle.getReviewDueTopics,
+  getRecentTopics: progressRepositoryDrizzle.getRecentTopics,
+  getSubjectCoverage: topicsRepositoryDrizzle.getSubjectCoverage,
+  getWeakestTopics: topicsRepositoryDrizzle.getWeakestTopics,
+  applyConfidenceDecay: progressRepositoryDrizzle.applyConfidenceDecay,
 };
 
 export type { UserProfile };

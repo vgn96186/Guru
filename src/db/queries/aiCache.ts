@@ -6,15 +6,14 @@ import {
 } from '../repositories/aiCacheRepository.drizzle';
 import {
   lectureNotesRepositoryDrizzle,
-  type LectureNoteRecord,
 } from '../repositories/lectureNotesRepository.drizzle';
 import {
   guruChatRepositoryDrizzle,
   type GuruChatThread,
   type ChatHistoryMessage,
 } from '../repositories/guruChatRepository.drizzle';
-import { contentFlagsRepositoryDrizzle } from '../repositories/contentFlagsRepository.drizzle';
 import { getDrizzleDb } from '../drizzle';
+import { runInTransaction } from '../database';
 import { eq, sql, desc, or, like, and } from 'drizzle-orm';
 import {
   lectureNotes,
@@ -533,10 +532,10 @@ export async function renameGuruChatThread(threadId: number, title: string): Pro
 
 export async function deleteGuruChatThread(threadId: number): Promise<void> {
   const db = getDrizzleDb();
-  await db.transaction(async (tx) => {
-    await tx.delete(chatHistory).where(eq(chatHistory.threadId, threadId));
-    await tx.delete(guruChatSessionMemory).where(eq(guruChatSessionMemory.threadId, threadId));
-    await tx.delete(guruChatThreads).where(eq(guruChatThreads.id, threadId));
+  await runInTransaction(async (txDb) => {
+    await getDrizzleDb().delete(chatHistory).where(eq(chatHistory.threadId, threadId));
+    await getDrizzleDb().delete(guruChatSessionMemory).where(eq(guruChatSessionMemory.threadId, threadId));
+    await getDrizzleDb().delete(guruChatThreads).where(eq(guruChatThreads.id, threadId));
   });
 }
 
@@ -575,9 +574,9 @@ export async function getChatHistory(threadId: number, limit = 20): Promise<Chat
 
 export async function clearChatHistory(topicName: string): Promise<void> {
   const db = getDrizzleDb();
-  await db.transaction(async (tx) => {
-    await tx.delete(chatHistory).where(eq(chatHistory.topicName, topicName));
-    await tx.delete(guruChatSessionMemory).where(eq(guruChatSessionMemory.topicName, topicName));
-    await tx.delete(guruChatThreads).where(eq(guruChatThreads.topicName, topicName));
+  await runInTransaction(async (txDb) => {
+    await getDrizzleDb().delete(chatHistory).where(eq(chatHistory.topicName, topicName));
+    await getDrizzleDb().delete(guruChatSessionMemory).where(eq(guruChatSessionMemory.topicName, topicName));
+    await getDrizzleDb().delete(guruChatThreads).where(eq(guruChatThreads.topicName, topicName));
   });
 }

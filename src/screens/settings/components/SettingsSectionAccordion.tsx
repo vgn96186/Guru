@@ -1,9 +1,8 @@
-import React, { type ComponentProps, useRef } from 'react';
+import React, { type ComponentProps } from 'react';
 import {
   StyleSheet,
   TouchableOpacity,
   View,
-  Animated,
   LayoutAnimation,
   UIManager,
   Platform,
@@ -13,8 +12,9 @@ import GlassSurface from '../../../components/primitives/GlassSurface';
 import LinearText from '../../../components/primitives/LinearText';
 import { linearTheme } from '../../../theme/linearTheme';
 
-// Enable LayoutAnimation on Android
-if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
+// Enable LayoutAnimation on Android (Skip on New Architecture to avoid warnings)
+const isFabric = typeof global !== 'undefined' && !!((global as any).nativeFabricUIManager || (global as any).RN$Bridgeless);
+if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental && !isFabric) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
 }
 

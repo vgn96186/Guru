@@ -13,9 +13,6 @@ import {
   BackHandler,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation } from '@react-navigation/native';
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import type { HomeStackParamList } from '../navigation/types';
 import { getCachedQuestionCount, getMockQuestions, type MockQuestion } from '../db/queries/aiCache';
 import { saveBulkQuestions } from '../db/queries/questionBank';
 import { MarkdownRender } from '../components/MarkdownRender';
@@ -24,16 +21,14 @@ import { ResponsiveContainer } from '../hooks/useResponsive';
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { emphasizeHighYieldMarkdown } from '../utils/highlightMarkdown';
 import { confirmDestructive } from '../components/dialogService';
-
-type Nav = NativeStackNavigationProp<HomeStackParamList, 'MockTest'>;
-
+import { HomeNav } from '../navigation/typedHooks';
 const CORRECT_MARKS = 4;
 const WRONG_MARKS = -1;
 
 type Answer = number | null; // -1 = skipped
 
 export default function MockTestScreen() {
-  const navigation = useNavigation<Nav>();
+  const navigation = HomeNav.useNav<'MockTest'>();
   const [questions, setQuestions] = useState<MockQuestion[]>([]);
   const [current, setCurrent] = useState(0);
   const [answers, setAnswers] = useState<Answer[]>([]);
@@ -323,6 +318,11 @@ export default function MockTestScreen() {
             renderReviewItem({ item: entry.q, index: entry.origIdx })
           }
           contentContainerStyle={styles.resultsContent}
+          getItemLayout={(_, index) => ({
+            length: 168,
+            offset: 168 * index,
+            index,
+          })}
           initialNumToRender={8}
           windowSize={8}
           maxToRenderPerBatch={10}

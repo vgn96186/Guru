@@ -1,43 +1,28 @@
-import React, { useCallback, useEffect, useState } from 'react';
-import {     
-  View } from      'react-native';
+import React from 'react';
+import { View, StyleSheet } from 'react-native';
+import { getCurrentLecturePosition } from '../../../services/lecturePositionService';
+import type { StudyResourceMode } from '../../../types';
+import { linearTheme as n } from '../../../theme/linearTheme';
+import LinearSurface from '../../../components/primitives/LinearSurface';
+import LinearText from '../../../components/primitives/LinearText';
 
-import { type DailyPlan,
-  type StudyPlanSummary,
-  type PlanMode,
- } from  '../services/studyPlanner';
-import { type NavigationProp  } from  '@react-navigation/native';
-import type { TabParamList, HomeStackParamList } from '../navigation/types';
+const bannerStyles = StyleSheet.create({
+  banner: { marginBottom: n.spacing.sm, backgroundColor: 'transparent', borderWidth: 0 },
+  bannerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
+  bannerTitle: { color: n.colors.textPrimary, fontSize: 14, fontWeight: '700' },
+  bannerDay: { color: n.colors.textMuted, fontSize: 12, fontWeight: '600' },
+  bannerHint: { color: n.colors.textSecondary, fontSize: 12 },
+  progressTrack: { height: 4, backgroundColor: n.colors.border, borderRadius: 2, marginBottom: 10 },
+  progressFill: { height: '100%', backgroundColor: n.colors.accent, borderRadius: 2 },
+  subjectRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 6 },
+  subjectBadge: { backgroundColor: n.colors.accent, paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 },
+  subjectBadgeNext: { backgroundColor: n.colors.border },
+  subjectBadgeText: { color: '#fff', fontSize: 9, fontWeight: '900' },
+  subjectName: { color: n.colors.textPrimary, fontSize: 13, fontWeight: '600', flex: 1 },
+  subjectMeta: { color: n.colors.textMuted, fontSize: 11 },
+});
 
-
-
-
-import { linearTheme as n } from '../theme/linearTheme';
-
-
-
-
-
-
-
-
-import type { TopicWithProgress, StudyResourceMode } from '../types';
-
-
-
-import { getCurrentLecturePosition } from '../services/lecturePositionService';
-import LinearSurface from '../components/primitives/LinearSurface';
-import LinearText from '../components/primitives/LinearText';
-
-
-
-
-
-export default /**
- * Compact banner that shows where the student currently sits in their
- * DBMCI One or BTR live batch, based on the stored start date.
- */
-function LiveClassBanner({
+export default function LiveClassBanner({
   resourceMode,
   dbmciStartDate,
   btrStartDate,
@@ -51,9 +36,9 @@ function LiveClassBanner({
 
   if (!startDate) {
     return (
-      <LinearSurface compact style={liveStyles.banner}>
-        <LinearText style={liveStyles.bannerTitle}>📺 {batchLabel} Live Batch</LinearText>
-        <LinearText style={liveStyles.bannerHint}>
+      <LinearSurface compact style={bannerStyles.banner}>
+        <LinearText style={bannerStyles.bannerTitle}>📺 {batchLabel} Live Batch</LinearText>
+        <LinearText style={bannerStyles.bannerHint}>
           Set your batch start date in Settings → Study Plan to unlock daily lecture tracking.
         </LinearText>
       </LinearSurface>
@@ -65,61 +50,41 @@ function LiveClassBanner({
 
   if (pos.isComplete) {
     return (
-      <LinearSurface compact style={liveStyles.banner}>
-        <LinearText style={liveStyles.bannerTitle}>🎓 {batchLabel} — Complete!</LinearText>
-        <LinearText style={liveStyles.bannerHint}>
+      <LinearSurface compact style={bannerStyles.banner}>
+        <LinearText style={bannerStyles.bannerTitle}>🎓 {batchLabel} — Complete!</LinearText>
+        <LinearText style={bannerStyles.bannerHint}>
           All {pos.totalDays} teaching days covered. Focus on revision and mocks.
         </LinearText>
       </LinearSurface>
     );
   }
 
-  const {
-    currentBlock,
-    nextBlock,
-    dayNumber,
-    totalDays,
-    dayInSubject,
-    daysLeftInSubject,
-    progressPercent,
-  } = pos;
-  const progressBarWidth = `${progressPercent}%` as `${number}%`;
+  const { currentBlock, nextBlock, dayNumber, totalDays, dayInSubject, daysLeftInSubject, progressPercent } = pos;
+  const progressBarWidth = `${progressPercent}%` as const;
 
   return (
-    <LinearSurface compact style={liveStyles.banner}>
-      <View style={liveStyles.bannerRow}>
-        <LinearText style={liveStyles.bannerTitle}>📺 {batchLabel}</LinearText>
-        <LinearText style={liveStyles.bannerDay}>
-          Day {dayNumber}/{totalDays}
-        </LinearText>
+    <LinearSurface compact style={bannerStyles.banner}>
+      <View style={bannerStyles.bannerRow}>
+        <LinearText style={bannerStyles.bannerTitle}>📺 {batchLabel}</LinearText>
+        <LinearText style={bannerStyles.bannerDay}>Day {dayNumber}/{totalDays}</LinearText>
       </View>
-
-      {/* Progress bar */}
-      <View style={liveStyles.progressTrack}>
-        <View style={[liveStyles.progressFill, { width: progressBarWidth }]} />
+      <View style={bannerStyles.progressTrack}>
+        <View style={[bannerStyles.progressFill, { width: progressBarWidth }]} />
       </View>
-
-      {/* Current subject */}
-      <View style={liveStyles.subjectRow}>
-        <View style={liveStyles.subjectBadge}>
-          <LinearText style={liveStyles.subjectBadgeText}>NOW</LinearText>
+      <View style={bannerStyles.subjectRow}>
+        <View style={bannerStyles.subjectBadge}>
+          <LinearText style={bannerStyles.subjectBadgeText}>NOW</LinearText>
         </View>
-        <LinearText style={liveStyles.subjectName}>{currentBlock.subjectName}</LinearText>
-        <LinearText style={liveStyles.subjectMeta}>
-          Day {dayInSubject}/{currentBlock.days} · {daysLeftInSubject}d left
-        </LinearText>
+        <LinearText style={bannerStyles.subjectName}>{currentBlock.subjectName}</LinearText>
+        <LinearText style={bannerStyles.subjectMeta}>Day {dayInSubject}/{currentBlock.days} · {daysLeftInSubject}d left</LinearText>
       </View>
-
-      {/* Next subject */}
       {nextBlock && (
-        <View style={liveStyles.subjectRow}>
-          <View style={[liveStyles.subjectBadge, liveStyles.subjectBadgeNext]}>
-            <LinearText style={liveStyles.subjectBadgeText}>NEXT</LinearText>
+        <View style={bannerStyles.subjectRow}>
+          <View style={[bannerStyles.subjectBadge, bannerStyles.subjectBadgeNext]}>
+            <LinearText style={bannerStyles.subjectBadgeText}>NEXT</LinearText>
           </View>
-          <LinearText style={[liveStyles.subjectName, { color: n.colors.textMuted }]}>
-            {nextBlock.subjectName}
-          </LinearText>
-          <LinearText style={liveStyles.subjectMeta}>{nextBlock.days}d</LinearText>
+          <LinearText style={[bannerStyles.subjectName, { color: n.colors.textMuted }]}>{nextBlock.subjectName}</LinearText>
+          <LinearText style={bannerStyles.subjectMeta}>{nextBlock.days}d</LinearText>
         </View>
       )}
     </LinearSurface>

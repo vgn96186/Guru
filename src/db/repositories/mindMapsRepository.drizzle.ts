@@ -46,7 +46,7 @@ function mapMindMapEdgeRow(row: MindMapEdgeRow): MindMapEdge {
     sourceNodeId: row.sourceNodeId,
     targetNodeId: row.targetNodeId,
     label: row.label ?? null,
-    isCrossLink: row.isCrossLink === 1 || row.isCrossLink === true,
+    isCrossLink: Boolean(row.isCrossLink),
     createdAt: row.createdAt,
   };
 }

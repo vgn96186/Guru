@@ -1,5 +1,5 @@
 import React from 'react';
-import { Linking, View, Text } from 'react-native';
+import { Text } from 'react-native';
 import OAuthCard from '../components/OAuthCard';
 import type { OAuthSlot } from '../types';
 

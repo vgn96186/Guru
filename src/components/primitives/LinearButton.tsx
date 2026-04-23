@@ -1,12 +1,12 @@
-import React from 'react';
+import React, { useCallback, useMemo } from 'react';
 import {
   ActivityIndicator,
   Pressable,
   View,
   type PressableProps,
-  type TextStyle,
 } from 'react-native';
 import { tv } from 'tailwind-variants';
+import * as Haptics from 'expo-haptics';
 import LinearText, { type LinearTextTone } from './LinearText';
 
 export type LinearButtonVariant = 'primary' | 'secondary' | 'ghost';
@@ -32,6 +32,10 @@ interface LinearButtonProps extends Omit<PressableProps, 'style' | 'className'> 
   textStyle?: any;
   leftIcon?: React.ReactNode;
   rightIcon?: React.ReactNode;
+  /** Callback when press starts - use for custom haptics or state changes */
+  onPressIn?: PressableProps['onPressIn'];
+  /** Callback when press ends */
+  onPressOut?: PressableProps['onPressOut'];
 }
 
 const buttonVariants = tv({
@@ -75,6 +79,8 @@ export default function LinearButton({
   rightIcon,
   disabled,
   accessibilityState,
+  onPressIn,
+  onPressOut,
   ...props
 }: LinearButtonProps) {
   const { variant: v, tone: resolvedTone } = resolveLegacyVariant(variant);
@@ -110,25 +116,54 @@ export default function LinearButton({
           : 'secondary'
         : 'ghost';
 
+  // Memoize the button class to prevent re-renders
+  const buttonClassName = useMemo(
+    () =>
+      buttonVariants({
+        variant: variantKey,
+        size,
+        disabled: resolvedDisabled,
+        className,
+      }),
+    [variantKey, size, resolvedDisabled, className],
+  );
+
+  // Haptic feedback on press
+  const handlePressIn = useCallback(
+    (e: Parameters<NonNullable<PressableProps['onPressIn']>>[0]) => {
+      if (!resolvedDisabled) {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      }
+      onPressIn?.(e);
+    },
+    [resolvedDisabled, onPressIn],
+  );
+
+  // Memoize base style to prevent recreation on every render
+  const dynamicStyle = typeof style === 'function' ? style : null;
+
   return (
     <Pressable
       {...props}
       disabled={resolvedDisabled}
+      onPressIn={handlePressIn}
+      onPressOut={onPressOut}
       accessibilityState={{
         ...accessibilityState,
         disabled: resolvedDisabled,
         busy: loading || accessibilityState?.busy,
       }}
-      className={buttonVariants({
-        variant: variantKey,
-        size,
-        disabled: resolvedDisabled,
-        className,
-      })}
-      style={({ pressed }) => [
-        { opacity: pressed ? 0.88 : resolvedDisabled ? 0.55 : 1 },
-        typeof style === 'function' ? style({ pressed }) : style,
-      ]}
+      className={buttonClassName}
+      // @ts-expect-error - Pressable style callback returning mixed array is valid RN pattern
+      style={({ pressed }) => {
+        const baseOpacity = resolvedDisabled ? 0.55 : 1;
+        const pressedOpacity = pressed ? 0.88 : 1;
+        const dynamicStyleFn = dynamicStyle;
+        return [
+          { opacity: baseOpacity * pressedOpacity },
+          dynamicStyleFn ? dynamicStyleFn({ pressed }) : style,
+        ];
+      }}
       accessibilityRole="button"
     >
       <View className="flex-row items-center justify-center gap-2 w-full min-w-0">

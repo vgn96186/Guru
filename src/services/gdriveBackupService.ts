@@ -186,7 +186,7 @@ export async function signOutGDrive(): Promise<void> {
 export async function isGDriveConnected(): Promise<boolean> {
   try {
     const profile = await profileRepository.getProfile();
-    return (profile as any)?.gdriveConnected === 1;
+    return Boolean((profile as any)?.gdriveConnected);
   } catch {
     return false;
   }

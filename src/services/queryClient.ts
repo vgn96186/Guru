@@ -1,6 +1,6 @@
 import { QueryClient } from '@tanstack/react-query';
+import { queryKeys } from '../hooks/queries/keys';
 import { dbEvents, DB_EVENT_KEYS } from './databaseEvents';
-import { PROFILE_QUERY_KEY } from '../hooks/queries/useProfile';
 
 /**
  * Singleton QueryClient — exported so dbEvents listeners and service layer
@@ -24,8 +24,7 @@ export const queryClient = new QueryClient({
 // Background tasks emit these events after writing to the DB; we invalidate
 // the affected queries so TanStack Query re-fetches in the background.
 
-const invalidateProfile = () =>
-  queryClient.invalidateQueries({ queryKey: PROFILE_QUERY_KEY });
+const invalidateProfile = () => queryClient.invalidateQueries({ queryKey: queryKeys.profile });
 
 dbEvents.on(DB_EVENT_KEYS.PROFILE_UPDATED, invalidateProfile);
 dbEvents.on(DB_EVENT_KEYS.PROGRESS_UPDATED, invalidateProfile);

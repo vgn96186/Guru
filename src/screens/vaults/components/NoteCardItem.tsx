@@ -1,7 +1,6 @@
 import React from 'react';
 import { View, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import * as Haptics from 'expo-haptics';
 import LinearText from '../../../components/primitives/LinearText';
 import SubjectChip from '../../../components/SubjectChip';
 import TopicPillRow from '../../../components/TopicPillRow';

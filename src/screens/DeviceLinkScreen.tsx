@@ -8,9 +8,6 @@ import {
   StatusBar,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation } from '@react-navigation/native';
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import type { MenuStackParamList } from '../navigation/types';
 import { linearTheme as n } from '../theme/linearTheme';
 import { useProfileQuery, useRefreshProfile } from '../hooks/queries/useProfile';
 import { profileRepository } from '../db/repositories';
@@ -23,8 +20,9 @@ import LinearTextInput from '../components/primitives/LinearTextInput';
 import LinearText from '../components/primitives/LinearText';
 import { Ionicons } from '@expo/vector-icons';
 
+import { MenuNav } from '../navigation/typedHooks';
 export default function DeviceLinkScreen() {
-  const navigation = useNavigation<NativeStackNavigationProp<MenuStackParamList>>();
+  const navigation = MenuNav.useNav();
   const { data: profile } = useProfileQuery();
   const refreshProfile = useRefreshProfile();
   const [code, setCode] = useState(profile?.syncCode || '');

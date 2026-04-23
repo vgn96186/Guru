@@ -3,7 +3,6 @@ import { Alert, Linking } from 'react-native';
 import * as Notifications from 'expo-notifications';
 import { useRefreshProfile, PROFILE_QUERY_KEY } from './queries/useProfile';
 import { useQueryClient } from '@tanstack/react-query';
-import type { UserProfile } from '../types';
 import { syncExamDatesIfStale } from '../services/examDateSyncService';
 import { refreshAccountabilityNotificationsSafely } from '../services/notificationService';
 import { navigationRef } from '../navigation/navigationRef';

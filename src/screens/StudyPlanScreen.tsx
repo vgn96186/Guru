@@ -14,9 +14,8 @@ import {
   type StudyPlanSummary,
   type PlanMode,
 } from '../services/studyPlanner';
-import { useFocusEffect, useNavigation, type NavigationProp } from '@react-navigation/native';
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import type { MenuStackParamList, TabParamList, HomeStackParamList } from '../navigation/types';
+import { useFocusEffect, type NavigationProp } from '@react-navigation/native';
+import type { TabParamList, HomeStackParamList } from '../navigation/types';
 import { navigationRef } from '../navigation/navigationRef';
 import { showToast } from '../components/Toast';
 import { useProfileQuery, useProfileActions } from '../hooks/queries/useProfile';
@@ -44,529 +43,33 @@ import LinearSurface from '../components/primitives/LinearSurface';
 import LinearText from '../components/primitives/LinearText';
 import { confirmDestructive } from '../components/dialogService';
 
+import { MenuNav } from '../navigation/typedHooks';
+import LiveClassBanner from './studyPlan/cards/LiveClassBanner';
+import DBMCISyllabusCard from './studyPlan/cards/DBMCISyllabusCard';
+import BTRProgressCard from './studyPlan/cards/BTRProgressCard';
+import MasteryFunnelCard from './studyPlan/cards/MasteryFunnelCard';
+import BacklogBanner from './studyPlan/cards/BacklogBanner';
+import FoundationRepairQueueCard from './studyPlan/cards/FoundationRepairQueueCard';
+import UrgencyCell from './studyPlan/cards/UrgencyCell';
+
 const SUBJECT_MAP = new Map(SUBJECTS_SEED.map((s) => [s.shortCode, s]));
 const DBMCI_TOTAL_DAYS = 137;
 const OVERDUE_FETCH_LIMIT = 2000;
 const MISSED_PREVIEW_LIMIT = 8;
 
-/**
- * Compact banner that shows where the student currently sits in their
- * DBMCI One or BTR live batch, based on the stored start date.
- */
-function LiveClassBanner({
-  resourceMode,
-  dbmciStartDate,
-  btrStartDate,
-}: {
-  resourceMode: StudyResourceMode;
-  dbmciStartDate?: string | null;
-  btrStartDate?: string | null;
-}) {
-  const startDate = resourceMode === 'btr' ? btrStartDate : dbmciStartDate;
-  const batchLabel = resourceMode === 'btr' ? 'BTR' : 'DBMCI One';
 
-  if (!startDate) {
-    return (
-      <LinearSurface compact style={liveStyles.banner}>
-        <LinearText style={liveStyles.bannerTitle}>📺 {batchLabel} Live Batch</LinearText>
-        <LinearText style={liveStyles.bannerHint}>
-          Set your batch start date in Settings → Study Plan to unlock daily lecture tracking.
-        </LinearText>
-      </LinearSurface>
-    );
-  }
 
-  const pos = getCurrentLecturePosition(startDate, resourceMode);
-  if (!pos) return null;
 
-  if (pos.isComplete) {
-    return (
-      <LinearSurface compact style={liveStyles.banner}>
-        <LinearText style={liveStyles.bannerTitle}>🎓 {batchLabel} — Complete!</LinearText>
-        <LinearText style={liveStyles.bannerHint}>
-          All {pos.totalDays} teaching days covered. Focus on revision and mocks.
-        </LinearText>
-      </LinearSurface>
-    );
-  }
 
-  const {
-    currentBlock,
-    nextBlock,
-    dayNumber,
-    totalDays,
-    dayInSubject,
-    daysLeftInSubject,
-    progressPercent,
-  } = pos;
-  const progressBarWidth = `${progressPercent}%` as `${number}%`;
 
-  return (
-    <LinearSurface compact style={liveStyles.banner}>
-      <View style={liveStyles.bannerRow}>
-        <LinearText style={liveStyles.bannerTitle}>📺 {batchLabel}</LinearText>
-        <LinearText style={liveStyles.bannerDay}>
-          Day {dayNumber}/{totalDays}
-        </LinearText>
-      </View>
 
-      {/* Progress bar */}
-      <View style={liveStyles.progressTrack}>
-        <View style={[liveStyles.progressFill, { width: progressBarWidth }]} />
-      </View>
 
-      {/* Current subject */}
-      <View style={liveStyles.subjectRow}>
-        <View style={liveStyles.subjectBadge}>
-          <LinearText style={liveStyles.subjectBadgeText}>NOW</LinearText>
-        </View>
-        <LinearText style={liveStyles.subjectName}>{currentBlock.subjectName}</LinearText>
-        <LinearText style={liveStyles.subjectMeta}>
-          Day {dayInSubject}/{currentBlock.days} · {daysLeftInSubject}d left
-        </LinearText>
-      </View>
 
-      {/* Next subject */}
-      {nextBlock && (
-        <View style={liveStyles.subjectRow}>
-          <View style={[liveStyles.subjectBadge, liveStyles.subjectBadgeNext]}>
-            <LinearText style={liveStyles.subjectBadgeText}>NEXT</LinearText>
-          </View>
-          <LinearText style={[liveStyles.subjectName, { color: n.colors.textMuted }]}>
-            {nextBlock.subjectName}
-          </LinearText>
-          <LinearText style={liveStyles.subjectMeta}>{nextBlock.days}d</LinearText>
-        </View>
-      )}
-    </LinearSurface>
-  );
-}
 
-function DBMCISyllabusCard({ allTopics }: { allTopics: TopicWithProgress[] }) {
-  // Count total topics per subject (for sizing context)
-  const subjectTopicCount = new Map<string, number>();
-  for (const t of allTopics) {
-    subjectTopicCount.set(t.subjectCode, (subjectTopicCount.get(t.subjectCode) ?? 0) + 1);
-  }
 
-  return (
-    <LinearSurface style={dbmciStyles.card}>
-      <LinearText style={dbmciStyles.title}>📋 DBMCI One — Study Sequence</LinearText>
-      <LinearText style={dbmciStyles.subtitle}>
-        Follow this order · {DBMCI_TOTAL_DAYS} lecture days · Topics auto-tracked from recordings
-      </LinearText>
-      {DBMCI_SUBJECT_ORDER.map((code, idx) => {
-        const subject = SUBJECT_MAP.get(code);
-        if (!subject) return null;
-        const multiplier = DBMCI_WORKLOAD_OVERRIDES[code] ?? 1;
-        const days = Math.round(multiplier * (DBMCI_TOTAL_DAYS / DBMCI_SUBJECT_ORDER.length));
-        const topicCount = subjectTopicCount.get(code) ?? 0;
 
-        return (
-          <View key={code} style={dbmciStyles.row}>
-            <LinearText style={[dbmciStyles.idx, { color: subject.colorHex }]}>
-              {idx + 1}
-            </LinearText>
-            <View style={[dbmciStyles.dot, { backgroundColor: subject.colorHex }]} />
-            <View style={dbmciStyles.rowContent}>
-              <LinearText style={dbmciStyles.subjectName}>{subject.name}</LinearText>
-              <LinearText style={dbmciStyles.topicCount}>{topicCount} topics</LinearText>
-            </View>
-            <View style={dbmciStyles.meta}>
-              <LinearText style={dbmciStyles.days}>{days}d</LinearText>
-            </View>
-          </View>
-        );
-      })}
-    </LinearSurface>
-  );
-}
 
-function BTRProgressCard({
-  allTopics,
-  onRefresh,
-}: {
-  allTopics: TopicWithProgress[];
-  onRefresh: () => void;
-}) {
-  const subjects = [...SUBJECTS_SEED].sort((a, b) => a.displayOrder - b.displayOrder);
-  // BTR-specific lecture completion (from lecture_schedule_progress table)
-  const [btrCompletedIndices, setBtrCompletedIndices] = useState<Set<number>>(new Set());
 
-  const loadBtrCompletion = useCallback(async () => {
-    try {
-      const indices = await getCompletedLectures('btr');
-      setBtrCompletedIndices(new Set(indices));
-    } catch (e) {
-      console.warn('[BTRProgress] Failed to load completions:', e);
-    }
-  }, []);
-
-  useEffect(() => {
-    void loadBtrCompletion();
-  }, [loadBtrCompletion]);
-
-  // Build a map: subjectId → BTR lecture index
-  const subjectToBtrIndex = new Map<number, number>();
-  for (const s of subjects) {
-    const idx = getLectureIndexForSubject('btr', s.id);
-    if (idx !== undefined) subjectToBtrIndex.set(s.id, idx);
-  }
-
-  // Per-subject mastery pipeline counts (global topic_progress)
-  type SubjectStats = {
-    unseen: number;
-    seen: number;
-    reviewed: number;
-    mastered: number;
-    total: number;
-  };
-  const subjectStats = new Map<string, SubjectStats>();
-  for (const s of subjects) {
-    subjectStats.set(s.shortCode, { unseen: 0, seen: 0, reviewed: 0, mastered: 0, total: 0 });
-  }
-  for (const t of allTopics) {
-    if ((t.childCount ?? 0) > 0) continue; // skip containers
-    const stats = subjectStats.get(t.subjectCode);
-    if (!stats) continue;
-    stats.total++;
-    if (t.progress.status === 'mastered') stats.mastered++;
-    else if (t.progress.status === 'reviewed') stats.reviewed++;
-    else if (t.progress.status === 'seen') stats.seen++;
-    else stats.unseen++;
-  }
-
-  // BTR-specific counts (based on lecture_schedule_progress, not global topic stats)
-  const btrWatchedCount = btrCompletedIndices.size;
-  const btrTotalLectures = subjectToBtrIndex.size; // 19
-  const overallMastered = [...subjectStats.values()].reduce((s, v) => s + v.mastered, 0);
-  const overallTotal = [...subjectStats.values()].reduce((s, v) => s + v.total, 0);
-
-  /** Mark a subject as BTR-watched: sets topic_progress AND lecture_schedule_progress. */
-  const handleMarkDone = async (subjectId: number) => {
-    try {
-      const db = getDb();
-      const now = Date.now();
-      await db.runAsync(
-        `UPDATE topic_progress
-         SET status = 'seen', last_studied_at = ?
-         WHERE topic_id IN (
-           SELECT id FROM topics WHERE subject_id = ? AND parent_topic_id IS NOT NULL
-         )
-         AND status = 'unseen'`,
-        [now, subjectId],
-      );
-      // Also record BTR lecture as completed
-      const lectIndex = getLectureIndexForSubject('btr', subjectId);
-      if (lectIndex !== undefined) {
-        await markLectureCompleted('btr', lectIndex);
-      }
-      showToast(
-        'BTR lecture marked as watched. Guru will now queue these topics for quiz and review.',
-        'success',
-      );
-      void loadBtrCompletion();
-      onRefresh();
-    } catch (err) {
-      console.error('[BTR] Mark done failed:', err);
-      showToast('Failed to mark subject', 'error');
-    }
-  };
-
-  /** Unmark a subject's BTR lecture (does NOT reset topic_progress). */
-  const handleUnmark = async (subjectId: number) => {
-    try {
-      const lectIndex = getLectureIndexForSubject('btr', subjectId);
-      if (lectIndex !== undefined) {
-        await unmarkLectureCompleted('btr', lectIndex);
-      }
-      showToast('BTR lecture unmarked.', 'success');
-      void loadBtrCompletion();
-      onRefresh();
-    } catch (err) {
-      console.error('[BTR] Unmark failed:', err);
-      showToast('Failed to unmark', 'error');
-    }
-  };
-
-  return (
-    <LinearSurface style={dbmciStyles.card}>
-      <LinearText style={dbmciStyles.title}>📊 BTR — Lecture Progress</LinearText>
-      <LinearText style={dbmciStyles.subtitle}>
-        {btrWatchedCount}/{btrTotalLectures} BTR lectures watched · {overallMastered}/{overallTotal}{' '}
-        topics mastered
-      </LinearText>
-      {/* Pipeline legend */}
-      <View style={masteryStyles.legendRow}>
-        <View style={masteryStyles.legendItem}>
-          <View style={[masteryStyles.legendDot, { backgroundColor: n.colors.textMuted }]} />
-          <LinearText style={masteryStyles.legendText}>Unseen</LinearText>
-        </View>
-        <View style={masteryStyles.legendItem}>
-          <View style={[masteryStyles.legendDot, { backgroundColor: n.colors.accent }]} />
-          <LinearText style={masteryStyles.legendText}>Studied</LinearText>
-        </View>
-        <View style={masteryStyles.legendItem}>
-          <View style={[masteryStyles.legendDot, { backgroundColor: n.colors.warning }]} />
-          <LinearText style={masteryStyles.legendText}>Reviewed</LinearText>
-        </View>
-        <View style={masteryStyles.legendItem}>
-          <View style={[masteryStyles.legendDot, { backgroundColor: n.colors.success }]} />
-          <LinearText style={masteryStyles.legendText}>Mastered</LinearText>
-        </View>
-      </View>
-      {subjects.map((subject) => {
-        const stats = subjectStats.get(subject.shortCode) ?? {
-          unseen: 0,
-          seen: 0,
-          reviewed: 0,
-          mastered: 0,
-          total: 0,
-        };
-        const watchedOrBetter = stats.seen + stats.reviewed + stats.mastered;
-        const masteredPct = stats.total > 0 ? stats.mastered / stats.total : 0;
-        const watchedPct = stats.total > 0 ? watchedOrBetter / stats.total : 0;
-        const reviewedPct = stats.total > 0 ? (stats.reviewed + stats.mastered) / stats.total : 0;
-        const needsQuiz = stats.seen > 0; // watched but unquizzed
-
-        // BTR-specific: is this subject's lecture explicitly completed?
-        const btrIndex = subjectToBtrIndex.get(subject.id);
-        const isBtrWatched = btrIndex !== undefined && btrCompletedIndices.has(btrIndex);
-        // Has organic study but no BTR lecture mark
-        const hasOrganicStudyOnly = !isBtrWatched && watchedOrBetter > 0;
-
-        return (
-          <View
-            key={subject.shortCode}
-            style={[
-              dbmciStyles.row,
-              { flexDirection: 'column', alignItems: 'flex-start', paddingBottom: 10 },
-            ]}
-          >
-            <View
-              style={{ flexDirection: 'row', alignItems: 'center', width: '100%', marginBottom: 4 }}
-            >
-              {/* BTR lecture status badge */}
-              {isBtrWatched ? (
-                <Ionicons
-                  name="checkmark-circle"
-                  size={16}
-                  color={n.colors.success}
-                  style={{ marginRight: 6 }}
-                />
-              ) : (
-                <View style={[dbmciStyles.dot, { backgroundColor: subject.colorHex }]} />
-              )}
-              <LinearText
-                style={[
-                  dbmciStyles.subjectName,
-                  !isBtrWatched && watchedOrBetter === 0 && { color: n.colors.textMuted },
-                ]}
-              >
-                {subject.name}
-              </LinearText>
-              {stats.total > 0 && (
-                <LinearText style={[dbmciStyles.days, { marginLeft: 'auto' }]}>
-                  {stats.mastered}/{stats.total}
-                </LinearText>
-              )}
-            </View>
-            {/* Stacked pipeline bar */}
-            {stats.total > 0 && (
-              <View style={masteryStyles.barTrack}>
-                <View
-                  style={[
-                    masteryStyles.barSeg,
-                    {
-                      width: `${masteredPct * 100}%` as `${number}%`,
-                      backgroundColor: n.colors.success,
-                    },
-                  ]}
-                />
-                <View
-                  style={[
-                    masteryStyles.barSeg,
-                    {
-                      width: `${(reviewedPct - masteredPct) * 100}%` as `${number}%`,
-                      backgroundColor: n.colors.warning,
-                    },
-                  ]}
-                />
-                <View
-                  style={[
-                    masteryStyles.barSeg,
-                    {
-                      width: `${(watchedPct - reviewedPct) * 100}%` as `${number}%`,
-                      backgroundColor: n.colors.accent,
-                    },
-                  ]}
-                />
-              </View>
-            )}
-            {/* Action row */}
-            <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4, gap: 8 }}>
-              {needsQuiz && (
-                <LinearText style={masteryStyles.quizNudge}>
-                  ⚡ {stats.seen} need quiz/review
-                </LinearText>
-              )}
-              {isBtrWatched ? (
-                <TouchableOpacity
-                  onPress={async () => {
-                    const ok = await confirmDestructive(
-                      'Unmark BTR lecture?',
-                      `This removes the BTR lecture marker for ${subject.name}. Topic study progress is not affected.`,
-                    );
-                    if (ok) handleUnmark(subject.id);
-                  }}
-                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                >
-                  <LinearText style={[dbmciStyles.markBtn, { color: n.colors.textMuted }]}>
-                    Unwatch
-                  </LinearText>
-                </TouchableOpacity>
-              ) : (
-                <TouchableOpacity
-                  onPress={async () => {
-                    const ok = await confirmDestructive(
-                      'Mark BTR lecture as watched?',
-                      hasOrganicStudyOnly
-                        ? `Some ${subject.name} topics already have study progress (from quizzes/sessions). This will mark the BTR lecture as watched and set remaining unseen topics to "seen".`
-                        : 'This marks all unseen leaf topics as "seen" for this subject. Watching ≠ mastery — Guru will then queue them for quiz and review.',
-                    );
-                    if (ok) handleMarkDone(subject.id);
-                  }}
-                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                >
-                  <LinearText style={dbmciStyles.markBtn}>
-                    {hasOrganicStudyOnly ? 'Mark BTR Lecture' : 'Mark Watched'}
-                  </LinearText>
-                </TouchableOpacity>
-              )}
-            </View>
-          </View>
-        );
-      })}
-    </LinearSurface>
-  );
-}
-
-/** Mastery funnel summary — shown at top of plan for all modes. */
-function MasteryFunnelCard({ summary }: { summary: StudyPlanSummary }) {
-  const total =
-    summary.unseenCount +
-    summary.seenNeedingQuizCount +
-    summary.reviewedCount +
-    summary.masteredCount;
-  if (total === 0) return null;
-
-  const bar = (count: number, color: string) => (
-    <View style={[masteryStyles.funnelSeg, { flex: count, backgroundColor: color }]} />
-  );
-
-  return (
-    <View style={masteryStyles.funnelCard}>
-      <View style={masteryStyles.funnelBar}>
-        {bar(summary.masteredCount, n.colors.success)}
-        {bar(summary.reviewedCount, n.colors.warning)}
-        {bar(summary.seenNeedingQuizCount, n.colors.accent)}
-        {bar(summary.unseenCount, n.colors.border)}
-      </View>
-      <View style={masteryStyles.funnelLegendRow}>
-        <LinearText style={[masteryStyles.funnelLegendItem, { color: n.colors.success }]}>
-          {summary.masteredCount}
-        </LinearText>
-        <LinearText style={[masteryStyles.funnelLegendItem, { color: n.colors.warning }]}>
-          {summary.reviewedCount}
-        </LinearText>
-        <LinearText style={[masteryStyles.funnelLegendItem, { color: n.colors.accent }]}>
-          {summary.seenNeedingQuizCount}
-        </LinearText>
-        <LinearText style={[masteryStyles.funnelLegendItem, { color: n.colors.textMuted }]}>
-          {summary.unseenCount}
-        </LinearText>
-      </View>
-    </View>
-  );
-}
-
-/** Red/amber banner when the review backlog is large enough to gate new topics. */
-function BacklogBanner({ summary }: { summary: StudyPlanSummary }) {
-  if (summary.overdueBacklogDays < 2) return null;
-  const severe = summary.overdueBacklogDays > 4;
-  return (
-    <View style={masteryStyles.backlogBanner}>
-      <LinearText
-        style={[
-          masteryStyles.backlogBannerText,
-          { color: severe ? n.colors.error : n.colors.warning },
-        ]}
-      >
-        {summary.overdueBacklogDays}d overdue reviews
-        {severe ? ' — new topics throttled' : ' — clear before new topics'}
-      </LinearText>
-    </View>
-  );
-}
-
-/** Focus card to repair weak fundamentals before chasing more new topics. */
-function FoundationRepairQueueCard({
-  summary,
-  todayPlan,
-  onStartFoundation,
-  onStartQuizRecovery,
-}: {
-  summary: StudyPlanSummary;
-  todayPlan?: DailyPlan;
-  onStartFoundation: () => void;
-  onStartQuizRecovery: () => void;
-}) {
-  const foundationToday =
-    todayPlan?.items.filter(
-      (item) =>
-        item.type === 'deep_dive' ||
-        item.reasonLabels.includes('Foundation gap') ||
-        item.topic.progress.confidence <= 1,
-    ) ?? [];
-
-  const hasQueue = foundationToday.length > 0 || summary.seenNeedingQuizCount > 0;
-  if (!hasQueue) return null;
-
-  return (
-    <View style={masteryStyles.foundationActionRow}>
-      <TouchableOpacity
-        style={masteryStyles.foundationPrimaryBtn}
-        onPress={onStartFoundation}
-        activeOpacity={0.8}
-      >
-        <LinearText style={masteryStyles.foundationPrimaryBtnText}>
-          Repair {foundationToday.length} weak
-        </LinearText>
-      </TouchableOpacity>
-      {summary.seenNeedingQuizCount > 0 && (
-        <TouchableOpacity
-          style={masteryStyles.foundationGhostBtn}
-          onPress={onStartQuizRecovery}
-          activeOpacity={0.8}
-        >
-          <LinearText style={masteryStyles.foundationGhostBtnText}>
-            Quiz {summary.seenNeedingQuizCount} watched
-          </LinearText>
-        </TouchableOpacity>
-      )}
-    </View>
-  );
-}
-
-/** Inline urgency cell for the summary strip. */
-function UrgencyCell({ summary }: { summary: StudyPlanSummary }) {
-  return (
-    <View style={styles.summaryCell}>
-      <LinearText style={styles.summaryValue}>{summary.daysRemaining}d</LinearText>
-      <LinearText style={styles.summaryLabel}>{summary.targetExam}</LinearText>
-    </View>
-  );
-}
 
 /** Horizontal chip row for quickly picking today's available time. */
 const CAPACITY_OPTIONS = [
@@ -577,9 +80,6 @@ const CAPACITY_OPTIONS = [
   { label: '3h', minutes: 180 },
   { label: '4h+', minutes: 240 },
 ];
-
-type Nav = NativeStackNavigationProp<MenuStackParamList>;
-
 const PLAN_MODES: Array<{ key: PlanMode; label: string }> = [
   { key: 'balanced', label: 'Balanced' },
   { key: 'high_yield', label: 'High Yield Only' },
@@ -594,7 +94,7 @@ const RESOURCE_MODES: Array<{ key: StudyResourceMode; label: string }> = [
 ];
 
 export default function StudyPlanScreen() {
-  const navigation = useNavigation<Nav>();
+  const navigation = MenuNav.useNav();
   const [plan, setPlan] = useState<DailyPlan[]>([]);
   const [summary, setSummary] = useState<StudyPlanSummary | null>(null);
   const [planMode, setPlanMode] = useState<PlanMode>('balanced');

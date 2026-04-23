@@ -9,7 +9,6 @@ import {
   FlatList,
   TextInput,
   TouchableOpacity,
-  Pressable,
   StyleSheet,
   Modal,
   ScrollView,
@@ -20,14 +19,11 @@ import {
 import LinearText from '../components/primitives/LinearText';
 import ErrorBoundary from '../components/ErrorBoundary';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useFocusEffect, useNavigation, useRoute } from '@react-navigation/native';
+import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import Clipboard from '@react-native-clipboard/clipboard';
 import LinearSurface from '../components/primitives/LinearSurface';
-import type { RouteProp } from '@react-navigation/native';
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import type { MenuStackParamList } from '../navigation/types';
 import { useScrollRestoration, usePersistedInput } from '../hooks/useScrollRestoration';
 import {
   getLectureHistory,
@@ -44,12 +40,8 @@ import LoadingOrb from '../components/LoadingOrb';
 import { CONFIDENCE_LABELS } from '../constants/gamification';
 import { loadTranscriptFromFile } from '../services/transcriptStorage';
 import { dbEvents, DB_EVENT_KEYS } from '../services/databaseEvents';
-import { Audio } from 'expo-av';
 import { MarkdownRender } from '../components/MarkdownRender';
-import {
-  buildLectureDisplayTitle,
-  resolveLectureSubjectLabel,
-} from '../services/lecture/lectureIdentity';
+import { resolveLectureSubjectLabel } from '../services/lecture/lectureIdentity';
 import {
   copyLectureTranscript,
   filterLectureHistoryItems,
@@ -67,6 +59,7 @@ import TranscriptionSettingsPanel from '../components/TranscriptionSettingsPanel
 import SubjectChip from '../components/SubjectChip';
 import TopicPillRow from '../components/TopicPillRow';
 
+import { MenuNav } from '../navigation/typedHooks';
 const SUBJECT_COLORS: Record<string, string> = {
   Physiology: n.colors.success,
   Anatomy: '#2196F3',
@@ -91,209 +84,13 @@ const SUBJECT_COLORS: Record<string, string> = {
   General: n.colors.textMuted,
 };
 
-/** Extract the first meaningful line from a note (skip markdown headers) */
-function extractFirstLine(note: string): string {
-  const lines = note
-    .split('\n')
-    .map((l) => l.trim())
-    .filter(Boolean);
-  for (const line of lines) {
-    const stripped = line.replace(/^#+\s*/, '').replace(/\*\*/g, '');
-    if (stripped.length > 10) return stripped;
-  }
-  return lines[0] ?? 'Lecture note';
-}
-
-function getLectureTitle(
-  item: Pick<LectureHistoryItem, 'subjectName' | 'topics' | 'note' | 'summary'>,
-): string {
-  return buildLectureDisplayTitle({
-    subjectName: item.subjectName,
-    topics: item.topics,
-    note: item.note,
-    summary: item.summary,
-  });
-}
-
-/** Collapsible transcript section */
-function TranscriptSection({ transcript }: { transcript: string }) {
-  const [content, setContent] = React.useState<string>('Loading transcript...');
-  React.useEffect(() => {
-    loadTranscriptFromFile(transcript).then((res: string | null) =>
-      setContent(res || 'No transcript available.'),
-    );
-  }, [transcript]);
-  const [expanded, setExpanded] = useState(false);
-  return (
-    <View style={{ marginBottom: 20 }}>
-      <TouchableOpacity
-        onPress={() => setExpanded(!expanded)}
-        style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}
-        activeOpacity={0.7}
-      >
-        <LinearText
-          style={{
-            color: n.colors.textMuted,
-            fontSize: 12,
-            textTransform: 'uppercase',
-            letterSpacing: 1,
-          }}
-        >
-          Raw Transcript
-        </LinearText>
-        <Ionicons
-          name={expanded ? 'chevron-up' : 'chevron-down'}
-          size={16}
-          color={n.colors.textMuted}
-          style={{ marginLeft: 6 }}
-        />
-      </TouchableOpacity>
-      {expanded && (
-        <LinearSurface padded={false} style={styles.transcriptCard}>
-          <LinearText style={styles.transcriptText}>{content}</LinearText>
-        </LinearSurface>
-      )}
-    </View>
-  );
-}
-
-function AudioPlayer({ uri }: { uri: string }) {
-  const [sound, setSound] = useState<Audio.Sound | null>(null);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [position, setPosition] = useState(0);
-  const [duration, setDuration] = useState(0);
-  const [barWidth, setBarWidth] = useState(0);
-
-  useEffect(() => {
-    return () => {
-      if (sound) {
-        sound.unloadAsync();
-      }
-    };
-  }, [sound]);
-
-  const handlePlayPause = async () => {
-    if (sound) {
-      if (isPlaying) {
-        await sound.pauseAsync();
-        setIsPlaying(false);
-      } else {
-        await sound.playAsync();
-        setIsPlaying(true);
-      }
-    } else {
-      const { sound: newSound } = await Audio.Sound.createAsync(
-        { uri },
-        { shouldPlay: true },
-        (status) => {
-          if (status.isLoaded) {
-            setPosition(status.positionMillis);
-            setDuration(status.durationMillis || 0);
-            setIsPlaying(status.isPlaying);
-          }
-        },
-      );
-      setSound(newSound);
-      setIsPlaying(true);
-    }
-  };
-
-  const seekTo = async (targetMs: number) => {
-    if (!sound) return;
-    const clamped = Math.max(0, Math.min(duration, targetMs));
-    await sound.setPositionAsync(clamped);
-    setPosition(clamped);
-  };
-
-  const jumpBy = async (deltaMs: number) => {
-    await seekTo(position + deltaMs);
-  };
-
-  const formatTime = (ms: number) => {
-    const totalSeconds = Math.floor(ms / 1000);
-    const minutes = Math.floor(totalSeconds / 60);
-    const seconds = totalSeconds % 60;
-    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
-  };
-
-  return (
-    <LinearSurface padded={false} style={audioStyles.container}>
-      <TouchableOpacity onPress={handlePlayPause} style={audioStyles.playBtn}>
-        <Ionicons name={isPlaying ? 'pause' : 'play'} size={24} color={n.colors.textInverse} />
-      </TouchableOpacity>
-      <TouchableOpacity onPress={() => void jumpBy(-10000)} style={audioStyles.jumpBtn}>
-        <LinearText style={audioStyles.jumpBtnText}>-10s</LinearText>
-      </TouchableOpacity>
-      <View style={audioStyles.progressWrap}>
-        <Pressable
-          style={audioStyles.progressBar}
-          onLayout={(event) => setBarWidth(event.nativeEvent.layout.width)}
-          onPress={(event) => {
-            if (!duration || barWidth <= 0) return;
-            const next = (event.nativeEvent.locationX / barWidth) * duration;
-            void seekTo(next);
-          }}
-        >
-          <View
-            style={[
-              audioStyles.progressFill,
-              { width: `${duration > 0 ? (position / duration) * 100 : 0}%` },
-            ]}
-          />
-        </Pressable>
-        <View style={audioStyles.timeRow}>
-          <LinearText style={audioStyles.timeText}>{formatTime(position)}</LinearText>
-          <LinearText style={audioStyles.timeText}>{formatTime(duration)}</LinearText>
-        </View>
-      </View>
-      <TouchableOpacity onPress={() => void jumpBy(10000)} style={audioStyles.jumpBtn}>
-        <LinearText style={audioStyles.jumpBtnText}>+10s</LinearText>
-      </TouchableOpacity>
-    </LinearSurface>
-  );
-}
-
-const audioStyles = StyleSheet.create({
-  container: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 12,
-    borderRadius: 12,
-    marginBottom: 20,
-    gap: 12,
-  },
-  playBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: n.colors.accent,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  jumpBtn: {
-    paddingHorizontal: 8,
-    paddingVertical: 6,
-    borderRadius: 10,
-    backgroundColor: n.colors.surface,
-    borderWidth: 1,
-    borderColor: n.colors.border,
-  },
-  jumpBtnText: { color: n.colors.textPrimary, fontSize: 11, fontWeight: '700' },
-  progressWrap: { flex: 1, gap: 4 },
-  progressBar: {
-    height: 4,
-    backgroundColor: n.colors.surface,
-    borderRadius: 2,
-    overflow: 'hidden',
-  },
-  progressFill: { height: '100%', backgroundColor: n.colors.accent },
-  timeRow: { flexDirection: 'row', justifyContent: 'space-between' },
-  timeText: { color: n.colors.textMuted, fontSize: 10, fontFamily: 'Inter_400Regular' },
-});
+import { extractFirstLine, getLectureTitle } from '../services/transcripts/formatters';
+import TranscriptSection from './transcripts/TranscriptSection';
+import AudioPlayer from '../components/AudioPlayer';
 
 export default function TranscriptHistoryScreen() {
-  const navigation = useNavigation<NativeStackNavigationProp<MenuStackParamList>>();
-  const route = useRoute<RouteProp<MenuStackParamList, 'TranscriptHistory'>>();
+  const navigation = MenuNav.useNav();
+  const route = MenuNav.useRoute<'TranscriptHistory'>();
   const { onScroll, onContentSizeChange, listRef } = useScrollRestoration('transcript-history');
   const [searchValue, setSearchPersisted] = usePersistedInput('transcript-history-search', '');
   const [notes, setNotes] = useState<LectureHistoryItem[]>([]);

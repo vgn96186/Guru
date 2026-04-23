@@ -245,7 +245,7 @@ const QUERY_STOPWORDS = new Set([
   'disorder',
 ]);
 
-function extractQueryTerms(query: string): string[] {
+export function extractQueryTerms(query: string): string[] {
   return Array.from(
     new Set(
       query
@@ -259,7 +259,7 @@ function extractQueryTerms(query: string): string[] {
   );
 }
 
-function scoreGroundingSource(source: MedicalGroundingSource, query: string): number {
+export function scoreGroundingSource(source: MedicalGroundingSource, query: string): number {
   const title = source.title.toLowerCase();
   const snippet = source.snippet.toLowerCase();
   const url = source.url.toLowerCase();
@@ -318,7 +318,7 @@ function scoreGroundingSource(source: MedicalGroundingSource, query: string): nu
   return score;
 }
 
-function rankGroundingSources(
+export function rankGroundingSources(
   sources: MedicalGroundingSource[],
   query: string,
   maxResults: number,
@@ -416,7 +416,7 @@ const NOISE_TERMS = [
   'selfie',
 ];
 
-function scoreWikimediaRelevance(
+export function scoreWikimediaRelevance(
   title: string,
   description: string,
   originalQuery: string,
@@ -1309,7 +1309,10 @@ async function searchPubMedFallback(
  * DuckDuckGo Instant Answer API — free, no API key.
  * Returns abstract text and related topics for medical terms.
  */
-export async function searchDuckDuckGo(query: string, maxResults = 4): Promise<MedicalGroundingSource[]> {
+export async function searchDuckDuckGo(
+  query: string,
+  maxResults = 4,
+): Promise<MedicalGroundingSource[]> {
   const medicalQuery = query.replace(/\(India.*?\)/g, '').trim();
   const url = `https://api.duckduckgo.com/?q=${encodeURIComponent(
     medicalQuery,

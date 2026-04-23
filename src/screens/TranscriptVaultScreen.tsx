@@ -46,6 +46,8 @@ import {
   showWarning,
 } from '../components/dialogService';
 import { ResponsiveContainer } from '../hooks/useResponsive';
+import { useVaultList } from '../hooks/vaults/useVaultList';
+import { TranscriptCardItem, TranscriptFile } from './vaults/components/TranscriptCardItem';
 import { linearTheme as n } from '../theme/linearTheme';
 import { whiteAlpha, captureBorderAlpha } from '../theme/colorUtils';
 import { EmptyState } from '../components/primitives';
@@ -61,15 +63,7 @@ import { saveLectureTranscript } from '../db/queries/aiCache';
 import { getSubjectByName } from '../db/queries/topics';
 import { saveTranscriptToFile } from '../services/transcriptStorage';
 
-interface TranscriptFile {
-  name: string;
-  path: string; // full file:// URI
-  sizeMB: number;
-  folder: string;
-  wordCount: number;
-  contentHash: string; // first 200 chars trimmed — used for duplicate detection
-  extractedTitle: string; // subject/topic extracted from content
-}
+
 
 /** Delete a file using expo-file-system first, falling back to native Java File.delete() */
 async function deleteFile(path: string): Promise<void> {
@@ -247,21 +241,41 @@ function displayName(fileName: string, extractedTitle?: string): string {
 export default function TranscriptVaultScreen() {
   const { width: viewportWidth, height: viewportHeight } = useWindowDimensions();
   const navigation = useNavigation();
-  const [files, setFiles] = useState<TranscriptFile[]>([]);
-  const [loading, setLoading] = useState(true);
   const [needsFileAccess, setNeedsFileAccess] = useState(false);
-  const [selectedPaths, setSelectedPaths] = useState<Set<string>>(new Set());
   const [isImportingText, setIsImportingText] = useState(false);
+
+  const PAGE_SIZE = 20;
+
+  const {
+    items: files,
+    setItems: setFiles,
+    visibleItems: sortedFiles,
+    loading,
+    setLoading,
+    sortBy,
+    setSortBy,
+    selectedIds: selectedPaths,
+    setSelectedIds: setSelectedPaths,
+    isSelectionMode,
+    toggleSelection,
+    handleLongPress,
+    cancelSelection,
+    displayCount,
+    setDisplayCount,
+    loadMore,
+  } = useVaultList<TranscriptFile, string>({
+    initialSortBy: 'name',
+    pageSize: PAGE_SIZE,
+    sortItems: (a, b, sort) => {
+      if (sort === 'words') return b.wordCount - a.wordCount;
+      return b.name.localeCompare(a.name); // Default 'name'
+    }
+  });
 
   // Reader
   const [readerContent, setReaderContent] = useState<string | null>(null);
   const [readerTitle, setReaderTitle] = useState('');
-  const [sortBy, setSortBy] = useState<'name' | 'words'>('name');
   const listLayoutKey = `${viewportWidth}x${viewportHeight}`;
-
-  // Pagination
-  const PAGE_SIZE = 20;
-  const [displayCount, setDisplayCount] = useState(PAGE_SIZE);
 
   const loadFiles = useCallback(async () => {
     setLoading(true);
@@ -419,28 +433,6 @@ export default function TranscriptVaultScreen() {
     });
     return () => sub.remove();
   }, [needsFileAccess, loadFiles]);
-
-  const isSelectionMode = selectedPaths.size > 0;
-
-  const toggleSelection = useCallback((path: string) => {
-    setSelectedPaths((prev) => {
-      const next = new Set(prev);
-      if (next.has(path)) next.delete(path);
-      else next.add(path);
-      return next;
-    });
-  }, []);
-
-  const handleLongPress = useCallback((path: string) => {
-    Haptics.selectionAsync();
-    setSelectedPaths((prev) => {
-      const next = new Set(prev);
-      next.add(path);
-      return next;
-    });
-  }, []);
-
-  const cancelSelection = useCallback(() => setSelectedPaths(new Set()), []);
 
   const handleBatchDelete = useCallback(async () => {
     const count = selectedPaths.size;
@@ -705,12 +697,6 @@ export default function TranscriptVaultScreen() {
     return dupes;
   }, [files]);
 
-  const sortedFiles = React.useMemo(() => {
-    const copy = [...files];
-    if (sortBy === 'words') copy.sort((a, b) => a.wordCount - b.wordCount);
-    else copy.sort((a, b) => b.name.localeCompare(a.name));
-    return copy;
-  }, [files, sortBy]);
   const junkFiles = React.useMemo(() => files.filter((f) => f.wordCount < 10), [files]);
   const processableCount = React.useMemo(
     () => files.filter((f) => f.wordCount >= 10).length,
@@ -728,62 +714,24 @@ export default function TranscriptVaultScreen() {
   );
 
   const renderItem = ({ item }: { item: TranscriptFile }) => {
-    const isSelected = selectedPaths.has(item.path);
     return (
-      <Pressable
-        onLongPress={() => handleLongPress(item.path)}
-        onPress={() => {
+      <TranscriptCardItem
+        item={item}
+        isSelected={selectedPaths.has(item.path)}
+        isSelectionMode={isSelectionMode}
+        displayName={displayName(item.name, item.extractedTitle)}
+        onPress={(t) => {
           if (isSelectionMode) {
             Haptics.selectionAsync();
-            toggleSelection(item.path);
+            toggleSelection(t.path);
             return;
           }
-          void handleRead(item);
+          void handleRead(t);
         }}
-        delayLongPress={220}
-      >
-        <LinearSurface
-          padded={false}
-          borderColor={isSelected ? n.colors.accent : n.colors.border}
-          style={[styles.card, isSelected && styles.cardSelected]}
-        >
-          {isSelectionMode ? (
-            <View style={styles.cardIcon}>
-              <Ionicons
-                name={isSelected ? 'checkmark-circle' : 'ellipse-outline'}
-                size={24}
-                color={isSelected ? n.colors.accent : n.colors.textMuted}
-              />
-            </View>
-          ) : (
-            <View style={styles.cardIcon}>
-              <Ionicons name="document-text-outline" size={24} color={n.colors.accent} />
-            </View>
-          )}
-          <View style={styles.cardBody}>
-            <LinearText style={styles.cardName} numberOfLines={3} ellipsizeMode="tail">
-              {displayName(item.name, item.extractedTitle)}
-            </LinearText>
-            <LinearText style={styles.cardMeta}>
-              {item.wordCount.toLocaleString()} words · {item.folder}
-              {item.sizeMB > 0 ? ` · ${item.sizeMB} KB` : ''}
-            </LinearText>
-          </View>
-          {!isSelectionMode && (
-            <View style={styles.cardActions}>
-              <TouchableOpacity style={styles.actionBtn} onPress={() => handleProcess(item)}>
-                <Ionicons name="sparkles" size={20} color={n.colors.success ?? n.colors.success} />
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.actionBtn} onPress={() => void handleRead(item)}>
-                <Ionicons name="book-outline" size={20} color={n.colors.accent} />
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.actionBtn} onPress={() => handleDelete(item)}>
-                <Ionicons name="trash-outline" size={20} color={n.colors.error} />
-              </TouchableOpacity>
-            </View>
-          )}
-        </LinearSurface>
-      </Pressable>
+        onLongPress={handleLongPress}
+        onProcess={handleProcess}
+        onDelete={handleDelete}
+      />
     );
   };
 
@@ -1100,7 +1048,7 @@ export default function TranscriptVaultScreen() {
           {!loading && sortedFiles.length > 0 && displayCount < sortedFiles.length && (
             <TouchableOpacity
               style={styles.loadMoreBtn}
-              onPress={() => setDisplayCount((prev) => prev + PAGE_SIZE)}
+              onPress={() => loadMore()}
               activeOpacity={0.7}
             >
               <LinearText style={styles.loadMoreText}>

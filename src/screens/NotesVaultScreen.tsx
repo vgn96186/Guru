@@ -26,16 +26,15 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import Clipboard from '@react-native-clipboard/clipboard';
-import { z } from 'zod';
 import { useFocusEffect, useNavigation, type NavigationProp } from '@react-navigation/native';
 import BannerSearchBar from '../components/BannerSearchBar';
 import { MarkdownRender } from '../components/MarkdownRender';
 import ScreenHeader from '../components/ScreenHeader';
-import SubjectChip from '../components/SubjectChip';
-import TopicPillRow from '../components/TopicPillRow';
 import LinearSurface from '../components/primitives/LinearSurface';
 import { ResponsiveContainer } from '../hooks/useResponsive';
 import { useScrollRestoration, usePersistedInput } from '../hooks/useScrollRestoration';
+import { useVaultList } from '../hooks/vaults/useVaultList';
+import { NoteCardItem } from './vaults/components/NoteCardItem';
 import { linearTheme as n } from '../theme/linearTheme';
 import { errorAlpha, warningAlpha, successAlpha, blackAlpha } from '../theme/colorUtils';
 import { EmptyState } from '../components/primitives';
@@ -47,82 +46,15 @@ import {
   type LectureHistoryItem,
 } from '../db/queries/aiCache';
 import { getSubjectByName } from '../db/queries/topics';
-import { generateJSONWithRouting } from '../services/ai/generate';
-import type { Message } from '../services/ai/types';
-import { CONFIDENCE_LABELS } from '../constants/gamification';
 import type { TabParamList } from '../navigation/types';
 import { showInfo, showSuccess, confirm, confirmDestructive } from '../components/dialogService';
 
-const NoteLabelSchema = z.object({
-  subject: z
-    .string()
-    .describe('NEET-PG medical subject (e.g. "Anatomy", "Pharmacology", "Pathology")'),
-  title: z
-    .string()
-    .describe(
-      'Short note title — noun phrase only, no verbs (e.g. "Cardiac Valves & Murmurs", "Beta Blockers — MOA & Side Effects")',
-    ),
-  topics: z.array(z.string()).describe('2-5 specific medical topics covered'),
-});
-
-async function aiRelabelNote(
-  noteText: string,
-): Promise<{ subject: string; title: string; topics: string[] } | null> {
-  try {
-    const snippet = noteText.split(/\s+/).slice(0, 800).join(' ');
-    const messages: Message[] = [
-      {
-        role: 'system',
-        content: `You label medical study notes. Return a subject, title, and topics.
-
-TITLE RULES:
-- Must be a short noun phrase like a textbook chapter heading (max 60 chars)
-- NEVER start with "This note covers", "Focuses on", "Overview of", "The note discusses" or similar
-- Good: "Cardiac Valves & Murmurs", "Iron Deficiency Anemia", "Brachial Plexus Injuries"
-- Bad: "This note covers cardiac anatomy", "Focuses on iron metabolism"
-
-Subject must be one of: Anatomy, Physiology, Biochemistry, Pathology, Pharmacology, Microbiology, Forensic Medicine, ENT, Ophthalmology, Community Medicine, Surgery, Medicine, OBG, Pediatrics, Orthopedics, Dermatology, Psychiatry, Radiology, Anesthesia.`,
-      },
-      { role: 'user', content: snippet },
-    ];
-    const { parsed } = await generateJSONWithRouting(
-      messages,
-      NoteLabelSchema,
-      'low',
-      false,
-      'groq',
-    );
-    return parsed;
-  } catch {
-    return null;
-  }
-}
+import { aiRelabelNote, NoteLabelSchema } from '../services/vaults/relabelService';
 
 function countWords(text: string): number {
   return text?.trim() ? text.trim().split(/\s+/).length : 0;
 }
 
-const SUBJECT_COLORS: Record<string, string> = {
-  Physiology: n.colors.success,
-  Anatomy: '#2196F3',
-  Biochemistry: n.colors.warning,
-  Pathology: n.colors.error,
-  Pharmacology: '#9C27B0',
-  Microbiology: '#00BCD4',
-  'Forensic Medicine': '#795548',
-  ENT: '#607D8B',
-  Ophthalmology: '#3F51B5',
-  'Community Medicine': '#8BC34A',
-  Surgery: '#E91E63',
-  Medicine: '#009688',
-  OBG: '#FF5722',
-  Pediatrics: '#CDDC39',
-  Orthopedics: '#FFC107',
-  Dermatology: '#673AB7',
-  Psychiatry: '#00ACC1',
-  Radiology: '#546E7A',
-  Anesthesia: '#D32F2F',
-};
 
 type NoteItem = LectureHistoryItem;
 type SortOption = 'date' | 'subject' | 'words';
@@ -173,27 +105,71 @@ export default function NotesVaultScreen() {
   const navigation = useNavigation();
   const tabsNavigation = navigation.getParent<NavigationProp<TabParamList>>();
   const { onScroll, onContentSizeChange, listRef } = useScrollRestoration('notes-vault');
-  const [searchValue, setSearchPersisted] = usePersistedInput('notes-vault-search', '');
-  const [notes, setNotes] = useState<NoteItem[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-  const [sortBy, setSortBy] = useState<SortOption>('date');
+  const [searchValueLocal, setSearchPersisted] = usePersistedInput('notes-vault-search', '');
+  
+  const {
+    items: notes,
+    setItems: setNotes,
+    visibleItems: visibleNotes,
+    loading,
+    setLoading,
+    refreshing,
+    setRefreshing,
+    searchValue,
+    setSearchValue,
+    sortBy,
+    setSortBy,
+    subjectFilter,
+    setSubjectFilter,
+    topicFilter,
+    setTopicFilter,
+    selectedIds,
+    setSelectedIds,
+    isSelectionMode,
+    toggleSelection,
+    handleLongPress,
+    cancelSelection,
+    displayCount,
+    setDisplayCount,
+    loadMore,
+  } = useVaultList<NoteItem, number>({
+    initialSortBy: 'date',
+    pageSize: PAGE_SIZE,
+    filterItem: (n, search, subj, top) => {
+      if (subj !== 'all' && (n.subjectName || 'Unknown') !== subj) return false;
+      if (top !== 'all' && !n.topics.includes(top)) return false;
+      if (search.trim()) {
+        const q = search.toLowerCase();
+        return !!(
+          n.note?.toLowerCase().includes(q) ||
+          n.summary?.toLowerCase().includes(q) ||
+          n.subjectName?.toLowerCase().includes(q) ||
+          n.topics.some((t) => t.toLowerCase().includes(q))
+        );
+      }
+      return true;
+    },
+    sortItems: (a, b, sort) => {
+      if (sort === 'subject') return (a.subjectName ?? '').localeCompare(b.subjectName ?? '');
+      if (sort === 'words') return countWords(a.note) - countWords(b.note);
+      return b.createdAt - a.createdAt; // default 'date'
+    }
+  });
+
+  // Sync search state from persisted input
+  React.useEffect(() => { setSearchValue(searchValueLocal); }, [searchValueLocal, setSearchValue]);
+  const handleSearchChange = React.useCallback((v: string) => {
+    setSearchValue(v);
+    setSearchPersisted(v);
+  }, [setSearchValue, setSearchPersisted]);
+
   const [isSortMenuOpen, setIsSortMenuOpen] = useState(false);
   const [isFilterMenuOpen, setIsFilterMenuOpen] = useState(false);
-  const [subjectFilter, setSubjectFilter] = useState<string>('all');
-  const [topicFilter, setTopicFilter] = useState<string>('all');
-
-  // Selection
-  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
-  const isSelectionMode = selectedIds.size > 0;
 
   // Reader modal
   const [readerContent, setReaderContent] = useState<string | null>(null);
   const [readerTitle, setReaderTitle] = useState('');
   const [readerNote, setReaderNote] = useState<NoteItem | null>(null);
-
-  // Pagination
-  const [displayCount, setDisplayCount] = useState(PAGE_SIZE);
 
   const loadNotes = useCallback(async () => {
     setLoading(true);
@@ -220,33 +196,6 @@ export default function NotesVaultScreen() {
     setRefreshing(false);
   }, [loadNotes]);
 
-  const visibleNotes = useMemo(() => {
-    let filtered = notes;
-    if (subjectFilter !== 'all') {
-      filtered = filtered.filter((n) => (n.subjectName || 'Unknown') === subjectFilter);
-    }
-    if (topicFilter !== 'all') {
-      filtered = filtered.filter((n) => n.topics.includes(topicFilter));
-    }
-    if (searchValue.trim()) {
-      const q = searchValue.toLowerCase();
-      filtered = filtered.filter(
-        (n) =>
-          n.note?.toLowerCase().includes(q) ||
-          n.summary?.toLowerCase().includes(q) ||
-          n.subjectName?.toLowerCase().includes(q) ||
-          n.topics.some((t) => t.toLowerCase().includes(q)),
-      );
-    }
-    const sorted = [...filtered];
-    if (sortBy === 'subject') {
-      sorted.sort((a, b) => (a.subjectName ?? '').localeCompare(b.subjectName ?? ''));
-    } else if (sortBy === 'words') {
-      sorted.sort((a, b) => countWords(a.note) - countWords(b.note));
-    }
-    // date sort is default from DB (newest first)
-    return sorted;
-  }, [notes, searchValue, sortBy, subjectFilter, topicFilter]);
 
   const subjectOptions = useMemo(
     () =>
@@ -298,25 +247,7 @@ export default function NotesVaultScreen() {
     }
   }, [topicFilter, topicOptions]);
 
-  const toggleSelection = useCallback((id: number) => {
-    setSelectedIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-  }, []);
 
-  const handleLongPress = useCallback((id: number) => {
-    Haptics.selectionAsync();
-    setSelectedIds((prev) => {
-      const next = new Set(prev);
-      next.add(id);
-      return next;
-    });
-  }, []);
-
-  const cancelSelection = useCallback(() => setSelectedIds(new Set()), []);
 
   const handleBatchDelete = useCallback(async () => {
     const count = selectedIds.size;
@@ -541,16 +472,6 @@ export default function NotesVaultScreen() {
     [tabsNavigation],
   );
 
-  const formatDate = (ts: number): string => {
-    const d = new Date(ts);
-    const now = new Date();
-    const diff = now.getTime() - d.getTime();
-    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-    if (days === 0) return 'Today';
-    if (days === 1) return 'Yesterday';
-    if (days < 7) return `${days}d ago`;
-    return d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
-  };
 
   const wordCountMap = useMemo(() => {
     const map = new Map<number, number>();
@@ -562,83 +483,26 @@ export default function NotesVaultScreen() {
 
   const renderNote = useCallback(
     ({ item }: { item: NoteItem }) => {
-      const subjectLabel = getSubjectLabel(item);
-      const isSelected = selectedIds.has(item.id);
-
       return (
-        <TouchableOpacity
-          style={[styles.card, isSelected && styles.cardSelected]}
-          activeOpacity={0.7}
-          onLongPress={() => handleLongPress(item.id)}
-          delayLongPress={220}
-          onPress={() => {
+        <NoteCardItem
+          item={item}
+          isSelected={selectedIds.has(item.id)}
+          isSelectionMode={isSelectionMode}
+          onPress={(n) => {
             if (isSelectionMode) {
               Haptics.selectionAsync();
-              toggleSelection(item.id);
+              toggleSelection(n.id);
               return;
             }
-            setReaderTitle(getTitle(item));
-            setReaderContent(item.note);
-            setReaderNote(item);
+            setReaderTitle(getTitle(n));
+            setReaderContent(n.note);
+            setReaderNote(n);
           }}
-        >
-          {isSelectionMode && (
-            <View style={styles.selectIcon}>
-              <Ionicons
-                name={isSelected ? 'checkmark-circle' : 'ellipse-outline'}
-                size={22}
-                color={isSelected ? n.colors.accent : n.colors.textMuted}
-              />
-            </View>
-          )}
-          <View style={styles.cardHeader}>
-            <SubjectChip
-              subject={subjectLabel}
-              color="#fff"
-              backgroundColor={SUBJECT_COLORS[subjectLabel] ?? n.colors.textMuted}
-              borderColor={SUBJECT_COLORS[subjectLabel] ?? n.colors.textMuted}
-              style={styles.subjectChip}
-            />
-          </View>
-          <View style={styles.dateRow}>
-            <LinearText style={styles.dateText}>{formatDate(item.createdAt)}</LinearText>
-          </View>
-          <LinearText style={styles.titleText} numberOfLines={3}>
-            {getTitle(item)}
-          </LinearText>
-          {item.topics.length > 0 && (
-            <TopicPillRow
-              topics={item.topics}
-              wrap
-              maxVisible={4}
-              rowStyle={styles.topicsRow}
-              pillStyle={styles.topicPill}
-              moreBadgeStyle={styles.moreBadge}
-            />
-          )}
-          <View style={styles.cardFooter}>
-            {item.confidence > 0 && (
-              <LinearText
-                style={[
-                  styles.confidenceBadge,
-                  item.confidence === 3
-                    ? styles.confidenceBadgeStrong
-                    : item.confidence === 2
-                      ? styles.confidenceBadgeMid
-                      : styles.confidenceBadgeLight,
-                ]}
-              >
-                {CONFIDENCE_LABELS[item.confidence as 1 | 2 | 3]}
-              </LinearText>
-            )}
-            <LinearText style={styles.wordCount}>
-              {(wordCountMap.get(item.id) ?? countWords(item.note)).toLocaleString()} words
-            </LinearText>
-            {item.appName ? (
-              <LinearText style={styles.appBadge}>via {item.appName}</LinearText>
-            ) : null}
-          </View>
-        </TouchableOpacity>
+          onLongPress={handleLongPress}
+          wordCount={wordCountMap.get(item.id) ?? countWords(item.note)}
+          subjectLabel={getSubjectLabel(item)}
+          title={getTitle(item)}
+        />
       );
     },
     [selectedIds, isSelectionMode, handleLongPress, toggleSelection, wordCountMap],
@@ -683,7 +547,7 @@ export default function NotesVaultScreen() {
             searchElement={
               <BannerSearchBar
                 value={searchValue}
-                onChangeText={setSearchPersisted}
+                onChangeText={handleSearchChange}
                 placeholder="Search notes, topics, subjects..."
               />
             }
@@ -979,7 +843,7 @@ export default function NotesVaultScreen() {
           {visibleNotes.length > 0 && displayCount < visibleNotes.length && (
             <TouchableOpacity
               style={styles.loadMoreBtn}
-              onPress={() => setDisplayCount((prev) => prev + PAGE_SIZE)}
+              onPress={() => loadMore()}
               activeOpacity={0.7}
             >
               <LinearText style={styles.loadMoreText}>

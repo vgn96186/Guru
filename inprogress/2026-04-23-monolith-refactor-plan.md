@@ -104,7 +104,7 @@ Current state: `src/screens/settings/sections/` exists with ~10 section files, b
 
 **Estimated effort**: 3–4 focused sessions. Do last in this program because it's the largest and touches many subsystems.
 
-### 4.2 `SessionScreen.tsx` (2298 LOC) — session state machine
+### 4.2 `SessionScreen.tsx` (2298 LOC) — session state machine [DONE]
 
 Two sub-screens already inline (`WarmUpMomentumScreen` @ 1481, `SessionDoneScreen` @ 1581). The default export owns mode resolution, content fetching, retries, XP, and nav.
 

@@ -25,15 +25,16 @@ export default function LectureModeScreen() {
   if (state.onBreak) {
     if (state.resumeCountdown >= 0) {
       return (
-        <LectureResumeScreen 
-          resumeCountdown={state.resumeCountdown} 
-          onResumeNow={() => actions.setResumeCountdown(0)} 
+        <LectureResumeScreen
+          resumeCountdown={state.resumeCountdown}
+          onResumeNow={() => actions.setResumeCountdown(0)}
         />
       );
     }
 
     const topics = state.breakTopics;
-    const randomTopicId = topics.length > 0 ? topics[Math.floor(Math.random() * topics.length)].id : undefined;
+    const randomTopicId =
+      topics.length > 0 ? topics[Math.floor(Math.random() * topics.length)].id : undefined;
     return (
       <BreakScreen
         countdown={state.breakCountdown}
@@ -48,6 +49,7 @@ export default function LectureModeScreen() {
   const secs = state.elapsed % 60;
 
   return (
+    // eslint-disable-next-line guru/prefer-screen-shell -- SafeAreaView needed here
     <SafeAreaView
       style={[styles.safe, state.proofOfLifeActive && styles.safeWarn]}
       testID="lecture-mode-screen"
@@ -59,7 +61,11 @@ export default function LectureModeScreen() {
       />
       <ResponsiveContainer>
         <View style={styles.header}>
-          <TouchableOpacity onPress={actions.confirmStopLecture} style={styles.backBtn} testID="lecture-end-btn">
+          <TouchableOpacity
+            onPress={actions.confirmStopLecture}
+            style={styles.backBtn}
+            testID="lecture-end-btn"
+          >
             <LinearText style={styles.backText}>← End</LinearText>
           </TouchableOpacity>
           <Ionicons name="tv-outline" size={20} color={n.colors.textPrimary} />
@@ -69,7 +75,10 @@ export default function LectureModeScreen() {
 
         <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
           {state.focusState !== 'focused' && !state.onBreak && (
-            <LinearSurface padded={false} style={[styles.hostageInfo, { borderColor: n.colors.error }]}>
+            <LinearSurface
+              padded={false}
+              style={[styles.hostageInfo, { borderColor: n.colors.error }]}
+            >
               <Ionicons name="eye-outline" size={32} color={n.colors.error} />
               <LinearText style={[styles.hostageText, { color: n.colors.error }]}>
                 Face not detected or distracted! Look at your study materials!
@@ -87,7 +96,10 @@ export default function LectureModeScreen() {
             </LinearSurface>
           )}
 
-          <LinearSurface style={[styles.timerBox, state.proofOfLifeActive && styles.timerBoxWarn]} testID="lecture-timer">
+          <LinearSurface
+            style={[styles.timerBox, state.proofOfLifeActive && styles.timerBoxWarn]}
+            testID="lecture-timer"
+          >
             <LinearText style={styles.timerLabel}>Lecture Time</LinearText>
             <LinearText
               style={[styles.timer, state.proofOfLifeActive && styles.timerWarn]}
@@ -101,7 +113,9 @@ export default function LectureModeScreen() {
 
           {state.proofWarningActive && !state.proofOfLifeActive && (
             <LinearSurface padded={false} style={styles.proofWarnBanner}>
-              <LinearText style={styles.proofWarnText}>⚠️ Listening check in 30s — get ready to type!</LinearText>
+              <LinearText style={styles.proofWarnText}>
+                ⚠️ Listening check in 30s — get ready to type!
+              </LinearText>
             </LinearSurface>
           )}
 
@@ -120,7 +134,9 @@ export default function LectureModeScreen() {
                     onPress={() => actions.setSelectedSubjectId(s.id)}
                     activeOpacity={0.8}
                   >
-                    <LinearText style={[styles.subjectChipText, { color: s.colorHex }]}>{s.shortCode}</LinearText>
+                    <LinearText style={[styles.subjectChipText, { color: s.colorHex }]}>
+                      {s.shortCode}
+                    </LinearText>
                   </TouchableOpacity>
                 ))}
               </View>
@@ -177,7 +193,9 @@ export default function LectureModeScreen() {
                   ? 'Type here immediately to dismiss alarm...'
                   : "Type a key concept to prove you're listening..."
               }
-              placeholderTextColor={state.proofOfLifeActive ? n.colors.error + 'AA' : n.colors.textMuted}
+              placeholderTextColor={
+                state.proofOfLifeActive ? n.colors.error + 'AA' : n.colors.textMuted
+              }
               multiline
               value={state.currentNote}
               onChangeText={actions.setCurrentNote}
@@ -205,7 +223,9 @@ export default function LectureModeScreen() {
 
           {state.notes.length > 0 && (
             <View style={styles.savedNotes}>
-              <LinearText style={styles.sectionLabel}>Proof of Focus ({state.notes.length})</LinearText>
+              <LinearText style={styles.sectionLabel}>
+                Proof of Focus ({state.notes.length})
+              </LinearText>
               {state.notes.map((note, i) => (
                 <View key={i} style={styles.noteRow}>
                   <LinearText style={styles.noteDot}>·</LinearText>

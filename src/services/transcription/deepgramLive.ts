@@ -77,6 +77,7 @@ export class DeepgramLiveTranscriber {
     };
 
     this.ws.onerror = (event: Event) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
       const msg = (event as any)?.message ?? 'WebSocket error';
       this.onError?.(new Error(msg));
     };

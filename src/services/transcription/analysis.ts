@@ -238,6 +238,7 @@ interface ParsedAnalysis {
   estimated_confidence?: number;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
 function parseArrayOrString(val: any, limit: number): string[] {
   if (Array.isArray(val)) return val.slice(0, limit);
   if (typeof val === 'string')

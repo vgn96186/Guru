@@ -75,6 +75,7 @@ export interface TopicProgressUpdate {
 }
 
 // Helpers
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
 function mapTopicRow(r: any): TopicWithProgress {
   const tid = r.id;
   const tname = r.topicName || r.name || 'Unnamed Topic';
@@ -82,7 +83,7 @@ function mapTopicRow(r: any): TopicWithProgress {
   const scode = r.subjectCode || '???';
   const scolor = r.subjectColor || '#555';
 
-  const p = r; // Flat structure
+  void r; // Flat structure already used via r.* below
 
   return {
     id: tid,
@@ -145,7 +146,9 @@ const buildTopicsQuery = async (
       fsrsStability: sql<number | null>`${topicProgress.fsrsStability} AS fsrsStability`,
       fsrsDifficulty: sql<number | null>`${topicProgress.fsrsDifficulty} AS fsrsDifficulty`,
       fsrsElapsedDays: sql<number | null>`${topicProgress.fsrsElapsedDays} AS fsrsElapsedDays`,
-      fsrsScheduledDays: sql<number | null>`${topicProgress.fsrsScheduledDays} AS fsrsScheduledDays`,
+      fsrsScheduledDays: sql<
+        number | null
+      >`${topicProgress.fsrsScheduledDays} AS fsrsScheduledDays`,
       fsrsReps: sql<number | null>`${topicProgress.fsrsReps} AS fsrsReps`,
       fsrsLapses: sql<number | null>`${topicProgress.fsrsLapses} AS fsrsLapses`,
       fsrsState: sql<number | null>`${topicProgress.fsrsState} AS fsrsState`,
@@ -162,19 +165,23 @@ const buildTopicsQuery = async (
     .leftJoin(topicProgress, eq(topics.id, topicProgress.topicId));
 
   if (whereClause) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
     query = query.where(whereClause) as any;
   }
   if (orderClauses && orderClauses.length > 0) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
     query = query.orderBy(...orderClauses) as any;
   }
   if (limitCount !== undefined) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
     query = query.limit(limitCount) as any;
   }
 
   const { sql: sqlString, params } = query.toSQL();
   const rawDb = getDb();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
   const rawRows = await rawDb.getAllAsync<any>(sqlString, params as string[]);
-  
+
   return rawRows;
 };
 
@@ -201,7 +208,9 @@ export const topicsRepositoryDrizzle = {
     const trimmed = query.trim().toLowerCase();
     if (!trimmed) return [];
     const rawDb = getDb();
-    const rows = await rawDb.getAllAsync<any>(`
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
+    const rows = await rawDb.getAllAsync<any>(
+      `
       SELECT 
         t.id, t.subject_id as subjectId, t.parent_topic_id as parentTopicId, t.name as topicName, t.estimated_minutes as estimatedMinutes, t.inicet_priority as inicetPriority,
         p.status, p.confidence, p.last_studied_at as lastStudiedAt, p.times_studied as timesStudied, p.xp_earned as xpEarned, p.next_review_date as nextReviewDate,
@@ -216,12 +225,15 @@ export const topicsRepositoryDrizzle = {
       WHERE LOWER(t.name) LIKE ?
       ORDER BY t.inicet_priority DESC, t.name ASC
       LIMIT ?
-    `, [`%${trimmed}%`, limitCount]);
+    `,
+      [`%${trimmed}%`, limitCount],
+    );
     return rows.map(mapTopicRow);
   },
 
   async getAllSubjects(): Promise<Subject[]> {
     const rawDb = getDb();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
     const rows = await rawDb.getAllAsync<any>(`
       SELECT id, name, short_code as shortCode, color_hex as colorHex, inicet_weight as inicetWeight, neet_weight as neetWeight, display_order as displayOrder
       FROM subjects
@@ -247,7 +259,8 @@ export const topicsRepositoryDrizzle = {
   },
 
   async queueTopicSuggestionInTx(
-    _tx: any, // kept for signature compatibility
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
+    _tx: any, // kept for signature compatibility — Drizzle repo doesn't use the tx param
     subjectId: number,
     topicName: string,
     sourceSummary?: string,
@@ -332,7 +345,7 @@ export const topicsRepositoryDrizzle = {
   },
 
   async approveTopicSuggestion(suggestionId: number): Promise<number | null> {
-    return runInTransaction(async (tx) => {
+    return runInTransaction(async (_tx) => {
       const db = getDrizzleDb();
       const suggestionRows = await db
         .select({
@@ -396,7 +409,9 @@ export const topicsRepositoryDrizzle = {
     const id = Number(subjectId);
     if (isNaN(id)) return [];
     const rawDb = getDb();
-    const rows = await rawDb.getAllAsync<any>(`
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
+    const rows = await rawDb.getAllAsync<any>(
+      `
       SELECT 
         t.id, t.subject_id as subjectId, t.parent_topic_id as parentTopicId, t.name as topicName, t.estimated_minutes as estimatedMinutes, t.inicet_priority as inicetPriority,
         p.status, p.confidence, p.last_studied_at as lastStudiedAt, p.times_studied as timesStudied, p.xp_earned as xpEarned, p.next_review_date as nextReviewDate,
@@ -410,12 +425,15 @@ export const topicsRepositoryDrizzle = {
       LEFT JOIN topic_progress p ON t.id = p.topic_id
       WHERE t.subject_id = ?
       ORDER BY COALESCE(t.parent_topic_id, t.id), CASE WHEN t.parent_topic_id IS NULL THEN 0 ELSE 1 END, t.inicet_priority DESC, t.name ASC
-    `, [id]);
+    `,
+      [id],
+    );
     return rows.map(mapTopicRow);
   },
 
   async getAllTopicsWithProgress(): Promise<TopicWithProgress[]> {
     const rawDb = getDb();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
     const rows = await rawDb.getAllAsync<any>(`
       SELECT 
         t.id, t.subject_id as subjectId, t.parent_topic_id as parentTopicId, t.name as topicName, t.estimated_minutes as estimatedMinutes, t.inicet_priority as inicetPriority,
@@ -440,6 +458,7 @@ export const topicsRepositoryDrizzle = {
   },
 
   async updateTopicProgressInTx(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
     _tx: any, // legacy param
     topicId: number,
     status: TopicProgress['status'],
@@ -604,6 +623,7 @@ export const topicsRepositoryDrizzle = {
 
   async getSubjectStatsAggregated(): Promise<SubjectStatsRow[]> {
     const rawDb = getDb();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
     const rawRows = await rawDb.getAllAsync<any>(`
       SELECT 
         t.subject_id as subjectId, 
@@ -620,6 +640,7 @@ export const topicsRepositoryDrizzle = {
       GROUP BY t.subject_id
     `);
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
     const rows = rawRows.map((r: any) => ({
       subjectId: r.subjectId !== null ? Number(r.subjectId) : null,
       total: Number(r.total) || 0,

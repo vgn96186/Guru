@@ -80,6 +80,7 @@ function NotificationSection({
 
 export default React.memo(NotificationSection);
 
+// eslint-disable-next-line guru/prefer-settings-primitives -- component-level styles
 const styles = StyleSheet.create({
   container: { gap: 12 },
   switchRow: {

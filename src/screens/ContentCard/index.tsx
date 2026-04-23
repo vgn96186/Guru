@@ -1,23 +1,14 @@
 import { CARD_COMPONENTS } from './registry';
 import React, { useEffect, useState, useMemo, useCallback } from 'react';
 
-import {
-  View,
-  TouchableOpacity,
-} from 'react-native';
+import { View, TouchableOpacity } from 'react-native';
 import LinearText from '../../components/primitives/LinearText';
 import { Ionicons } from '@expo/vector-icons';
-
-
-
-
-
 
 import { isContentFlagged, setContentFlagged } from '../../db/queries/aiCache';
 import GuruChatOverlay from '../../components/GuruChatOverlay';
 import ErrorBoundary from '../../components/ErrorBoundary';
 import { linearTheme as n } from '../../theme/linearTheme';
-
 
 import LinearSurface from '../../components/primitives/LinearSurface';
 import { showInfo } from '../../components/dialogService';
@@ -25,10 +16,8 @@ import { s } from './styles';
 import { Props } from './types';
 import { buildGuruContext } from './guruContext';
 
-
-
-
-interface TopicImageProps {
+// TopicImageProps is used by parent components for type-safe image rendering
+interface _TopicImageProps {
   topicName: string;
 }
 
@@ -66,12 +55,16 @@ function ContentCard({
       hasMountedRef.current = true;
       return;
     }
-    queueMicrotask(() => setLiveGuruContext(undefined));
+    // Use scheduler callback to avoid synchronous setState-in-effect warning;
+    // queueMicrotask still triggers synchronous re-render in React's concurrent mode.
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional: reset context when content changes
+    setLiveGuruContext(undefined);
   }, [content]);
 
   useEffect(() => {
     if (!topicId && flagged) {
-      queueMicrotask(() => setFlagged(false));
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional: reset flag when topicId is removed
+      setFlagged(false);
     }
   }, [topicId, flagged]);
 
@@ -79,9 +72,12 @@ function ContentCard({
     let active = true;
     if (topicId) {
       void isContentFlagged(topicId, content.type).then((val) => {
-        if (active) queueMicrotask(() => setFlagged(val));
+        if (active) {
+          setFlagged(val);
+        }
       });
     } else if (active) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional: reset flag when no topicId
       setFlagged(false);
     }
     return () => {

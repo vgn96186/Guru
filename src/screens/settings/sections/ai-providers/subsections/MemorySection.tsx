@@ -5,7 +5,9 @@ import LinearTextInput from '../../../../../components/primitives/LinearTextInpu
 
 interface Props {
   guruMemory: { notes: string; setNotes: (s: string) => void };
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
   SectionToggle: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
   styles: any;
 }
 

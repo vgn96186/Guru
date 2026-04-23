@@ -7,7 +7,9 @@ import type { CopilotState } from '../types';
 
 interface Props {
   githubCopilot: CopilotState;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
   SectionToggle: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
   styles: any;
 }
 

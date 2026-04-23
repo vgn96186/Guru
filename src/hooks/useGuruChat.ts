@@ -170,6 +170,7 @@ export function useGuruChat(options: UseGuruChatOptions): UseGuruChatReturn {
         }
       : {
           // Dummy config when model is null (disabled state)
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
           model: null as any,
           system: '',
           initialMessages: [],

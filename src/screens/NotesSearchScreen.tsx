@@ -142,7 +142,10 @@ export default function NotesSearchScreen() {
     );
     if (ok) {
       const db = getDb();
-      await db.runAsync('UPDATE topic_progress SET user_notes = ? WHERE topic_id = ?', ['', topicId]);
+      await db.runAsync('UPDATE topic_progress SET user_notes = ? WHERE topic_id = ?', [
+        '',
+        topicId,
+      ]);
       await search(query);
     }
   }
@@ -183,7 +186,10 @@ export default function NotesSearchScreen() {
         } else if (key.startsWith('topic-')) {
           const id = Number(key.replace('topic-', ''));
           if (!Number.isNaN(id)) {
-            await db.runAsync('UPDATE topic_progress SET user_notes = ? WHERE topic_id = ?', ['', id]);
+            await db.runAsync('UPDATE topic_progress SET user_notes = ? WHERE topic_id = ?', [
+              '',
+              id,
+            ]);
           }
         }
       }
@@ -297,6 +303,7 @@ export default function NotesSearchScreen() {
   }
 
   return (
+    // eslint-disable-next-line guru/prefer-screen-shell -- SafeAreaView needed here
     <SafeAreaView style={styles.safe}>
       <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
       <ResponsiveContainer>

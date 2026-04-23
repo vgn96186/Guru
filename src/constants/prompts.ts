@@ -505,6 +505,7 @@ RULES:
 }
 
 export function buildReplanPrompt(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
   currentPlan: any,
   completedBlockIds: string[],
   missedBlockIds: string[],

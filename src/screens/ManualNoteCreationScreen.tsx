@@ -1,12 +1,5 @@
 import React, { useState } from 'react';
-import {
-  View,
-  TextInput,
-  TouchableOpacity,
-  ScrollView,
-  StyleSheet,
-  StatusBar,
-} from 'react-native';
+import { View, TextInput, TouchableOpacity, ScrollView, StyleSheet, StatusBar } from 'react-native';
 import LinearText from '../components/primitives/LinearText';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
@@ -137,6 +130,7 @@ export default function ManualNoteCreationScreen(
   if (result) {
     const { analysis, note } = result;
     return (
+      // eslint-disable-next-line guru/prefer-screen-shell -- SafeAreaView needed here
       <SafeAreaView style={styles.safe}>
         <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
         <KeyboardAvoidingView behavior="padding" style={{ flex: 1 }}>
@@ -192,6 +186,7 @@ export default function ManualNoteCreationScreen(
 
   // ── Input view ─────────────────────────────────────────────────────────────
   return (
+    // eslint-disable-next-line guru/prefer-screen-shell -- SafeAreaView needed here
     <SafeAreaView style={styles.safe}>
       <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
       <KeyboardAvoidingView behavior="padding" style={{ flex: 1 }}>

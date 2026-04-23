@@ -36,9 +36,10 @@ import { WhisperModelManager } from './whisperModelManager';
 
 // ─── VAD for chunking ────────────────────────────────────────────────────────
 
-let initWhisperVad: any = null;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
+let _initWhisperVad: any = null;
 try {
-  initWhisperVad = require('whisper.rn/index.js').initWhisperVad;
+  _initWhisperVad = require('whisper.rn/index.js').initWhisperVad;
 } catch {
   console.warn('[BatchTranscriber] initWhisperVad not available');
 }
@@ -295,26 +296,30 @@ export class BatchTranscriber {
 
     // Convert whisper.rn segments to our format, adjusting timestamps
     // to be absolute (relative to recording start, not chunk start)
-    return result.segments
-      .filter((seg: any) => {
-        const text = seg.text?.trim();
-        if (!text) return false;
-        // Filter hallucinations
-        if (text === '[BLANK_AUDIO]' || text === '(blank audio)') return false;
-        if (/^(thank you\.?\s*){3,}/i.test(text)) return false;
-        if (/^(♪\s*)+$/.test(text)) return false;
-        return true;
-      })
-      .map((seg: any) => {
-        const segment: TranscriptSegment = {
-          id: this.segmentCounter++,
-          // Absolute timestamps: chunk start + segment-relative time
-          start: chunk.startTimeSec + (seg.t0 ?? 0) / 100, // whisper.rn uses centiseconds
-          end: chunk.startTimeSec + (seg.t1 ?? chunk.durationSec * 100) / 100,
-          text: seg.text.trim(),
-        };
-        return segment;
-      });
+    return (
+      result.segments
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
+        .filter((seg: any) => {
+          const text = seg.text?.trim();
+          if (!text) return false;
+          // Filter hallucinations
+          if (text === '[BLANK_AUDIO]' || text === '(blank audio)') return false;
+          if (/^(thank you\.?\s*){3,}/i.test(text)) return false;
+          if (/^(♪\s*)+$/.test(text)) return false;
+          return true;
+        })
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
+        .map((seg: any) => {
+          const segment: TranscriptSegment = {
+            id: this.segmentCounter++,
+            // Absolute timestamps: chunk start + segment-relative time
+            start: chunk.startTimeSec + (seg.t0 ?? 0) / 100, // whisper.rn uses centiseconds
+            end: chunk.startTimeSec + (seg.t1 ?? chunk.durationSec * 100) / 100,
+            text: seg.text.trim(),
+          };
+          return segment;
+        })
+    );
   }
 
   // ── Memory Management ───────────────────────────────────────────────────
@@ -354,6 +359,7 @@ export class BatchTranscriber {
     total: number,
     vadSkipped: number,
   ): void {
+    void vadSkipped;
     if (!this.callback) return;
 
     const elapsedSeconds = (Date.now() - this.processingStartTime) / 1000;

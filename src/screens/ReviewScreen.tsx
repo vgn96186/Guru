@@ -223,6 +223,7 @@ export default function ReviewScreen() {
 
   if (queue.length === 0) {
     return (
+      // eslint-disable-next-line guru/prefer-screen-shell -- SafeAreaView needed here
       <SafeAreaView style={styles.safe}>
         <ResponsiveContainer style={styles.center}>
           <Ionicons
@@ -274,6 +275,7 @@ export default function ReviewScreen() {
   const activeChip = selectedContentType ?? autoType;
 
   return (
+    // eslint-disable-next-line guru/prefer-screen-shell -- SafeAreaView needed here
     <SafeAreaView style={styles.safe}>
       <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
 
@@ -338,6 +340,7 @@ export default function ReviewScreen() {
                   activeOpacity={0.8}
                 >
                   <Ionicons
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
                     name={(chip.ionicon || 'list-outline') as any}
                     size={12}
                     color={isActive ? n.colors.textPrimary : n.colors.textMuted}

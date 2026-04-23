@@ -112,6 +112,7 @@ function AdvancedToolsSection({
 
 export default React.memo(AdvancedToolsSection);
 
+// eslint-disable-next-line guru/prefer-settings-primitives -- component-level styles
 const styles = StyleSheet.create({
   section: {
     backgroundColor: n.colors.surface,

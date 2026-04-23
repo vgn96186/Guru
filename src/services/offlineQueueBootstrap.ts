@@ -6,18 +6,18 @@ import { BUNDLED_GROQ_KEY } from '../config/appConfig';
 
 let bootstrapped = false;
 
-const UnknownJsonSchema = z.unknown();
+const _UnknownJsonSchema = z.unknown();
 
 export function registerOfflineQueueProcessors(): void {
   if (bootstrapped) return;
   bootstrapped = true;
 
-  registerProcessor('generate_text', async (item) => {
+  registerProcessor('generate_text', async (_item) => {
     // Legacy/Transient tasks: skip for now as they usually depend on live UI state
     throw new Error('Real-time task cannot be replayed safely.');
   });
 
-  registerProcessor('generate_json', async (item) => {
+  registerProcessor('generate_json', async (_item) => {
     throw new Error('Real-time task cannot be replayed safely.');
   });
 

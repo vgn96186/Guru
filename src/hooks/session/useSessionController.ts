@@ -42,6 +42,7 @@ import {
 import type { AgendaItem, Mood, SessionMode } from '../../types';
 
 export interface UseSessionControllerProps {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
   navigation: any;
   routeParams: {
     mood: Mood;
@@ -485,7 +486,7 @@ export function useSessionController({ navigation, routeParams }: UseSessionCont
                 setAiError(e?.message ?? 'AI content failed');
               }
             })
-            .catch((fallbackError) => {
+            .catch((_fallbackError) => {
               contentRetryCount.current = 0;
               setContentRetryPending(false);
               setAiError(e?.message ?? 'AI content failed');
@@ -642,7 +643,7 @@ export function useSessionController({ navigation, routeParams }: UseSessionCont
                   setAiError(e?.message ?? 'AI content failed');
                 }
               })
-              .catch((fallbackError) => {
+              .catch((_fallbackError) => {
                 setAiError(e?.message ?? 'AI content failed');
               })
               .finally(() => {

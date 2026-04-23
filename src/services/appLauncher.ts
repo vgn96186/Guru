@@ -286,13 +286,17 @@ async function _launchMedicalAppInner(
       } else {
         throw new Error(`Could not launch ${app.name}.`);
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('[AppLauncher] Launch sequence failed:', err);
-      Alert.alert('Launch Error', `Failed to open ${app.name}: ${err?.message || 'Unknown error'}`);
+      Alert.alert(
+        'Launch Error',
+        `Failed to open ${app.name}: ${(err instanceof Error ? err.message : String(err)) || 'Unknown error'}`,
+      );
       await cleanupAbortedLaunch(
         logId,
         'Launch failed before lecture app opened',
-        err?.message || 'Launch failed before lecture app opened',
+        (err instanceof Error ? err.message : String(err)) ||
+          'Launch failed before lecture app opened',
         '[AppLauncher] Failed to stop recording after launch error:',
         '[AppLauncher] Failed to finalize aborted session:',
         '[AppLauncher] Failed to hide overlay after launch error:',
@@ -373,16 +377,16 @@ async function launchMockLectureAudio(
 
     await Linking.openURL(MOCK_EXTERNAL_LECTURE_AUDIO_URL);
     return true;
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error('[AppLauncher] Mock lecture launch failed:', err);
     Alert.alert(
       'Mock Lecture Launch Error',
-      `Failed to open mock lecture audio: ${err?.message || 'Unknown error'}`,
+      `Failed to open mock lecture audio: ${(err instanceof Error ? err.message : String(err)) || 'Unknown error'}`,
     );
     await cleanupAbortedLaunch(
       logId,
       'Mock lecture launch failed',
-      err?.message || 'Mock lecture launch failed',
+      (err instanceof Error ? err.message : String(err)) || 'Mock lecture launch failed',
       '[AppLauncher] Failed to stop recording after mock launch error:',
       '[AppLauncher] Failed to finalize mock session:',
       '[AppLauncher] Failed to hide overlay after mock launch error:',

@@ -605,6 +605,7 @@ export default function GuruChatScreenContent() {
 
   if (shouldShowGuruChatSkeleton({ isHydratingThread, isHydratingHistory })) {
     return (
+      // eslint-disable-next-line guru/prefer-screen-shell -- SafeAreaView needed here
       <SafeAreaView style={styles.safe} testID="guru-chat-screen">
         <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
         <ChatSkeleton />
@@ -613,6 +614,7 @@ export default function GuruChatScreenContent() {
   }
 
   return (
+    // eslint-disable-next-line guru/prefer-screen-shell -- SafeAreaView needed here
     <SafeAreaView style={styles.safe} testID="guru-chat-screen">
       <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
       <View style={styles.flex}>

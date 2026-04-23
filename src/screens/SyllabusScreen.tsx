@@ -240,7 +240,11 @@ function SyllabusScreenContent() {
 
     const map = new Map<number, { total: number; seen: number }>();
     const metricMap = new Map<number, SubjectMetrics>();
-    let totalT = 0, seenT = 0, dueT = 0, hyT = 0, notesT = 0;
+    let totalT = 0,
+      seenT = 0,
+      dueT = 0,
+      hyT = 0,
+      notesT = 0;
 
     for (const row of combinedRows) {
       const sId = Number(row.subjectId);
@@ -345,10 +349,12 @@ function SyllabusScreenContent() {
     const timer = setTimeout(() => {
       const db = getDb();
       void Promise.all([
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
         (db.getAllAsync as any)(
           `SELECT subject_id, COUNT(*) as c FROM topics WHERE LOWER(name) LIKE ? GROUP BY subject_id`,
           [`%${searchLower}%`],
         ),
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
         (db.getAllAsync as any)(
           `SELECT t.id, t.name, t.subject_id, s.name as subject_name, s.color_hex
          FROM topics t
@@ -360,7 +366,9 @@ function SyllabusScreenContent() {
         ),
       ]).then(([rows, topics]) => {
         if (!isFocusedRef.current) return;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
         setSearchMatchIds(new Set((rows as any[]).map((r: any) => r.subject_id)));
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
         setSearchMatchCounts(new Map((rows as any[]).map((r: any) => [r.subject_id, r.c])));
         setTopicResults(topics);
       });
@@ -392,10 +400,10 @@ function SyllabusScreenContent() {
         message: 'Guru successfully re-checked your topics. 😏',
         variant: 'success',
       });
-    } catch (e: any) {
+    } catch (e: unknown) {
       showToast({
         title: 'Sync failed',
-        message: e?.message ?? 'Unknown error',
+        message: (e instanceof Error ? e.message : String(e)) ?? 'Unknown error',
         variant: 'error',
       });
     } finally {
@@ -415,10 +423,10 @@ function SyllabusScreenContent() {
           : `"${suggestion.name}" was already available.`,
         variant: 'success',
       });
-    } catch (e: any) {
+    } catch (e: unknown) {
       showToast({
         title: 'Approval failed',
-        message: e?.message ?? 'Unknown error',
+        message: (e instanceof Error ? e.message : String(e)) ?? 'Unknown error',
         variant: 'error',
       });
     } finally {
@@ -436,10 +444,10 @@ function SyllabusScreenContent() {
         message: `"${suggestion.name}" will stay out of the syllabus.`,
         variant: 'info',
       });
-    } catch (e: any) {
+    } catch (e: unknown) {
       showToast({
         title: 'Reject failed',
-        message: e?.message ?? 'Unknown error',
+        message: (e instanceof Error ? e.message : String(e)) ?? 'Unknown error',
         variant: 'error',
       });
     } finally {
@@ -450,16 +458,21 @@ function SyllabusScreenContent() {
   async function _runDiagnostics() {
     const { getDb } = require('../db/database');
     const db = getDb();
-    
+
     const [countRow, subjects, coverage] = await Promise.all([
-        (db.getFirstAsync as any)('SELECT COUNT(*) as c FROM topics'),
-        (db.getAllAsync as any)('SELECT id, name FROM subjects'),
-        (db.getAllAsync as any)('SELECT subject_id, COUNT(*) as c FROM topics GROUP BY subject_id'),
-      ]);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
+      (db.getFirstAsync as any)('SELECT COUNT(*) as c FROM topics'),
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
+      (db.getAllAsync as any)('SELECT id, name FROM subjects'),
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
+      (db.getAllAsync as any)('SELECT subject_id, COUNT(*) as c FROM topics GROUP BY subject_id'),
+    ]);
     const count = countRow?.c;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
     const subjectMap = new Map(subjects.map((s: any) => [s.id, s.name]));
     const summary = coverage
       .map(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
         (c: any) =>
           `${subjectMap.get(c.subject_id) || `ID ${c.subject_id} (NOT IN SUBJECTS)`}: ${
             c.c
@@ -470,6 +483,7 @@ function SyllabusScreenContent() {
     const diag =
       `Total topics: ${count}\n\n` +
       `--- Topics Per Subject ---\n${summary}\n\n` +
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
       `--- Subjects Map ---\n${subjects.map((s: any) => `${s.id}: ${s.name}`).join('\n')}`;
 
     showInfo('Database State', diag);
@@ -505,6 +519,10 @@ function SyllabusScreenContent() {
     },
     [navigation, scheduleNavUnlock],
   );
+
+  // Stable ref so listHeaderComponent useMemo doesn't need handleTopicResultPress in deps
+  const handleTopicResultPressRef = useRef(handleTopicResultPress);
+  handleTopicResultPressRef.current = handleTopicResultPress;
 
   const handleSubjectPress = useCallback(
     (item: Subject) => {
@@ -566,7 +584,7 @@ function SyllabusScreenContent() {
           <TouchableOpacity
             key={`topic-${topic.id}`}
             activeOpacity={0.8}
-            onPress={() => handleTopicResultPress(topic)}
+            onPress={() => handleTopicResultPressRef.current(topic)}
           >
             <LinearSurface compact padded={false} style={styles.topicResultCard}>
               <View style={[styles.topicResultDot, { backgroundColor: topic.color_hex }]} />
@@ -621,6 +639,7 @@ function SyllabusScreenContent() {
   });
 
   return (
+    // eslint-disable-next-line guru/prefer-screen-shell -- SafeAreaView needed here
     <SafeAreaView style={styles.safe} testID="syllabus-screen">
       <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
       <ScreenMotion

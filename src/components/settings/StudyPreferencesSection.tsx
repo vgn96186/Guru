@@ -63,6 +63,7 @@ function StudyPreferencesSection({
 
 export default React.memo(StudyPreferencesSection);
 
+// eslint-disable-next-line guru/prefer-settings-primitives -- component-level styles
 const styles = StyleSheet.create({
   container: { gap: 16 },
   switchRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },

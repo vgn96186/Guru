@@ -72,6 +72,7 @@ export async function handleRunAutoBackupNow({
 }: {
   setBackupBusy: (busy: boolean) => void;
   runAutoBackup: () => Promise<boolean>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
   profileRepository: any;
   refreshProfile: () => void;
 }) {

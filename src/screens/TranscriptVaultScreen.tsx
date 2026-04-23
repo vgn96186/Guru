@@ -62,8 +62,6 @@ import { saveLectureTranscript } from '../db/queries/aiCache';
 import { getSubjectByName } from '../db/queries/topics';
 import { saveTranscriptToFile } from '../services/transcriptStorage';
 
-
-
 /** Delete a file using expo-file-system first, falling back to native Java File.delete() */
 async function deleteFile(path: string): Promise<void> {
   try {
@@ -268,7 +266,7 @@ export default function TranscriptVaultScreen() {
     sortItems: (a, b, sort) => {
       if (sort === 'words') return b.wordCount - a.wordCount;
       return b.name.localeCompare(a.name); // Default 'name'
-    }
+    },
   });
 
   // Reader
@@ -278,7 +276,6 @@ export default function TranscriptVaultScreen() {
 
   const loadFiles = useCallback(async () => {
     setLoading(true);
-    setDisplayCount(PAGE_SIZE);
     try {
       const hasAccess = await hasAllFilesAccess();
       setNeedsFileAccess(!hasAccess);
@@ -311,6 +308,7 @@ export default function TranscriptVaultScreen() {
               allFiles.push({
                 name,
                 path: uri,
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
                 sizeMB: Math.round((((info as any).size ?? 0) / 1024) * 10) / 10,
                 folder: 'Internal',
                 wordCount: wc,
@@ -350,6 +348,7 @@ export default function TranscriptVaultScreen() {
               allFiles.push({
                 name,
                 path: uri,
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
                 sizeMB: Math.round((((info as any).size ?? 0) / 1024) * 10) / 10,
                 folder: 'Backups',
                 wordCount: wc,
@@ -410,12 +409,13 @@ export default function TranscriptVaultScreen() {
       // Sort by name (which usually contains timestamps)
       unique.sort((a, b) => b.name.localeCompare(a.name));
       setFiles(unique);
+      setDisplayCount(PAGE_SIZE);
     } catch (e) {
       console.warn('[TranscriptVault] Failed to scan:', e);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [PAGE_SIZE, setDisplayCount, setFiles, setLoading]);
 
   useEffect(() => {
     void loadFiles();
@@ -451,7 +451,7 @@ export default function TranscriptVaultScreen() {
       setFiles((prev) => prev.filter((f) => !selectedPaths.has(f.path)));
       setSelectedPaths(new Set());
     }
-  }, [selectedPaths]);
+  }, [selectedPaths, setFiles, setSelectedPaths]);
 
   const handleUploadText = useCallback(async () => {
     try {
@@ -472,36 +472,42 @@ export default function TranscriptVaultScreen() {
       await saveTranscriptToFile(content);
       await loadFiles();
       showSuccess('Imported', `${asset.name ?? 'Text file'} was added to Transcript Vault.`);
-    } catch (e: any) {
+    } catch (e: unknown) {
       showError(e, 'Could not import this text file.');
     } finally {
       setIsImportingText(false);
     }
   }, [loadFiles]);
 
-  const handleRead = useCallback(async (item: TranscriptFile) => {
-    try {
-      const content = await FileSystem.readAsStringAsync(item.path);
-      setReaderTitle(displayName(item.name, item.extractedTitle));
-      setReaderContent(content || '(Empty file)');
-    } catch (e: any) {
-      showError(e, 'Could not read file.');
-    }
-  }, []);
-
-  const handleDelete = useCallback(async (item: TranscriptFile) => {
-    const ok = await confirmDestructive('Delete transcript?', item.name, {
-      confirmLabel: 'Delete',
-    });
-    if (ok) {
+  const handleRead = useCallback(
+    async (item: TranscriptFile) => {
       try {
-        await deleteFile(item.path);
-        setFiles((prev) => prev.filter((f) => f.path !== item.path));
-      } catch {
-        showError('Could not delete the file. Check file access permissions.');
+        const content = await FileSystem.readAsStringAsync(item.path);
+        setReaderTitle(displayName(item.name, item.extractedTitle));
+        setReaderContent(content || '(Empty file)');
+      } catch (e: unknown) {
+        showError(e, 'Could not read file.');
       }
-    }
-  }, []);
+    },
+    [setReaderContent, setReaderTitle],
+  );
+
+  const handleDelete = useCallback(
+    async (item: TranscriptFile) => {
+      const ok = await confirmDestructive('Delete transcript?', item.name, {
+        confirmLabel: 'Delete',
+      });
+      if (ok) {
+        try {
+          await deleteFile(item.path);
+          setFiles((prev) => prev.filter((f) => f.path !== item.path));
+        } catch {
+          showError('Could not delete the file. Check file access permissions.');
+        }
+      }
+    },
+    [setFiles],
+  );
 
   const [processProgress, setProcessProgress] = useState<string | null>(null);
 
@@ -555,7 +561,7 @@ export default function TranscriptVaultScreen() {
           await processTranscript(item);
           setProcessProgress(null);
           showSuccess('Done', 'Note created in Notes Vault.');
-        } catch (e: any) {
+        } catch (e: unknown) {
           setProcessProgress(null);
           showError(e, 'Could not process transcript.');
         }
@@ -594,7 +600,7 @@ export default function TranscriptVaultScreen() {
         `Created ${done} note${done !== 1 ? 's' : ''}${failed > 0 ? ` (${failed} failed)` : ''}.`,
       );
     }
-  }, [selectedPaths, files, processTranscript]);
+  }, [selectedPaths, files, processTranscript, setSelectedPaths]);
 
   // Files that need renaming: old format OR generic/unknown labels
   const renamableFiles = React.useMemo(
@@ -735,6 +741,7 @@ export default function TranscriptVaultScreen() {
   };
 
   return (
+    // eslint-disable-next-line guru/prefer-screen-shell -- SafeAreaView needed here
     <SafeAreaView style={styles.safe}>
       <ErrorBoundary>
         <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />

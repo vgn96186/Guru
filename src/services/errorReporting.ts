@@ -26,6 +26,7 @@ export function initErrorReporting() {
     },
     beforeSend(event) {
       // PII Scrubbing
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
       const scrubEvent = (obj: any) => {
         if (!obj || typeof obj !== 'object') return;
         for (const key in obj) {
@@ -61,13 +62,13 @@ export function reportError(error: unknown, context?: Record<string, unknown>) {
   // 1. Always log to local SQLite database for offline capture
   const errorMessage = error instanceof Error ? error.message : String(error);
   const errorStack = error instanceof Error ? error.stack : undefined;
-  
+
   logErrorToDatabase({
     error: errorMessage,
     stack: errorStack,
     timestamp: Date.now(),
     context: context ? JSON.stringify(context) : undefined,
-  }).catch(e => {
+  }).catch((e) => {
     if (__DEV__) console.warn('[errorReporting] Failed to log to local DB:', e);
   });
 

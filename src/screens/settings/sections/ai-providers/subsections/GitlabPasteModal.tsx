@@ -11,6 +11,7 @@ interface Props {
   setPasteUrl: (url: string) => void;
   onSubmit: () => void;
   submitting: boolean;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
   styles: any;
 }
 

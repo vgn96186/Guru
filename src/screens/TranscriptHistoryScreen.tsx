@@ -475,6 +475,7 @@ export default function TranscriptHistoryScreen() {
   );
 
   return (
+    // eslint-disable-next-line guru/prefer-screen-shell -- SafeAreaView needed here
     <SafeAreaView style={styles.container}>
       <ErrorBoundary>
         <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />

@@ -11,7 +11,8 @@ const RESPONSES_URL = 'https://chatgpt.com/backend-api/codex/responses';
 const OPENAI_BETA_HEADER = 'responses=experimental';
 const ORIGINATOR_HEADER = 'codex_cli_rs';
 
-interface ResponsesApiInput {
+// Type for ChatGPT Responses API input format
+interface _ResponsesApiInput {
   type: 'message';
   role: 'user' | 'assistant' | 'developer';
   content: Array<{
@@ -41,6 +42,7 @@ function getChatGptFetch(): typeof fetch {
   throw new Error('No fetch implementation available for ChatGPT transport');
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
 function extractTextFromResponsesData(data: any): string {
   const output = data?.output;
   if (Array.isArray(output)) {
@@ -135,7 +137,9 @@ function splitForPseudoStream(text: string, targetChunkChars = 34): string[] {
   return chunks.length > 0 ? chunks : [text];
 }
 
-async function emitPseudoStreamFallback(
+// Pseudo-streaming fallback: emits text in chunks via onDelta callback
+// Currently unused but kept for future streaming support
+async function _emitPseudoStreamFallback(
   text: string,
   onDelta: (delta: string) => void,
 ): Promise<string> {

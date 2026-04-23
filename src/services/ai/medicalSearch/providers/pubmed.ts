@@ -9,6 +9,7 @@ export async function searchPubMedFallback(
   const searchUrl = `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&retmode=json&sort=pub+date&retmax=${maxResults}&term=${encodeURIComponent(
     term,
   )}`;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
   const searchData = await fetchJsonWithTimeout<any>(searchUrl);
   const ids: string[] = Array.isArray(searchData?.esearchresult?.idlist)
     ? searchData.esearchresult.idlist
@@ -18,6 +19,7 @@ export async function searchPubMedFallback(
   const summaryUrl = `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?db=pubmed&retmode=json&id=${ids.join(
     ',',
   )}`;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
   const summaryData = await fetchJsonWithTimeout<any>(summaryUrl);
   const uidList: string[] = Array.isArray(summaryData?.result?.uids)
     ? summaryData.result.uids

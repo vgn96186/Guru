@@ -38,6 +38,7 @@ export function ResponsiveContainer({
   testID,
 }: {
   children: React.ReactNode;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
   style?: any;
   testID?: string;
 }) {

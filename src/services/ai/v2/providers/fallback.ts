@@ -32,7 +32,7 @@ export function createFallbackModel(opts: FallbackModelOptions): LanguageModelV2
   if (!opts.models.length) {
     throw new Error('createFallbackModel: at least one model required');
   }
-  const first = opts.models[0];
+  const _first = opts.models[0];
 
   return {
     specificationVersion: 'v2',

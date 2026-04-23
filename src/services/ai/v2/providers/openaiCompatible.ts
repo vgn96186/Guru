@@ -39,9 +39,7 @@ export interface OpenAICompatibleConfig {
   fetch?: typeof fetch;
 }
 
-export function createOpenAICompatibleModel(
-  config: OpenAICompatibleConfig,
-): LanguageModelV2 {
+export function createOpenAICompatibleModel(config: OpenAICompatibleConfig): LanguageModelV2 {
   const doFetch = config.fetch ?? fetch;
 
   const buildBody = (
@@ -75,7 +73,10 @@ export function createOpenAICompatibleModel(
     }
     if (options.responseFormat?.type === 'json') {
       body.response_format = options.responseFormat.schema
-        ? { type: 'json_schema', json_schema: { name: 'response', schema: options.responseFormat.schema, strict: true } }
+        ? {
+            type: 'json_schema',
+            json_schema: { name: 'response', schema: options.responseFormat.schema, strict: true },
+          }
         : { type: 'json_object' };
     }
     return config.transformRequestBody ? config.transformRequestBody(body) : body;
@@ -133,50 +134,58 @@ export function createOpenAICompatibleModel(
 // ─── Message conversion ─────────────────────────────────────────────────────
 
 function convertMessagesToOpenAI(messages: ModelMessage[]): unknown[] {
-  return messages.map((msg) => {
-    if (msg.role === 'system') {
-      return { role: 'system', content: msg.content };
-    }
-    if (msg.role === 'user') {
-      if (typeof msg.content === 'string') return { role: 'user', content: msg.content };
-      return {
-        role: 'user',
-        content: msg.content.map((p) =>
-          p.type === 'text'
-            ? { type: 'text', text: p.text }
-            : { type: 'image_url', image_url: { url: `data:${p.mimeType};base64,${p.base64Data}` } },
-        ),
-      };
-    }
-    if (msg.role === 'assistant') {
-      if (typeof msg.content === 'string') return { role: 'assistant', content: msg.content };
-      const textParts = msg.content.filter((p): p is { type: 'text'; text: string } => p.type === 'text');
-      const toolCalls = msg.content.filter((p): p is ToolCallPart => p.type === 'tool-call');
-      return {
-        role: 'assistant',
-        content: textParts.map((p) => p.text).join('') || null,
-        ...(toolCalls.length
-          ? {
-              tool_calls: toolCalls.map((tc) => ({
-                id: tc.toolCallId,
-                type: 'function',
-                function: { name: tc.toolName, arguments: JSON.stringify(tc.input) },
-              })),
-            }
-          : {}),
-      };
-    }
-    // role === 'tool'
-    return msg.content.map((r) => ({
-      role: 'tool',
-      tool_call_id: r.toolCallId,
-      content: typeof r.output === 'string' ? r.output : JSON.stringify(r.output),
-    }));
-  }).flat();
+  return messages
+    .map((msg) => {
+      if (msg.role === 'system') {
+        return { role: 'system', content: msg.content };
+      }
+      if (msg.role === 'user') {
+        if (typeof msg.content === 'string') return { role: 'user', content: msg.content };
+        return {
+          role: 'user',
+          content: msg.content.map((p) =>
+            p.type === 'text'
+              ? { type: 'text', text: p.text }
+              : {
+                  type: 'image_url',
+                  image_url: { url: `data:${p.mimeType};base64,${p.base64Data}` },
+                },
+          ),
+        };
+      }
+      if (msg.role === 'assistant') {
+        if (typeof msg.content === 'string') return { role: 'assistant', content: msg.content };
+        const textParts = msg.content.filter(
+          (p): p is { type: 'text'; text: string } => p.type === 'text',
+        );
+        const toolCalls = msg.content.filter((p): p is ToolCallPart => p.type === 'tool-call');
+        return {
+          role: 'assistant',
+          content: textParts.map((p) => p.text).join('') || null,
+          ...(toolCalls.length
+            ? {
+                tool_calls: toolCalls.map((tc) => ({
+                  id: tc.toolCallId,
+                  type: 'function',
+                  function: { name: tc.toolName, arguments: JSON.stringify(tc.input) },
+                })),
+              }
+            : {}),
+        };
+      }
+      // role === 'tool'
+      return msg.content.map((r) => ({
+        role: 'tool',
+        tool_call_id: r.toolCallId,
+        content: typeof r.output === 'string' ? r.output : JSON.stringify(r.output),
+      }));
+    })
+    .flat();
 }
 
 // ─── Non-streaming response parse ───────────────────────────────────────────
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
 function parseChatCompletion(json: any): LanguageModelV2GenerateResult {
   const choice = json?.choices?.[0];
   const msg = choice?.message ?? {};
@@ -211,4 +220,3 @@ function parseChatCompletion(json: any): LanguageModelV2GenerateResult {
     rawResponse: json,
   };
 }
-

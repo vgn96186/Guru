@@ -78,7 +78,11 @@ export async function calculateAndAwardSessionXp(
   }
 
   // Atomic: update quiz count + XP in a single transaction to prevent drift on crash
-  const { newTotal, leveledUp, newLevel } = await runInTransaction(async (db) => {
+  const {
+    newTotal: _newTotal,
+    leveledUp,
+    newLevel,
+  } = await runInTransaction(async (db) => {
     if (totalQuizCorrect > 0) {
       await db.runAsync(
         'UPDATE user_profile SET quiz_correct_count = quiz_correct_count + ? WHERE id = 1',

@@ -101,7 +101,7 @@ function generateSummary(transcript: string): string {
 }
 
 function generateRecallQuestions(transcript: string, topics: Array<{ name: string }>): string[] {
-  return topics.slice(0, 5).map((t, i) => `What are the key ${t.name} mechanisms?`);
+  return topics.slice(0, 5).map((t) => `What are the key ${t.name} mechanisms?`);
 }
 
 /**

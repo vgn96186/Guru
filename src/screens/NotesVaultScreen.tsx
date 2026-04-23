@@ -55,7 +55,6 @@ function countWords(text: string): number {
   return text?.trim() ? text.trim().split(/\s+/).length : 0;
 }
 
-
 type NoteItem = LectureHistoryItem;
 type SortOption = 'date' | 'subject' | 'words';
 
@@ -106,7 +105,7 @@ export default function NotesVaultScreen() {
   const tabsNavigation = navigation.getParent<NavigationProp<TabParamList>>();
   const { onScroll, onContentSizeChange, listRef } = useScrollRestoration('notes-vault');
   const [searchValueLocal, setSearchPersisted] = usePersistedInput('notes-vault-search', '');
-  
+
   const {
     items: notes,
     setItems: setNotes,
@@ -153,15 +152,20 @@ export default function NotesVaultScreen() {
       if (sort === 'subject') return (a.subjectName ?? '').localeCompare(b.subjectName ?? '');
       if (sort === 'words') return countWords(a.note) - countWords(b.note);
       return b.createdAt - a.createdAt; // default 'date'
-    }
+    },
   });
 
   // Sync search state from persisted input
-  React.useEffect(() => { setSearchValue(searchValueLocal); }, [searchValueLocal, setSearchValue]);
-  const handleSearchChange = React.useCallback((v: string) => {
-    setSearchValue(v);
-    setSearchPersisted(v);
-  }, [setSearchValue, setSearchPersisted]);
+  React.useEffect(() => {
+    setSearchValue(searchValueLocal);
+  }, [searchValueLocal, setSearchValue]);
+  const handleSearchChange = React.useCallback(
+    (v: string) => {
+      setSearchValue(v);
+      setSearchPersisted(v);
+    },
+    [setSearchValue, setSearchPersisted],
+  );
 
   const [isSortMenuOpen, setIsSortMenuOpen] = useState(false);
   const [isFilterMenuOpen, setIsFilterMenuOpen] = useState(false);
@@ -182,7 +186,7 @@ export default function NotesVaultScreen() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [setDisplayCount, setLoading, setNotes]);
 
   useFocusEffect(
     useCallback(() => {
@@ -194,8 +198,7 @@ export default function NotesVaultScreen() {
     setRefreshing(true);
     await loadNotes();
     setRefreshing(false);
-  }, [loadNotes]);
-
+  }, [loadNotes, setRefreshing]);
 
   const subjectOptions = useMemo(
     () =>
@@ -239,15 +242,13 @@ export default function NotesVaultScreen() {
     if (subjectFilter !== 'all' && !subjectOptions.includes(subjectFilter)) {
       setSubjectFilter('all');
     }
-  }, [subjectFilter, subjectOptions]);
+  }, [subjectFilter, subjectOptions, setSubjectFilter]);
 
   useEffect(() => {
     if (topicFilter !== 'all' && !topicOptions.includes(topicFilter)) {
       setTopicFilter('all');
     }
-  }, [topicFilter, topicOptions]);
-
-
+  }, [topicFilter, topicOptions, setTopicFilter]);
 
   const handleBatchDelete = useCallback(async () => {
     const count = selectedIds.size;
@@ -262,8 +263,8 @@ export default function NotesVaultScreen() {
       try {
         await deleteLectureNote(id);
         deleted++;
-      } catch (e: any) {
-        lastErr = e?.message ?? String(e);
+      } catch (e: unknown) {
+        lastErr = (e instanceof Error ? e.message : String(e)) ?? String(e);
       }
     }
     setSelectedIds(new Set());
@@ -275,7 +276,7 @@ export default function NotesVaultScreen() {
         `Deleted ${deleted}/${selectedIds.size}.\n\nError: ${lastErr}`,
       );
     }
-  }, [selectedIds, loadNotes]);
+  }, [selectedIds, loadNotes, setNotes, setSelectedIds]);
 
   // Junk notes: very short
   const junkNotes = useMemo(() => notes.filter((n) => countWords(n.note) < 80), [notes]);
@@ -472,7 +473,6 @@ export default function NotesVaultScreen() {
     [tabsNavigation],
   );
 
-
   const wordCountMap = useMemo(() => {
     const map = new Map<number, number>();
     for (const note of visibleNotes) {
@@ -533,6 +533,7 @@ export default function NotesVaultScreen() {
   ];
 
   return (
+    // eslint-disable-next-line guru/prefer-screen-shell -- SafeAreaView needed here
     <SafeAreaView style={styles.safe}>
       <ErrorBoundary>
         <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />

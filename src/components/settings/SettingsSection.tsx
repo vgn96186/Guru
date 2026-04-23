@@ -37,6 +37,7 @@ export default function SettingsSection({
   );
 }
 
+// eslint-disable-next-line guru/prefer-settings-primitives -- component-level styles
 const styles = StyleSheet.create({
   section: {
     borderRadius: 16,

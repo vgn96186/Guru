@@ -49,12 +49,16 @@ type MindMapAIResponse = z.infer<typeof MindMapAIResponseSchema>;
 
 function extractLabel(v: unknown): string | undefined {
   if (typeof v === 'string') return v;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
   if (v && typeof v === 'object' && 'label' in v) return String((v as any).label);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
   if (v && typeof v === 'object' && 'name' in v) return String((v as any).name);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
   if (v && typeof v === 'object' && 'title' in v) return String((v as any).title);
   return undefined;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
 function normalizeBranchNode(raw: any): any {
   if (!raw || typeof raw !== 'object') return raw;
 
@@ -80,10 +84,12 @@ function normalizeBranchNode(raw: any): any {
     label: String(label),
     relation: raw.relation ?? raw.relationship ?? raw.edge_label ?? raw.edgeLabel ?? raw.edge,
     children: Array.isArray(children)
-      ? children.map((c: any) => normalizeBranchNode(c))
+      ? // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
+        children.map((c: any) => normalizeBranchNode(c))
       : undefined,
     crossLinks: Array.isArray(crossLinks)
-      ? crossLinks.map((cl: any) => ({
+      ? // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
+        crossLinks.map((cl: any) => ({
           targetLabel: String(
             cl.targetLabel ?? cl.target_label ?? cl.target ?? cl.to ?? cl.name ?? '',
           ),
@@ -96,6 +102,7 @@ function normalizeBranchNode(raw: any): any {
 function normalizeMindMapResponse(raw: unknown): unknown {
   if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return raw;
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
   const obj = raw as Record<string, any>;
 
   // Already in canonical form?

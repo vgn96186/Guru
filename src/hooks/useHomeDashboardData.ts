@@ -33,6 +33,7 @@ function rankTasksForNovelty(
   nowTs: number,
   repeatCooldownMs: number,
 ): TodayTask[] {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
   if (tasks.some((task) => !(task as any)?.topic?.id)) return tasks;
 
   const todayStr = new Date(nowTs).toISOString().slice(0, 10);
@@ -103,6 +104,7 @@ function trackHomeShownTopics(weak: TopicWithProgress[], tasks: TodayTask[], now
   const topWeak = weak.slice(0, 1).map((topic) => topic.id);
   const topTasks = tasks
     .slice(0, 3)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
     .map((task) => (task as any)?.topic?.id)
     .filter((id): id is number => typeof id === 'number');
   [...topWeak, ...topTasks].forEach((id) => homeShownTopicMap.set(id, nowTs));
@@ -131,6 +133,7 @@ export function useHomeDashboardData() {
       const nowTs = Date.now();
       let noveltyCooldownHours = 6;
       try {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
         const maybeProfile = await (profileRepository as any)?.getProfile?.();
         if (maybeProfile?.homeNoveltyCooldownHours != null) {
           noveltyCooldownHours = Math.min(24, Math.max(1, maybeProfile.homeNoveltyCooldownHours));
@@ -205,9 +208,11 @@ export function useHomeDashboardData() {
       ]);
       const nextMinutes = (log?.totalMinutes ?? 0) + externalMinutes;
       setTodayMinutes((prev) => (prev === nextMinutes ? prev : nextMinutes));
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('[Home] Failed to load initial data:', err);
-      const message = err?.message ?? 'Unable to load home data. Please try again.';
+      const message =
+        (err instanceof Error ? err.message : String(err)) ??
+        'Unable to load home data. Please try again.';
       if (!options?.silent) {
         setLoadError(message);
         Alert.alert('Load Failed', message);

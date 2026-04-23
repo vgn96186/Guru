@@ -6,7 +6,9 @@ import MindMapCanvas, { NodeData, EdgeData } from '../../modules/omni-canvas';
 const AnimatedNativeCanvas = Animated.createAnimatedComponent(MindMapCanvas);
 
 type Props = {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
   nodes: any[];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
   edges: any[];
   scale: SharedValue<number>;
   translateX: SharedValue<number>;

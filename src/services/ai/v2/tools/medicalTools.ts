@@ -254,8 +254,7 @@ export const factCheckTool = tool({
   execute: async ({ claim, topicName }) => {
     // Dynamically import to avoid circular dependencies
     const { extractMedicalEntities, extractClaims } = await import('../../medicalEntities');
-    const { calculateTextSimilarity, detectContradictions } =
-      await import('../../medicalFactCheck');
+    const { detectContradictions } = await import('../../medicalFactCheck');
 
     const entities = extractMedicalEntities(claim);
     const claims = extractClaims(claim, entities.drugs, entities.diseases);
@@ -443,6 +442,7 @@ export const generateFlashcardsTool = tool({
       const { AIContentSchema } = await import('../../schemas');
 
       const profile = await profileRepository.getProfile();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
       const model = createGuruFallbackModel({ profile }) as any;
 
       const focusPrompt =

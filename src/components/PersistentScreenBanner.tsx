@@ -10,7 +10,9 @@ export interface PersistentScreenBannerConfig {
   children?: React.ReactNode;
   searchElement?: React.ReactNode;
   rightElement?: React.ReactNode;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
   titleStyle?: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
   subtitleStyle?: any;
   titleNumberOfLines?: number;
   onBackPress?: () => void;

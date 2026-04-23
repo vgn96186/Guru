@@ -129,6 +129,10 @@ class LocalLlmModule : Module() {
             LocalModelRuntime.resetSharedEngine()
         }
 
+        AsyncFunction("resetSession") {
+            LocalModelRuntime.resetSession()
+        }
+
         // ── Gemini Nano (AICore) ──────────────────────────────────────────
         AsyncFunction("nanoCheckStatus") { promise: Promise ->
             scope.launch {

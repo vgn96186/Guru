@@ -14,6 +14,7 @@ export const DB_EVENT_KEYS = {
   PROFILE_UPDATED: 'PROFILE_UPDATED',
 };
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
 export function notifyDbUpdate(event: string, payload?: any) {
   if (__DEV__) console.log(`[DB_EVENT] Notifying: ${event}`);
   dbEvents.emit(event, payload);

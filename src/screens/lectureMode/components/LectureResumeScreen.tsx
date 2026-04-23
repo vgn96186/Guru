@@ -12,6 +12,7 @@ interface LectureResumeScreenProps {
 
 export function LectureResumeScreen({ resumeCountdown, onResumeNow }: LectureResumeScreenProps) {
   return (
+    // eslint-disable-next-line guru/prefer-screen-shell -- SafeAreaView needed here
     <SafeAreaView style={styles.safe}>
       <ResponsiveContainer style={styles.resumeContainer}>
         <LinearText style={styles.resumeTitle}>Ready to resume?</LinearText>

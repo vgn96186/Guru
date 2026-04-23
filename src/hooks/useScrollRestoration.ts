@@ -10,6 +10,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
  *   <FlatList ref={listRef} onScroll={onScroll} onContentSizeChange={onContentSizeChange} ... />
  */
 export function useScrollRestoration(key: string) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
   const listRef = useRef<any>(null);
   const isFocused = useIsFocused();
   const scrollY = useRef(0);
@@ -55,6 +56,7 @@ export function useScrollRestoration(key: string) {
     }
   }, [isFocused, saveScrollPosition]);
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
   const onScroll = useCallback((event: any) => {
     scrollY.current = event.nativeEvent.contentOffset.y;
   }, []);

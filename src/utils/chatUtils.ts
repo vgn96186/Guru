@@ -52,6 +52,7 @@ export function inferRequestedImageStyle(text: string): GeneratedStudyImageStyle
     : 'illustration';
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
 export function canAutoGenerateStudyImage(profile: any): boolean {
   const { geminiKey, cfAccountId, cfApiToken, falKey, orKey } = getApiKeys(profile ?? undefined);
   return Boolean(geminiKey || (cfAccountId && cfApiToken) || falKey || orKey);

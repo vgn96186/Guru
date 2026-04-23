@@ -1,3 +1,4 @@
+/* eslint-disable guru/prefer-screen-shell -- topic detail uses custom layout with FlatList */
 import React from 'react';
 import { View, FlatList, StatusBar, Animated } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';

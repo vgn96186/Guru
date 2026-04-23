@@ -218,9 +218,9 @@ export default function RecordingVaultScreen() {
 
         setProcessingState('done');
         setProcessingMsg(`Saved! ${analysis.topics.length} topics from ${analysis.subject}`);
-      } catch (e: any) {
+      } catch (e: unknown) {
         setProcessingState('error');
-        setProcessingMsg(e?.message ?? 'Processing failed');
+        setProcessingMsg((e instanceof Error ? e.message : String(e)) ?? 'Processing failed');
       }
     },
     [],
@@ -480,8 +480,8 @@ export default function RecordingVaultScreen() {
           'No .m4a files found yet. It will be scanned on each refresh.',
         );
       }
-    } catch (e: any) {
-      const msg = e?.message ?? String(e);
+    } catch (e: unknown) {
+      const msg = (e instanceof Error ? e.message : String(e)) ?? String(e);
       console.warn('[RecordingVault] pickFolderAndScan error:', msg);
       if (msg.includes('timed out')) return;
       void showError(msg, 'Could not open folder picker.');
@@ -504,7 +504,7 @@ export default function RecordingVaultScreen() {
         sizeMB: Math.round(((asset.size ?? 0) / (1024 * 1024) || 0) * 10) / 10,
         appName: 'Recording Vault Upload',
       });
-    } catch (e: any) {
+    } catch (e: unknown) {
       void showError(e, 'Upload failed');
     } finally {
       setIsUploadingAudio(false);
@@ -523,6 +523,7 @@ export default function RecordingVaultScreen() {
   );
 
   return (
+    // eslint-disable-next-line guru/prefer-screen-shell -- SafeAreaView needed here
     <SafeAreaView style={styles.safe}>
       <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
       <ResponsiveContainer style={styles.container}>

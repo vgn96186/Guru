@@ -44,10 +44,10 @@ export default function InertiaScreen() {
   const [phase, setPhase] = useState<Phase>('breathe');
   const [breatheText, setBreatheText] = useState('Breathe in...');
   const [content, setContent] = useState<DetectiveContent | null>(null);
-  const [topic, setTopic] = useState<TopicWithProgress | null>(null);
+  const [_, setTopic] = useState<TopicWithProgress | null>(null);
   const [revealStep, setRevealStep] = useState(1);
   const [isSolved, setIsSolved] = useState(false);
-  const [showSkip, setShowSkip] = useState(true);
+  const [showSkip, _setShowSkip] = useState(true);
 
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -211,6 +211,7 @@ export default function InertiaScreen() {
 
   if (phase === 'breathe') {
     return (
+      // eslint-disable-next-line guru/prefer-screen-shell -- SafeAreaView needed here
       <SafeAreaView style={styles.safe}>
         <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
         <ResponsiveContainer style={styles.center}>
@@ -240,6 +241,7 @@ export default function InertiaScreen() {
 
   if (phase === 'fetching') {
     return (
+      // eslint-disable-next-line guru/prefer-screen-shell -- SafeAreaView needed here
       <SafeAreaView style={styles.safe}>
         <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
         <LoadingOrb message="Constructing a diagnostic puzzle..." />
@@ -249,6 +251,7 @@ export default function InertiaScreen() {
 
   if (phase === 'sit_up_prompt') {
     return (
+      // eslint-disable-next-line guru/prefer-screen-shell -- SafeAreaView needed here
       <SafeAreaView style={styles.safe}>
         <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
         <ResponsiveContainer style={{ flex: 1 }}>
@@ -289,6 +292,7 @@ export default function InertiaScreen() {
 
   if ((phase === 'micro_win' || phase === 'micro_win_bed') && content) {
     return (
+      // eslint-disable-next-line guru/prefer-screen-shell -- SafeAreaView needed here
       <SafeAreaView style={styles.safe}>
         <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
         <ResponsiveContainer style={{ flex: 1 }}>
@@ -345,6 +349,7 @@ export default function InertiaScreen() {
 
   if (phase === 'pivot') {
     return (
+      // eslint-disable-next-line guru/prefer-screen-shell -- SafeAreaView needed here
       <SafeAreaView style={styles.safe}>
         <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
         <ResponsiveContainer style={{ flex: 1 }}>

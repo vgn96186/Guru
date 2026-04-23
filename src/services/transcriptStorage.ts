@@ -9,7 +9,7 @@ import { copyFileToPublicBackup } from '../../modules/app-launcher';
 const TRANSCRIPT_DIR = FileSystemLegacy.documentDirectory + 'transcripts/';
 const RECOVERY_DIR = FileSystemLegacy.documentDirectory + 'recovery/';
 const BACKUP_ROOT = FileSystemLegacy.documentDirectory + 'backups/';
-const PUBLIC_TRANSCRIPT_DIR = BACKUP_ROOT + 'Transcripts/';
+const _PUBLIC_TRANSCRIPT_DIR = BACKUP_ROOT + 'Transcripts/';
 const PUBLIC_NOTES_DIR = BACKUP_ROOT + 'Notes/';
 const TRANSCRIPT_LOAD_FAILED_MESSAGE = 'Transcript file could not be loaded.';
 

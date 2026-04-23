@@ -1,4 +1,4 @@
-// @ts-nocheck — AI SDK v6 migration stub
+// AI SDK tool for semantic note tagging
 import { tool } from 'ai';
 import { z } from 'zod';
 import { getDb } from '../../db/database';

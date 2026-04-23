@@ -36,6 +36,7 @@ export const MarkdownRender = React.memo(function MarkdownRender({
     : markdownStyles;
   const rules = React.useMemo(
     () => ({
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
       strong: (node: any, children: React.ReactNode, _parent: any, styles: any) => (
         <LinearText
           key={node.key}
@@ -48,10 +49,13 @@ export const MarkdownRender = React.memo(function MarkdownRender({
         </LinearText>
       ),
       text: (
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
         node: any,
         _children: React.ReactNode,
         parent: Array<{ type: string }>,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
         styles: any,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
         inheritedStyles: any = {},
       ) => {
         const isInsideStrong =
@@ -93,6 +97,7 @@ const baseTextStyle = StyleSheet.create({
   },
 });
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
 const markdownStyles: any = {
   body: {
     color: n.colors.textMuted,

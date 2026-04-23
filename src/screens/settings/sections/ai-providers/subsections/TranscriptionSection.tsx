@@ -3,7 +3,9 @@ import { Text } from 'react-native';
 import TranscriptionSettingsPanel from '../../../../../components/TranscriptionSettingsPanel';
 
 interface Props {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
   SectionToggle: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
   styles: any;
 }
 

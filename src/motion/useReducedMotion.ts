@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 
-type AccessibilityInfoLike = {
+// Type definition for AccessibilityInfo reduce-motion API
+// Kept for documentation purposes even though we import from react-native directly
+type _AccessibilityInfoLike = {
   addEventListener(
     eventName: 'reduceMotionChanged',
     handler: (enabled: boolean) => void,

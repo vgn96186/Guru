@@ -181,7 +181,7 @@ async function initDatabaseInternal(forceSeed = false): Promise<void> {
   const topicCountRes = await db.getFirstAsync<{ count: number }>(
     "SELECT COUNT(*) as count FROM sqlite_master WHERE type='table' AND name='topics'",
   );
-  const isFresh = topicCountRes?.count === 0;
+  const _isFresh = topicCountRes?.count === 0;
 
   // Run Drizzle migrations
   try {
@@ -584,8 +584,10 @@ async function ensureCriticalColumns(db: SQLite.SQLiteDatabase): Promise<void> {
             await db.execAsync(`ALTER TABLE ${tableName} ADD COLUMN ${col} ${def}`);
             totalAdded++;
             if (__DEV__) console.log(`[DB] Recovered missing column: ${tableName}.${col}`);
-          } catch (err: any) {
-            if (!err?.message?.includes('duplicate column name')) {
+          } catch (err: unknown) {
+            if (
+              !(err instanceof Error ? err.message : String(err))?.includes('duplicate column name')
+            ) {
               if (__DEV__) console.error(`[DB] Failed to add column ${tableName}.${col}:`, err);
             }
           }
@@ -593,7 +595,8 @@ async function ensureCriticalColumns(db: SQLite.SQLiteDatabase): Promise<void> {
       }
     } catch (err) {
       if (__DEV__) console.error(`[DB] Error ensuring columns for ${tableName}:`, err);
-    }    }
+    }
+  }
 
   if (totalAdded > 0 && !__DEV__) {
     console.log(`[DB] Recovered ${totalAdded} missing column(s) across standard tables`);

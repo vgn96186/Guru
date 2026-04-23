@@ -18,6 +18,7 @@ export interface UseObjectOptions<T> {
   model: LanguageModel;
   schema: z.ZodType<T>;
   system?: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
   initialMessages?: any[];
   temperature?: number;
   maxOutputTokens?: number;
@@ -26,6 +27,7 @@ export interface UseObjectOptions<T> {
 }
 
 export interface SubmitObjectOptions {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
   messages?: any[];
   system?: string;
   temperature?: number;
@@ -45,10 +47,21 @@ export interface UseObjectResult<T> {
 }
 
 export function useObject<T>(options: UseObjectOptions<T>): UseObjectResult<T> {
+  const {
+    model,
+    schema,
+    system,
+    temperature,
+    maxOutputTokens,
+    onSuccess,
+    onError,
+    initialMessages,
+  } = options;
+
   const [object, setObject] = useState<T | null>(null);
   const [error, setError] = useState<unknown>(null);
   const [status, setStatus] = useState<UseObjectStatus>('idle');
-  const [messages, setMessages] = useState<CoreMessage[]>(options.initialMessages ?? []);
+  const [messages, setMessages] = useState<CoreMessage[]>(initialMessages ?? []);
   const abortControllerRef = useRef<AbortController | null>(null);
 
   const abort = useCallback(() => {
@@ -73,14 +86,15 @@ export function useObject<T>(options: UseObjectOptions<T>): UseObjectResult<T> {
       setError(null);
 
       const nextMessages = submitOptions?.messages ?? messages;
-      const nextSystem = submitOptions?.system ?? options.system;
-      const nextTemperature = submitOptions?.temperature ?? options.temperature;
-      const nextMaxOutputTokens = submitOptions?.maxOutputTokens ?? options.maxOutputTokens;
+      const nextSystem = submitOptions?.system ?? system;
+      const nextTemperature = submitOptions?.temperature ?? temperature;
+      const nextMaxOutputTokens = submitOptions?.maxOutputTokens ?? maxOutputTokens;
 
       try {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
         const result: any = await (generateObject as any)({
-          model: options.model,
-          schema: options.schema,
+          model,
+          schema,
           messages: nextMessages,
           system: nextSystem,
           temperature: nextTemperature,
@@ -90,7 +104,7 @@ export function useObject<T>(options: UseObjectOptions<T>): UseObjectResult<T> {
 
         setObject(result.object as T);
         setStatus('success');
-        options.onSuccess?.(result.object as T);
+        onSuccess?.(result.object as T);
         return result.object as T;
       } catch (err) {
         if ((err as Error)?.name === 'AbortError') {
@@ -99,23 +113,13 @@ export function useObject<T>(options: UseObjectOptions<T>): UseObjectResult<T> {
         }
         setError(err);
         setStatus('error');
-        options.onError?.(err);
+        onError?.(err);
         return null;
       } finally {
         abortControllerRef.current = null;
       }
     },
-    [
-      abort,
-      messages,
-      options.maxOutputTokens,
-      options.model,
-      options.onError,
-      options.onSuccess,
-      options.schema,
-      options.system,
-      options.temperature,
-    ],
+    [abort, messages, maxOutputTokens, model, onError, onSuccess, schema, system, temperature],
   );
 
   return {

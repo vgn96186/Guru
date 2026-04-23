@@ -18,52 +18,59 @@ export async function searchOpenI(
   const sourceLabel = collection === 'mpx' ? 'MedPix (NIH)' : 'Open i (NIH)';
 
   try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
     const data = await fetchJsonWithTimeout<any>(searchUrl, 10000);
     // API returns results in 'list' array
     const results = data?.list || data?.results || [];
 
-    return results
-      .filter((r: any) => {
-        // Accept entries with imgLarge/imgThumb or nested image.url
-        return r?.title && (r?.imgLarge || r?.imgThumb || r?.image?.url);
-      })
-      .slice(0, maxResults)
-      .map((r: any): MedicalGroundingSource => {
-        const title = clipText(r.title, 220);
-        // Prefer imgLarge for quality, fall back to imgThumb or image.url
-        const rawImg = r.imgLarge || r.imgThumb || r.image?.url || '';
-        const imageUrl = rawImg.startsWith('//')
-          ? `https:${rawImg}`
-          : rawImg.startsWith('/')
-            ? `https://openi.nlm.nih.gov${rawImg}`
-            : rawImg;
-        const description = r.abstract || r.description || r.title || '';
-        const cleanDesc = description
-          .replace(/<[^>]+>/g, ' ')
-          .replace(/\s+/g, ' ')
-          .trim();
+    return (
+      results
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
+        .filter((r: any) => {
+          // Accept entries with imgLarge/imgThumb or nested image.url
+          return r?.title && (r?.imgLarge || r?.imgThumb || r?.image?.url);
+        })
+        .slice(0, maxResults)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
+        .map((r: any): MedicalGroundingSource => {
+          const title = clipText(r.title, 220);
+          // Prefer imgLarge for quality, fall back to imgThumb or image.url
+          const rawImg = r.imgLarge || r.imgThumb || r.image?.url || '';
+          const imageUrl = rawImg.startsWith('//')
+            ? `https:${rawImg}`
+            : rawImg.startsWith('/')
+              ? `https://openi.nlm.nih.gov${rawImg}`
+              : rawImg;
+          const description = r.abstract || r.description || r.title || '';
+          const cleanDesc = description
+            .replace(/<[^>]+>/g, ' ')
+            .replace(/\s+/g, ' ')
+            .trim();
 
-        const uid = r.uid || r.uuid || '';
-        const imgId = r.image?.id || r.medpixFigureId || '';
+          const uid = r.uid || r.uuid || '';
+          const imgId = r.image?.id || r.medpixFigureId || '';
 
-        return {
-          id: `openi-${uid}-${imgId || imageUrl}`,
-          title,
-          url: uid.startsWith('MPX')
-            ? `https://openi.nlm.nih.gov/detailedresult?img=${imgId}&query=${encodeURIComponent(
-                query,
-              )}`
-            : `https://openi.nlm.nih.gov/detailedresult?img=${
-                imgId || uid
-              }&query=${encodeURIComponent(query)}`,
-          imageUrl,
-          snippet: clipText(cleanDesc, 420),
-          source: sourceLabel,
-          author: r.owner || r.authors || 'NIH',
-          license:
-            collection === 'mpx' ? 'Public Domain (MedPix/NIH)' : 'Public Domain (U.S. Government)',
-        };
-      });
+          return {
+            id: `openi-${uid}-${imgId || imageUrl}`,
+            title,
+            url: uid.startsWith('MPX')
+              ? `https://openi.nlm.nih.gov/detailedresult?img=${imgId}&query=${encodeURIComponent(
+                  query,
+                )}`
+              : `https://openi.nlm.nih.gov/detailedresult?img=${
+                  imgId || uid
+                }&query=${encodeURIComponent(query)}`,
+            imageUrl,
+            snippet: clipText(cleanDesc, 420),
+            source: sourceLabel,
+            author: r.owner || r.authors || 'NIH',
+            license:
+              collection === 'mpx'
+                ? 'Public Domain (MedPix/NIH)'
+                : 'Public Domain (U.S. Government)',
+          };
+        })
+    );
   } catch (err) {
     if (__DEV__) {
       console.warn(`[MedicalSearch] ${sourceLabel} failed:`, describeMedicalSearchError(err));

@@ -73,9 +73,11 @@ export default function StorageSections(props: any) {
 
   return (
     <>
-      <LinearText variant="sectionTitle" tone="muted" style={styles.categoryLabel}>
-        STORAGE
-      </LinearText>
+      <View style={{ width: '100%' }}>
+        <LinearText variant="sectionTitle" tone="muted" style={styles.categoryLabel}>
+          STORAGE
+        </LinearText>
+      </View>
       <SectionToggle id="storage_data" title="Data Management" icon="trash-outline" tint="#F44336">
         <TouchableOpacity
           style={styles.dangerBtn}

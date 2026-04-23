@@ -16,8 +16,11 @@ interface Props {
     | ((r: unknown) => void);
   testFalKey: () => void;
   testingFalKey: boolean;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
   clearProviderValidated: (id: any) => void;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
   SectionToggle: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
   styles: any;
 }
 
@@ -92,16 +95,16 @@ export default function ImageGenSection({
                 falValidationStatus === 'ok'
                   ? 'checkmark-circle'
                   : falValidationStatus === 'fail'
-                  ? 'close-circle'
-                  : 'flash-outline'
+                    ? 'close-circle'
+                    : 'flash-outline'
               }
               size={20}
               color={
                 falValidationStatus === 'ok'
                   ? linearTheme.colors.success
                   : falValidationStatus === 'fail'
-                  ? linearTheme.colors.error
-                  : linearTheme.colors.accent
+                    ? linearTheme.colors.error
+                    : linearTheme.colors.accent
               }
             />
           )}

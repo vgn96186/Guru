@@ -171,8 +171,8 @@ export default function MockTestScreen() {
       const borderColor = isSkipped
         ? n.colors.borderHighlight
         : isCorrect
-        ? n.colors.success
-        : n.colors.error;
+          ? n.colors.success
+          : n.colors.error;
 
       return (
         <LinearSurface
@@ -218,6 +218,7 @@ export default function MockTestScreen() {
   if (phase === 'setup') {
     if (availableCount === 0) {
       return (
+        // eslint-disable-next-line guru/prefer-screen-shell -- SafeAreaView needed here
         <SafeAreaView style={styles.safe}>
           <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
           <ResponsiveContainer style={styles.emptyContainer}>
@@ -236,6 +237,7 @@ export default function MockTestScreen() {
     }
 
     return (
+      // eslint-disable-next-line guru/prefer-screen-shell -- SafeAreaView needed here
       <SafeAreaView style={styles.safe}>
         <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
         <ResponsiveContainer style={styles.setupContainer}>
@@ -309,6 +311,7 @@ export default function MockTestScreen() {
     const scoreColor = pct >= 60 ? n.colors.success : pct >= 40 ? n.colors.warning : n.colors.error;
 
     return (
+      // eslint-disable-next-line guru/prefer-screen-shell -- SafeAreaView needed here
       <SafeAreaView style={styles.safe}>
         <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
         <FlatList
@@ -424,6 +427,7 @@ export default function MockTestScreen() {
   if (!q) return null;
 
   return (
+    // eslint-disable-next-line guru/prefer-screen-shell -- SafeAreaView needed here
     <SafeAreaView style={styles.safe}>
       <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
 

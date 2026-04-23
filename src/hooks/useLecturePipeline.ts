@@ -340,7 +340,7 @@ Summary: ${result.lectureSummary}`;
       } else if (result.topics.length > 0) {
         generateQuiz(result);
       }
-    } catch (e: any) {
+    } catch (e: unknown) {
       if (stallCheckIntervalRef.current) {
         clearInterval(stallCheckIntervalRef.current);
         stallCheckIntervalRef.current = null;
@@ -352,12 +352,12 @@ Summary: ${result.lectureSummary}`;
 
       // Handle Metro bundler disconnect (dev mode only) — not a real transcription failure
       const isMetroDisconnect =
-        e?.name === 'LoadBundleFromServerRequestError' ||
-        e?.message?.includes('Could not load bundle');
+        (e instanceof Error ? e.name : 'Error') === 'LoadBundleFromServerRequestError' ||
+        (e instanceof Error ? e.message : String(e))?.includes('Could not load bundle');
 
       const message = isMetroDisconnect
         ? 'Connection to dev server lost. Audio preserved — retry when reconnected.'
-        : (e?.message ?? 'Transcription failed');
+        : ((e instanceof Error ? e.message : String(e)) ?? 'Transcription failed');
 
       setActiveStage(null);
       setStageMessage('');

@@ -44,10 +44,21 @@ export interface UseObjectResult<T> {
 }
 
 export function useObject<T>(options: UseObjectOptions<T>): UseObjectResult<T> {
+  const {
+    model,
+    schema,
+    system,
+    temperature,
+    maxOutputTokens,
+    onSuccess,
+    onError,
+    initialMessages,
+  } = options;
+
   const [object, setObject] = useState<T | null>(null);
   const [error, setError] = useState<unknown>(null);
   const [status, setStatus] = useState<UseObjectStatus>('idle');
-  const [messages, setMessages] = useState<ModelMessage[]>(options.initialMessages ?? []);
+  const [messages, setMessages] = useState<ModelMessage[]>(initialMessages ?? []);
   const abortControllerRef = useRef<AbortController | null>(null);
 
   const abort = useCallback(() => {
@@ -72,14 +83,14 @@ export function useObject<T>(options: UseObjectOptions<T>): UseObjectResult<T> {
       setError(null);
 
       const nextMessages = submitOptions?.messages ?? messages;
-      const nextSystem = submitOptions?.system ?? options.system;
-      const nextTemperature = submitOptions?.temperature ?? options.temperature;
-      const nextMaxOutputTokens = submitOptions?.maxOutputTokens ?? options.maxOutputTokens;
+      const nextSystem = submitOptions?.system ?? system;
+      const nextTemperature = submitOptions?.temperature ?? temperature;
+      const nextMaxOutputTokens = submitOptions?.maxOutputTokens ?? maxOutputTokens;
 
       try {
         const result = await generateObject<T>({
-          model: options.model,
-          schema: options.schema,
+          model,
+          schema,
           messages: nextMessages,
           system: nextSystem,
           temperature: nextTemperature,
@@ -89,7 +100,7 @@ export function useObject<T>(options: UseObjectOptions<T>): UseObjectResult<T> {
 
         setObject(result.object);
         setStatus('success');
-        options.onSuccess?.(result.object);
+        onSuccess?.(result.object);
         return result.object;
       } catch (err) {
         if ((err as Error)?.name === 'AbortError') {
@@ -98,23 +109,13 @@ export function useObject<T>(options: UseObjectOptions<T>): UseObjectResult<T> {
         }
         setError(err);
         setStatus('error');
-        options.onError?.(err);
+        onError?.(err);
         return null;
       } finally {
         abortControllerRef.current = null;
       }
     },
-    [
-      abort,
-      messages,
-      options.maxOutputTokens,
-      options.model,
-      options.onError,
-      options.onSuccess,
-      options.schema,
-      options.system,
-      options.temperature,
-    ],
+    [abort, messages, maxOutputTokens, model, onError, onSuccess, schema, system, temperature],
   );
 
   return {

@@ -50,11 +50,12 @@ export async function init(): Promise<boolean> {
   initialized = true;
   if (samsung) {
     // Wire events once.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
     const emitter = new EventEmitter(GuruAppLauncher as any) as any;
     emitter.addListener('onSamsungPerfWarning', ({ level }: { level: number }) => {
       warningListeners.forEach((l) => l(level));
     });
-    emitter.addListener('onSamsungPerfReleased', ({ ts }: { ts: number }) => {
+    emitter.addListener('onSamsungPerfReleased', ({ ts: _ts }: { ts: number }) => {
       releaseListeners.forEach((l) => l());
     });
   }

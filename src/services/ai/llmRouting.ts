@@ -96,8 +96,8 @@ async function ensureLocalLlmLoaded(modelPath: string): Promise<void> {
       await LocalLlm.release();
       localLlmLoaded = false;
     }
-    await LocalLlm.initialize({ 
-      modelPath: cleanPath, 
+    await LocalLlm.initialize({
+      modelPath: cleanPath,
       maxNumTokens: 4096,
       preferredBackend: 'gpu',
     });
@@ -180,7 +180,20 @@ async function callLocalLLM(
     });
     return result.text;
   } finally {
+    await releaseAfterGeneration();
     release();
+  }
+}
+
+// LiteRT-LM Conversation state corrupts after one generation on some devices
+// (SIGSEGV in nativeSendMessage, "Failed to invoke the compiled model").
+// Edge Gallery pattern: reset Conversation between one-shot calls, keep Engine warm.
+async function releaseAfterGeneration(): Promise<void> {
+  if (!localLlmLoaded) return;
+  try {
+    await LocalLlm.resetSession();
+  } catch (err) {
+    console.warn('[LLM] resetSession after generation failed:', err);
   }
 }
 
@@ -218,6 +231,7 @@ export async function chatWithLocalNative(options: {
       backend: result.backend,
     };
   } finally {
+    await releaseAfterGeneration();
     release();
   }
 }

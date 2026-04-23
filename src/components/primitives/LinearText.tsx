@@ -32,6 +32,7 @@ interface LinearTextProps extends Omit<TextProps, 'style'> {
   truncate?: boolean;
   className?: string;
   /** @deprecated Use className instead */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
   style?: any;
 }
 

@@ -121,7 +121,7 @@ export const questionBankRepositoryDrizzle = {
   async saveBulkQuestions(questions: SaveQuestionInput[]): Promise<number> {
     if (questions.length === 0) return 0;
 
-    const db = getDrizzleDb();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
     return runInTransaction(async (tx: any) => {
       let saved = 0;
 
@@ -165,9 +165,9 @@ export const questionBankRepositoryDrizzle = {
   },
 
   async recordAttempt(id: number, correct: boolean): Promise<void> {
-    const db = getDrizzleDb();
     const now = Date.now();
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
     await runInTransaction(async (tx: any) => {
       const rows = await tx
         .select({

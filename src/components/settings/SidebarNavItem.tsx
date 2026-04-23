@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 
 interface SidebarNavItemProps {
   label: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
   iconName?: any;
   icon?: React.ReactNode;
   badge?: string;

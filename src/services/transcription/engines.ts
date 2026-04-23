@@ -149,6 +149,7 @@ export async function transcribeRawWithGroq(
     uri: fileUri,
     name: 'lecture.m4a',
     type: 'audio/mp4',
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
   } as any);
   formData.append('model', 'whisper-large-v3-turbo');
   formData.append('temperature', '0');
@@ -247,10 +248,10 @@ export async function transcribeRawWithHuggingFace(
     typeof data?.text === 'string'
       ? data.text
       : typeof data?.generated_text === 'string'
-      ? data.generated_text
-      : Array.isArray(data) && typeof data[0]?.text === 'string'
-      ? data[0].text
-      : '';
+        ? data.generated_text
+        : Array.isArray(data) && typeof data[0]?.text === 'string'
+          ? data[0].text
+          : '';
   const transcript = sanitizeTranscript(rawText.trim());
   if (isLikelyHallucination(transcript)) return '';
   return transcript;

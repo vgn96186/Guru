@@ -5,6 +5,7 @@ import { requireNativeModule } from 'expo-modules-core';
 
 type NativeListener = { remove: () => void };
 type GuruAppLauncherModule = {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
   addListener?: (eventName: string, listener: (...args: any[]) => void) => NativeListener;
 };
 

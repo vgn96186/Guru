@@ -210,6 +210,7 @@ export default function PunishmentMode() {
 
   if (!showGuiltScreen || !currentMessage) {
     return (
+      // eslint-disable-next-line guru/prefer-screen-shell -- SafeAreaView needed here
       <SafeAreaView style={styles.safe}>
         <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
         <ResponsiveContainer style={styles.minimizedContainer}>
@@ -226,6 +227,7 @@ export default function PunishmentMode() {
   }
 
   return (
+    // eslint-disable-next-line guru/prefer-screen-shell -- SafeAreaView needed here
     <SafeAreaView style={styles.safe}>
       <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
       <ResponsiveContainer style={{ flex: 1 }}>

@@ -393,7 +393,7 @@ export function CanvasView({
         }
         pushUndo({ type: 'expand', nodeIds: insertedIds });
         await onRefresh();
-      } catch (err: any) {
+      } catch (err: unknown) {
         showError(err, 'AI Error');
       } finally {
         setExpandingNodeId(null);
@@ -534,7 +534,7 @@ export function CanvasView({
           dialogTitle: `Mind Map: ${data.map.title}`,
         });
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       showError(err, 'Share failed');
     }
   }, [data.map.title]);

@@ -224,8 +224,8 @@ export async function transcribeLectureWithRecovery(opts: {
 
   try {
     let result: LecturePipelineResult;
-    let usedLiveTranscript = false;
-    let usedBackgroundInsights = false;
+    let _usedLiveTranscript = false;
+    let _usedBackgroundInsights = false;
     let liveTranscript = '';
     let precomputedQuiz: PrecomputedQuizQuestion[] = [];
     let precomputedInsights: PrecomputedLectureInsights | null = null;
@@ -252,7 +252,7 @@ export async function transcribeLectureWithRecovery(opts: {
 
     precomputedQuiz = normalizePrecomputedQuiz(precomputedInsights?.quiz?.questions);
     if (precomputedQuiz.length > 0 && precomputedInsights?.summary?.trim()) {
-      usedBackgroundInsights = true;
+      _usedBackgroundInsights = true;
       const backgroundReadyProgress: LecturePipelineProgress = {
         stage: 'analyzing',
         message: 'Break quiz and key concepts were prepared during recording',
@@ -314,7 +314,7 @@ export async function transcribeLectureWithRecovery(opts: {
         throw error;
       }
 
-      usedLiveTranscript = true;
+      _usedLiveTranscript = true;
       completionProvider = 'deepgram';
 
       const liveReadyProgress: LecturePipelineProgress = {

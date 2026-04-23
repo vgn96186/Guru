@@ -7,6 +7,7 @@ import LinearText from '../../../components/primitives/LinearText';
 import { linearTheme } from '../../../theme/linearTheme';
 import { fetchExamDates } from '../../../services/aiService';
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
 export function PlanningAlertsSection(props: any) {
   const { styles, testNotification, SectionToggle } = props;
 
@@ -46,8 +47,10 @@ export function PlanningAlertsSection(props: any) {
       setFetchDatesMsg(
         `✅ Fetched: INICET ${dates.inicetDate} · NEET-PG ${dates.neetDate}. Verify and save.`,
       );
-    } catch (e: any) {
-      setFetchDatesMsg(`❌ ${e?.message || 'Could not fetch dates. Try manually.'}`);
+    } catch (e: unknown) {
+      setFetchDatesMsg(
+        `❌ ${(e instanceof Error ? e.message : String(e)) || 'Could not fetch dates. Try manually.'}`,
+      );
     } finally {
       setFetchingDates(false);
     }

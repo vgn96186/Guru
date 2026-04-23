@@ -5,7 +5,9 @@ import type { ChatGptSlotState } from '../types';
 
 interface Props {
   chatgpt: ChatGptSlotState;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
   SectionToggle: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
   styles: any;
 }
 

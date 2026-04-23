@@ -582,7 +582,6 @@ export async function generateStudyPlan(
   const futureReviews: Map<number, PlanItem[]> = new Map(); // DayOffset -> Items
 
   const daysToPlan = Math.min(daysToExam, 60);
-  let totalMinutesScheduled = 0;
   const planEndDate = new Date(today);
   planEndDate.setDate(today.getDate() + daysToPlan);
   const planEndStr = planEndDate.toISOString().slice(0, 10);
@@ -746,8 +745,6 @@ export async function generateStudyPlan(
       totalMinutes: dayMinutes,
       isRestDay: dayMinutes === 0,
     });
-
-    totalMinutesScheduled += dayMinutes;
 
     // Break early if queues empty (and no future reviews pending for near future)
     if (

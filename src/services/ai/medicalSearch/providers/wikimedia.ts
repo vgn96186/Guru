@@ -19,6 +19,7 @@ export async function searchWikimediaCommons(
   )}&srnamespace=6&srlimit=${fetchLimit}&srprop=size|wordcount|timestamp|snippet&format=json`;
 
   try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
     const searchData = await fetchJsonWithTimeout<any>(searchUrl, 12000);
     const pages = searchData?.query?.search || [];
     if (pages.length === 0) return [];
@@ -26,17 +27,20 @@ export async function searchWikimediaCommons(
     // Filter out non-renderable file types by title extension
     const renderableExtensions = /\.(png|jpg|jpeg|gif|webp|bmp)$/i;
     const renderablePages = pages.filter(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
       (p: any) => renderableExtensions.test(p.title) || !/\.(svg|pdf|tiff?|djvu)$/i.test(p.title),
     );
 
     if (renderablePages.length === 0) return [];
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
     const titles = renderablePages.map((p: any) => p.title).join('|');
     // Request thumburl for smaller, more reliable images
     const imageInfoUrl = `https://commons.wikimedia.org/w/api.php?action=query&titles=${encodeURIComponent(
       titles,
     )}&prop=imageinfo&iiprop=url|thumburl|extmetadata|size|mime&format=json&iiurlwidth=400`;
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
     const infoData = await fetchJsonWithTimeout<any>(imageInfoUrl, 12000);
     const imagePages = infoData?.query?.pages || {};
 

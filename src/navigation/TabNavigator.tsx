@@ -58,6 +58,7 @@ const EXTERNAL_APP_ICON_MAP: Record<string, keyof typeof Ionicons.glyphMap> = {
 };
 
 export default function TabNavigator() {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- React Navigation requires specific param list type for .navigate() calls
   const navigation = useNavigation<any>();
   const insets = useSafeAreaInsets();
   const { width: windowWidth, height: windowHeight } = useWindowDimensions();
@@ -153,7 +154,7 @@ export default function TabNavigator() {
         huggingFaceModel: huggingFaceModel || undefined,
         localWhisperPath,
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
       void showError(error, 'Could not open app');
     }
   }
@@ -221,6 +222,7 @@ export default function TabNavigator() {
     onRecovered: setReturnSheet,
     onPomodoroBreak: (payload?: PomodoroBreakPayload) => {
       if (!navigationRef.isReady()) return;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
       (navigationRef as any).navigate(
         'PomodoroQuiz',
         payload ? { breakPayload: payload } : undefined,
@@ -263,8 +265,8 @@ export default function TabNavigator() {
       setUploadSubjectRequired(false);
       setSelectedUploadSubjectName(null);
       void showSuccess('Success', 'Audio transcribed and added to notes vault.');
-    } catch (e: any) {
-      void showError(e.message, 'Error');
+    } catch (e: unknown) {
+      void showError(e instanceof Error ? e.message : String(e), 'Error');
     } finally {
       setIsSavingUpload(false);
     }

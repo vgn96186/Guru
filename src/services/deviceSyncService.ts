@@ -13,8 +13,10 @@ const BROKER_URL = 'wss://broker.emqx.io:8084/mqtt';
 // v2 prefix: incompatible with old un-encrypted v1 clients
 const ROOM_PREFIX = 'guru/v2/room/';
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
 let client: any = null;
 let currentRoomCode: string | null = null;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
 let mqttModule: any = null;
 let mqttUnavailable = false;
 const CLOCK_SKEW_TOLERANCE_MS = 5 * 60 * 1000;
@@ -174,6 +176,7 @@ async function ensureConnected(code: string): Promise<void> {
       client = nextClient;
       isConnected = true;
       if (__DEV__) console.log('[DeviceSync] Connected to MQTT broker');
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
       nextClient.subscribe(topic, (err: any) => {
         if (err) {
           console.error('[DeviceSync] Failed to subscribe to topic:', err);
@@ -189,6 +192,7 @@ async function ensureConnected(code: string): Promise<void> {
       }
     });
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
     nextClient.on('message', async (receivedTopic: string, message: any) => {
       if (receivedTopic !== topic) return;
 
@@ -265,6 +269,7 @@ async function ensureConnected(code: string): Promise<void> {
       }
     });
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
     nextClient.on('error', (err: any) => {
       isConnected = false;
       console.error('[DeviceSync] MQTT error:', err?.message ?? err);
@@ -357,6 +362,7 @@ export function sendSyncMessage(msg: SyncMessage) {
   encryptPayload(code, msg)
     .then((envelope) => {
       if (client && isConnected) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
         client.publish(activeTopic, envelope, (err: any) => {
           if (err) {
             console.warn('[DeviceSync] Publish failed:', err);

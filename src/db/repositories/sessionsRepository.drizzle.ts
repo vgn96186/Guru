@@ -95,7 +95,7 @@ export const sessionsRepositoryDrizzle = {
     durationMinutes: number,
     notes?: string,
   ): Promise<void> {
-    const db = getDrizzleDb();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
     await runInTransaction(async (tx: any) => {
       const row = await tx
         .select({ endedAt: sessions.endedAt })
@@ -143,8 +143,8 @@ export const sessionsRepositoryDrizzle = {
     notes?: string,
   ): Promise<void> {
     const today = todayStr();
-    const db = getDrizzleDb();
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
     await runInTransaction(async (tx: any) => {
       const prevRows = await tx
         .select({

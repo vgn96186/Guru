@@ -6,7 +6,11 @@ import type {
   SaveQuestionInput,
   FlashcardsContent,
 } from '../../types';
-import { SYSTEM_PROMPT, CONTENT_PROMPT_MAP, buildEscalatingQuizPrompt } from '../../constants/prompts';
+import {
+  SYSTEM_PROMPT,
+  CONTENT_PROMPT_MAP,
+  buildEscalatingQuizPrompt,
+} from '../../constants/prompts';
 import { getCachedContent, setCachedContent } from '../../db/queries/aiCache';
 import { saveBulkQuestions } from '../../db/queries/questionBank';
 import { AIContentSchema, QuizSchema } from './schemas';
@@ -176,7 +180,7 @@ function isLikelyIncompleteAiContent(content: AIContent): boolean {
 export async function fetchContent(
   topic: TopicWithProgress,
   contentType: ContentType,
-  forceProvider?: 'groq' | 'gemini',
+  _forceProvider?: 'groq' | 'gemini',
 ): Promise<AIContent> {
   const cached = await getCachedContent(topic.id, contentType);
   if (cached) {

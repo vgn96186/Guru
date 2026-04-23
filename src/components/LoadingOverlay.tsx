@@ -41,7 +41,7 @@ interface LoadingOverlayProps {
 }
 
 /** Spring configuration for natural, bouncy feel */
-const SPRING_CONFIG = {
+const _SPRING_CONFIG = {
   damping: 15,
   stiffness: 150,
   mass: 1,
@@ -64,11 +64,7 @@ const EXIT_SPRING = {
 /**
  * Custom hook for dot animation style
  */
-function useDotAnimatedStyle(
-  value: SharedValue<number>,
-  _baseSize: number,
-  colorStr: string,
-) {
+function useDotAnimatedStyle(value: SharedValue<number>, _baseSize: number, colorStr: string) {
   return useAnimatedStyle(() => ({
     opacity: interpolate(value.value, [0, 1], [0.35, 1]),
     transform: [{ scale: interpolate(value.value, [0, 0.5, 1], [0.7, 1.15, 1]) }],
@@ -141,29 +137,21 @@ export function InlineLoading({
     <View style={styles.inlineContainer}>
       <View style={styles.inlineSpinner}>
         <Animated.View
-          style={[
-            styles.dot,
-            size === 'medium' ? styles.dotMedium : null,
-            animatedDotStyle1,
-          ]}
+          style={[styles.dot, size === 'medium' ? styles.dotMedium : null, animatedDotStyle1]}
         />
         <Animated.View
-          style={[
-            styles.dot,
-            size === 'medium' ? styles.dotMedium : null,
-            animatedDotStyle2,
-          ]}
+          style={[styles.dot, size === 'medium' ? styles.dotMedium : null, animatedDotStyle2]}
         />
         <Animated.View
-          style={[
-            styles.dot,
-            size === 'medium' ? styles.dotMedium : null,
-            animatedDotStyle3,
-          ]}
+          style={[styles.dot, size === 'medium' ? styles.dotMedium : null, animatedDotStyle3]}
         />
       </View>
       {message && (
-        <LinearText variant={size === 'medium' ? 'body' : 'caption'} tone='secondary' style={styles.inlineText}>
+        <LinearText
+          variant={size === 'medium' ? 'body' : 'caption'}
+          tone="secondary"
+          style={styles.inlineText}
+        >
           {message}
         </LinearText>
       )}
@@ -196,11 +184,15 @@ export default function LoadingOverlay({
     } else {
       backdropOpacityAnim.value = withSpring(0, EXIT_SPRING);
       contentScale.value = withSpring(0.9, EXIT_SPRING);
-      contentOpacity.value = withTiming(0, { duration: 150, easing: Easing.out(Easing.quad) }, () => {
-        if (mounted.current && onDismissed) {
-          runOnJS(onDismissed)();
-        }
-      });
+      contentOpacity.value = withTiming(
+        0,
+        { duration: 150, easing: Easing.out(Easing.quad) },
+        () => {
+          if (mounted.current && onDismissed) {
+            runOnJS(onDismissed)();
+          }
+        },
+      );
     }
   }, [visible, backdropOpacityAnim, contentScale, contentOpacity, onDismissed]);
 
@@ -224,7 +216,7 @@ export default function LoadingOverlay({
     <Modal
       transparent
       visible={visible}
-      animationType='none'
+      animationType="none"
       statusBarTranslucent
       supportedOrientations={['portrait']}
     >
@@ -239,7 +231,7 @@ export default function LoadingOverlay({
           <Animated.View style={[styles.content, contentStyle]}>
             {icon ?? <BouncyDots />}
             {message && (
-              <LinearText variant='body' tone='secondary' style={styles.message}>
+              <LinearText variant="body" tone="secondary" style={styles.message}>
                 {message}
               </LinearText>
             )}

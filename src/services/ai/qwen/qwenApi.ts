@@ -37,7 +37,7 @@ function sanitizeText(text: string): string {
 // Map Guru model IDs to Qwen OAuth model IDs.
 // 'coder-model' is the internal CLI name — only works for the official Qwen Code binary.
 // Third-party OAuth clients must use 'qwen3-coder-plus' (per reverse engineering docs).
-function resolveQwenModel(base: string): string {
+function resolveQwenModel(_base: string): string {
   return 'qwen3-coder-plus';
 }
 

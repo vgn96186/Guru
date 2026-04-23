@@ -1,10 +1,5 @@
 import React, { useCallback, useMemo } from 'react';
-import {
-  ActivityIndicator,
-  Pressable,
-  View,
-  type PressableProps,
-} from 'react-native';
+import { ActivityIndicator, Pressable, View, type PressableProps } from 'react-native';
 import { tv } from 'tailwind-variants';
 import * as Haptics from 'expo-haptics';
 import LinearText, { type LinearTextTone } from './LinearText';
@@ -13,7 +8,10 @@ export type LinearButtonVariant = 'primary' | 'secondary' | 'ghost';
 export type LinearButtonTone = 'neutral' | 'danger';
 export type LinearButtonSize = 'sm' | 'md' | 'lg';
 
-function resolveLegacyVariant(v: LinearButtonVariant): { variant: LinearButtonVariant; tone: LinearButtonTone } {
+function resolveLegacyVariant(v: LinearButtonVariant): {
+  variant: LinearButtonVariant;
+  tone: LinearButtonTone;
+} {
   return { variant: v, tone: 'neutral' };
 }
 
@@ -29,6 +27,7 @@ interface LinearButtonProps extends Omit<PressableProps, 'style' | 'className'> 
   /** @deprecated Use className instead */
   style?: PressableProps['style'];
   /** @deprecated Use className on LinearText instead */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
   textStyle?: any;
   leftIcon?: React.ReactNode;
   rightIcon?: React.ReactNode;
@@ -88,7 +87,7 @@ export default function LinearButton({
   const textTn = textTone ?? getDefaultTextTone(v, finalTone);
   const isDanger = finalTone === 'danger';
   const resolvedDisabled = disabled || loading;
-  const resolvedLabel = loading ? loadingLabel ?? null : label;
+  const resolvedLabel = loading ? (loadingLabel ?? null) : label;
   const spinnerColor = getSpinnerColor(textTn);
   const leadingDecoration = loading ? (
     <ActivityIndicator size="small" color={spinnerColor} />
@@ -199,11 +198,7 @@ export default function LinearButton({
   );
 }
 
-
-function getDefaultTextTone(
-  variant: LinearButtonVariant,
-  tone: LinearButtonTone,
-): LinearTextTone {
+function getDefaultTextTone(variant: LinearButtonVariant, tone: LinearButtonTone): LinearTextTone {
   if (variant === 'primary') return tone === 'danger' ? 'primary' : 'inverse';
   if (tone === 'danger') return 'error';
   return 'primary';

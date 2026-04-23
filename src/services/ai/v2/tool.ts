@@ -30,6 +30,7 @@ export function tool<INPUT, OUTPUT>(
   return def;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
 export type ToolSet = Record<string, ToolDefinition<any, any>>;
 
 function stripJsonSchemaDollarKeys(schema: unknown): unknown {

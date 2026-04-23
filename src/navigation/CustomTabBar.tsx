@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo } from 'react';
+import React, { useEffect, useMemo, useRef } from 'react';
 import { Pressable, StyleSheet, View, Animated } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import type { MaterialTopTabBarProps } from '@react-navigation/material-top-tabs';
@@ -56,7 +56,9 @@ export function CustomTabBar({
   const actionHubEnabled = isActionHubAllowedForRoute(activeLeafRouteName);
 
   // Animated rotation for the FAB icon
-  const rotationAnim = useMemo(() => new Animated.Value(isActionHubOpen ? 1 : 0), []);
+  // useRef ensures the Animated.Value is created once and never recreated,
+  // while the useEffect below drives it to the correct value on every change.
+  const rotationAnim = useRef(new Animated.Value(isActionHubOpen ? 1 : 0)).current;
 
   useEffect(() => {
     Animated.spring(rotationAnim, {

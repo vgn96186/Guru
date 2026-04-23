@@ -76,12 +76,12 @@ function connectionForTable(table: BackupTableName, main: SQLiteDatabase): SQLit
 type BackupTableData = Record<BackupTableName, BackupRow[]>;
 type SubjectBackupRef = { shortCode: string; name: string };
 type TopicBackupRef = { subjectShortCode: string; topicName: string };
-type BackupMetadata = {
+type _BackupMetadata = {
   subjects: SubjectBackupRef[];
   topics: TopicBackupRef[];
 };
 
-function isRecord(value: unknown): value is Record<string, unknown> {
+function _isRecord(value: unknown): value is Record<string, unknown> {
   return !!value && typeof value === 'object' && !Array.isArray(value);
 }
 
@@ -120,15 +120,31 @@ export async function exportJsonBackup(): Promise<boolean> {
   const db = getDb();
   const drizzle = getDrizzleDb();
   const [subjectsRaw, topicsRaw] = await Promise.all([
-    drizzle.select({ id: subjects.id, name: subjects.name, short_code: subjects.shortCode }).from(subjects),
-    drizzle.select({ id: topics.id, name: topics.name, subject_id: topics.subjectId, short_code: subjects.shortCode })
+    drizzle
+      .select({ id: subjects.id, name: subjects.name, short_code: subjects.shortCode })
+      .from(subjects),
+    drizzle
+      .select({
+        id: topics.id,
+        name: topics.name,
+        subject_id: topics.subjectId,
+        short_code: subjects.shortCode,
+      })
       .from(topics)
       .innerJoin(subjects, eq(topics.subjectId, subjects.id)),
   ]);
   const subjectsList = subjectsRaw;
-  const topicsList = topicsRaw as Array<{ id: number; name: string; subject_id: number; short_code: string }>;
+  const topicsList = topicsRaw as Array<{
+    id: number;
+    name: string;
+    subject_id: number;
+    short_code: string;
+  }>;
   const subjectRefsById = new Map<number, SubjectBackupRef>(
-    subjectsList.map((subject) => [subject.id, { shortCode: subject.short_code, name: subject.name }]),
+    subjectsList.map((subject) => [
+      subject.id,
+      { shortCode: subject.short_code, name: subject.name },
+    ]),
   );
   const topicRefsById = new Map<number, TopicBackupRef>(
     topicsList.map((topic) => [
@@ -253,13 +269,26 @@ export async function importJsonBackup(): Promise<{ ok: boolean; message: string
   const db = getDb();
   const drizzle = getDrizzleDb();
   const [subjectsRaw, topicsRaw] = await Promise.all([
-    drizzle.select({ id: subjects.id, name: subjects.name, short_code: subjects.shortCode }).from(subjects),
-    drizzle.select({ id: topics.id, name: topics.name, subject_id: topics.subjectId, short_code: subjects.shortCode })
+    drizzle
+      .select({ id: subjects.id, name: subjects.name, short_code: subjects.shortCode })
+      .from(subjects),
+    drizzle
+      .select({
+        id: topics.id,
+        name: topics.name,
+        subject_id: topics.subjectId,
+        short_code: subjects.shortCode,
+      })
       .from(topics)
       .innerJoin(subjects, eq(topics.subjectId, subjects.id)),
   ]);
   const subjectsList = subjectsRaw;
-  const topicsList = topicsRaw as Array<{ id: number; name: string; subject_id: number; short_code: string }>;
+  const topicsList = topicsRaw as Array<{
+    id: number;
+    name: string;
+    subject_id: number;
+    short_code: string;
+  }>;
 
   const subjectIdsByShortCode = new Map<string, number>(
     subjectsList.map((subject) => [subject.short_code.toLowerCase(), subject.id]),

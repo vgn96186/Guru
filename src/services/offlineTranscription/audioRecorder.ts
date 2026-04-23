@@ -23,6 +23,7 @@ import { RecordingState, TranscriptionError } from './types';
 // ─── PCM Stream Library ──────────────────────────────────────────────────────
 // @fugood/react-native-audio-pcm-stream provides raw PCM from the mic.
 // It's the recommended audio source for whisper.rn's RealtimeTranscriber.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
 let AudioPcmStream: any = null;
 try {
   AudioPcmStream = require('@fugood/react-native-audio-pcm-stream').default;
@@ -33,6 +34,7 @@ try {
 }
 
 // ─── Fallback: Native module recording ───────────────────────────────────────
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
 let AppLauncher: any = null;
 try {
   AppLauncher = require('../../../modules/app-launcher');

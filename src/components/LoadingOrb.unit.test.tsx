@@ -1,21 +1,22 @@
 import React from 'react';
-import { act, render } from '@testing-library/react-native';
+import { render } from '@testing-library/react-native';
 import LoadingOrb from './LoadingOrb';
 
-const lottieMock = jest.fn((props: any) =>
-  React.createElement('LottieView', { testID: 'loading-orb-lottie', ...props }),
+const turbulentOrbMock = jest.fn((props: any) =>
+  React.createElement('TurbulentOrb', { testID: 'turbulent-orb', ...props }),
 );
 
-jest.mock('lottie-react-native', () => {
-  const React = require('react');
-  return {
-    __esModule: true,
-    default: (props: any) => lottieMock(props),
-  };
-}, { virtual: true });
+jest.mock('./TurbulentOrb', () => ({
+  __esModule: true,
+  default: (props: any) => turbulentOrbMock(props),
+}));
+
+jest.mock('../hooks/queries/useProfile', () => ({
+  __esModule: true,
+  useProfileQuery: () => ({ data: { loadingOrbStyle: 'turbulent' } }),
+}));
 
 jest.mock('react-native-reanimated', () => {
-  const React = require('react');
   const { View } = require('react-native');
   return {
     __esModule: true,
@@ -37,53 +38,29 @@ jest.mock('react-native-reanimated', () => {
   };
 });
 
-jest.mock('react-native-svg', () => {
-  const React = require('react');
-  const el = (tag: string) => (props: any) => React.createElement(tag, props, props.children);
-  return {
-    __esModule: true,
-    default: el('Svg'),
-    Svg: el('Svg'),
-    Defs: el('Defs'),
-    RadialGradient: el('RadialGradient'),
-    Stop: el('Stop'),
-    Circle: el('Circle'),
-    Ellipse: el('Ellipse'),
-  };
-});
-
 describe('LoadingOrb', () => {
   beforeEach(() => {
-    lottieMock.mockClear();
+    turbulentOrbMock.mockClear();
   });
 
   it('renders without crashing on mount', () => {
-    const { root } = render(<LoadingOrb />);
-    expect(root).toBeTruthy();
+    expect(() => render(<LoadingOrb />)).not.toThrow();
+    expect(turbulentOrbMock).toHaveBeenCalled();
   });
 
   it('renders with custom size', () => {
-    const { root } = render(<LoadingOrb size={120} />);
-    expect(root).toBeTruthy();
+    expect(() => render(<LoadingOrb size={120} />)).not.toThrow();
+    expect(turbulentOrbMock).toHaveBeenCalled();
   });
 
-  it('renders the turbulent blob using lottie', () => {
-    render(<LoadingOrb />);
-    expect(lottieMock).toHaveBeenCalled();
-  });
+  it('renders the turbulent orb variant when the profile is not classic', () => {
+    render(<LoadingOrb message="Loading..." size={140} />);
 
-  it('switches from the intro segment to the smooth loop after the first animation finishes', () => {
-    render(<LoadingOrb />);
-
-    const initialProps = lottieMock.mock.calls.at(-1)?.[0];
-    expect(initialProps?.onAnimationFinish).toEqual(expect.any(Function));
-
-    act(() => {
-      initialProps.onAnimationFinish(false);
-    });
-
-    const updatedProps = lottieMock.mock.calls.at(-1)?.[0];
-    expect(lottieMock).toHaveBeenCalledTimes(2);
-    expect(updatedProps?.onAnimationFinish).toEqual(expect.any(Function));
+    expect(turbulentOrbMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        message: 'Loading...',
+        size: 140,
+      }),
+    );
   });
 });

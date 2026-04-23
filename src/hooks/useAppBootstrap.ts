@@ -200,6 +200,7 @@ export function useAppBootstrap(onFatalError?: (message: string) => void): void 
  * Check GDrive for a newer backup from a different device.
  * Shows a prompt if found — user taps "Restore" or "Skip".
  */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
 async function checkForNewerGDriveBackup(queryClient: any): Promise<void> {
   try {
     const { isGDriveConnected, listGDriveBackups, downloadBackupFromGDrive } =

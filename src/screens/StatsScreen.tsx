@@ -181,6 +181,7 @@ function StatsScreenContent() {
   ];
 
   return (
+    // eslint-disable-next-line guru/prefer-screen-shell -- SafeAreaView needed here
     <SafeAreaView style={styles.safe} testID="stats-screen">
       <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
       <ScrollView

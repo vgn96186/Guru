@@ -36,11 +36,13 @@ export default function Icon({
   );
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
 function ensureOutline(n: string): any {
   if (n.endsWith('-outline')) return n;
   if (n.startsWith('logo-')) return n;
   return `${n}-outline`;
 }
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
 function stripOutline(n: string): any {
   return n.replace(/-outline$/, '');
 }

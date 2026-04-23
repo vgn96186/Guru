@@ -1,12 +1,12 @@
 import React from 'react';
-import { View, TouchableOpacity, Platform } from 'react-native';
+import { View, Platform } from 'react-native';
 import SettingsPermissionRow from '../components/SettingsPermissionRow';
 import LinearText from '../../../components/primitives/LinearText';
 import { useProfileQuery } from '../../../hooks/queries/useProfile';
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
 export function AppIntegrationsSection(props: any) {
   const {
-    styles,
     SectionToggle,
     permStatus,
     onRequestNotifications,

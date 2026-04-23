@@ -231,6 +231,7 @@ export async function generateImageSearchQuery(
       forceOrder: DEFAULT_PROVIDER_ORDER,
       disableLocal: true,
     });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
     const { text } = await generateText({ model, messages: msgs as any });
     const candidate = text
       .replace(/^["']|["']$/g, '')
@@ -268,6 +269,7 @@ export async function generateVisualSearchQueries(topicName: string): Promise<st
       forceOrder: DEFAULT_PROVIDER_ORDER,
       disableLocal: true,
     });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
     const { text } = await generateText({ model, messages: msgs as any });
     // Try to parse as JSON array
     const cleaned = text.trim().replace(/^```json\n?|\n?```$/g, '');

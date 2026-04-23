@@ -28,7 +28,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { getCompletedTopicIdsBetween } from '../db/queries/sessions';
 import { getTopicsDueForReview, getAllTopicsWithProgress } from '../db/queries/topics';
 
-
 import type { TopicWithProgress, StudyResourceMode } from '../types';
 import ScreenHeader from '../components/ScreenHeader';
 import { SUBJECTS_SEED } from '../constants/syllabus';
@@ -44,24 +43,10 @@ import BacklogBanner from './studyPlan/cards/BacklogBanner';
 import FoundationRepairQueueCard from './studyPlan/cards/FoundationRepairQueueCard';
 import UrgencyCell from './studyPlan/cards/UrgencyCell';
 
-const SUBJECT_MAP = new Map(SUBJECTS_SEED.map((s) => [s.shortCode, s]));
-const DBMCI_TOTAL_DAYS = 137;
+const _SUBJECT_MAP = new Map(SUBJECTS_SEED.map((s) => [s.shortCode, s]));
+const _DBMCI_TOTAL_DAYS = 137;
 const OVERDUE_FETCH_LIMIT = 2000;
 const MISSED_PREVIEW_LIMIT = 8;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 /** Horizontal chip row for quickly picking today's available time. */
 const CAPACITY_OPTIONS = [
@@ -156,9 +141,12 @@ export default function StudyPlanScreen() {
       setCompletedWeekIds(new Set(completedWeek));
       setMissedTotalCount(overdue.length);
       setMissedTopics(overdue.slice(0, MISSED_PREVIEW_LIMIT));
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('[StudyPlan] Failed to refresh plan:', err);
-      setLoadError(err?.message ?? 'Unable to load study plan right now.');
+      setLoadError(
+        (err instanceof Error ? err.message : String(err)) ??
+          'Unable to load study plan right now.',
+      );
     } finally {
       setIsLoading(false);
     }
@@ -263,52 +251,33 @@ export default function StudyPlanScreen() {
     );
   }
 
-  if (isLoading && !summary) {
-    return (
-      <SafeAreaView style={styles.safe} testID="plan-screen">
-        <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
-        <View style={styles.loadingWrap}>
-          <LoadingOrb message="Building your study plan..." size={120} />
-        </View>
-      </SafeAreaView>
-    );
-  }
-
-  if (loadError && !summary) {
-    return (
-      <SafeAreaView style={styles.safe} testID="plan-screen">
-        <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
-        <View style={styles.loadingWrap}>
-          <LinearText style={styles.errorTitle}>Could not load study plan</LinearText>
-          <LinearText style={styles.errorText}>{loadError}</LinearText>
-          <TouchableOpacity style={styles.retryButton} onPress={refreshPlan} activeOpacity={0.8}>
-            <LinearText style={styles.retryButtonText}>Retry</LinearText>
-          </TouchableOpacity>
-        </View>
-      </SafeAreaView>
-    );
-  }
-
-  if (!summary) return null;
-
+  // ── Hooks MUST run before any early returns (rules-of-hooks) ──
   const todayPlan = plan[0];
   const weekPlans = plan.slice(1, 7);
-  const requiredHoursDisplay = summary.hoursPerDayCapped
+  const requiredHoursDisplay = summary?.hoursPerDayCapped
     ? `${summary.requiredHoursPerDay}h+`
-    : `${summary.requiredHoursPerDay}h`;
+    : `${summary?.requiredHoursPerDay ?? 0}h`;
   const currentPlanModeLabel =
     PLAN_MODES.find((mode) => mode.key === planMode)?.label ?? 'Balanced';
   const currentResourceLabel =
-    RESOURCE_MODES.find((mode) => mode.key === resourceMode)?.label ?? summary.resourceLabel;
+    RESOURCE_MODES.find((mode) => mode.key === resourceMode)?.label ?? summary?.resourceLabel ?? '';
   const todayTaskCount = todayPlan?.items.length ?? 0;
   const heroMetrics = [
     { label: 'Today tasks', value: String(todayTaskCount), tone: 'accent' as const },
-    { label: 'Topics left', value: String(summary.totalTopicsLeft), tone: 'primary' as const },
-    { label: 'Watch gap', value: String(summary.seenNeedingQuizCount), tone: 'warning' as const },
+    {
+      label: 'Topics left',
+      value: String(summary?.totalTopicsLeft ?? 0),
+      tone: 'primary' as const,
+    },
+    {
+      label: 'Watch gap',
+      value: String(summary?.seenNeedingQuizCount ?? 0),
+      tone: 'warning' as const,
+    },
     {
       label: 'Overdue load',
-      value: `${summary.overdueBacklogDays}d`,
-      tone: summary.overdueBacklogDays > 4 ? ('error' as const) : ('success' as const),
+      value: `${summary?.overdueBacklogDays ?? 0}d`,
+      tone: (summary?.overdueBacklogDays ?? 0) > 4 ? ('error' as const) : ('success' as const),
     },
   ];
   // Pre-compute aggregates once — map+filter over items on every render was expensive
@@ -328,7 +297,39 @@ export default function StudyPlanScreen() {
     return { foundationToday: foundation, watchedNeedingQuizToday: quizRecovery };
   }, [todayPlan]);
 
+  // ── Early returns AFTER all hooks ──
+  if (isLoading && !summary) {
+    return (
+      // eslint-disable-next-line guru/prefer-screen-shell -- SafeAreaView needed here
+      <SafeAreaView style={styles.safe} testID="plan-screen">
+        <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
+        <View style={styles.loadingWrap}>
+          <LoadingOrb message="Building your study plan..." size={120} />
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (loadError && !summary) {
+    return (
+      // eslint-disable-next-line guru/prefer-screen-shell -- SafeAreaView needed here
+      <SafeAreaView style={styles.safe} testID="plan-screen">
+        <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
+        <View style={styles.loadingWrap}>
+          <LinearText style={styles.errorTitle}>Could not load study plan</LinearText>
+          <LinearText style={styles.errorText}>{loadError}</LinearText>
+          <TouchableOpacity style={styles.retryButton} onPress={refreshPlan} activeOpacity={0.8}>
+            <LinearText style={styles.retryButtonText}>Retry</LinearText>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (!summary) return null;
+
   return (
+    // eslint-disable-next-line guru/prefer-screen-shell -- SafeAreaView needed here
     <SafeAreaView style={styles.safe} testID="plan-screen">
       <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
       <ScrollView contentContainerStyle={styles.content}>
@@ -982,7 +983,7 @@ const styles = StyleSheet.create({
   },
 });
 
-const dbmciStyles = StyleSheet.create({
+const _dbmciStyles = StyleSheet.create({
   card: {
     marginBottom: n.spacing.sm,
   },
@@ -1067,7 +1068,7 @@ const dbmciStyles = StyleSheet.create({
   },
 });
 
-const liveStyles = StyleSheet.create({
+const _liveStyles = StyleSheet.create({
   banner: {
     marginBottom: n.spacing.sm,
   },

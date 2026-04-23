@@ -11,6 +11,7 @@ import { ManualReviewCard } from './cards/ManualReviewCard';
 import { SocraticCard } from './cards/SocraticCard';
 import { FlashcardCard } from './cards/FlashcardCard';
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
 export const CARD_COMPONENTS: Record<ContentType, any> = {
   keypoints: KeyPointsCard,
   must_know: MustKnowCard,

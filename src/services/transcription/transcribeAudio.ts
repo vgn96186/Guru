@@ -94,6 +94,7 @@ export async function transcribeAudio(opts: {
     groqKey = getApiKeys(profile).groqKey,
     huggingFaceToken = profile.huggingFaceToken || BUNDLED_HF_TOKEN,
     huggingFaceModel = profile.huggingFaceTranscriptionModel || DEFAULT_HF_TRANSCRIPTION_MODEL,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
     deepgramKey = (profile as any).deepgramApiKey || getApiKeys(profile).deepgramKey,
     useLocalWhisper = profile.useLocalWhisper,
     localWhisperPath = profile.localWhisperPath,

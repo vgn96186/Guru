@@ -54,6 +54,7 @@ export default function BrainDumpReviewScreen({ navigation }: Props) {
   };
 
   return (
+    // eslint-disable-next-line guru/prefer-screen-shell -- SafeAreaView needed here
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
       <ResponsiveContainer>

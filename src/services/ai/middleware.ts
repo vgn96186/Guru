@@ -1,4 +1,4 @@
-// @ts-nocheck — AI SDK v6 migration; runtime kept, strict types deferred
+// AI SDK v6 middleware wrapper — strict types applied
 /**
  * Middleware — wrap a LanguageModel with cross-cutting concerns.
  *
@@ -16,11 +16,16 @@ import type {
   LanguageModelV2StreamPart as LanguageModelStreamPart,
   LanguageModelV2Usage as LanguageModelUsage,
 } from '@ai-sdk/provider';
-type LanguageModelGenerateResult = any;
-type LanguageModelStreamResult = any;
+// Infer result types from the base LanguageModel's doGenerate/doStream signatures
+type LanguageModelGenerateResult = Awaited<ReturnType<LanguageModel['doGenerate']>>;
+type LanguageModelStreamResult = Awaited<ReturnType<LanguageModel['doStream']>>;
 
 export interface Middleware {
-  onRequest?: (ctx: { provider: string; modelId: string; options: LanguageModelCallOptions }) => void;
+  onRequest?: (ctx: {
+    provider: string;
+    modelId: string;
+    options: LanguageModelCallOptions;
+  }) => void;
   onStart?: (ctx: { provider: string; modelId: string; mode: 'generate' | 'stream' }) => void;
   onFinish?: (ctx: {
     provider: string;
@@ -30,7 +35,12 @@ export interface Middleware {
     usage: LanguageModelUsage;
     elapsedMs: number;
   }) => void;
-  onError?: (ctx: { provider: string; modelId: string; mode: 'generate' | 'stream'; error: unknown }) => void;
+  onError?: (ctx: {
+    provider: string;
+    modelId: string;
+    mode: 'generate' | 'stream';
+    error: unknown;
+  }) => void;
 }
 
 export function withMiddleware(base: LanguageModel, mw: Middleware): LanguageModel {
@@ -55,7 +65,12 @@ export function withMiddleware(base: LanguageModel, mw: Middleware): LanguageMod
         });
         return result;
       } catch (err) {
-        mw.onError?.({ provider: base.provider, modelId: base.modelId, mode: 'generate', error: err });
+        mw.onError?.({
+          provider: base.provider,
+          modelId: base.modelId,
+          mode: 'generate',
+          error: err,
+        });
         throw err;
       }
     },
@@ -68,7 +83,12 @@ export function withMiddleware(base: LanguageModel, mw: Middleware): LanguageMod
       try {
         inner = await base.doStream(options);
       } catch (err) {
-        mw.onError?.({ provider: base.provider, modelId: base.modelId, mode: 'stream', error: err });
+        mw.onError?.({
+          provider: base.provider,
+          modelId: base.modelId,
+          mode: 'stream',
+          error: err,
+        });
         throw err;
       }
 

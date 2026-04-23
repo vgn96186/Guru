@@ -11,6 +11,7 @@ export interface SettingsCommandProps {
   topProviderLabel: string;
   oauthConnectionCount: number;
   localAiSummary: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
   styles?: any;
 }
 

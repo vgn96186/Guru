@@ -151,6 +151,7 @@ export default function BreakScreen({
   const pct = duration > 0 ? ((duration - countdown) / duration) * 100 : 100;
 
   return (
+    // eslint-disable-next-line guru/prefer-screen-shell -- SafeAreaView needed here
     <SafeAreaView style={styles.safe}>
       <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
       <ResponsiveContainer style={styles.container}>

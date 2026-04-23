@@ -83,6 +83,7 @@ interface LocalLlmNativeModule extends NativeModule {
   chatStream(messages: ChatMessage[], options: GenerateOptions): Promise<{ status: string }>;
   cancel(): Promise<void>;
   release(): Promise<void>;
+  resetSession(): Promise<void>;
   warmup(modelPath: string): Promise<{ backend: LocalLlmBackend; warmedUp: boolean }>;
   // Gemini Nano
   nanoCheckStatus(): Promise<NanoStatusResult>;
@@ -146,6 +147,11 @@ export function release() {
   return native.release();
 }
 
+/** Reset the active Conversation but keep the Engine warm. Call between independent one-shot generations. */
+export function resetSession() {
+  return native.resetSession();
+}
+
 // ── Gemini Nano (AICore) ────────────────────────────────────────────────
 
 /** Check whether Gemini Nano is available on this device. */
@@ -167,7 +173,9 @@ export function nanoWarmup(): Promise<boolean> {
  * Warm up Gemma LiteRT model for lower first-inference latency.
  * Runs a dummy inference to pre-load weights and initialize KV cache.
  */
-export function warmup(modelPath: string): Promise<{ backend: LocalLlmBackend; warmedUp: boolean }> {
+export function warmup(
+  modelPath: string,
+): Promise<{ backend: LocalLlmBackend; warmedUp: boolean }> {
   return native.warmup(modelPath);
 }
 
@@ -192,6 +200,7 @@ export default {
   addLlmErrorListener,
   cancel,
   release,
+  resetSession,
   nanoCheckStatus,
   nanoDownloadIfNeeded,
   nanoWarmup,

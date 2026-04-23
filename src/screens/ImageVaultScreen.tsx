@@ -203,6 +203,7 @@ export default function ImageVaultScreen() {
   );
 
   return (
+    // eslint-disable-next-line guru/prefer-screen-shell -- SafeAreaView needed here
     <SafeAreaView style={styles.safe}>
       <ErrorBoundary>
         <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />

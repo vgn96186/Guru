@@ -6,6 +6,7 @@ import LinearText from '../../../components/primitives/LinearText';
 import SettingsField from '../components/SettingsField';
 import SettingsToggleRow from '../components/SettingsToggleRow';
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
 export function GeneralOverviewSection(props: any) {
   const { styles, SectionToggle, navigation, name, setName, loadingOrbStyle, setLoadingOrbStyle } =
     props;

@@ -165,6 +165,7 @@ import {
 function SamsungBackgroundRow() {
   const [isSamsung, setIsSamsung] = useState(false);
   const [isIgnoring, setIsIgnoring] = useState(false);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- React Navigation requires specific param list type for .navigate() calls
   const navigation = useNavigation<any>();
   const isFocused = useIsFocused();
 
@@ -1213,9 +1214,10 @@ export default function SettingsScreen() {
       setFetchDatesMsg(
         `âœ… Fetched: INICET ${dates.inicetDate} Â· NEET-PG ${dates.neetDate}. Verify and save.`,
       );
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } catch (e: any) {
-      setFetchDatesMsg(`âŒ ${e?.message || 'Could not fetch dates. Try manually.'}`);
+    } catch (e: unknown) {
+      setFetchDatesMsg(
+        `âŒ ${(e instanceof Error ? e.message : String(e)) || 'Could not fetch dates. Try manually.'}`,
+      );
     } finally {
       setFetchingDates(false);
     }
@@ -1856,19 +1858,14 @@ export default function SettingsScreen() {
     switch (activeCategory) {
       case 'dashboard':
         return (
-          <View style={styles.categoryStack}>
-            <DashboardOverview
-              isTablet={isTabletLayout}
-              providerOrder={providerOrder}
-              localLlmReady={localLlmReady}
-              setActiveCategory={setActiveCategory}
-            />
+          <>
+            <DashboardOverview isTablet={isTabletLayout} setActiveCategory={setActiveCategory} />
             <GeneralOverviewSection
               styles={styles}
               SectionToggle={SectionToggle}
               navigation={navigation}
             />
-          </View>
+          </>
         );
       case 'ai':
         return (
@@ -1879,6 +1876,7 @@ export default function SettingsScreen() {
             navigation={navigation}
             profile={profile!}
             guruChat={{
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any -- model shape varies by provider
               models: liveGuruChatModels as any,
               defaultModel: guruChatDefaultModel,
               setDefaultModel: setGuruChatDefaultModel,
@@ -2167,7 +2165,7 @@ export default function SettingsScreen() {
         );
       case 'integrations':
         return (
-          <View style={styles.categoryStack}>
+          <>
             <AppIntegrationsSection
               styles={styles}
               permStatus={permStatus}
@@ -2177,7 +2175,7 @@ export default function SettingsScreen() {
               onRequestOverlay={onRequestOverlay}
             />
             <SamsungBackgroundRow />
-          </View>
+          </>
         );
       case 'planning':
         return (
@@ -2237,7 +2235,7 @@ export default function SettingsScreen() {
         );
       case 'advanced':
         return (
-          <View style={styles.categoryStack}>
+          <>
             <SectionToggle
               id="adv_developer"
               title="Developer Options"
@@ -2261,20 +2259,14 @@ export default function SettingsScreen() {
                 </LinearText>
               </TouchableOpacity>
             </SectionToggle>
-          </View>
+          </>
         );
       default:
         return null;
     }
   }
-
-  function renderLegacySettingsReference() {
-    return null;
-  }
-
-  void renderLegacySettingsReference;
-
   return (
+    // eslint-disable-next-line guru/prefer-screen-shell -- settings uses custom layout with KeyboardAvoidingView
     <SafeAreaView style={styles.safe}>
       <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
       <KeyboardAvoidingView
@@ -2299,61 +2291,55 @@ export default function SettingsScreen() {
               keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'none'}
               overScrollMode="never"
             >
-              <ScreenHeader title="Settings" onBackPress={() => navigation.navigate('MenuHome')} />
+              <ScreenHeader
+                title="Settings"
+                onBackPress={() => navigation.navigate('MenuHome')}
+                rightElement={
+                  saving ? <ActivityIndicator size="small" color={n.colors.textMuted} /> : null
+                }
+              />
 
               {!isTabletLayout ? renderMobileCategoryNav() : null}
 
-              <LinearSurface compact style={[styles.summaryCard, styles.shellSummaryCard]}>
-                <View style={styles.summaryRow}>
-                  <View style={styles.summaryCopy}>
-                    <LinearText variant="meta" tone="accent" style={styles.summaryEyebrow}>
-                      {activeCategoryMeta.label.toUpperCase()}
-                    </LinearText>
-                    <LinearText variant="title" style={styles.summaryTitle}>
-                      {activeCategoryMeta.label}
-                    </LinearText>
-                    <LinearText variant="body" tone="secondary" style={styles.summaryText}>
-                      {categoryDescriptions[activeCategory]}
-                    </LinearText>
-                  </View>
-                  <View style={styles.summaryPill}>
-                    <LinearText variant="chip" tone="accent">
-                      {saving ? 'Auto-saving' : 'Live settings'}
-                    </LinearText>
-                  </View>
-                </View>
-                <View style={styles.summaryMetricsRow}>
-                  {settingsSummaryCards.map((card) => (
-                    <View key={card.label} style={styles.summaryMetricCard}>
-                      <LinearText
-                        variant="title"
-                        tone={card.tone}
-                        style={styles.summaryMetricValue}
-                      >
-                        {card.value}
+              {activeCategory !== 'dashboard' && (
+                <LinearSurface compact style={[styles.summaryCard, styles.shellSummaryCard]}>
+                  <View style={styles.summaryRow}>
+                    <View style={styles.summaryCopy}>
+                      <LinearText variant="meta" tone="accent" style={styles.summaryEyebrow}>
+                        {activeCategoryMeta.label.toUpperCase()}
                       </LinearText>
-                      <LinearText
-                        variant="caption"
-                        tone="secondary"
-                        style={styles.summaryMetricLabel}
-                      >
-                        {card.label}
+                      <LinearText variant="title" style={styles.summaryTitle}>
+                        {activeCategoryMeta.label}
+                      </LinearText>
+                      <LinearText variant="body" tone="secondary" style={styles.summaryText}>
+                        {categoryDescriptions[activeCategory]}
                       </LinearText>
                     </View>
-                  ))}
-                </View>
-              </LinearSurface>
+                  </View>
+                  <View style={styles.summaryMetricsRow}>
+                    {settingsSummaryCards.map((card) => (
+                      <View key={card.label} style={styles.summaryMetricCard}>
+                        <LinearText
+                          variant="title"
+                          tone={card.tone}
+                          style={styles.summaryMetricValue}
+                        >
+                          {card.value}
+                        </LinearText>
+                        <LinearText
+                          variant="caption"
+                          tone="secondary"
+                          style={styles.summaryMetricLabel}
+                        >
+                          {card.label}
+                        </LinearText>
+                      </View>
+                    ))}
+                  </View>
+                </LinearSurface>
+              )}
 
               <View style={styles.categoryContent}>{renderActiveCategoryContent()}</View>
-
-              {saving && (
-                <View style={[styles.saveBtn, styles.saveBtnDisabled]}>
-                  <ActivityIndicator size="small" color={n.colors.textPrimary} />
-                  <LinearText style={[styles.saveBtnText, { marginLeft: 8 }]}>
-                    Auto-saving…
-                  </LinearText>
-                </View>
-              )}
 
               <LinearText style={styles.footer}>Guru AI · v1.0.0</LinearText>
             </ScrollView>

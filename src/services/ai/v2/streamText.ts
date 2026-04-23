@@ -76,8 +76,8 @@ export const stepCountIs =
     steps >= n;
 
 export const hasToolCall =
-  (toolName: string): StopCondition =>
-  ({ lastFinishReason }) => {
+  (_toolName: string): StopCondition =>
+  ({ lastFinishReason: _lastFinishReason }) => {
     // This is a simplified implementation - a full implementation would need
     // to track tool calls across steps. For now, this returns false to maintain
     // the existing behavior where stepCountIs is the primary stop condition.

@@ -18,6 +18,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { linearTheme as n } from '../theme/linearTheme';
 
 import { type LecturePipelineStage } from '../services/lecture/lectureSessionMonitor';
+// CONFIDENCE_LABELS and CONFIDENCE_LABELS_WITH_EMOJI removed — unused imports
 import { useLecturePipeline } from '../hooks/useLecturePipeline';
 import { MarkdownRender } from './MarkdownRender';
 import { LectureReturnActionButtons } from './lectureReturn/LectureReturnActionButtons';

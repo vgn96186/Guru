@@ -427,24 +427,29 @@ export function mapToDrizzleUpdate(updates: Partial<UserProfile>): Partial<NewUs
     drizzleUpdate.transcriptionProvider = sanitizeEnum(
       'transcriptionProvider',
       updates.transcriptionProvider,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
     ) as any;
   }
   if ('autoBackupFrequency' in updates) {
     drizzleUpdate.autoBackupFrequency = sanitizeEnum(
       'autoBackupFrequency',
       updates.autoBackupFrequency,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
     ) as any;
   }
   if ('guruFrequency' in updates) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
     drizzleUpdate.guruFrequency = sanitizeEnum('guruFrequency', updates.guruFrequency) as any;
   }
   if ('studyResourceMode' in updates) {
     drizzleUpdate.studyResourceMode = sanitizeEnum(
       'studyResourceMode',
       updates.studyResourceMode,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
     ) as any;
   }
   if ('harassmentTone' in updates) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
     drizzleUpdate.harassmentTone = sanitizeEnum('harassmentTone', updates.harassmentTone) as any;
   }
   // Process JSON fields

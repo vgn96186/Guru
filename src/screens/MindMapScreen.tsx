@@ -44,6 +44,7 @@ export default function MindMapScreen() {
     if (normalized.changed) {
       await bulkUpdateNodePositions(
         full.map.id,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
         normalized.full.nodes.map((n: any) => ({ id: n.id, x: n.x, y: n.y })),
       );
       return { ...normalized.full, map: { ...normalized.full.map, viewportJson: '' } };
@@ -86,6 +87,7 @@ export default function MindMapScreen() {
         setCreating(true);
         try {
           const layout = await generateMindMap(topicNameParam);
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
           const layoutNodes = layout.nodes.map((ln: any) => ({
             label: ln.label,
             x: ln.x,
@@ -96,7 +98,7 @@ export default function MindMapScreen() {
           await bulkInsertNodesAndEdges(mapId, layoutNodes, layout.edges);
           await refreshList();
           await openMap(mapId);
-        } catch (err: any) {
+        } catch (err: unknown) {
           showError(err, 'Failed to create mind map');
         } finally {
           setCreating(false);
@@ -133,7 +135,7 @@ export default function MindMapScreen() {
       await clearMindMapContents(mapId);
       await bulkInsertNodesAndEdges(mapId, layoutNodes, layout.edges);
       await openMap(mapId);
-    } catch (err: any) {
+    } catch (err: unknown) {
       showError(err, 'Regeneration Failed');
     } finally {
       setCreating(false);
@@ -170,7 +172,7 @@ export default function MindMapScreen() {
         await clearMindMapContents(mapId);
         await bulkInsertNodesAndEdges(mapId, layoutNodes, layout.edges);
         await refreshList();
-      } catch (err: any) {
+      } catch (err: unknown) {
         showError(err, 'Regeneration Failed');
       } finally {
         setCreating(false);
@@ -200,7 +202,7 @@ export default function MindMapScreen() {
       await bulkInsertNodesAndEdges(mapId, layoutNodes, layout.edges);
       await refreshList();
       await openMap(mapId);
-    } catch (err: any) {
+    } catch (err: unknown) {
       showError(err, 'Failed to create mind map');
     } finally {
       setCreating(false);
@@ -222,6 +224,7 @@ export default function MindMapScreen() {
 
   if (loading || creating) {
     return (
+      // eslint-disable-next-line guru/prefer-screen-shell -- SafeAreaView needed here
       <SafeAreaView style={styles.root}>
         <ScreenHeader title="Mind Map" showSettings />
         <View style={styles.centerContent}>
@@ -233,6 +236,7 @@ export default function MindMapScreen() {
 
   if (activeMapData) {
     return (
+      // eslint-disable-next-line guru/prefer-screen-shell -- SafeAreaView needed here
       <SafeAreaView style={styles.root} edges={['top']}>
         <ErrorBoundary>
           <CanvasView
@@ -251,6 +255,7 @@ export default function MindMapScreen() {
   }
 
   return (
+    // eslint-disable-next-line guru/prefer-screen-shell -- SafeAreaView needed here
     <SafeAreaView style={styles.root}>
       <ScreenHeader title="Mind Map" showSettings />
       <MapListView

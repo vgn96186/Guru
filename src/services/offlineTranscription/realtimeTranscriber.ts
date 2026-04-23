@@ -26,7 +26,8 @@
 
 import { initWhisper } from 'whisper.rn/index.js';
 
-type WhisperContextType = Awaited<ReturnType<typeof initWhisper>>;
+// Type alias for Whisper context — used by class internals
+type _WhisperContextType = Awaited<ReturnType<typeof initWhisper>>;
 import {
   TranscriptSegment,
   TranscriptionProgress,
@@ -41,8 +42,11 @@ import { WhisperModelManager } from './whisperModelManager';
 // ─── whisper.rn RealtimeTranscriber imports ──────────────────────────────────
 // These come from whisper.rn v0.5.x's new streaming API
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
 let RealtimeTranscriber: any = null;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
 let AudioPcmStreamAdapter: any = null;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
 let initWhisperVad: any = null;
 
 try {
@@ -58,7 +62,8 @@ try {
 
 export type RealtimeTranscriptCallback = (progress: TranscriptionProgress) => void;
 
-interface SliceResult {
+// Represents a sliced audio result with timing
+interface _SliceResult {
   text: string;
   startSec: number;
   endSec: number;
@@ -72,8 +77,11 @@ export class RealtimeTranscriptionController {
   private vadConfig: VadConfig;
 
   // whisper.rn instances
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
   private transcriber: any = null;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
   private audioAdapter: any = null;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
   private vadContext: any = null;
 
   // State
@@ -163,6 +171,7 @@ export class RealtimeTranscriptionController {
       nThreads: this.config.nThreads,
 
       // Callbacks
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
       onTranscription: (result: any) => {
         this.handleTranscriptionResult(result);
       },
@@ -281,6 +290,7 @@ export class RealtimeTranscriptionController {
     }
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
   private handleTranscriptionResult(result: any): void {
     if (!result?.text) return;
 

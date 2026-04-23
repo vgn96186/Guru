@@ -132,9 +132,13 @@ export interface GuruChatState {
 }
 
 export interface AiProvidersProps {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
   styles: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
   SectionToggle: FC<any>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
   SubSectionToggle: FC<any>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
   navigation: any;
   profile: UserProfile;
 

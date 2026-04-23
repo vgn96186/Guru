@@ -6,9 +6,13 @@ import type { LocalAiState } from '../types';
 
 interface Props {
   localAi: LocalAiState;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
   profile: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
   updateUserProfile: (p: any) => Promise<void>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
   SectionToggle: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
   styles: any;
 }
 
@@ -49,10 +53,10 @@ export default function LocalAiSection({
           !llmAllowed
             ? 'Device incompatible'
             : !llmReady
-            ? 'Model not downloaded'
-            : llmFileName
-            ? llmFileName
-            : 'Ready'
+              ? 'Model not downloaded'
+              : llmFileName
+                ? llmFileName
+                : 'Ready'
         }
         styles={styles}
       />

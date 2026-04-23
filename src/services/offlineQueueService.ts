@@ -7,6 +7,7 @@ import { showToast } from '../components/notificationService';
 export interface OfflineQueueItem {
   id?: number;
   type: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
   payload: any;
   createdAt: number;
   attempts: number;
@@ -15,8 +16,9 @@ export interface OfflineQueueItem {
 
 export async function enqueueOfflineOperation(
   type: string,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
   payload: any,
-  maxAttempts = 3,
+  _maxAttempts = 3,
 ): Promise<number> {
   const db = getDrizzleDb();
 
@@ -109,7 +111,7 @@ export async function processOfflineQueue(): Promise<number> {
 export async function getOfflineQueue(): Promise<OfflineQueueItem[]> {
   const db = getDb();
   const items = (await db.getAllAsync(
-    `SELECT * FROM offline_queue ORDER BY createdAt ASC`
+    `SELECT * FROM offline_queue ORDER BY createdAt ASC`,
   )) as OfflineQueueItem[];
 
   return items.map((item) => ({

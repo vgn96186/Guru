@@ -60,18 +60,33 @@ async function findSubjectId(name: string): Promise<number | null> {
   const normalized = name.toLowerCase().trim();
 
   // 1. Direct match
-  let res = await db.select({ id: subjects.id }).from(subjects).where(sql`LOWER(${subjects.name}) = LOWER(${normalized})`).limit(1).then(r => r[0]);
+  let res = await db
+    .select({ id: subjects.id })
+    .from(subjects)
+    .where(sql`LOWER(${subjects.name}) = LOWER(${normalized})`)
+    .limit(1)
+    .then((r) => r[0]);
   if (res) return res.id;
 
   // 2. Fuzzy mapping match
   const mapped = SUBJECT_MAPPINGS[normalized];
   if (mapped) {
-    res = await db.select({ id: subjects.id }).from(subjects).where(sql`LOWER(${subjects.name}) = LOWER(${mapped})`).limit(1).then(r => r[0]);
+    res = await db
+      .select({ id: subjects.id })
+      .from(subjects)
+      .where(sql`LOWER(${subjects.name}) = LOWER(${mapped})`)
+      .limit(1)
+      .then((r) => r[0]);
     if (res) return res.id;
   }
 
   // 3. Partial substring match (fallback)
-  res = await db.select({ id: subjects.id }).from(subjects).where(sql`LOWER(${subjects.name}) LIKE ${`%${normalized}%`}`).limit(1).then(r => r[0]);
+  res = await db
+    .select({ id: subjects.id })
+    .from(subjects)
+    .where(sql`LOWER(${subjects.name}) LIKE ${`%${normalized}%`}`)
+    .limit(1)
+    .then((r) => r[0]);
   return res?.id ?? null;
 }
 
@@ -84,7 +99,6 @@ export async function saveLecturePersistence(opts: {
   embedding?: number[] | null;
   recordingPath?: string | null;
 }) {
-  const db = getDrizzleDb();
   const { analysis } = opts;
   const saveStageStartedAt = Date.now();
   const lectureIdentity = {
@@ -139,6 +153,7 @@ export async function saveLecturePersistence(opts: {
     const noteId = await runInTransaction(async (txDb) => {
       if (analysis.topics.length > 0 || analysis.lectureSummary) {
         await markTopicsFromLecture(
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
           txDb as any, // Drizzle tx not perfectly typed with expo-sqlite interface here, but ok
           analysis.topics,
           analysis.estimatedConfidence,
@@ -151,6 +166,7 @@ export async function saveLecturePersistence(opts: {
         }
       }
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
       const result = await (txDb as any)
         .insert(lectureNotes)
         .values({
@@ -270,7 +286,6 @@ export async function saveLectureChunk(opts: {
   embedding?: number[] | null;
   recordingPath?: string | null;
 }): Promise<{ noteId: number; topicsMatched: number; xpAwarded: number }> {
-  const db = getDrizzleDb();
   const { analysis } = opts;
 
   // Compute embedding before the transaction
@@ -301,7 +316,8 @@ export async function saveLectureChunk(opts: {
       // 1. exact match in subject, 2. LIKE contains, 3. reverse contains,
       // 4. semantic/cosine similarity, 5. queue unmatched
       await markTopicsFromLecture(
-          txDb as any,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
+        txDb as any,
         analysis.topics,
         analysis.estimatedConfidence,
         analysis.subject,

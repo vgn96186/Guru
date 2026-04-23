@@ -217,7 +217,7 @@ export const aiCacheRepositoryDrizzle = {
 
     if (rowIds.length === 0) return [];
 
-    const selectedIds: number[] = [];
+    const _selectedIds: number[] = [];
     const batchSize = Math.min(Math.max(Math.ceil(limit / 3), 8), 24);
     let offset = 0;
     let parsedQuestions: MockQuestion[] = [];
@@ -285,6 +285,7 @@ export const aiCacheRepositoryDrizzle = {
     return (rows[0]?.isFlagged ?? 0) === 1;
   },
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
   async getFlaggedContent(): Promise<any[]> {
     const db = getDrizzleDb();
     const rows = await db

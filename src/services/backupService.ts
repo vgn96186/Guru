@@ -122,7 +122,7 @@ export async function importDatabase() {
       await testDb.getFirstAsync('SELECT COUNT(*) FROM subjects');
       // DB is valid — clean up rollback
       await FileSystem.deleteAsync(rollbackPath, { idempotent: true });
-    } catch (validationError) {
+    } catch (_validationError) {
       // Imported DB is corrupt — rollback
       const rollbackExists = await FileSystem.getInfoAsync(rollbackPath);
       if (rollbackExists?.exists) {

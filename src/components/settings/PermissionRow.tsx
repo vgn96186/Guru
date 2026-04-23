@@ -44,6 +44,7 @@ function PermissionRow({ label, status, onFix }: PermissionRowProps) {
 
 export default React.memo(PermissionRow);
 
+// eslint-disable-next-line guru/prefer-settings-primitives -- component-level styles
 const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',

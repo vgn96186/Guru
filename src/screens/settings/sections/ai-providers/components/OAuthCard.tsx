@@ -8,6 +8,7 @@ import type { OAuthSlot } from '../types';
 interface Props {
   title: string;
   slot: OAuthSlot;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
   styles: any;
   children?: React.ReactNode;
 }

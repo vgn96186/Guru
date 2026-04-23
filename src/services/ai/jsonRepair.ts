@@ -26,8 +26,8 @@ function extractBalancedJson(raw: string): string {
     objectStart === -1
       ? arrayStart
       : arrayStart === -1
-      ? objectStart
-      : Math.min(objectStart, arrayStart);
+        ? objectStart
+        : Math.min(objectStart, arrayStart);
 
   if (start === -1) return raw.trim();
 
@@ -94,6 +94,7 @@ export function normalizeRootForSchema<T>(value: unknown, schema: z.ZodType<T>):
 
   if (typeof value !== 'object' || Array.isArray(value)) return value;
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
   const v = value as Record<string, any>;
   const entries = Object.entries(v);
 
@@ -109,6 +110,7 @@ export function normalizeRootForSchema<T>(value: unknown, schema: z.ZodType<T>):
 
     // If it's an object with a 'type' property inside, unwrap
     if (wrappedValue && typeof wrappedValue === 'object' && !Array.isArray(wrappedValue)) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
       if ('type' in (wrappedValue as any)) return wrappedValue;
 
       // Heuristic: if the inner object has keys that we'd expect in medical responses, unwrap.
@@ -148,6 +150,7 @@ export function normalizeRootForSchema<T>(value: unknown, schema: z.ZodType<T>):
 
   // Pattern 2: Normalizing common snake_case/kebab-case property names from flaky LLMs
   // This is a "best effort" pass to help Zod validation succeed on key-value pairs.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
   const normalized: Record<string, any> = {};
   for (const [k, val] of Object.entries(v)) {
     // Map snake_case or kebab-case to camelCase for the expected schema fields
@@ -189,14 +192,7 @@ async function parseStructuredJsonWithTimeout<T>(
       const extracted = extractBalancedJson(cleaned);
 
       const candidates = Array.from(
-        new Set(
-          [
-            cleaned,
-            extracted,
-            repairJson(cleaned),
-            repairJson(extracted),
-          ].filter(Boolean),
-        ),
+        new Set([cleaned, extracted, repairJson(cleaned), repairJson(extracted)].filter(Boolean)),
       );
 
       logJsonParseSummary({
@@ -220,7 +216,9 @@ async function parseStructuredJsonWithTimeout<T>(
           logJsonParseSuccess({ candidateIndex, candidateLength: candidate.length });
           return parsed;
         } catch (err) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
           if (err instanceof z.ZodError && (err as any).rawText === undefined) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
             (err as any).rawText = raw;
           }
           lastError = err as Error;

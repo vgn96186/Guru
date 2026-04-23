@@ -7,7 +7,9 @@ import SettingsLabel from '../../../components/SettingsLabel';
 import type { CloudflareKeyField } from '../types';
 
 interface Props extends CloudflareKeyField {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
   styles: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
   clearProviderValidated?: (id: any) => void;
   providerId?: string;
 }
@@ -81,16 +83,16 @@ export default function CloudflareKeyRow({
                 validationStatus === 'valid'
                   ? 'checkmark-circle'
                   : validationStatus === 'invalid'
-                  ? 'close-circle'
-                  : 'flash-outline'
+                    ? 'close-circle'
+                    : 'flash-outline'
               }
               size={20}
               color={
                 validationStatus === 'valid'
                   ? linearTheme.colors.success
                   : validationStatus === 'invalid'
-                  ? linearTheme.colors.error
-                  : linearTheme.colors.accent
+                    ? linearTheme.colors.error
+                    : linearTheme.colors.accent
               }
             />
           )}

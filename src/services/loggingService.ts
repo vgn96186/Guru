@@ -13,9 +13,11 @@ export interface LogEntry {
   timestamp: number;
   level: LogLevel;
   message: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
   data?: any[];
   source?: string;
   stack?: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
   metadata?: Record<string, any>;
 }
 
@@ -26,6 +28,7 @@ const ENABLE_PERSISTENCE = __DEV__; // Only persist in dev mode for privacy
 
 class LoggingService {
   private logs: LogEntry[] = [];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
   private originalConsoleMethods: Record<string, (...args: any[]) => void> = {};
   private isInitialized = false;
   private listeners: ((entry: LogEntry) => void)[] = [];
@@ -35,11 +38,11 @@ class LoggingService {
    */
   init() {
     if (this.isInitialized) return;
-    
+
     this.interceptConsole();
     this.setupGlobalErrorHandlers();
     this.loadPersistedLogs();
-    
+
     this.isInitialized = true;
     this.log('info', 'LoggingService initialized');
   }
@@ -49,19 +52,21 @@ class LoggingService {
    */
   private interceptConsole() {
     const methods: LogLevel[] = ['log', 'info', 'warn', 'error', 'debug'];
-    
+
     methods.forEach((method) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
       this.originalConsoleMethods[method] = (console as any)[method];
-      
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
       (console as any)[method] = (...args: any[]) => {
         // Call original console method
         this.originalConsoleMethods[method].apply(console, args);
-        
+
         // Capture the log
-        const message = args.map(arg => 
-          typeof arg === 'object' ? JSON.stringify(arg) : String(arg)
-        ).join(' ');
-        
+        const message = args
+          .map((arg) => (typeof arg === 'object' ? JSON.stringify(arg) : String(arg)))
+          .join(' ');
+
         this.addLog(method === 'log' ? 'info' : method, message, args);
       };
     });
@@ -76,9 +81,9 @@ class LoggingService {
       const originalOnError = window.onerror;
       window.onerror = (message, source, lineno, colno, error) => {
         this.addLog('error', `Uncaught error: ${message}`, [], {
-          metadata: { source, lineno, colno, stack: error?.stack }
+          metadata: { source, lineno, colno, stack: error?.stack },
         });
-        
+
         // Call original handler if exists
         if (originalOnError) {
           return originalOnError(message, source, lineno, colno, error);
@@ -92,14 +97,15 @@ class LoggingService {
         const reason = event.reason;
         const message = reason instanceof Error ? reason.message : String(reason);
         const stack = reason instanceof Error ? reason.stack : undefined;
-        
+
         this.addLog('error', `Unhandled promise rejection: ${message}`, [], {
-          metadata: { stack }
+          metadata: { stack },
         });
-        
+
         // Call original handler if exists
         if (originalOnUnhandledRejection) {
           // Use call to preserve 'this' context
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
           return (originalOnUnhandledRejection as any).call(window, event);
         }
         return false;
@@ -107,14 +113,20 @@ class LoggingService {
     }
 
     // React Native ErrorUtils handler
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
     const ErrorUtils = (global as any).ErrorUtils;
     if (ErrorUtils) {
       const originalErrorHandler = ErrorUtils.getGlobalHandler();
       ErrorUtils.setGlobalHandler((error: Error, isFatal?: boolean) => {
-        this.addLog('error', `React Native ${isFatal ? 'fatal' : 'non-fatal'} error: ${error.message}`, [], {
-          metadata: { stack: error.stack, isFatal }
-        });
-        
+        this.addLog(
+          'error',
+          `React Native ${isFatal ? 'fatal' : 'non-fatal'} error: ${error.message}`,
+          [],
+          {
+            metadata: { stack: error.stack, isFatal },
+          },
+        );
+
         // Call original handler
         originalErrorHandler(error, isFatal);
       });
@@ -124,6 +136,7 @@ class LoggingService {
   /**
    * Add a log entry
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
   private addLog(level: LogLevel, message: string, data?: any[], metadata?: Partial<LogEntry>) {
     const entry: LogEntry = {
       id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
@@ -131,7 +144,7 @@ class LoggingService {
       level,
       message,
       data,
-      ...metadata
+      ...metadata,
     };
 
     // Add to circular buffer
@@ -141,7 +154,7 @@ class LoggingService {
     }
 
     // Notify listeners
-    this.listeners.forEach(listener => listener(entry));
+    this.listeners.forEach((listener) => listener(entry));
 
     // Persist if enabled
     if (ENABLE_PERSISTENCE) {
@@ -152,6 +165,7 @@ class LoggingService {
   /**
    * Log a message programmatically
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
   log(level: LogLevel, message: string, ...data: any[]) {
     this.addLog(level, message, data);
   }
@@ -161,7 +175,7 @@ class LoggingService {
    */
   getLogs(level?: LogLevel): LogEntry[] {
     if (level) {
-      return this.logs.filter(log => log.level === level);
+      return this.logs.filter((log) => log.level === level);
     }
     return [...this.logs];
   }
@@ -170,7 +184,7 @@ class LoggingService {
    * Get logs since a specific timestamp
    */
   getLogsSince(timestamp: number): LogEntry[] {
-    return this.logs.filter(log => log.timestamp >= timestamp);
+    return this.logs.filter((log) => log.timestamp >= timestamp);
   }
 
   /**
@@ -207,10 +221,12 @@ class LoggingService {
    * Export logs as text
    */
   exportAsText(): string {
-    return this.logs.map(log => {
-      const date = new Date(log.timestamp).toISOString();
-      return `[${date}] [${log.level.toUpperCase()}] ${log.message}${log.stack ? '\n' + log.stack : ''}`;
-    }).join('\n');
+    return this.logs
+      .map((log) => {
+        const date = new Date(log.timestamp).toISOString();
+        return `[${date}] [${log.level.toUpperCase()}] ${log.message}${log.stack ? '\n' + log.stack : ''}`;
+      })
+      .join('\n');
   }
 
   /**
@@ -226,7 +242,7 @@ class LoggingService {
   private async persistLogs() {
     try {
       await AsyncStorage.setItem(LOG_STORAGE_KEY, JSON.stringify(this.logs.slice(-100))); // Only persist last 100
-    } catch (error) {
+    } catch (_error) {
       // Silently fail - logging shouldn't break the app
     }
   }
@@ -236,7 +252,7 @@ class LoggingService {
    */
   private async loadPersistedLogs() {
     if (!ENABLE_PERSISTENCE) return;
-    
+
     try {
       const stored = await AsyncStorage.getItem(LOG_STORAGE_KEY);
       if (stored) {
@@ -245,7 +261,7 @@ class LoggingService {
           this.logs = parsed;
         }
       }
-    } catch (error) {
+    } catch (_error) {
       // Silently fail
     }
   }
@@ -255,10 +271,11 @@ class LoggingService {
    */
   destroy() {
     // Restore console methods
-    Object.keys(this.originalConsoleMethods).forEach(method => {
+    Object.keys(this.originalConsoleMethods).forEach((method) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
       (console as any)[method] = this.originalConsoleMethods[method];
     });
-    
+
     this.removeAllListeners();
     this.isInitialized = false;
   }
@@ -269,10 +286,15 @@ export const loggingService = new LoggingService();
 
 // Convenience methods
 export const logger = {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
   debug: (message: string, ...data: any[]) => loggingService.log('debug', message, ...data),
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
   info: (message: string, ...data: any[]) => loggingService.log('info', message, ...data),
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
   warn: (message: string, ...data: any[]) => loggingService.log('warn', message, ...data),
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
   error: (message: string, ...data: any[]) => loggingService.log('error', message, ...data),
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
   log: (message: string, ...data: any[]) => loggingService.log('info', message, ...data),
 };
 

@@ -7,6 +7,7 @@ import LinearText from '../../../components/primitives/LinearText';
 import { linearTheme } from '../../../theme/linearTheme';
 import { ALL_CONTENT_TYPES } from '../types';
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
 export function InterventionsSection(props: any) {
   const { styles, subjects, SectionToggle } = props;
 
@@ -37,7 +38,12 @@ export function InterventionsSection(props: any) {
 
   return (
     <>
-      <SectionToggle id="interv_flow" title="Interventions & Study Flow" icon="shield" tint="#F87171">
+      <SectionToggle
+        id="interv_flow"
+        title="Interventions & Study Flow"
+        icon="shield"
+        tint="#F87171"
+      >
         <SettingsToggleRow
           label="Strict Mode (Punishment Mode)"
           hint="Nag you instantly if you leave the app or are idle. Idle time won't count towards session duration."
@@ -81,7 +87,12 @@ export function InterventionsSection(props: any) {
         />
       </SectionToggle>
 
-      <SectionToggle id="interv_pomodoro" title="Pomodoro (Lecture Overlay)" icon="timer" tint="#FB923C">
+      <SectionToggle
+        id="interv_pomodoro"
+        title="Pomodoro (Lecture Overlay)"
+        icon="timer"
+        tint="#FB923C"
+      >
         <SettingsToggleRow
           label="Enable Pomodoro Suggestion"
           hint="Auto-expand the external lecture overlay every interval to suggest a break."
@@ -93,11 +104,11 @@ export function InterventionsSection(props: any) {
             styles.hint,
             {
               color:
-                props.pomodoroLectureQuizReady ?? false
+                (props.pomodoroLectureQuizReady ?? false)
                   ? linearTheme.colors.success
                   : pomodoroEnabled
-                  ? linearTheme.colors.error
-                  : linearTheme.colors.textMuted,
+                    ? linearTheme.colors.error
+                    : linearTheme.colors.textMuted,
             },
           ]}
           variant="body"
@@ -106,8 +117,8 @@ export function InterventionsSection(props: any) {
           {props.pomodoroLectureQuizReady
             ? 'Lecture-aware break quizzes are ready.'
             : pomodoroEnabled
-            ? 'Requires overlay permission, Groq, and Deepgram to be fully featured.'
-            : 'Pomodoro break suggestions are off.'}
+              ? 'Requires overlay permission, Groq, and Deepgram to be fully featured.'
+              : 'Pomodoro break suggestions are off.'}
         </LinearText>
         {!props.hasPomodoroOverlayPermission && (
           <TouchableOpacity
@@ -190,6 +201,7 @@ export function InterventionsSection(props: any) {
           Pin subjects to limit sessions to those areas only. Clear all to study everything.
         </LinearText>
         <View style={styles.chipGrid}>
+          {/* eslint-disable-next-line @typescript-eslint/no-explicit-any -- subject chip iteration */}
           {subjects.map((s: any) => {
             const isFocused = focusSubjectIds.includes(s.id);
             return (
@@ -202,7 +214,8 @@ export function InterventionsSection(props: any) {
                 onPress={() =>
                   setFocusSubjectIds(
                     isFocused
-                      ? focusSubjectIds.filter((subjectId: any) => subjectId !== s.id)
+                      ? // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
+                        focusSubjectIds.filter((subjectId: any) => subjectId !== s.id)
                       : [...focusSubjectIds, s.id],
                   )
                 }
@@ -227,7 +240,12 @@ export function InterventionsSection(props: any) {
         )}
       </SectionToggle>
 
-      <SectionToggle id="interv_content" title="Content Type Preferences" icon="layers" tint="#A78BFA">
+      <SectionToggle
+        id="interv_content"
+        title="Content Type Preferences"
+        icon="layers"
+        tint="#A78BFA"
+      >
         <LinearText style={styles.hint} variant="body" tone="muted">
           Block card types you don't want in sessions. Keypoints can't be blocked.
         </LinearText>
@@ -247,7 +265,8 @@ export function InterventionsSection(props: any) {
                   if (isLocked) return;
                   setBlockedTypes(
                     isBlocked
-                      ? blockedTypes.filter((blockedType: any) => blockedType !== type)
+                      ? // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
+                        blockedTypes.filter((blockedType: any) => blockedType !== type)
                       : [...blockedTypes, type],
                   );
                 }}

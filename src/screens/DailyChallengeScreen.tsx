@@ -179,6 +179,7 @@ export default function DailyChallengeScreen() {
     const progressPct =
       loadingProgress.total > 0 ? (loadingProgress.current / loadingProgress.total) * 100 : 0;
     return (
+      // eslint-disable-next-line guru/prefer-screen-shell -- SafeAreaView needed here
       <SafeAreaView style={styles.safe}>
         <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
         <ResponsiveContainer>
@@ -211,6 +212,7 @@ export default function DailyChallengeScreen() {
             : '💪 Try again';
 
     return (
+      // eslint-disable-next-line guru/prefer-screen-shell -- SafeAreaView needed here
       <SafeAreaView style={styles.safe}>
         <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
         <ResponsiveContainer>
@@ -250,6 +252,7 @@ export default function DailyChallengeScreen() {
 
   if (questions.length === 0) {
     return (
+      // eslint-disable-next-line guru/prefer-screen-shell -- SafeAreaView needed here
       <SafeAreaView style={styles.safe}>
         <ResponsiveContainer>
           <EmptyState
@@ -266,6 +269,7 @@ export default function DailyChallengeScreen() {
   if (!q) {
     // Safety guard — should not happen, but prevents crash
     return (
+      // eslint-disable-next-line guru/prefer-screen-shell -- SafeAreaView needed here
       <SafeAreaView style={styles.safe}>
         <ResponsiveContainer>
           <View style={styles.loadingContainer}>
@@ -286,6 +290,7 @@ export default function DailyChallengeScreen() {
   const isCorrect = selected === q.correctIndex;
 
   return (
+    // eslint-disable-next-line guru/prefer-screen-shell -- SafeAreaView needed here
     <SafeAreaView style={styles.safe}>
       <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
       <ResponsiveContainer>

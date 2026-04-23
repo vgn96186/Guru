@@ -50,6 +50,7 @@ function ProfileSection({
 
 export default React.memo(ProfileSection);
 
+// eslint-disable-next-line guru/prefer-settings-primitives -- component-level styles
 const styles = StyleSheet.create({
   container: { gap: 12 },
   syncWarning: { color: '#F14C4C', fontSize: 12, marginBottom: 8 },

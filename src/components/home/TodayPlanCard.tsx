@@ -75,6 +75,37 @@ export default function TodayPlanCard() {
       ?.navigate('MenuTab', { screen: 'StudyPlan' });
   };
 
+  // Pre-compute aggregates once — MUST be called before any early returns (rules-of-hooks)
+  const { nextTask, remainingBlocks, totalMinutes, typeLabel, typeColor } = useMemo(() => {
+    if (!todayPlan)
+      return {
+        nextTask: null,
+        remainingBlocks: 0,
+        totalMinutes: 0,
+        typeLabel: 'STUDY',
+        typeColor: n.colors.accent,
+      };
+    const blocks = todayPlan.blocks.filter((b) => b.type !== 'break');
+    const first = blocks[0] ?? null;
+    const remaining = blocks.length;
+    const minutes = blocks.reduce((sum, b) => sum + b.durationMinutes, 0);
+    const label = first?.type === 'review' ? 'REVIEW' : first?.type === 'test' ? 'TEST' : 'STUDY';
+    const color =
+      first?.type === 'review'
+        ? n.colors.warning
+        : first?.type === 'test'
+          ? '#E05252'
+          : n.colors.accent;
+    return {
+      nextTask: first,
+      remainingBlocks: remaining,
+      totalMinutes: minutes,
+      typeLabel: label,
+      typeColor: color,
+    };
+  }, [todayPlan]);
+
+  // ── Early returns AFTER hooks ──
   if (!todayPlan) {
     return (
       <LinearSurface style={styles.container} borderColor="rgba(255,255,255,0.10)">
@@ -106,24 +137,6 @@ export default function TodayPlanCard() {
       </LinearSurface>
     );
   }
-
-  // Pre-compute aggregates once — filter+reduce over blocks on every render was expensive
-  const { studyBlocks: _studyBlocks, nextTask, remainingBlocks, totalMinutes, typeLabel, typeColor } =
-    useMemo(() => {
-      const blocks = todayPlan.blocks.filter((b) => b.type !== 'break');
-      const first = blocks[0];
-      const remaining = blocks.length;
-      const minutes = blocks.reduce((sum, b) => sum + b.durationMinutes, 0);
-      const label =
-        first?.type === 'review' ? 'REVIEW' : first?.type === 'test' ? 'TEST' : 'STUDY';
-      const color =
-        first?.type === 'review'
-          ? n.colors.warning
-          : first?.type === 'test'
-            ? '#E05252'
-            : n.colors.accent;
-      return { studyBlocks: blocks, nextTask: first, remainingBlocks: remaining, totalMinutes: minutes, typeLabel: label, typeColor: color };
-    }, [todayPlan]);
 
   // Don't render active state if no study blocks
   if (!nextTask) {

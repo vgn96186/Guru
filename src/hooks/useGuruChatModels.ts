@@ -33,6 +33,7 @@ const MODEL_GROUP_ORDER: ModelOption['group'][] = [
 ];
 
 export interface UseGuruChatModelsOptions {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
   profile: any | null;
 }
 

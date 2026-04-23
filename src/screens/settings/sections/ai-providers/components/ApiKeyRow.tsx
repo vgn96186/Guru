@@ -10,7 +10,9 @@ interface Props extends ApiKeyField {
   label: string;
   placeholder: string;
   hint?: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
   styles: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
   clearProviderValidated?: (id: any) => void;
   providerId?: string;
 }
@@ -67,16 +69,16 @@ export default function ApiKeyRow({
                 validationStatus === 'valid'
                   ? 'checkmark-circle'
                   : validationStatus === 'invalid'
-                  ? 'close-circle'
-                  : 'flash-outline'
+                    ? 'close-circle'
+                    : 'flash-outline'
               }
               size={20}
               color={
                 validationStatus === 'valid'
                   ? linearTheme.colors.success
                   : validationStatus === 'invalid'
-                  ? linearTheme.colors.error
-                  : linearTheme.colors.accent
+                    ? linearTheme.colors.error
+                    : linearTheme.colors.accent
               }
             />
           )}

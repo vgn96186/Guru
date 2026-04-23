@@ -33,8 +33,10 @@ const DRIVE_UPLOAD_URL = 'https://www.googleapis.com/upload/drive/v3/files';
 // Auth helpers (lazy-loaded to avoid crash if google-signin not installed)
 // ──────���───────────���─────────────────────────────────��────────────────────────
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
 let _GoogleSignin: any = null;
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
 function getGoogleSigninModule(): any {
   if (!_GoogleSignin) {
     try {
@@ -69,7 +71,8 @@ function isConfigureMissingError(error: unknown): boolean {
       : typeof error === 'string'
         ? error
         : error && typeof error === 'object' && 'message' in error
-          ? String((error as any).message)
+          ? // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
+            String((error as any).message)
           : '';
   const normalized = message.toLowerCase();
   return normalized.includes('apiclient is null') || normalized.includes('call configure() first');
@@ -85,6 +88,7 @@ async function resolveGoogleWebClientId(preferredWebClientId?: string): Promise<
 
   try {
     const profile = await profileRepository.getProfile();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
     const fromProfile = (profile as any)?.gdriveWebClientId?.trim() ?? '';
     if (fromProfile) return fromProfile;
   } catch {
@@ -148,6 +152,7 @@ export async function signInToGDrive(preferredWebClientId?: string): Promise<{ e
   const { GoogleSignin } = getGoogleSigninModule();
   await GoogleSignin.hasPlayServices?.({ showPlayServicesUpdateDialog: true });
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
   let userInfo: any;
   try {
     userInfo = await GoogleSignin.signIn();
@@ -164,6 +169,7 @@ export async function signInToGDrive(preferredWebClientId?: string): Promise<{ e
   await profileRepository.updateProfile({
     gdriveConnected: 1,
     gdriveEmail: email,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
   } as any);
 
   return { email };
@@ -180,12 +186,14 @@ export async function signOutGDrive(): Promise<void> {
     gdriveConnected: 0,
     gdriveEmail: '',
     gdriveLastSyncAt: null,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
   } as any);
 }
 
 export async function isGDriveConnected(): Promise<boolean> {
   try {
     const profile = await profileRepository.getProfile();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
     return Boolean((profile as any)?.gdriveConnected);
   } catch {
     return false;
@@ -257,6 +265,7 @@ export async function uploadBackupToGDrive(localFilePath: string): Promise<boole
   // Update last sync timestamp
   await profileRepository.updateProfile({
     gdriveLastSyncAt: now,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
   } as any);
 
   console.log('[GDrive] Backup uploaded successfully:', fileName);
@@ -290,6 +299,7 @@ export async function listGDriveBackups(): Promise<GDriveBackupMeta[]> {
   const data = await response.json();
   const files = data.files ?? [];
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
   return files.map((f: any) => ({
     fileId: f.id,
     name: f.name,

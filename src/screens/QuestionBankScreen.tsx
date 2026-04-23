@@ -1,3 +1,4 @@
+/* eslint-disable guru/prefer-screen-shell -- question bank root */
 import React, { useCallback, useState } from 'react';
 import { View, StyleSheet, TouchableOpacity, FlatList, StatusBar, Modal } from 'react-native';
 import LinearText from '../components/primitives/LinearText';

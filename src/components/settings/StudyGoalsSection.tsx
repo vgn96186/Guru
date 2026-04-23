@@ -70,6 +70,7 @@ function StudyGoalsSection({
 
 export default React.memo(StudyGoalsSection);
 
+// eslint-disable-next-line guru/prefer-settings-primitives -- component-level styles
 const styles = StyleSheet.create({
   row: { flexDirection: 'row' },
   rowField: { flex: 1 },

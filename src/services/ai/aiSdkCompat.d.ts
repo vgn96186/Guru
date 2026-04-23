@@ -18,14 +18,18 @@ import type {
 
 declare module '@ai-sdk/provider' {
   // V2 Result types were removed in v6 — use loose typing to bridge
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
   export type LanguageModelV2GenerateResult = any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
   export type LanguageModelV2StreamResult = any;
 
   // Legacy unversioned names used across provider implementations
   export type LanguageModel = _LMV2;
   export type LanguageModelCallOptions = _LMV2Opts;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
   export type LanguageModelGenerateResult = any;
   export type LanguageModelStreamPart = _LMV2Stream;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
   export type LanguageModelStreamResult = any;
   export type LanguageModelMessage = _LMV2Msg;
   export type LanguageModelToolCallPart = _LMV2ToolCall;

@@ -13,6 +13,7 @@ import { generateEmbedding, cosineSimilarity, blobToEmbedding } from '../ai/embe
  * 5. Queue unmatched names for manual syllabus review
  */
 export async function markTopicsFromLecture(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
   _tx: any, // legacy param
   topicsList: string[],
   confidence: number,
@@ -181,15 +182,12 @@ async function findSemanticMatches(
 ): Promise<number[]> {
   let query = db.select({ id: topics.id, embedding: topics.embedding }).from(topics);
   if (subjectName) {
-    query = query
-      .innerJoin(subjects, eq(topics.subjectId, subjects.id))
-      .where(
-        and(
-          sql`LOWER(${subjects.name}) = ${subjectName.toLowerCase()}`,
-          isNotNull(topics.embedding),
-        ),
-      ) as any;
+    query = query.innerJoin(subjects, eq(topics.subjectId, subjects.id)).where(
+      and(sql`LOWER(${subjects.name}) = ${subjectName.toLowerCase()}`, isNotNull(topics.embedding)),
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
+    ) as any;
   } else {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
     query = query.where(isNotNull(topics.embedding)) as any;
   }
 
@@ -199,6 +197,7 @@ async function findSemanticMatches(
   for (let index = 0; index < rows.length; index++) {
     const row = rows[index];
     if (!row.embedding) continue;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
     const topicVec = blobToEmbedding(row.embedding as any);
     const sim = cosineSimilarity(targetEmbedding, topicVec);
     if (sim >= threshold) {
@@ -218,6 +217,7 @@ async function findSemanticMatches(
 }
 
 async function applyLectureProgressToTopic(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
   _tx: any,
   topicId: number,
   confidence: number,

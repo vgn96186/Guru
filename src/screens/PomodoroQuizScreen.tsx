@@ -112,6 +112,7 @@ export default function PomodoroQuizScreen() {
 
   if (loading) {
     return (
+      // eslint-disable-next-line guru/prefer-screen-shell -- SafeAreaView needed here
       <SafeAreaView style={styles.safe}>
         <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
         <View style={styles.center}>
@@ -130,6 +131,7 @@ export default function PomodoroQuizScreen() {
 
   if (noQuizAvailable) {
     return (
+      // eslint-disable-next-line guru/prefer-screen-shell -- SafeAreaView needed here
       <SafeAreaView style={styles.safe}>
         <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
         <View style={styles.center}>
@@ -156,6 +158,7 @@ export default function PomodoroQuizScreen() {
 
   if (isDone || !question) {
     return (
+      // eslint-disable-next-line guru/prefer-screen-shell -- SafeAreaView needed here
       <SafeAreaView style={styles.safe}>
         <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
         <View style={styles.center}>
@@ -190,6 +193,7 @@ export default function PomodoroQuizScreen() {
   const isCorrect = selected === question.correctIndex;
 
   return (
+    // eslint-disable-next-line guru/prefer-screen-shell -- SafeAreaView needed here
     <SafeAreaView style={styles.safe}>
       <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
       <ScrollView

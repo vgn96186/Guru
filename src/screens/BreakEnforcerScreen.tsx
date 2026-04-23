@@ -85,6 +85,7 @@ export default function BreakEnforcerScreen() {
 
   if (isOver) {
     return (
+      // eslint-disable-next-line guru/prefer-screen-shell -- SafeAreaView needed here
       <SafeAreaView style={styles.safeError}>
         <StatusBar barStyle="light-content" backgroundColor={n.colors.error} />
         <ResponsiveContainer style={styles.container}>
@@ -111,6 +112,7 @@ export default function BreakEnforcerScreen() {
   }
 
   return (
+    // eslint-disable-next-line guru/prefer-screen-shell -- SafeAreaView needed here
     <SafeAreaView style={styles.safe}>
       <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
       <ResponsiveContainer style={styles.container}>

@@ -55,6 +55,7 @@ function parseInline(text: string): InlineToken[] {
   return tokens.length > 0 ? tokens : [{ text }];
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
 function InlineText({ text, style }: { text: string; style: any }) {
   return (
     <LinearText style={style} textBreakStrategy="simple" variant="body" tone="muted">

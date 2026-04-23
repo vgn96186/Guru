@@ -206,7 +206,7 @@ async function fetchSourceText(url: string): Promise<string> {
   }
 }
 
-function scoreHit(context: string, examKeyword: RegExp, sourceUrl: string): number {
+function scoreHit(context: string, examKeyword: RegExp, _sourceUrl: string): number {
   let score = 1;
   if (examKeyword.test(context)) score += 2;
   if (
@@ -382,10 +382,7 @@ async function braveWebSearch(
   }
 }
 
-function extractDateHitsFromBrave(
-  results: BraveSearchResult[],
-  examKeyword: RegExp,
-): DateHit[] {
+function extractDateHitsFromBrave(results: BraveSearchResult[], examKeyword: RegExp): DateHit[] {
   const hits: DateHit[] = [];
   for (const item of results) {
     const sourceUrl = item.url || '';
@@ -511,7 +508,10 @@ export async function fetchExamDatesViaBrave(): Promise<{
             neetDate: finalNeet?.date ?? scrapeResult.neetDate,
             inicetSources: finalInicet?.sources ?? ddgInicetBest?.sources,
             neetSources: finalNeet?.sources ?? ddgNeetBest?.sources,
-            method: (inicetBest || neetBest) && (ddgInicetBest || ddgNeetBest) ? 'brave+ddg' : 'ddg+scrape',
+            method:
+              (inicetBest || neetBest) && (ddgInicetBest || ddgNeetBest)
+                ? 'brave+ddg'
+                : 'ddg+scrape',
           };
         } catch {
           // Return what we have from Brave+DDG

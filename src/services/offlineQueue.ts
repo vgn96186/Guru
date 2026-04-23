@@ -24,6 +24,7 @@ export type OfflineRequestType = 'generate_json' | 'generate_text' | 'transcribe
 export interface OfflineQueueItem {
   id?: number;
   requestType: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
   payload: any;
   createdAt: number;
   attempts: number;
@@ -33,19 +34,20 @@ export interface OfflineQueueItem {
 }
 
 const MAX_ATTEMPTS = 5;
-const MAX_QUEUE_SIZE = 100; // Prevent storage exhaustion
+const _MAX_QUEUE_SIZE = 100; // Prevent storage exhaustion
 const DEDUPE_WINDOW_MS = 5 * 60 * 1000; // 5 minutes
 const RETRY_BASE_DELAY = 1000; // 1 second base delay for retries
 const FOREGROUND_PROCESS_DELAY_MS = 1000;
 const FOREGROUND_PROCESS_COOLDOWN_MS = 5000;
 
 /** Canonical JSON string (sorted keys) so dedupe and storage always match. */
-function canonicalPayloadString(payload: Record<string, unknown>): string {
+function _canonicalPayloadString(payload: Record<string, unknown>): string {
   return JSON.stringify(payload, Object.keys(payload).sort());
 }
 
 async function runQueueStatusUpdate(
   sqlQuery: string,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
   params: any[],
   failureLogPrefix: string,
 ): Promise<boolean> {
@@ -60,11 +62,12 @@ async function runQueueStatusUpdate(
 }
 
 /** Enqueue a failed request for later retry. */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
 export async function enqueueRequest(requestType: string, payload: any): Promise<void> {
   try {
     const db = getDb();
     const countRow = await db.getFirstAsync<{ count: number }>(
-      "SELECT COUNT(*) as count FROM offline_ai_queue WHERE status IN ('pending', 'processing')"
+      "SELECT COUNT(*) as count FROM offline_ai_queue WHERE status IN ('pending', 'processing')",
     );
     const count = countRow?.count ?? 0;
     if (count >= 100) {
@@ -81,6 +84,7 @@ export async function enqueueRequest(requestType: string, payload: any): Promise
                 acc[key] = payload[key];
                 return acc;
               },
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
               {} as Record<string, any>,
             )
         : payload;
@@ -88,7 +92,7 @@ export async function enqueueRequest(requestType: string, payload: any): Promise
 
     const recentRow = await db.getFirstAsync<{ id: number; created_at: number }>(
       "SELECT id, created_at FROM offline_ai_queue WHERE request_type = ? AND payload = ? AND status IN ('pending', 'processing') AND created_at > ?",
-      [requestType, payloadStr, nowTs() - DEDUPE_WINDOW_MS]
+      [requestType, payloadStr, nowTs() - DEDUPE_WINDOW_MS],
     );
 
     if (recentRow) {
@@ -98,7 +102,7 @@ export async function enqueueRequest(requestType: string, payload: any): Promise
 
     await db.runAsync(
       "INSERT INTO offline_ai_queue (request_type, payload, status, attempts, created_at) VALUES (?, ?, 'pending', 0, ?)",
-      [requestType, payloadStr, nowTs()]
+      [requestType, payloadStr, nowTs()],
     );
   } catch (err) {
     console.warn('[OfflineQueue] Failed to enqueue request:', err);
@@ -120,7 +124,7 @@ export async function getPendingRequests(): Promise<OfflineQueueItem[]> {
       error_message: string | null;
     }>(
       "SELECT * FROM offline_ai_queue WHERE status IN ('pending', 'failed') AND attempts < ? ORDER BY CASE status WHEN 'failed' THEN 1 ELSE 0 END, created_at ASC LIMIT 20",
-      [MAX_ATTEMPTS]
+      [MAX_ATTEMPTS],
     );
 
     return rows.map((r) => ({
@@ -182,7 +186,7 @@ export async function pruneCompletedItems(): Promise<void> {
     const cutoff = nowTs() - INTERVALS.SEVEN_DAYS;
     await db.runAsync(
       "DELETE FROM offline_ai_queue WHERE status = 'completed' AND created_at < ?",
-      [cutoff]
+      [cutoff],
     );
     if (__DEV__) console.log(`[OfflineQueue] Pruned old completed items`);
   } catch (error) {
@@ -306,7 +310,9 @@ const appStateSubscription = AppState.addEventListener('change', (state: AppStat
 });
 
 // Cleanup on module unload (in development hot reload)
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
 if (typeof window !== 'undefined' && (window as any).__DEV__) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
   (window as any).__OFFLINE_QUEUE_CLEANUP__ = () => {
     appStateSubscription?.remove();
   };

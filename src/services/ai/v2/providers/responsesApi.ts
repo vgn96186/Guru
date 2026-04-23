@@ -161,7 +161,10 @@ function convertMessagesToResponses(
     }
 
     if (msg.role === 'user') {
-      const parts = typeof msg.content === 'string' ? [{ type: 'text' as const, text: msg.content }] : msg.content;
+      const parts =
+        typeof msg.content === 'string'
+          ? [{ type: 'text' as const, text: msg.content }]
+          : msg.content;
       const content = parts
         .filter((p): p is { type: 'text'; text: string } => p.type === 'text')
         .map((p) => ({ type: 'input_text' as const, text: p.text }));
@@ -170,7 +173,10 @@ function convertMessagesToResponses(
     }
 
     if (msg.role === 'assistant') {
-      const parts = typeof msg.content === 'string' ? [{ type: 'text' as const, text: msg.content }] : msg.content;
+      const parts =
+        typeof msg.content === 'string'
+          ? [{ type: 'text' as const, text: msg.content }]
+          : msg.content;
       const textParts = parts.filter((p): p is { type: 'text'; text: string } => p.type === 'text');
       const toolCalls = parts.filter((p): p is ToolCallPart => p.type === 'tool-call');
       if (textParts.length) {
@@ -214,6 +220,7 @@ function textFromParts(parts: ReadonlyArray<{ type: string } & Record<string, un
 
 // ─── Non-streaming response parse ───────────────────────────────────────────
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
 function parseResponsesResult(json: any): LanguageModelV2GenerateResult {
   const content: LanguageModelV2GenerateResult['content'] = [];
   let finishReason: FinishReason = 'stop';
@@ -276,9 +283,7 @@ function parseResponsesResult(json: any): LanguageModelV2GenerateResult {
  *   - response.completed               → usage + finish
  *   - response.failed / response.error → error + finish
  */
-async function* sseToStreamParts(
-  response: Response,
-): AsyncGenerator<LanguageModelV2StreamPart> {
+async function* sseToStreamParts(response: Response): AsyncGenerator<LanguageModelV2StreamPart> {
   const reader = response.body?.getReader();
   if (!reader) {
     yield { type: 'error', error: new Error('No readable body') };
@@ -333,6 +338,7 @@ async function* sseToStreamParts(
         const payload = trimmed.slice(5).trim();
         if (!payload || payload === '[DONE]') continue;
 
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
         let evt: any;
         try {
           evt = JSON.parse(payload);

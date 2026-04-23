@@ -41,6 +41,7 @@ export function useSummaryMetrics(props: AiProvidersProps) {
   ].filter(Boolean).length;
 
   const providerPriority = sanitizeProviderOrder(routing.providerOrder)[0];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
   const topProviderLabel = (PROVIDER_DISPLAY_NAMES as any)[providerPriority] ?? 'Auto';
 
   const localAiSummary = localAi.enabled
@@ -59,6 +60,7 @@ export function useSummaryMetrics(props: AiProvidersProps) {
 
 interface Props {
   metrics: ReturnType<typeof useSummaryMetrics>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
   styles: any;
 }
 
@@ -66,7 +68,7 @@ export default function SummaryHeader({ metrics, styles }: Props) {
   const { readyProviderCount, oauthConnectionCount, topProviderLabel, localAiSummary } = metrics;
 
   return (
-    <>
+    <View style={{ width: '100%' }}>
       <LinearText
         style={[styles.categoryLabel, { marginTop: 0 }]}
         variant="sectionTitle"
@@ -114,6 +116,6 @@ export default function SummaryHeader({ metrics, styles }: Props) {
           </View>
         </View>
       </LinearSurface>
-    </>
+    </View>
   );
 }

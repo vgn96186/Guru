@@ -68,13 +68,13 @@ async function wikiApiJson(res: Response, step: string): Promise<unknown | null>
   }
   try {
     return JSON.parse(text) as unknown;
-  } catch (e) {
+  } catch (_e) {
     // #region agent log
     dbgImageService('B', 'wiki json parse error', {
       step,
       status: res.status,
       prefix: trimmed.slice(0, 120),
-      err: String(e),
+      err: String(_e),
     });
     // #endregion
     return null;
@@ -108,7 +108,7 @@ export async function fetchWikipediaImage(topicName: string): Promise<string | n
       const pageId = Object.keys(pages)[0];
       if (pageId === '-1') return null;
       return pages[pageId]?.thumbnail?.source || null;
-    } catch (e) {
+    } catch (_e) {
       return null;
     }
   }

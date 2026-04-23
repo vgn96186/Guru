@@ -97,7 +97,11 @@ export function createLocalLlmModel(config: LocalLlmConfig): LanguageModelV2 {
       // Use true native streaming when no tools are enabled (tools require blocking chat)
       if (!useTools) {
         // Subscription refs stored in a mutable container so abort handler can access them
-        const subs = { token: null as { remove: () => void } | null, complete: null as { remove: () => void } | null, error: null as { remove: () => void } | null };
+        const subs = {
+          token: null as { remove: () => void } | null,
+          complete: null as { remove: () => void } | null,
+          error: null as { remove: () => void } | null,
+        };
         let completionReceived = false;
         let safetyTimeoutId: ReturnType<typeof setTimeout> | null = null;
         let aborted = false; // Track if abort fired before subscriptions created
@@ -110,6 +114,9 @@ export function createLocalLlmModel(config: LocalLlmConfig): LanguageModelV2 {
           subs.token?.remove();
           subs.complete?.remove();
           subs.error?.remove();
+          // LiteRT-LM Conversation wedges after one generation on some devices —
+          // reset Conversation, keep Engine warm (Edge Gallery pattern).
+          void LocalLlm.resetSession().catch(() => {});
         };
 
         void (async () => {
@@ -128,7 +135,7 @@ export function createLocalLlmModel(config: LocalLlmConfig): LanguageModelV2 {
               push({ type: 'text-delta', id: textId, delta: token });
             });
 
-            subs.complete = LocalLlm.addLlmCompleteListener(({ text, toolCallsJson }) => {
+            subs.complete = LocalLlm.addLlmCompleteListener(({ text: _text, toolCallsJson }) => {
               completionReceived = true;
               cleanup();
 
@@ -163,7 +170,7 @@ export function createLocalLlmModel(config: LocalLlmConfig): LanguageModelV2 {
                 systemInstruction: systemText || undefined,
                 temperature: 0.7,
                 topP: 0.9,
-              })
+              }),
             );
 
             // Safety timeout - if no completion received, end stream
@@ -174,11 +181,13 @@ export function createLocalLlmModel(config: LocalLlmConfig): LanguageModelV2 {
                 end();
               }
             }, STREAM_TIMEOUT_MS);
-
           } catch (err) {
             cleanup();
             if (__DEV__) {
-              console.warn('[v2/localLlm] Native stream error:', err instanceof Error ? err.message : err);
+              console.warn(
+                '[v2/localLlm] Native stream error:',
+                err instanceof Error ? err.message : err,
+              );
             }
             push({ type: 'error', error: err });
             push({ type: 'finish', finishReason: 'error', usage: {} });
@@ -186,18 +195,18 @@ export function createLocalLlmModel(config: LocalLlmConfig): LanguageModelV2 {
           }
         })();
 
-      // Register abort handler (uses `subs` closure, not external refs)
-      options.abortSignal?.addEventListener('abort', () => {
-        aborted = true; // Mark aborted before cleanup to prevent race
-        cleanup();
-        void (async () => {
-          try {
-            await LocalLlm.cancel();
-          } catch {
-            // ignore
-          }
-        })();
-      });
+        // Register abort handler (uses `subs` closure, not external refs)
+        options.abortSignal?.addEventListener('abort', () => {
+          aborted = true; // Mark aborted before cleanup to prevent race
+          cleanup();
+          void (async () => {
+            try {
+              await LocalLlm.cancel();
+            } catch {
+              // ignore
+            }
+          })();
+        });
       } else {
         // With tools enabled, fall back to blocking chat + simulated streaming
         void (async () => {

@@ -102,6 +102,7 @@ export default function MenuScreen() {
   }, []);
 
   return (
+    // eslint-disable-next-line guru/prefer-screen-shell -- SafeAreaView needed here
     <SafeAreaView style={styles.safe} testID="menu-screen">
       <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
       <ResponsiveContainer style={styles.flex}>

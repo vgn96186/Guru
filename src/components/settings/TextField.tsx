@@ -68,6 +68,7 @@ export default function TextField({
       <LinearText variant="label" style={[styles.label, labelStyle]}>
         {label}
       </LinearText>
+      {/* eslint-disable-next-line guru/prefer-settings-primitives -- component-level styles */}
       <TextInput
         style={[
           styles.input,
@@ -92,6 +93,7 @@ export default function TextField({
   );
 }
 
+// eslint-disable-next-line guru/prefer-settings-primitives -- component-level styles
 const styles = StyleSheet.create({
   container: {
     marginBottom: 16,

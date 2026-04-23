@@ -244,6 +244,7 @@ export default function FlashcardsScreen() {
 
   if (queue.length === 0) {
     return (
+      // eslint-disable-next-line guru/prefer-screen-shell -- SafeAreaView needed here
       <SafeAreaView style={styles.safe}>
         <ResponsiveContainer style={styles.center}>
           <Ionicons name="layers-outline" size={64} color={n.colors.textMuted} />
@@ -274,6 +275,7 @@ export default function FlashcardsScreen() {
   const currentCard = cards[cardIdx];
   if (!currentCard) {
     return (
+      // eslint-disable-next-line guru/prefer-screen-shell -- SafeAreaView needed here
       <SafeAreaView style={styles.safe}>
         <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
         <ResponsiveContainer>
@@ -368,6 +370,7 @@ export default function FlashcardsScreen() {
   };
 
   return (
+    // eslint-disable-next-line guru/prefer-screen-shell -- SafeAreaView needed here
     <SafeAreaView style={styles.safe}>
       <ErrorBoundary>
         <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />

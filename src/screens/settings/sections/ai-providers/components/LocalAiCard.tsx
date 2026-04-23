@@ -5,6 +5,7 @@ import SettingsToggleRow from '../../../components/SettingsToggleRow';
 
 interface Props {
   title: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
   iconName: any;
   iconColor: string;
   isActive: boolean;
@@ -13,6 +14,7 @@ interface Props {
   disableToggle?: boolean;
   extraInfo?: string;
   showToggle?: boolean;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
   styles: any;
 }
 

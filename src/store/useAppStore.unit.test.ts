@@ -35,6 +35,4 @@ describe('useAppStore', () => {
       expect(useAppStore.getState().planGeneratedAt).toBeNull();
     });
   });
-
-
 });

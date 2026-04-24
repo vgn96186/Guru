@@ -29,7 +29,9 @@ export function getLocalLlmRamWarning(): string | null {
     return null;
   }
 
-  return `This device has ${formatRam(totalMemory)} RAM. Guru disables on-device text AI below 6.0 GB for Gemma 4 to avoid crashes.`;
+  return `This device has ${formatRam(
+    totalMemory,
+  )} RAM. Guru disables on-device text AI below 6.0 GB for Gemma 4 to avoid crashes.`;
 }
 
 export function isLocalLlmUsable(

@@ -267,10 +267,14 @@ export function buildEscalatingQuizPrompt(
 
   const wrongContext =
     previouslyWrong.length > 0
-      ? `The student previously got these WRONG — test them again from a different angle: ${previouslyWrong.slice(0, 3).join('; ')}.`
+      ? `The student previously got these WRONG — test them again from a different angle: ${previouslyWrong
+          .slice(0, 3)
+          .join('; ')}.`
       : '';
 
-  return `Create 4 MCQs on "${topicName}" (${subjectName}) — Round ${round + 1} / escalating difficulty.
+  return `Create 4 MCQs on "${topicName}" (${subjectName}) — Round ${
+    round + 1
+  } / escalating difficulty.
 
 Difficulty level: ${difficulty}.
 ${wrongContext}
@@ -377,21 +381,35 @@ export function buildAccountabilityPrompt(stats: {
   if (stats.daysToNeetPg > 0) examLines.push(`NEET-PG in ${stats.daysToNeetPg} days`);
   const examContext = examLines.length > 0 ? examLines.join(' | ') : 'exam date not set';
 
-  return `Generate exactly ${count} accountability push notifications for ${stats.displayName}, a NEET-PG/INI-CET student preparing in India.
+  return `Generate exactly ${count} accountability push notifications for ${
+    stats.displayName
+  }, a NEET-PG/INI-CET student preparing in India.
 
 STUDENT SNAPSHOT:
 - Name: ${stats.displayName}
-- Streak: ${stats.streak} day${stats.streak !== 1 ? 's' : ''}${stats.streak === 0 ? ' (broken — restart needed)' : ''}
+- Streak: ${stats.streak} day${stats.streak !== 1 ? 's' : ''}${
+    stats.streak === 0 ? ' (broken — restart needed)' : ''
+  }
 - Exams: ${examContext}
-- Syllabus: ${stats.coveragePercent}% covered (${stats.masteredCount} mastered out of ${stats.totalTopics} topics)
-- Weakest topics: ${stats.weakestTopics.length > 0 ? stats.weakestTopics.join(', ') : 'none yet (just started)'}
-- Nemesis topics (most failed): ${stats.nemesisTopics.length > 0 ? stats.nemesisTopics.join(', ') : 'none yet'}
-- DUE FOR REVIEW (SRS): ${stats.dueTopics.length > 0 ? stats.dueTopics.join(', ') : 'nothing urgent'}
+- Syllabus: ${stats.coveragePercent}% covered (${stats.masteredCount} mastered out of ${
+    stats.totalTopics
+  } topics)
+- Weakest topics: ${
+    stats.weakestTopics.length > 0 ? stats.weakestTopics.join(', ') : 'none yet (just started)'
+  }
+- Nemesis topics (most failed): ${
+    stats.nemesisTopics.length > 0 ? stats.nemesisTopics.join(', ') : 'none yet'
+  }
+- DUE FOR REVIEW (SRS): ${
+    stats.dueTopics.length > 0 ? stats.dueTopics.join(', ') : 'nothing urgent'
+  }
 - Last studied: ${stats.lastStudied}
 - Last mood: ${stats.lastMood ?? 'unknown'}
 
 Return exactly ${count} messages as JSON, one for each scheduledFor slot:
-{ "messages": [${slots.map((s) => `{ "title": "...", "body": "...", "scheduledFor": "${s}" }`).join(', ')}] }
+{ "messages": [${slots
+    .map((s) => `{ "title": "...", "body": "...", "scheduledFor": "${s}" }`)
+    .join(', ')}] }
 
 RULES:
 - Use ${stats.displayName}'s name at least once across all messages

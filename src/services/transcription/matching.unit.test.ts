@@ -1,4 +1,7 @@
 import { markTopicsFromLecture } from './matching';
+import { setDbForTests } from '../../db/database';
+import { resetDrizzleDb } from '../../db/drizzle';
+import { createTestDatabase } from '../../db/testing/createTestDatabase';
 import * as topicsQueries from '../../db/queries/topics';
 import * as embeddingService from '../ai/embeddingService';
 
@@ -13,46 +16,57 @@ jest.mock('../ai/embeddingService', () => ({
   blobToEmbedding: jest.fn(),
 }));
 
-function mockDb(
-  overrides: Partial<{
-    getFirstAsync: jest.Mock;
-    getAllAsync: jest.Mock;
-  }> = {},
-) {
-  return {
-    getFirstAsync: jest.fn().mockResolvedValue(null),
-    getAllAsync: jest.fn().mockResolvedValue([]),
-    ...overrides,
-  } as unknown as import('expo-sqlite').SQLiteDatabase;
-}
-
 describe('markTopicsFromLecture', () => {
-  beforeEach(() => {
+  let db: ReturnType<typeof createTestDatabase>;
+
+  beforeEach(async () => {
     jest.clearAllMocks();
+    db = createTestDatabase();
+    setDbForTests(db);
+    resetDrizzleDb();
+
+    await db.runAsync(
+      'INSERT INTO subjects (id, name, short_code, color_hex, inicet_weight, neet_weight, display_order) VALUES (?, ?, ?, ?, ?, ?, ?)',
+      [1, 'Medicine', 'MED', '#123456', 1, 1, 1],
+    );
+    await db.runAsync(
+      'INSERT INTO subjects (id, name, short_code, color_hex, inicet_weight, neet_weight, display_order) VALUES (?, ?, ?, ?, ?, ?, ?)',
+      [2, 'Pathology', 'PATH', '#654321', 1, 1, 2],
+    );
+    await db.runAsync(
+      'INSERT INTO subjects (id, name, short_code, color_hex, inicet_weight, neet_weight, display_order) VALUES (?, ?, ?, ?, ?, ?, ?)',
+      [3, 'Surgery', 'SURG', '#abcdef', 1, 1, 3],
+    );
+    await db.runAsync('INSERT INTO topics (id, subject_id, name) VALUES (?, ?, ?)', [
+      101,
+      1,
+      'Diabetes',
+    ]);
+    await db.runAsync('INSERT INTO topics (id, subject_id, name, embedding) VALUES (?, ?, ?, ?)', [
+      55,
+      2,
+      'Kidney topic',
+      new Uint8Array([1, 2, 3]),
+    ]);
+  });
+
+  afterEach(() => {
+    setDbForTests(null);
+    resetDrizzleDb();
   });
 
   it('returns immediately when no topics and no lecture summary', async () => {
-    const db = mockDb();
-    await markTopicsFromLecture(db, [], 2, 'Anatomy');
-    expect(db.getFirstAsync).not.toHaveBeenCalled();
+    await markTopicsFromLecture({}, [], 2, 'Anatomy');
+
     expect(topicsQueries.updateTopicProgressInTx).not.toHaveBeenCalled();
   });
 
   it('matches a topic by keyword and updates progress', async () => {
-    const db = mockDb({
-      getFirstAsync: jest.fn().mockImplementation((sql: string) => {
-        if (sql.includes('JOIN subjects') && sql.includes('LOWER(t.name) =')) {
-          return Promise.resolve({ id: 101 });
-        }
-        return Promise.resolve(null);
-      }),
-      getAllAsync: jest.fn().mockResolvedValue([]),
-    });
-
-    await markTopicsFromLecture(db, ['  diabetes  '], 2, 'Medicine');
+    const tx = {};
+    await markTopicsFromLecture(tx, ['  diabetes  '], 2, 'Medicine');
 
     expect(topicsQueries.updateTopicProgressInTx).toHaveBeenCalledWith(
-      db,
+      tx,
       101,
       'seen',
       2,
@@ -66,40 +80,27 @@ describe('markTopicsFromLecture', () => {
     (embeddingService.cosineSimilarity as jest.Mock).mockReturnValue(0.9);
     (embeddingService.blobToEmbedding as jest.Mock).mockReturnValue([0.1, 0.2, 0.3]);
 
-    const rows = [{ id: 55, embedding: new Uint8Array([1, 2, 3]) }];
-    const db = mockDb({
-      getFirstAsync: jest.fn().mockResolvedValue(null),
-      getAllAsync: jest.fn().mockImplementation((sql: string) => {
-        if (sql.includes('embedding')) {
-          return Promise.resolve(rows);
-        }
-        return Promise.resolve([]);
-      }),
-    });
-
-    // Pass undefined so the pipeline generates an embedding (null would skip generation)
-    await markTopicsFromLecture(db, [], 2, 'Pathology', 'Some lecture about kidneys', undefined);
+    const tx = {};
+    await markTopicsFromLecture(tx, [], 2, 'Pathology', 'Some lecture about kidneys', undefined);
 
     expect(embeddingService.generateEmbedding).toHaveBeenCalledWith('Some lecture about kidneys');
-    expect(topicsQueries.updateTopicProgressInTx).toHaveBeenCalled();
+    expect(topicsQueries.updateTopicProgressInTx).toHaveBeenCalledWith(
+      tx,
+      55,
+      'seen',
+      2,
+      0,
+      'Some lecture about kidneys',
+    );
   });
 
   it('queues unmatched topic names when subject exists', async () => {
-    const db = mockDb({
-      getFirstAsync: jest.fn().mockImplementation((sql: string, params?: string[]) => {
-        if (sql.includes('FROM subjects') && params?.[0]?.toLowerCase() === 'surgery') {
-          return Promise.resolve({ id: 9 });
-        }
-        return Promise.resolve(null);
-      }),
-      getAllAsync: jest.fn().mockResolvedValue([]),
-    });
-
-    await markTopicsFromLecture(db, ['Totally Unknown Topic Xyz'], 2, 'Surgery', undefined);
+    const tx = {};
+    await markTopicsFromLecture(tx, ['Totally Unknown Topic Xyz'], 2, 'Surgery', undefined);
 
     expect(topicsQueries.queueTopicSuggestionInTx).toHaveBeenCalledWith(
-      db,
-      9,
+      tx,
+      3,
       'Totally Unknown Topic Xyz',
       undefined,
     );

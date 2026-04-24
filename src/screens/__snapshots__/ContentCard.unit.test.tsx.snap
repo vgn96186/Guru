@@ -94,29 +94,15 @@ exports[`ContentCard Snapshots matches snapshot for {"answer": "Ans", "clues": [
       >
         <Text
           allowFontScaling={true}
+          className="font-inter include-font-padding-false text-[15px] leading-[22px] font-normal text-textPrimary"
           style={
-            [
-              {
-                "includeFontPadding": false,
-              },
-              {
-                "fontFamily": "Inter_400Regular",
-                "fontSize": 15,
-                "lineHeight": 22,
-              },
-              {
-                "color": "#F2F2F2",
-              },
-              false,
-              false,
-              {
-                "color": "#5E6AD2",
-                "fontSize": 12,
-                "fontWeight": "700",
-                "letterSpacing": 1.5,
-                "marginBottom": 6,
-              },
-            ]
+            {
+              "color": "#5E6AD2",
+              "fontSize": 12,
+              "fontWeight": "700",
+              "letterSpacing": 1.5,
+              "marginBottom": 6,
+            }
           }
           textBreakStrategy="simple"
         >
@@ -134,33 +120,19 @@ exports[`ContentCard Snapshots matches snapshot for {"answer": "Ans", "clues": [
         >
           <Text
             allowFontScaling={true}
+            className="font-inter include-font-padding-false text-[15px] leading-[22px] font-normal text-textPrimary"
             ellipsizeMode="tail"
             numberOfLines={3}
             style={
-              [
-                {
-                  "includeFontPadding": false,
-                },
-                {
-                  "fontFamily": "Inter_400Regular",
-                  "fontSize": 15,
-                  "lineHeight": 22,
-                },
-                {
-                  "color": "#F2F2F2",
-                },
-                false,
-                false,
-                {
-                  "color": "#F2F2F2",
-                  "fontSize": 22,
-                  "fontWeight": "800",
-                  "lineHeight": 28,
-                  "marginBottom": 20,
-                  "minWidth": 0,
-                  "width": "100%",
-                },
-              ]
+              {
+                "color": "#F2F2F2",
+                "fontSize": 22,
+                "fontWeight": "800",
+                "lineHeight": 28,
+                "marginBottom": 20,
+                "minWidth": 0,
+                "width": "100%",
+              }
             }
             textBreakStrategy="simple"
           >
@@ -185,28 +157,14 @@ exports[`ContentCard Snapshots matches snapshot for {"answer": "Ans", "clues": [
         >
           <Text
             allowFontScaling={true}
+            className="font-inter include-font-padding-false text-[15px] leading-[22px] font-normal text-textPrimary"
             style={
-              [
-                {
-                  "includeFontPadding": false,
-                },
-                {
-                  "fontFamily": "Inter_400Regular",
-                  "fontSize": 15,
-                  "lineHeight": 22,
-                },
-                {
-                  "color": "#F2F2F2",
-                },
-                false,
-                false,
-                {
-                  "color": "#5E6AD2",
-                  "fontSize": 12,
-                  "fontWeight": "700",
-                  "marginBottom": 4,
-                },
-              ]
+              {
+                "color": "#5E6AD2",
+                "fontSize": 12,
+                "fontWeight": "700",
+                "marginBottom": 4,
+              }
             }
             textBreakStrategy="simple"
           >
@@ -215,27 +173,13 @@ exports[`ContentCard Snapshots matches snapshot for {"answer": "Ans", "clues": [
           </Text>
           <Text
             allowFontScaling={true}
+            className="font-inter include-font-padding-false text-[15px] leading-[22px] font-normal text-textPrimary"
             style={
-              [
-                {
-                  "includeFontPadding": false,
-                },
-                {
-                  "fontFamily": "Inter_400Regular",
-                  "fontSize": 15,
-                  "lineHeight": 22,
-                },
-                {
-                  "color": "#F2F2F2",
-                },
-                false,
-                false,
-                {
-                  "color": "#F2F2F2",
-                  "fontSize": 15,
-                  "lineHeight": 22,
-                },
-              ]
+              {
+                "color": "#F2F2F2",
+                "fontSize": 15,
+                "lineHeight": 22,
+              }
             }
             textBreakStrategy="simple"
           >
@@ -267,27 +211,13 @@ exports[`ContentCard Snapshots matches snapshot for {"answer": "Ans", "clues": [
           >
             <Text
               allowFontScaling={true}
+              className="font-inter include-font-padding-false text-[15px] leading-[22px] font-normal text-textPrimary"
               style={
-                [
-                  {
-                    "includeFontPadding": false,
-                  },
-                  {
-                    "fontFamily": "Inter_400Regular",
-                    "fontSize": 15,
-                    "lineHeight": 22,
-                  },
-                  {
-                    "color": "#F2F2F2",
-                  },
-                  false,
-                  false,
-                  {
-                    "color": "#F2F2F2",
-                    "fontSize": 16,
-                    "fontWeight": "800",
-                  },
-                ]
+                {
+                  "color": "#F2F2F2",
+                  "fontSize": 16,
+                  "fontWeight": "800",
+                }
               }
               textBreakStrategy="simple"
             >
@@ -311,27 +241,13 @@ exports[`ContentCard Snapshots matches snapshot for {"answer": "Ans", "clues": [
           >
             <Text
               allowFontScaling={true}
+              className="font-inter include-font-padding-false text-[15px] leading-[22px] font-normal text-textPrimary"
               style={
-                [
-                  {
-                    "includeFontPadding": false,
-                  },
-                  {
-                    "fontFamily": "Inter_400Regular",
-                    "fontSize": 15,
-                    "lineHeight": 22,
-                  },
-                  {
-                    "color": "#F2F2F2",
-                  },
-                  false,
-                  false,
-                  {
-                    "color": "#D97706",
-                    "fontSize": 15,
-                    "fontWeight": "700",
-                  },
-                ]
+                {
+                  "color": "#D97706",
+                  "fontSize": 15,
+                  "fontWeight": "700",
+                }
               }
               textBreakStrategy="simple"
             >
@@ -352,26 +268,12 @@ exports[`ContentCard Snapshots matches snapshot for {"answer": "Ans", "clues": [
         >
           <Text
             allowFontScaling={true}
+            className="font-inter include-font-padding-false text-[15px] leading-[22px] font-normal text-textPrimary"
             style={
-              [
-                {
-                  "includeFontPadding": false,
-                },
-                {
-                  "fontFamily": "Inter_400Regular",
-                  "fontSize": 15,
-                  "lineHeight": 22,
-                },
-                {
-                  "color": "#F2F2F2",
-                },
-                false,
-                false,
-                {
-                  "color": "#939396",
-                  "fontSize": 13,
-                },
-              ]
+              {
+                "color": "#939396",
+                "fontSize": 13,
+              }
             }
             textBreakStrategy="simple"
           >
@@ -427,22 +329,6 @@ exports[`ContentCard Snapshots matches snapshot for {"answer": "Ans", "clues": [
         size={20}
       />
     </TouchableOpacity>
-    <Text
-      testID="guru-context"
-    >
-      Card type: Detective
-Clues: Clue 1
-Answer: Ans
-Explanation: Exp
-
-Current study step:
-Card type: Detective
-Diagnosis (Student shouldn't know yet unless solved): Ans
-Explanation: Exp
-All Clues: Clue 1
-Visible Clues count: 1
-Student is still investigating.
-    </Text>
   </View>
 </View>
 `;
@@ -539,25 +425,7 @@ exports[`ContentCard Snapshots matches snapshot for {"cards": [Array], "topicNam
         >
           <Text
             allowFontScaling={true}
-            style={
-              [
-                {
-                  "includeFontPadding": false,
-                },
-                {
-                  "fontFamily": "Inter_600SemiBold",
-                  "fontSize": 12,
-                  "letterSpacing": 0.2,
-                  "lineHeight": 16,
-                },
-                {
-                  "color": "#939396",
-                },
-                false,
-                false,
-                undefined,
-              ]
-            }
+            className="font-inter include-font-padding-false text-[12px] leading-[16px] font-semibold tracking-[0.2px] text-textMuted"
             textBreakStrategy="simple"
           >
             Test Topic
@@ -586,29 +454,15 @@ exports[`ContentCard Snapshots matches snapshot for {"cards": [Array], "topicNam
         >
           <Text
             allowFontScaling={true}
+            className="font-inter include-font-padding-false text-[15px] leading-[22px] font-normal text-textPrimary"
             style={
-              [
-                {
-                  "includeFontPadding": false,
-                },
-                {
-                  "fontFamily": "Inter_400Regular",
-                  "fontSize": 15,
-                  "lineHeight": 22,
-                },
-                {
-                  "color": "#F2F2F2",
-                },
-                false,
-                false,
-                {
-                  "color": "#939396",
-                  "fontSize": 12,
-                  "fontWeight": "900",
-                  "letterSpacing": 2,
-                  "marginBottom": 20,
-                },
-              ]
+              {
+                "color": "#939396",
+                "fontSize": 12,
+                "fontWeight": "900",
+                "letterSpacing": 2,
+                "marginBottom": 20,
+              }
             }
             textBreakStrategy="simple"
           >
@@ -616,29 +470,15 @@ exports[`ContentCard Snapshots matches snapshot for {"cards": [Array], "topicNam
           </Text>
           <Text
             allowFontScaling={true}
+            className="font-inter include-font-padding-false text-[15px] leading-[22px] font-normal text-textPrimary"
             style={
-              [
-                {
-                  "includeFontPadding": false,
-                },
-                {
-                  "fontFamily": "Inter_400Regular",
-                  "fontSize": 15,
-                  "lineHeight": 22,
-                },
-                {
-                  "color": "#F2F2F2",
-                },
-                false,
-                false,
-                {
-                  "color": "#F2F2F2",
-                  "fontSize": 20,
-                  "fontWeight": "700",
-                  "lineHeight": 30,
-                  "textAlign": "center",
-                },
-              ]
+              {
+                "color": "#F2F2F2",
+                "fontSize": 20,
+                "fontWeight": "700",
+                "lineHeight": 30,
+                "textAlign": "center",
+              }
             }
             textBreakStrategy="simple"
           >
@@ -646,25 +486,11 @@ exports[`ContentCard Snapshots matches snapshot for {"cards": [Array], "topicNam
           </Text>
           <Text
             allowFontScaling={true}
+            className="font-inter include-font-padding-false text-[12px] leading-[16px] font-medium text-textMuted"
             style={
-              [
-                {
-                  "includeFontPadding": false,
-                },
-                {
-                  "fontFamily": "Inter_500Medium",
-                  "fontSize": 12,
-                  "lineHeight": 16,
-                },
-                {
-                  "color": "#939396",
-                },
-                false,
-                false,
-                {
-                  "marginTop": 20,
-                },
-              ]
+              {
+                "marginTop": 20,
+              }
             }
             textBreakStrategy="simple"
           >
@@ -693,27 +519,13 @@ exports[`ContentCard Snapshots matches snapshot for {"cards": [Array], "topicNam
           >
             <Text
               allowFontScaling={true}
+              className="font-inter include-font-padding-false text-[15px] leading-[22px] font-normal text-textPrimary"
               style={
-                [
-                  {
-                    "includeFontPadding": false,
-                  },
-                  {
-                    "fontFamily": "Inter_400Regular",
-                    "fontSize": 15,
-                    "lineHeight": 22,
-                  },
-                  {
-                    "color": "#F2F2F2",
-                  },
-                  false,
-                  false,
-                  {
-                    "color": "#F2F2F2",
-                    "fontSize": 16,
-                    "fontWeight": "800",
-                  },
-                ]
+                {
+                  "color": "#F2F2F2",
+                  "fontSize": 16,
+                  "fontWeight": "800",
+                }
               }
               textBreakStrategy="simple"
             >
@@ -770,9 +582,6 @@ exports[`ContentCard Snapshots matches snapshot for {"cards": [Array], "topicNam
         size={20}
       />
     </TouchableOpacity>
-    <Text
-      testID="guru-context"
-    />
   </View>
 </View>
 `;
@@ -871,29 +680,15 @@ exports[`ContentCard Snapshots matches snapshot for {"errors": [Array], "paragra
       >
         <Text
           allowFontScaling={true}
+          className="font-inter include-font-padding-false text-[15px] leading-[22px] font-normal text-textPrimary"
           style={
-            [
-              {
-                "includeFontPadding": false,
-              },
-              {
-                "fontFamily": "Inter_400Regular",
-                "fontSize": 15,
-                "lineHeight": 22,
-              },
-              {
-                "color": "#F2F2F2",
-              },
-              false,
-              false,
-              {
-                "color": "#5E6AD2",
-                "fontSize": 12,
-                "fontWeight": "700",
-                "letterSpacing": 1.5,
-                "marginBottom": 6,
-              },
-            ]
+            {
+              "color": "#5E6AD2",
+              "fontSize": 12,
+              "fontWeight": "700",
+              "letterSpacing": 1.5,
+              "marginBottom": 6,
+            }
           }
           textBreakStrategy="simple"
         >
@@ -911,33 +706,19 @@ exports[`ContentCard Snapshots matches snapshot for {"errors": [Array], "paragra
         >
           <Text
             allowFontScaling={true}
+            className="font-inter include-font-padding-false text-[15px] leading-[22px] font-normal text-textPrimary"
             ellipsizeMode="tail"
             numberOfLines={3}
             style={
-              [
-                {
-                  "includeFontPadding": false,
-                },
-                {
-                  "fontFamily": "Inter_400Regular",
-                  "fontSize": 15,
-                  "lineHeight": 22,
-                },
-                {
-                  "color": "#F2F2F2",
-                },
-                false,
-                false,
-                {
-                  "color": "#F2F2F2",
-                  "fontSize": 22,
-                  "fontWeight": "800",
-                  "lineHeight": 28,
-                  "marginBottom": 20,
-                  "minWidth": 0,
-                  "width": "100%",
-                },
-              ]
+              {
+                "color": "#F2F2F2",
+                "fontSize": 22,
+                "fontWeight": "800",
+                "lineHeight": 28,
+                "marginBottom": 20,
+                "minWidth": 0,
+                "width": "100%",
+              }
             }
             textBreakStrategy="simple"
           >
@@ -946,28 +727,14 @@ exports[`ContentCard Snapshots matches snapshot for {"errors": [Array], "paragra
         </View>
         <Text
           allowFontScaling={true}
+          className="font-inter include-font-padding-false text-[15px] leading-[22px] font-normal text-textPrimary"
           style={
-            [
-              {
-                "includeFontPadding": false,
-              },
-              {
-                "fontFamily": "Inter_400Regular",
-                "fontSize": 15,
-                "lineHeight": 22,
-              },
-              {
-                "color": "#F2F2F2",
-              },
-              false,
-              false,
-              {
-                "color": "#F2F2F2",
-                "fontSize": 16,
-                "lineHeight": 24,
-                "marginBottom": 16,
-              },
-            ]
+            {
+              "color": "#F2F2F2",
+              "fontSize": 16,
+              "lineHeight": 24,
+              "marginBottom": 16,
+            }
           }
           textBreakStrategy="simple"
         >
@@ -985,27 +752,13 @@ exports[`ContentCard Snapshots matches snapshot for {"errors": [Array], "paragra
         >
           <Text
             allowFontScaling={true}
+            className="font-inter include-font-padding-false text-[15px] leading-[22px] font-normal text-textPrimary"
             style={
-              [
-                {
-                  "includeFontPadding": false,
-                },
-                {
-                  "fontFamily": "Inter_400Regular",
-                  "fontSize": 15,
-                  "lineHeight": 22,
-                },
-                {
-                  "color": "#F2F2F2",
-                },
-                false,
-                false,
-                {
-                  "color": "#F2F2F2",
-                  "fontSize": 15,
-                  "lineHeight": 24,
-                },
-              ]
+              {
+                "color": "#F2F2F2",
+                "fontSize": 15,
+                "lineHeight": 24,
+              }
             }
             textBreakStrategy="simple"
           >
@@ -1029,27 +782,13 @@ exports[`ContentCard Snapshots matches snapshot for {"errors": [Array], "paragra
         >
           <Text
             allowFontScaling={true}
+            className="font-inter include-font-padding-false text-[15px] leading-[22px] font-normal text-textPrimary"
             style={
-              [
-                {
-                  "includeFontPadding": false,
-                },
-                {
-                  "fontFamily": "Inter_400Regular",
-                  "fontSize": 15,
-                  "lineHeight": 22,
-                },
-                {
-                  "color": "#F2F2F2",
-                },
-                false,
-                false,
-                {
-                  "color": "#F2F2F2",
-                  "fontSize": 16,
-                  "fontWeight": "800",
-                },
-              ]
+              {
+                "color": "#F2F2F2",
+                "fontSize": 16,
+                "fontWeight": "800",
+              }
             }
             textBreakStrategy="simple"
           >
@@ -1069,26 +808,12 @@ exports[`ContentCard Snapshots matches snapshot for {"errors": [Array], "paragra
         >
           <Text
             allowFontScaling={true}
+            className="font-inter include-font-padding-false text-[15px] leading-[22px] font-normal text-textPrimary"
             style={
-              [
-                {
-                  "includeFontPadding": false,
-                },
-                {
-                  "fontFamily": "Inter_400Regular",
-                  "fontSize": 15,
-                  "lineHeight": 22,
-                },
-                {
-                  "color": "#F2F2F2",
-                },
-                false,
-                false,
-                {
-                  "color": "#939396",
-                  "fontSize": 13,
-                },
-              ]
+              {
+                "color": "#939396",
+                "fontSize": 13,
+              }
             }
             textBreakStrategy="simple"
           >
@@ -1144,19 +869,6 @@ exports[`ContentCard Snapshots matches snapshot for {"errors": [Array], "paragra
         size={20}
       />
     </TouchableOpacity>
-    <Text
-      testID="guru-context"
-    >
-      Card type: Error hunt
-Paragraph: Para
-Error 1: wrong "W", correct "C". E
-
-Current study step:
-Card type: Error hunt
-Paragraph: Para
-Actual errors to find: "W" should be "C" because E
-Student is still searching for errors.
-    </Text>
   </View>
 </View>
 `;
@@ -1255,29 +967,15 @@ exports[`ContentCard Snapshots matches snapshot for {"examTip": "Tip", "mostTest
       >
         <Text
           allowFontScaling={true}
+          className="font-inter include-font-padding-false text-[15px] leading-[22px] font-normal text-textPrimary"
           style={
-            [
-              {
-                "includeFontPadding": false,
-              },
-              {
-                "fontFamily": "Inter_400Regular",
-                "fontSize": 15,
-                "lineHeight": 22,
-              },
-              {
-                "color": "#F2F2F2",
-              },
-              false,
-              false,
-              {
-                "color": "#5E6AD2",
-                "fontSize": 12,
-                "fontWeight": "700",
-                "letterSpacing": 1.5,
-                "marginBottom": 6,
-              },
-            ]
+            {
+              "color": "#5E6AD2",
+              "fontSize": 12,
+              "fontWeight": "700",
+              "letterSpacing": 1.5,
+              "marginBottom": 6,
+            }
           }
           textBreakStrategy="simple"
         >
@@ -1295,33 +993,19 @@ exports[`ContentCard Snapshots matches snapshot for {"examTip": "Tip", "mostTest
         >
           <Text
             allowFontScaling={true}
+            className="font-inter include-font-padding-false text-[15px] leading-[22px] font-normal text-textPrimary"
             ellipsizeMode="tail"
             numberOfLines={3}
             style={
-              [
-                {
-                  "includeFontPadding": false,
-                },
-                {
-                  "fontFamily": "Inter_400Regular",
-                  "fontSize": 15,
-                  "lineHeight": 22,
-                },
-                {
-                  "color": "#F2F2F2",
-                },
-                false,
-                false,
-                {
-                  "color": "#F2F2F2",
-                  "fontSize": 22,
-                  "fontWeight": "800",
-                  "lineHeight": 28,
-                  "marginBottom": 20,
-                  "minWidth": 0,
-                  "width": "100%",
-                },
-              ]
+              {
+                "color": "#F2F2F2",
+                "fontSize": 22,
+                "fontWeight": "800",
+                "lineHeight": 28,
+                "marginBottom": 20,
+                "minWidth": 0,
+                "width": "100%",
+              }
             }
             textBreakStrategy="simple"
           >
@@ -1330,31 +1014,17 @@ exports[`ContentCard Snapshots matches snapshot for {"examTip": "Tip", "mostTest
         </View>
         <Text
           allowFontScaling={true}
+          className="font-inter include-font-padding-false text-[15px] leading-[22px] font-normal text-textPrimary"
           style={
-            [
-              {
-                "includeFontPadding": false,
-              },
-              {
-                "fontFamily": "Inter_400Regular",
-                "fontSize": 15,
-                "lineHeight": 22,
-              },
-              {
-                "color": "#F2F2F2",
-              },
-              false,
-              false,
-              {
-                "color": "#A0A0A5",
-                "fontSize": 12,
-                "fontWeight": "800",
-                "letterSpacing": 1,
-                "marginBottom": 10,
-                "marginTop": 20,
-                "textTransform": "uppercase",
-              },
-            ]
+            {
+              "color": "#A0A0A5",
+              "fontSize": 12,
+              "fontWeight": "800",
+              "letterSpacing": 1,
+              "marginBottom": 10,
+              "marginTop": 20,
+              "textTransform": "uppercase",
+            }
           }
           textBreakStrategy="simple"
         >
@@ -1396,31 +1066,17 @@ exports[`ContentCard Snapshots matches snapshot for {"examTip": "Tip", "mostTest
         </View>
         <Text
           allowFontScaling={true}
+          className="font-inter include-font-padding-false text-[15px] leading-[22px] font-normal text-textPrimary"
           style={
-            [
-              {
-                "includeFontPadding": false,
-              },
-              {
-                "fontFamily": "Inter_400Regular",
-                "fontSize": 15,
-                "lineHeight": 22,
-              },
-              {
-                "color": "#F2F2F2",
-              },
-              false,
-              false,
-              {
-                "color": "#A0A0A5",
-                "fontSize": 12,
-                "fontWeight": "800",
-                "letterSpacing": 1,
-                "marginBottom": 10,
-                "marginTop": 20,
-                "textTransform": "uppercase",
-              },
-            ]
+            {
+              "color": "#A0A0A5",
+              "fontSize": 12,
+              "fontWeight": "800",
+              "letterSpacing": 1,
+              "marginBottom": 10,
+              "marginTop": 20,
+              "textTransform": "uppercase",
+            }
           }
           textBreakStrategy="simple"
         >
@@ -1484,27 +1140,13 @@ exports[`ContentCard Snapshots matches snapshot for {"examTip": "Tip", "mostTest
               />
               <Text
                 allowFontScaling={true}
+                className="font-inter include-font-padding-false text-[15px] leading-[22px] font-normal text-textPrimary"
                 style={
-                  [
-                    {
-                      "includeFontPadding": false,
-                    },
-                    {
-                      "fontFamily": "Inter_400Regular",
-                      "fontSize": 15,
-                      "lineHeight": 22,
-                    },
-                    {
-                      "color": "#F2F2F2",
-                    },
-                    false,
-                    false,
-                    {
-                      "color": "#5E6AD2",
-                      "fontSize": 12,
-                      "fontWeight": "700",
-                    },
-                  ]
+                  {
+                    "color": "#5E6AD2",
+                    "fontSize": 12,
+                    "fontWeight": "700",
+                  }
                 }
                 textBreakStrategy="simple"
               >
@@ -1528,29 +1170,15 @@ exports[`ContentCard Snapshots matches snapshot for {"examTip": "Tip", "mostTest
         >
           <Text
             allowFontScaling={true}
+            className="font-inter include-font-padding-false text-[15px] leading-[22px] font-normal text-textPrimary"
             style={
-              [
-                {
-                  "includeFontPadding": false,
-                },
-                {
-                  "fontFamily": "Inter_400Regular",
-                  "fontSize": 15,
-                  "lineHeight": 22,
-                },
-                {
-                  "color": "#F2F2F2",
-                },
-                false,
-                false,
-                {
-                  "color": "#5E6AD2",
-                  "fontSize": 11,
-                  "fontWeight": "900",
-                  "letterSpacing": 1,
-                  "marginBottom": 6,
-                },
-              ]
+              {
+                "color": "#5E6AD2",
+                "fontSize": 11,
+                "fontWeight": "900",
+                "letterSpacing": 1,
+                "marginBottom": 6,
+              }
             }
             textBreakStrategy="simple"
           >
@@ -1558,28 +1186,14 @@ exports[`ContentCard Snapshots matches snapshot for {"examTip": "Tip", "mostTest
           </Text>
           <Text
             allowFontScaling={true}
+            className="font-inter include-font-padding-false text-[15px] leading-[22px] font-normal text-textPrimary"
             style={
-              [
-                {
-                  "includeFontPadding": false,
-                },
-                {
-                  "fontFamily": "Inter_400Regular",
-                  "fontSize": 15,
-                  "lineHeight": 22,
-                },
-                {
-                  "color": "#F2F2F2",
-                },
-                false,
-                false,
-                {
-                  "color": "#F2F2F2",
-                  "fontSize": 14,
-                  "fontStyle": "italic",
-                  "lineHeight": 20,
-                },
-              ]
+              {
+                "color": "#F2F2F2",
+                "fontSize": 14,
+                "fontStyle": "italic",
+                "lineHeight": 20,
+              }
             }
             textBreakStrategy="simple"
           >
@@ -1603,27 +1217,13 @@ exports[`ContentCard Snapshots matches snapshot for {"examTip": "Tip", "mostTest
         >
           <Text
             allowFontScaling={true}
+            className="font-inter include-font-padding-false text-[15px] leading-[22px] font-normal text-textPrimary"
             style={
-              [
-                {
-                  "includeFontPadding": false,
-                },
-                {
-                  "fontFamily": "Inter_400Regular",
-                  "fontSize": 15,
-                  "lineHeight": 22,
-                },
-                {
-                  "color": "#F2F2F2",
-                },
-                false,
-                false,
-                {
-                  "color": "#F2F2F2",
-                  "fontSize": 16,
-                  "fontWeight": "800",
-                },
-              ]
+              {
+                "color": "#F2F2F2",
+                "fontSize": 16,
+                "fontWeight": "800",
+              }
             }
             textBreakStrategy="simple"
           >
@@ -1643,26 +1243,12 @@ exports[`ContentCard Snapshots matches snapshot for {"examTip": "Tip", "mostTest
         >
           <Text
             allowFontScaling={true}
+            className="font-inter include-font-padding-false text-[15px] leading-[22px] font-normal text-textPrimary"
             style={
-              [
-                {
-                  "includeFontPadding": false,
-                },
-                {
-                  "fontFamily": "Inter_400Regular",
-                  "fontSize": 15,
-                  "lineHeight": 22,
-                },
-                {
-                  "color": "#F2F2F2",
-                },
-                false,
-                false,
-                {
-                  "color": "#939396",
-                  "fontSize": 13,
-                },
-              ]
+              {
+                "color": "#939396",
+                "fontSize": 13,
+              }
             }
             textBreakStrategy="simple"
           >
@@ -1718,13 +1304,6 @@ exports[`ContentCard Snapshots matches snapshot for {"examTip": "Tip", "mostTest
         size={20}
       />
     </TouchableOpacity>
-    <Text
-      testID="guru-context"
-    >
-      Card type: Must Know & Most Tested
-Must know: MK 1
-Most tested: MT 1
-    </Text>
   </View>
 </View>
 `;
@@ -1823,29 +1402,15 @@ exports[`ContentCard Snapshots matches snapshot for {"expansion": [Array], "mnem
       >
         <Text
           allowFontScaling={true}
+          className="font-inter include-font-padding-false text-[15px] leading-[22px] font-normal text-textPrimary"
           style={
-            [
-              {
-                "includeFontPadding": false,
-              },
-              {
-                "fontFamily": "Inter_400Regular",
-                "fontSize": 15,
-                "lineHeight": 22,
-              },
-              {
-                "color": "#F2F2F2",
-              },
-              false,
-              false,
-              {
-                "color": "#5E6AD2",
-                "fontSize": 12,
-                "fontWeight": "700",
-                "letterSpacing": 1.5,
-                "marginBottom": 6,
-              },
-            ]
+            {
+              "color": "#5E6AD2",
+              "fontSize": 12,
+              "fontWeight": "700",
+              "letterSpacing": 1.5,
+              "marginBottom": 6,
+            }
           }
           textBreakStrategy="simple"
         >
@@ -1863,33 +1428,19 @@ exports[`ContentCard Snapshots matches snapshot for {"expansion": [Array], "mnem
         >
           <Text
             allowFontScaling={true}
+            className="font-inter include-font-padding-false text-[15px] leading-[22px] font-normal text-textPrimary"
             ellipsizeMode="tail"
             numberOfLines={3}
             style={
-              [
-                {
-                  "includeFontPadding": false,
-                },
-                {
-                  "fontFamily": "Inter_400Regular",
-                  "fontSize": 15,
-                  "lineHeight": 22,
-                },
-                {
-                  "color": "#F2F2F2",
-                },
-                false,
-                false,
-                {
-                  "color": "#F2F2F2",
-                  "fontSize": 22,
-                  "fontWeight": "800",
-                  "lineHeight": 28,
-                  "marginBottom": 20,
-                  "minWidth": 0,
-                  "width": "100%",
-                },
-              ]
+              {
+                "color": "#F2F2F2",
+                "fontSize": 22,
+                "fontWeight": "800",
+                "lineHeight": 28,
+                "marginBottom": 20,
+                "minWidth": 0,
+                "width": "100%",
+              }
             }
             textBreakStrategy="simple"
           >
@@ -1911,29 +1462,15 @@ exports[`ContentCard Snapshots matches snapshot for {"expansion": [Array], "mnem
         >
           <Text
             allowFontScaling={true}
+            className="font-inter include-font-padding-false text-[15px] leading-[22px] font-normal text-textPrimary"
             style={
-              [
-                {
-                  "includeFontPadding": false,
-                },
-                {
-                  "fontFamily": "Inter_400Regular",
-                  "fontSize": 15,
-                  "lineHeight": 22,
-                },
-                {
-                  "color": "#F2F2F2",
-                },
-                false,
-                false,
-                {
-                  "color": "#5E6AD2",
-                  "fontSize": 28,
-                  "fontWeight": "900",
-                  "letterSpacing": 2,
-                  "textAlign": "center",
-                },
-              ]
+              {
+                "color": "#5E6AD2",
+                "fontSize": 28,
+                "fontWeight": "900",
+                "letterSpacing": 2,
+                "textAlign": "center",
+              }
             }
             textBreakStrategy="simple"
           >
@@ -1964,27 +1501,13 @@ exports[`ContentCard Snapshots matches snapshot for {"expansion": [Array], "mnem
         >
           <Text
             allowFontScaling={true}
+            className="font-inter include-font-padding-false text-[15px] leading-[22px] font-normal text-textPrimary"
             style={
-              [
-                {
-                  "includeFontPadding": false,
-                },
-                {
-                  "fontFamily": "Inter_400Regular",
-                  "fontSize": 15,
-                  "lineHeight": 22,
-                },
-                {
-                  "color": "#F2F2F2",
-                },
-                false,
-                false,
-                {
-                  "color": "#F2F2F2",
-                  "fontSize": 16,
-                  "fontWeight": "800",
-                },
-              ]
+              {
+                "color": "#F2F2F2",
+                "fontSize": 16,
+                "fontWeight": "800",
+              }
             }
             textBreakStrategy="simple"
           >
@@ -2004,26 +1527,12 @@ exports[`ContentCard Snapshots matches snapshot for {"expansion": [Array], "mnem
         >
           <Text
             allowFontScaling={true}
+            className="font-inter include-font-padding-false text-[15px] leading-[22px] font-normal text-textPrimary"
             style={
-              [
-                {
-                  "includeFontPadding": false,
-                },
-                {
-                  "fontFamily": "Inter_400Regular",
-                  "fontSize": 15,
-                  "lineHeight": 22,
-                },
-                {
-                  "color": "#F2F2F2",
-                },
-                false,
-                false,
-                {
-                  "color": "#939396",
-                  "fontSize": 13,
-                },
-              ]
+              {
+                "color": "#939396",
+                "fontSize": 13,
+              }
             }
             textBreakStrategy="simple"
           >
@@ -2079,20 +1588,6 @@ exports[`ContentCard Snapshots matches snapshot for {"expansion": [Array], "mnem
         size={20}
       />
     </TouchableOpacity>
-    <Text
-      testID="guru-context"
-    >
-      Card type: Mnemonic
-Mnemonic: MNE
-Expansion: M | N | E
-Tip: Tip
-
-Current study step:
-Card type: Mnemonic
-Mnemonic visible: MNE
-Expansion is hidden.
-Tip is hidden.
-    </Text>
   </View>
 </View>
 `;
@@ -2191,29 +1686,15 @@ exports[`ContentCard Snapshots matches snapshot for {"guruReaction": "Reaction",
       >
         <Text
           allowFontScaling={true}
+          className="font-inter include-font-padding-false text-[15px] leading-[22px] font-normal text-textPrimary"
           style={
-            [
-              {
-                "includeFontPadding": false,
-              },
-              {
-                "fontFamily": "Inter_400Regular",
-                "fontSize": 15,
-                "lineHeight": 22,
-              },
-              {
-                "color": "#F2F2F2",
-              },
-              false,
-              false,
-              {
-                "color": "#5E6AD2",
-                "fontSize": 12,
-                "fontWeight": "700",
-                "letterSpacing": 1.5,
-                "marginBottom": 6,
-              },
-            ]
+            {
+              "color": "#5E6AD2",
+              "fontSize": 12,
+              "fontWeight": "700",
+              "letterSpacing": 1.5,
+              "marginBottom": 6,
+            }
           }
           textBreakStrategy="simple"
         >
@@ -2231,33 +1712,19 @@ exports[`ContentCard Snapshots matches snapshot for {"guruReaction": "Reaction",
         >
           <Text
             allowFontScaling={true}
+            className="font-inter include-font-padding-false text-[15px] leading-[22px] font-normal text-textPrimary"
             ellipsizeMode="tail"
             numberOfLines={3}
             style={
-              [
-                {
-                  "includeFontPadding": false,
-                },
-                {
-                  "fontFamily": "Inter_400Regular",
-                  "fontSize": 15,
-                  "lineHeight": 22,
-                },
-                {
-                  "color": "#F2F2F2",
-                },
-                false,
-                false,
-                {
-                  "color": "#F2F2F2",
-                  "fontSize": 22,
-                  "fontWeight": "800",
-                  "lineHeight": 28,
-                  "marginBottom": 20,
-                  "minWidth": 0,
-                  "width": "100%",
-                },
-              ]
+              {
+                "color": "#F2F2F2",
+                "fontSize": 22,
+                "fontWeight": "800",
+                "lineHeight": 28,
+                "marginBottom": 20,
+                "minWidth": 0,
+                "width": "100%",
+              }
             }
             textBreakStrategy="simple"
           >
@@ -2266,28 +1733,14 @@ exports[`ContentCard Snapshots matches snapshot for {"guruReaction": "Reaction",
         </View>
         <Text
           allowFontScaling={true}
+          className="font-inter include-font-padding-false text-[15px] leading-[22px] font-normal text-textPrimary"
           style={
-            [
-              {
-                "includeFontPadding": false,
-              },
-              {
-                "fontFamily": "Inter_400Regular",
-                "fontSize": 15,
-                "lineHeight": 22,
-              },
-              {
-                "color": "#F2F2F2",
-              },
-              false,
-              false,
-              {
-                "color": "#F2F2F2",
-                "fontSize": 16,
-                "lineHeight": 24,
-                "marginBottom": 16,
-              },
-            ]
+            {
+              "color": "#F2F2F2",
+              "fontSize": 16,
+              "lineHeight": 24,
+              "marginBottom": 16,
+            }
           }
           textBreakStrategy="simple"
         >
@@ -2337,27 +1790,13 @@ exports[`ContentCard Snapshots matches snapshot for {"guruReaction": "Reaction",
         >
           <Text
             allowFontScaling={true}
+            className="font-inter include-font-padding-false text-[15px] leading-[22px] font-normal text-textPrimary"
             style={
-              [
-                {
-                  "includeFontPadding": false,
-                },
-                {
-                  "fontFamily": "Inter_400Regular",
-                  "fontSize": 15,
-                  "lineHeight": 22,
-                },
-                {
-                  "color": "#F2F2F2",
-                },
-                false,
-                false,
-                {
-                  "color": "#F2F2F2",
-                  "fontSize": 16,
-                  "fontWeight": "800",
-                },
-              ]
+              {
+                "color": "#F2F2F2",
+                "fontSize": 16,
+                "fontWeight": "800",
+              }
             }
             textBreakStrategy="simple"
           >
@@ -2377,26 +1816,12 @@ exports[`ContentCard Snapshots matches snapshot for {"guruReaction": "Reaction",
         >
           <Text
             allowFontScaling={true}
+            className="font-inter include-font-padding-false text-[15px] leading-[22px] font-normal text-textPrimary"
             style={
-              [
-                {
-                  "includeFontPadding": false,
-                },
-                {
-                  "fontFamily": "Inter_400Regular",
-                  "fontSize": 15,
-                  "lineHeight": 22,
-                },
-                {
-                  "color": "#F2F2F2",
-                },
-                false,
-                false,
-                {
-                  "color": "#939396",
-                  "fontSize": 13,
-                },
-              ]
+              {
+                "color": "#939396",
+                "fontSize": 13,
+              }
             }
             textBreakStrategy="simple"
           >
@@ -2452,23 +1877,6 @@ exports[`ContentCard Snapshots matches snapshot for {"guruReaction": "Reaction",
         size={20}
       />
     </TouchableOpacity>
-    <Text
-      testID="guru-context"
-    >
-      Card type: Teach-back
-Prompt: Prompt
-Key points to mention: KP 1
-Guru reaction target: Reaction
-
-Current study step:
-Card type: Teach-back
-Topic: Test Topic
-Prompt given to student: Prompt
-Key points student MUST mention: KP 1
-Ideal Guru reaction/answer: Reaction
-Student hasn't started typing yet.
-Result not yet revealed.
-    </Text>
   </View>
 </View>
 `;
@@ -2567,29 +1975,15 @@ exports[`ContentCard Snapshots matches snapshot for {"keyConceptHighlights": [Ar
       >
         <Text
           allowFontScaling={true}
+          className="font-inter include-font-padding-false text-[15px] leading-[22px] font-normal text-textPrimary"
           style={
-            [
-              {
-                "includeFontPadding": false,
-              },
-              {
-                "fontFamily": "Inter_400Regular",
-                "fontSize": 15,
-                "lineHeight": 22,
-              },
-              {
-                "color": "#F2F2F2",
-              },
-              false,
-              false,
-              {
-                "color": "#5E6AD2",
-                "fontSize": 12,
-                "fontWeight": "700",
-                "letterSpacing": 1.5,
-                "marginBottom": 6,
-              },
-            ]
+            {
+              "color": "#5E6AD2",
+              "fontSize": 12,
+              "fontWeight": "700",
+              "letterSpacing": 1.5,
+              "marginBottom": 6,
+            }
           }
           textBreakStrategy="simple"
         >
@@ -2607,33 +2001,19 @@ exports[`ContentCard Snapshots matches snapshot for {"keyConceptHighlights": [Ar
         >
           <Text
             allowFontScaling={true}
+            className="font-inter include-font-padding-false text-[15px] leading-[22px] font-normal text-textPrimary"
             ellipsizeMode="tail"
             numberOfLines={3}
             style={
-              [
-                {
-                  "includeFontPadding": false,
-                },
-                {
-                  "fontFamily": "Inter_400Regular",
-                  "fontSize": 15,
-                  "lineHeight": 22,
-                },
-                {
-                  "color": "#F2F2F2",
-                },
-                false,
-                false,
-                {
-                  "color": "#F2F2F2",
-                  "fontSize": 22,
-                  "fontWeight": "800",
-                  "lineHeight": 28,
-                  "marginBottom": 20,
-                  "minWidth": 0,
-                  "width": "100%",
-                },
-              ]
+              {
+                "color": "#F2F2F2",
+                "fontSize": 22,
+                "fontWeight": "800",
+                "lineHeight": 28,
+                "marginBottom": 20,
+                "minWidth": 0,
+                "width": "100%",
+              }
             }
             textBreakStrategy="simple"
           >
@@ -2663,28 +2043,14 @@ exports[`ContentCard Snapshots matches snapshot for {"keyConceptHighlights": [Ar
         >
           <Text
             allowFontScaling={true}
+            className="font-inter include-font-padding-false text-[15px] leading-[22px] font-normal text-textPrimary"
             style={
-              [
-                {
-                  "includeFontPadding": false,
-                },
-                {
-                  "fontFamily": "Inter_400Regular",
-                  "fontSize": 15,
-                  "lineHeight": 22,
-                },
-                {
-                  "color": "#F2F2F2",
-                },
-                false,
-                false,
-                {
-                  "color": "#A0A0A5",
-                  "fontSize": 12,
-                  "fontWeight": "700",
-                  "marginBottom": 8,
-                },
-              ]
+              {
+                "color": "#A0A0A5",
+                "fontSize": 12,
+                "fontWeight": "700",
+                "marginBottom": 8,
+              }
             }
             textBreakStrategy="simple"
           >
@@ -2713,28 +2079,14 @@ exports[`ContentCard Snapshots matches snapshot for {"keyConceptHighlights": [Ar
             >
               <Text
                 allowFontScaling={true}
+                className="font-inter include-font-padding-false text-[15px] leading-[22px] font-normal text-textPrimary"
                 style={
-                  [
-                    {
-                      "includeFontPadding": false,
-                    },
-                    {
-                      "fontFamily": "Inter_400Regular",
-                      "fontSize": 15,
-                      "lineHeight": 22,
-                    },
-                    {
-                      "color": "#F2F2F2",
-                    },
-                    false,
-                    false,
-                    {
-                      "color": "#5E6AD2",
-                      "fontSize": 12,
-                      "fontWeight": "600",
-                      "lineHeight": 18,
-                    },
-                  ]
+                  {
+                    "color": "#5E6AD2",
+                    "fontSize": 12,
+                    "fontWeight": "600",
+                    "lineHeight": 18,
+                  }
                 }
                 textBreakStrategy="simple"
               >
@@ -2760,27 +2112,13 @@ exports[`ContentCard Snapshots matches snapshot for {"keyConceptHighlights": [Ar
         >
           <Text
             allowFontScaling={true}
+            className="font-inter include-font-padding-false text-[15px] leading-[22px] font-normal text-textPrimary"
             style={
-              [
-                {
-                  "includeFontPadding": false,
-                },
-                {
-                  "fontFamily": "Inter_400Regular",
-                  "fontSize": 15,
-                  "lineHeight": 22,
-                },
-                {
-                  "color": "#F2F2F2",
-                },
-                false,
-                false,
-                {
-                  "color": "#F2F2F2",
-                  "fontSize": 16,
-                  "fontWeight": "800",
-                },
-              ]
+              {
+                "color": "#F2F2F2",
+                "fontSize": 16,
+                "fontWeight": "800",
+              }
             }
             textBreakStrategy="simple"
           >
@@ -2800,26 +2138,12 @@ exports[`ContentCard Snapshots matches snapshot for {"keyConceptHighlights": [Ar
         >
           <Text
             allowFontScaling={true}
+            className="font-inter include-font-padding-false text-[15px] leading-[22px] font-normal text-textPrimary"
             style={
-              [
-                {
-                  "includeFontPadding": false,
-                },
-                {
-                  "fontFamily": "Inter_400Regular",
-                  "fontSize": 15,
-                  "lineHeight": 22,
-                },
-                {
-                  "color": "#F2F2F2",
-                },
-                false,
-                false,
-                {
-                  "color": "#939396",
-                  "fontSize": 13,
-                },
-              ]
+              {
+                "color": "#939396",
+                "fontSize": 13,
+              }
             }
             textBreakStrategy="simple"
           >
@@ -2875,13 +2199,6 @@ exports[`ContentCard Snapshots matches snapshot for {"keyConceptHighlights": [Ar
         size={20}
       />
     </TouchableOpacity>
-    <Text
-      testID="guru-context"
-    >
-      Card type: Story
-Story: Story
-Highlights: Highlight 1
-    </Text>
   </View>
 </View>
 `;
@@ -2980,29 +2297,15 @@ exports[`ContentCard Snapshots matches snapshot for {"memoryHook": "Hook", "poin
       >
         <Text
           allowFontScaling={true}
+          className="font-inter include-font-padding-false text-[15px] leading-[22px] font-normal text-textPrimary"
           style={
-            [
-              {
-                "includeFontPadding": false,
-              },
-              {
-                "fontFamily": "Inter_400Regular",
-                "fontSize": 15,
-                "lineHeight": 22,
-              },
-              {
-                "color": "#F2F2F2",
-              },
-              false,
-              false,
-              {
-                "color": "#5E6AD2",
-                "fontSize": 12,
-                "fontWeight": "700",
-                "letterSpacing": 1.5,
-                "marginBottom": 6,
-              },
-            ]
+            {
+              "color": "#5E6AD2",
+              "fontSize": 12,
+              "fontWeight": "700",
+              "letterSpacing": 1.5,
+              "marginBottom": 6,
+            }
           }
           textBreakStrategy="simple"
         >
@@ -3020,33 +2323,18 @@ exports[`ContentCard Snapshots matches snapshot for {"memoryHook": "Hook", "poin
         >
           <Text
             allowFontScaling={true}
+            className="font-inter include-font-padding-false text-[22px] leading-[28px] font-semibold tracking-[-0.3px] text-textPrimary"
             numberOfLines={3}
             style={
-              [
-                {
-                  "includeFontPadding": false,
-                },
-                {
-                  "fontFamily": "Inter_600SemiBold",
-                  "fontSize": 22,
-                  "letterSpacing": -0.3,
-                  "lineHeight": 28,
-                },
-                {
-                  "color": "#F2F2F2",
-                },
-                false,
-                false,
-                {
-                  "color": "#F2F2F2",
-                  "fontSize": 22,
-                  "fontWeight": "800",
-                  "lineHeight": 28,
-                  "marginBottom": 20,
-                  "minWidth": 0,
-                  "width": "100%",
-                },
-              ]
+              {
+                "color": "#F2F2F2",
+                "fontSize": 22,
+                "fontWeight": "800",
+                "lineHeight": 28,
+                "marginBottom": 20,
+                "minWidth": 0,
+                "width": "100%",
+              }
             }
             textBreakStrategy="simple"
           >
@@ -3055,28 +2343,14 @@ exports[`ContentCard Snapshots matches snapshot for {"memoryHook": "Hook", "poin
         </View>
         <Text
           allowFontScaling={true}
+          className="font-inter include-font-padding-false text-[15px] leading-[22px] font-normal text-textPrimary"
           style={
-            [
-              {
-                "includeFontPadding": false,
-              },
-              {
-                "fontFamily": "Inter_400Regular",
-                "fontSize": 15,
-                "lineHeight": 22,
-              },
-              {
-                "color": "#F2F2F2",
-              },
-              false,
-              false,
-              {
-                "color": "#939396",
-                "fontSize": 12,
-                "fontWeight": "600",
-                "marginBottom": 12,
-              },
-            ]
+            {
+              "color": "#939396",
+              "fontSize": 12,
+              "fontWeight": "600",
+              "marginBottom": 12,
+            }
           }
           textBreakStrategy="simple"
         >
@@ -3130,30 +2404,16 @@ exports[`ContentCard Snapshots matches snapshot for {"memoryHook": "Hook", "poin
             >
               <Text
                 allowFontScaling={true}
+                className="font-inter include-font-padding-false text-[15px] leading-[22px] font-normal text-textPrimary"
                 style={
                   [
                     {
-                      "includeFontPadding": false,
+                      "fontSize": 13,
+                      "fontWeight": "800",
                     },
                     {
-                      "fontFamily": "Inter_400Regular",
-                      "fontSize": 15,
-                      "lineHeight": 22,
+                      "color": "#5E6AD2",
                     },
-                    {
-                      "color": "#F2F2F2",
-                    },
-                    false,
-                    false,
-                    [
-                      {
-                        "fontSize": 13,
-                        "fontWeight": "800",
-                      },
-                      {
-                        "color": "#5E6AD2",
-                      },
-                    ],
                   ]
                 }
                 textBreakStrategy="simple"
@@ -3192,27 +2452,13 @@ exports[`ContentCard Snapshots matches snapshot for {"memoryHook": "Hook", "poin
         >
           <Text
             allowFontScaling={true}
+            className="font-inter include-font-padding-false text-[15px] leading-[22px] font-normal text-textPrimary"
             style={
-              [
-                {
-                  "includeFontPadding": false,
-                },
-                {
-                  "fontFamily": "Inter_400Regular",
-                  "fontSize": 15,
-                  "lineHeight": 22,
-                },
-                {
-                  "color": "#F2F2F2",
-                },
-                false,
-                false,
-                {
-                  "color": "#F2F2F2",
-                  "fontSize": 16,
-                  "fontWeight": "800",
-                },
-              ]
+              {
+                "color": "#F2F2F2",
+                "fontSize": 16,
+                "fontWeight": "800",
+              }
             }
             textBreakStrategy="simple"
           >
@@ -3236,26 +2482,12 @@ exports[`ContentCard Snapshots matches snapshot for {"memoryHook": "Hook", "poin
         >
           <Text
             allowFontScaling={true}
+            className="font-inter include-font-padding-false text-[15px] leading-[22px] font-normal text-textPrimary"
             style={
-              [
-                {
-                  "includeFontPadding": false,
-                },
-                {
-                  "fontFamily": "Inter_400Regular",
-                  "fontSize": 15,
-                  "lineHeight": 22,
-                },
-                {
-                  "color": "#F2F2F2",
-                },
-                false,
-                false,
-                {
-                  "color": "#939396",
-                  "fontSize": 13,
-                },
-              ]
+              {
+                "color": "#939396",
+                "fontSize": 13,
+              }
             }
             textBreakStrategy="simple"
           >
@@ -3311,17 +2543,6 @@ exports[`ContentCard Snapshots matches snapshot for {"memoryHook": "Hook", "poin
         size={20}
       />
     </TouchableOpacity>
-    <Text
-      testID="guru-context"
-    >
-      Card type: Key points
-Points: 1. Point 1
-Memory hook: Hook
-
-Current study step:
-Card type: Key points
-Currently visible points: Point 1
-    </Text>
   </View>
 </View>
 `;
@@ -3423,29 +2644,15 @@ exports[`ContentCard Snapshots matches snapshot for {"questions": [Array], "topi
         >
           <Text
             allowFontScaling={true}
+            className="font-inter include-font-padding-false text-[15px] leading-[22px] font-normal text-textPrimary"
             style={
-              [
-                {
-                  "includeFontPadding": false,
-                },
-                {
-                  "fontFamily": "Inter_400Regular",
-                  "fontSize": 15,
-                  "lineHeight": 22,
-                },
-                {
-                  "color": "#F2F2F2",
-                },
-                false,
-                false,
-                {
-                  "color": "#5E6AD2",
-                  "fontSize": 11,
-                  "fontWeight": "800",
-                  "letterSpacing": 1.2,
-                  "marginBottom": 16,
-                },
-              ]
+              {
+                "color": "#5E6AD2",
+                "fontSize": 11,
+                "fontWeight": "800",
+                "letterSpacing": 1.2,
+                "marginBottom": 16,
+              }
             }
             textBreakStrategy="simple"
           >
@@ -3468,28 +2675,14 @@ exports[`ContentCard Snapshots matches snapshot for {"questions": [Array], "topi
           >
             <Text
               allowFontScaling={true}
+              className="font-inter include-font-padding-false text-[15px] leading-[22px] font-normal text-textPrimary"
               style={
-                [
-                  {
-                    "includeFontPadding": false,
-                  },
-                  {
-                    "fontFamily": "Inter_400Regular",
-                    "fontSize": 15,
-                    "lineHeight": 22,
-                  },
-                  {
-                    "color": "#F2F2F2",
-                  },
-                  false,
-                  false,
-                  {
-                    "color": "#F2F2F2",
-                    "fontSize": 18,
-                    "fontWeight": "700",
-                    "lineHeight": 28,
-                  },
-                ]
+                {
+                  "color": "#F2F2F2",
+                  "fontSize": 18,
+                  "fontWeight": "700",
+                  "lineHeight": 28,
+                }
               }
               textBreakStrategy="simple"
             >
@@ -3511,27 +2704,13 @@ exports[`ContentCard Snapshots matches snapshot for {"questions": [Array], "topi
           >
             <Text
               allowFontScaling={true}
+              className="font-inter include-font-padding-false text-[15px] leading-[22px] font-normal text-textPrimary"
               style={
-                [
-                  {
-                    "includeFontPadding": false,
-                  },
-                  {
-                    "fontFamily": "Inter_400Regular",
-                    "fontSize": 15,
-                    "lineHeight": 22,
-                  },
-                  {
-                    "color": "#F2F2F2",
-                  },
-                  false,
-                  false,
-                  {
-                    "color": "#000000",
-                    "fontSize": 15,
-                    "fontWeight": "800",
-                  },
-                ]
+                {
+                  "color": "#000000",
+                  "fontSize": 15,
+                  "fontWeight": "800",
+                }
               }
               textBreakStrategy="simple"
             >
@@ -3551,26 +2730,12 @@ exports[`ContentCard Snapshots matches snapshot for {"questions": [Array], "topi
           >
             <Text
               allowFontScaling={true}
+              className="font-inter include-font-padding-false text-[15px] leading-[22px] font-normal text-textPrimary"
               style={
-                [
-                  {
-                    "includeFontPadding": false,
-                  },
-                  {
-                    "fontFamily": "Inter_400Regular",
-                    "fontSize": 15,
-                    "lineHeight": 22,
-                  },
-                  {
-                    "color": "#F2F2F2",
-                  },
-                  false,
-                  false,
-                  {
-                    "color": "#939396",
-                    "fontSize": 13,
-                  },
-                ]
+                {
+                  "color": "#939396",
+                  "fontSize": 13,
+                }
               }
               textBreakStrategy="simple"
             >
@@ -3627,17 +2792,6 @@ exports[`ContentCard Snapshots matches snapshot for {"questions": [Array], "topi
         size={20}
       />
     </TouchableOpacity>
-    <Text
-      testID="guru-context"
-    >
-      Card type: Socratic
-Q1: Q1 Answer: A1 Why it matters: W1
-
-Current study step:
-Card type: Socratic
-Current question 1 of 1: Q1
-Answer is not shown yet.
-    </Text>
   </View>
 </View>
 `;
@@ -3736,29 +2890,15 @@ exports[`ContentCard Snapshots matches snapshot for {"topicName": "Test Topic", 
       >
         <Text
           allowFontScaling={true}
+          className="font-inter include-font-padding-false text-[15px] leading-[22px] font-normal text-textPrimary"
           style={
-            [
-              {
-                "includeFontPadding": false,
-              },
-              {
-                "fontFamily": "Inter_400Regular",
-                "fontSize": 15,
-                "lineHeight": 22,
-              },
-              {
-                "color": "#F2F2F2",
-              },
-              false,
-              false,
-              {
-                "color": "#5E6AD2",
-                "fontSize": 12,
-                "fontWeight": "700",
-                "letterSpacing": 1.5,
-                "marginBottom": 6,
-              },
-            ]
+            {
+              "color": "#5E6AD2",
+              "fontSize": 12,
+              "fontWeight": "700",
+              "letterSpacing": 1.5,
+              "marginBottom": 6,
+            }
           }
           textBreakStrategy="simple"
         >
@@ -3776,33 +2916,19 @@ exports[`ContentCard Snapshots matches snapshot for {"topicName": "Test Topic", 
         >
           <Text
             allowFontScaling={true}
+            className="font-inter include-font-padding-false text-[15px] leading-[22px] font-normal text-textPrimary"
             ellipsizeMode="tail"
             numberOfLines={3}
             style={
-              [
-                {
-                  "includeFontPadding": false,
-                },
-                {
-                  "fontFamily": "Inter_400Regular",
-                  "fontSize": 15,
-                  "lineHeight": 22,
-                },
-                {
-                  "color": "#F2F2F2",
-                },
-                false,
-                false,
-                {
-                  "color": "#F2F2F2",
-                  "fontSize": 22,
-                  "fontWeight": "800",
-                  "lineHeight": 28,
-                  "marginBottom": 20,
-                  "minWidth": 0,
-                  "width": "100%",
-                },
-              ]
+              {
+                "color": "#F2F2F2",
+                "fontSize": 22,
+                "fontWeight": "800",
+                "lineHeight": 28,
+                "marginBottom": 20,
+                "minWidth": 0,
+                "width": "100%",
+              }
             }
             textBreakStrategy="simple"
           >
@@ -3823,27 +2949,13 @@ exports[`ContentCard Snapshots matches snapshot for {"topicName": "Test Topic", 
         >
           <Text
             allowFontScaling={true}
+            className="font-inter include-font-padding-false text-[15px] leading-[22px] font-normal text-textPrimary"
             style={
-              [
-                {
-                  "includeFontPadding": false,
-                },
-                {
-                  "fontFamily": "Inter_400Regular",
-                  "fontSize": 15,
-                  "lineHeight": 22,
-                },
-                {
-                  "color": "#F2F2F2",
-                },
-                false,
-                false,
-                {
-                  "fontSize": 32,
-                  "marginBottom": 12,
-                  "textAlign": "center",
-                },
-              ]
+              {
+                "fontSize": 32,
+                "marginBottom": 12,
+                "textAlign": "center",
+              }
             }
             textBreakStrategy="simple"
           >
@@ -3851,28 +2963,14 @@ exports[`ContentCard Snapshots matches snapshot for {"topicName": "Test Topic", 
           </Text>
           <Text
             allowFontScaling={true}
+            className="font-inter include-font-padding-false text-[15px] leading-[22px] font-normal text-textPrimary"
             style={
-              [
-                {
-                  "includeFontPadding": false,
-                },
-                {
-                  "fontFamily": "Inter_400Regular",
-                  "fontSize": 15,
-                  "lineHeight": 22,
-                },
-                {
-                  "color": "#F2F2F2",
-                },
-                false,
-                false,
-                {
-                  "color": "#A0A0A5",
-                  "fontSize": 14,
-                  "lineHeight": 20,
-                  "textAlign": "center",
-                },
-              ]
+              {
+                "color": "#A0A0A5",
+                "fontSize": 14,
+                "lineHeight": 20,
+                "textAlign": "center",
+              }
             }
             textBreakStrategy="simple"
           >
@@ -3881,31 +2979,17 @@ exports[`ContentCard Snapshots matches snapshot for {"topicName": "Test Topic", 
         </View>
         <Text
           allowFontScaling={true}
+          className="font-inter include-font-padding-false text-[15px] leading-[22px] font-normal text-textPrimary"
           style={
-            [
-              {
-                "includeFontPadding": false,
-              },
-              {
-                "fontFamily": "Inter_400Regular",
-                "fontSize": 15,
-                "lineHeight": 22,
-              },
-              {
-                "color": "#F2F2F2",
-              },
-              false,
-              false,
-              {
-                "backgroundColor": "#000000",
-                "borderRadius": 12,
-                "color": "#F2F2F2",
-                "fontSize": 15,
-                "lineHeight": 28,
-                "marginBottom": 32,
-                "padding": 20,
-              },
-            ]
+            {
+              "backgroundColor": "#000000",
+              "borderRadius": 12,
+              "color": "#F2F2F2",
+              "fontSize": 15,
+              "lineHeight": 28,
+              "marginBottom": 32,
+              "padding": 20,
+            }
           }
           textBreakStrategy="simple"
         >
@@ -3940,27 +3024,13 @@ exports[`ContentCard Snapshots matches snapshot for {"topicName": "Test Topic", 
         >
           <Text
             allowFontScaling={true}
+            className="font-inter include-font-padding-false text-[15px] leading-[22px] font-normal text-textPrimary"
             style={
-              [
-                {
-                  "includeFontPadding": false,
-                },
-                {
-                  "fontFamily": "Inter_400Regular",
-                  "fontSize": 15,
-                  "lineHeight": 22,
-                },
-                {
-                  "color": "#F2F2F2",
-                },
-                false,
-                false,
-                {
-                  "color": "#F2F2F2",
-                  "fontSize": 16,
-                  "fontWeight": "800",
-                },
-              ]
+              {
+                "color": "#F2F2F2",
+                "fontSize": 16,
+                "fontWeight": "800",
+              }
             }
             textBreakStrategy="simple"
           >
@@ -3980,26 +3050,12 @@ exports[`ContentCard Snapshots matches snapshot for {"topicName": "Test Topic", 
         >
           <Text
             allowFontScaling={true}
+            className="font-inter include-font-padding-false text-[15px] leading-[22px] font-normal text-textPrimary"
             style={
-              [
-                {
-                  "includeFontPadding": false,
-                },
-                {
-                  "fontFamily": "Inter_400Regular",
-                  "fontSize": 15,
-                  "lineHeight": 22,
-                },
-                {
-                  "color": "#F2F2F2",
-                },
-                false,
-                false,
-                {
-                  "color": "#939396",
-                  "fontSize": 13,
-                },
-              ]
+              {
+                "color": "#939396",
+                "fontSize": 13,
+              }
             }
             textBreakStrategy="simple"
           >
@@ -4055,11 +3111,6 @@ exports[`ContentCard Snapshots matches snapshot for {"topicName": "Test Topic", 
         size={20}
       />
     </TouchableOpacity>
-    <Text
-      testID="guru-context"
-    >
-      Card type: Manual review
-    </Text>
   </View>
 </View>
 `;

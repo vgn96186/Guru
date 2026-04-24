@@ -1,9 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import {
-  Image,
-} from 'react-native';
+import { Image } from 'react-native';
 import { fetchWikipediaImage } from '../../../services/imageService';
-
 
 import { s } from '../styles';
 

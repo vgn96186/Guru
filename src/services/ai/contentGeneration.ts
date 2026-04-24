@@ -225,7 +225,10 @@ export async function fetchContent(
 
   const request = (async () => {
     const promptFn = CONTENT_PROMPT_MAP[contentType];
-    const userPrompt = `${promptFn(topic.name, topic.subjectName)}${buildMasteryAdaptivePromptContext(topic)}`;
+    const userPrompt = `${promptFn(
+      topic.name,
+      topic.subjectName,
+    )}${buildMasteryAdaptivePromptContext(topic)}`;
     const messages: CoreMessage[] = [
       { role: 'system', content: SYSTEM_PROMPT },
       { role: 'user', content: userPrompt },

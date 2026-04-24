@@ -1,5 +1,5 @@
 import React from 'react';
-import { fireEvent, render, waitFor, within } from '@testing-library/react-native';
+import { fireEvent, render, waitFor } from '@testing-library/react-native';
 import { Animated } from 'react-native';
 import CompactQuickStatsBar from './CompactQuickStatsBar';
 import { profileRepository } from '../../db/repositories';
@@ -44,7 +44,7 @@ describe('CompactQuickStatsBar', () => {
   });
 
   it('renders bar layout, a11y summary, percent mode, streak, and level chip', () => {
-    const { getByLabelText, getByTestId, getByText } = render(
+    const { getByLabelText, getByText } = render(
       <CompactQuickStatsBar
         progressPercent={63}
         todayMinutes={75}
@@ -60,17 +60,19 @@ describe('CompactQuickStatsBar', () => {
         'Daily progress 63 percent. 75 of 120 minutes completed. 9 day streak. Level 4. 12 sessions done.',
       ),
     ).toBeTruthy();
-    expect(getByText('Today')).toBeTruthy();
+    expect(getByText('TODAY')).toBeTruthy();
     expect(getByText('63%')).toBeTruthy();
-    expect(getByText('Streak')).toBeTruthy();
-    const streak = getByTestId('streak-burn');
-    expect(within(streak).getByText('9d')).toBeTruthy();
-    expect(getByText('LV 4')).toBeTruthy();
-    expect(getByText('12 SES')).toBeTruthy();
+    expect(getByText('STREAK')).toBeTruthy();
+    expect(getByText('9')).toBeTruthy();
+    expect(getByText('days')).toBeTruthy();
+    expect(getByText('LEVEL')).toBeTruthy();
+    expect(getByText('4')).toBeTruthy();
+    expect(getByText('SESSIONS')).toBeTruthy();
+    expect(getByText('12')).toBeTruthy();
   });
 
-  it('toggles progress pill to fraction minutes / goal', () => {
-    const { getByText, getByLabelText } = render(
+  it('shows the current minutes and opens the goal picker on press', () => {
+    const { getByText, getByLabelText, getByTestId } = render(
       <CompactQuickStatsBar
         progressPercent={63}
         todayMinutes={75}
@@ -81,10 +83,9 @@ describe('CompactQuickStatsBar', () => {
       />,
     );
 
-    fireEvent.press(
-      getByLabelText('63 percent of daily goal. Tap to show minutes. Long press to change goal.'),
-    );
-    expect(getByText('75/120m')).toBeTruthy();
+    expect(getByText('75 / 120m')).toBeTruthy();
+    fireEvent.press(getByLabelText('Change daily goal'));
+    expect(getByTestId('goal-overlay')).toBeTruthy();
   });
 
   it('rounds progress percent for display and a11y label', () => {
@@ -117,7 +118,7 @@ describe('CompactQuickStatsBar', () => {
     expect(getByLabelText(/Daily progress 100 percent/)).toBeTruthy();
   });
 
-  it('shows overlay goal chips after long press, then persists a new goal', async () => {
+  it('shows overlay goal chips on press, then persists a new goal', async () => {
     const onGoalChange = jest.fn();
     const { getByTestId, getByText, getByLabelText, queryByText } = render(
       <CompactQuickStatsBar
@@ -133,13 +134,10 @@ describe('CompactQuickStatsBar', () => {
 
     expect(queryByText('30m')).toBeNull();
 
-    fireEvent(
-      getByLabelText('63 percent of daily goal. Tap to show minutes. Long press to change goal.'),
-      'longPress',
-    );
+    fireEvent.press(getByLabelText('Change daily goal'));
 
     expect(getByTestId('goal-overlay')).toBeTruthy();
-    for (const minutes of [30, 60, 90, 180, 240]) {
+    for (const minutes of [30, 60, 90, 120, 180, 240]) {
       expect(getByText(`${minutes}m`)).toBeTruthy();
     }
 

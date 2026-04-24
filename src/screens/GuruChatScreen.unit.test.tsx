@@ -352,8 +352,15 @@ describe('GuruChatScreen', () => {
       expect(mockGuruChatSendMessage).toHaveBeenCalledWith(
         'Explain shock',
         expect.objectContaining({
+          groundingContext: undefined,
+          groundingTitle: undefined,
+          sessionSummary: undefined,
+          sessionStateJson: '{}',
+          profileNotes: undefined,
+          studyContext: undefined,
           syllabusTopicId: undefined,
         }),
+        { persistThreadId: 7 },
       );
     });
 

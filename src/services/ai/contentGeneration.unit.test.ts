@@ -11,7 +11,7 @@ jest.mock('ai', () => ({
   generateObject: jest.fn(),
 }));
 
-jest.mock('./providers/guruFallback', () => ({
+jest.mock('./v2/providers/guruFallback', () => ({
   createGuruFallbackModel: jest.fn(),
 }));
 

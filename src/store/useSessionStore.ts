@@ -91,7 +91,8 @@ export const useSessionStore = create<SessionStoreState>()(
       setAgenda: (agenda) => set({ agenda }),
       setCurrentContent: (content) => {
         const { agenda, currentItemIndex, currentContentIndex, contentCacheBySlot } = get();
-        const item = agenda && currentItemIndex < agenda.items.length ? agenda.items[currentItemIndex] : null;
+        const item =
+          agenda && currentItemIndex < agenda.items.length ? agenda.items[currentItemIndex] : null;
         if (!item || !content) {
           set({ currentContent: content });
           return;

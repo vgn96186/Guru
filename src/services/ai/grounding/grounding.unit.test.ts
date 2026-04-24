@@ -4,7 +4,7 @@ jest.mock('../../../db/repositories/profileRepository', () => ({
   },
 }));
 
-jest.mock('../providers/guruFallback', () => ({
+jest.mock('../v2/providers/guruFallback', () => ({
   createGuruFallbackModel: jest.fn(() => ({ provider: 'fallback', modelId: 'test-model' })),
 }));
 

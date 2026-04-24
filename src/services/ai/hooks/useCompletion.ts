@@ -1,12 +1,12 @@
 /**
  * useCompletion — React hook for non-conversational text generation.
- * 
+ *
  * Similar to Vercel AI SDK's `useCompletion` hook. Manages a single input,
  * streams the completion response, and provides controls.
- * 
+ *
  * This is useful for:
  * - Summarization
- * - Translation  
+ * - Translation
  * - Code generation
  * - Any non-chat text completion
  */
@@ -60,7 +60,7 @@ export function useCompletion(options: UseCompletionOptions): UseCompletionRetur
   const [completion, setCompletion] = useState('');
   const [status, setStatus] = useState<CompletionStatus>('idle');
   const [error, setError] = useState<unknown>(null);
-  
+
   const abortControllerRef = useRef<AbortController | null>(null);
 
   const stop = useCallback(() => {
@@ -77,56 +77,59 @@ export function useCompletion(options: UseCompletionOptions): UseCompletionRetur
     setStatus('idle');
   }, [stop, options.initialInput]);
 
-  const complete = useCallback(async (inputOverride?: string) => {
-    const textToComplete = inputOverride ?? input;
-    if (!textToComplete.trim()) return;
+  const complete = useCallback(
+    async (inputOverride?: string) => {
+      const textToComplete = inputOverride ?? input;
+      if (!textToComplete.trim()) return;
 
-    stop(); // Stop any ongoing completion
-    
-    setStatus('submitted');
-    setError(null);
-    setCompletion('');
-    
-    const controller = new AbortController();
-    abortControllerRef.current = controller;
+      stop(); // Stop any ongoing completion
 
-    try {
-      const result = streamText({
-        model: options.model,
-        messages: [{ role: 'user', content: textToComplete }],
-        system: options.system,
-        maxOutputTokens: options.maxTokens,
-        temperature: options.temperature,
-        abortSignal: controller.signal,
-      });
+      setStatus('submitted');
+      setError(null);
+      setCompletion('');
 
-      setStatus('streaming');
-      
-      let fullText = '';
-      for await (const chunk of result.textStream) {
-        if (controller.signal.aborted) break;
-        
-        fullText += chunk;
-        setCompletion(fullText);
+      const controller = new AbortController();
+      abortControllerRef.current = controller;
+
+      try {
+        const result = streamText({
+          model: options.model,
+          messages: [{ role: 'user', content: textToComplete }],
+          system: options.system,
+          maxOutputTokens: options.maxTokens,
+          temperature: options.temperature,
+          abortSignal: controller.signal,
+        });
+
+        setStatus('streaming');
+
+        let fullText = '';
+        for await (const chunk of result.textStream) {
+          if (controller.signal.aborted) break;
+
+          fullText += chunk;
+          setCompletion(fullText);
+        }
+
+        if (!controller.signal.aborted) {
+          setStatus('idle');
+          options.onFinish?.(fullText);
+        }
+      } catch (err) {
+        if ((err as Error)?.name === 'AbortError') {
+          setStatus('idle');
+          return;
+        }
+
+        setError(err);
+        setStatus('error');
+        options.onError?.(err);
+      } finally {
+        abortControllerRef.current = null;
       }
-
-      if (!controller.signal.aborted) {
-        setStatus('idle');
-        options.onFinish?.(fullText);
-      }
-    } catch (err) {
-      if ((err as Error)?.name === 'AbortError') {
-        setStatus('idle');
-        return;
-      }
-      
-      setError(err);
-      setStatus('error');
-      options.onError?.(err);
-    } finally {
-      abortControllerRef.current = null;
-    }
-  }, [input, options, stop]);
+    },
+    [input, options, stop],
+  );
 
   return {
     input,

@@ -119,12 +119,8 @@ export function NoteCardItem({
             {CONFIDENCE_LABELS[item.confidence as 1 | 2 | 3]}
           </LinearText>
         )}
-        <LinearText style={styles.wordCount}>
-          {wordCount.toLocaleString()} words
-        </LinearText>
-        {item.appName ? (
-          <LinearText style={styles.appBadge}>via {item.appName}</LinearText>
-        ) : null}
+        <LinearText style={styles.wordCount}>{wordCount.toLocaleString()} words</LinearText>
+        {item.appName ? <LinearText style={styles.appBadge}>via {item.appName}</LinearText> : null}
       </View>
     </TouchableOpacity>
   );

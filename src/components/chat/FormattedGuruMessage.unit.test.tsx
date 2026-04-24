@@ -1,4 +1,5 @@
 import React from 'react';
+import { StyleSheet } from 'react-native';
 import { render } from '@testing-library/react-native';
 import { FormattedGuruMessage } from './FormattedGuruMessage';
 import { linearTheme as n } from '../../theme/linearTheme';
@@ -70,14 +71,14 @@ describe('FormattedGuruMessage', () => {
     expect(queryByText('==Inflammation==')).toBeNull();
     expect(queryByText('==Acute Inflammation==')).toBeNull();
     expect(queryByText('!!C5a!!')).toBeNull();
-    expect(heading.props.style).toEqual(
-      expect.arrayContaining([expect.objectContaining({ color: n.colors.accent })]),
+    expect(StyleSheet.flatten(heading.props.style)).toEqual(
+      expect.objectContaining({ color: n.colors.accent }),
     );
-    expect(topic.props.style).toEqual(
-      expect.arrayContaining([expect.objectContaining({ color: n.colors.accent })]),
+    expect(StyleSheet.flatten(topic.props.style)).toEqual(
+      expect.objectContaining({ color: n.colors.accent }),
     );
-    expect(highYield.props.style).toEqual(
-      expect.arrayContaining([expect.objectContaining({ color: '#FB923C' })]),
+    expect(StyleSheet.flatten(highYield.props.style)).toEqual(
+      expect.objectContaining({ color: '#FB923C' }),
     );
   });
 });

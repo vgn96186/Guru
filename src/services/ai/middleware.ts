@@ -20,6 +20,15 @@ import type {
 type LanguageModelGenerateResult = Awaited<ReturnType<LanguageModel['doGenerate']>>;
 type LanguageModelStreamResult = Awaited<ReturnType<LanguageModel['doStream']>>;
 
+const FINISH_REASONS: readonly FinishReason[] = [
+  'stop',
+  'length',
+  'content-filter',
+  'tool-calls',
+  'error',
+  'other',
+] as const;
+
 export interface Middleware {
   onRequest?: (ctx: {
     provider: string;
@@ -43,11 +52,16 @@ export interface Middleware {
   }) => void;
 }
 
+function normalizeFinishReason(reason: unknown): FinishReason {
+  return FINISH_REASONS.includes(reason as FinishReason) ? (reason as FinishReason) : 'other';
+}
+
 export function withMiddleware(base: LanguageModel, mw: Middleware): LanguageModel {
   return {
     specificationVersion: 'v2',
     provider: base.provider,
     modelId: base.modelId,
+    supportedUrls: base.supportedUrls,
 
     async doGenerate(options): Promise<LanguageModelGenerateResult> {
       const start = Date.now();
@@ -59,7 +73,7 @@ export function withMiddleware(base: LanguageModel, mw: Middleware): LanguageMod
           provider: base.provider,
           modelId: base.modelId,
           mode: 'generate',
-          finishReason: result.finishReason,
+          finishReason: normalizeFinishReason(result.finishReason),
           usage: result.usage,
           elapsedMs: Date.now() - start,
         });
@@ -93,30 +107,38 @@ export function withMiddleware(base: LanguageModel, mw: Middleware): LanguageMod
       }
 
       const { provider, modelId } = base;
-      async function* wrapped(): AsyncGenerator<LanguageModelStreamPart> {
-        try {
-          for await (const part of inner.stream) {
-            if (part.type === 'finish') {
-              mw.onFinish?.({
-                provider,
-                modelId,
-                mode: 'stream',
-                finishReason: part.finishReason,
-                usage: part.usage,
-                elapsedMs: Date.now() - start,
-              });
-            } else if (part.type === 'error') {
-              mw.onError?.({ provider, modelId, mode: 'stream', error: part.error });
+      const wrapped = new ReadableStream<LanguageModelStreamPart>({
+        async start(controller) {
+          const reader = inner.stream.getReader();
+          try {
+            while (true) {
+              const { done, value } = await reader.read();
+              if (done) break;
+              if (value.type === 'finish') {
+                mw.onFinish?.({
+                  provider,
+                  modelId,
+                  mode: 'stream',
+                  finishReason: normalizeFinishReason(value.finishReason),
+                  usage: value.usage,
+                  elapsedMs: Date.now() - start,
+                });
+              } else if (value.type === 'error') {
+                mw.onError?.({ provider, modelId, mode: 'stream', error: value.error });
+              }
+              controller.enqueue(value);
             }
-            yield part;
+            controller.close();
+          } catch (err) {
+            mw.onError?.({ provider, modelId, mode: 'stream', error: err });
+            controller.error(err);
+          } finally {
+            reader.releaseLock();
           }
-        } catch (err) {
-          mw.onError?.({ provider, modelId, mode: 'stream', error: err });
-          throw err;
-        }
-      }
+        },
+      });
 
-      return { stream: wrapped(), response: inner.response };
+      return { ...inner, stream: wrapped };
     },
   };
 }

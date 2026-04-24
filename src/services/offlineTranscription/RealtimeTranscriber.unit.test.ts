@@ -1,4 +1,3 @@
-
 jest.mock('./whisperModelManager', () => ({
   getWhisperModelManager: jest.fn(() => ({
     getContext: jest.fn(() => ({})),
@@ -23,12 +22,13 @@ describe('RealtimeTranscriptionController', () => {
 
     jest.doMock('whisper.rn/index.js', () => ({
       AudioPcmStreamAdapter: jest.fn(),
-      RealtimeTranscriber: jest
-        .fn()
-        .mockImplementation(function (this: { start: jest.Mock; stop: jest.Mock }) {
-          this.start = jest.fn();
-          this.stop = jest.fn();
-        }),
+      RealtimeTranscriber: jest.fn().mockImplementation(function (this: {
+        start: jest.Mock;
+        stop: jest.Mock;
+      }) {
+        this.start = jest.fn();
+        this.stop = jest.fn();
+      }),
     }));
 
     RealtimeTranscriptionController =

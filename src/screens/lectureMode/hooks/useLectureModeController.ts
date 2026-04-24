@@ -33,7 +33,9 @@ export function useLectureModeController() {
   const { data: profile } = useProfileQuery();
 
   const [subjects, setSubjects] = useState<Subject[]>([]);
-  const [selectedSubjectId, setSelectedSubjectId] = useState<number | null>(route.params?.subjectId ?? null);
+  const [selectedSubjectId, setSelectedSubjectId] = useState<number | null>(
+    route.params?.subjectId ?? null,
+  );
 
   const [elapsed, setElapsed] = useState(0);
   const [notes, setNotes] = useState<string[]>([]);
@@ -63,53 +65,60 @@ export function useLectureModeController() {
   const { focusState } = useFaceTracking();
 
   const handleNoteAdded = useCallback((note: string) => {
-    setNotes(n => [...n, note]);
+    setNotes((n) => [...n, note]);
   }, []);
 
   const handleProofOfLifeDismissed = useCallback(() => {
     setProofOfLifeActive(false);
   }, []);
 
-  const { isRecordingEnabled, setIsRecordingEnabled, isTranscribing, importAndTranscribeAudio } = useLectureAudio({
-    selectedSubjectId,
-    onBreak,
-    elapsed,
-    shouldContinueAutoScribe: shouldContinueAutoScribeRef.current,
-    onNoteAdded: handleNoteAdded,
-    onProofOfLifeDismissed: handleProofOfLifeDismissed
-  });
-
-  const buildLectureState = useCallback(() => ({
-    elapsed,
-    notes,
-    currentNote,
-    selectedSubjectId,
-    sessionId: sessionIdRef.current,
-    isRecordingEnabled,
-    timestamp: Date.now(),
-  }), [elapsed, notes, currentNote, selectedSubjectId, isRecordingEnabled]);
-
-  const persistLectureState = useCallback(async (force = false) => {
-    if (!isHydratedRef.current) return;
-    const state = buildLectureState();
-    const snapshot = JSON.stringify({
-      elapsed: state.elapsed,
-      notes: state.notes,
-      currentNote: state.currentNote,
-      selectedSubjectId: state.selectedSubjectId,
-      sessionId: state.sessionId,
-      isRecordingEnabled: state.isRecordingEnabled,
+  const { isRecordingEnabled, setIsRecordingEnabled, isTranscribing, importAndTranscribeAudio } =
+    useLectureAudio({
+      selectedSubjectId,
+      onBreak,
+      elapsed,
+      shouldContinueAutoScribe: shouldContinueAutoScribeRef.current,
+      onNoteAdded: handleNoteAdded,
+      onProofOfLifeDismissed: handleProofOfLifeDismissed,
     });
 
-    if (!force && snapshot === lastSavedSnapshotRef.current) return;
-    lastSavedSnapshotRef.current = snapshot;
+  const buildLectureState = useCallback(
+    () => ({
+      elapsed,
+      notes,
+      currentNote,
+      selectedSubjectId,
+      sessionId: sessionIdRef.current,
+      isRecordingEnabled,
+      timestamp: Date.now(),
+    }),
+    [elapsed, notes, currentNote, selectedSubjectId, isRecordingEnabled],
+  );
 
-    try {
-      await AsyncStorage.setItem(LECTURE_STATE_KEY, JSON.stringify(state));
-    } catch (err) {
-      console.warn('[LectureMode] Failed to save state:', err);
-    }
-  }, [buildLectureState]);
+  const persistLectureState = useCallback(
+    async (force = false) => {
+      if (!isHydratedRef.current) return;
+      const state = buildLectureState();
+      const snapshot = JSON.stringify({
+        elapsed: state.elapsed,
+        notes: state.notes,
+        currentNote: state.currentNote,
+        selectedSubjectId: state.selectedSubjectId,
+        sessionId: state.sessionId,
+        isRecordingEnabled: state.isRecordingEnabled,
+      });
+
+      if (!force && snapshot === lastSavedSnapshotRef.current) return;
+      lastSavedSnapshotRef.current = snapshot;
+
+      try {
+        await AsyncStorage.setItem(LECTURE_STATE_KEY, JSON.stringify(state));
+      } catch (err) {
+        console.warn('[LectureMode] Failed to save state:', err);
+      }
+    },
+    [buildLectureState],
+  );
 
   useEffect(() => {
     let isMounted = true;
@@ -152,7 +161,9 @@ export function useLectureModeController() {
         }
       }
     })();
-    return () => { isMounted = false; };
+    return () => {
+      isMounted = false;
+    };
   }, [setIsRecordingEnabled]);
 
   useEffect(() => {
@@ -177,17 +188,23 @@ export function useLectureModeController() {
     if (!isHydratedRef.current) return;
     if (elapsed > 10 && !sessionIdRef.current) {
       createSession([], null, 'normal')
-        .then((id) => { sessionIdRef.current = id; })
+        .then((id) => {
+          sessionIdRef.current = id;
+        })
         .catch(console.error);
     }
     if (elapsed > 0 && elapsed % 60 === 0 && sessionIdRef.current) {
       const mins = Math.floor(elapsed / 60);
       const totalXp = mins * 15 + notes.length * 50;
-      void updateSessionProgress(sessionIdRef.current, mins, totalXp, [], notes.join('\n\n')).catch(console.error);
+      void updateSessionProgress(sessionIdRef.current, mins, totalXp, [], notes.join('\n\n')).catch(
+        console.error,
+      );
     }
   }, [elapsed, notes, refreshProfile]);
 
-  useEffect(() => { if (!profile) refreshProfile(); }, [profile, refreshProfile]);
+  useEffect(() => {
+    if (!profile) refreshProfile();
+  }, [profile, refreshProfile]);
 
   useEffect(() => {
     shouldContinueAutoScribeRef.current = isRecordingEnabled && !onBreak;
@@ -211,7 +228,8 @@ export function useLectureModeController() {
         if (msg.type === 'DOOMSCROLL_DETECTED') {
           setPartnerDoomscrolling(true);
           Vibration.vibrate([0, 500, 200, 500, 200, 1000]);
-          if (partnerDoomscrollingTimerRef.current) clearTimeout(partnerDoomscrollingTimerRef.current);
+          if (partnerDoomscrollingTimerRef.current)
+            clearTimeout(partnerDoomscrollingTimerRef.current);
           partnerDoomscrollingTimerRef.current = setTimeout(() => {
             setPartnerDoomscrolling(false);
             partnerDoomscrollingTimerRef.current = null;
@@ -234,7 +252,9 @@ export function useLectureModeController() {
 
   const hasTriggeredDoomscrollRef = useRef(false);
   useAppStateTransition({
-    onActive: () => { hasTriggeredDoomscrollRef.current = false; },
+    onActive: () => {
+      hasTriggeredDoomscrollRef.current = false;
+    },
     onBackground: () => {
       if (!onBreak && elapsed > 0) {
         void persistLectureState(true);
@@ -248,14 +268,18 @@ export function useLectureModeController() {
           Vibration.vibrate([0, 500, 200, 500]);
         }
       }
-    }
+    },
   });
 
   useEffect(() => {
     timerRef.current = setInterval(() => {
       setElapsed((e) => {
         const newE = e + 1;
-        if (newE > 0 && newE % PROOF_OF_LIFE_INTERVAL === PROOF_OF_LIFE_INTERVAL - PROOF_OF_LIFE_WARNING && !onBreak) {
+        if (
+          newE > 0 &&
+          newE % PROOF_OF_LIFE_INTERVAL === PROOF_OF_LIFE_INTERVAL - PROOF_OF_LIFE_WARNING &&
+          !onBreak
+        ) {
           setProofWarningActive(true);
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
         }
@@ -282,7 +306,10 @@ export function useLectureModeController() {
       proofOfLifeTimerRef.current = setInterval(() => {
         setProofOfLifeCountdown((c) => {
           if (c === 1) {
-            sendImmediateNag('🚨 WAKE UP', 'You zoned out! What is the professor saying right now?!');
+            sendImmediateNag(
+              '🚨 WAKE UP',
+              'You zoned out! What is the professor saying right now?!',
+            );
             Vibration.vibrate(1000);
             return 0;
           }
@@ -381,7 +408,7 @@ export function useLectureModeController() {
     if (!isRecordingEnabled && !groqKey && !huggingFaceToken && !hasLocalWhisper) {
       showInfo(
         'Transcription Required',
-        'Add Groq or Hugging Face credentials, or enable Local Whisper in Settings to use Auto-Scribe.'
+        'Add Groq or Hugging Face credentials, or enable Local Whisper in Settings to use Auto-Scribe.',
       );
       return;
     }
@@ -392,7 +419,7 @@ export function useLectureModeController() {
     const ok = await confirmDestructive(
       'Stop lecture?',
       'Are you actually done, or just avoiding it?',
-      { confirmLabel: 'Stop', cancelLabel: 'Keep watching' }
+      { confirmLabel: 'Stop', cancelLabel: 'Keep watching' },
     );
     if (ok) stopLecture();
   }
@@ -403,7 +430,7 @@ export function useLectureModeController() {
         const ok = await confirmDestructive(
           'Ready to wrap up?',
           'You can always come back and continue later.',
-          { confirmLabel: 'Finish', cancelLabel: 'Keep watching' }
+          { confirmLabel: 'Finish', cancelLabel: 'Keep watching' },
         );
         if (ok) stopLecture();
       })();
@@ -451,7 +478,7 @@ export function useLectureModeController() {
       breakTopics,
       isRecordingEnabled,
       isTranscribing,
-      focusState
+      focusState,
     },
     actions: {
       setSelectedSubjectId,
@@ -462,7 +489,7 @@ export function useLectureModeController() {
       toggleAutoScribe,
       importAndTranscribeAudio,
       confirmStopLecture,
-      setResumeCountdown
-    }
+      setResumeCountdown,
+    },
   };
 }

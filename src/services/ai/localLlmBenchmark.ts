@@ -1,6 +1,6 @@
 /**
  * Local LLM Benchmark Utility
- * 
+ *
  * Measures and tracks inference latency for local AI operations.
  * Use to benchmark before/after optimization changes.
  */
@@ -61,14 +61,14 @@ function recordBenchmark(result: BenchmarkResult): void {
   if (benchmarkHistory.length > MAX_HISTORY_ENTRIES) {
     benchmarkHistory.pop(); // Remove oldest
   }
-  
+
   // Log for debugging
   console.log(
     `[LLM Benchmark] ${result.backend} | ` +
-    `Total: ${result.totalMs}ms | ` +
-    `TTFT: ${result.timeToFirstTokenMs}ms | ` +
-    `Tokens: ${result.tokenCount} | ` +
-    `Speed: ${result.tokensPerSecond.toFixed(1)} tok/s`
+      `Total: ${result.totalMs}ms | ` +
+      `TTFT: ${result.timeToFirstTokenMs}ms | ` +
+      `Tokens: ${result.tokenCount} | ` +
+      `Speed: ${result.tokensPerSecond.toFixed(1)} tok/s`,
   );
 }
 
@@ -81,16 +81,16 @@ async function runBenchmarkIteration(
   systemInstruction?: string,
 ): Promise<BenchmarkResult> {
   const LocalLlm = await import('../../../modules/local-llm');
-  
+
   const metrics: BenchmarkMetrics = {
     startTime: Date.now(),
     firstTokenTime: null,
     tokenCount: 0,
     endTime: 0,
   };
-  
+
   let completionReceived = false;
-  
+
   // Subscribe to token events
   const tokenSub = LocalLlm.addLlmTokenListener(() => {
     if (metrics.firstTokenTime === null) {
@@ -98,31 +98,28 @@ async function runBenchmarkIteration(
     }
     metrics.tokenCount++;
   });
-  
+
   // Subscribe to completion event
   const completeSub = LocalLlm.addLlmCompleteListener(() => {
     completionReceived = true;
     metrics.endTime = Date.now();
   });
-  
+
   // Subscribe to error event
   const errorSub = LocalLlm.addLlmErrorListener(() => {
     completionReceived = true;
     metrics.endTime = Date.now();
   });
-  
+
   try {
     // Start streaming
-    await LocalLlm.chatStream(
-      [{ role: 'user', content: prompt }],
-      {
-        modelPath,
-        systemInstruction: systemInstruction || 'You are a helpful assistant.',
-        temperature: 0.7,
-        topP: 0.9,
-      }
-    );
-    
+    await LocalLlm.chatStream([{ role: 'user', content: prompt }], {
+      modelPath,
+      systemInstruction: systemInstruction || 'You are a helpful assistant.',
+      temperature: 0.7,
+      topP: 0.9,
+    });
+
     // Wait for completion event (max 60s timeout)
     await new Promise<void>((resolve) => {
       const timeoutId = setTimeout(() => {
@@ -141,23 +138,21 @@ async function runBenchmarkIteration(
       };
       check();
     });
-    
+
     // Set endTime if not set by completion handler
     if (metrics.endTime === 0) {
       metrics.endTime = Date.now();
     }
-    
+
     const totalMs = metrics.endTime - metrics.startTime;
-    const timeToFirstTokenMs = metrics.firstTokenTime 
-      ? metrics.firstTokenTime - metrics.startTime 
+    const timeToFirstTokenMs = metrics.firstTokenTime
+      ? metrics.firstTokenTime - metrics.startTime
       : totalMs;
-    const tokensPerSecond = metrics.tokenCount > 0 
-      ? (metrics.tokenCount / totalMs) * 1000 
-      : 0;
-    
+    const tokensPerSecond = metrics.tokenCount > 0 ? (metrics.tokenCount / totalMs) * 1000 : 0;
+
     // Get backend
     const backend = await LocalLlm.getBackend();
-    
+
     return {
       totalMs,
       timeToFirstTokenMs,
@@ -182,9 +177,7 @@ async function runBenchmarkIteration(
 /**
  * Run a complete benchmark with warmup and multiple iterations
  */
-export async function runLocalLlmBenchmark(
-  config: BenchmarkConfig,
-): Promise<{
+export async function runLocalLlmBenchmark(config: BenchmarkConfig): Promise<{
   results: BenchmarkResult[];
   average: {
     totalMs: number;
@@ -207,7 +200,7 @@ export async function runLocalLlmBenchmark(
   for (let i = 0; i < warmupRuns; i++) {
     console.log(`[LLM Benchmark] Warmup run ${i + 1}/${warmupRuns}...`);
     await runBenchmarkIteration(modelPath, prompt, systemInstruction);
-    await new Promise(resolve => setTimeout(resolve, 1000)); // 1s between runs
+    await new Promise((resolve) => setTimeout(resolve, 1000)); // 1s between runs
   }
 
   // Run benchmark iterations (record)
@@ -217,7 +210,7 @@ export async function runLocalLlmBenchmark(
     const result = await runBenchmarkIteration(modelPath, prompt, systemInstruction);
     recordBenchmark(result);
     results.push(result);
-    await new Promise(resolve => setTimeout(resolve, 1000)); // 1s between runs
+    await new Promise((resolve) => setTimeout(resolve, 1000)); // 1s between runs
   }
 
   // Calculate averages
@@ -229,8 +222,8 @@ export async function runLocalLlmBenchmark(
 
   console.log(
     `[LLM Benchmark] Average: ${average.totalMs.toFixed(0)}ms total, ` +
-    `${average.timeToFirstTokenMs.toFixed(0)}ms TTFT, ` +
-    `${average.tokensPerSecond.toFixed(1)} tok/s`
+      `${average.timeToFirstTokenMs.toFixed(0)}ms TTFT, ` +
+      `${average.tokensPerSecond.toFixed(1)} tok/s`,
   );
 
   return { results, average };
@@ -266,10 +259,10 @@ export function compareBenchmarks(
 } {
   const totalMsDelta = after.totalMs - before.totalMs;
   const totalMsPercentChange = (totalMsDelta / before.totalMs) * 100;
-  
+
   const ttftDelta = after.timeToFirstTokenMs - before.timeToFirstTokenMs;
   const ttftPercentChange = (ttftDelta / before.timeToFirstTokenMs) * 100;
-  
+
   const speedDelta = after.tokensPerSecond - before.tokensPerSecond;
   const speedPercentChange = (speedDelta / before.tokensPerSecond) * 100;
 

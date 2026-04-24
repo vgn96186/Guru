@@ -1,24 +1,28 @@
 import { profileRepository } from './profileRepository';
-import * as progressQueries from '../queries/progress';
-import * as topicQueries from '../queries/topics';
+import { progressRepositoryDrizzle } from './progressRepository.drizzle';
+import { topicsRepositoryDrizzle } from './topicsRepository.drizzle';
 
-jest.mock('../queries/progress', () => ({
-  getUserProfile: jest.fn(),
-  updateUserProfile: jest.fn(),
-  addXp: jest.fn(),
-  updateStreak: jest.fn(),
-  useStreakShield: jest.fn(),
-  getDaysToExam: jest.fn(),
-  resetStudyProgress: jest.fn(),
-  clearAiCache: jest.fn(),
-  getReviewDueTopics: jest.fn(),
-  getRecentTopics: jest.fn(),
-  applyConfidenceDecay: jest.fn(),
+jest.mock('./progressRepository.drizzle', () => ({
+  progressRepositoryDrizzle: {
+    getProfile: jest.fn(),
+    updateProfile: jest.fn(),
+    addXp: jest.fn(),
+    updateStreak: jest.fn(),
+    useStreakShield: jest.fn(),
+    getDaysToExam: jest.fn(),
+    resetStudyProgress: jest.fn(),
+    clearAiCache: jest.fn(),
+    getReviewDueTopics: jest.fn(),
+    getRecentTopics: jest.fn(),
+    applyConfidenceDecay: jest.fn(),
+  },
 }));
 
-jest.mock('../queries/topics', () => ({
-  getSubjectCoverage: jest.fn(),
-  getWeakestTopics: jest.fn(),
+jest.mock('./topicsRepository.drizzle', () => ({
+  topicsRepositoryDrizzle: {
+    getSubjectCoverage: jest.fn(),
+    getWeakestTopics: jest.fn(),
+  },
 }));
 
 describe('profileRepository', () => {
@@ -26,121 +30,114 @@ describe('profileRepository', () => {
     jest.clearAllMocks();
   });
 
-  it('delegates getProfile to getUserProfile', async () => {
+  it('delegates getProfile', async () => {
     const mockProfile = { displayName: 'Test User' } as any;
-    (progressQueries.getUserProfile as jest.Mock).mockResolvedValue(mockProfile);
+    (progressRepositoryDrizzle.getProfile as jest.Mock).mockResolvedValue(mockProfile);
 
     const result = await profileRepository.getProfile();
 
-    expect(progressQueries.getUserProfile).toHaveBeenCalled();
+    expect(progressRepositoryDrizzle.getProfile).toHaveBeenCalled();
     expect(result).toEqual(mockProfile);
   });
 
-  it('delegates updateProfile to updateUserProfile', async () => {
+  it('delegates updateProfile', async () => {
     const updates = { displayName: 'New Name' };
-    (progressQueries.updateUserProfile as jest.Mock).mockResolvedValue(undefined);
 
     await profileRepository.updateProfile(updates);
 
-    expect(progressQueries.updateUserProfile).toHaveBeenCalledWith(updates);
+    expect(progressRepositoryDrizzle.updateProfile).toHaveBeenCalledWith(updates);
   });
 
   it('delegates addXp', async () => {
-    (progressQueries.addXp as jest.Mock).mockResolvedValue({ newTotal: 100 });
-
     await profileRepository.addXp(50);
 
-    expect(progressQueries.addXp).toHaveBeenCalledWith(50);
+    expect(progressRepositoryDrizzle.addXp).toHaveBeenCalledWith(50);
   });
 
   it('delegates updateStreak', async () => {
-    (progressQueries.updateStreak as jest.Mock).mockResolvedValue(undefined);
-
     await profileRepository.updateStreak(true);
 
-    expect(progressQueries.updateStreak).toHaveBeenCalledWith(true);
+    expect(progressRepositoryDrizzle.updateStreak).toHaveBeenCalledWith(true);
   });
 
   it('delegates useStreakShield', async () => {
-    (progressQueries.useStreakShield as jest.Mock).mockResolvedValue(true);
+    (progressRepositoryDrizzle.useStreakShield as jest.Mock).mockResolvedValue(true);
 
     const result = await profileRepository.useStreakShield();
 
-    expect(progressQueries.useStreakShield).toHaveBeenCalled();
+    expect(progressRepositoryDrizzle.useStreakShield).toHaveBeenCalled();
     expect(result).toBe(true);
   });
 
   it('delegates getDaysToExam', () => {
-    (progressQueries.getDaysToExam as jest.Mock).mockReturnValue(10);
+    (progressRepositoryDrizzle.getDaysToExam as jest.Mock).mockReturnValue(10);
 
     const result = profileRepository.getDaysToExam('2023-11-06');
 
-    expect(progressQueries.getDaysToExam).toHaveBeenCalledWith('2023-11-06');
+    expect(progressRepositoryDrizzle.getDaysToExam).toHaveBeenCalledWith('2023-11-06');
     expect(result).toBe(10);
   });
 
   it('delegates resetStudyProgress', async () => {
-    (progressQueries.resetStudyProgress as jest.Mock).mockResolvedValue(undefined);
-
     await profileRepository.resetStudyProgress();
 
-    expect(progressQueries.resetStudyProgress).toHaveBeenCalled();
+    expect(progressRepositoryDrizzle.resetStudyProgress).toHaveBeenCalled();
   });
 
   it('delegates clearAiCache', async () => {
-    (progressQueries.clearAiCache as jest.Mock).mockResolvedValue(undefined);
-
     await profileRepository.clearAiCache();
 
-    expect(progressQueries.clearAiCache).toHaveBeenCalled();
+    expect(progressRepositoryDrizzle.clearAiCache).toHaveBeenCalled();
   });
 
   it('delegates getReviewDueTopics', async () => {
     const mockTopics = [{ topicId: 1 }] as any;
-    (progressQueries.getReviewDueTopics as jest.Mock).mockResolvedValue(mockTopics);
+    (progressRepositoryDrizzle.getReviewDueTopics as jest.Mock).mockResolvedValue(mockTopics);
 
     const result = await profileRepository.getReviewDueTopics();
 
-    expect(progressQueries.getReviewDueTopics).toHaveBeenCalled();
+    expect(progressRepositoryDrizzle.getReviewDueTopics).toHaveBeenCalled();
     expect(result).toEqual(mockTopics);
   });
 
   it('delegates getRecentTopics', async () => {
     const mockTopics = ['Topic 1'];
-    (progressQueries.getRecentTopics as jest.Mock).mockResolvedValue(mockTopics);
+    (progressRepositoryDrizzle.getRecentTopics as jest.Mock).mockResolvedValue(mockTopics);
 
     const result = await profileRepository.getRecentTopics(5);
 
-    expect(progressQueries.getRecentTopics).toHaveBeenCalledWith(5);
+    expect(progressRepositoryDrizzle.getRecentTopics).toHaveBeenCalledWith(5);
     expect(result).toEqual(mockTopics);
   });
 
   it('delegates getSubjectCoverage', async () => {
     const mockCoverage = [{ subjectId: 1 }] as any;
-    (topicQueries.getSubjectCoverage as jest.Mock).mockResolvedValue(mockCoverage);
+    (topicsRepositoryDrizzle.getSubjectCoverage as jest.Mock).mockResolvedValue(mockCoverage);
 
     const result = await profileRepository.getSubjectCoverage();
 
-    expect(topicQueries.getSubjectCoverage).toHaveBeenCalled();
+    expect(topicsRepositoryDrizzle.getSubjectCoverage).toHaveBeenCalled();
     expect(result).toEqual(mockCoverage);
   });
 
   it('delegates getWeakestTopics', async () => {
     const mockTopics = [{ id: 1 }] as any;
-    (topicQueries.getWeakestTopics as jest.Mock).mockResolvedValue(mockTopics);
+    (topicsRepositoryDrizzle.getWeakestTopics as jest.Mock).mockResolvedValue(mockTopics);
 
     const result = await profileRepository.getWeakestTopics(3);
 
-    expect(topicQueries.getWeakestTopics).toHaveBeenCalledWith(3);
+    expect(topicsRepositoryDrizzle.getWeakestTopics).toHaveBeenCalledWith(3);
     expect(result).toEqual(mockTopics);
   });
 
   it('delegates applyConfidenceDecay', async () => {
-    (progressQueries.applyConfidenceDecay as jest.Mock).mockResolvedValue({ decayed: 5 });
+    (progressRepositoryDrizzle.applyConfidenceDecay as jest.Mock).mockResolvedValue({
+      decayed: 5,
+    });
 
     const result = await profileRepository.applyConfidenceDecay();
 
-    expect(progressQueries.applyConfidenceDecay).toHaveBeenCalled();
+    expect(progressRepositoryDrizzle.applyConfidenceDecay).toHaveBeenCalled();
     expect(result).toEqual({ decayed: 5 });
   });
 });

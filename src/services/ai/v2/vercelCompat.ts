@@ -1,6 +1,6 @@
 /**
  * Vercel AI SDK Compatibility Layer
- * 
+ *
  * Provides Vercel AI SDK-compatible APIs on top of Guru's AI v2 framework.
  * This allows code written for Vercel AI SDK to work with Guru's multi-provider
  * system with minimal changes.
@@ -8,7 +8,15 @@
 
 import type { z } from 'zod';
 import type { UserProfile } from '../../../types';
-import type { LanguageModelV2, ModelMessage, TextPart, ImagePart, ToolCallPart, ToolResultPart, FinishReason as GuruFinishReason } from './spec';
+import type {
+  LanguageModelV2,
+  ModelMessage,
+  TextPart,
+  ImagePart,
+  ToolCallPart,
+  ToolResultPart,
+  FinishReason as GuruFinishReason,
+} from './spec';
 import { createGuruFallbackModel } from './providers/guruFallback';
 import { streamText as guruStreamText } from './streamText';
 import { tool as guruTool, type ToolDefinition, type ToolSet } from './tool';
@@ -89,19 +97,23 @@ export interface LanguageModel {
     responseFormat?: { type: 'text' } | { type: 'json'; schema?: unknown };
     abortSignal?: AbortSignal;
   }) => Promise<{
-    stream: AsyncIterable<{
-      type: 'text-delta';
-      textDelta: string;
-    } | {
-      type: 'tool-call';
-      toolCallId: string;
-      toolName: string;
-      args: unknown;
-    } | {
-      type: 'finish';
-      finishReason: 'stop' | 'length' | 'tool-calls' | 'error' | 'other';
-      usage: { promptTokens: number; completionTokens: number };
-    }>;
+    stream: AsyncIterable<
+      | {
+          type: 'text-delta';
+          textDelta: string;
+        }
+      | {
+          type: 'tool-call';
+          toolCallId: string;
+          toolName: string;
+          args: unknown;
+        }
+      | {
+          type: 'finish';
+          finishReason: 'stop' | 'length' | 'tool-calls' | 'error' | 'other';
+          usage: { promptTokens: number; completionTokens: number };
+        }
+    >;
   }>;
 }
 
@@ -112,7 +124,9 @@ export interface LanguageModel {
 /**
  * Map Guru's FinishReason to Vercel's finish reason.
  */
-function mapFinishReason(reason: GuruFinishReason): 'stop' | 'length' | 'tool-calls' | 'error' | 'other' {
+function mapFinishReason(
+  reason: GuruFinishReason,
+): 'stop' | 'length' | 'tool-calls' | 'error' | 'other' {
   switch (reason) {
     case 'stop':
     case 'length':
@@ -130,7 +144,9 @@ function mapFinishReason(reason: GuruFinishReason): 'stop' | 'length' | 'tool-ca
 /**
  * Map Vercel's finish reason to Guru's FinishReason.
  */
-function _mapToGuruFinishReason(reason: 'stop' | 'length' | 'tool-calls' | 'error' | 'other'): GuruFinishReason {
+function _mapToGuruFinishReason(
+  reason: 'stop' | 'length' | 'tool-calls' | 'error' | 'other',
+): GuruFinishReason {
   return reason;
 }
 
@@ -148,30 +164,30 @@ export function fromVercelMessage(msg: CoreMessage): ModelMessage {
 
   if (msg.role === 'user') {
     const parts: Array<TextPart | ImagePart> = [];
-    
+
     // Handle text content
     if (msg.content) {
       parts.push({ type: 'text', text: msg.content });
     }
-    
+
     // Handle attachments (simplified - convert to image parts if possible)
     if (msg.experimental_attachments?.length) {
       for (const attachment of msg.experimental_attachments) {
         if (attachment.contentType.startsWith('image/')) {
           // Note: Vercel uses URLs, Guru uses base64. This is a simplified conversion.
           // In a real implementation, you'd need to fetch and convert the image.
-          parts.push({ 
-            type: 'image', 
-            mimeType: attachment.contentType, 
-            base64Data: `data:${attachment.contentType};base64,PLACEHOLDER` 
+          parts.push({
+            type: 'image',
+            mimeType: attachment.contentType,
+            base64Data: `data:${attachment.contentType};base64,PLACEHOLDER`,
           });
         }
       }
     }
-    
-    return { 
-      role: 'user', 
-      content: parts.length === 1 && parts[0].type === 'text' ? parts[0].text : parts 
+
+    return {
+      role: 'user',
+      content: parts.length === 1 && parts[0].type === 'text' ? parts[0].text : parts,
     };
   }
 
@@ -188,7 +204,7 @@ export function fromVercelMessage(msg: CoreMessage): ModelMessage {
       };
       return { role: 'assistant', content: [toolCall] };
     }
-    
+
     // Regular text response
     return { role: 'assistant', content: msg.content };
   }
@@ -218,7 +234,7 @@ export function toVercelMessage(msg: ModelMessage): CoreMessage {
   if (msg.role === 'user') {
     let content = '';
     const attachments: Array<{ name?: string; contentType: string; url: string }> = [];
-    
+
     if (typeof msg.content === 'string') {
       content = msg.content;
     } else if (Array.isArray(msg.content)) {
@@ -234,7 +250,7 @@ export function toVercelMessage(msg: ModelMessage): CoreMessage {
         }
       }
     }
-    
+
     return {
       role: 'user',
       content,
@@ -256,10 +272,10 @@ export function toVercelMessage(msg: ModelMessage): CoreMessage {
           toolCallId: toolCall.toolCallId,
         };
       }
-      
+
       // Fallback: concatenate text parts
       const textParts = msg.content.filter((p): p is TextPart => p.type === 'text');
-      return { role: 'assistant', content: textParts.map(p => p.text).join('') };
+      return { role: 'assistant', content: textParts.map((p) => p.text).join('') };
     }
   }
 
@@ -294,7 +310,9 @@ export function fromVercelTool(name: string, tool: CoreTool): ToolDefinition {
 /**
  * Convert Guru tool definition to Vercel AI SDK tool format.
  */
-export function toVercelTool<INPUT = unknown, OUTPUT = unknown>(tool: ToolDefinition<INPUT, OUTPUT>): CoreTool {
+export function toVercelTool<INPUT = unknown, OUTPUT = unknown>(
+  tool: ToolDefinition<INPUT, OUTPUT>,
+): CoreTool {
   return {
     description: tool.description,
     parameters: tool.inputSchema,
@@ -322,7 +340,7 @@ export function createModel(options: {
   // If profile is provided, use Guru's multi-provider fallback
   // Otherwise, create a simple provider-specific model
   let guruModel: LanguageModelV2;
-  
+
   if (options.profile) {
     guruModel = createGuruFallbackModel({ profile: options.profile });
   } else {
@@ -334,34 +352,35 @@ export function createModel(options: {
   return {
     async doGenerate(vercelOptions) {
       const prompt = vercelOptions.prompt.map(fromVercelMessage);
-      
+
       const result = await guruModel.doGenerate({
         prompt,
         maxOutputTokens: vercelOptions.maxTokens,
         temperature: vercelOptions.temperature,
         topP: vercelOptions.topP,
         stopSequences: vercelOptions.stopSequences,
-        tools: vercelOptions.tools?.map(t => ({
+        tools: vercelOptions.tools?.map((t) => ({
           name: t.name,
           description: t.description || '',
           inputSchema: t.parameters,
         })),
         toolChoice: vercelOptions.toolChoice,
-        responseFormat: vercelOptions.responseFormat?.type === 'json' 
-          ? { type: 'json', schema: vercelOptions.responseFormat.schema }
-          : undefined,
+        responseFormat:
+          vercelOptions.responseFormat?.type === 'json'
+            ? { type: 'json', schema: vercelOptions.responseFormat.schema }
+            : undefined,
         abortSignal: vercelOptions.abortSignal,
       });
 
       // Convert result to Vercel format
       const text = result.content
         .filter((p): p is TextPart => p.type === 'text')
-        .map(p => p.text)
+        .map((p) => p.text)
         .join('');
 
       const toolCalls = result.content
         .filter((p): p is ToolCallPart => p.type === 'tool-call')
-        .map(p => ({
+        .map((p) => ({
           toolCallId: p.toolCallId,
           toolName: p.toolName,
           args: p.input,
@@ -380,22 +399,23 @@ export function createModel(options: {
 
     async doStream(vercelOptions) {
       const prompt = vercelOptions.prompt.map(fromVercelMessage);
-      
+
       const result = await guruModel.doStream({
         prompt,
         maxOutputTokens: vercelOptions.maxTokens,
         temperature: vercelOptions.temperature,
         topP: vercelOptions.topP,
         stopSequences: vercelOptions.stopSequences,
-        tools: vercelOptions.tools?.map(t => ({
+        tools: vercelOptions.tools?.map((t) => ({
           name: t.name,
           description: t.description || '',
           inputSchema: t.parameters,
         })),
         toolChoice: vercelOptions.toolChoice,
-        responseFormat: vercelOptions.responseFormat?.type === 'json' 
-          ? { type: 'json', schema: vercelOptions.responseFormat.schema }
-          : undefined,
+        responseFormat:
+          vercelOptions.responseFormat?.type === 'json'
+            ? { type: 'json', schema: vercelOptions.responseFormat.schema }
+            : undefined,
         abortSignal: vercelOptions.abortSignal,
       });
 
@@ -405,11 +425,11 @@ export function createModel(options: {
           if (part.type === 'text-delta') {
             yield { type: 'text-delta' as const, textDelta: part.delta };
           } else if (part.type === 'tool-call') {
-            yield { 
-              type: 'tool-call' as const, 
-              toolCallId: part.toolCallId, 
-              toolName: part.toolName, 
-              args: part.input 
+            yield {
+              type: 'tool-call' as const,
+              toolCallId: part.toolCallId,
+              toolName: part.toolName,
+              args: part.input,
             };
           } else if (part.type === 'finish') {
             yield {
@@ -417,8 +437,8 @@ export function createModel(options: {
               finishReason: mapFinishReason(part.finishReason),
               usage: {
                 promptTokens: part.usage.inputTokens || 0,
-                completionTokens: part.usage.outputTokens || 0
-              }
+                completionTokens: part.usage.outputTokens || 0,
+              },
             };
           }
         }
@@ -450,7 +470,7 @@ export async function* streamText(options: {
   // Convert to Guru format
   const guruMessages = options.messages.map(fromVercelMessage);
   const guruTools: ToolSet = {};
-  
+
   if (options.tools) {
     for (const [name, tool] of Object.entries(options.tools)) {
       guruTools[name] = fromVercelTool(name, tool);
@@ -460,7 +480,7 @@ export async function* streamText(options: {
   // Get the underlying Guru model
   // Note: This assumes the LanguageModel was created with createModel above
   const guruModel = (options.model as { _guruModel?: LanguageModelV2 })._guruModel;
-  
+
   if (!guruModel) {
     throw new Error('Model must be created with createModel from this compatibility layer');
   }
@@ -492,8 +512,8 @@ export async function* streamText(options: {
     finishReason: mapFinishReason(finishReason),
     usage: {
       promptTokens: usage.inputTokens || 0,
-      completionTokens: usage.outputTokens || 0
-    }
+      completionTokens: usage.outputTokens || 0,
+    },
   };
 }
 

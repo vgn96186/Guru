@@ -37,6 +37,11 @@ jest.mock('../components/GuruChatOverlay', () => {
 });
 
 describe('ContentCard Ask Guru context', () => {
+  beforeEach(() => {
+    const { isContentFlagged } = require('../db/queries/aiCache');
+    isContentFlagged.mockResolvedValue(false);
+  });
+
   const quizContent: QuizContent = {
     type: 'quiz',
     topicName: 'ACS',
@@ -194,10 +199,12 @@ const mockContents: AIContent[] = [
 ];
 
 describe('ContentCard Snapshots', () => {
-  it.each(mockContents)('matches snapshot for %p type', async (content) => {
+  beforeEach(() => {
     const { isContentFlagged } = require('../db/queries/aiCache');
-    console.log('Mock is:', isContentFlagged);
+    isContentFlagged.mockResolvedValue(false);
+  });
 
+  it.each(mockContents)('matches snapshot for %p type', async (content) => {
     const { toJSON } = render(
       <ContentCard
         content={content}

@@ -29,7 +29,10 @@ const badgeVariants = tv({
   },
 });
 
-const textToneMap: Record<LinearBadgeVariant, 'secondary' | 'accent' | 'success' | 'warning' | 'error'> = {
+const textToneMap: Record<
+  LinearBadgeVariant,
+  'secondary' | 'accent' | 'success' | 'warning' | 'error'
+> = {
   default: 'secondary',
   accent: 'accent',
   success: 'success',
@@ -52,4 +55,3 @@ export default function LinearBadge({
     </View>
   );
 }
-

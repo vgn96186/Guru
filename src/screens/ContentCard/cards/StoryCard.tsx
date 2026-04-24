@@ -1,27 +1,16 @@
 import React, { useState } from 'react';
-import {
-  View,
-  ScrollView,
-  TouchableOpacity,
-} from 'react-native';
+import { View, ScrollView, TouchableOpacity } from 'react-native';
 import LinearText from '../../../components/primitives/LinearText';
 import StudyMarkdown from '../../../components/StudyMarkdown';
 import { emphasizeHighYieldMarkdown } from '../../../utils/highlightMarkdown';
 
-
 import { ContentFlagButton } from '../../../components/ContentFlagButton';
 import { s } from '../styles';
 import { Props } from '../types';
-import type {
-  StoryContent,
-} from '../../../types';
+import type { StoryContent } from '../../../types';
 import { TopicImage } from '../shared/TopicImage';
 import { ConfidenceRating } from '../shared/ConfidenceRating';
-import {
-  useCardScrollContentStyle,
-} from '../hooks/useCardScrollPadding';
-
-
+import { useCardScrollContentStyle } from '../hooks/useCardScrollPadding';
 
 // ── Key Points ────────────────────────────────────────────────────
 // ── Must Know & Most Tested ──────────────────────────────────────

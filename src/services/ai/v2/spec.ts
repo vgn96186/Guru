@@ -71,13 +71,7 @@ export interface LanguageModelV2CallOptions {
   providerOptions?: Record<string, unknown>;
 }
 
-export type FinishReason =
-  | 'stop'
-  | 'length'
-  | 'tool-calls'
-  | 'content-filter'
-  | 'error'
-  | 'other';
+export type FinishReason = 'stop' | 'length' | 'tool-calls' | 'content-filter' | 'error' | 'other';
 
 export interface LanguageModelV2Usage {
   inputTokens?: number;

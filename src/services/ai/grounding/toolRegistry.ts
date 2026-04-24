@@ -96,7 +96,6 @@ export function buildGroundingTools(options?: { allowImages?: boolean }): ToolSe
     /** Get MCQs from question bank for a topic */
     get_quiz_questions: getQuizQuestionsTool,
 
-
     /** Generate spaced repetition flashcards for a topic */
     generate_flashcards: generateFlashcardsTool,
 

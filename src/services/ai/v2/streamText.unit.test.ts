@@ -12,9 +12,7 @@ import type {
   LanguageModelV2StreamResult,
 } from './spec';
 
-function makeMockModel(
-  scripts: LanguageModelV2StreamPart[][],
-): LanguageModelV2 {
+function makeMockModel(scripts: LanguageModelV2StreamPart[][]): LanguageModelV2 {
   let call = 0;
   return {
     specificationVersion: 'v2',
@@ -96,12 +94,7 @@ describe('streamText', () => {
       }
     }
 
-    expect(allParts).toEqual([
-      't:looking…',
-      'c:add',
-      'r:add:{"sum":5}',
-      't:The answer is 5.',
-    ]);
+    expect(allParts).toEqual(['t:looking…', 'c:add', 'r:add:{"sum":5}', 't:The answer is 5.']);
     expect(await result.text).toBe('looking…The answer is 5.');
     const toolCalls = await result.toolCalls;
     expect(toolCalls).toHaveLength(1);

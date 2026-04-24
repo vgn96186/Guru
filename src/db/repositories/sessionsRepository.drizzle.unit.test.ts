@@ -1,10 +1,16 @@
 import { getDrizzleDb } from '../drizzle';
+import { runInTransaction } from '../database';
 import { sessionsRepositoryDrizzle } from './sessionsRepository.drizzle';
 import { dateStr, todayStr } from '../database';
 import { MS_PER_DAY } from '../../constants/time';
 
 jest.mock('../drizzle', () => ({
   getDrizzleDb: jest.fn(),
+}));
+
+jest.mock('../database', () => ({
+  ...jest.requireActual('../database'),
+  runInTransaction: jest.fn(),
 }));
 
 type MockDb = {
@@ -181,6 +187,9 @@ describe('sessionsRepositoryDrizzle', () => {
 
   it('endSession runs a transaction', async () => {
     const db = makeDb();
+    (runInTransaction as jest.Mock).mockImplementation(
+      async (callback: (txn: unknown) => Promise<void>) => db.transaction(callback),
+    );
     (getDrizzleDb as jest.Mock).mockReturnValue(db);
 
     await sessionsRepositoryDrizzle.endSession(1, [1, 2], 100, 30, 'test notes');

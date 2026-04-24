@@ -1,11 +1,5 @@
 // Re-export Vercel AI SDK core functions
-export {
-  streamText,
-  generateText,
-  generateObject,
-  streamObject,
-  tool,
-} from 'ai';
+export { streamText, generateText, generateObject, streamObject, tool } from 'ai';
 
 // Re-export types — use LanguageModelV2 as the canonical LanguageModel for provider code
 export type { LanguageModelV2 as LanguageModel } from '@ai-sdk/provider';

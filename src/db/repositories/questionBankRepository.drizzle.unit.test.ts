@@ -1,4 +1,5 @@
 import { getDrizzleDb } from '../drizzle';
+import { runInTransaction } from '../database';
 import { questionBankRepositoryDrizzle } from './questionBankRepository.drizzle';
 
 jest.mock('drizzle-orm', () => {
@@ -25,6 +26,10 @@ jest.mock('drizzle-orm', () => {
 
 jest.mock('../drizzle', () => ({
   getDrizzleDb: jest.fn(),
+}));
+
+jest.mock('../database', () => ({
+  runInTransaction: jest.fn(),
 }));
 
 jest.mock('../drizzleSchema', () => ({
@@ -168,6 +173,9 @@ describe('questionBankRepositoryDrizzle', () => {
     db.transaction.mockImplementation(async (callback: (txn: typeof tx) => Promise<number>) =>
       callback(tx),
     );
+    (runInTransaction as jest.Mock).mockImplementation(
+      async (callback: (txn: typeof tx) => Promise<number>) => db.transaction(callback),
+    );
 
     const saved = await questionBankRepositoryDrizzle.saveBulkQuestions([
       {
@@ -236,6 +244,9 @@ describe('questionBankRepositoryDrizzle', () => {
       callback(tx),
     );
     (getDrizzleDb as jest.Mock).mockReturnValue(db);
+    (runInTransaction as jest.Mock).mockImplementation(
+      async (callback: (txn: typeof tx) => Promise<void>) => db.transaction(callback),
+    );
     jest.spyOn(Date, 'now').mockReturnValue(1717000000000);
 
     await questionBankRepositoryDrizzle.recordAttempt(9, true);

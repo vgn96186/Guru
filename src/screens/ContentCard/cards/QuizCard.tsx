@@ -12,30 +12,22 @@ import * as Haptics from 'expo-haptics';
 import LinearText from '../../../components/primitives/LinearText';
 import StudyMarkdown from '../../../components/StudyMarkdown';
 import { emphasizeHighYieldMarkdown } from '../../../utils/highlightMarkdown';
-import {
-  explainTopicDeeper,
-  generateEscalatingQuiz,
-} from '../../../services/ai';
+import { explainTopicDeeper, generateEscalatingQuiz } from '../../../services/ai';
 import { ContentFlagButton } from '../../../components/ContentFlagButton';
 import { s } from '../styles';
 import { linearTheme as n } from '../../../theme/linearTheme';
 import { Props, ContextUpdater } from '../types';
-import type {
-  QuizContent,
-} from '../../../types';
+import type { QuizContent } from '../../../types';
 import { QuestionImage } from '../shared/QuestionImage';
 import { ConceptChip } from '../shared/ConceptChip';
 import { DeepExplanationBlock } from '../shared/DeepExplanationBlock';
 import { QuizOptionBtn } from '../shared/QuizOptionBtn';
-import {
-  useCardScrollContentStyle,
-} from '../hooks/useCardScrollPadding';
+import { useCardScrollContentStyle } from '../hooks/useCardScrollPadding';
 import { formatQuizExplanation } from '../utils/formatQuizExplanation';
 import { extractMedicalConcepts } from '../utils/extractMedicalConcepts';
 import { isQuizImageHttpUrl } from '../utils/isQuizImageHttpUrl';
 import { stripImageFraming } from '../utils/stripImageFraming';
 import { compactLines } from '../utils/compactLines';
-
 
 import { useSPen } from '../../../hooks/useSPen';
 
@@ -118,10 +110,20 @@ export function QuizCard({
         [
           `Card type: Quiz — Topic: ${content.topicName}`,
           `Active Question (${currentQ + 1}/${validQuestions.length}): ${q.question}`,
-          `Options: ${q.options.map((opt, i) => `${String.fromCharCode(65 + i)}. ${opt}`).join(' | ')}`,
-          `Correct Answer: ${String.fromCharCode(65 + q.correctIndex)}. ${q.options[q.correctIndex]}`,
+          `Options: ${q.options
+            .map((opt, i) => `${String.fromCharCode(65 + i)}. ${opt}`)
+            .join(' | ')}`,
+          `Correct Answer: ${String.fromCharCode(65 + q.correctIndex)}. ${
+            q.options[q.correctIndex]
+          }`,
           selected !== null
-            ? `Student chose: ${selected === -1 ? "I don't know (revealed answer)" : `${String.fromCharCode(65 + selected)}. ${q.options[selected]} — ${selected === q.correctIndex ? 'CORRECT' : 'INCORRECT'}`}`
+            ? `Student chose: ${
+                selected === -1
+                  ? "I don't know (revealed answer)"
+                  : `${String.fromCharCode(65 + selected)}. ${q.options[selected]} — ${
+                      selected === q.correctIndex ? 'CORRECT' : 'INCORRECT'
+                    }`
+              }`
             : 'Student has not answered yet.',
           `Explanation: ${formattedExplanation}`,
           deepExplanation ? `Deeper explanation visible: ${deepExplanation.slice(0, 200)}...` : '',

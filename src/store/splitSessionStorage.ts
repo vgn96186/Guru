@@ -207,7 +207,6 @@ export const splitSessionStorage = {
       } else {
         await SecureStore.deleteItemAsync(SECURE_SESSION_ID_KEY);
       }
-
     } catch (e) {
       console.error('[splitSessionStorage] Failed to set item:', e);
     }

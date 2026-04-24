@@ -10,7 +10,11 @@ interface Props {
   setUserConfidence: (level: 1 | 2 | 3) => void;
 }
 
-export function LectureReturnConfidenceSelector({ userConfidence, estimatedConfidence, setUserConfidence }: Props) {
+export function LectureReturnConfidenceSelector({
+  userConfidence,
+  estimatedConfidence,
+  setUserConfidence,
+}: Props) {
   return (
     <View style={styles.confidenceSection}>
       <Text style={styles.sectionLabel}>YOUR CONFIDENCE LEVEL</Text>
@@ -35,12 +39,7 @@ export function LectureReturnConfidenceSelector({ userConfidence, estimatedConfi
               onPress={() => setUserConfidence(level)}
               activeOpacity={0.7}
             >
-              <Text
-                style={[
-                  styles.confidenceOptionText,
-                  isSelected && { color: colors[level] },
-                ]}
-              >
+              <Text style={[styles.confidenceOptionText, isSelected && { color: colors[level] }]}>
                 {CONFIDENCE_LABELS_WITH_EMOJI[level]}
               </Text>
             </TouchableOpacity>
@@ -49,8 +48,8 @@ export function LectureReturnConfidenceSelector({ userConfidence, estimatedConfi
       </View>
       {userConfidence && userConfidence !== estimatedConfidence && (
         <Text style={styles.confidenceOverrideNote}>
-          AI detected "{CONFIDENCE_LABELS[estimatedConfidence as 1 | 2 | 3]}"
-          — you're overriding to your selection
+          AI detected "{CONFIDENCE_LABELS[estimatedConfidence as 1 | 2 | 3]}" — you're overriding to
+          your selection
         </Text>
       )}
     </View>

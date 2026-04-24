@@ -1,26 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import {
-  View,
-  ScrollView,
-  TouchableOpacity,
-} from 'react-native';
+import { View, ScrollView, TouchableOpacity } from 'react-native';
 import LinearText from '../../../components/primitives/LinearText';
 import StudyMarkdown from '../../../components/StudyMarkdown';
 import { emphasizeHighYieldMarkdown } from '../../../utils/highlightMarkdown';
 
-
 import { s } from '../styles';
 import { linearTheme as n } from '../../../theme/linearTheme';
 import { Props, ContextUpdater } from '../types';
-import type {
-  SocraticContent,
-} from '../../../types';
-import {
-  useCardScrollPaddingBottom,
-} from '../hooks/useCardScrollPadding';
+import type { SocraticContent } from '../../../types';
+import { useCardScrollPaddingBottom } from '../hooks/useCardScrollPadding';
 import { compactLines } from '../utils/compactLines';
-
-
 
 // ── Key Points ────────────────────────────────────────────────────
 // ── Must Know & Most Tested ──────────────────────────────────────

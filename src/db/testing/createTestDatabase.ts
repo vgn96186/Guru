@@ -1,4 +1,6 @@
 import Database from 'better-sqlite3';
+import { readFileSync } from 'fs';
+import { join } from 'path';
 import { wrapBetterSqliteToAsync } from './betterSqliteAdapter';
 import type { SQLiteDatabase } from 'expo-sqlite';
 
@@ -15,9 +17,18 @@ export type TestDatabaseHandle = {
  */
 export function createTestDatabase(_seedWithData = false): SQLiteDatabase {
   const raw = new Database(':memory:');
+  raw.pragma('journal_mode = DELETE');
+  raw.pragma('foreign_keys = ON');
+  const baselineSql = readFileSync(
+    join(__dirname, '..', 'drizzle-migrations', '0000_baseline_v164.sql'),
+    'utf8',
+  )
+    .split('--> statement-breakpoint')
+    .map((statement) => statement.trim())
+    .filter(Boolean)
+    .join(';\n');
+  raw.exec(baselineSql);
+  raw.prepare('INSERT OR IGNORE INTO user_profile (id) VALUES (1)').run();
   const db = wrapBetterSqliteToAsync(raw);
-
-  // Actually we need to apply drizzle schema directly, or just let it be handled by tests
-  // since ALL_SCHEMAS/DB_INDEXES no longer exist in Drizzle version
   return db;
 }

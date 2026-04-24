@@ -1,98 +1,57 @@
-// Mock expo-sqlite FIRST, before anything else
-jest.mock(
-  'expo-sqlite',
-  () => ({
-    openDatabaseSync: jest.fn(),
-    useSQLiteContext: jest.fn(),
-  }),
-  { virtual: true },
-);
-
-jest.mock(
-  'expo-asset',
-  () => ({
-    Asset: {
-      loadAsync: jest.fn(),
-    },
-  }),
-  { virtual: true },
-);
-
 import { dailyAgendaRepository } from './dailyAgendaRepository';
-import { getDb } from '../database';
+import { dailyAgendaRepositoryDrizzle } from './dailyAgendaRepository.drizzle';
 
-const mockDb = {
-  runAsync: jest.fn(),
-  getFirstAsync: jest.fn(),
-  getAllAsync: jest.fn(),
-  execAsync: jest.fn(),
-};
-
-jest.mock('../database', () => {
-  return {
-    getDb: jest.fn(() => mockDb),
-    todayStr: jest.fn(() => '2023-10-27'),
-    dateStr: jest.fn((d: Date) => d.toISOString().split('T')[0]),
-  };
-});
+jest.mock('./dailyAgendaRepository.drizzle', () => ({
+  dailyAgendaRepositoryDrizzle: {
+    getDailyAgenda: jest.fn(),
+    saveDailyAgenda: jest.fn(),
+    deleteDailyAgenda: jest.fn(),
+    logPlanEvent: jest.fn(),
+  },
+}));
 
 describe('dailyAgendaRepository', () => {
   beforeEach(() => {
-    (getDb as jest.Mock).mockReturnValue(mockDb);
     jest.clearAllMocks();
   });
 
-  it('gets a daily plan by date', async () => {
+  it('delegates getDailyAgenda to the Drizzle repository', async () => {
     const mockPlan = { date: '2026-03-14', tasks: [] };
-    (getDb().getFirstAsync as jest.Mock).mockResolvedValue({ plan_json: JSON.stringify(mockPlan) });
+    (dailyAgendaRepositoryDrizzle.getDailyAgenda as jest.Mock).mockResolvedValue(mockPlan);
 
     const result = await dailyAgendaRepository.getDailyAgenda('2026-03-14');
 
+    expect(dailyAgendaRepositoryDrizzle.getDailyAgenda).toHaveBeenCalledWith('2026-03-14');
     expect(result).toEqual(mockPlan);
-    expect(mockDb.getFirstAsync).toHaveBeenCalledWith(
-      'SELECT plan_json FROM daily_agenda WHERE date = ?',
-      ['2026-03-14'],
-    );
   });
 
-  it('returns null if no plan exists for date', async () => {
-    (getDb().getFirstAsync as jest.Mock).mockResolvedValue(null);
-
-    const result = await dailyAgendaRepository.getDailyAgenda('2023-10-27');
-
-    expect(result).toBeNull();
-  });
-
-  it('saves a daily plan', async () => {
+  it('delegates saveDailyAgenda to the Drizzle repository', async () => {
     const mockPlan = { date: '2026-03-14', tasks: [] } as any;
-    (getDb().runAsync as jest.Mock).mockResolvedValue(undefined);
 
     await dailyAgendaRepository.saveDailyAgenda('2026-03-14', mockPlan, 'guru');
 
-    expect(mockDb.runAsync).toHaveBeenCalledWith(
-      expect.stringContaining('INSERT OR REPLACE INTO daily_agenda'),
-      ['2026-03-14', JSON.stringify(mockPlan), 'guru', expect.any(Number), expect.any(Number)],
+    expect(dailyAgendaRepositoryDrizzle.saveDailyAgenda).toHaveBeenCalledWith(
+      '2026-03-14',
+      mockPlan,
+      'guru',
     );
   });
 
-  it('deletes a daily plan', async () => {
-    (getDb().runAsync as jest.Mock).mockResolvedValue(undefined);
-
+  it('delegates deleteDailyAgenda to the Drizzle repository', async () => {
     await dailyAgendaRepository.deleteDailyAgenda('2026-03-14');
-    expect(mockDb.runAsync).toHaveBeenCalledWith('DELETE FROM daily_agenda WHERE date = ?', [
-      '2026-03-14',
-    ]);
+
+    expect(dailyAgendaRepositoryDrizzle.deleteDailyAgenda).toHaveBeenCalledWith('2026-03-14');
   });
 
-  it('logs a plan event', async () => {
-    (getDb().runAsync as jest.Mock).mockResolvedValue(undefined);
+  it('delegates logPlanEvent to the Drizzle repository', async () => {
     const mockPayload = { foo: 'bar' };
 
     await dailyAgendaRepository.logPlanEvent('2026-03-14', 'test_event', mockPayload);
 
-    expect(mockDb.runAsync).toHaveBeenCalledWith(
-      'INSERT INTO plan_events (date, event_type, payload_json, created_at) VALUES (?, ?, ?, ?)',
-      ['2026-03-14', 'test_event', JSON.stringify(mockPayload), expect.any(Number)],
+    expect(dailyAgendaRepositoryDrizzle.logPlanEvent).toHaveBeenCalledWith(
+      '2026-03-14',
+      'test_event',
+      mockPayload,
     );
   });
 });

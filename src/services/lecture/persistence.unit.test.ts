@@ -1,16 +1,19 @@
 import { beforeEach, describe, expect, it, jest } from '@jest/globals';
+import { getDrizzleDb } from '../../db/drizzle';
 
-const mockDb: any = {
-  execAsync: jest.fn(),
-  runAsync: jest.fn(),
-  getFirstAsync: jest.fn(),
-  getAllAsync: jest.fn(),
-};
+const mockUpdateSessionRecordingPath = jest.fn();
+const mockUpdateTelemetry = jest.fn();
+const mockAppendPipelineEvent = jest.fn();
+const mockRunInTransaction = jest.fn() as jest.Mock;
+const mockShowToast = jest.fn();
 
 jest.mock('../../db/database', () => ({
-  getDb: jest.fn(() => mockDb),
   nowTs: jest.fn(() => 1700000000),
-  runInTransaction: jest.fn(async (fn: any) => fn(mockDb)),
+  runInTransaction: (...args: unknown[]) => mockRunInTransaction(...args),
+}));
+
+jest.mock('../../db/drizzle', () => ({
+  getDrizzleDb: jest.fn(),
 }));
 
 jest.mock('../transcriptStorage', () => ({
@@ -39,9 +42,9 @@ jest.mock('../databaseEvents', () => ({
 }));
 
 jest.mock('../../db/queries/externalLogs', () => ({
-  appendSessionPipelineEvent: jest.fn(),
-  updateSessionPipelineTelemetry: jest.fn(),
-  updateSessionRecordingPath: jest.fn(),
+  appendSessionPipelineEvent: (...args: unknown[]) => mockAppendPipelineEvent(...args),
+  updateSessionPipelineTelemetry: (...args: unknown[]) => mockUpdateTelemetry(...args),
+  updateSessionRecordingPath: (...args: unknown[]) => mockUpdateSessionRecordingPath(...args),
 }));
 
 jest.mock('../../db/queries/progress', () => ({
@@ -49,140 +52,193 @@ jest.mock('../../db/queries/progress', () => ({
 }));
 
 jest.mock('../../components/Toast', () => ({
-  showToast: jest.fn(),
+  showToast: (...args: unknown[]) => mockShowToast(...args),
 }));
 
+function createSelectChain(rowsQueue: unknown[][]) {
+  return {
+    from: jest.fn(() => ({
+      where: jest.fn(() => ({
+        limit: jest.fn().mockResolvedValue((rowsQueue.shift() ?? []) as unknown[] as never),
+      })),
+    })),
+  };
+}
+
+function createMockDrizzleDb(selectRows: unknown[][] = []) {
+  const updateSetCalls: Array<Record<string, unknown>> = [];
+  const updateWhere = jest.fn().mockResolvedValue(undefined as never);
+  const updateSet = jest.fn((payload: Record<string, unknown>) => {
+    updateSetCalls.push(payload);
+    return { where: updateWhere };
+  });
+  const drizzleDb = {
+    select: jest.fn(() => createSelectChain(selectRows)),
+    update: jest.fn(() => ({ set: updateSet })),
+  };
+
+  return { drizzleDb, updateSetCalls, updateWhere };
+}
+
+function createMockTx(noteId = 42) {
+  const returning = jest
+    .fn<(payload: Record<string, unknown>) => Promise<Array<{ id: number }>>>()
+    .mockResolvedValue([{ id: noteId }]);
+  const values = jest.fn((payload: Record<string, unknown>) => {
+    void payload;
+    return { returning };
+  });
+  return {
+    tx: {
+      insert: jest.fn(() => ({ values })),
+    },
+    values,
+  };
+}
+
 describe('persistence service', () => {
-  describe('saveLecturePersistence', () => {
-    beforeEach(() => {
-      jest.clearAllMocks();
-      // Re-set mocks cleared by clearAllMocks
-      const dbMod = require('../../db/database');
-      dbMod.getDb.mockReturnValue(mockDb);
-      dbMod.nowTs.mockReturnValue(1700000000);
-      dbMod.runInTransaction.mockImplementation(async (fn: any) => fn(mockDb));
-      const backupMod = require('../backgroundBackupService');
-      backupMod.runAutoPublicBackup.mockReturnValue(Promise.resolve());
-      const eventsMod = require('../databaseEvents');
-      eventsMod.notifyDbUpdate.mockReturnValue(undefined);
-      mockDb.getFirstAsync.mockResolvedValue({ id: 7 }); // Default subject ID
-      mockDb.execAsync.mockResolvedValue(undefined);
-      mockDb.runAsync.mockImplementation(async (sql: any) => {
-        if (sql.includes('INSERT INTO lecture_notes')) {
-          return { lastInsertRowId: 42 };
-        }
-        return { lastInsertRowId: 0 };
-      });
-    });
+  beforeEach(() => {
+    jest.clearAllMocks();
+    const dbModule = require('../../db/database');
+    const embeddingModule = require('../ai/embeddingService');
+    const backupModule = require('../backgroundBackupService');
+    dbModule.nowTs.mockReturnValue(1700000000);
+    embeddingModule.embeddingToBlob.mockReturnValue('mock-blob');
+    backupModule.runAutoPublicBackup.mockResolvedValue(undefined);
+  });
 
-    it('stores the original recording path first, then updates both records after rename', async () => {
-      const {
-        saveTranscriptToFile,
-        renameRecordingToLectureIdentity,
-      } = require('../transcriptStorage');
-      const { updateSessionRecordingPath } = require('../../db/queries/externalLogs');
-      const { saveLecturePersistence } = require('./persistence');
+  it('stores the original recording path first, then updates both records after rename', async () => {
+    const {
+      saveTranscriptToFile,
+      renameRecordingToLectureIdentity,
+    } = require('../transcriptStorage');
+    const { saveLecturePersistence } = require('./persistence');
 
-      saveTranscriptToFile.mockResolvedValue('file:///mock/transcript.txt');
-      renameRecordingToLectureIdentity.mockResolvedValue('/recordings/Biochem-Glycolysis.m4a');
+    const { drizzleDb, updateSetCalls } = createMockDrizzleDb([[{ id: 7 }]]);
+    const { tx, values } = createMockTx(42);
+    (getDrizzleDb as jest.Mock).mockReturnValue(drizzleDb);
+    mockRunInTransaction.mockImplementation((async (fn: (txn: typeof tx) => Promise<number>) =>
+      fn(tx)) as never);
 
-      await saveLecturePersistence({
-        analysis: {
-          transcript: 'lecture transcript',
-          subject: 'Biochemistry',
-          topics: ['Glycolysis'],
-          keyConcepts: [],
-          highYieldPoints: [],
-          lectureSummary: 'Glycolysis overview',
-          estimatedConfidence: 2,
-        },
-        appName: 'Marrow',
-        durationMinutes: 55,
-        logId: 11,
-        quickNote: 'Quick note',
-        embedding: [0.1, 0.2],
-        recordingPath: '/recordings/raw.m4a',
-      });
+    saveTranscriptToFile.mockResolvedValue('file:///mock/transcript.txt');
+    renameRecordingToLectureIdentity.mockResolvedValue('/recordings/Biochem-Glycolysis.m4a');
 
-      const insertCall = mockDb.runAsync.mock.calls.find(([sql]: [string]) =>
-        String(sql).includes('INSERT INTO lecture_notes'),
-      );
-      expect((insertCall as any)?.[1][10]).toBe('/recordings/raw.m4a');
-      expect(renameRecordingToLectureIdentity).toHaveBeenCalledWith('/recordings/raw.m4a', {
-        subjectName: 'Biochemistry',
+    await saveLecturePersistence({
+      analysis: {
+        transcript: 'lecture transcript',
+        subject: 'Biochemistry',
         topics: ['Glycolysis'],
-      });
-      expect(mockDb.runAsync).toHaveBeenCalledWith(
-        'UPDATE lecture_notes SET recording_path = ? WHERE id = ?',
-        ['/recordings/Biochem-Glycolysis.m4a', 42],
-      );
-      expect(updateSessionRecordingPath).toHaveBeenCalledWith(
-        11,
-        '/recordings/Biochem-Glycolysis.m4a',
-      );
+        keyConcepts: [],
+        highYieldPoints: [],
+        lectureSummary: 'Glycolysis overview',
+        estimatedConfidence: 2,
+      },
+      appName: 'Marrow',
+      durationMinutes: 55,
+      logId: 11,
+      quickNote: 'Quick note',
+      embedding: [0.1, 0.2],
+      recordingPath: '/recordings/raw.m4a',
     });
 
-    it('generates embedding if not provided', async () => {
-      const { generateEmbedding } = require('../ai/embeddingService');
-      const { saveLecturePersistence } = require('./persistence');
+    expect(values).toHaveBeenCalledWith(
+      expect.objectContaining({
+        subjectId: 7,
+        recordingPath: '/recordings/raw.m4a',
+        transcript: 'file:///mock/transcript.txt',
+        embedding: 'mock-blob',
+      }),
+    );
+    expect(renameRecordingToLectureIdentity).toHaveBeenCalledWith('/recordings/raw.m4a', {
+      subjectName: 'Biochemistry',
+      topics: ['Glycolysis'],
+    });
+    expect(updateSetCalls).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ transcriptionStatus: 'completed', lectureNoteId: 42 }),
+        expect.objectContaining({ recordingPath: '/recordings/Biochem-Glycolysis.m4a' }),
+      ]),
+    );
+    expect(mockUpdateSessionRecordingPath).toHaveBeenCalledWith(
+      11,
+      '/recordings/Biochem-Glycolysis.m4a',
+    );
+  });
 
-      generateEmbedding.mockResolvedValue([0.3, 0.4]);
+  it('generates embedding if not provided', async () => {
+    const { generateEmbedding } = require('../ai/embeddingService');
+    const { saveLecturePersistence } = require('./persistence');
 
-      await saveLecturePersistence({
-        analysis: {
-          transcript: 'lecture transcript',
-          subject: 'Anatomy',
-          topics: ['Heart'],
-          lectureSummary: 'Heart anatomy',
-          estimatedConfidence: 3,
-        },
-        appName: 'TestApp',
-        durationMinutes: 30,
-        logId: 1,
-        quickNote: '',
-      });
+    const { drizzleDb } = createMockDrizzleDb([[{ id: 7 }]]);
+    const { tx, values } = createMockTx(42);
+    (getDrizzleDb as jest.Mock).mockReturnValue(drizzleDb);
+    mockRunInTransaction.mockImplementation((async (fn: (txn: typeof tx) => Promise<number>) =>
+      fn(tx)) as never);
+    generateEmbedding.mockResolvedValue([0.3, 0.4]);
 
-      expect(generateEmbedding).toHaveBeenCalledWith('Heart anatomy');
+    await saveLecturePersistence({
+      analysis: {
+        transcript: 'lecture transcript',
+        subject: 'Anatomy',
+        topics: ['Heart'],
+        lectureSummary: 'Heart anatomy',
+        estimatedConfidence: 3,
+      },
+      appName: 'TestApp',
+      durationMinutes: 30,
+      logId: 1,
+      quickNote: '',
     });
 
-    it('falls back to fuzzy mapping for subject ID', async () => {
-      const { saveLecturePersistence } = require('./persistence');
+    expect(generateEmbedding).toHaveBeenCalledWith('Heart anatomy');
+    expect(values).toHaveBeenCalledWith(
+      expect.objectContaining({
+        embedding: 'mock-blob',
+      }),
+    );
+  });
 
-      // 1. Direct match fails
-      mockDb.getFirstAsync.mockResolvedValueOnce(null);
-      // 2. Fuzzy match succeeds (e.g. 'anat' -> 'Anatomy')
-      mockDb.getFirstAsync.mockResolvedValueOnce({ id: 10 });
+  it('falls back to fuzzy mapping for subject ID', async () => {
+    const { saveLecturePersistence } = require('./persistence');
 
-      await saveLecturePersistence({
-        analysis: { subject: 'anat', topics: [], estimatedConfidence: 1 },
+    const { drizzleDb } = createMockDrizzleDb([[], [{ id: 10 }]]);
+    const { tx, values } = createMockTx(42);
+    (getDrizzleDb as jest.Mock).mockReturnValue(drizzleDb);
+    mockRunInTransaction.mockImplementation((async (fn: (txn: typeof tx) => Promise<number>) =>
+      fn(tx)) as never);
+
+    await saveLecturePersistence({
+      analysis: { transcript: '', subject: 'anat', topics: [], estimatedConfidence: 1 },
+      appName: 'App',
+      durationMinutes: 10,
+      logId: 1,
+      quickNote: '',
+    });
+
+    expect(values).toHaveBeenCalledWith(
+      expect.objectContaining({
+        subjectId: 10,
+      }),
+    );
+  });
+
+  it('handles errors and propagates them (runInTransaction handles rollback)', async () => {
+    const { saveLecturePersistence } = require('./persistence');
+
+    const { drizzleDb } = createMockDrizzleDb([[{ id: 7 }]]);
+    (getDrizzleDb as jest.Mock).mockReturnValue(drizzleDb);
+    mockRunInTransaction.mockRejectedValue(new Error('DB Error') as never);
+
+    await expect(
+      saveLecturePersistence({
+        analysis: { transcript: '', subject: 'Anatomy', topics: [], estimatedConfidence: 1 },
         appName: 'App',
         durationMinutes: 10,
         logId: 1,
         quickNote: '',
-      });
+      }),
+    ).rejects.toThrow('DB Error');
 
-      expect(mockDb.getFirstAsync).toHaveBeenCalledWith(
-        expect.stringContaining('LOWER(name) = LOWER(?)'),
-        ['Anatomy'],
-      );
-    });
-
-    it('handles errors and propagates them (runInTransaction handles rollback)', async () => {
-      const { saveLecturePersistence } = require('./persistence');
-      const dbMod = require('../../db/database');
-
-      // Simulate runInTransaction catching + rethrowing (which it does internally)
-      dbMod.runInTransaction.mockRejectedValue(new Error('DB Error'));
-
-      await expect(
-        saveLecturePersistence({
-          analysis: { subject: 'Anatomy', topics: [], estimatedConfidence: 1 },
-          appName: 'App',
-          durationMinutes: 10,
-          logId: 1,
-          quickNote: '',
-        }),
-      ).rejects.toThrow('DB Error');
-    });
+    expect(mockShowToast).toHaveBeenCalled();
   });
 });

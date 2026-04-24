@@ -6,6 +6,11 @@ import type { SQLiteDatabase } from 'expo-sqlite';
  * expo-sqlite's {@link SQLiteDatabase} (subset used by Guru query code).
  */
 export function wrapBetterSqliteToAsync(db: InstanceType<typeof Database>): SQLiteDatabase {
+  const makeResult = (rows: unknown[]) => ({
+    getAllSync: () => rows,
+    getFirstSync: () => rows[0] ?? null,
+  });
+
   return {
     execAsync: async (sql: string) => {
       db.exec(sql);
@@ -27,6 +32,27 @@ export function wrapBetterSqliteToAsync(db: InstanceType<typeof Database>): SQLi
       const stmt = db.prepare(sql);
       const rows = Array.isArray(params) ? stmt.all(...params) : stmt.all();
       return rows as T[];
+    },
+    prepareSync: (sql: string) => {
+      const stmt = db.prepare(sql);
+      return {
+        executeSync(params?: unknown[]) {
+          if (stmt.reader) {
+            const rows = Array.isArray(params) ? stmt.all(...params) : stmt.all();
+            return makeResult(rows);
+          }
+          const info = Array.isArray(params) ? stmt.run(...params) : stmt.run();
+          return {
+            changes: info.changes,
+            lastInsertRowId: info.lastInsertRowid,
+            ...makeResult([]),
+          };
+        },
+        executeForRawResultSync(params?: unknown[]) {
+          const rows = Array.isArray(params) ? stmt.raw().all(...params) : stmt.raw().all();
+          return makeResult(rows);
+        },
+      };
     },
     isInTransactionAsync: async () => false,
     closeSync: () => {

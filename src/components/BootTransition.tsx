@@ -42,7 +42,7 @@ const createViscousBlobPath = (
     // Viscous fluid: LOW frequency, HIGH amplitude undulations.
     // Surface tension suppresses sharp features — no high harmonics.
     const noise =
-      Math.sin(phase * 2 + speed * 0.7) * 0.50 +
+      Math.sin(phase * 2 + speed * 0.7) * 0.5 +
       Math.sin(phase * 3 - speed * 1.1) * 0.28 +
       Math.cos(phase * 4 + speed * 1.6) * 0.12 +
       Math.sin(phase * 5 - speed * 2.0) * 0.04;
@@ -702,7 +702,10 @@ export default function BootTransition() {
                 </Defs>
 
                 {/* 0 — Ground shadow (squashed, offset below) */}
-                <AnimatedPath animatedProps={animatedGroundShadowProps} fill="url(#orbGroundShadow)" />
+                <AnimatedPath
+                  animatedProps={animatedGroundShadowProps}
+                  fill="url(#orbGroundShadow)"
+                />
 
                 {/* 1 — Ambient glow halo */}
                 <AnimatedPath animatedProps={animatedGlowProps} fill="url(#orbGlow)" />

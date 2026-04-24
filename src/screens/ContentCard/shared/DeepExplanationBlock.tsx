@@ -1,13 +1,9 @@
 import React, { useState } from 'react';
-import {
-  View,
-  TouchableOpacity,
-} from 'react-native';
+import { View, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import LinearText from '../../../components/primitives/LinearText';
 import StudyMarkdown from '../../../components/StudyMarkdown';
 import { emphasizeHighYieldMarkdown } from '../../../utils/highlightMarkdown';
-
 
 import { s } from '../styles';
 import { linearTheme as n } from '../../../theme/linearTheme';

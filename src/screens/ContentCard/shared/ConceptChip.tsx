@@ -1,16 +1,10 @@
 import React, { useState } from 'react';
-import {
-  View,
-  TouchableOpacity,
-  ActivityIndicator,
-} from 'react-native';
+import { View, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import LinearText from '../../../components/primitives/LinearText';
 import StudyMarkdown from '../../../components/StudyMarkdown';
 import { emphasizeHighYieldMarkdown } from '../../../utils/highlightMarkdown';
-import {
-  explainQuizConcept,
-} from '../../../services/ai';
+import { explainQuizConcept } from '../../../services/ai';
 import { linearTheme as n } from '../../../theme/linearTheme';
 
 export function ConceptChip({ concept, topicName }: { concept: string; topicName: string }) {

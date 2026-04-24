@@ -116,7 +116,9 @@ export function createLocalLlmModel(config: LocalLlmConfig): LanguageModelV2 {
           subs.error?.remove();
           // LiteRT-LM Conversation wedges after one generation on some devices —
           // reset Conversation, keep Engine warm (Edge Gallery pattern).
-          void LocalLlm.resetSession().catch(() => {});
+          if (typeof LocalLlm.resetSession === 'function') {
+            void LocalLlm.resetSession().catch(() => {});
+          }
         };
 
         void (async () => {
@@ -129,6 +131,32 @@ export function createLocalLlmModel(config: LocalLlmConfig): LanguageModelV2 {
 
           try {
             const cleanPath = modelPath.replace(/^file:\/\//, '');
+
+            if (
+              typeof LocalLlm.chatStream !== 'function' ||
+              typeof LocalLlm.addLlmTokenListener !== 'function' ||
+              typeof LocalLlm.addLlmCompleteListener !== 'function' ||
+              typeof LocalLlm.addLlmErrorListener !== 'function'
+            ) {
+              const native = await samsungPerf.runBoosted('llm_inference', () =>
+                chatWithLocalNative({
+                  chatMessages,
+                  modelPath,
+                  systemInstruction: systemText || undefined,
+                }),
+              );
+              const text = native.text ?? '';
+              if (text.trim()) {
+                push({ type: 'text-delta', id: textId, delta: text });
+              }
+              push({
+                type: 'finish',
+                finishReason: text.trim() ? 'stop' : 'error',
+                usage: {},
+              });
+              end();
+              return;
+            }
 
             // Set up event listeners for native streaming
             subs.token = LocalLlm.addLlmTokenListener(({ token }) => {
@@ -199,13 +227,15 @@ export function createLocalLlmModel(config: LocalLlmConfig): LanguageModelV2 {
         options.abortSignal?.addEventListener('abort', () => {
           aborted = true; // Mark aborted before cleanup to prevent race
           cleanup();
-          void (async () => {
-            try {
-              await LocalLlm.cancel();
-            } catch {
-              // ignore
-            }
-          })();
+          if (typeof LocalLlm.cancel === 'function') {
+            void (async () => {
+              try {
+                await LocalLlm.cancel();
+              } catch {
+                // ignore
+              }
+            })();
+          }
         });
       } else {
         // With tools enabled, fall back to blocking chat + simulated streaming

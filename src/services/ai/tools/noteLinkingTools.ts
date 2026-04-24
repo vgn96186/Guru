@@ -1,7 +1,7 @@
 // AI SDK tool for semantic note tagging
 import { tool } from 'ai';
 import { z } from 'zod';
-import { getDb } from '../../db/database';
+import { getDb } from '../../../db/database';
 
 export const tagNoteTool = tool({
   description:

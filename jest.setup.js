@@ -177,10 +177,16 @@ jest.mock('react-native', () => {
       currentState: 'active',
       addEventListener: jest.fn(() => ({ remove: jest.fn() })),
     },
+    DeviceEventEmitter: {
+      addListener: jest.fn(() => ({ remove: jest.fn() })),
+      removeAllListeners: jest.fn(),
+      emit: jest.fn(),
+    },
     Linking: {
       openURL: jest.fn(),
       canOpenURL: jest.fn(() => Promise.resolve(true)),
       getInitialURL: jest.fn(() => Promise.resolve(null)),
+      addEventListener: jest.fn(() => ({ remove: jest.fn() })),
     },
     BackHandler: {
       addEventListener: jest.fn(() => ({ remove: jest.fn() })),
@@ -243,6 +249,26 @@ jest.mock('react-native', () => {
     })(),
   };
 });
+
+jest.mock('@react-native-clipboard/clipboard', () => ({
+  __esModule: true,
+  default: {
+    getString: jest.fn(() => Promise.resolve('')),
+    setString: jest.fn(),
+    hasString: jest.fn(() => Promise.resolve(false)),
+  },
+}));
+
+jest.mock('expo-media-library', () => ({
+  __esModule: true,
+  requestPermissionsAsync: jest.fn(() => Promise.resolve({ status: 'granted', granted: true })),
+  saveToLibraryAsync: jest.fn(() => Promise.resolve()),
+  createAssetAsync: jest.fn(() => Promise.resolve({ id: 'asset-1' })),
+  createAlbumAsync: jest.fn(() => Promise.resolve({ id: 'album-1' })),
+  addAssetsToAlbumAsync: jest.fn(() => Promise.resolve()),
+  usePermissions: jest.fn(() => [{ status: 'granted', granted: true }, jest.fn()]),
+  getPermissionsAsync: jest.fn(() => Promise.resolve({ status: 'granted', granted: true })),
+}));
 
 jest.mock('react-native-gesture-handler', () => {
   const React = require('react');

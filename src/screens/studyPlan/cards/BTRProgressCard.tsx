@@ -1,7 +1,12 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { View, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { getCompletedLectures, markLectureCompleted, unmarkLectureCompleted, getLectureIndexForSubject } from '../../../db/queries/lectureSchedule';
+import {
+  getCompletedLectures,
+  markLectureCompleted,
+  unmarkLectureCompleted,
+  getLectureIndexForSubject,
+} from '../../../db/queries/lectureSchedule';
 import { getDb } from '../../../db/database';
 import type { TopicWithProgress } from '../../../types';
 import { SUBJECTS_SEED } from '../../../constants/syllabus';
@@ -27,16 +32,46 @@ const masteryStyles = StyleSheet.create({
   legendItem: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   legendDot: { width: 8, height: 8, borderRadius: 4 },
   legendText: { fontSize: 10, color: n.colors.textMuted },
-  barTrack: { height: 6, backgroundColor: n.colors.border, borderRadius: 3, flexDirection: 'row', overflow: 'hidden', marginTop: 4 },
+  barTrack: {
+    height: 6,
+    backgroundColor: n.colors.border,
+    borderRadius: 3,
+    flexDirection: 'row',
+    overflow: 'hidden',
+    marginTop: 4,
+  },
   barSeg: { height: '100%', minWidth: 2 },
   quizNudge: { fontSize: 10, color: n.colors.warning, fontWeight: '600' },
   foundationActionRow: { flexDirection: 'row', gap: 8, marginBottom: n.spacing.sm },
-  foundationPrimaryBtn: { backgroundColor: n.colors.warning, borderRadius: n.radius.sm, paddingVertical: 10, paddingHorizontal: 16, flex: 1 },
+  foundationPrimaryBtn: {
+    backgroundColor: n.colors.warning,
+    borderRadius: n.radius.sm,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    flex: 1,
+  },
   foundationPrimaryBtnText: { color: '#000', fontSize: 12, fontWeight: '800', textAlign: 'center' },
-  foundationGhostBtn: { borderWidth: 1, borderColor: n.colors.warning, borderRadius: n.radius.sm, paddingVertical: 10, paddingHorizontal: 16 },
-  foundationGhostBtnText: { color: n.colors.warning, fontSize: 12, fontWeight: '700', textAlign: 'center' },
+  foundationGhostBtn: {
+    borderWidth: 1,
+    borderColor: n.colors.warning,
+    borderRadius: n.radius.sm,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+  },
+  foundationGhostBtnText: {
+    color: n.colors.warning,
+    fontSize: 12,
+    fontWeight: '700',
+    textAlign: 'center',
+  },
   funnelCard: { marginBottom: n.spacing.sm },
-  funnelBar: { height: 12, backgroundColor: n.colors.border, borderRadius: 6, flexDirection: 'row', overflow: 'hidden' },
+  funnelBar: {
+    height: 12,
+    backgroundColor: n.colors.border,
+    borderRadius: 6,
+    flexDirection: 'row',
+    overflow: 'hidden',
+  },
   funnelSeg: { height: '100%', minWidth: 2 },
   funnelLegendRow: { flexDirection: 'row', justifyContent: 'space-around', marginTop: 6 },
   funnelLegendItem: { fontSize: 12, fontWeight: '700' },
@@ -61,7 +96,9 @@ export default function BTRProgressCard({
     }
   }, []);
 
-  useEffect(() => { void loadBtrCompletion(); }, [loadBtrCompletion]);
+  useEffect(() => {
+    void loadBtrCompletion();
+  }, [loadBtrCompletion]);
 
   const subjectToBtrIndex = new Map<number, number>();
   for (const s of subjects) {
@@ -69,9 +106,16 @@ export default function BTRProgressCard({
     if (idx !== undefined) subjectToBtrIndex.set(s.id, idx);
   }
 
-  type SubjectStats = { unseen: number; seen: number; reviewed: number; mastered: number; total: number };
+  type SubjectStats = {
+    unseen: number;
+    seen: number;
+    reviewed: number;
+    mastered: number;
+    total: number;
+  };
   const subjectStats = new Map<string, SubjectStats>();
-  for (const s of subjects) subjectStats.set(s.shortCode, { unseen: 0, seen: 0, reviewed: 0, mastered: 0, total: 0 });
+  for (const s of subjects)
+    subjectStats.set(s.shortCode, { unseen: 0, seen: 0, reviewed: 0, mastered: 0, total: 0 });
   for (const t of allTopics) {
     if ((t.childCount ?? 0) > 0) continue;
     const stats = subjectStats.get(t.subjectCode);
@@ -124,16 +168,35 @@ export default function BTRProgressCard({
     <LinearSurface style={cardStyles.card}>
       <LinearText style={cardStyles.title}>📊 BTR — Lecture Progress</LinearText>
       <LinearText style={cardStyles.subtitle}>
-        {btrWatchedCount}/{btrTotalLectures} BTR lectures watched · {overallMastered}/{overallTotal} topics mastered
+        {btrWatchedCount}/{btrTotalLectures} BTR lectures watched · {overallMastered}/{overallTotal}{' '}
+        topics mastered
       </LinearText>
       <View style={masteryStyles.legendRow}>
-        <View style={masteryStyles.legendItem}><View style={[masteryStyles.legendDot, { backgroundColor: n.colors.textMuted }]} /><LinearText style={masteryStyles.legendText}>Unseen</LinearText></View>
-        <View style={masteryStyles.legendItem}><View style={[masteryStyles.legendDot, { backgroundColor: n.colors.accent }]} /><LinearText style={masteryStyles.legendText}>Studied</LinearText></View>
-        <View style={masteryStyles.legendItem}><View style={[masteryStyles.legendDot, { backgroundColor: n.colors.warning }]} /><LinearText style={masteryStyles.legendText}>Reviewed</LinearText></View>
-        <View style={masteryStyles.legendItem}><View style={[masteryStyles.legendDot, { backgroundColor: n.colors.success }]} /><LinearText style={masteryStyles.legendText}>Mastered</LinearText></View>
+        <View style={masteryStyles.legendItem}>
+          <View style={[masteryStyles.legendDot, { backgroundColor: n.colors.textMuted }]} />
+          <LinearText style={masteryStyles.legendText}>Unseen</LinearText>
+        </View>
+        <View style={masteryStyles.legendItem}>
+          <View style={[masteryStyles.legendDot, { backgroundColor: n.colors.accent }]} />
+          <LinearText style={masteryStyles.legendText}>Studied</LinearText>
+        </View>
+        <View style={masteryStyles.legendItem}>
+          <View style={[masteryStyles.legendDot, { backgroundColor: n.colors.warning }]} />
+          <LinearText style={masteryStyles.legendText}>Reviewed</LinearText>
+        </View>
+        <View style={masteryStyles.legendItem}>
+          <View style={[masteryStyles.legendDot, { backgroundColor: n.colors.success }]} />
+          <LinearText style={masteryStyles.legendText}>Mastered</LinearText>
+        </View>
       </View>
       {subjects.map((subject) => {
-        const stats = subjectStats.get(subject.shortCode) ?? { unseen: 0, seen: 0, reviewed: 0, mastered: 0, total: 0 };
+        const stats = subjectStats.get(subject.shortCode) ?? {
+          unseen: 0,
+          seen: 0,
+          reviewed: 0,
+          mastered: 0,
+          total: 0,
+        };
         const watchedOrBetter = stats.seen + stats.reviewed + stats.mastered;
         const masteredPct = stats.total > 0 ? stats.mastered / stats.total : 0;
         const watchedPct = stats.total > 0 ? watchedOrBetter / stats.total : 0;
@@ -144,32 +207,97 @@ export default function BTRProgressCard({
         const hasOrganicStudyOnly = !isBtrWatched && watchedOrBetter > 0;
 
         return (
-          <View key={subject.shortCode} style={{ flexDirection: 'column', alignItems: 'flex-start', paddingBottom: 10 }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', width: '100%', marginBottom: 4 }}>
+          <View
+            key={subject.shortCode}
+            style={{ flexDirection: 'column', alignItems: 'flex-start', paddingBottom: 10 }}
+          >
+            <View
+              style={{ flexDirection: 'row', alignItems: 'center', width: '100%', marginBottom: 4 }}
+            >
               {isBtrWatched ? (
-                <Ionicons name='checkmark-circle' size={16} color={n.colors.success} style={{ marginRight: 6 }} />
+                <Ionicons
+                  name="checkmark-circle"
+                  size={16}
+                  color={n.colors.success}
+                  style={{ marginRight: 6 }}
+                />
               ) : (
                 <View style={[cardStyles.dot, { backgroundColor: subject.colorHex }]} />
               )}
-              <LinearText style={[cardStyles.subjectName, !isBtrWatched && watchedOrBetter === 0 && { color: n.colors.textMuted }]}>{subject.name}</LinearText>
-              {stats.total > 0 && <LinearText style={[cardStyles.days, { marginLeft: 'auto' }]}>{stats.mastered}/{stats.total}</LinearText>}
+              <LinearText
+                style={[
+                  cardStyles.subjectName,
+                  !isBtrWatched && watchedOrBetter === 0 && { color: n.colors.textMuted },
+                ]}
+              >
+                {subject.name}
+              </LinearText>
+              {stats.total > 0 && (
+                <LinearText style={[cardStyles.days, { marginLeft: 'auto' }]}>
+                  {stats.mastered}/{stats.total}
+                </LinearText>
+              )}
             </View>
             {stats.total > 0 && (
               <View style={masteryStyles.barTrack}>
-                <View style={[{ width: `${masteredPct * 100}%`, backgroundColor: n.colors.success }]} />
-                <View style={[{ width: `${(reviewedPct - masteredPct) * 100}%`, backgroundColor: n.colors.warning }]} />
-                <View style={[{ width: `${(watchedPct - reviewedPct) * 100}%`, backgroundColor: n.colors.accent }]} />
+                <View
+                  style={[{ width: `${masteredPct * 100}%`, backgroundColor: n.colors.success }]}
+                />
+                <View
+                  style={[
+                    {
+                      width: `${(reviewedPct - masteredPct) * 100}%`,
+                      backgroundColor: n.colors.warning,
+                    },
+                  ]}
+                />
+                <View
+                  style={[
+                    {
+                      width: `${(watchedPct - reviewedPct) * 100}%`,
+                      backgroundColor: n.colors.accent,
+                    },
+                  ]}
+                />
               </View>
             )}
             <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4, gap: 8 }}>
-              {needsQuiz && <LinearText style={masteryStyles.quizNudge}>⚡ {stats.seen} need quiz/review</LinearText>}
+              {needsQuiz && (
+                <LinearText style={masteryStyles.quizNudge}>
+                  ⚡ {stats.seen} need quiz/review
+                </LinearText>
+              )}
               {isBtrWatched ? (
-                <TouchableOpacity onPress={async () => { const ok = await confirmDestructive('Unmark BTR lecture?', `Remove BTR marker for ${subject.name}.`); if (ok) handleUnmark(subject.id); }} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-                  <LinearText style={[cardStyles.markBtn, { color: n.colors.textMuted }]}>Unwatch</LinearText>
+                <TouchableOpacity
+                  onPress={async () => {
+                    const ok = await confirmDestructive(
+                      'Unmark BTR lecture?',
+                      `Remove BTR marker for ${subject.name}.`,
+                    );
+                    if (ok) handleUnmark(subject.id);
+                  }}
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                >
+                  <LinearText style={[cardStyles.markBtn, { color: n.colors.textMuted }]}>
+                    Unwatch
+                  </LinearText>
                 </TouchableOpacity>
               ) : (
-                <TouchableOpacity onPress={async () => { const ok = await confirmDestructive('Mark BTR lecture as watched?', hasOrganicStudyOnly ? `Some ${subject.name} topics have study progress.` : 'Marks unseen topics as seen.'); if (ok) handleMarkDone(subject.id); }} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-                  <LinearText style={cardStyles.markBtn}>{hasOrganicStudyOnly ? 'Mark BTR Lecture' : 'Mark Watched'}</LinearText>
+                <TouchableOpacity
+                  onPress={async () => {
+                    const ok = await confirmDestructive(
+                      'Mark BTR lecture as watched?',
+                      hasOrganicStudyOnly
+                        ? `Some ${subject.name} topics have study progress.`
+                        : 'Marks unseen topics as seen.',
+                    );
+                    if (ok) handleMarkDone(subject.id);
+                  }}
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                >
+                  <LinearText style={cardStyles.markBtn}>
+                    {hasOrganicStudyOnly ? 'Mark BTR Lecture' : 'Mark Watched'}
+                  </LinearText>
                 </TouchableOpacity>
               )}
             </View>

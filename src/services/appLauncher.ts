@@ -290,7 +290,9 @@ async function _launchMedicalAppInner(
       console.error('[AppLauncher] Launch sequence failed:', err);
       Alert.alert(
         'Launch Error',
-        `Failed to open ${app.name}: ${(err instanceof Error ? err.message : String(err)) || 'Unknown error'}`,
+        `Failed to open ${app.name}: ${
+          (err instanceof Error ? err.message : String(err)) || 'Unknown error'
+        }`,
       );
       await cleanupAbortedLaunch(
         logId,
@@ -381,7 +383,9 @@ async function launchMockLectureAudio(
     console.error('[AppLauncher] Mock lecture launch failed:', err);
     Alert.alert(
       'Mock Lecture Launch Error',
-      `Failed to open mock lecture audio: ${(err instanceof Error ? err.message : String(err)) || 'Unknown error'}`,
+      `Failed to open mock lecture audio: ${
+        (err instanceof Error ? err.message : String(err)) || 'Unknown error'
+      }`,
     );
     await cleanupAbortedLaunch(
       logId,

@@ -47,17 +47,14 @@ describe('openaiChatCompletionsSse', () => {
   });
 
   it('consumeSseEventBlock extracts reasoning_content', () => {
-    const block =
-      'data: {"choices":[{"delta":{"reasoning_content":"step"}}]}\n';
+    const block = 'data: {"choices":[{"delta":{"reasoning_content":"step"}}]}\n';
     const { texts, sawDone } = consumeSseEventBlock(block);
     expect(texts).toEqual(['step']);
     expect(sawDone).toBe(false);
   });
 
   it('consumeSseEventBlock ignores malformed JSON data line', () => {
-    const block =
-      'data: not-json\n' +
-      'data: {"choices":[{"delta":{"content":"ok"}}]}\n';
+    const block = 'data: not-json\n' + 'data: {"choices":[{"delta":{"content":"ok"}}]}\n';
     const { texts, sawDone } = consumeSseEventBlock(block);
     expect(texts).toEqual(['ok']);
     expect(sawDone).toBe(false);
@@ -85,9 +82,7 @@ describe('openaiChatCompletionsSse', () => {
 
   it('readOpenAiCompatibleSse stops on [DONE] without trailing buffer', async () => {
     const encoder = new TextEncoder();
-    const payload =
-      'data: {"choices":[{"delta":{"content":"x"}}]}\n\n' +
-      'data: [DONE]\n\n';
+    const payload = 'data: {"choices":[{"delta":{"content":"x"}}]}\n\n' + 'data: [DONE]\n\n';
     const stream = new ReadableStream<Uint8Array>({
       start(controller) {
         controller.enqueue(encoder.encode(payload));
@@ -115,8 +110,6 @@ describe('openaiChatCompletionsSse', () => {
 
   it('readOpenAiCompatibleSse throws when response has no body', async () => {
     const res = new Response(null);
-    await expect(readOpenAiCompatibleSse(res, () => {})).rejects.toThrow(
-      'Streaming unavailable',
-    );
+    await expect(readOpenAiCompatibleSse(res, () => {})).rejects.toThrow('Streaming unavailable');
   });
 });

@@ -1,15 +1,7 @@
 import React, { useState } from 'react';
-import {
-  View,
-  TouchableOpacity,
-  Image,
-  Modal,
-  Pressable,
-  useWindowDimensions,
-} from 'react-native';
+import { View, TouchableOpacity, Image, Modal, Pressable, useWindowDimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import LinearText from '../../../components/primitives/LinearText';
-
 
 import { s } from '../styles';
 import { linearTheme as n } from '../../../theme/linearTheme';

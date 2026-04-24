@@ -153,20 +153,26 @@ export const dailyAgendaTool = tool({
       if (lowConfSubjects.length > 0) {
         const subject = lowConfSubjects.shift()!;
         agenda.push({
-          time: `${Math.floor(currentHour)}:${currentHour % 1 === 0 ? '00' : '30'}-${Math.floor(currentHour + 1)}:00`,
+          time: `${Math.floor(currentHour)}:${currentHour % 1 === 0 ? '00' : '30'}-${Math.floor(
+            currentHour + 1,
+          )}:00`,
           activity: 'Deep study',
           subject: subject.name,
         });
       } else {
         agenda.push({
-          time: `${Math.floor(currentHour)}:${currentHour % 1 === 0 ? '00' : '30'}-${Math.floor(currentHour + 1)}:00`,
+          time: `${Math.floor(currentHour)}:${currentHour % 1 === 0 ? '00' : '30'}-${Math.floor(
+            currentHour + 1,
+          )}:00`,
           activity: 'Review / Light reading',
         });
       }
 
       if (currentHour % 3 < 1.5) {
         agenda.push({
-          time: `${Math.floor(currentHour)}:${((currentHour % 1) * 60) | 0}-${Math.floor(currentHour)}:${((currentHour % 1) * 60 + 10) | 0}`,
+          time: `${Math.floor(currentHour)}:${((currentHour % 1) * 60) | 0}-${Math.floor(
+            currentHour,
+          )}:${((currentHour % 1) * 60 + 10) | 0}`,
           activity: 'Break (walk/stretch)',
         });
       }

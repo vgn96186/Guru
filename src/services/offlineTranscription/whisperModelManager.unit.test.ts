@@ -1,4 +1,3 @@
-
 // Mock FileSystem
 jest.mock('expo-file-system/legacy', () => ({
   documentDirectory: 'file:///mock-docs/',

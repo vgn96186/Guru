@@ -49,7 +49,9 @@ export function PlanningAlertsSection(props: any) {
       );
     } catch (e: unknown) {
       setFetchDatesMsg(
-        `❌ ${(e instanceof Error ? e.message : String(e)) || 'Could not fetch dates. Try manually.'}`,
+        `❌ ${
+          (e instanceof Error ? e.message : String(e)) || 'Could not fetch dates. Try manually.'
+        }`,
       );
     } finally {
       setFetchingDates(false);

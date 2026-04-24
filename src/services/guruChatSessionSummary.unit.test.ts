@@ -28,7 +28,9 @@ jest.mock('../db/queries/guruChatMemory', () => ({
 }));
 
 const mockGenerate = generateObject as jest.MockedFunction<typeof generateObject>;
-const mockCreateModel = createGuruFallbackModel as jest.MockedFunction<typeof createGuruFallbackModel>;
+const mockCreateModel = createGuruFallbackModel as jest.MockedFunction<
+  typeof createGuruFallbackModel
+>;
 const mockGetProfile = profileRepository.getProfile as jest.MockedFunction<
   typeof profileRepository.getProfile
 >;

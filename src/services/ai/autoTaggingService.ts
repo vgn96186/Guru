@@ -1,7 +1,7 @@
 /**
  * AutoTaggingService — Background semantic organization for notes.
- * 
- * Uses Gemini Nano (local) or cloud fallbacks to analyze notes and apply 
+ *
+ * Uses Gemini Nano (local) or cloud fallbacks to analyze notes and apply
  * semantic tags using the tag_note tool.
  */
 
@@ -11,15 +11,22 @@ import { createGuruFallbackModel } from './v2/providers/guruFallback';
 import { profileRepository } from '../../db/repositories';
 import { tagNoteTool } from './tools/noteLinkingTools';
 
-export async function triggerAutoTagging(noteId: number, content: string, noteType: 'lecture' | 'topic' = 'lecture') {
+export async function triggerAutoTagging(
+  noteId: number,
+  content: string,
+  noteType: 'lecture' | 'topic' = 'lecture',
+) {
   // Run in background to not block the UI or the main save pipeline
   void (async () => {
     try {
       if (__DEV__) console.log(`[AutoTagging] Starting for note ${noteId}...`);
-      
+
       const profile = await profileRepository.getProfile();
       // createGuruFallbackModel will automatically prefer Gemini Nano if available/enabled
-      const model = createGuruFallbackModel({ profile, textMode: true }) as unknown as LanguageModel;
+      const model = createGuruFallbackModel({
+        profile,
+        textMode: true,
+      }) as unknown as LanguageModel;
 
       await generateText({
         model,

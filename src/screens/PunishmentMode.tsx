@@ -260,7 +260,10 @@ export default function PunishmentMode() {
                 style={[
                   styles.progressFill,
                   {
-                    width: `${Math.min(100, (lastStudyTime / (profile?.dailyGoalMinutes ?? 120)) * 100)}%`,
+                    width: `${Math.min(
+                      100,
+                      (lastStudyTime / (profile?.dailyGoalMinutes ?? 120)) * 100,
+                    )}%`,
                     backgroundColor: currentMessage.color,
                   },
                 ]}

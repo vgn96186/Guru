@@ -21,9 +21,10 @@ export function buildGroundingModel(options: {
     profile: options.profile,
     textMode: true,
     disableLocal: options.decision.mode === 'grounded_agent',
-    forceOrder: options.decision.mode === 'grounded_agent'
-      ? getToolCapableProviderOrder(options.profile)
-      : undefined,
+    forceOrder:
+      options.decision.mode === 'grounded_agent'
+        ? getToolCapableProviderOrder(options.profile)
+        : undefined,
     onProviderError: options.onProviderError,
     onProviderSuccess: options.onProviderSuccess,
   });

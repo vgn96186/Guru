@@ -1,6 +1,6 @@
 /**
  * Vercel AI SDK Compatibility Tests
- * 
+ *
  * Tests the compatibility layer between Guru AI v2 and Vercel AI SDK.
  */
 
@@ -135,11 +135,11 @@ describe('Vercel AI SDK Compatibility', () => {
 
     it('converts Vercel tool to Guru tool', () => {
       const converted = fromVercelTool('test_tool', vercelTool);
-      
+
       expect(converted.name).toBe('test_tool');
       expect(converted.description).toBe('A test tool');
       expect(converted.inputSchema).toBeDefined();
-      
+
       // Test execution
       const input = { query: 'medical term' };
       expect(() => converted.inputSchema.parse(input)).not.toThrow();
@@ -147,10 +147,10 @@ describe('Vercel AI SDK Compatibility', () => {
 
     it('converts Guru tool to Vercel tool', () => {
       const converted = toVercelTool(guruToolDef);
-      
+
       expect(converted.description).toBe('A test tool');
       expect(converted.parameters).toBeDefined();
-      
+
       // Test execution
       const input = { query: 'medical term' };
       expect(() => (converted.parameters as z.ZodType).parse(input)).not.toThrow();

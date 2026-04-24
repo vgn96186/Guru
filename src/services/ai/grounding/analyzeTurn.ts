@@ -1,12 +1,18 @@
 import { previewText } from '../runtimeDebug';
-import type { GroundingBudget, GroundingConfidencePolicy, GroundingDecision, GroundingIntent } from './types';
+import type {
+  GroundingBudget,
+  GroundingConfidencePolicy,
+  GroundingDecision,
+  GroundingIntent,
+} from './types';
 
 const SOURCE_SENSITIVE_RE =
   /\b(guideline|guidelines|protocol|protocols|latest|recent|update|updated|management|treatment|treat|dose|dosing|diagnosis|diagnostic|contraindication|contraindications|adverse|side effect|differential|compare|versus|vs\b|evidence|citation|citations|source|sources|study|trial|recommend|recommended|verify|fact check|is this true)\b/i;
 const VISUAL_RE =
   /\b(image|images|diagram|diagrams|figure|figures|picture|pictures|photo|photos|visual|show me|show|see|fundus|x-ray|xray|ct|mri|histology|microscopy|gross specimen)\b/i;
 const QUIZ_RE = /\b(quiz me|test me|mcq|question me|practice question|viva)\b/i;
-const TEACH_RE = /\b(explain|teach|step by step|from the basics|basics|high yield|walk me through)\b/i;
+const TEACH_RE =
+  /\b(explain|teach|step by step|from the basics|basics|high yield|walk me through)\b/i;
 const FACT_CHECK_RE = /\b(is this true|fact check|verify|correct or not|is it correct)\b/i;
 
 function detectIntent(question: string): GroundingIntent {
@@ -19,7 +25,10 @@ function detectIntent(question: string): GroundingIntent {
   return 'clarify';
 }
 
-function detectConfidencePolicy(question: string, intent: GroundingIntent): GroundingConfidencePolicy {
+function detectConfidencePolicy(
+  question: string,
+  intent: GroundingIntent,
+): GroundingConfidencePolicy {
   const trimmed = question.trim();
   if (!trimmed) return 'low';
   if (intent === 'guideline' || intent === 'fact_check' || intent === 'visual') return 'low';
@@ -61,7 +70,9 @@ export function analyzeTurn(options: {
   const confidencePolicy = detectConfidencePolicy(question, intent);
 
   const explicitLocal = options.chosenModel === 'local';
-  const explicitCloud = Boolean(options.chosenModel && !['auto', 'local'].includes(options.chosenModel));
+  const explicitCloud = Boolean(
+    options.chosenModel && !['auto', 'local'].includes(options.chosenModel),
+  );
 
   const shouldUseGroundedAgent =
     options.forceMode === 'grounded_agent' ||

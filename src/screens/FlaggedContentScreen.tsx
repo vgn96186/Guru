@@ -24,8 +24,7 @@ const FLAG_REASON_LABELS: Record<string, string> = {
 };
 
 export default function FlaggedContentScreen() {
-  const navigation =
-    MenuNav.useNav<'FlaggedContent'>();
+  const navigation = MenuNav.useNav<'FlaggedContent'>();
   const [flaggedItems, setFlaggedItems] = useState<FlaggedContentItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState<number | null>(null);

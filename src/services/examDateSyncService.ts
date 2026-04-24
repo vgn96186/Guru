@@ -97,7 +97,9 @@ function normalizeIsoDate(year: number, month: number, day: number): string | nu
   if (month < 1 || month > 12) return null;
   if (day < 1 || day > 31) return null;
 
-  const iso = `${year.toString().padStart(4, '0')}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
+  const iso = `${year.toString().padStart(4, '0')}-${month.toString().padStart(2, '0')}-${day
+    .toString()
+    .padStart(2, '0')}`;
   const dt = new Date(year, month - 1, day);
 
   // Verify it represents a valid Date object.
@@ -360,7 +362,9 @@ async function braveWebSearch(
   count: number,
   braveKey: string,
 ): Promise<BraveSearchResult[]> {
-  const url = `https://api.search.brave.com/res/v1/web/search?q=${encodeURIComponent(query)}&count=${Math.min(count, 10)}&search_lang=en&country=in&freshness=py&spellcheck=1`;
+  const url = `https://api.search.brave.com/res/v1/web/search?q=${encodeURIComponent(
+    query,
+  )}&count=${Math.min(count, 10)}&search_lang=en&country=in&freshness=py&spellcheck=1`;
 
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 12000);

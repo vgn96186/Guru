@@ -2,10 +2,7 @@ import { profileRepository } from '../../../db/repositories/profileRepository';
 import type { Message } from '../types';
 import { logGroundingEvent, previewText } from '../runtimeDebug';
 import { streamText } from 'ai';
-import type { 
-  LanguageModelMessage as ModelMessage, 
-  LanguageModel,
-} from '@ai-sdk/provider';
+import type { LanguageModelMessage as ModelMessage, LanguageModel } from '@ai-sdk/provider';
 import type { ToolResultPart } from 'ai';
 import { analyzeTurn } from './analyzeTurn';
 import { buildGroundingContextSections, buildGroundingPromptMessages } from './contextBuilder';
@@ -31,7 +28,9 @@ function identity(text: string): string {
   return text;
 }
 
-export async function prepareGroundedTurn(request: GroundingRequest): Promise<PreparedGroundedTurn> {
+export async function prepareGroundedTurn(
+  request: GroundingRequest,
+): Promise<PreparedGroundedTurn> {
   const profile = request.profile ?? (await profileRepository.getProfile());
   const localModelAvailable = Boolean(profile.useLocalModel && profile.localModelPath?.trim());
   const decision = analyzeTurn({
@@ -176,7 +175,11 @@ async function executeGroundedPass(
   }
 }
 
-function maybeEmitRemainingFinalText(prepared: PreparedGroundedTurn, state: GroundingExecutionState, finalText: string) {
+function maybeEmitRemainingFinalText(
+  prepared: PreparedGroundedTurn,
+  state: GroundingExecutionState,
+  finalText: string,
+) {
   if (!prepared.request.onReplyDelta) return;
   if (finalText.length <= state.emittedText.length) return;
   const remaining = finalText.slice(state.emittedText.length);
@@ -188,9 +191,9 @@ function maybeEmitRemainingFinalText(prepared: PreparedGroundedTurn, state: Grou
 function canContinue(prepared: PreparedGroundedTurn): boolean {
   return Boolean(
     prepared.request.shouldRequestContinuation &&
-      prepared.request.buildContinuationMessages &&
-      prepared.request.hasUsefulContinuation &&
-      prepared.request.appendContinuation,
+    prepared.request.buildContinuationMessages &&
+    prepared.request.hasUsefulContinuation &&
+    prepared.request.appendContinuation,
   );
 }
 

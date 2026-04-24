@@ -1,10 +1,5 @@
 import React from 'react';
-import {
-  Pressable,
-  View,
-  type PressableProps,
-  type TextStyle,
-} from 'react-native';
+import { Pressable, View, type PressableProps, type TextStyle } from 'react-native';
 import { tv } from 'tailwind-variants';
 import LinearText from './LinearText';
 
@@ -58,7 +53,10 @@ const chipVariants = tv({
   },
 });
 
-const toneToTextTone: Record<LinearChipButtonTone, 'primary' | 'accent' | 'success' | 'warning' | 'error'> = {
+const toneToTextTone: Record<
+  LinearChipButtonTone,
+  'primary' | 'accent' | 'success' | 'warning' | 'error'
+> = {
   neutral: 'primary',
   accent: 'accent',
   success: 'success',
@@ -97,7 +95,8 @@ export default function LinearChipButton({
       style={({ pressed }) => [
         { opacity: pressed ? 0.88 : 1 },
         typeof style === 'function' ? style({ pressed }) : style,
-        selected && (typeof selectedStyle === 'function' ? selectedStyle({ pressed }) : selectedStyle),
+        selected &&
+          (typeof selectedStyle === 'function' ? selectedStyle({ pressed }) : selectedStyle),
       ]}
     >
       <View className="flex-row items-center justify-center gap-1">
@@ -115,4 +114,3 @@ export default function LinearChipButton({
     </Pressable>
   );
 }
-

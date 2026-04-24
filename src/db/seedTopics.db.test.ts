@@ -12,12 +12,7 @@
 import { readFileSync } from 'fs';
 import { join } from 'path';
 
-import {
-  resetDbSingleton,
-  setDbForTests,
-  seedSubjects,
-  seedTopics,
-} from './database';
+import { resetDbSingleton, setDbForTests, seedSubjects, seedTopics } from './database';
 import { createTestDatabase } from './testing/createTestDatabase';
 
 const SNAPSHOT = JSON.parse(
@@ -50,9 +45,7 @@ describe('seedSubjects + seedTopics (integration)', () => {
   it('inserts all 19 subjects', async () => {
     const db = (await import('./database')).getDb();
     await seedSubjects(db);
-    const row = await db.getFirstAsync<{ c: number }>(
-      'SELECT COUNT(*) AS c FROM subjects',
-    );
+    const row = await db.getFirstAsync<{ c: number }>('SELECT COUNT(*) AS c FROM subjects');
     expect(row?.c).toBe(SNAPSHOT.subjectsCount);
   });
 
@@ -61,9 +54,7 @@ describe('seedSubjects + seedTopics (integration)', () => {
     await seedSubjects(db);
     await seedTopics(db);
 
-    const topicsRow = await db.getFirstAsync<{ c: number }>(
-      'SELECT COUNT(*) AS c FROM topics',
-    );
+    const topicsRow = await db.getFirstAsync<{ c: number }>('SELECT COUNT(*) AS c FROM topics');
     expect(topicsRow?.c).toBe(SNAPSHOT.topicsCount);
 
     const linked = await db.getFirstAsync<{ c: number }>(
@@ -103,9 +94,7 @@ describe('seedSubjects + seedTopics (integration)', () => {
     await seedSubjects(db);
     await seedTopics(db);
     await seedTopics(db);
-    const row = await db.getFirstAsync<{ c: number }>(
-      'SELECT COUNT(*) AS c FROM topics',
-    );
+    const row = await db.getFirstAsync<{ c: number }>('SELECT COUNT(*) AS c FROM topics');
     expect(row?.c).toBe(SNAPSHOT.topicsCount);
   });
 });

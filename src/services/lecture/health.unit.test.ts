@@ -5,10 +5,7 @@ import {
   notifyTranscriptionEvidenceOk,
   notifyTranscriptionEvidenceNoSpeech,
 } from '../notificationService';
-import {
-  transcribeRawWithGroq,
-  transcribeRawWithHuggingFace,
-} from '../transcription/engines';
+import { transcribeRawWithGroq, transcribeRawWithHuggingFace } from '../transcription/engines';
 import { startRecordingHealthCheck, stopRecordingHealthCheck } from './health';
 
 jest.mock('react-native', () => ({

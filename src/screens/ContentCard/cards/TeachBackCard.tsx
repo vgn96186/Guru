@@ -1,32 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import {
-  View,
-  ScrollView,
-  TouchableOpacity,
-  TextInput,
-  ActivityIndicator,
-} from 'react-native';
+import { View, ScrollView, TouchableOpacity, TextInput, ActivityIndicator } from 'react-native';
 import LinearText from '../../../components/primitives/LinearText';
 import StudyMarkdown from '../../../components/StudyMarkdown';
 import { emphasizeHighYieldMarkdown } from '../../../utils/highlightMarkdown';
-import {
-  askGuru,
-} from '../../../services/ai';
+import { askGuru } from '../../../services/ai';
 import { ContentFlagButton } from '../../../components/ContentFlagButton';
 import { s } from '../styles';
 import { linearTheme as n } from '../../../theme/linearTheme';
 import { Props, ContextUpdater } from '../types';
-import type {
-  TeachBackContent,
-} from '../../../types';
+import type { TeachBackContent } from '../../../types';
 import { TopicImage } from '../shared/TopicImage';
 import { ConfidenceRating } from '../shared/ConfidenceRating';
-import {
-  useCardScrollContentStyle,
-} from '../hooks/useCardScrollPadding';
+import { useCardScrollContentStyle } from '../hooks/useCardScrollPadding';
 import { compactLines } from '../utils/compactLines';
-
-
 
 // ── Key Points ────────────────────────────────────────────────────
 // ── Must Know & Most Tested ──────────────────────────────────────
@@ -79,7 +65,9 @@ export function TeachBackCard({
     if (!answer.trim()) return;
     setValidating(true);
     try {
-      const context = `Topic: ${content.topicName}. Expected points: ${content.keyPointsToMention.join(', ')}`;
+      const context = `Topic: ${
+        content.topicName
+      }. Expected points: ${content.keyPointsToMention.join(', ')}`;
       const raw = await askGuru(answer, context);
       const parsed = JSON.parse(raw);
       setGuruFeedback(parsed);

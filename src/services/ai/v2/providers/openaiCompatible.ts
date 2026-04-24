@@ -101,7 +101,9 @@ export function createOpenAICompatibleModel(config: OpenAICompatibleConfig): Lan
       }
       if (!response.ok) {
         throw new Error(
-          `[${config.provider}] ${response.status} ${response.statusText}: ${await response.text()}`,
+          `[${config.provider}] ${response.status} ${
+            response.statusText
+          }: ${await response.text()}`,
         );
       }
       const json = await response.json();
@@ -122,7 +124,9 @@ export function createOpenAICompatibleModel(config: OpenAICompatibleConfig): Lan
       }
       if (!response.ok) {
         throw new Error(
-          `[${config.provider}] ${response.status} ${response.statusText}: ${await response.text()}`,
+          `[${config.provider}] ${response.status} ${
+            response.statusText
+          }: ${await response.text()}`,
         );
       }
       const stream = sseToStreamParts(response);

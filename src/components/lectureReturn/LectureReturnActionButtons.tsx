@@ -151,22 +151,14 @@ export function LectureReturnActionButtons({
 
       {/* Quiz phase: skip if no questions or stuck loading */}
       {phase === 'quiz' && !quizLoading && !hasQuestion && (
-        <TouchableOpacity
-          style={styles.primaryBtn}
-          onPress={cleanupAndClose}
-          activeOpacity={0.85}
-        >
+        <TouchableOpacity style={styles.primaryBtn} onPress={cleanupAndClose} activeOpacity={0.85}>
           <Text style={styles.primaryBtnText}>Close</Text>
         </TouchableOpacity>
       )}
 
       {/* Quiz done */}
       {phase === 'quiz_done' && (
-        <TouchableOpacity
-          style={styles.primaryBtn}
-          onPress={cleanupAndClose}
-          activeOpacity={0.85}
-        >
+        <TouchableOpacity style={styles.primaryBtn} onPress={cleanupAndClose} activeOpacity={0.85}>
           <Text style={styles.primaryBtnText}>Done</Text>
         </TouchableOpacity>
       )}

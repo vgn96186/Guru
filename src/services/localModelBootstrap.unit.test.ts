@@ -403,7 +403,7 @@ describe('localModelBootstrap', () => {
     expect(FileSystem.createDownloadResumable).not.toHaveBeenCalled();
     expect(profileRepository.updateProfile).toHaveBeenCalledWith(
       expect.objectContaining({
-        localModelPath: '/storage/emulated/0/Download/gemma-4-E4B-it.litertlm',
+        localModelPath: 'file:///storage/emulated/0/Download/gemma-4-E4B-it.litertlm',
         useLocalModel: true,
       }),
     );

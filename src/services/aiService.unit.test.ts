@@ -29,16 +29,18 @@ async function loadAiService(opts?: {
   const initializeMock = jest.fn(async () => ({ backend: 'gpu' }));
   const chatMock = jest.fn(async () => ({ text: localCompletionText, backend: 'gpu' }));
   const releaseMock = jest.fn(async () => undefined);
+  const resetSessionMock = jest.fn(async () => undefined);
   const isInitializedMock = jest.fn(async () => false);
 
   jest.doMock('react-native', () => ({
     AppState: { addEventListener: jest.fn() },
     StyleSheet: { create: (styles: any) => styles },
   }));
-  jest.doMock('../../modules/local-llm', () => ({
+  jest.doMock('local-llm', () => ({
     initialize: initializeMock,
     chat: chatMock,
     release: releaseMock,
+    resetSession: resetSessionMock,
     isInitialized: isInitializedMock,
   }));
   jest.doMock('../db/repositories/profileRepository', () => ({

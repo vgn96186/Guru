@@ -5,10 +5,6 @@ import { type StudyPlanSummary } from '../../../services/studyPlanner';
 import { linearTheme as n } from '../../../theme/linearTheme';
 import LinearText from '../../../components/primitives/LinearText';
 
-
-
-
-
 export default /** Red/amber banner when the review backlog is large enough to gate new topics. */
 function BacklogBanner({ summary }: { summary: StudyPlanSummary }) {
   if (summary.overdueBacklogDays < 2) return null;

@@ -5,7 +5,13 @@
  * consume the full stream and resolve.
  */
 
-import type { FinishReason, LanguageModelV2Usage, ModelMessage, ToolCallPart, ToolResultPart } from './spec';
+import type {
+  FinishReason,
+  LanguageModelV2Usage,
+  ModelMessage,
+  ToolCallPart,
+  ToolResultPart,
+} from './spec';
 import { streamText, type StreamTextOptions } from './streamText';
 
 export interface GenerateTextOptions extends Omit<StreamTextOptions, 'onStepFinish'> {}
@@ -19,9 +25,7 @@ export interface GenerateTextResult {
   responseMessages: ModelMessage[];
 }
 
-export async function generateText(
-  options: GenerateTextOptions,
-): Promise<GenerateTextResult> {
+export async function generateText(options: GenerateTextOptions): Promise<GenerateTextResult> {
   const result = streamText(options);
   // Drain the stream to completion — otherwise promises never resolve.
   for await (const _ of result.fullStream) {

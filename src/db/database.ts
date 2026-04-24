@@ -411,7 +411,7 @@ async function seedUserProfile(db: SQLite.SQLiteDatabase): Promise<void> {
  * a backup whose PRAGMA user_version was already high enough to skip the
  * ALTER TABLE migration.
  */
-async function ensureCriticalColumns(db: SQLite.SQLiteDatabase): Promise<void> {
+export async function ensureCriticalColumns(db: SQLite.SQLiteDatabase): Promise<void> {
   // Every column that migrations or schema.ts adds to critical tables
   // Format: [columnName, "TYPE DEFAULT ..."]
   const tables: Record<string, [string, string][]> = {

@@ -36,8 +36,7 @@ function makeStackHooks<ParamList extends ParamListBase>() {
   return {
     useNav: <S extends keyof ParamList = keyof ParamList>() =>
       useNavigation<NativeStackNavigationProp<ParamList, S & string>>(),
-    useRoute: <S extends keyof ParamList>() =>
-      useRoute<RouteProp<ParamList, S & string>>(),
+    useRoute: <S extends keyof ParamList>() => useRoute<RouteProp<ParamList, S & string>>(),
   };
 }
 

@@ -1,18 +1,9 @@
 import React, { useCallback, useMemo } from 'react';
-import {
-  ActivityIndicator,
-  Pressable,
-  View,
-  type PressableProps,
-} from 'react-native';
+import { ActivityIndicator, Pressable, View, type PressableProps } from 'react-native';
 import { tv } from 'tailwind-variants';
 import * as Haptics from 'expo-haptics';
 
-export type LinearIconButtonVariant =
-  | 'ghost'
-  | 'secondary'
-  | 'accent'
-  | 'danger';
+export type LinearIconButtonVariant = 'ghost' | 'secondary' | 'accent' | 'danger';
 export type LinearIconButtonSize = 'sm' | 'md' | 'lg';
 export type LinearIconButtonShape = 'rounded' | 'round';
 
@@ -133,10 +124,7 @@ export default function LinearIconButton({
       style={({ pressed }) => {
         const pressedOpacity = pressed ? 0.88 : resolvedDisabled ? 0.55 : 1;
         const dynamicStyleFn = dynamicStyle;
-        return [
-          { opacity: pressedOpacity },
-          dynamicStyleFn ? dynamicStyleFn({ pressed }) : style,
-        ];
+        return [{ opacity: pressedOpacity }, dynamicStyleFn ? dynamicStyleFn({ pressed }) : style];
       }}
     >
       <View className={`items-center justify-center ${contentClassName ?? ''}`}>
@@ -145,4 +133,3 @@ export default function LinearIconButton({
     </Pressable>
   );
 }
-

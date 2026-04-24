@@ -32,12 +32,16 @@ function buildGuruSystemPrompt(options: { grounded: boolean }): string {
   return promptLines.join('\n');
 }
 
-function buildTopicContextLine(topicName?: string, syllabusTopicId?: number, subjectName?: string): string | null {
+function buildTopicContextLine(
+  topicName?: string,
+  syllabusTopicId?: number,
+  subjectName?: string,
+): string | null {
   const parts: string[] = [];
   if (subjectName) parts.push(`Subject: ${subjectName}`);
   if (topicName) parts.push(`Topic: ${topicName}`);
   if (syllabusTopicId != null) parts.push(`Topic ID: ${syllabusTopicId}`);
-  
+
   return parts.length > 0 ? `Context | ${parts.join(' | ')}` : null;
 }
 
@@ -63,9 +67,24 @@ export function buildGroundingContextSections(
   const maxChars = decision.mode === 'local_tutor' ? 1200 : 2200;
   const sections = [
     compactSection('profile', 'Conversation guidance', request.profileContext, maxChars),
-    compactSection('profile', 'Student profile notes', request.memoryContext?.profileNotes, maxChars),
-    compactSection('session', 'Earlier thread summary', request.memoryContext?.sessionSummary, maxChars),
-    compactSection('tutor_state', 'Structured tutoring state', request.memoryContext?.stateJson, maxChars),
+    compactSection(
+      'profile',
+      'Student profile notes',
+      request.memoryContext?.profileNotes,
+      maxChars,
+    ),
+    compactSection(
+      'session',
+      'Earlier thread summary',
+      request.memoryContext?.sessionSummary,
+      maxChars,
+    ),
+    compactSection(
+      'tutor_state',
+      'Structured tutoring state',
+      request.memoryContext?.stateJson,
+      maxChars,
+    ),
     compactSection(
       'study',
       'Study snapshot from the progress DB',

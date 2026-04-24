@@ -6,7 +6,9 @@
  */
 
 import { blob, integer, real, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core';
-import { DEFAULT_INICET_DATE, DEFAULT_NEET_DATE } from '../config/appConfig';
+
+const DB_DEFAULT_INICET_DATE = '2026-05-17';
+const DB_DEFAULT_NEET_DATE = '2026-08-30';
 
 export const subjects = sqliteTable('subjects', {
   id: integer('id').primaryKey(),
@@ -144,8 +146,8 @@ export const userProfile = sqliteTable('user_profile', {
   streakCurrent: integer('streak_current').notNull().default(0),
   streakBest: integer('streak_best').notNull().default(0),
   dailyGoalMinutes: integer('daily_goal_minutes').notNull().default(120),
-  inicetDate: text('inicet_date').notNull().default(DEFAULT_INICET_DATE),
-  neetDate: text('neet_date').notNull().default(DEFAULT_NEET_DATE),
+  inicetDate: text('inicet_date').notNull().default(DB_DEFAULT_INICET_DATE),
+  neetDate: text('neet_date').notNull().default(DB_DEFAULT_NEET_DATE),
   preferredSessionLength: integer('preferred_session_length').notNull().default(45),
   openrouterApiKey: text('openrouter_api_key').notNull().default(''),
   openrouterKey: text('openrouter_key').notNull().default(''),

@@ -5,11 +5,7 @@
 import { z } from 'zod';
 import { tool } from '../tool';
 import { getDrizzleDb } from '../../../../db/drizzle';
-import {
-  topics,
-  questionBank,
-  aiCache,
-} from '../../../../db/drizzleSchema';
+import { topics, questionBank, aiCache } from '../../../../db/drizzleSchema';
 import { sql, like, eq } from 'drizzle-orm';
 
 /**

@@ -1,30 +1,19 @@
 import React, { useState } from 'react';
-import {
-  View,
-  ScrollView,
-  TouchableOpacity,
-} from 'react-native';
+import { View, ScrollView, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import LinearText from '../../../components/primitives/LinearText';
 import StudyMarkdown from '../../../components/StudyMarkdown';
 import { emphasizeHighYieldMarkdown } from '../../../utils/highlightMarkdown';
 
-
 import { ContentFlagButton } from '../../../components/ContentFlagButton';
 import { s } from '../styles';
 import { linearTheme as n } from '../../../theme/linearTheme';
 import { Props } from '../types';
-import type {
-  MustKnowContent,
-} from '../../../types';
+import type { MustKnowContent } from '../../../types';
 import { TopicImage } from '../shared/TopicImage';
 import { ConfidenceRating } from '../shared/ConfidenceRating';
 import { ExplainablePoint } from '../shared/ExplainablePoint';
-import {
-  useCardScrollContentStyle,
-} from '../hooks/useCardScrollPadding';
-
-
+import { useCardScrollContentStyle } from '../hooks/useCardScrollPadding';
 
 // ── Key Points ────────────────────────────────────────────────────
 // ── Must Know & Most Tested ──────────────────────────────────────

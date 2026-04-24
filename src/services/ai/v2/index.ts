@@ -114,7 +114,11 @@ export { useObject } from './hooks/useObject';
 export type { UseObjectOptions, UseObjectResult, SubmitObjectOptions } from './hooks/useObject';
 
 export { useCompletion } from './hooks/useCompletion';
-export type { UseCompletionOptions, UseCompletionReturn, CompletionStatus } from './hooks/useCompletion';
+export type {
+  UseCompletionOptions,
+  UseCompletionReturn,
+  CompletionStatus,
+} from './hooks/useCompletion';
 
 // Compatibility layer — drop-in replacements for legacy generate/chat APIs
 export {

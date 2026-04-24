@@ -48,7 +48,8 @@ export const useAppStore = create<AppState>((set) => ({
 
   setBootPhase: (phase) => set({ bootPhase: phase }),
   setStartButtonLayout: (layout) => set({ startButtonLayout: layout }),
-  setStartButtonCta: (label, sublabel) => set({ startButtonLabel: label, startButtonSublabel: sublabel }),
+  setStartButtonCta: (label, sublabel) =>
+    set({ startButtonLabel: label, startButtonSublabel: sublabel }),
   setRecoveringBackground: (value) => set({ isRecoveringBackground: value }),
   setDailyAvailability: (mins) => set({ dailyAvailability: mins }),
   setTodayPlan: (plan) => set({ todayPlan: plan, planGeneratedAt: plan ? Date.now() : null }),

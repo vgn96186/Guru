@@ -1,10 +1,6 @@
 import React from 'react';
-import {
-  View,
-  TouchableOpacity,
-} from 'react-native';
+import { View, TouchableOpacity } from 'react-native';
 import LinearText from '../../../components/primitives/LinearText';
-
 
 import { s } from '../styles';
 import { linearTheme as n } from '../../../theme/linearTheme';

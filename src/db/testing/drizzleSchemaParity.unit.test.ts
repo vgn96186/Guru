@@ -10,6 +10,10 @@
 
 import * as schema from '../drizzleSchema';
 import Database from 'better-sqlite3';
+import { readFileSync } from 'fs';
+import { join } from 'path';
+import { ensureCriticalColumns } from '../database';
+import { wrapBetterSqliteToAsync } from './betterSqliteAdapter';
 
 interface ColumnInfo {
   cid: number;
@@ -49,7 +53,10 @@ const DRIZZLE_TABLE_MAP: Record<string, string> = {
   mindMaps: 'mind_maps',
   mindMapNodes: 'mind_map_nodes',
   mindMapEdges: 'mind_map_edges',
+  mindMapNodeLinks: 'mind_map_node_links',
   migrationHistory: 'migration_history',
+  semanticLinks: 'semantic_links',
+  topicNotes: 'topic_notes',
   userProfile: 'user_profile',
 };
 
@@ -57,6 +64,14 @@ function createFreshDb(): Database.Database {
   const db = new Database(':memory:');
   db.pragma('journal_mode = DELETE');
   db.pragma('foreign_keys = ON');
+  const baselineSql = readFileSync(
+    join(__dirname, '..', 'drizzle-migrations', '0000_baseline_v164.sql'),
+    'utf8',
+  );
+  for (const statement of baselineSql.split('--> statement-breakpoint')) {
+    const sql = statement.trim();
+    if (sql) db.exec(sql);
+  }
 
   return db;
 }
@@ -89,6 +104,10 @@ describe('Drizzle schema parity', () => {
 
   beforeAll(() => {
     db = createFreshDb();
+  });
+
+  beforeAll(async () => {
+    await ensureCriticalColumns(wrapBetterSqliteToAsync(db));
   });
 
   afterAll(() => {

@@ -224,7 +224,9 @@ class LoggingService {
     return this.logs
       .map((log) => {
         const date = new Date(log.timestamp).toISOString();
-        return `[${date}] [${log.level.toUpperCase()}] ${log.message}${log.stack ? '\n' + log.stack : ''}`;
+        return `[${date}] [${log.level.toUpperCase()}] ${log.message}${
+          log.stack ? '\n' + log.stack : ''
+        }`;
       })
       .join('\n');
   }

@@ -2,7 +2,11 @@ import { useState, useRef, useCallback, useEffect } from 'react';
 import { Audio } from 'expo-av';
 import * as FileSystem from 'expo-file-system/legacy';
 import * as Haptics from 'expo-haptics';
-import { transcribeAudio, isMeaningfulLectureAnalysis, LectureAnalysis } from '../../../services/transcriptionService';
+import {
+  transcribeAudio,
+  isMeaningfulLectureAnalysis,
+  LectureAnalysis,
+} from '../../../services/transcriptionService';
 import { moveFileToRecovery } from '../../../services/transcriptStorage';
 import { enqueueRequest } from '../../../services/offlineQueue';
 import { saveLectureChunk } from '../../../services/lecture/persistence';
@@ -21,7 +25,14 @@ export function useLectureAudio(options: {
   onNoteAdded: (note: string) => void;
   onProofOfLifeDismissed: () => void;
 }) {
-  const { selectedSubjectId, onBreak, elapsed, shouldContinueAutoScribe, onNoteAdded, onProofOfLifeDismissed } = options;
+  const {
+    selectedSubjectId,
+    onBreak,
+    elapsed,
+    shouldContinueAutoScribe,
+    onNoteAdded,
+    onProofOfLifeDismissed,
+  } = options;
 
   const [recording, setRecording] = useState<Audio.Recording | null>(null);
   const recordingRef = useRef<Audio.Recording | null>(null);
@@ -138,9 +149,21 @@ export function useLectureAudio(options: {
             throw new Error('No usable lecture content was detected in this recording.');
           }
 
-          const conceptsText = analysis.keyConcepts.length > 0 ? '\n\n💡 **Key Concepts**\n' + analysis.keyConcepts.map((c: string) => `• ${c}`).join('\n') : '';
-          const hyText = analysis.highYieldPoints.length > 0 ? '\n\n🚀 **High-Yield**\n' + analysis.highYieldPoints.map((p: string) => `• ${p}`).join('\n') : '';
-          const quickNote = `🎯 **Subject**: ${analysis.subject}\n📌 **Topics**: ${analysis.topics.join(', ')}\n\n📝 **Summary**: ${analysis.lectureSummary}${conceptsText}${hyText}`;
+          const conceptsText =
+            analysis.keyConcepts.length > 0
+              ? '\n\n💡 **Key Concepts**\n' +
+                analysis.keyConcepts.map((c: string) => `• ${c}`).join('\n')
+              : '';
+          const hyText =
+            analysis.highYieldPoints.length > 0
+              ? '\n\n🚀 **High-Yield**\n' +
+                analysis.highYieldPoints.map((p: string) => `• ${p}`).join('\n')
+              : '';
+          const quickNote = `🎯 **Subject**: ${
+            analysis.subject
+          }\n📌 **Topics**: ${analysis.topics.join(', ')}\n\n📝 **Summary**: ${
+            analysis.lectureSummary
+          }${conceptsText}${hyText}`;
 
           const result = await saveLectureChunk({
             analysis,
@@ -155,7 +178,6 @@ export function useLectureAudio(options: {
           void enhanceNoteInBackground(result.noteId);
           onNoteAdded(quickNote);
           onProofOfLifeDismissed();
-
         } catch (err) {
           console.warn('[LectureMode] Chunk processing failed, moving to recovery:', err);
           const recoveryUri = await moveFileToRecovery(uri);
@@ -233,9 +255,19 @@ export function useLectureAudio(options: {
         throw new Error('No usable lecture content was detected.');
       }
 
-      const conceptsText = analysis.keyConcepts.length > 0 ? '\n\n💡 **Key Concepts**\n' + analysis.keyConcepts.map((c: string) => `• ${c}`).join('\n') : '';
-      const hyText = analysis.highYieldPoints.length > 0 ? '\n\n🚀 **High-Yield**\n' + analysis.highYieldPoints.map((p: string) => `• ${p}`).join('\n') : '';
-      const quickNote = `🎯 **Subject**: ${analysis.subject}\n📌 **Topics**: ${analysis.topics.join(', ')}\n\n📝 **Summary**: ${analysis.lectureSummary}${conceptsText}${hyText}`;
+      const conceptsText =
+        analysis.keyConcepts.length > 0
+          ? '\n\n💡 **Key Concepts**\n' +
+            analysis.keyConcepts.map((c: string) => `• ${c}`).join('\n')
+          : '';
+      const hyText =
+        analysis.highYieldPoints.length > 0
+          ? '\n\n🚀 **High-Yield**\n' +
+            analysis.highYieldPoints.map((p: string) => `• ${p}`).join('\n')
+          : '';
+      const quickNote = `🎯 **Subject**: ${analysis.subject}\n📌 **Topics**: ${analysis.topics.join(
+        ', ',
+      )}\n\n📝 **Summary**: ${analysis.lectureSummary}${conceptsText}${hyText}`;
 
       const result = await saveLectureChunk({
         analysis,
@@ -261,6 +293,6 @@ export function useLectureAudio(options: {
     isRecordingEnabled,
     setIsRecordingEnabled,
     isTranscribing,
-    importAndTranscribeAudio
+    importAndTranscribeAudio,
   };
 }

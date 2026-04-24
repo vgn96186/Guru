@@ -21,4 +21,3 @@ export function createPoeModel(config: PoeConfig): LanguageModelV2 {
     }),
   });
 }
-

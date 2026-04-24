@@ -354,12 +354,8 @@ export const progressRepositoryDrizzle = {
     // instead of N individual Drizzle UPDATE round-trips
     await runInTransaction(async (txDb) => {
       const idList = updates.map((u) => u.topicId);
-      const confCases = updates
-        .map((u) => `WHEN ${u.topicId} THEN ${u.newConf}`)
-        .join(' ');
-      const statusCases = updates
-        .map((u) => `WHEN ${u.topicId} THEN '${u.newStatus}'`)
-        .join(' ');
+      const confCases = updates.map((u) => `WHEN ${u.topicId} THEN ${u.newConf}`).join(' ');
+      const statusCases = updates.map((u) => `WHEN ${u.topicId} THEN '${u.newStatus}'`).join(' ');
       const idPlaceholders = idList.map(() => '?').join(',');
       await txDb.runAsync(
         `UPDATE topic_progress

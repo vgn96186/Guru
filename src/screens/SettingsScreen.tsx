@@ -1216,7 +1216,9 @@ export default function SettingsScreen() {
       );
     } catch (e: unknown) {
       setFetchDatesMsg(
-        `âŒ ${(e instanceof Error ? e.message : String(e)) || 'Could not fetch dates. Try manually.'}`,
+        `âŒ ${
+          (e instanceof Error ? e.message : String(e)) || 'Could not fetch dates. Try manually.'
+        }`,
       );
     } finally {
       setFetchingDates(false);

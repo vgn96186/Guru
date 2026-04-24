@@ -63,7 +63,6 @@ describe('Drizzle query parity (in-memory SQLite)', () => {
         description TEXT
       )
     `);
-    rawDb.prepare(`INSERT OR IGNORE INTO user_profile (id) VALUES (1)`).run();
 
     const sqlite = wrapBetterSqliteToAsync(rawDb);
     mockDrizzleDb = drizzleBetterSqlite(rawDb, { schema: drizzleSchema });
@@ -73,6 +72,7 @@ describe('Drizzle query parity (in-memory SQLite)', () => {
     };
     setDbForTests(sqlite);
     await migrate(mockDrizzleDb as any, migrations);
+    rawDb.prepare(`INSERT OR IGNORE INTO user_profile (id) VALUES (1)`).run();
   });
 
   afterEach(() => {

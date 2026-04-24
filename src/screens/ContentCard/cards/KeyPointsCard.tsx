@@ -1,30 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import {
-  View,
-  ScrollView,
-  TouchableOpacity,
-  useWindowDimensions,
-} from 'react-native';
+import { View, ScrollView, TouchableOpacity, useWindowDimensions } from 'react-native';
 import LinearText from '../../../components/primitives/LinearText';
 import StudyMarkdown from '../../../components/StudyMarkdown';
 import { emphasizeHighYieldMarkdown } from '../../../utils/highlightMarkdown';
-
 
 import { ContentFlagButton } from '../../../components/ContentFlagButton';
 import { s } from '../styles';
 import { linearTheme as n } from '../../../theme/linearTheme';
 import { Props, ContextUpdater } from '../types';
-import type {
-  KeyPointsContent,
-} from '../../../types';
+import type { KeyPointsContent } from '../../../types';
 import { TopicImage } from '../shared/TopicImage';
 import { ConfidenceRating } from '../shared/ConfidenceRating';
-import {
-  useCardScrollContentStyle,
-} from '../hooks/useCardScrollPadding';
+import { useCardScrollContentStyle } from '../hooks/useCardScrollPadding';
 import { compactLines } from '../utils/compactLines';
-
-
 
 // ── Key Points ────────────────────────────────────────────────────
 

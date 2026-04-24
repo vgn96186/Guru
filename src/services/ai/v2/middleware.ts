@@ -20,7 +20,11 @@ import type {
 import { logStreamEvent } from '../runtimeDebug';
 
 export interface Middleware {
-  onRequest?: (ctx: { provider: string; modelId: string; options: LanguageModelV2CallOptions }) => void;
+  onRequest?: (ctx: {
+    provider: string;
+    modelId: string;
+    options: LanguageModelV2CallOptions;
+  }) => void;
   onStart?: (ctx: { provider: string; modelId: string; mode: 'generate' | 'stream' }) => void;
   onFinish?: (ctx: {
     provider: string;
@@ -30,7 +34,12 @@ export interface Middleware {
     usage: LanguageModelV2Usage;
     elapsedMs: number;
   }) => void;
-  onError?: (ctx: { provider: string; modelId: string; mode: 'generate' | 'stream'; error: unknown }) => void;
+  onError?: (ctx: {
+    provider: string;
+    modelId: string;
+    mode: 'generate' | 'stream';
+    error: unknown;
+  }) => void;
 }
 
 export function withMiddleware(base: LanguageModelV2, mw: Middleware): LanguageModelV2 {
@@ -55,7 +64,12 @@ export function withMiddleware(base: LanguageModelV2, mw: Middleware): LanguageM
         });
         return result;
       } catch (err) {
-        mw.onError?.({ provider: base.provider, modelId: base.modelId, mode: 'generate', error: err });
+        mw.onError?.({
+          provider: base.provider,
+          modelId: base.modelId,
+          mode: 'generate',
+          error: err,
+        });
         throw err;
       }
     },
@@ -68,7 +82,12 @@ export function withMiddleware(base: LanguageModelV2, mw: Middleware): LanguageM
       try {
         inner = await base.doStream(options);
       } catch (err) {
-        mw.onError?.({ provider: base.provider, modelId: base.modelId, mode: 'stream', error: err });
+        mw.onError?.({
+          provider: base.provider,
+          modelId: base.modelId,
+          mode: 'stream',
+          error: err,
+        });
         throw err;
       }
 

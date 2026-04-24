@@ -1,26 +1,17 @@
 import React, { useState } from 'react';
-import {
-  View,
-  TouchableOpacity,
-} from 'react-native';
+import { View, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import LinearText from '../../../components/primitives/LinearText';
-
 
 import { ContentFlagButton } from '../../../components/ContentFlagButton';
 import { s, FLASHCARD_RATINGS } from '../styles';
 import { linearTheme as n } from '../../../theme/linearTheme';
 import { Props } from '../types';
-import type {
-  FlashcardsContent,
-} from '../../../types';
+import type { FlashcardsContent } from '../../../types';
 import { QuestionImage } from '../shared/QuestionImage';
 
-
 import { useSPen } from '../../../hooks/useSPen';
-
-
 
 // ── Key Points ────────────────────────────────────────────────────
 // ── Must Know & Most Tested ──────────────────────────────────────

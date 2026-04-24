@@ -59,10 +59,7 @@ export function createCloudflareModel(opts: {
   });
 }
 
-export function createGitHubModelsModel(opts: {
-  modelId: string;
-  token: string;
-}): LanguageModelV2 {
+export function createGitHubModelsModel(opts: { modelId: string; token: string }): LanguageModelV2 {
   return createOpenAICompatibleModel({
     provider: 'github-models',
     modelId: opts.modelId,
@@ -71,16 +68,18 @@ export function createGitHubModelsModel(opts: {
   });
 }
 
-export function createG4FModel(opts: {
-  modelId?: string;
-  url?: string;
-  apiKey?: string;
-} = {}): LanguageModelV2 {
+export function createG4FModel(
+  opts: {
+    modelId?: string;
+    url?: string;
+    apiKey?: string;
+  } = {},
+): LanguageModelV2 {
   const url = opts.url ?? G4F_PROXY_URL ?? '';
   if (!url) {
     throw new Error(
       'G4F proxy URL not configured. Set EXPO_PUBLIC_G4F_URL in .env ' +
-      '(see deploy/g4f/README.md) or pass { url } explicitly.'
+        '(see deploy/g4f/README.md) or pass { url } explicitly.',
     );
   }
   return createOpenAICompatibleModel({

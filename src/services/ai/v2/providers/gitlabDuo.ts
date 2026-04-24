@@ -78,4 +78,3 @@ export function createGitLabDuoModel(config: GitLabDuoConfig): LanguageModelV2 {
     },
   };
 }
-

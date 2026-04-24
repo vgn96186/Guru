@@ -2,80 +2,92 @@ jest.mock('./fallback', () => ({
   createFallbackModel: jest.fn(() => ({
     provider: 'fallback',
     modelId: 'fallback',
+    doGenerate: jest.fn(),
+    doStream: jest.fn(),
   })),
 }));
 
-jest.mock('./presets', () => ({
-  createGroqModel: jest.fn(({ modelId }: { modelId: string }) => ({ provider: 'groq', modelId })),
-  createOpenRouterModel: jest.fn(({ modelId }: { modelId: string }) => ({
-    provider: 'openrouter',
+function makeMockModel(provider: string, modelId: string) {
+  return {
+    specificationVersion: 'v2' as const,
+    provider,
     modelId,
+    doGenerate: jest.fn(),
+    doStream: jest.fn(),
+  };
+}
+
+jest.mock('./presets', () => ({
+  createGroqModel: jest.fn(({ modelId }: { modelId: string }) => makeMockModel('groq', modelId)),
+  createOpenRouterModel: jest.fn(({ modelId }: { modelId: string }) => ({
+    ...makeMockModel('openrouter', modelId),
   })),
   createDeepSeekModel: jest.fn(({ modelId }: { modelId: string }) => ({
-    provider: 'deepseek',
-    modelId,
+    ...makeMockModel('deepseek', modelId),
   })),
   createCloudflareModel: jest.fn(({ modelId }: { modelId: string }) => ({
-    provider: 'cloudflare',
-    modelId,
+    ...makeMockModel('cloudflare', modelId),
   })),
   createGitHubModelsModel: jest.fn(({ modelId }: { modelId: string }) => ({
-    provider: 'github',
-    modelId,
+    ...makeMockModel('github', modelId),
   })),
 }));
 
 jest.mock('./openaiCompatible', () => ({
   createOpenAICompatibleModel: jest.fn(
     ({ provider, modelId }: { provider: string; modelId: string }) => ({
-      provider,
-      modelId,
+      ...makeMockModel(provider, modelId),
     }),
   ),
 }));
 
 jest.mock('./gemini', () => ({
   createGeminiModel: jest.fn(({ modelId }: { modelId: string }) => ({
-    provider: 'gemini',
-    modelId,
+    ...makeMockModel('gemini', modelId),
   })),
 }));
 
 jest.mock('./localLlm', () => ({
   createLocalLlmModel: jest.fn(({ modelPath }: { modelPath: string }) => ({
+    specificationVersion: 'v2',
     provider: 'local',
     modelId: modelPath,
+    doGenerate: jest.fn(),
+    doStream: jest.fn(),
   })),
-  createNanoModel: jest.fn(() => ({ provider: 'nano', modelId: 'nano' })),
+  createNanoModel: jest.fn(() => ({
+    specificationVersion: 'v2',
+    provider: 'nano',
+    modelId: 'nano',
+    doGenerate: jest.fn(),
+    doStream: jest.fn(),
+  })),
 }));
 
 jest.mock('./chatgpt', () => ({
   createChatGptModel: jest.fn(({ modelId }: { modelId: string }) => ({
-    provider: 'chatgpt',
-    modelId,
+    ...makeMockModel('chatgpt', modelId),
   })),
 }));
 
 jest.mock('./githubCopilot', () => ({
   createGitHubCopilotModel: jest.fn(({ modelId }: { modelId: string }) => ({
-    provider: 'github_copilot',
-    modelId,
+    ...makeMockModel('github_copilot', modelId),
   })),
 }));
 
 jest.mock('./gitlabDuo', () => ({
   createGitLabDuoModel: jest.fn(({ modelId }: { modelId: string }) => ({
-    provider: 'gitlab_duo',
-    modelId,
+    ...makeMockModel('gitlab_duo', modelId),
   })),
 }));
 
 jest.mock('./poe', () => ({
-  createPoeModel: jest.fn(({ modelId }: { modelId: string }) => ({ provider: 'poe', modelId })),
+  createPoeModel: jest.fn(({ modelId }: { modelId: string }) => makeMockModel('poe', modelId)),
 }));
 
 jest.mock('./qwen', () => ({
-  createQwenModel: jest.fn(({ modelId }: { modelId: string }) => ({ provider: 'qwen', modelId })),
+  createQwenModel: jest.fn(({ modelId }: { modelId: string }) => makeMockModel('qwen', modelId)),
 }));
 
 import { createGuruFallbackModel } from './guruFallback';
@@ -123,22 +135,39 @@ describe('createGuruFallbackModel', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     (createGroqModel as jest.Mock).mockImplementation(({ modelId }: any) => ({
-      provider: 'groq',
-      modelId,
+      ...makeMockModel('groq', modelId),
     }));
     (createOpenRouterModel as jest.Mock).mockImplementation(({ modelId }: any) => ({
-      provider: 'openrouter',
-      modelId,
+      ...makeMockModel('openrouter', modelId),
     }));
     (createGeminiModel as jest.Mock).mockImplementation(({ modelId }: any) => ({
-      provider: 'gemini',
-      modelId,
+      ...makeMockModel('gemini', modelId),
     }));
     (createChatGptModel as jest.Mock).mockImplementation(({ modelId }: any) => ({
-      provider: 'chatgpt',
-      modelId,
+      ...makeMockModel('chatgpt', modelId),
+    }));
+    (createLocalLlmModel as jest.Mock).mockImplementation(({ modelPath }: any) => ({
+      specificationVersion: 'v2',
+      provider: 'local',
+      modelId: modelPath,
+      doGenerate: jest.fn(),
+      doStream: jest.fn(),
+    }));
+    (createNanoModel as jest.Mock).mockImplementation(() => ({
+      specificationVersion: 'v2',
+      provider: 'nano',
+      modelId: 'nano',
+      doGenerate: jest.fn(),
+      doStream: jest.fn(),
     }));
   });
+
+  function getFallbackTargets() {
+    return (jest.mocked(createFallbackModel).mock.calls[0]?.[0].models ?? []).map((model) => ({
+      provider: model.provider,
+      modelId: model.modelId,
+    }));
+  }
 
   it('uses only the explicitly selected cloud model when chosenModel targets a provider', () => {
     createGuruFallbackModel({
@@ -183,11 +212,7 @@ describe('createGuruFallbackModel', () => {
 
     expect(createLocalLlmModel).not.toHaveBeenCalled();
     expect(createNanoModel).not.toHaveBeenCalled();
-    const models = jest.mocked(createFallbackModel).mock.calls[0]?.[0].models as Array<{
-      provider: string;
-      modelId: string;
-    }>;
-    expect(models).toEqual([{ provider: 'gemini', modelId: 'gemini-2.5-flash' }]);
+    expect(getFallbackTargets()).toEqual([{ provider: 'gemini', modelId: 'gemini-2.5-flash' }]);
   });
 
   it('routes chatgpt-prefixed selections only through ChatGPT', () => {
@@ -198,11 +223,7 @@ describe('createGuruFallbackModel', () => {
 
     expect(createLocalLlmModel).not.toHaveBeenCalled();
     expect(createNanoModel).not.toHaveBeenCalled();
-    const models = jest.mocked(createFallbackModel).mock.calls[0]?.[0].models as Array<{
-      provider: string;
-      modelId: string;
-    }>;
-    expect(models).toEqual([{ provider: 'chatgpt', modelId: 'gpt-5-mini' }]);
+    expect(getFallbackTargets()).toEqual([{ provider: 'chatgpt', modelId: 'gpt-5-mini' }]);
   });
 
   it('uses only the on-device local model when chosenModel is local', () => {

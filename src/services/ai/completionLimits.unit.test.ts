@@ -1,7 +1,4 @@
-import {
-  CLOUD_MAX_COMPLETION_TOKENS,
-  LOCAL_LLM_MAX_COMPLETION_TOKENS,
-} from './completionLimits';
+import { CLOUD_MAX_COMPLETION_TOKENS, LOCAL_LLM_MAX_COMPLETION_TOKENS } from './completionLimits';
 
 describe('completionLimits', () => {
   it('exports stable cloud and local LLM token ceilings', () => {

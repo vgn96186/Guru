@@ -6,11 +6,7 @@
  * Keep streaming parse logic in one place to avoid drift between helpers.
  */
 
-import type {
-  FinishReason,
-  LanguageModelV2StreamPart,
-  LanguageModelV2Usage,
-} from './v2/spec';
+import type { FinishReason, LanguageModelV2StreamPart, LanguageModelV2Usage } from './v2/spec';
 
 /** Extract text deltas from one SSE event block (content between blank lines). */
 export function consumeSseEventBlock(block: string): { texts: string[]; sawDone: boolean } {

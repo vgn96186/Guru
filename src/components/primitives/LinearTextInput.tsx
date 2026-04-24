@@ -1,10 +1,5 @@
 import React, { useState } from 'react';
-import {
-  TextInput,
-  View,
-  type TextInputProps,
-  type ViewProps,
-} from 'react-native';
+import { TextInput, View, type TextInputProps, type ViewProps } from 'react-native';
 import { tv } from 'tailwind-variants';
 
 interface LinearTextInputProps extends Omit<TextInputProps, 'style' | 'className'> {
@@ -54,10 +49,7 @@ export default function LinearTextInput({
   });
 
   return (
-    <View
-      className={containerVariantClass}
-      style={containerStyle}
-    >
+    <View className={containerVariantClass} style={containerStyle}>
       {leftIcon && <View className="justify-center items-center mr-2">{leftIcon}</View>}
       <TextInput
         className={`flex-1 text-textPrimary font-inter text-[15px] py-2 ${className ?? ''}`}
@@ -78,4 +70,3 @@ export default function LinearTextInput({
     </View>
   );
 }
-

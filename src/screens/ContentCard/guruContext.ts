@@ -62,7 +62,9 @@ export function buildGuruContext(content: AIContent): string | undefined {
             .slice(0, 2)
             .map(
               (error, index) =>
-                `Error ${index + 1}: wrong "${error.wrong}", correct "${error.correct}". ${error.explanation}`,
+                `Error ${index + 1}: wrong "${error.wrong}", correct "${error.correct}". ${
+                  error.explanation
+                }`,
             ),
         ],
         4,
@@ -87,7 +89,9 @@ export function buildGuruContext(content: AIContent): string | undefined {
             .slice(0, 3)
             .map(
               (question, index) =>
-                `Q${index + 1}: ${question.question}\nAnswer: ${question.answer}\nWhy it matters: ${question.whyItMatters}`,
+                `Q${index + 1}: ${question.question}\nAnswer: ${question.answer}\nWhy it matters: ${
+                  question.whyItMatters
+                }`,
             ),
         ],
         4,

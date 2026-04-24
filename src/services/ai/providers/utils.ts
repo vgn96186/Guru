@@ -78,7 +78,10 @@ function truncateMessageMiddle(content: string, maxLen: number): string {
   const head = Math.floor((maxLen - 120) * 0.5);
   const tail = maxLen - head - 80;
   const omitted = content.length - head - tail;
-  return `${content.slice(0, head)}\n\n… [${omitted} characters omitted for API limit] …\n\n${content.slice(-tail)}`;
+  return `${content.slice(
+    0,
+    head,
+  )}\n\n… [${omitted} characters omitted for API limit] …\n\n${content.slice(-tail)}`;
 }
 
 export function clampMessagesToCharBudget(

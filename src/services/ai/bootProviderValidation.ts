@@ -169,7 +169,7 @@ export async function validateAiProvidersOnBoot(): Promise<void> {
         ...result,
         ms,
       })),
-      3000 // 3s timeout since we do this on boot and it can be slow
+      3000, // 3s timeout since we do this on boot and it can be slow
     ),
   );
 

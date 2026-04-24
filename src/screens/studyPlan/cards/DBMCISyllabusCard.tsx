@@ -1,6 +1,9 @@
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
-import { DBMCI_SUBJECT_ORDER, DBMCI_WORKLOAD_OVERRIDES } from '../../../services/studyPlannerBuckets';
+import {
+  DBMCI_SUBJECT_ORDER,
+  DBMCI_WORKLOAD_OVERRIDES,
+} from '../../../services/studyPlannerBuckets';
 import { SUBJECTS_SEED } from '../../../constants/syllabus';
 import { linearTheme as n } from '../../../theme/linearTheme';
 import LinearSurface from '../../../components/primitives/LinearSurface';

@@ -11,9 +11,9 @@ import { syncVaultSeedTopics } from '../db/database';
 import { showDialog } from '../components/dialogService';
 import { showToast } from '../components/Toast';
 
-const capturedScreenMotionProps: Array<Record<string, unknown>> = [];
-const capturedStaggeredProps: Array<Record<string, unknown>> = [];
-let latestScreenMotionEntryComplete: (() => void) | undefined;
+const mockCapturedScreenMotionProps: Array<Record<string, unknown>> = [];
+const mockCapturedStaggeredProps: Array<Record<string, unknown>> = [];
+let mockLatestScreenMotionEntryComplete: (() => void) | undefined;
 
 jest.mock('react-native', () => {
   const React = require('react');
@@ -118,52 +118,67 @@ jest.mock('../services/databaseEvents', () => ({
 }));
 
 jest.mock('../hooks/useResponsive', () => ({
-  ResponsiveContainer: ({ children, ...props }: React.PropsWithChildren<Record<string, unknown>>) =>
-    React.createElement('ResponsiveContainer', props, children),
+  ResponsiveContainer: ({ children, ...props }: any) => {
+    const React = require('react');
+    return React.createElement('ResponsiveContainer', props, children);
+  },
 }));
 
 jest.mock('../components/ScreenHeader', () => {
-  return ({ title, subtitle, searchElement, rightElement }: Record<string, unknown>) =>
-    React.createElement(
+  return ({ title, subtitle, searchElement, rightElement }: Record<string, unknown>) => {
+    const React = require('react');
+    return React.createElement(
       'ScreenHeader',
       { title, subtitle },
-      searchElement as React.ReactNode,
-      rightElement as React.ReactNode,
+      searchElement as any,
+      rightElement as any,
     );
+  };
 });
 
 jest.mock('../components/BannerIconButton', () => {
-  return ({ children, ...props }: React.PropsWithChildren<Record<string, unknown>>) =>
-    React.createElement('BannerIconButton', props, children);
+  return ({ children, ...props }: any) => {
+    const React = require('react');
+    return React.createElement('BannerIconButton', props, children);
+  };
 });
 
 jest.mock('../components/BannerSearchBar', () => {
-  return (props: Record<string, unknown>) => React.createElement('BannerSearchBar', props);
+  return (props: Record<string, unknown>) => {
+    const React = require('react');
+    return React.createElement('BannerSearchBar', props);
+  };
 });
 
 jest.mock('../components/primitives/LinearSurface', () => {
-  return ({ children, ...props }: React.PropsWithChildren<Record<string, unknown>>) =>
-    React.createElement('LinearSurface', props, children);
+  return ({ children, ...props }: any) => {
+    const React = require('react');
+    return React.createElement('LinearSurface', props, children);
+  };
 });
 
 jest.mock('../components/SubjectCard', () => {
-  return ({ subject, ...props }: Record<string, unknown>) =>
-    React.createElement('SubjectCard', { subjectId: (subject as { id: number }).id, ...props });
+  return ({ subject, ...props }: Record<string, unknown>) => {
+    const React = require('react');
+    return React.createElement('SubjectCard', { subjectId: (subject as { id: number }).id, ...props });
+  };
 });
 
 jest.mock('../motion/ScreenMotion', () => {
-  return ({ children, ...props }: React.PropsWithChildren<Record<string, unknown>>) => {
+  return ({ children, ...props }: any) => {
     if (typeof props.isEntryComplete === 'function') {
-      latestScreenMotionEntryComplete = props.isEntryComplete as () => void;
+      mockLatestScreenMotionEntryComplete = props.isEntryComplete as () => void;
     }
-    capturedScreenMotionProps.push(props);
+    mockCapturedScreenMotionProps.push(props);
+    const React = require('react');
     return React.createElement('ScreenMotion', props, children);
   };
 });
 
 jest.mock('../motion/StaggeredEntrance', () => {
-  return ({ children, ...props }: React.PropsWithChildren<Record<string, unknown>>) => {
-    capturedStaggeredProps.push(props);
+  return ({ children, ...props }: any) => {
+    mockCapturedStaggeredProps.push(props);
+    const React = require('react');
     return React.createElement('StaggeredEntrance', props, children);
   };
 });
@@ -208,9 +223,9 @@ jest.mock('expo-haptics', () => ({
 
 describe('SyllabusScreen motion sequencing', () => {
   beforeEach(() => {
-    capturedScreenMotionProps.length = 0;
-    capturedStaggeredProps.length = 0;
-    latestScreenMotionEntryComplete = undefined;
+    mockCapturedScreenMotionProps.length = 0;
+    mockCapturedStaggeredProps.length = 0;
+    mockLatestScreenMotionEntryComplete = undefined;
     jest.clearAllMocks();
 
     (getAllSubjects as jest.Mock).mockResolvedValue([
@@ -275,12 +290,12 @@ describe('SyllabusScreen motion sequencing', () => {
   it('uses an explicit first-mount trigger and gates section reveals on shell completion', async () => {
     render(<SyllabusScreen />);
 
-    await waitFor(() => expect(capturedScreenMotionProps.length).toBeGreaterThan(0));
-    expect(capturedScreenMotionProps[0]).toMatchObject({ trigger: 'first-mount' });
+    await waitFor(() => expect(mockCapturedScreenMotionProps.length).toBeGreaterThan(0));
+    expect(mockCapturedScreenMotionProps[0]).toMatchObject({ trigger: 'first-mount' });
 
     await waitFor(() => {
       const sectionProps = new Map<number, Record<string, unknown>>();
-      for (const props of capturedStaggeredProps) {
+      for (const props of mockCapturedStaggeredProps) {
         if (typeof props.index === 'number' && props.index <= 2) {
           sectionProps.set(props.index, props);
         }
@@ -291,15 +306,15 @@ describe('SyllabusScreen motion sequencing', () => {
       );
     });
 
-    expect(typeof latestScreenMotionEntryComplete).toBe('function');
+    expect(typeof mockLatestScreenMotionEntryComplete).toBe('function');
 
     act(() => {
-      latestScreenMotionEntryComplete?.();
+      mockLatestScreenMotionEntryComplete?.();
     });
 
     await waitFor(() => {
       const sectionProps = new Map<number, Record<string, unknown>>();
-      for (const props of capturedStaggeredProps) {
+      for (const props of mockCapturedStaggeredProps) {
         if (typeof props.index === 'number' && props.index <= 2) {
           sectionProps.set(props.index, props);
         }

@@ -54,7 +54,7 @@ import LoadingOrb from '../components/LoadingOrb';
 import ScreenHeader from '../components/ScreenHeader';
 import LinearButton from '../components/primitives/LinearButton';
 import LinearSurface from '../components/primitives/LinearSurface';
-import { generateJSONWithRouting } from '../services/ai/generate';
+import { generateJSONV2 } from '../services/ai/v2/compat';
 import type { Message } from '../services/ai/types';
 import { analyzeTranscript } from '../services/transcription/analysis';
 import { generateADHDNote } from '../services/transcription/noteGeneration';
@@ -138,14 +138,12 @@ If unclear, make your best guess from the content.`,
       },
       { role: 'user', content: snippet },
     ];
-    const { parsed } = await generateJSONWithRouting(
+    const { object } = await generateJSONV2(
       messages,
       TranscriptLabelSchema,
-      'low',
-      false,
-      'groq',
+      { providerOrderOverride: ['groq'] },
     );
-    if (parsed.subject && parsed.topic) return parsed;
+    if (object.subject && object.topic) return object;
     return null;
   } catch {
     return null;

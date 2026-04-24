@@ -1,18 +1,31 @@
 import React from 'react';
 import { View, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import LinearSurface from '../../../components/primitives/LinearSurface';
 import LinearText from '../../../components/primitives/LinearText';
 import { useProfileQuery, useLevelInfo } from '../../../hooks/queries/useProfile';
 import { PROVIDER_DISPLAY_NAMES } from '../../../types';
 import { sanitizeProviderOrder } from '../../../utils/providerOrder';
 import { linearTheme as n } from '../../../theme/linearTheme';
+import { dailyLogRepository } from '../../../db/repositories';
+import { updateUserProfile } from '../../../db/queries/progress';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
 export function DashboardOverview(props: any) {
   const { setActiveCategory, isTablet } = props;
   const { data: profile } = useProfileQuery();
   const levelInfo = useLevelInfo();
+  const queryClient = useQueryClient();
+
+  const todayIso = new Date().toISOString().slice(0, 10);
+  const { data: dailyLog } = useQuery({
+    queryKey: ['dailyLog', todayIso],
+    queryFn: () => dailyLogRepository.getDailyLog(todayIso),
+  });
+  const todayMins = dailyLog?.totalMinutes || 0;
+  const goalMins = profile?.dailyGoalMinutes || 120;
+  const goalProgress = Math.min(100, Math.max(0, (todayMins / goalMins) * 100));
 
   const name = profile?.displayName || 'Doctor';
   const initial = name.charAt(0).toUpperCase();
@@ -21,6 +34,12 @@ export function DashboardOverview(props: any) {
   const streak = profile?.streakCurrent || 0;
 
   const xpProgress = levelInfo ? levelInfo.progress * 100 : 0;
+
+  const hour = new Date().getHours();
+  let greeting = 'Good Evening';
+  if (hour < 12) greeting = 'Good Morning';
+  else if (hour < 17) greeting = 'Good Afternoon';
+  else if (hour > 22) greeting = 'Late Night Grind';
 
   // Determine next exam
   let examName = 'Target Exam';
@@ -51,24 +70,31 @@ export function DashboardOverview(props: any) {
   const topProviderName = (PROVIDER_DISPLAY_NAMES as any)[topProvider] ?? 'Auto';
   const isLocalReady = profile?.useLocalModel && profile?.localModelPath;
 
+  const handleToggleStrict = async () => {
+    await updateUserProfile({ strictModeEnabled: !isStrict });
+    queryClient.invalidateQueries({ queryKey: ['profile'] });
+  };
+
   const renderGridChip = (
     category: string,
     icon: keyof typeof Ionicons.glyphMap,
     color: string,
     title: string,
     subtitle: string,
+    progress?: number,
+    onPressOverride?: () => void,
   ) => (
     <View style={{ flexBasis: isTablet ? '48%' : '100%', flexGrow: 1 }}>
       <TouchableOpacity
         style={styles.gridChip}
-        onPress={() => setActiveCategory(category)}
+        onPress={onPressOverride || (() => setActiveCategory(category))}
         activeOpacity={0.8}
       >
         <View style={styles.chipHeader}>
           <View style={[styles.iconWrap, { backgroundColor: `${color}15` }]}>
             <Ionicons name={icon} size={18} color={color} />
           </View>
-          <Ionicons name="arrow-forward" size={16} color="rgba(255,255,255,0.2)" />
+          <Ionicons name={onPressOverride ? "swap-horizontal" : "arrow-forward"} size={16} color="rgba(255,255,255,0.2)" />
         </View>
         <View style={{ marginTop: 'auto' }}>
           <LinearText variant="title" style={{ fontSize: 18, color: '#E8E8E8' }}>
@@ -81,6 +107,11 @@ export function DashboardOverview(props: any) {
           >
             {subtitle}
           </LinearText>
+          {progress !== undefined && (
+            <View style={[styles.track, { marginTop: 8, height: 4, backgroundColor: 'rgba(255,255,255,0.05)' }]}>
+              <View style={[styles.fill, { width: `${progress}%`, backgroundColor: color }]} />
+            </View>
+          )}
         </View>
       </TouchableOpacity>
     </View>
@@ -99,13 +130,16 @@ export function DashboardOverview(props: any) {
       <View style={{ flex: isTablet ? 1 : undefined }}>
         <LinearSurface compact style={[styles.playerCard, { flex: 1 }]}>
           <View>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16, marginBottom: 24 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16, marginBottom: 16 }}>
               <View style={styles.avatarLarge}>
                 <LinearText variant="title" style={{ fontSize: 28, color: '#FFFFFF' }}>
                   {initial}
                 </LinearText>
               </View>
               <View style={{ flex: 1 }}>
+                <LinearText variant="meta" tone="accent" style={{ fontSize: 11, letterSpacing: 0.5, marginBottom: 2 }}>
+                  {greeting.toUpperCase()}
+                </LinearText>
                 <LinearText variant="title" style={{ fontSize: 24, marginBottom: 4 }}>
                   {name}
                 </LinearText>
@@ -119,6 +153,15 @@ export function DashboardOverview(props: any) {
                   </LinearText>
                 </View>
               </View>
+            </View>
+
+            <View style={{ flexDirection: 'row', gap: 12, marginBottom: 24 }}>
+              <LinearText variant="meta" tone="muted" style={{ fontSize: 10 }}>
+                {isLocalReady ? '🟢 LOCAL LLM' : '🟡 CLOUD AI'}
+              </LinearText>
+              <LinearText variant="meta" tone="muted" style={{ fontSize: 10 }}>
+                {profile?.deviceSyncCode ? '🟢 SYNCED' : '⚪ STANDALONE'}
+              </LinearText>
             </View>
 
             <View style={styles.statsRow}>
@@ -169,7 +212,7 @@ export function DashboardOverview(props: any) {
 
       {/* Right Column: 2x2 Action Grid */}
       <View style={{ flex: isTablet ? 1.3 : undefined }}>
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12, height: '100%' }}>
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12 }}>
           {renderGridChip(
             'planning',
             'calendar',
@@ -181,15 +224,18 @@ export function DashboardOverview(props: any) {
             'planning',
             'time',
             n.colors.warning,
-            `${profile?.dailyGoalMinutes || 120} Mins`,
-            'Daily Study Goal',
+            `${todayMins} / ${goalMins} m`,
+            'Daily Goal Progress',
+            goalProgress,
           )}
           {renderGridChip(
             'interventions',
             isStrict ? 'shield' : 'shield-checkmark',
             isStrict ? '#F87171' : '#10B981',
-            isStrict ? 'Strict Mode' : faceTrack ? 'Tracking Active' : 'No Guardrails',
-            'Session Rules',
+            isStrict ? 'Strict Mode ON' : 'Strict Mode OFF',
+            'Tap to toggle',
+            undefined,
+            handleToggleStrict,
           )}
           {renderGridChip(
             'ai',

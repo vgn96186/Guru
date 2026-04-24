@@ -1,0 +1,2000 @@
+    00000070'11936000-00000070'11937fff ---         0      2000
+    00000070'11938000-00000070'126fdfff rw-         0    dc6000  [anon:scudo:secondary]
+    00000070'126fe000-00000070'126fffff ---         0      2000
+    00000070'12700000-00000070'146abfff rw-         0   1fac000  [anon:scudo:secondary]
+    00000070'146ac000-00000070'146adfff ---         0      2000
+    00000070'146ae000-00000070'15683fff rw-         0    fd6000  [anon:scudo:secondary]
+    00000070'15684000-00000070'15685fff ---         0      2000
+    00000070'15686000-00000070'15e70fff rw-         0    7eb000  [anon:scudo:secondary]
+    00000070'15e71000-00000070'15e72fff ---         0      2000
+    00000070'15e73000-00000070'16268fff rw-         0    3f6000  [anon:scudo:secondary]
+    00000070'16269000-00000070'1626afff ---         0      2000
+    00000070'1626b000-00000070'16465fff rw-         0    1fb000  [anon:scudo:secondary]
+    00000070'16466000-00000070'16466fff ---         0      1000
+    00000070'16467000-00000070'167a7fff ---         0    341000
+    00000070'167a8000-00000070'167abfff rw-         0      4000
+    00000070'167ac000-00000070'17466fff ---         0    cbb000
+    00000070'17467000-00000070'17467fff ---         0      1000
+    00000070'17468000-00000070'17468fff ---         0      1000  [anon:stack_and_tls:10802]
+    00000070'17469000-00000070'1786ffff rw-         0    407000  [anon:stack_and_tls:10802]
+    00000070'17870000-00000070'17870fff ---         0      1000
+    00000070'17871000-00000070'17afbfff ---         0    28b000
+    00000070'17afc000-00000070'17afffff rw-         0      4000
+    00000070'17b00000-00000070'18870fff ---         0    d71000
+    00000070'18871000-00000070'18871fff ---         0      1000
+    00000070'18872000-00000070'18872fff ---         0      1000  [anon:stack_and_tls:10796]
+    00000070'18873000-00000070'18c79fff rw-         0    407000  [anon:stack_and_tls:10796]
+    00000070'18c7a000-00000070'18c7bfff ---         0      2000
+    00000070'18c7c000-00000070'18e60fff rw-         0    1e5000  [anon:scudo:secondary]
+    00000070'18e61000-00000070'18e62fff ---         0      2000
+    00000070'18e63000-00000070'19044fff rw-         0    1e2000  [anon:scudo:secondary]
+    00000070'19045000-00000070'19046fff ---         0      2000
+    00000070'19047000-00000070'1920ffff rw-         0    1c9000  [anon:scudo:secondary]
+    00000070'19210000-00000070'19211fff ---         0      2000
+    00000070'19212000-00000070'193d8fff rw-         0    1c7000  [anon:scudo:secondary]
+    00000070'193d9000-00000070'193dafff ---         0      2000
+    00000070'193db000-00000070'1959efff rw-         0    1c4000  [anon:scudo:secondary]
+    00000070'1959f000-00000070'195a0fff ---         0      2000
+    00000070'195a1000-00000070'19761fff rw-         0    1c1000  [anon:scudo:secondary]
+    00000070'19762000-00000070'19763fff ---         0      2000
+    00000070'19764000-00000070'19922fff rw-         0    1bf000  [anon:scudo:secondary]
+    00000070'19923000-00000070'19924fff ---         0      2000
+    00000070'19925000-00000070'19adefff rw-         0    1ba000  [anon:scudo:secondary]
+    00000070'19adf000-00000070'19ae0fff ---         0      2000
+    00000070'19ae1000-00000070'19c94fff rw-         0    1b4000  [anon:scudo:secondary]
+    00000070'19c95000-00000070'19c96fff ---         0      2000
+    00000070'19c97000-00000070'19e27fff rw-         0    191000  [anon:scudo:secondary]
+    00000070'19e28000-00000070'19e29fff ---         0      2000
+    00000070'19e2a000-00000070'19fb2fff rw-         0    189000  [anon:scudo:secondary]
+    00000070'19fb3000-00000070'19fb4fff ---         0      2000
+    00000070'19fb5000-00000070'1a138fff rw-         0    184000  [anon:scudo:secondary]
+    00000070'1a139000-00000070'1a13afff ---         0      2000
+    00000070'1a13b000-00000070'1a2b4fff rw-         0    17a000  [anon:scudo:secondary]
+    00000070'1a2b5000-00000070'1a2b6fff ---         0      2000
+    00000070'1a2b7000-00000070'1a42bfff rw-         0    175000  [anon:scudo:secondary]
+    00000070'1a42c000-00000070'1a42dfff ---         0      2000
+    00000070'1a42e000-00000070'1a59bfff rw-         0    16e000  [anon:scudo:secondary]
+    00000070'1a59c000-00000070'1a59dfff ---         0      2000
+    00000070'1a59e000-00000070'1a704fff rw-         0    167000  [anon:scudo:secondary]
+    00000070'1a705000-00000070'1a706fff ---         0      2000
+    00000070'1a707000-00000070'1a868fff rw-         0    162000  [anon:scudo:secondary]
+    00000070'1a869000-00000070'1a86afff ---         0      2000
+    00000070'1a86b000-00000070'1a9c8fff rw-         0    15e000  [anon:scudo:secondary]
+    00000070'1a9c9000-00000070'1a9cafff ---         0      2000
+    00000070'1a9cb000-00000070'1ab23fff rw-         0    159000  [anon:scudo:secondary]
+    00000070'1ab24000-00000070'1ab25fff ---         0      2000
+    00000070'1ab26000-00000070'1dd27fff rw-         0   3202000  [anon:scudo:secondary]
+    00000070'1dd28000-00000070'1dd29fff ---         0      2000
+    00000070'1dd2a000-00000070'1e26afff rw-         0    541000  [anon:scudo:secondary]
+    00000070'1e26b000-00000070'1e26cfff ---         0      2000
+    00000070'1e26d000-00000070'1e36dfff rw-         0    101000  [anon:scudo:secondary]
+    00000070'1e36e000-00000070'1e36ffff ---         0      2000
+    00000070'1e370000-00000070'1e470fff rw-         0    101000  [anon:scudo:secondary]
+    00000070'1e471000-00000070'1e472fff ---         0      2000
+    00000070'1e473000-00000070'1e573fff rw-         0    101000  [anon:scudo:secondary]
+    00000070'1e574000-00000070'1e575fff ---         0      2000
+    00000070'1e576000-00000070'1e676fff rw-         0    101000  [anon:scudo:secondary]
+    00000070'1e677000-00000070'1e678fff ---         0      2000
+    00000070'1e679000-00000070'1e779fff rw-         0    101000  [anon:scudo:secondary]
+    00000070'1e77a000-00000070'1e77bfff ---         0      2000
+    00000070'1e77c000-00000070'1e87cfff rw-         0    101000  [anon:scudo:secondary]
+    00000070'1e87d000-00000070'1e87efff ---         0      2000
+    00000070'1e87f000-00000070'1e97ffff rw-         0    101000  [anon:scudo:secondary]
+    00000070'1e980000-00000070'1e981fff ---         0      2000
+    00000070'1e982000-00000070'1ea82fff rw-         0    101000  [anon:scudo:secondary]
+    00000070'1ea83000-00000070'1ea83fff ---         0      1000
+    00000070'1ea84000-00000070'28d84fff rw-    484000   a301000  /storage/emulated/0/Download/gemma-4-E4B-it.litertlm
+    00000070'28d92000-00000070'28d92fff ---         0      1000
+    00000070'28d93000-00000070'36eaafff rw-         0   e118000  [anon:scudo:secondary]
+    00000070'36eab000-00000070'36eabfff ---         0      1000
+    00000070'36f61000-00000070'36f61fff ---         0      1000
+    00000070'36f62000-00000070'370b5fff rw-         0    154000  [anon:scudo:secondary]
+    00000070'370b6000-00000070'370b7fff ---         0      2000
+    00000070'370b8000-00000070'37209fff rw-         0    152000  [anon:scudo:secondary]
+    00000070'3720a000-00000070'3720bfff ---         0      2000
+    00000070'3720c000-00000070'37359fff rw-         0    14e000  [anon:scudo:secondary]
+    00000070'3735a000-00000070'3735bfff ---         0      2000
+    00000070'3735c000-00000070'374a9fff rw-         0    14e000  [anon:scudo:secondary]
+    00000070'374aa000-00000070'374abfff ---         0      2000
+    00000070'374ac000-00000070'375f4fff rw-         0    149000  [anon:scudo:secondary]
+    00000070'375f5000-00000070'375f6fff ---         0      2000
+    00000070'375f7000-00000070'3773bfff rw-         0    145000  [anon:scudo:secondary]
+    00000070'3773c000-00000070'3773dfff ---         0      2000
+    00000070'3773e000-00000070'37882fff rw-         0    145000  [anon:scudo:secondary]
+    00000070'37883000-00000070'37884fff ---         0      2000
+    00000070'37885000-00000070'379c9fff rw-         0    145000  [anon:scudo:secondary]
+    00000070'379ca000-00000070'379cbfff ---         0      2000
+    00000070'379cc000-00000070'37b10fff rw-         0    145000  [anon:scudo:secondary]
+    00000070'37b11000-00000070'37b12fff ---         0      2000
+    00000070'37b13000-00000070'37c57fff rw-         0    145000  [anon:scudo:secondary]
+    00000070'37c58000-00000070'37c59fff ---         0      2000
+    00000070'37c5a000-00000070'37d9efff rw-         0    145000  [anon:scudo:secondary]
+    00000070'37d9f000-00000070'37da0fff ---         0      2000
+    00000070'37da1000-00000070'37ee5fff rw-         0    145000  [anon:scudo:secondary]
+    00000070'37ee6000-00000070'37ee7fff ---         0      2000
+    00000070'37ee8000-00000070'3802cfff rw-         0    145000  [anon:scudo:secondary]
+    00000070'3802d000-00000070'3802efff ---         0      2000
+    00000070'3802f000-00000070'38173fff rw-         0    145000  [anon:scudo:secondary]
+    00000070'38174000-00000070'38175fff ---         0      2000
+    00000070'38176000-00000070'382bafff rw-         0    145000  [anon:scudo:secondary]
+    00000070'382bb000-00000070'382bcfff ---         0      2000
+    00000070'382bd000-00000070'38401fff rw-         0    145000  [anon:scudo:secondary]
+    00000070'38402000-00000070'38403fff ---         0      2000
+    00000070'38404000-00000070'38548fff rw-         0    145000  [anon:scudo:secondary]
+    00000070'38549000-00000070'3854afff ---         0      2000
+    00000070'3854b000-00000070'3868ffff rw-         0    145000  [anon:scudo:secondary]
+    00000070'38690000-00000070'38691fff ---         0      2000
+    00000070'38692000-00000070'387d6fff rw-         0    145000  [anon:scudo:secondary]
+    00000070'387d7000-00000070'387d8fff ---         0      2000
+    00000070'387d9000-00000070'3891dfff rw-         0    145000  [anon:scudo:secondary]
+    00000070'3891e000-00000070'3891ffff ---         0      2000
+    00000070'38920000-00000070'38a64fff rw-         0    145000  [anon:scudo:secondary]
+    00000070'38a65000-00000070'38a66fff ---         0      2000
+    00000070'38a67000-00000070'38babfff rw-         0    145000  [anon:scudo:secondary]
+    00000070'38bac000-00000070'38badfff ---         0      2000
+    00000070'38bae000-00000070'38cf2fff rw-         0    145000  [anon:scudo:secondary]
+    00000070'38cf3000-00000070'38cf4fff ---         0      2000
+    00000070'38cf5000-00000070'38e39fff rw-         0    145000  [anon:scudo:secondary]
+    00000070'38e3a000-00000070'38e3bfff ---         0      2000
+    00000070'38e3c000-00000070'38f80fff rw-         0    145000  [anon:scudo:secondary]
+    00000070'38f81000-00000070'38f82fff ---         0      2000
+    00000070'38f83000-00000070'39083fff rw-         0    101000  [anon:scudo:secondary]
+    00000070'39084000-00000070'39085fff ---         0      2000
+    00000070'39086000-00000070'39186fff rw-         0    101000  [anon:scudo:secondary]
+    00000070'39187000-00000070'39188fff ---         0      2000
+    00000070'39189000-00000070'39289fff rw-         0    101000  [anon:scudo:secondary]
+    00000070'3928a000-00000070'3928bfff ---         0      2000
+    00000070'3928c000-00000070'3938cfff rw-         0    101000  [anon:scudo:secondary]
+    00000070'3938d000-00000070'3938efff ---         0      2000
+    00000070'3938f000-00000070'3948ffff rw-         0    101000  [anon:scudo:secondary]
+    00000070'39490000-00000070'39491fff ---         0      2000
+    00000070'39492000-00000070'39592fff rw-         0    101000  [anon:scudo:secondary]
+    00000070'39593000-00000070'39594fff ---         0      2000
+    00000070'39595000-00000070'39695fff rw-         0    101000  [anon:scudo:secondary]
+    00000070'39696000-00000070'39697fff ---         0      2000
+    00000070'39698000-00000070'39798fff rw-         0    101000  [anon:scudo:secondary]
+    00000070'39799000-00000070'3979afff ---         0      2000
+    00000070'3979b000-00000070'3989bfff rw-         0    101000  [anon:scudo:secondary]
+    00000070'3989c000-00000070'3989dfff ---         0      2000
+    00000070'3989e000-00000070'3999efff rw-         0    101000  [anon:scudo:secondary]
+    00000070'3999f000-00000070'399a0fff ---         0      2000
+    00000070'399a1000-00000070'39aa1fff rw-         0    101000  [anon:scudo:secondary]
+    00000070'39aa2000-00000070'39aa3fff ---         0      2000
+    00000070'39aa4000-00000070'39ba4fff rw-         0    101000  [anon:scudo:secondary]
+    00000070'39ba5000-00000070'39ba6fff ---         0      2000
+    00000070'39ba7000-00000070'39ca7fff rw-         0    101000  [anon:scudo:secondary]
+    00000070'39ca8000-00000070'39ca9fff ---         0      2000
+    00000070'39caa000-00000070'39daafff rw-         0    101000  [anon:scudo:secondary]
+    00000070'39dab000-00000070'39dacfff ---         0      2000
+    00000070'39dad000-00000070'39eadfff rw-         0    101000  [anon:scudo:secondary]
+    00000070'39eae000-00000070'39eaffff ---         0      2000
+    00000070'39eb0000-00000070'39fb0fff rw-         0    101000  [anon:scudo:secondary]
+    00000070'39fb1000-00000070'39fb2fff ---         0      2000
+    00000070'39fb3000-00000070'3a0b3fff rw-         0    101000  [anon:scudo:secondary]
+    00000070'3a0b4000-00000070'3a0b5fff ---         0      2000
+    00000070'3a0b6000-00000070'3a1b6fff rw-         0    101000  [anon:scudo:secondary]
+    00000070'3a1b7000-00000070'3a1b8fff ---         0      2000
+    00000070'3a1b9000-00000070'3a2b9fff rw-         0    101000  [anon:scudo:secondary]
+    00000070'3a2ba000-00000070'3a2bbfff ---         0      2000
+    00000070'3a2bc000-00000070'3a3bcfff rw-         0    101000  [anon:scudo:secondary]
+    00000070'3a3bd000-00000070'3a3befff ---         0      2000
+    00000070'3a3bf000-00000070'3a4bffff rw-         0    101000  [anon:scudo:secondary]
+    00000070'3a4c0000-00000070'3a4c1fff ---         0      2000
+    00000070'3a4c2000-00000070'3a5c2fff rw-         0    101000  [anon:scudo:secondary]
+    00000070'3a5c3000-00000070'3a5c4fff ---         0      2000
+    00000070'3a5c5000-00000070'3a6c5fff rw-         0    101000  [anon:scudo:secondary]
+    00000070'3a6c6000-00000070'3a6c7fff ---         0      2000
+    00000070'3a6c8000-00000070'3a7c8fff rw-         0    101000  [anon:scudo:secondary]
+    00000070'3a7c9000-00000070'3a7cafff ---         0      2000
+    00000070'3a7cb000-00000070'3a8cbfff rw-         0    101000  [anon:scudo:secondary]
+    00000070'3a8cc000-00000070'3a8cdfff ---         0      2000
+    00000070'3a8ce000-00000070'3a9cefff rw-         0    101000  [anon:scudo:secondary]
+    00000070'3a9cf000-00000070'3a9d0fff ---         0      2000
+    00000070'3a9d1000-00000070'3aad1fff rw-         0    101000  [anon:scudo:secondary]
+    00000070'3aad2000-00000070'3aad3fff ---         0      2000
+    00000070'3aad4000-00000070'3abd4fff rw-         0    101000  [anon:scudo:secondary]
+    00000070'3abd5000-00000070'3abd6fff ---         0      2000
+    00000070'3abd7000-00000070'3acd7fff rw-         0    101000  [anon:scudo:secondary]
+    00000070'3acd8000-00000070'3acd9fff ---         0      2000
+    00000070'3acda000-00000070'3addafff rw-         0    101000  [anon:scudo:secondary]
+    00000070'3addb000-00000070'3addcfff ---         0      2000
+    00000070'3addd000-00000070'3aeddfff rw-         0    101000  [anon:scudo:secondary]
+    00000070'3aede000-00000070'3aedffff ---         0      2000
+    00000070'3aee0000-00000070'3b0e0fff rw-         0    201000  [anon:scudo:secondary]
+    00000070'3b0e1000-00000070'3b0e2fff ---         0      2000
+    00000070'3b0e3000-00000070'3b2e3fff rw-         0    201000  [anon:scudo:secondary]
+    00000070'3b2e4000-00000070'3b2e5fff ---         0      2000
+    00000070'3b2e6000-00000070'3b6e6fff rw-         0    401000  [anon:scudo:secondary]
+    00000070'3b6e7000-00000070'3b6e8fff ---         0      2000
+    00000070'3b6e9000-00000070'3b8e9fff rw-         0    201000  [anon:scudo:secondary]
+    00000070'3b8ea000-00000070'3b8ebfff ---         0      2000
+    00000070'3b8ec000-00000070'3bcecfff rw- [[TRUNCATED]]
+
+========================================
+2026-04-24 00:28:23 data_app_native_crash (text, 15302 bytes)
+SystemUptimeMs: 806671200
+Process: com.anonymous.gurustudy.dev
+PID: 11677
+UID: 10479
+Frozen: false
+Flags: 0x28c8be46
+Package: com.anonymous.gurustudy.dev v1 (1.0.0)
+Foreground: Yes
+Process-Runtime: 159493
+Build: samsung/gts10pwifiins/gts10pwifi:16/BP2A.250605.031.A3/X820XXS7CZB5:user/release-keys
+Loading-Progress: 1.0
+Dropped-Count: 0
+
+*** *** *** *** *** *** *** *** *** *** *** *** *** *** *** ***
+Build fingerprint: 'samsung/gts10pwifiins/gts10pwifi:16/BP2A.250605.031.A3/X820XXS7CZB5:user/release-keys'
+Revision: '5'
+ABI: 'arm64'
+Processor: '7'
+Timestamp: 2026-04-24 00:28:23.645457837+0530
+Process uptime: 160s
+Cmdline: com.anonymous.gurustudy.dev
+pid: 11677, tid: 11808, name: DefaultDispatch  >>> com.anonymous.gurustudy.dev <<<
+uid: 10479
+tagged_addr_ctrl: 0000000000000001 (PR_TAGGED_ADDR_ENABLE)
+pac_enabled_keys: 000000000000000f (PR_PAC_APIAKEY, PR_PAC_APIBKEY, PR_PAC_APDAKEY, PR_PAC_APDBKEY)
+signal 11 (SIGSEGV), code 1 (SEGV_MAPERR), fault addr 0x400a53dac23f1dc0
+    x0  400a53dac23f1dc0  x1  000000705fa13000  x2  5fa1320000000000  x3  000000705fa12d58
+    x4  0000000000000120  x5  00000072ee4a14bc  x6  0000000000000001  x7  b4000070370bffc0
+    x8  0000000000000001  x9  0000000000000001  x10 0000000000000160  x11 0000000093bec54c
+    x12 000000000012000c  x13 000000000004d8f8  x14 0000000000000018  x15 0000000000060000
+    x16 000000704b9a2358  x17 00000074cae6b540  x18 000000705e994000  x19 b40000732e8dc4a0
+    x20 000000705fa13370  x21 000000705fa132d0  x22 000000705fa12f80  x23 000000705fa13000
+    x24 000000705fa13948  x25 000000705fa13610  x26 0000000000000000  x27 00000071008a0130
+    x28 000000705fa134d0  x29 000000705fa135d0
+    lr  000000704ad0f59c  sp  000000705fa12e50  pc  000000704ad0f5b0  pst 0000000060001000
+66 total frames
+backtrace:
+      #00 pc 000000000070c5b0  /data/app/~~5gNuQZVxMQAVSmahnOwBCQ==/com.anonymous.gurustudy.dev-SGszd0eDb9Htdoiq4y8QmQ==/base.apk!liblitertlm_jni.so (offset 0x65c4000) (BuildId: ecacedccf835d7674c95bd40186d0fde)
+      #01 pc 00000000006f9a60  /data/app/~~5gNuQZVxMQAVSmahnOwBCQ==/com.anonymous.gurustudy.dev-SGszd0eDb9Htdoiq4y8QmQ==/base.apk!liblitertlm_jni.so (offset 0x65c4000) (Java_com_google_ai_edge_litertlm_LiteRtLmJni_nativeSendMessage+248) (BuildId: ecacedccf835d7674c95bd40186d0fde)
+      #02 pc 00000000002c2300  /apex/com.android.art/lib64/libart.so (art_quick_generic_jni_trampoline+144) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #03 pc 00000000002aaf94  /apex/com.android.art/lib64/libart.so (art_quick_invoke_stub+612) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #04 pc 0000000000585f48  /apex/com.android.art/lib64/libart.so (bool art::interpreter::DoCall<false>(art::ArtMethod*, art::Thread*, art::ShadowFrame&, art::Instruction const*, unsigned short, bool, art::JValue*)+2688) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #05 pc 0000000000490364  /apex/com.android.art/lib64/libart.so (void art::interpreter::ExecuteSwitchImplCpp<false>(art::interpreter::SwitchImplContext*)+1484) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #06 pc 00000000003d1718  /apex/com.android.art/lib64/libart.so (ExecuteSwitchImplAsm+8) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #07 pc 0000000000380b3c  /data/app/~~5gNuQZVxMQAVSmahnOwBCQ==/com.anonymous.gurustudy.dev-SGszd0eDb9Htdoiq4y8QmQ==/base.apk (offset 0x23d6000) (com.google.ai.edge.litertlm.Conversation.sendMessage+0)
+      #08 pc 00000000003d22e4  /apex/com.android.art/lib64/libart.so (art::interpreter::ArtInterpreterToInterpreterBridge(art::Thread*, art::CodeItemDataAccessor const&, art::ShadowFrame*, art::JValue*)+448) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #09 pc 0000000000586338  /apex/com.android.art/lib64/libart.so (bool art::interpreter::DoCall<false>(art::ArtMethod*, art::Thread*, art::ShadowFrame&, art::Instruction const*, unsigned short, bool, art::JValue*)+3696) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #10 pc 0000000000490364  /apex/com.android.art/lib64/libart.so (void art::interpreter::ExecuteSwitchImplCpp<false>(art::interpreter::SwitchImplContext*)+1484) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #11 pc 00000000003d1718  /apex/com.android.art/lib64/libart.so (ExecuteSwitchImplAsm+8) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #12 pc 0000000000380b00  /data/app/~~5gNuQZVxMQAVSmahnOwBCQ==/com.anonymous.gurustudy.dev-SGszd0eDb9Htdoiq4y8QmQ==/base.apk (offset 0x23d6000) (com.google.ai.edge.litertlm.Conversation.sendMessage+0)
+      #13 pc 00000000003d22e4  /apex/com.android.art/lib64/libart.so (art::interpreter::ArtInterpreterToInterpreterBridge(art::Thread*, art::CodeItemDataAccessor const&, art::ShadowFrame*, art::JValue*)+448) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #14 pc 0000000000586338  /apex/com.android.art/lib64/libart.so (bool art::interpreter::DoCall<false>(art::ArtMethod*, art::Thread*, art::ShadowFrame&, art::Instruction const*, unsigned short, bool, art::JValue*)+3696) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #15 pc 0000000000490364  /apex/com.android.art/lib64/libart.so (void art::interpreter::ExecuteSwitchImplCpp<false>(art::interpreter::SwitchImplContext*)+1484) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #16 pc 00000000003d1718  /apex/com.android.art/lib64/libart.so (ExecuteSwitchImplAsm+8) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #17 pc 0000000000380c70  /data/app/~~5gNuQZVxMQAVSmahnOwBCQ==/com.anonymous.gurustudy.dev-SGszd0eDb9Htdoiq4y8QmQ==/base.apk (offset 0x23d6000) (com.google.ai.edge.litertlm.Conversation.sendMessage+0)
+      #18 pc 00000000003d22e4  /apex/com.android.art/lib64/libart.so (art::interpreter::ArtInterpreterToInterpreterBridge(art::Thread*, art::CodeItemDataAccessor const&, art::ShadowFrame*, art::JValue*)+448) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #19 pc 0000000000586338  /apex/com.android.art/lib64/libart.so (bool art::interpreter::DoCall<false>(art::ArtMethod*, art::Thread*, art::ShadowFrame&, art::Instruction const*, unsigned short, bool, art::JValue*)+3696) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #20 pc 0000000000490364  /apex/com.android.art/lib64/libart.so (void art::interpreter::ExecuteSwitchImplCpp<false>(art::interpreter::SwitchImplContext*)+1484) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #21 pc 00000000003d1718  /apex/com.android.art/lib64/libart.so (ExecuteSwitchImplAsm+8) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #22 pc 0000000000028a48  /data/app/~~5gNuQZVxMQAVSmahnOwBCQ==/com.anonymous.gurustudy.dev-SGszd0eDb9Htdoiq4y8QmQ==/base.apk (offset 0x462d000) (expo.modules.localllm.LocalModelRuntime.runChat+0)
+      #23 pc 00000000003d22e4  /apex/com.android.art/lib64/libart.so (art::interpreter::ArtInterpreterToInterpreterBridge(art::Thread*, art::CodeItemDataAccessor const&, art::ShadowFrame*, art::JValue*)+448) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #24 pc 000000000051c498  /apex/com.android.art/lib64/libart.so (bool art::interpreter::DoCall<true>(art::ArtMethod*, art::Thread*, art::ShadowFrame&, art::Instruction const*, unsigned short, bool, art::JValue*)+1536) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #25 pc 0000000000491eb8  /apex/com.android.art/lib64/libart.so (void art::interpreter::ExecuteSwitchImplCpp<false>(art::interpreter::SwitchImplContext*)+8480) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #26 pc 00000000003d1718  /apex/com.android.art/lib64/libart.so (ExecuteSwitchImplAsm+8) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #27 pc 00000000000255ac  /data/app/~~5gNuQZVxMQAVSmahnOwBCQ==/com.anonymous.gurustudy.dev-SGszd0eDb9Htdoiq4y8QmQ==/base.apk (offset 0x462d000) (expo.modules.localllm.LocalLlmModule$definition$1$14$1.invokeSuspend+0)
+      #28 pc 00000000003d22e4  /apex/com.android.art/lib64/libart.so (art::interpreter::ArtInterpreterToInterpreterBridge(art::Thread*, art::CodeItemDataAccessor const&, art::ShadowFrame*, art::JValue*)+448) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #29 pc 0000000000586338  /apex/com.android.art/lib64/libart.so (bool art::interpreter::DoCall<false>(art::ArtMethod*, art::Thread*, art::ShadowFrame&, art::Instruction const*, unsigned short, bool, art::JValue*)+3696) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #30 pc 0000000000490364  /apex/com.android.art/lib64/libart.so (void art::interpreter::ExecuteSwitchImplCpp<false>(art::interpreter::SwitchImplContext*)+1484) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #31 pc 00000000003d1718  /apex/com.android.art/lib64/libart.so (ExecuteSwitchImplAsm+8) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #32 pc 000000000025fbd4  /data/app/~~5gNuQZVxMQAVSmahnOwBCQ==/com.anonymous.gurustudy.dev-SGszd0eDb9Htdoiq4y8QmQ==/base.apk (offset 0x390d000) (kotlin.coroutines.jvm.internal.BaseContinuationImpl.resumeWith+0)
+      #33 pc 00000000003d136c  /apex/com.android.art/lib64/libart.so (art::interpreter::Execute(art::Thread*, art::CodeItemDataAccessor const&, art::ShadowFrame&, art::JValue, bool, bool) (.__uniq.112435418011751916792819755956732575238.llvm.15381326084910962254)+364) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #34 pc 00000000003d0aa0  /apex/com.android.art/lib64/libart.so (artQuickToInterpreterBridge+1020) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #35 pc 00000000002c2438  /apex/com.android.art/lib64/libart.so (art_quick_to_interpreter_bridge+88) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #36 pc 000000000292918c  /memfd:jit-cache (deleted) (offset 0x2000000) (kotlinx.coroutines.DispatchedTask.run+1228)
+      #37 pc 00000000002aaf94  /apex/com.android.art/lib64/libart.so (art_quick_invoke_stub+612) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #38 pc 0000000000585f48  /apex/com.android.art/lib64/libart.so (bool art::interpreter::DoCall<false>(art::ArtMethod*, art::Thread*, art::ShadowFrame&, art::Instruction const*, unsigned short, bool, art::JValue*)+2688) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #39 pc 0000000000490364  /apex/com.android.art/lib64/libart.so (void art::interpreter::ExecuteSwitchImplCpp<false>(art::interpreter::SwitchImplContext*)+1484) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #40 pc 00000000003d1718  /apex/com.android.art/lib64/libart.so (ExecuteSwitchImplAsm+8) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #41 pc 00000000003e4ad0  /data/app/~~5gNuQZVxMQAVSmahnOwBCQ==/com.anonymous.gurustudy.dev-SGszd0eDb9Htdoiq4y8QmQ==/base.apk (offset 0x390d000) (kotlinx.coroutines.scheduling.CoroutineScheduler.runSafely+0)
+      #42 pc 00000000003d22e4  /apex/com.android.art/lib64/libart.so (art::interpreter::ArtInterpreterToInterpreterBridge(art::Thread*, art::CodeItemDataAccessor const&, art::ShadowFrame*, art::JValue*)+448) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #43 pc 0000000000586338  /apex/com.android.art/lib64/libart.so (bool art::interpreter::DoCall<false>(art::ArtMethod*, art::Thread*, art::ShadowFrame&, art::Instruction const*, unsigned short, bool, art::JValue*)+3696) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #44 pc 0000000000490364  /apex/com.android.art/lib64/libart.so (void art::interpreter::ExecuteSwitchImplCpp<false>(art::interpreter::SwitchImplContext*)+1484) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #45 pc 00000000003d1718  /apex/com.android.art/lib64/libart.so (ExecuteSwitchImplAsm+8) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #46 pc 00000000003e35cc  /data/app/~~5gNuQZVxMQAVSmahnOwBCQ==/com.anonymous.gurustudy.dev-SGszd0eDb9Htdoiq4y8QmQ==/base.apk (offset 0x390d000) (kotlinx.coroutines.scheduling.CoroutineScheduler$Worker.executeTask+0)
+      #47 pc 00000000003d22e4  /apex/com.android.art/lib64/libart.so (art::interpreter::ArtInterpreterToInterpreterBridge(art::Thread*, art::CodeItemDataAccessor const&, art::ShadowFrame*, art::JValue*)+448) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #48 pc 0000000000586338  /apex/com.android.art/lib64/libart.so (bool art::interpreter::DoCall<false>(art::ArtMethod*, art::Thread*, art::ShadowFrame&, art::Instruction const*, unsigned short, bool, art::JValue*)+3696) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #49 pc 000000000048ff6c  /apex/com.android.art/lib64/libart.so (void art::interpreter::ExecuteSwitchImplCpp<false>(art::interpreter::SwitchImplContext*)+468) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #50 pc 00000000003d1718  /apex/com.android.art/lib64/libart.so (ExecuteSwitchImplAsm+8) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #51 pc 00000000003e3740  /data/app/~~5gNuQZVxMQAVSmahnOwBCQ==/com.anonymous.gurustudy.dev-SGszd0eDb9Htdoiq4y8QmQ==/base.apk (offset 0x390d000) (kotlinx.coroutines.scheduling.CoroutineScheduler$Worker.runWorker+0)
+      #52 pc 00000000003d22e4  /apex/com.android.art/lib64/libart.so (art::interpreter::ArtInterpreterToInterpreterBridge(art::Thread*, art::CodeItemDataAccessor const&, art::ShadowFrame*, art::JValue*)+448) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #53 pc 0000000000586338  /apex/com.android.art/lib64/libart.so (bool art::interpreter::DoCall<false>(art::ArtMethod*, art::Thread*, art::ShadowFrame&, art::Instruction const*, unsigned short, bool, art::JValue*)+3696) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #54 pc 000000000048ff6c  /apex/com.android.art/lib64/libart.so (void art::interpreter::ExecuteSwitchImplCpp<false>(art::interpreter::SwitchImplContext*)+468) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #55 pc 00000000003d1718  /apex/com.android.art/lib64/libart.so (ExecuteSwitchImplAsm+8) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #56 pc 00000000003e3728  /data/app/~~5gNuQZVxMQAVSmahnOwBCQ==/com.anonymous.gurustudy.dev-SGszd0eDb9Htdoiq4y8QmQ==/base.apk (offset 0x390d000) (kotlinx.coroutines.scheduling.CoroutineScheduler$Worker.run+0)
+      #57 pc 00000000003d136c  /apex/com.android.art/lib64/libart.so (art::interpreter::Execute(art::Thread*, art::CodeItemDataAccessor const&, art::ShadowFrame&, art::JValue, bool, bool) (.__uniq.112435418011751916792819755956732575238.llvm.15381326084910962254)+364) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #58 pc 00000000003d0aa0  /apex/com.android.art/lib64/libart.so (artQuickToInterpreterBridge+1020) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #59 pc 00000000002c2438  /apex/com.android.art/lib64/libart.so (art_quick_to_interpreter_bridge+88) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #60 pc 00000000002aaf94  /apex/com.android.art/lib64/libart.so (art_quick_invoke_stub+612) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #61 pc 00000000002709b0  /apex/com.android.art/lib64/libart.so (art::ArtMethod::Invoke(art::Thread*, unsigned int*, unsigned int, art::JValue*, char const*)+220) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #62 pc 00000000004bdfc8  /apex/com.android.art/lib64/libart.so (art::Thread::CreateCallback(void*)+1184) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #63 pc 00000000004bdb18  /apex/com.android.art/lib64/libart.so (art::Thread::CreateCallbackWithUffdGc(void*)+8) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #64 pc 0000000000082c4c  /apex/com.android.runtime/lib64/bionic/libc.so (__pthread_start(void*)+236) (BuildId: 1a3e2eff9b521b59ef377e69d16e88b8)
+      #65 pc 00000000000754b0  /apex/com.android.runtime/lib64/bionic/libc.so (__start_thread+64) (BuildId: 1a3e2eff9b521b59ef377e69d16e88b8)
+
+========================================
+2026-04-24 00:28:23 SYSTEM_TOMBSTONE_PROTO_WITH_HEADERS (compressed data, 111983 bytes)
+/data/system/dropbox/SYSTEM_TOMBSTONE_PROTO_WITH_HEADERS@1776970703840.dat.gz
+
+========================================
+2026-04-24 00:28:23 SYSTEM_TOMBSTONE (compressed text, 10663 bytes)
+isPrevious: true
+Build: samsung/gts10pwifiins/gts10pwifi:16/BP2A.250605.031.A3/X820XXS7CZB5:user/release-keys
+Hardware: gts10pwifi
+Revision: 5
+Bootloader: X820XXS7CZB5
+Radio: null
+Kernel: Linux version 6.1.134-android14-11-abX820XXS7CZB5 (build-user@build-host) (Android (10087095, +pgo, +bolt, +lto, -mlgo, based on r487747c) clang version 17.0.2 (https://android.googlesource.com/toolchain/llvm-project d9f89f4d16663d5012e5c09495f3b30ece3d2362), LLD 17.0.2) #1 SMP PREEMPT Fri Feb 13 05:54:51 UTC 2026
+
+Dropped-Count: 0
+*** *** *** *** *** *** *** *** *** *** *** *** *** *** *** ***
+Build fingerprint: 'samsung/gts10pwifiins/gts10pwifi:16/BP2A.250605.031.A3/X820XXS7CZB5:user/release-keys'
+Revision: '5'
+ABI: 'arm64'
+Processor: '7'
+Timestamp: 2026-04-24 00:28:23.645457837+0530
+Process uptime: 160s
+Cmdline: com.anonymous.gurustudy.dev
+pid: 11677, tid: 11808, name: DefaultDispatch  >>> com.anonymous.gurustudy.dev <<<
+uid: 10479
+tagged_addr_ctrl: 0000000000000001 (PR_TAGGED_ADDR_ENABLE)
+pac_enabled_keys: 000000000000000f (PR_PAC_APIAKEY, PR_PAC_APIBKEY, PR_PAC_APDAKEY, PR_PAC_APDBKEY)
+signal 11 (SIGSEGV), code 1 (SEGV_MAPERR), fault addr 0x400a53dac23f1dc0
+    x0  400a53dac23f1dc0  x1  000000705fa13000  x2  5fa1320000000000  x3  000000705fa12d58
+    x4  0000000000000120  x5  00000072ee4a14bc  x6  0000000000000001  x7  b4000070370bffc0
+    x8  0000000000000001  x9  0000000000000001  x10 0000000000000160  x11 0000000093bec54c
+    x12 000000000012000c  x13 000000000004d8f8  x14 0000000000000018  x15 0000000000060000
+    x16 000000704b9a2358  x17 00000074cae6b540  x18 000000705e994000  x19 b40000732e8dc4a0
+    x20 000000705fa13370  x21 000000705fa132d0  x22 000000705fa12f80  x23 000000705fa13000
+    x24 000000705fa13948  x25 000000705fa13610  x26 0000000000000000  x27 00000071008a0130
+    x28 000000705fa134d0  x29 000000705fa135d0
+    lr  000000704ad0f59c  sp  000000705fa12e50  pc  000000704ad0f5b0  pst 0000000060001000
+
+66 total frames
+backtrace:
+      #00 pc 000000000070c5b0  /data/app/~~5gNuQZVxMQAVSmahnOwBCQ==/com.anonymous.gurustudy.dev-SGszd0eDb9Htdoiq4y8QmQ==/base.apk!liblitertlm_jni.so (offset 0x65c4000) (BuildId: ecacedccf835d7674c95bd40186d0fde)
+      #01 pc 00000000006f9a60  /data/app/~~5gNuQZVxMQAVSmahnOwBCQ==/com.anonymous.gurustudy.dev-SGszd0eDb9Htdoiq4y8QmQ==/base.apk!liblitertlm_jni.so (offset 0x65c4000) (Java_com_google_ai_edge_litertlm_LiteRtLmJni_nativeSendMessage+248) (BuildId: ecacedccf835d7674c95bd40186d0fde)
+      #02 pc 00000000002c2300  /apex/com.android.art/lib64/libart.so (art_quick_generic_jni_trampoline+144) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #03 pc 00000000002aaf94  /apex/com.android.art/lib64/libart.so (art_quick_invoke_stub+612) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #04 pc 0000000000585f48  /apex/com.android.art/lib64/libart.so (bool art::interpreter::DoCall<false>(art::ArtMethod*, art::Thread*, art::ShadowFrame&, art::Instruction const*, unsigned short, bool, art::JValue*)+2688) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #05 pc 0000000000490364  /apex/com.android.art/lib64/libart.so (void art::interpreter::ExecuteSwitchImplCpp<false>(art::interpreter::SwitchImplContext*)+1484) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #06 pc 00000000003d1718  /apex/com.android.art/lib64/libart.so (ExecuteSwitchImplAsm+8) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #07 pc 0000000000380b3c  /data/app/~~5gNuQZVxMQAVSmahnOwBCQ==/com.anonymous.gurustudy.dev-SGszd0eDb9Htdoiq4y8QmQ==/base.apk (offset 0x23d6000) (com.google.ai.edge.litertlm.Conversation.sendMessage+0)
+      #08 pc 00000000003d22e4  /apex/com.android.art/lib64/libart.so (art::interpreter::ArtInterpreterToInterpreterBridge(art::Thread*, art::CodeItemDataAccessor const&, art::ShadowFrame*, art::JValue*)+448) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #09 pc 0000000000586338  /apex/com.android.art/lib64/libart.so (bool art::interpreter::DoCall<false>(art::ArtMethod*, art::Thread*, art::ShadowFrame&, art::Instruction const*, unsigned short, bool, art::JValue*)+3696) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #10 pc 0000000000490364  /apex/com.android.art/lib64/libart.so (void art::interpreter::ExecuteSwitchImplCpp<false>(art::interpreter::SwitchImplContext*)+1484) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #11 pc 00000000003d1718  /apex/com.android.art/lib64/libart.so (ExecuteSwitchImplAsm+8) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #12 pc 0000000000380b00  /data/app/~~5gNuQZVxMQAVSmahnOwBCQ==/com.anonymous.gurustudy.dev-SGszd0eDb9Htdoiq4y8QmQ==/base.apk (offset 0x23d6000) (com.google.ai.edge.litertlm.Conversation.sendMessage+0)
+      #13 pc 00000000003d22e4  /apex/com.android.art/lib64/libart.so (art::interpreter::ArtInterpreterToInterpreterBridge(art::Thread*, art::CodeItemDataAccessor const&, art::ShadowFrame*, art::JValue*)+448) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #14 pc 0000000000586338  /apex/com.android.art/lib64/libart.so (bool art::interpreter::DoCall<false>(art::ArtMethod*, art::Thread*, art::ShadowFrame&, art::Instruction const*, unsigned short, bool, art::JValue*)+3696) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #15 pc 0000000000490364  /apex/com.android.art/lib64/libart.so (void art::interpreter::ExecuteSwitchImplCpp<false>(art::interpreter::SwitchImplContext*)+1484) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #16 pc 00000000003d1718  /apex/com.android.art/lib64/libart.so (ExecuteSwitchImplAsm+8) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #17 pc 0000000000380c70  /data/app/~~5gNuQZVxMQAVSmahnOwBCQ==/com.anonymous.gurustudy.dev-SGszd0eDb9Htdoiq4y8QmQ==/base.apk (offset 0x23d6000) (com.google.ai.edge.litertlm.Conversation.sendMessage+0)
+      #18 pc 00000000003d22e4  /apex/com.android.art/lib64/libart.so (art::interpreter::ArtInterpreterToInterpreterBridge(art::Thread*, art::CodeItemDataAccessor const&, art::ShadowFrame*, art::JValue*)+448) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #19 pc 0000000000586338  /apex/com.android.art/lib64/libart.so (bool art::interpreter::DoCall<false>(art::ArtMethod*, art::Thread*, art::ShadowFrame&, art::Instruction const*, unsigned short, bool, art::JValue*)+3696) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #20 pc 0000000000490364  /apex/com.android.art/lib64/libart.so (void art::interpreter::ExecuteSwitchImplCpp<false>(art::interpreter::SwitchImplContext*)+1484) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #21 pc 00000000003d1718  /apex/com.android.art/lib64/libart.so (ExecuteSwitchImplAsm+8) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #22 pc 0000000000028a48  /data/app/~~5gNuQZVxMQAVSmahnOwBCQ==/com.anonymous.gurustudy.dev-SGszd0eDb9Htdoiq4y8QmQ==/base.apk (offset 0x462d000) (expo.modules.localllm.LocalModelRuntime.runChat+0)
+      #23 pc 00000000003d22e4  /apex/com.android.art/lib64/libart.so (art::interpreter::ArtInterpreterToInterpreterBridge(art::Thread*, art::CodeItemDataAccessor const&, art::ShadowFrame*, art::JValue*)+448) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #24 pc 000000000051c498  /apex/com.android.art/lib64/libart.so (bool art::interpreter::DoCall<true>(art::ArtMethod*, art::Thread*, art::ShadowFrame&, art::Instruction const*, unsigned short, bool, art::JValue*)+1536) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #25 pc 0000000000491eb8  /apex/com.android.art/lib64/libart.so (void art::interpreter::ExecuteSwitchImplCpp<false>(art::interpreter::SwitchImplContext*)+8480) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #26 pc 00000000003d1718  /apex/com.android.art/lib64/libart.so (ExecuteSwitchImplAsm+8) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #27 pc 00000000000255ac  /data/app/~~5gNuQZVxMQAVSmahnOwBCQ==/com.anonymous.gurustudy.dev-SGszd0eDb9Htdoiq4y8QmQ==/base.apk (offset 0x462d000) (expo.modules.localllm.LocalLlmModule$definition$1$14$1.invokeSuspend+0)
+      #28 pc 00000000003d22e4  /apex/com.android.art/lib64/libart.so (art::interpreter::ArtInterpreterToInterpreterBridge(art::Thread*, art::CodeItemDataAccessor const&, art::ShadowFrame*, art::JValue*)+448) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #29 pc 0000000000586338  /apex/com.android.art/lib64/libart.so (bool art::interpreter::DoCall<false>(art::ArtMethod*, art::Thread*, art::ShadowFrame&, art::Instruction const*, unsigned short, bool, art::JValue*)+3696) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #30 pc 0000000000490364  /apex/com.android.art/lib64/libart.so (void art::interpreter::ExecuteSwitchImplCpp<false>(art::interpreter::SwitchImplContext*)+1484) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #31 pc 00000000003d1718  /apex/com.android.art/lib64/libart.so (ExecuteSwitchImplAsm+8) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #32 pc 000000000025fbd4  /data/app/~~5gNuQZVxMQAVSmahnOwBCQ==/com.anonymous.gurustudy.dev-SGszd0eDb9Htdoiq4y8QmQ==/base.apk (offset 0x390d000) (kotlin.coroutines.jvm.internal.BaseContinuationImpl.resumeWith+0)
+      #33 pc 00000000003d136c  /apex/com.android.art/lib64/libart.so (art::interpreter::Execute(art::Thread*, art::CodeItemDataAccessor const&, art::ShadowFrame&, art::JValue, bool, bool) (.__uniq.112435418011751916792819755956732575238.llvm.15381326084910962254)+364) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #34 pc 00000000003d0aa0  /apex/com.android.art/lib64/libart.so (artQuickToInterpreterBridge+1020) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #35 pc 00000000002c2438  /apex/com.android.art/lib64/libart.so (art_quick_to_interpreter_bridge+88) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #36 pc 000000000292918c  /memfd:jit-cache (deleted) (offset 0x2000000) (kotlinx.coroutines.DispatchedTask.run+1228)
+      #37 pc 00000000002aaf94  /apex/com.android.art/lib64/libart.so (art_quick_invoke_stub+612) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #38 pc 0000000000585f48  /apex/com.android.art/lib64/libart.so (bool art::interpreter::DoCall<false>(art::ArtMethod*, art::Thread*, art::ShadowFrame&, art::Instruction const*, unsigned short, bool, art::JValue*)+2688) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #39 pc 0000000000490364  /apex/com.android.art/lib64/libart.so (void art::interpreter::ExecuteSwitchImplCpp<false>(art::interpreter::SwitchImplContext*)+1484) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #40 pc 00000000003d1718  /apex/com.android.art/lib64/libart.so (ExecuteSwitchImplAsm+8) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #41 pc 00000000003e4ad0  /data/app/~~5gNuQZVxMQAVSmahnOwBCQ==/com.anonymous.gurustudy.dev-SGszd0eDb9Htdoiq4y8QmQ==/base.apk (offset 0x390d000) (kotlinx.coroutines.scheduling.CoroutineScheduler.runSafely+0)
+      #42 pc 00000000003d22e4  /apex/com.android.art/lib64/libart.so (art::interpreter::ArtInterpreterToInterpreterBridge(art::Thread*, art::CodeItemDataAccessor const&, art::ShadowFrame*, art::JValue*)+448) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #43 pc 0000000000586338  /apex/com.android.art/lib64/libart.so (bool art::interpreter::DoCall<false>(art::ArtMethod*, art::Thread*, art::ShadowFrame&, art::Instruction const*, unsigned short, bool, art::JValue*)+3696) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #44 pc 0000000000490364  /apex/com.android.art/lib64/libart.so (void art::interpreter::ExecuteSwitchImplCpp<false>(art::interpreter::SwitchImplContext*)+1484) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #45 pc 00000000003d1718  /apex/com.android.art/lib64/libart.so (ExecuteSwitchImplAsm+8) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #46 pc 00000000003e35cc  /data/app/~~5gNuQZVxMQAVSmahnOwBCQ==/com.anonymous.gurustudy.dev-SGszd0eDb9Htdoiq4y8QmQ==/base.apk (offset 0x390d000) (kotlinx.coroutines.scheduling.CoroutineScheduler$Worker.executeTask+0)
+      #47 pc 00000000003d22e4  /apex/com.android.art/lib64/libart.so (art::interpreter::ArtInterpreterToInterpreterBridge(art::Thread*, art::CodeItemDataAccessor const&, art::ShadowFrame*, art::JValue*)+448) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #48 pc 0000000000586338  /apex/com.android.art/lib64/libart.so (bool art::interpreter::DoCall<false>(art::ArtMethod*, art::Thread*, art::ShadowFrame&, art::Instruction const*, unsigned short, bool, art::JValue*)+3696) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #49 pc 000000000048ff6c  /apex/com.android.art/lib64/libart.so (void art::interpreter::ExecuteSwitchImplCpp<false>(art::interpreter::SwitchImplContext*)+468) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #50 pc 00000000003d1718  /apex/com.android.art/lib64/libart.so (ExecuteSwitchImplAsm+8) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #51 pc 00000000003e3740  /data/app/~~5gNuQZVxMQAVSmahnOwBCQ==/com.anonymous.gurustudy.dev-SGszd0eDb9Htdoiq4y8QmQ==/base.apk (offset 0x390d000) (kotlinx.coroutines.scheduling.CoroutineScheduler$Worker.runWorker+0)
+      #52 pc 00000000003d22e4  /apex/com.android.art/lib64/libart.so (art::interpreter::ArtInterpreterToInterpreterBridge(art::Thread*, art::CodeItemDataAccessor const&, art::ShadowFrame*, art::JValue*)+448) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #53 pc 0000000000586338  /apex/com.android.art/lib64/libart.so (bool art::interpreter::DoCall<false>(art::ArtMethod*, art::Thread*, art::ShadowFrame&, art::Instruction const*, unsigned short, bool, art::JValue*)+3696) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #54 pc 000000000048ff6c  /apex/com.android.art/lib64/libart.so (void art::interpreter::ExecuteSwitchImplCpp<false>(art::interpreter::SwitchImplContext*)+468) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #55 pc 00000000003d1718  /apex/com.android.art/lib64/libart.so (ExecuteSwitchImplAsm+8) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #56 pc 00000000003e3728  /data/app/~~5gNuQZVxMQAVSmahnOwBCQ==/com.anonymous.gurustudy.dev-SGszd0eDb9Htdoiq4y8QmQ==/base.apk (offset 0x390d000) (kotlinx.coroutines.scheduling.CoroutineScheduler$Worker.run+0)
+      #57 pc 00000000003d136c  /apex/com.android.art/lib64/libart.so (art::interpreter::Execute(art::Thread*, art::CodeItemDataAccessor const&, art::ShadowFrame&, art::JValue, bool, bool) (.__uniq.112435418011751916792819755956732575238.llvm.15381326084910962254)+364) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #58 pc 00000000003d0aa0  /apex/com.android.art/lib64/libart.so (artQuickToInterpreterBridge+1020) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #59 pc 00000000002c2438  /apex/com.android.art/lib64/libart.so (art_quick_to_interpreter_bridge+88) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #60 pc 00000000002aaf94  /apex/com.android.art/lib64/libart.so (art_quick_invoke_stub+612) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #61 pc 00000000002709b0  /apex/com.android.art/lib64/libart.so (art::ArtMethod::Invoke(art::Thread*, unsigned int*, unsigned int, art::JValue*, char const*)+220) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #62 pc 00000000004bdfc8  /apex/com.android.art/lib64/libart.so (art::Thread::CreateCallback(void*)+1184) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #63 pc 00000000004bdb18  /apex/com.android.art/lib64/libart.so (art::Thread::CreateCallbackWithUffdGc(void*)+8) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #64 pc 0000000000082c4c  /apex/com.android.runtime/lib64/bionic/libc.so (__pthread_start(void*)+236) (BuildId: 1a3e2eff9b521b59ef377e69d16e88b8)
+      #65 pc 00000000000754b0  /apex/com.android.runtime/lib64/bionic/libc.so (__start_thread+64) (BuildId: 1a3e2eff9b521b59ef377e69d16e88b8)
+
+memory near x1 ([anon:stack_and_tls:11808]):
+    000000705fa12fe0 0000000000000001 000000705fa13108  .........1._p...
+    000000705fa12ff0 0000000000000000 0000000000000000  ................
+    000000705fa13000 3feb3bc7a21b0480 0000000000000000  .....;.?........
+    000000705fa13010 000000705fa13070 00000074cae71a00  p0._p.......t...
+    000000705fa13020 000000705fa134d0 00000071008a0130  .4._p...0...q...
+    000000705fa13030 0000000000000000 000000705fa13610  .........6._p...
+    000000705fa13040 000000705fa13900 0000000000000001  .9._p...........
+    000000705fa13050 3feb3bc7a21b0480 0000000000000000  .....;.?........
+    000000705fa13060 b40000736e532050 b40000736e5320e0  P Sns.... Sns...
+    000000705fa13070 b40000736e5320e0 00000074cae6b780  . Sns.......t...
+    000000705fa13080 0000000000000001 0000000000000000  ................
+    000000705fa13090 0000000000000000 0000000000000000  ................
+    000000705fa130a0 0000000000000001 0000000000000059  ........Y.......
+    000000705fa130b0 0000000000000055 b4000071de4c3f80  U........?L.q...
+    000000705fa130c0 0000000000000001 b4000072af4e4a90  .........JN.r...
+    000000705fa130d0 0000000000000000 000000705fa130ef  .........0._p...
+
+memory near x3 ([anon:stack_and_tls:11808]):
+    000000705fa12d30 b40000736e5320e0 000000705fa12da0  . Sns....-._p...
+    000000705fa12d40 0000000000000001 000000720f851610  ............r...
+    000000705fa12d50 000000114acffcfc c54c00000012000c  ...J..........L.
+    000000705fa12d60 000000705fa135d0 000000704acfaf2c  .5._p...,..Jp...
+    000000705fa12d70 b40000736e5320e0 000000705fa12da0  . Sns....-._p...
+    000000705fa12d80 0000000000000001 b40000731e3cfb70  ........p.<.s...
+    000000705fa12d90 000000704af2869c 000000705fa12e00  ...Jp......_p...
+    000000705fa12da0 0000000000000001 0000000000000000  ................
+    000000705fa12db0 0000000000000000 0000000000000000  ................
+    000000705fa12dc0 b40000720f853030 b40000720f853030  00..r...00..r...
+    000000705fa12dd0 b40000720f853150 0000000000000001  P1..r...........
+    000000705fa12de0 0000000000000001 0000000000000000  ................
+    000000705fa12df0 0000000000000000 0000000000000000  ................
+    000000705fa12e00 b40000720f851610 b40000720f851610  ....r.......r...
+    000000705fa12e10 b40000720f851730 0000000000000001  0...r...........
+    000000705fa12e20 000000704ad0f580 000000705fa13000  ...Jp....0._p...
+
+memory near x5 ([anon:scudo:primary]):
+    00000072ee4a1490 00063730000635a8 00063e1400063340  .5..07..@3...>..
+    00000072ee4a14a0 0006396000063ae8 00063e4c00063b90  .:..`9...;..L>..
+    00000072ee4a14b0 00063ce0000639b4 0000000d000639d0  .9...<...9......
+    00000072ee4a14c0 00000072ee49fe00 0005b5480005b404  ..I.r.......H...
+    00000072ee4a14d0 0005b38c0005b4f4 0005b4400005b344  ........D...@...
+    00000072ee4a14e0 0005b4d00005b578 0005b3c80005b530  x.......0.......
+    00000072ee4a14f0 0005b4dc0005b3ec 000000000005b374  ........t.......
+    00000072ee4a1500 00000072ee49fe40 000531f8000520a4  @.I.r.... ...1..
+    00000072ee4a1510 000529bc00050f64 000531e80005118c  d....).......1..
+    00000072ee4a1520 00052278000510ec 0005421800053988  ....x"...9...B..
+    00000072ee4a1530 000537b4000514e4 0000000000053234  .....7..42......
+    00000072ee4a1540 0000000000000000 0000000000060000  ................
+    00000072ee4a1550 0000000000000000 0000000000000001  ................
+    00000072ee4a1560 00000072ee4a1480 00000072ee4a1480  ..J.r.....J.r...
+    00000072ee4a1570 0012fd260012000d 000000000012fcab  ....&...........
+    00000072ee4a1580 00000072ee4a06c0 000becc8000becdc  ..J.r...........
+
+memory near x7 ([anon:scudo:secondary]):
+    00000070370bffa0 0000000000000000 0000000000000000  ................
+    00000070370bffb0 0000000000000000 0000000000000000  ................
+    00000070370bffc0 6cfc2a010a0d1722 7f12e1fdfdb63562  "....*.lb5......
+    00000070370bffd0 16161616140726d6 1616161616161616  .&..............
+    00000070370bffe0 1616161616161616 1616161616161616  ................
+    00000070370bfff0 1616161616161616 1616161616161616  ................
+    00000070370c0000 1616161616161616 1616161616161616  ................
+    00000070370c0010 1616161616161616 1616161616161616  ................
+    00000070370c0020 1616161616161616 1616161616161616  ................
+    00000070370c0030 1616161616161616 1616161616161616  ................
+    00000070370c0040 0000000000000000 0000000000000000  ................
+    00000070370c0050 0000000000000000 0000000000000000  ................
+    00000070370c0060 0000000000000000 0000000000000000  ................
+    00000070370c0070 0000000000000000 0000000000000000  ................
+    00000070370c0080 0000000000000000 0000000000000000  ................
+    00000070370c0090 0000000000000000 0000000000000000  ................
+
+memory near x16 (/data/app/~~5gNuQZVxMQAVSmahnOwBCQ==/com.anonymous.gurustudy.dev-SGszd0eDb9Htdoiq4y8QmQ==/base.apk):
+    000000704b9a2330 00000074caea6af0 00000074cae7d740  .j..t...@...t...
+    000000704b9a2340 00000074cae9bc60 00000074cae7d640  `...t...@...t...
+    000000704b9a2350 00000074cae6b750 00000074cae6b540  P...t...@...t...
+    000000704b9a2360 00000074cae96050 00000074cae95ff0  P`..t...._..t...
+    000000704b9a2370 00000074efad4d70 00000074efac24b0  pM..t....$..t...
+    000000704b9a2380 00000074caec8090 00000074daeaf040  ....t...@...t...
+    000000704b9a2390 00000074daeaf020 00000074cae9be20   ...t... ...t...
+    000000704b9a23a0 00000074caeee940 00000074cae91a80  @...t.......t...
+    000000704b9a23b0 00000074cae8a740 00000074cae9df70  @...t...p...t...
+    000000704b9a23c0 00000074caeef580 00000074efad57d0  ....t....W..t...
+    000000704b9a23d0 00000074cae6ba00 00000074caea4600  ....t....F..t...
+    000000704b9a23e0 00000074cae6b4a0 00000074caea3e70  ....t...p>..t...
+    000000704b9a23f0 00000074caea4e90 00000074caea79e0  .N..t....y..t...
+    000000704b9a2400 00000074caee1cb0 00000074caea49c0  ....t....I..t...
+    000000704b9a2410 00000074caea4a60 00000074caeca210  `J..t.......t...
+    000000704b9a2420 00000074cae9c480 00000074caeaad00  ....t.......t...
+
+memory near x17 (/apex/com.android.runtime/lib64/bionic/libc.so):
+    00000074cae6b520 aa1403e3528000a0 9400528daa1303e4  ...R.........R..
+    00000074cae6b530 17ffffedaa1f03e0 0000000000000000  ................
+    00000074cae6b540 105955e9d503201f 91012108aa0903e8  . ...UY......!..
+    00000074cae6b550 b4000180f8bfc108 aa0903ebaa0903ea  ................
+    00000074cae6b560 f9401d4aaa0003e1 8a0a200a3940fd6b  ....J.@.k.@9. ..
+    00000074cae6b570 eb0be15f92481d4a f9401d29540000e1  J.H._......T).@.
+    00000074cae6b580 b50000488a294020 f94005011400187e   @).H...~.....@.
+    00000074cae6b590 a9bf7bfdd61f0020 b0fffe40910003fd   ....{......@...
+    00000074cae6b5a0 94005323912eec00 00000000940253ba  ....#S...S......
+    00000074cae6b5b0 10595269d503201f f8bfc12991012129  . ..iRY.)!..)...
+    00000074cae6b5c0 140018dbb5000049 d61f0000f9400920  I....... .@.....
+    00000074cae6b5d0 10595168d503201f f8bfc10891012108  . ..hQY..!......
+    00000074cae6b5e0 14001fafb5000048 d61f0040f9403502  H........5@.@...
+    00000074cae6b5f0 f9000bf5a9bd7bfd 910003fda9024ff4  .{.......O......
+    00000074cae6b600 31032c1f2a0103f3 3103301f540001c0  ...*.,.1...T.0.1
+    00000074cae6b610 d503201f54000221 aa1403e0104fd634  !..T. ..4.O.....
+
+memory near x18:
+    000000705e994000 0000000000000000 0000000000000000  ................
+    000000705e994010 0000000000000000 0000000000000000  ................
+    000000705e994020 0000000000000000 0000000000000000  ................
+    000000705e994030 0000000000000000 0000000000000000  ................
+    000000705e994040 0000000000000000 0000000000000000  ................
+    000000705e994050 0000000000000000 0000000000000000  ................
+    000000705e994060 0000000000000000 0000000000000000  ................
+    000000705e994070 0000000000000000 0000000000000000  ................
+    000000705e994080 0000000000000000 0000000000000000  ................
+    000000705e994090 0000000000000000 0000000000000000  ................
+    000000705e9940a0 0000000000000000 0000000000000000  ................
+    000000705e9940b0 0000000000000000 0000000000000000  ................
+    000000705e9940c0 0000000000000000 0000000000000000  ................
+    000000705e9940d0 0000000000000000 0000000000000000  ................
+    000000705e9940e0 0000000000000000 0000000000000000  ................
+    000000705e9940f0 0000000000000000 0000000000000000  ................
+
+memory near x19 ([anon:scudo:primary]):
+    000000732e8dc480 0000000000000000 0000000000000000  ................
+    000000732e8dc490 f39b000000400110 0000000000000000  ..@.............
+    000000732e8dc4a0 0000000000000000 3fe874be4dd3ab34  ........4..M.t.?
+    000000732e8dc4b0 3fce2d06c8b15330 3fe3e80b46c10e70  0S...-.?p..F...?
+    000000732e8dc4c0 3fd82fe9727de320 3fe21c4e249d0138   .}r./.?8..$N..?
+    000000732e8dc4d0 3fdbc763b6c5fd90 3fe2db1198358bc0  ....c..?..5....?
+    000000732e8dc4e0 3fda49dccf94e880 3fe5f3f3dff2a2c0  .....I.?.......?
+    000000732e8dc4f0 3fd41818401aba80 3feb3bc7a21b0480  ...@...?.....;.?
+    000000732e8dc500 3fcd404f1b5e6380 3fed7424970d62a0  .c^.O@.?.b..$t.?
+    000000732e8dc510 3fd782bffd5440c0 3fe43ea00155dfa0  .@T....?..U..>.?
+    000000732e8dc520 3fe6bce7a95bcf40 3fd94a23de6c0e80  @.[....?..l.#J.?
+    000000732e8dc530 3fec9e06676e2980 3fe196b5d500a280  .)ng...?.......?
+    000000732e8dc540 3fdf59a1e212ab00 3feebc7939f60800  .....Y.?...9y..?
+    000000732e8dc550 3fe252ddf6d1e880 3fe25e1c4292cd80  .....R.?...B.^.?
+    000000732e8dc560 3feb4f05c69b4a00 3fe84bb5a1d0f900  .J...O.?.....K.?
+    000000732e8dc570 3fe4c6a4795f4aa0 3fe5e32176a9a2c0  .J_y...?...v!..?
+
+memory near x20 ([anon:stack_and_tls:11808]):
+    000000705fa13350 00000071cc511800 0000000000000001  ..Q.q...........
+    000000705fa13360 b4000072af550280 0000007000000000  ..U.r.......p...
+    000000705fa13370 000000705fa13610 00000071ccd1e034  .6._p...4...q...
+    000000705fa13380 b40000723e25af50 000000705fa134e0  P.%>r....4._p...
+    000000705fa13390 0000000000000001 b4000072af550640  ........@.U.r...
+    000000705fa133a0 0000000000000000 e972513f4ac08500  ...........J?Qr.
+    000000705fa133b0 000000705fa13510 00000071ccf3a368  .5._p...h...q...
+    000000705fa133c0 0000000000000008 00000000036169a0  .........ia.....
+    000000705fa133d0 000000705fa13500 0000000000001000  .5._p...........
+    000000705fa133e0 000000005fa13500 00000071ccf3a300  .5._........q...
+    000000705fa133f0 00000070b6fb9200 b4000072ce2d7110  ....p....q-.r...
+    000000705fa13400 000000705fa13634 000000705fa13600  46._p....6._p...
+    000000705fa13410 000000705fa13600 00000070b768108a  .6._p.....h.p...
+    000000705fa13420 b4000071fe2a1500 0000007000000001  ..*.q.......p...
+    000000705fa13430 b4000072af478ee0 b4000071ef9c92e0  ..G.r.......q...
+    000000705fa13440 0000007000000000 0000007000000001  ....p.......p...
+
+memory near x21 ([anon:stack_and_tls:11808]):
+    000000705fa132b0 036169a000000000 00000000036169a0  .....ia..ia.....
+    000000705fa132c0 0000000000000000 0000000000000000  ................
+    000000705fa132d0 0000000000000000 000000705fa13500  .........5._p...
+    000000705fa132e0 000000705fa132b0 000000705fa132a0  .2._p....2._p...
+    000000705fa132f0 000000705fa132c0 b4000072ce2d7110  .2._p....q-.r...
+    000000705fa13300 000000705fa13300 0000000000001000  .3._p...........
+    000000705fa13310 000000005fa13500 000000705fa13200  .5._.....2._p...
+    000000705fa13320 000000705fa13200 000000705fa13610  .2._p....6._p...
+    000000705fa13330 0000000000000000 0000000000000000  ................
+    000000705fa13340 0000007000000000 0000000000000020  ....p... .......
+    000000705fa13350 00000071cc511800 0000000000000001  ..Q.q...........
+    000000705fa13360 b4000072af550280 0000007000000000  ..U.r.......p...
+    000000705fa13370 000000705fa13610 00000071ccd1e034  .6._p...4...q...
+    000000705fa13380 b40000723e25af50 000000705fa134e0  P.%>r....4._p...
+    000000705fa13390 0000000000000001 b4000072af550640  ........@.U.r...
+    000000705fa133a0 0000000000000000 e972513f4ac08500  ...........J?Qr.
+
+memory near x22 ([anon:stack_and_tls:11808]):
+    000000705fa12f60 0000000000000000 0000000000000000  ................
+    000000705fa12f70 0000000000000000 000000705fa13150  ........P1._p...
+    000000705fa12f80 0000000000000001 b4000072af545f00  ........._T.r...
+    000000705fa12f90 000000705fa16740 000000705fa130d0  @g._p....0._p...
+    000000705fa12fa0 000000705fa13218 b40000741ee2b7f0  .2._p.......t...
+    000000705fa12fb0 b40000741ee2b7f0 b40000741ee2b7f8  ....t.......t...
+    000000705fa12fc0 0000000000000000 000000705fa10100  ..........._p...
+    000000705fa12fd0 000000705fa13108 000000705fa130d0  .1._p....0._p...
+    000000705fa12fe0 0000000000000001 000000705fa13108  .........1._p...
+    000000705fa12ff0 0000000000000000 0000000000000000  ................
+    000000705fa13000 3feb3bc7a21b0480 0000000000000000  .....;.?........
+    000000705fa13010 000000705fa13070 00000074cae71a00  p0._p.......t...
+    000000705fa13020 000000705fa134d0 00000071008a0130  .4._p...0...q...
+    000000705fa13030 0000000000000000 000000705fa13610  .........6._p...
+    000000705fa13040 000000705fa13900 0000000000000001  .9._p...........
+    000000705fa13050 3feb3bc7a21b0480 0000000000000000  .....;.?........
+
+memory near x23 ([anon:stack_and_tls:11808]):
+    000000705fa12fe0 0000000000000001 000000705fa13108  .........1._p...
+    000000705fa12ff0 0000000000000000 0000000000000000  ................
+    000000705fa13000 3feb3bc7a21b0480 0000000000000000  .....;.?........
+    000000705fa13010 000000705fa13070 00000074cae71a00  p0._p.......t...
+    000000705fa13020 000000705fa134d0 00000071008a0130  .4._p...0...q...
+    000000705fa13030 0000000000000000 000000705fa13610  .........6._p...
+    000000705fa13040 000000705fa13900 0000000000000001  .9._p...........
+    000000705fa13050 3feb3bc7a21b0480 0000000000000000  .....;.?........
+    000000705fa13060 b40000736e532050 b40000736e5320e0  P Sns.... Sns...
+    000000705fa13070 b40000736e5320e0 00000074cae6b780  . Sns.......t...
+    000000705fa13080 0000000000000001 0000000000000000  ................
+    000000705fa13090 0000000000000000 0000000000000000  ................
+    000000705fa130a0 0000000000000001 0000000000000059  ........Y.......
+    000000705fa130b0 0000000000000055 b4000071de4c3f80  U........?L.q...
+    000000705fa130c0 0000000000000001 b4000072af4e4a90  .........JN.r...
+    000000705fa130d0 0000000000000000 000000705fa130ef  .........0._p...
+
+memory near x24 ([anon:stack_and_tls:11808]):
+    000000705fa13920 b4000072ce2d7110 000000705fa13ab8  .q-.r....:._p...
+    000000705fa13930 000000705fa139b0 000000705fa13948  .9._p...H9._p...
+    000000705fa13940 0000000000000000 0000000003616bd8  .........ka.....
+    000000705fa13950 000000705fa13b20 00000071cd03033c   ;._p...<...q...
+    000000705fa13960 0000000000000008 000000710089d7c0  ............q...
+    000000705fa13970 0000000000000008 000000705fa139b0  .........9._p...
+    000000705fa13980 000000705fa13d18 b4000072ce2d7110  .=._p....q-.r...
+    000000705fa13990 0000000000000008 b40000725e2510d0  ..........%^r...
+    000000705fa139a0 0000000000000058 0000000000000003  X...............
+    000000705fa139b0 000000705fa13d80 000000710089d7c0  .=._p.......q...
+    000000705fa139c0 0000000000000000 000000300000000b  ............0...
+    000000705fa139d0 0361657800000000 0210c5f003616988  ....xea..ia.....
+    000000705fa139e0 02f3579800000000 b40000732e8dc4a0  .....W......s...
+    000000705fa139f0 03615f9003616bd8 0218080803616560  .ka.._a.`ea.....
+    000000705fa13a00 0361698803616578 000000000210c5f0  xea..ia.........
+    000000705fa13a10 0000000002f35798 03616bd800000000  .W...........ka.
+
+memory near x25 ([anon:stack_and_tls:11808]):
+    000000705fa135f0 00000071008a0130 b40000725e2510d0  0...q.....%^r...
+    000000705fa13600 000000705fa13750 00000071cd02ff4c  P7._p...L...q...
+    000000705fa13610 0000000000000000 00000071008a0130  ........0...q...
+    000000705fa13620 0000000000000000 0000000000000005  ................
+    000000705fa13630 02f3579800000000 b40000732e8dc4a0  .....W......s...
+    000000705fa13640 0361698803616bd8 0000000002f35798  .ka..ia..W......
+    000000705fa13650 03616bd800000000 0000000003616988  .....ka..ia.....
+    000000705fa13660 0000000000000004 0000000000000000  ................
+    000000705fa13670 0000000000000000 000000705fa13948  ........H9._p...
+    000000705fa13680 00000070b7681088 000000705fa13620  ..h.p... 6._p...
+    000000705fa13690 000000705fa13660 b4000072ce2d7110  `6._p....q-.r...
+    000000705fa136a0 0000000002025a58 b40000731e258b70  XZ......p.%.s...
+    000000705fa136b0 0000000000000005 000000705fa13610  .........6._p...
+    000000705fa136c0 000000705fa13634 000000705fa139b0  46._p....9._p...
+    000000705fa136d0 0000000500000004 0000000700000006  ................
+    000000705fa136e0 b400007300000001 0000000000000000  ....s...........
+
+memory near x27 ([anon:dalvik-LinearAlloc]):
+    00000071008a0110 1000011102f34eb0 ffff001800008a0d  .N..............
+    00000071008a0120 00000071cce7b730 00000071ccd6c270  0...q...p...q...
+    00000071008a0130 1000011102f34eb0 fffb001900008a0e  .N..............
+    00000071008a0140 000000704acfc968 00000071ccd6c270  h..Jp...p...q...
+    00000071008a0150 1000011102f34eb0 ffff001a00008a0f  .N..............
+    00000071008a0160 00000071cce7b730 00000071ccd6c270  0...q...p...q...
+    00000071008a0170 1020011102f34eb0 ffff001b00008a10  .N.... .........
+    00000071008a0180 00000071cce7b730 00000071ccd6c270  0...q...p...q...
+    00000071008a0190 0000005000000002 0000000000000002  ....P...........
+    00000071008a01a0 1031100102f31b30 ffff00000000d217  0.....1.........
+    00000071008a01b0 00000070b7075908 00000071ccd6c3e0  .Y..p.......q...
+    00000071008a01c0 1030001102f31b30 ffff000b0000d218  0.....0.........
+    00000071008a01d0 00000070b7073fc4 00000071ccd6c3e0  .?..p.......q...
+    00000071008a01e0 0000016000000000 0000000072151130  ....`...0..r....
+    00000071008a01f0 0000000072151130 0000000072151130  0..r....0..r....
+    00000071008a0200 0000000072151130 0000000072151130  0..r....0..r....
+
+memory near x28 ([anon:stack_and_tls:11808]):
+    000000705fa134b0 0000000000000000 b4000072ce2d7110  .........q-.r...
+    000000705fa134c0 000000705fa13498 000000000000002d  .4._p...-.......
+    000000705fa134d0 00000071008a0130 000000705fa16740  0...q...@g._p...
+    000000705fa134e0 0000000000000000 0000000000000000  ................
+    000000705fa134f0 0000000000000000 0000000000000000  ................
+    000000705fa13500 00000000ffffffff 65646f6d3e6e7275  ........urn>mode
+    000000705fa13510 0000000000000000 8060180680601806  ..........`...`.
+    000000705fa13520 0000000002f35798 b40000732e8dc4a0  .W..........s...
+    000000705fa13530 0000000003616bd8 0000000003616988  .ka......ia.....
+    000000705fa13540 00000070b7ce1787 000000705fa13948  ....p...H9._p...
+    000000705fa13550 000000705fa11ec8 0000000000000000  ..._p...........
+    000000705fa13560 b4000072ce2d71d0 0000000000000000  .q-.r...........
+    000000705fa13570 b4000072ce2d7110 000000705fa13948  .q-.r...H9._p...
+    000000705fa13580 000000705fa13610 0000000000000000  .6._p...........
+    000000705fa13590 00000071008a0130 0000000000000008  0...q...........
+    000000705fa135a0 000000705fa135d0 00000071ccd54f98  .5._p....O..q...
+
+memory near x29 ([anon:stack_and_tls:11808]):
+    000000705fa135b0 0000000000000000 2e8dc4a002f35798  .........W......
+    000000705fa135c0 03616bd8b4000073 0000007103616988  s....ka..ia.q...
+    000000705fa135d0 000000705fa13948 00000070b7ce1787  H9._p.......p...
+    000000705fa135e0 000000705fa13948 0000000000000005  H9._p...........
+    000000705fa135f0 00000071008a0130 b40000725e2510d0  0...q.....%^r...
+    000000705fa13600 000000705fa13750 00000071cd02ff4c  P7._p...L...q...
+    000000705fa13610 0000000000000000 00000071008a0130  ........0...q...
+    000000705fa13620 0000000000000000 0000000000000005  ................
+    000000705fa13630 02f3579800000000 b40000732e8dc4a0  .....W......s...
+    000000705fa13640 0361698803616bd8 0000000002f35798  .ka..ia..W......
+    000000705fa13650 03616bd800000000 0000000003616988  .....ka..ia.....
+    000000705fa13660 0000000000000004 0000000000000000  ................
+    000000705fa13670 0000000000000000 000000705fa13948  ........H9._p...
+    000000705fa13680 00000070b7681088 000000705fa13620  ..h.p... 6._p...
+    000000705fa13690 000000705fa13660 b4000072ce2d7110  `6._p....q-.r...
+    000000705fa136a0 0000000002025a58 b40000731e258b70  XZ......p.%.s...
+
+memory near lr (/data/app/~~5gNuQZVxMQAVSmahnOwBCQ==/com.anonymous.gurustudy.dev-SGszd0eDb9Htdoiq4y8QmQ==/base.apk):
+    000000704ad0f570 910723e19107e3e8 97fffc62aa1303e0  .....#......b...
+    000000704ad0f580 97ffca3c910723e0 f100051ff940ffe8  .#..<.....@.....
+    000000704ad0f590 9107e3e054002e01 3cc502e097ffc24c  ...T....L......<
+    000000704ad0f5a0 9106c3e1f9419a60 3d8002e09104c3f6  `.A............=
+    000000704ad0f5b0 f9402909f9400008 d63f01209104c3e8  ..@..)@..... .?.
+    000000704ad0f5c0 f100051ff9409be8 9104c3e054002da1  ..@......-.T....
+    000000704ad0f5d0 9102e3e097ffc23e 97ffe7b0910022c1  >........"......
+    000000704ad0f5e0 f901efffa94c23e1 eb08003ff901ebff  .#L.........?...
+    000000704ad0f5f0 cb010108540011e0 9ac90d0852800309  ...T.......R....
+    000000704ad0f600 54000163f100091f 91026000b0ffd6c0  ....c..T.....`..
+    000000704ad0f610 528009219400114a 942e69d952800a82  J...!..R...R.i..
+    000000704ad0f620 910c43e0f9018be0 1400008397ffbabc  .....C..........
+    000000704ad0f630 910263f7910263e0 f9416276942ef41c  .c...c......vbA.
+    000000704ad0f640 b24002faf9416679 912246f7b0ffdb77  yfA...@.w....F".
+    000000704ad0f650 d0ffdb38910b23fb 910a83fc910d0f18  .#..8...........
+    000000704ad0f660 54000da0eb1902df a94226ca394062c8  .......T.b@9.&B.
+
+memory near sp ([anon:stack_and_tls:11808]):
+    000000705fa12e30 0000000000000001 000000705fa132d0  .........2._p...
+    000000705fa12e40 000000705fa13370 b40000732e8dc4a0  p3._p.......s...
+    000000705fa12e50 000000705fa130d0 000000741ee2b7f0  .0._p.......t...
+    000000705fa12e60 000000114ad02d08 bc5d000000008001  .-.J..........].
+    000000705fa12e70 000000705fa135d0 000000704acfcd64  .5._p...d..Jp...
+    000000705fa12e80 000000705fa13108 0000000000000001  .1._p...........
+    000000705fa12e90 000000705fa130d0 000000705fa13218  .0._p....2._p...
+    000000705fa12ea0 000000704ad02b54 000000705fa12fa8  T+.Jp..../._p...
+    000000705fa12eb0 b40000741edce3d2 000000705fa13218  ....t....2._p...
+    000000705fa12ec0 0000000000000000 0000000000000000  ................
+    000000705fa12ed0 00000074caf1e000 0000000000000001  ....t...........
+    000000705fa12ee0 000000705fa12f00 00000074cae6b780  ./._p.......t...
+    000000705fa12ef0 0000000000000001 f8de000000020002  ................
+    000000705fa12f00 000000705fa12f20 0000000000000000   /._p...........
+    000000705fa12f10 000000705fa12fcc 0000000000000001  ./._p...........
+    000000705fa12f20 000000705fa135d0 00303b704acfcc4c  .5._p...L..Jp;0.
+
+memory near pc (/data/app/~~5gNuQZVxMQAVSmahnOwBCQ==/com.anonymous.gurustudy.dev-SGszd0eDb9Htdoiq4y8QmQ==/base.apk):
+    000000704ad0f590 9107e3e054002e01 3cc502e097ffc24c  ...T....L......<
+    000000704ad0f5a0 9106c3e1f9419a60 3d8002e09104c3f6  `.A............=
+    000000704ad0f5b0 f9402909f9400008 d63f01209104c3e8  ..@..)@..... .?.
+    000000704ad0f5c0 f100051ff9409be8 9104c3e054002da1  ..@......-.T....
+    000000704ad0f5d0 9102e3e097ffc23e 97ffe7b0910022c1  >........"......
+    000000704ad0f5e0 f901efffa94c23e1 eb08003ff901ebff  .#L.........?...
+    000000704ad0f5f0 cb010108540011e0 9ac90d0852800309  ...T.......R....
+    000000704ad0f600 54000163f100091f 91026000b0ffd6c0  ....c..T.....`..
+    000000704ad0f610 528009219400114a 942e69d952800a82  J...!..R...R.i..
+    000000704ad0f620 910c43e0f9018be0 1400008397ffbabc  .....C..........
+    000000704ad0f630 910263f7910263e0 f9416276942ef41c  .c...c......vbA.
+    000000704ad0f640 b24002faf9416679 912246f7b0ffdb77  yfA...@.w....F".
+    000000704ad0f650 d0ffdb38910b23fb 910a83fc910d0f18  .#..8...........
+    000000704ad0f660 54000da0eb1902df a94226ca394062c8  .......T.b@9.&B.
+    000000704ad0f670 97fff692910066cc 9a890180910ee3e8  .f..............
+    000000704ad0f680 9409a4f49a8a0161 a943a6ca3940c2c8  a.........@9..C.
+
+memory map (4948 entries): (fault address prefixed with --->)
+    00000000'02000000-00000000'11ffffff rw-         0  10000000  [anon:dalvik-main space]
+    00000000'347a1000-00000000'447a0fff rw-         0  10000000  [anon:dalvik-free list large object space]
+    00000000'547a1000-00000000'567a0fff r--         0   2000000  /memfd:jit-zygote-cache (deleted)
+    00000000'567a1000-00000000'587a0fff r-x   2000000   2000000  /memfd:jit-zygote-cache (deleted)
+    00000000'587a1000-00000000'587a4fff rw-         0      4000
+    00000000'587a5000-00000000'5a7a4fff r--         0   2000000  /memfd:jit-cache (deleted)
+    00000000'5a7a5000-00000000'5c7a4fff r-x   2000000   2000000  /memfd:jit-cache (deleted)
+    00000000'70a90000-00000000'721fffff rw-         0   1770000  [anon:dalvik-/data/misc/apexdata/com.android.art/dalvik-cache/boot.art]
+    00000000'72200000-00000000'7258bfff r--         0    38c000  /data/misc/apexdata/com.android.art/dalvik-cache/arm64/boot.oat
+    00000000'7258c000-00000000'73179fff r-x    38c000    bee000  /data/misc/apexdata/com.android.art/dalvik-cache/arm64/boot.oat
+    00000000'7317a000-00000000'7317bfff ---         0      2000  [anon:dalvik-Boot image reservation]
+    00000000'7317c000-00000000'7317cfff rw-         0      1000  [anon:.bss]
+    00000000'7317d000-00000000'7317ffff ---         0      3000  [anon:dalvik-Boot image reservation]
+    00000000'73180000-00000000'7329dfff rw-         0    11e000  /data/misc/apexdata/com.android.art/dalvik-cache/arm64/boot.vdex
+    00000000'7329e000-00000000'7329ffff ---         0      2000  [anon:dalvik-Boot image reservation]
+    00000000'732a0000-00000000'73bdffff rw-         0    940000
+    00000000'73be0000-00000000'73bfbfff r--         0     1c000  /data/misc/apexdata/com.android.art/dalvik-cache/arm64/boot-framework-adservices.oat
+    00000000'73bfc000-00000000'73c30fff rw-         0     35000  /data/misc/apexdata/com.android.art/dalvik-cache/arm64/boot-framework-adservices.vdex
+    00000000'73c31000-00000000'73c33fff ---         0      3000  [anon:dalvik-Boot image reservation]
+    00000000'73c34000-00000000'74302fff rw-         0    6cf000  [anon:dalvik-zygote space]
+    00000000'74303000-00000000'74303fff rw-         0      1000  [anon:dalvik-non moving space]
+    00000000'74304000-00000000'74322fff rw-         0     1f000  [anon:dalvik-non moving space]
+    00000000'74323000-00000000'77434fff ---         0   3112000  [anon:dalvik-non moving space]
+    00000000'77435000-00000000'77c33fff rw-         0    7ff000  [anon:dalvik-non moving space]
+    00000000'ebad6000-00000000'ebad6fff ---         0      1000  [anon:dalvik-Sentinel fault page]
+    00000022'0a400000-00000022'0a7fffff rw-         0    400000  [anon:hermes-rt]
+    00000022'0a800000-00000022'0a813fff rw-         0     14000  [anon:hades-segment]
+    00000022'0a814000-00000022'0a814fff ---         0      1000  [anon:hades-segment]
+    00000022'0a815000-00000022'0ac13fff rw-         0    3ff000  [anon:hades-segment]
+    00000022'0ac14000-00000022'0ac14fff ---         0      1000  [anon:hades-segment]
+    00000022'0ac15000-00000022'0b013fff rw-         0    3ff000  [anon:hades-segment]
+    00000022'0b014000-00000022'0b014fff ---         0      1000  [anon:hades-segment]
+    00000022'0b015000-00000022'0b413fff rw-         0    3ff000  [anon:hades-segment]
+    00000022'0b414000-00000022'0b414fff ---         0      1000  [anon:hades-segment]
+    00000022'0b415000-00000022'0b813fff rw-         0    3ff000  [anon:hades-segment]
+    00000022'0b814000-00000022'0b814fff ---         0      1000  [anon:hades-segment]
+    00000022'0b815000-00000022'0bc13fff rw-         0    3ff000  [anon:hades-segment]
+    00000022'0bc14000-00000022'0bc14fff ---         0      1000  [anon:hades-segment]
+    00000022'0bc15000-00000022'0c013fff rw-         0    3ff000  [anon:hades-segment]
+    00000022'0c014000-00000022'0c014fff ---         0      1000  [anon:hades-segment]
+    00000022'0c015000-00000022'0c413fff rw-         0    3ff000  [anon:hades-segment]
+    00000022'0c414000-00000022'0c414fff ---         0      1000  [anon:hades-segment]
+    00000022'0c415000-00000022'0c813fff rw-         0    3ff000  [anon:hades-segment]
+    00000022'0c814000-00000022'0c814fff ---         0      1000  [anon:hades-segment]
+    00000022'0c815000-00000022'0cc13fff rw-         0    3ff000  [anon:hades-segment]
+    00000022'0cc14000-00000022'0cc14fff ---         0      1000  [anon:hades-segment]
+    00000022'0cc15000-00000022'0d013fff rw-         0    3ff000  [anon:hades-segment]
+    00000022'0d014000-00000022'0d014fff ---         0      1000  [anon:hades-segment]
+    00000022'0d015000-00000022'0d413fff rw-         0    3ff000  [anon:hades-segment]
+    00000022'0d414000-00000022'0d414fff ---         0      1000  [anon:hades-segment]
+    00000022'0d415000-00000022'0d813fff rw-         0    3ff000  [anon:hades-segment]
+    00000022'0d814000-00000022'0d814fff ---         0      1000  [anon:hades-segment]
+    00000022'0d815000-00000022'0dc13fff rw-         0    3ff000  [anon:hades-segment]
+    00000022'0dc14000-00000022'0dc14fff ---         0      1000  [anon:hades-segment]
+    00000022'0dc15000-00000022'0e013fff rw-         0    3ff000  [anon:hades-segment]
+    00000022'0e014000-00000022'0e014fff ---         0      1000  [anon:hades-segment]
+    00000022'0e015000-00000022'0e413fff rw-         0    3ff000  [anon:hades-segment]
+    00000022'0e414000-00000022'0e414fff ---         0      1000  [anon:hades-segment]
+    00000022'0e415000-00000022'0e813fff rw-         0    3ff000  [anon:hades-segment]
+    00000022'0e814000-00000022'0e814fff ---         0      1000  [anon:hades-segment]
+    00000022'0e815000-00000022'0ebfffff rw-         0    3eb000  [anon:hades-segment]
+    00000022'0ec00000-00000022'cb3fffff ---         0  bc800000  [anon:hermes-free-heap]
+    0000005c'86920000-0000005c'86921fff r--         0      2000  /system/bin/app_process64 (BuildId: a794fd51930c7efd2cde1e14d2db11f5)
+    0000005c'86924000-0000005c'86925fff r-x      4000      2000  /system/bin/app_process64 (BuildId: a794fd51930c7efd2cde1e14d2db11f5)
+    0000005c'86928000-0000005c'86928fff r--      8000      1000  /system/bin/app_process64 (BuildId: a794fd51930c7efd2cde1e14d2db11f5)
+    0000005c'8692c000-0000005c'8692cfff rw-      c000      1000  /system/bin/app_process64 (BuildId: a794fd51930c7efd2cde1e14d2db11f5)
+    00000068'02788000-00000068'3458bfff rw-   a788000  31e04000  /storage/emulated/0/Download/gemma-4-E4B-it.litertlm
+    00000068'346d3000-00000068'b82c3fff r--         0  83bf1000  /data/data/com.anonymous.gurustudy.dev/cache/gemma-4-E4B-it.litertlm.xnnpack_cache
+    00000068'b82c4000-00000069'3ee1cfff rw-  506c4000  86b59000  /storage/emulated/0/Download/gemma-4-E4B-it.litertlm
+    00000069'3f000000-00000069'3f3fffff rw-         0    400000  [anon:hermes-rt]
+    00000069'3f400000-00000069'3f413fff rw-         0     14000  [anon:hades-segment]
+    00000069'3f414000-00000069'3f414fff ---         0      1000  [anon:hades-segment]
+    00000069'3f415000-00000069'3f813fff rw-         0    3ff000  [anon:hades-segment]
+    00000069'3f814000-00000069'3f814fff ---         0      1000  [anon:hades-segment]
+    00000069'3f815000-00000069'3fbfffff rw-         0    3eb000  [anon:hades-segment]
+    00000069'3fc00000-00000069'ffffffff ---         0  c0400000  [anon:hermes-free-heap]
+    0000006a'00000000-0000006a'00000fff ---         0      1000  [anon:partition_alloc]
+    0000006a'00001000-0000006a'00001fff rw-         0      1000  [anon:partition_alloc]
+    0000006a'00002000-0000006a'00200fff ---         0    1ff000  [anon:partition_alloc]
+    0000006a'00201000-0000006a'00201fff rw-         0      1000  [anon:partition_alloc]
+    0000006a'00202000-0000006c'00003fff ---         0  1ffe02000  [anon:partition_alloc]
+    0000006c'00004000-0000006c'0014ffff rw-         0    14c000  [anon:partition_alloc]
+    0000006c'00150000-0000006c'00203fff ---         0     b4000  [anon:partition_alloc]
+    0000006c'00204000-0000006c'0020bfff rw-         0      8000  [anon:partition_alloc]
+    0000006c'0020c000-0000006f'ffffffff ---         0  3ffdf4000  [anon:partition_alloc]
+    00000070'06ff6000-00000070'07d6bfff ---         0    d76000
+    00000070'07d6c000-00000070'07d6ffff rw-         0      4000
+    00000070'07d70000-00000070'07ff5fff ---         0    286000
+    00000070'07ff6000-00000070'07ff6fff ---         0      1000
+    00000070'07ff7000-00000070'07ff7fff ---         0      1000  [anon:stack_and_tls:11870]
+    00000070'07ff8000-00000070'083fefff rw-         0    407000  [anon:stack_and_tls:11870]
+    00000070'083ff000-00000070'083fffff ---         0      1000
+    00000070'08400000-00000070'09681fff r--         0   1282000  /system/fonts/SamsungColorEmoji.ttf
+    00000070'1ba81000-00000070'1ba81fff ---         0      1000
+    00000070'1ba82000-00000070'1e482fff rw-         0   2a01000  [anon:scudo:secondary]
+    00000070'1e483000-00000070'1e483fff ---         0      1000
+    00000070'1e484000-00000070'28784fff rw-    484000   a301000  /storage/emulated/0/Download/gemma-4-E4B-it.litertlm
+    00000070'2879f000-00000070'2879ffff ---         0      1000
+    00000070'287a0000-00000070'368b7fff rw-         0   e118000  [anon:scudo:secondary]
+    00000070'368b8000-00000070'368b9fff ---         0      2000
+    00000070'368ba000-00000070'36abafff rw-         0    201000  [anon:scudo:secondary]
+    00000070'36abb000-00000070'36abcfff ---         0      2000
+    00000070'36abd000-00000070'36cbdfff rw-         0    201000  [anon:scudo:secondary]
+    00000070'36cbe000-00000070'36cbffff ---         0      2000
+    00000070'36cc0000-00000070'370c0fff rw-         0    401000  [anon:scudo:secondary]
+    00000070'370c1000-00000070'370c2fff ---         0      2000
+    00000070'370c3000-00000070'372c3fff rw-         0    201000  [anon:scudo:secondary]
+    00000070'372c4000-00000070'372c5fff ---         0      2000
+    00000070'372c6000-00000070'376c6fff rw-         0    401000  [anon:scudo:secondary]
+    00000070'376c7000-00000070'376c8fff ---         0      2000
+    00000070'376c9000-00000070'378c9fff rw-         0    201000  [anon:scudo:secondary]
+    00000070'378ca000-00000070'378cbfff ---         0      2000
+    00000070'378cc000-00000070'37accfff rw-         0    201000  [anon:scudo:secondary]
+    00000070'37acd000-00000070'37acefff ---         0      2000
+    00000070'37acf000-00000070'37ccffff rw-         0    201000  [anon:scudo:secondary]
+    00000070'37cd0000-00000070'37cd1fff ---         0      2000
+    00000070'37cd2000-00000070'37ed2fff rw-         0    201000  [anon:scudo:secondary]
+    00000070'37ed3000-00000070'37ed4fff ---         0      2000
+    00000070'37ed5000-00000070'380d5fff rw-         0    201000  [anon:scudo:secondary]
+    00000070'380d6000-00000070'380d7fff ---         0      2000
+    00000070'380d8000-00000070'382d8fff rw-         0    201000  [anon:scudo:secondary]
+    00000070'382d9000-00000070'382dafff ---         0      2000
+    00000070'382db000-00000070'384dbfff rw-         0    201000  [anon:scudo:secondary]
+    00000070'384dc000-00000070'384ddfff ---         0      2000
+    00000070'384de000-00000070'386defff rw-         0    201000  [anon:scudo:secondary]
+    00000070'386df000-00000070'386e0fff ---         0      2000
+    00000070'386e1000-00000070'388e1fff rw-         0    201000  [anon:scudo:secondary]
+    00000070'388e2000-00000070'388e3fff ---         0      2000
+    00000070'388e4000-00000070'38ce4fff rw-         0    401000  [anon:scudo:secondary]
+    00000070'38ce5000-00000070'38ce6fff ---         0      2000
+    00000070'38ce7000-00000070'38ee7fff rw-         0    201000  [anon:scudo:secondary]
+    00000070'38ee8000-00000070'38ee9fff ---         0      2000
+    00000070'38eea000-00000070'390eafff rw-         0    201000  [anon:scudo:secondary]
+    00000070'390eb000-00000070'390ecfff ---         0      2000
+    00000070'390ed000-00000070'392edfff rw-         0    201000  [anon:scudo:secondary]
+    00000070'392ee000-00000070'392effff ---         0      2000
+    00000070'392f0000-00000070'394f0fff rw-         0    201000  [anon:scudo:secondary]
+    00000070'394f1000-00000070'394f2fff ---         0      2000
+    00000070'394f3000-00000070'396f3fff rw-         0    201000  [anon:scudo:secondary]
+    00000070'396f4000-00000070'396f5fff ---         0      2000
+    00000070'396f6000-00000070'398f6fff rw-         0    201000  [anon:scudo:secondary]
+    00000070'398f7000-00000070'398f8fff ---         0      2000
+    00000070'398f9000-00000070'39cf9fff rw-         0    401000  [anon:scudo:secondary]
+    00000070'39cfa000-00000070'39cfbfff ---         0      2000
+    00000070'39cfc000-00000070'39efcfff rw-         0    201000  [anon:scudo:secondary]
+    00000070'39efd000-00000070'39efefff ---         0      2000
+    00000070'39eff000-00000070'3a0fffff rw-         0    201000  [anon:scudo:secondary]
+    00000070'3a100000-00000070'3a101fff ---         0      2000
+    00000070'3a102000-00000070'3a302fff rw-         0    201000  [anon:scudo:secondary]
+    00000070'3a303000-00000070'3a304fff ---         0      2000
+    00000070'3a305000-00000070'3a505fff rw-         0    201000  [anon:scudo:secondary]
+    00000070'3a506000-00000070'3a507fff ---         0      2000
+    00000070'3a508000-00000070'3a708fff rw-         0    201000  [anon:scudo:secondary]
+    00000070'3a709000-00000070'3a70afff ---         0      2000
+    00000070'3a70b000-00000070'3a90bfff rw-         0    201000  [anon:scudo:secondary]
+    00000070'3a90c000-00000070'3a90dfff ---         0      2000
+    00000070'3a90e000-00000070'3ab0efff rw-         0    201000  [anon:scudo:secondary]
+    00000070'3ab0f000-00000070'3ab10fff ---         0      2000
+    00000070'3ab11000-00000070'3af11fff rw-         0    401000  [anon:scudo:secondary]
+    00000070'3af12000-00000070'3af13fff ---         0      2000
+    00000070'3af14000-00000070'3b314fff rw-         0    401000  [anon:scudo:secondary]
+    00000070'3b315000-00000070'3b316fff ---         0      2000
+    00000070'3b317000-00000070'3b517fff rw-         0    201000  [anon:scudo:secondary]
+    00000070'3b518000-00000070'3b519fff ---         0      2000
+    00000070'3b51a000-00000070'3b71afff rw-         0    201000  [anon:scudo:secondary]
+    00000070'3b71b000-00000070'3b71cfff ---         0      2000
+    00000070'3b71d000-00000070'3b91dfff rw-         0    201000  [anon:scudo:secondary]
+    00000070'3b91e000-00000070'3b91ffff ---         0      2000
+    00000070'3b920000-00000070'3bb20fff rw-         0    201000  [anon:scudo:secondary]
+    00000070'3bb21000-00000070'3bb22fff ---         0      2000
+    00000070'3bb23000-00000070'3bf23fff rw-         0    401000  [anon:scudo:secondary]
+    00000070'3bf24000-00000070'3bf25fff ---         0      2000
+    00000070'3bf26000-00000070'3c126fff rw-         0    201000  [anon:scudo:secondary]
+    00000070'3c127000-00000070'3c128fff ---         0      2000
+    00000070'3c129000-00000070'3c329fff rw-         0    201000  [anon:scudo:secondary]
+    00000070'3c32a000-00000070'3c32bfff ---         0      2000
+    00000070'3c32c000-00000070'3c52cfff rw-         0    201000  [anon:scudo:secondary]
+    00000070'3c52d000-00000070'3c52efff ---         0      2000
+    00000070'3c52f000-00000070'3c72ffff rw-         0    201000  [anon:scudo:secondary]
+    00000070'3c730000-00000070'3c731fff ---         0      2000
+    00000070'3c732000-00000070'3c932fff rw-         0    201000  [anon:scudo:secondary]
+    00000070'3c933000-00000070'3c934fff ---         0      2000
+    00000070'3c935000-00000070'3cd35fff rw-         0    401000  [anon:scudo:secondary]
+    00000070'3cd36000-00000070'3cd37fff ---         0      2000
+    00000070'3cd38000-00000070'3cf38fff rw-         0    201000  [anon:scudo:secondary]
+    00000070'3cf39000-00000070'3cf3afff ---         0      2000
+    00000070'3cf3b000-00000070'3d13bfff rw-         0    201000  [anon:scudo:secondary]
+    00000070'3d13c000-00000070'3d13dfff ---         0      2000
+    00000070'3d13e000-00000070'3d33efff rw-         0    201000  [anon:scudo:secondary]
+    00000070'3d33f000-00000070'3d340fff ---         0      2000
+    00000070'3d341000-00000070'3d541fff rw-         0    201000  [anon:scudo:secondary]
+    00000070'3d542000-00000070'3d543fff ---         0      2000
+    00000070'3d544000-00000070'3d744fff rw-         0    201000  [anon:scudo:secondary]
+    00000070'3d745000-00000070'3d745fff ---         0      1000
+    00000070'3e7bd000-00000070'3e7bdfff ---         0      1000
+    00000070'3e7be000-00000070'4115efff rw-         0   29a1000  [anon:scudo:secondary]
+    00000070'4115f000-00000070'41160fff ---         0      2000
+    00000070'41161000-00000070'44362fff rw-         0   3202000  [anon:scudo:secondary]
+    00000070'44363000-00000070'44364fff ---         0      2000
+    00000070'44365000-00000070'44fe5fff rw-         0    c81000  [anon:scudo:secondary]
+    00000070'44fe6000-00000070'44fe7fff ---         0      2000
+    00000070'44fe8000-00000070'453e8fff rw-         0    401000  [anon:scudo:secondary]
+    00000070'453e9000-00000070'453e9fff ---         0      1000
+    00000070'453ea000-00000070'45b6bfff ---         0    782000
+    00000070'45b6c000-00000070'45b6ffff rw-         0      4000
+    00000070'45b70000-00000070'463e9fff ---         0    87a000
+    00000070'463ea000-00000070'463eafff ---         0      1000
+    00000070'463eb000-00000070'463ebfff ---         0      1000  [anon:stack_and_tls:11816]
+    00000070'463ec000-00000070'467f2fff rw-         0    407000  [anon:stack_and_tls:11816]
+    00000070'467f3000-00000070'467f3fff ---         0      1000
+    00000070'467f4000-00000070'474a7fff ---         0    cb4000
+    00000070'474a8000-00000070'474abfff rw-         0      4000
+    00000070'474ac000-00000070'477f3fff ---         0    348000
+    00000070'477f4000-00000070'477f4fff ---         0      1000
+    00000070'477f5000-00000070'477f5fff ---         0      1000  [anon:stack_and_tls:11815]
+    00000070'477f6000-00000070'47bfcfff rw-         0    407000  [anon:stack_and_tls:11815]
+    00000070'47bfd000-00000070'47bfdfff ---         0      1000
+    00000070'47bfe000-00000070'4821bfff ---         0    61e000
+    00000070'4821c000-00000070'4821ffff rw-         0      4000
+    00000070'48220000-00000070'48bfdfff ---         0    9de000
+    00000070'48bfe000-00000070'48bfefff ---         0      1000
+    00000070'48bff000-00000070'48bfffff ---         0      1000  [anon:stack_and_tls:11814]
+    00000070'48c00000-00000070'49006fff rw-         0    407000  [anon:stack_and_tls:11814]
+    00000070'49007000-00000070'49007fff ---         0      1000
+    00000070'4a603000-00000070'4b8f3fff r-x   65c4000   12f1000  /data/app/~~5gNuQZVxMQAVSmahnOwBCQ==/com.anonymous.gurustudy.dev-SGszd0eDb9Htdoiq4y8QmQ==/base.apk (BuildId: ecacedccf835d7674c95bd40186d0fde)
+    00000070'4b8f4000-00000070'4b8f6fff ---         0      3000
+    00000070'4b8f7000-00000070'4b9a2fff r--   78b8000     ac000  /data/app/~~5gNuQZVxMQAVSmahnOwBCQ==/com.anonymous.gurustudy.dev-SGszd0eDb9Htdoiq4y8QmQ==/base.apk
+    00000070'4b9a3000-00000070'4b9a5fff ---         0      3000
+    00000070'4b9a6000-00000070'4b9b2fff rw-   7963000      d000  /data/app/~~5gNuQZVxMQAVSmahnOwBCQ==/com.anonymous.gurustudy.dev-SGszd0eDb9Htdoiq4y8QmQ==/base.apk
+    00000070'4b9b3000-00000070'4b9fefff rw-         0     4c000  [anon:.bss]
+    00000070'4ba00000-00000070'4ebfffff ---         0   3200000
+    00000070'5055e000-00000070'5055efff ---         0      1000
+    00000070'5055f000-00000070'50a9ffff rw-         0    541000  [anon:scudo:secondary]
+    00000070'50aa0000-00000070'50aa1fff ---         0      2000
+    00000070'50aa2000-00000070'50be2fff rw-         0    141000  [anon:scudo:secondary]
+    00000070'50be3000-00000070'50be4fff ---         0      2000
+    00000070'50be5000-00000070'50ce5fff rw-         0    101000  [anon:scudo:secondary]
+    00000070'50ce6000-00000070'50ce7fff ---         0      2000
+    00000070'50ce8000-00000070'50de8fff rw-         0    101000  [anon:scudo:secondary]
+    00000070'50de9000-00000070'50deafff ---         0      2000
+    00000070'50deb000-00000070'50eebfff rw-         0    101000  [anon:scudo:secondary]
+    00000070'50eec000-00000070'50eecfff ---         0      1000
+    00000070'52fc3000-00000070'52fc3fff ---         0      1000
+    00000070'52fc4000-00000070'530c4fff rw-         0    101000  [anon:scudo:secondary]
+    00000070'530c5000-00000070'530c6fff ---         0      2000
+    00000070'530c7000-00000070'531c7fff rw-         0    101000  [anon:scudo:secondary]
+    00000070'531c8000-00000070'531c9fff ---         0      2000
+    00000070'531ca000-00000070'532cafff rw-         0    101000  [anon:scudo:secondary]
+    00000070'532cb000-00000070'532ccfff ---         0      2000
+    00000070'532cd000-00000070'533cdfff rw-         0    101000  [anon:scudo:secondary]
+    00000070'533ce000-00000070'533cffff ---         0      2000
+    00000070'533d0000-00000070'534d0fff rw-         0    101000  [anon:scudo:secondary]
+    00000070'534d1000-00000070'534d2fff ---         0      2000
+    00000070'534d3000-00000070'535d3fff rw-         0    101000  [anon:scudo:secondary]
+    00000070'535d4000-00000070'535d5fff ---         0      2000
+    00000070'535d6000-00000070'536d6fff rw-         0    101000  [anon:scudo:secondary]
+    00000070'536d7000-00000070'536d8fff ---         0      2000
+    00000070'536d9000-00000070'537d9fff rw-         0    101000  [anon:scudo:secondary]
+    00000070'537da000-00000070'537dbfff ---         0      2000
+    00000070'537dc000-00000070'538dcfff rw-         0    101000  [anon:scudo:secondary]
+    00000070'538dd000-00000070'538defff ---         0      2000
+    00000070'538df000-00000070'539dffff rw-         0    101000  [anon:scudo:secondary]
+    00000070'539e0000-00000070'539e1fff ---         0      2000
+    00000070'539e2000-00000070'53ae2fff rw-         0    101000  [anon:scudo:secondary]
+    00000070'53ae3000-00000070'53ae4fff ---         0      2000
+    00000070'53ae5000-00000070'53be5fff rw-         0    101000  [anon:scudo:secondary]
+    00000070'53be6000-00000070'53be7fff ---         0      2000
+    00000070'53be8000-00000070'53ce8fff rw-         0    101000  [anon:scudo:secondary]
+    00000070'53ce9000-00000070'53ceafff ---         0      2000
+    00000070'53ceb000-00000070'53debfff rw-         0    101000  [anon:scudo:secondary]
+    00000070'53dec000-00000070'53dedfff ---         0      2000
+    00000070'53dee000-00000070'53eeefff rw-         0    101000  [anon:scudo:secondary]
+    00000070'53eef000-00000070'53ef0fff ---         0      2000
+    00000070'53ef1000-00000070'53ff1fff rw-         0    101000  [anon:scudo:secondary]
+    00000070'53ff2000-00000070'53ff3fff ---         0      2000
+    00000070'53ff4000-00000070'540f4fff rw-         0    101000  [anon:scudo:secondary]
+    00000070'540f5000-00000070'540f6fff ---         0      2000
+    00000070'540f7000-00000070'541f7fff rw-         0    101000  [anon:scudo:secondary]
+    00000070'541f8000-00000070'541f9fff ---         0      2000
+    00000070'541fa000-00000070'542fafff rw-         0    101000  [anon:scudo:secondary]
+    00000070'542fb000-00000070'542fcfff ---         0      2000
+    00000070'542fd000-00000070'543fdfff rw-         0    101000  [anon:scudo:secondary]
+    00000070'543fe000-00000070'543fffff ---         0      2000
+    00000070'54400000-00000070'54500fff rw-         0    101000  [anon:scudo:secondary]
+    00000070'54501000-00000070'54502fff ---         0      2000
+    00000070'54503000-00000070'54603fff rw-         0    101000  [anon:scudo:secondary]
+    00000070'54604000-00000070'54605fff ---         0      2000
+    00000070'54606000-00000070'54706fff rw-         0    101000  [anon:scudo:secondary]
+    00000070'54707000-00000070'54708fff ---         0      2000
+    00000070'54709000-00000070'54809fff rw-         0    101000  [anon:scudo:secondary]
+    00000070'5480a000-00000070'5480bfff ---         0      2000
+    00000070'5480c000-00000070'5490cfff rw-         0    101000  [anon:scudo:secondary]
+    00000070'5490d000-00000070'5490efff ---         0      2000
+    00000070'5490f000-00000070'54a0ffff rw-         0    101000  [anon:scudo:secondary]
+    00000070'54a10000-00000070'54a11fff ---         0      2000
+    00000070'54a12000-00000070'54b12fff rw-         0    101000  [anon:scudo:secondary]
+    00000070'54b13000-00000070'54b14fff ---         0      2000
+    00000070'54b15000-00000070'54c15fff rw-         0    101000  [anon:scudo:secondary]
+    00000070'54c16000-00000070'54c17fff ---         0      2000
+    00000070'54c18000-00000070'54d18fff rw-         0    101000  [anon:scudo:secondary]
+    00000070'54d19000-00000070'54d1afff ---         0      2000
+    00000070'54d1b000-00000070'54e1bfff rw-         0    101000  [anon:scudo:secondary]
+    00000070'54e1c000-00000070'54e1dfff ---         0      2000
+    00000070'54e1e000-00000070'54f1efff rw-         0    101000  [anon:scudo:secondary]
+    00000070'54f1f000-00000070'54f20fff ---         0      2000
+    00000070'54f21000-00000070'55021fff rw-         0    101000  [anon:scudo:secondary]
+    00000070'55022000-00000070'55023fff ---         0      2000
+    00000070'55024000-00000070'550e1fff rw-         0     be000  [anon:scudo:secondary]
+    00000070'550e2000-00000070'550e2fff ---         0      1000
+    00000070'551bf000-00000070'551bffff ---         0      1000
+    00000070'551c0000-00000070'552c0fff rw-         0    101000  [anon:scudo:secondary]
+    00000070'552c1000-00000070'552c2fff ---         0      2000
+    00000070'552c3000-00000070'553c3fff rw-         0    101000  [anon:scudo:secondary]
+    00000070'553c4000-00000070'553c5fff ---         0      2000
+    00000070'553c6000-00000070'554c6fff rw-         0    101000  [anon:scudo:secondary]
+    00000070'554c7000-00000070'554c8fff ---         0      2000
+    00000070'554c9000-00000070'555c9fff rw-         0    101000  [anon:scudo:secondary]
+    00000070'555ca000-00000070'555cbfff ---         0      2000
+    00000070'555cc000-00000070'556ccfff rw-         0    101000  [a[[TRUNCATED]]
+
+========================================
+2026-04-24 18:03:19 data_app_native_crash (text, 15734 bytes)
+SystemUptimeMs: 851113312
+Process: com.anonymous.gurustudy.dev
+PID: 29928
+UID: 10479
+Frozen: false
+Flags: 0x28c8be46
+Package: com.anonymous.gurustudy.dev v1 (1.0.0)
+Foreground: Yes
+Process-Runtime: 17450
+Build: samsung/gts10pwifiins/gts10pwifi:16/BP2A.250605.031.A3/X820XXS7CZB5:user/release-keys
+Loading-Progress: 1.0
+Dropped-Count: 0
+
+*** *** *** *** *** *** *** *** *** *** *** *** *** *** *** ***
+Build fingerprint: 'samsung/gts10pwifiins/gts10pwifi:16/BP2A.250605.031.A3/X820XXS7CZB5:user/release-keys'
+Revision: '5'
+ABI: 'arm64'
+Processor: '7'
+Timestamp: 2026-04-24 18:03:18.783577610+0530
+Process uptime: 18s
+Cmdline: com.anonymous.gurustudy.dev
+pid: 29928, tid: 30229, name: DefaultDispatch  >>> com.anonymous.gurustudy.dev <<<
+uid: 10479
+tagged_addr_ctrl: 0000000000000001 (PR_TAGGED_ADDR_ENABLE)
+pac_enabled_keys: 000000000000000f (PR_PAC_APIAKEY, PR_PAC_APIBKEY, PR_PAC_APDAKEY, PR_PAC_APDBKEY)
+signal 11 (SIGSEGV), code 1 (SEGV_MAPERR), fault addr 0xffffffffffffffff
+    x0  ffffffffffffffff  x1  00000070835d2f10  x2  835d310000000000  x3  00000070835d2c68
+    x4  0000000000000120  x5  0000000013a76aee  x6  0000000000055f46  x7  b400007044107fc0
+    x8  0000000000000001  x9  0000000000000001  x10 0000000000000160  x11 00000000949b7953
+    x12 000000000012000c  x13 000000007fffffff  x14 0000000013a76aee  x15 0000129844bda16c
+    x16 0000007052da3358  x17 00000074cae6b540  x18 0000007082558000  x19 b40000732ec0e960
+    x20 00000070835d3280  x21 00000070835d31e0  x22 00000070835d2e90  x23 00000070835d2f10
+    x24 00000070835d3858  x25 00000070835d3520  x26 0000000000000000  x27 000000710089d810
+    x28 00000070835d33e0  x29 00000070835d34e0
+    lr  000000705211059c  sp  00000070835d2d60  pc  00000070521105b0  pst 0000000060001000
+67 total frames
+backtrace:
+      #00 pc 000000000070c5b0  /data/app/~~nnNt1w8bY-n9n5_BGCtmyg==/com.anonymous.gurustudy.dev-T-e49b-2iLvRlaaFO4bwgw==/base.apk!liblitertlm_jni.so (offset 0x6664000) (BuildId: ecacedccf835d7674c95bd40186d0fde)
+      #01 pc 00000000006f9a60  /data/app/~~nnNt1w8bY-n9n5_BGCtmyg==/com.anonymous.gurustudy.dev-T-e49b-2iLvRlaaFO4bwgw==/base.apk!liblitertlm_jni.so (offset 0x6664000) (Java_com_google_ai_edge_litertlm_LiteRtLmJni_nativeSendMessage+248) (BuildId: ecacedccf835d7674c95bd40186d0fde)
+      #02 pc 00000000002c2300  /apex/com.android.art/lib64/libart.so (art_quick_generic_jni_trampoline+144) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #03 pc 00000000002aaf94  /apex/com.android.art/lib64/libart.so (art_quick_invoke_stub+612) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #04 pc 0000000000585f48  /apex/com.android.art/lib64/libart.so (bool art::interpreter::DoCall<false>(art::ArtMethod*, art::Thread*, art::ShadowFrame&, art::Instruction const*, unsigned short, bool, art::JValue*)+2688) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #05 pc 0000000000490364  /apex/com.android.art/lib64/libart.so (void art::interpreter::ExecuteSwitchImplCpp<false>(art::interpreter::SwitchImplContext*)+1484) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #06 pc 00000000003d1718  /apex/com.android.art/lib64/libart.so (ExecuteSwitchImplAsm+8) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #07 pc 0000000000380370  /data/app/~~nnNt1w8bY-n9n5_BGCtmyg==/com.anonymous.gurustudy.dev-T-e49b-2iLvRlaaFO4bwgw==/base.apk (offset 0x2079000) (com.google.ai.edge.litertlm.Conversation.sendMessage+0)
+      #08 pc 00000000003d22e4  /apex/com.android.art/lib64/libart.so (art::interpreter::ArtInterpreterToInterpreterBridge(art::Thread*, art::CodeItemDataAccessor const&, art::ShadowFrame*, art::JValue*)+448) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #09 pc 0000000000586338  /apex/com.android.art/lib64/libart.so (bool art::interpreter::DoCall<false>(art::ArtMethod*, art::Thread*, art::ShadowFrame&, art::Instruction const*, unsigned short, bool, art::JValue*)+3696) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #10 pc 0000000000490364  /apex/com.android.art/lib64/libart.so (void art::interpreter::ExecuteSwitchImplCpp<false>(art::interpreter::SwitchImplContext*)+1484) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #11 pc 00000000003d1718  /apex/com.android.art/lib64/libart.so (ExecuteSwitchImplAsm+8) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #12 pc 0000000000380334  /data/app/~~nnNt1w8bY-n9n5_BGCtmyg==/com.anonymous.gurustudy.dev-T-e49b-2iLvRlaaFO4bwgw==/base.apk (offset 0x2079000) (com.google.ai.edge.litertlm.Conversation.sendMessage+0)
+      #13 pc 00000000003d22e4  /apex/com.android.art/lib64/libart.so (art::interpreter::ArtInterpreterToInterpreterBridge(art::Thread*, art::CodeItemDataAccessor const&, art::ShadowFrame*, art::JValue*)+448) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #14 pc 0000000000586338  /apex/com.android.art/lib64/libart.so (bool art::interpreter::DoCall<false>(art::ArtMethod*, art::Thread*, art::ShadowFrame&, art::Instruction const*, unsigned short, bool, art::JValue*)+3696) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #15 pc 0000000000490364  /apex/com.android.art/lib64/libart.so (void art::interpreter::ExecuteSwitchImplCpp<false>(art::interpreter::SwitchImplContext*)+1484) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #16 pc 00000000003d1718  /apex/com.android.art/lib64/libart.so (ExecuteSwitchImplAsm+8) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #17 pc 00000000003804a4  /data/app/~~nnNt1w8bY-n9n5_BGCtmyg==/com.anonymous.gurustudy.dev-T-e49b-2iLvRlaaFO4bwgw==/base.apk (offset 0x2079000) (com.google.ai.edge.litertlm.Conversation.sendMessage+0)
+      #18 pc 00000000003d22e4  /apex/com.android.art/lib64/libart.so (art::interpreter::ArtInterpreterToInterpreterBridge(art::Thread*, art::CodeItemDataAccessor const&, art::ShadowFrame*, art::JValue*)+448) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #19 pc 0000000000586338  /apex/com.android.art/lib64/libart.so (bool art::interpreter::DoCall<false>(art::ArtMethod*, art::Thread*, art::ShadowFrame&, art::Instruction const*, unsigned short, bool, art::JValue*)+3696) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #20 pc 0000000000490364  /apex/com.android.art/lib64/libart.so (void art::interpreter::ExecuteSwitchImplCpp<false>(art::interpreter::SwitchImplContext*)+1484) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #21 pc 00000000003d1718  /apex/com.android.art/lib64/libart.so (ExecuteSwitchImplAsm+8) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #22 pc 00000000000292ac  /data/app/~~nnNt1w8bY-n9n5_BGCtmyg==/com.anonymous.gurustudy.dev-T-e49b-2iLvRlaaFO4bwgw==/base.apk (offset 0xffc000) (expo.modules.localllm.LocalModelRuntime.runChat+0)
+      #23 pc 00000000003d22e4  /apex/com.android.art/lib64/libart.so (art::interpreter::ArtInterpreterToInterpreterBridge(art::Thread*, art::CodeItemDataAccessor const&, art::ShadowFrame*, art::JValue*)+448) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #24 pc 000000000051c498  /apex/com.android.art/lib64/libart.so (bool art::interpreter::DoCall<true>(art::ArtMethod*, art::Thread*, art::ShadowFrame&, art::Instruction const*, unsigned short, bool, art::JValue*)+1536) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #25 pc 0000000000491eb8  /apex/com.android.art/lib64/libart.so (void art::interpreter::ExecuteSwitchImplCpp<false>(art::interpreter::SwitchImplContext*)+8480) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #26 pc 00000000003d1718  /apex/com.android.art/lib64/libart.so (ExecuteSwitchImplAsm+8) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #27 pc 0000000000025f0c  /data/app/~~nnNt1w8bY-n9n5_BGCtmyg==/com.anonymous.gurustudy.dev-T-e49b-2iLvRlaaFO4bwgw==/base.apk (offset 0xffc000) (expo.modules.localllm.LocalLlmModule$definition$1$15$1.invokeSuspend+0)
+      #28 pc 00000000003d22e4  /apex/com.android.art/lib64/libart.so (art::interpreter::ArtInterpreterToInterpreterBridge(art::Thread*, art::CodeItemDataAccessor const&, art::ShadowFrame*, art::JValue*)+448) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #29 pc 0000000000586338  /apex/com.android.art/lib64/libart.so (bool art::interpreter::DoCall<false>(art::ArtMethod*, art::Thread*, art::ShadowFrame&, art::Instruction const*, unsigned short, bool, art::JValue*)+3696) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #30 pc 0000000000490364  /apex/com.android.art/lib64/libart.so (void art::interpreter::ExecuteSwitchImplCpp<false>(art::interpreter::SwitchImplContext*)+1484) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #31 pc 00000000003d1718  /apex/com.android.art/lib64/libart.so (ExecuteSwitchImplAsm+8) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #32 pc 000000000025f408  /data/app/~~nnNt1w8bY-n9n5_BGCtmyg==/com.anonymous.gurustudy.dev-T-e49b-2iLvRlaaFO4bwgw==/base.apk (offset 0x35b0000) (kotlin.coroutines.jvm.internal.BaseContinuationImpl.resumeWith+0)
+      #33 pc 00000000003d22e4  /apex/com.android.art/lib64/libart.so (art::interpreter::ArtInterpreterToInterpreterBridge(art::Thread*, art::CodeItemDataAccessor const&, art::ShadowFrame*, art::JValue*)+448) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #34 pc 0000000000586338  /apex/com.android.art/lib64/libart.so (bool art::interpreter::DoCall<false>(art::ArtMethod*, art::Thread*, art::ShadowFrame&, art::Instruction const*, unsigned short, bool, art::JValue*)+3696) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #35 pc 000000000049052c  /apex/com.android.art/lib64/libart.so (void art::interpreter::ExecuteSwitchImplCpp<false>(art::interpreter::SwitchImplContext*)+1940) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #36 pc 00000000003d1718  /apex/com.android.art/lib64/libart.so (ExecuteSwitchImplAsm+8) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #37 pc 00000000003a00d0  /data/app/~~nnNt1w8bY-n9n5_BGCtmyg==/com.anonymous.gurustudy.dev-T-e49b-2iLvRlaaFO4bwgw==/base.apk (offset 0x35b0000) (kotlinx.coroutines.DispatchedTask.run+0)
+      #38 pc 00000000003d22e4  /apex/com.android.art/lib64/libart.so (art::interpreter::ArtInterpreterToInterpreterBridge(art::Thread*, art::CodeItemDataAccessor const&, art::ShadowFrame*, art::JValue*)+448) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #39 pc 0000000000586338  /apex/com.android.art/lib64/libart.so (bool art::interpreter::DoCall<false>(art::ArtMethod*, art::Thread*, art::ShadowFrame&, art::Instruction const*, unsigned short, bool, art::JValue*)+3696) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #40 pc 0000000000490364  /apex/com.android.art/lib64/libart.so (void art::interpreter::ExecuteSwitchImplCpp<false>(art::interpreter::SwitchImplContext*)+1484) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #41 pc 00000000003d1718  /apex/com.android.art/lib64/libart.so (ExecuteSwitchImplAsm+8) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #42 pc 00000000003e4304  /data/app/~~nnNt1w8bY-n9n5_BGCtmyg==/com.anonymous.gurustudy.dev-T-e49b-2iLvRlaaFO4bwgw==/base.apk (offset 0x35b0000) (kotlinx.coroutines.scheduling.CoroutineScheduler.runSafely+0)
+      #43 pc 00000000003d22e4  /apex/com.android.art/lib64/libart.so (art::interpreter::ArtInterpreterToInterpreterBridge(art::Thread*, art::CodeItemDataAccessor const&, art::ShadowFrame*, art::JValue*)+448) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #44 pc 0000000000586338  /apex/com.android.art/lib64/libart.so (bool art::interpreter::DoCall<false>(art::ArtMethod*, art::Thread*, art::ShadowFrame&, art::Instruction const*, unsigned short, bool, art::JValue*)+3696) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #45 pc 0000000000490364  /apex/com.android.art/lib64/libart.so (void art::interpreter::ExecuteSwitchImplCpp<false>(art::interpreter::SwitchImplContext*)+1484) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #46 pc 00000000003d1718  /apex/com.android.art/lib64/libart.so (ExecuteSwitchImplAsm+8) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #47 pc 00000000003e2e00  /data/app/~~nnNt1w8bY-n9n5_BGCtmyg==/com.anonymous.gurustudy.dev-T-e49b-2iLvRlaaFO4bwgw==/base.apk (offset 0x35b0000) (kotlinx.coroutines.scheduling.CoroutineScheduler$Worker.executeTask+0)
+      #48 pc 00000000003d22e4  /apex/com.android.art/lib64/libart.so (art::interpreter::ArtInterpreterToInterpreterBridge(art::Thread*, art::CodeItemDataAccessor const&, art::ShadowFrame*, art::JValue*)+448) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #49 pc 0000000000586338  /apex/com.android.art/lib64/libart.so (bool art::interpreter::DoCall<false>(art::ArtMethod*, art::Thread*, art::ShadowFrame&, art::Instruction const*, unsigned short, bool, art::JValue*)+3696) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #50 pc 000000000048ff6c  /apex/com.android.art/lib64/libart.so (void art::interpreter::ExecuteSwitchImplCpp<false>(art::interpreter::SwitchImplContext*)+468) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #51 pc 00000000003d1718  /apex/com.android.art/lib64/libart.so (ExecuteSwitchImplAsm+8) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #52 pc 00000000003e2f74  /data/app/~~nnNt1w8bY-n9n5_BGCtmyg==/com.anonymous.gurustudy.dev-T-e49b-2iLvRlaaFO4bwgw==/base.apk (offset 0x35b0000) (kotlinx.coroutines.scheduling.CoroutineScheduler$Worker.runWorker+0)
+      #53 pc 00000000003d22e4  /apex/com.android.art/lib64/libart.so (art::interpreter::ArtInterpreterToInterpreterBridge(art::Thread*, art::CodeItemDataAccessor const&, art::ShadowFrame*, art::JValue*)+448) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #54 pc 0000000000586338  /apex/com.android.art/lib64/libart.so (bool art::interpreter::DoCall<false>(art::ArtMethod*, art::Thread*, art::ShadowFrame&, art::Instruction const*, unsigned short, bool, art::JValue*)+3696) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #55 pc 000000000048ff6c  /apex/com.android.art/lib64/libart.so (void art::interpreter::ExecuteSwitchImplCpp<false>(art::interpreter::SwitchImplContext*)+468) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #56 pc 00000000003d1718  /apex/com.android.art/lib64/libart.so (ExecuteSwitchImplAsm+8) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #57 pc 00000000003e2f5c  /data/app/~~nnNt1w8bY-n9n5_BGCtmyg==/com.anonymous.gurustudy.dev-T-e49b-2iLvRlaaFO4bwgw==/base.apk (offset 0x35b0000) (kotlinx.coroutines.scheduling.CoroutineScheduler$Worker.run+0)
+      #58 pc 00000000003d136c  /apex/com.android.art/lib64/libart.so (art::interpreter::Execute(art::Thread*, art::CodeItemDataAccessor const&, art::ShadowFrame&, art::JValue, bool, bool) (.__uniq.112435418011751916792819755956732575238.llvm.15381326084910962254)+364) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #59 pc 00000000003d0aa0  /apex/com.android.art/lib64/libart.so (artQuickToInterpreterBridge+1020) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #60 pc 00000000002c2438  /apex/com.android.art/lib64/libart.so (art_quick_to_interpreter_bridge+88) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #61 pc 00000000002aaf94  /apex/com.android.art/lib64/libart.so (art_quick_invoke_stub+612) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #62 pc 00000000002709b0  /apex/com.android.art/lib64/libart.so (art::ArtMethod::Invoke(art::Thread*, unsigned int*, unsigned int, art::JValue*, char const*)+220) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #63 pc 00000000004bdfc8  /apex/com.android.art/lib64/libart.so (art::Thread::CreateCallback(void*)+1184) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #64 pc 00000000004bdb18  /apex/com.android.art/lib64/libart.so (art::Thread::CreateCallbackWithUffdGc(void*)+8) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #65 pc 0000000000082c4c  /apex/com.android.runtime/lib64/bionic/libc.so (__pthread_start(void*)+236) (BuildId: 1a3e2eff9b521b59ef377e69d16e88b8)
+      #66 pc 00000000000754b0  /apex/com.android.runtime/lib64/bionic/libc.so (__start_thread+64) (BuildId: 1a3e2eff9b521b59ef377e69d16e88b8)
+
+========================================
+2026-04-24 18:03:19 SYSTEM_TOMBSTONE_PROTO_WITH_HEADERS (compressed data, 125537 bytes)
+/data/system/dropbox/SYSTEM_TOMBSTONE_PROTO_WITH_HEADERS@1777033999625.dat.gz
+
+========================================
+2026-04-24 18:03:19 SYSTEM_TOMBSTONE (compressed text, 9944 bytes)
+isPrevious: true
+Build: samsung/gts10pwifiins/gts10pwifi:16/BP2A.250605.031.A3/X820XXS7CZB5:user/release-keys
+Hardware: gts10pwifi
+Revision: 5
+Bootloader: X820XXS7CZB5
+Radio: null
+Kernel: Linux version 6.1.134-android14-11-abX820XXS7CZB5 (build-user@build-host) (Android (10087095, +pgo, +bolt, +lto, -mlgo, based on r487747c) clang version 17.0.2 (https://android.googlesource.com/toolchain/llvm-project d9f89f4d16663d5012e5c09495f3b30ece3d2362), LLD 17.0.2) #1 SMP PREEMPT Fri Feb 13 05:54:51 UTC 2026
+
+Dropped-Count: 0
+*** *** *** *** *** *** *** *** *** *** *** *** *** *** *** ***
+Build fingerprint: 'samsung/gts10pwifiins/gts10pwifi:16/BP2A.250605.031.A3/X820XXS7CZB5:user/release-keys'
+Revision: '5'
+ABI: 'arm64'
+Processor: '7'
+Timestamp: 2026-04-24 18:03:18.783577610+0530
+Process uptime: 18s
+Cmdline: com.anonymous.gurustudy.dev
+pid: 29928, tid: 30229, name: DefaultDispatch  >>> com.anonymous.gurustudy.dev <<<
+uid: 10479
+tagged_addr_ctrl: 0000000000000001 (PR_TAGGED_ADDR_ENABLE)
+pac_enabled_keys: 000000000000000f (PR_PAC_APIAKEY, PR_PAC_APIBKEY, PR_PAC_APDAKEY, PR_PAC_APDBKEY)
+signal 11 (SIGSEGV), code 1 (SEGV_MAPERR), fault addr 0xffffffffffffffff
+    x0  ffffffffffffffff  x1  00000070835d2f10  x2  835d310000000000  x3  00000070835d2c68
+    x4  0000000000000120  x5  0000000013a76aee  x6  0000000000055f46  x7  b400007044107fc0
+    x8  0000000000000001  x9  0000000000000001  x10 0000000000000160  x11 00000000949b7953
+    x12 000000000012000c  x13 000000007fffffff  x14 0000000013a76aee  x15 0000129844bda16c
+    x16 0000007052da3358  x17 00000074cae6b540  x18 0000007082558000  x19 b40000732ec0e960
+    x20 00000070835d3280  x21 00000070835d31e0  x22 00000070835d2e90  x23 00000070835d2f10
+    x24 00000070835d3858  x25 00000070835d3520  x26 0000000000000000  x27 000000710089d810
+    x28 00000070835d33e0  x29 00000070835d34e0
+    lr  000000705211059c  sp  00000070835d2d60  pc  00000070521105b0  pst 0000000060001000
+
+67 total frames
+backtrace:
+      #00 pc 000000000070c5b0  /data/app/~~nnNt1w8bY-n9n5_BGCtmyg==/com.anonymous.gurustudy.dev-T-e49b-2iLvRlaaFO4bwgw==/base.apk!liblitertlm_jni.so (offset 0x6664000) (BuildId: ecacedccf835d7674c95bd40186d0fde)
+      #01 pc 00000000006f9a60  /data/app/~~nnNt1w8bY-n9n5_BGCtmyg==/com.anonymous.gurustudy.dev-T-e49b-2iLvRlaaFO4bwgw==/base.apk!liblitertlm_jni.so (offset 0x6664000) (Java_com_google_ai_edge_litertlm_LiteRtLmJni_nativeSendMessage+248) (BuildId: ecacedccf835d7674c95bd40186d0fde)
+      #02 pc 00000000002c2300  /apex/com.android.art/lib64/libart.so (art_quick_generic_jni_trampoline+144) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #03 pc 00000000002aaf94  /apex/com.android.art/lib64/libart.so (art_quick_invoke_stub+612) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #04 pc 0000000000585f48  /apex/com.android.art/lib64/libart.so (bool art::interpreter::DoCall<false>(art::ArtMethod*, art::Thread*, art::ShadowFrame&, art::Instruction const*, unsigned short, bool, art::JValue*)+2688) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #05 pc 0000000000490364  /apex/com.android.art/lib64/libart.so (void art::interpreter::ExecuteSwitchImplCpp<false>(art::interpreter::SwitchImplContext*)+1484) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #06 pc 00000000003d1718  /apex/com.android.art/lib64/libart.so (ExecuteSwitchImplAsm+8) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #07 pc 0000000000380370  /data/app/~~nnNt1w8bY-n9n5_BGCtmyg==/com.anonymous.gurustudy.dev-T-e49b-2iLvRlaaFO4bwgw==/base.apk (offset 0x2079000) (com.google.ai.edge.litertlm.Conversation.sendMessage+0)
+      #08 pc 00000000003d22e4  /apex/com.android.art/lib64/libart.so (art::interpreter::ArtInterpreterToInterpreterBridge(art::Thread*, art::CodeItemDataAccessor const&, art::ShadowFrame*, art::JValue*)+448) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #09 pc 0000000000586338  /apex/com.android.art/lib64/libart.so (bool art::interpreter::DoCall<false>(art::ArtMethod*, art::Thread*, art::ShadowFrame&, art::Instruction const*, unsigned short, bool, art::JValue*)+3696) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #10 pc 0000000000490364  /apex/com.android.art/lib64/libart.so (void art::interpreter::ExecuteSwitchImplCpp<false>(art::interpreter::SwitchImplContext*)+1484) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #11 pc 00000000003d1718  /apex/com.android.art/lib64/libart.so (ExecuteSwitchImplAsm+8) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #12 pc 0000000000380334  /data/app/~~nnNt1w8bY-n9n5_BGCtmyg==/com.anonymous.gurustudy.dev-T-e49b-2iLvRlaaFO4bwgw==/base.apk (offset 0x2079000) (com.google.ai.edge.litertlm.Conversation.sendMessage+0)
+      #13 pc 00000000003d22e4  /apex/com.android.art/lib64/libart.so (art::interpreter::ArtInterpreterToInterpreterBridge(art::Thread*, art::CodeItemDataAccessor const&, art::ShadowFrame*, art::JValue*)+448) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #14 pc 0000000000586338  /apex/com.android.art/lib64/libart.so (bool art::interpreter::DoCall<false>(art::ArtMethod*, art::Thread*, art::ShadowFrame&, art::Instruction const*, unsigned short, bool, art::JValue*)+3696) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #15 pc 0000000000490364  /apex/com.android.art/lib64/libart.so (void art::interpreter::ExecuteSwitchImplCpp<false>(art::interpreter::SwitchImplContext*)+1484) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #16 pc 00000000003d1718  /apex/com.android.art/lib64/libart.so (ExecuteSwitchImplAsm+8) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #17 pc 00000000003804a4  /data/app/~~nnNt1w8bY-n9n5_BGCtmyg==/com.anonymous.gurustudy.dev-T-e49b-2iLvRlaaFO4bwgw==/base.apk (offset 0x2079000) (com.google.ai.edge.litertlm.Conversation.sendMessage+0)
+      #18 pc 00000000003d22e4  /apex/com.android.art/lib64/libart.so (art::interpreter::ArtInterpreterToInterpreterBridge(art::Thread*, art::CodeItemDataAccessor const&, art::ShadowFrame*, art::JValue*)+448) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #19 pc 0000000000586338  /apex/com.android.art/lib64/libart.so (bool art::interpreter::DoCall<false>(art::ArtMethod*, art::Thread*, art::ShadowFrame&, art::Instruction const*, unsigned short, bool, art::JValue*)+3696) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #20 pc 0000000000490364  /apex/com.android.art/lib64/libart.so (void art::interpreter::ExecuteSwitchImplCpp<false>(art::interpreter::SwitchImplContext*)+1484) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #21 pc 00000000003d1718  /apex/com.android.art/lib64/libart.so (ExecuteSwitchImplAsm+8) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #22 pc 00000000000292ac  /data/app/~~nnNt1w8bY-n9n5_BGCtmyg==/com.anonymous.gurustudy.dev-T-e49b-2iLvRlaaFO4bwgw==/base.apk (offset 0xffc000) (expo.modules.localllm.LocalModelRuntime.runChat+0)
+      #23 pc 00000000003d22e4  /apex/com.android.art/lib64/libart.so (art::interpreter::ArtInterpreterToInterpreterBridge(art::Thread*, art::CodeItemDataAccessor const&, art::ShadowFrame*, art::JValue*)+448) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #24 pc 000000000051c498  /apex/com.android.art/lib64/libart.so (bool art::interpreter::DoCall<true>(art::ArtMethod*, art::Thread*, art::ShadowFrame&, art::Instruction const*, unsigned short, bool, art::JValue*)+1536) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #25 pc 0000000000491eb8  /apex/com.android.art/lib64/libart.so (void art::interpreter::ExecuteSwitchImplCpp<false>(art::interpreter::SwitchImplContext*)+8480) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #26 pc 00000000003d1718  /apex/com.android.art/lib64/libart.so (ExecuteSwitchImplAsm+8) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #27 pc 0000000000025f0c  /data/app/~~nnNt1w8bY-n9n5_BGCtmyg==/com.anonymous.gurustudy.dev-T-e49b-2iLvRlaaFO4bwgw==/base.apk (offset 0xffc000) (expo.modules.localllm.LocalLlmModule$definition$1$15$1.invokeSuspend+0)
+      #28 pc 00000000003d22e4  /apex/com.android.art/lib64/libart.so (art::interpreter::ArtInterpreterToInterpreterBridge(art::Thread*, art::CodeItemDataAccessor const&, art::ShadowFrame*, art::JValue*)+448) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #29 pc 0000000000586338  /apex/com.android.art/lib64/libart.so (bool art::interpreter::DoCall<false>(art::ArtMethod*, art::Thread*, art::ShadowFrame&, art::Instruction const*, unsigned short, bool, art::JValue*)+3696) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #30 pc 0000000000490364  /apex/com.android.art/lib64/libart.so (void art::interpreter::ExecuteSwitchImplCpp<false>(art::interpreter::SwitchImplContext*)+1484) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #31 pc 00000000003d1718  /apex/com.android.art/lib64/libart.so (ExecuteSwitchImplAsm+8) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #32 pc 000000000025f408  /data/app/~~nnNt1w8bY-n9n5_BGCtmyg==/com.anonymous.gurustudy.dev-T-e49b-2iLvRlaaFO4bwgw==/base.apk (offset 0x35b0000) (kotlin.coroutines.jvm.internal.BaseContinuationImpl.resumeWith+0)
+      #33 pc 00000000003d22e4  /apex/com.android.art/lib64/libart.so (art::interpreter::ArtInterpreterToInterpreterBridge(art::Thread*, art::CodeItemDataAccessor const&, art::ShadowFrame*, art::JValue*)+448) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #34 pc 0000000000586338  /apex/com.android.art/lib64/libart.so (bool art::interpreter::DoCall<false>(art::ArtMethod*, art::Thread*, art::ShadowFrame&, art::Instruction const*, unsigned short, bool, art::JValue*)+3696) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #35 pc 000000000049052c  /apex/com.android.art/lib64/libart.so (void art::interpreter::ExecuteSwitchImplCpp<false>(art::interpreter::SwitchImplContext*)+1940) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #36 pc 00000000003d1718  /apex/com.android.art/lib64/libart.so (ExecuteSwitchImplAsm+8) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #37 pc 00000000003a00d0  /data/app/~~nnNt1w8bY-n9n5_BGCtmyg==/com.anonymous.gurustudy.dev-T-e49b-2iLvRlaaFO4bwgw==/base.apk (offset 0x35b0000) (kotlinx.coroutines.DispatchedTask.run+0)
+      #38 pc 00000000003d22e4  /apex/com.android.art/lib64/libart.so (art::interpreter::ArtInterpreterToInterpreterBridge(art::Thread*, art::CodeItemDataAccessor const&, art::ShadowFrame*, art::JValue*)+448) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #39 pc 0000000000586338  /apex/com.android.art/lib64/libart.so (bool art::interpreter::DoCall<false>(art::ArtMethod*, art::Thread*, art::ShadowFrame&, art::Instruction const*, unsigned short, bool, art::JValue*)+3696) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #40 pc 0000000000490364  /apex/com.android.art/lib64/libart.so (void art::interpreter::ExecuteSwitchImplCpp<false>(art::interpreter::SwitchImplContext*)+1484) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #41 pc 00000000003d1718  /apex/com.android.art/lib64/libart.so (ExecuteSwitchImplAsm+8) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #42 pc 00000000003e4304  /data/app/~~nnNt1w8bY-n9n5_BGCtmyg==/com.anonymous.gurustudy.dev-T-e49b-2iLvRlaaFO4bwgw==/base.apk (offset 0x35b0000) (kotlinx.coroutines.scheduling.CoroutineScheduler.runSafely+0)
+      #43 pc 00000000003d22e4  /apex/com.android.art/lib64/libart.so (art::interpreter::ArtInterpreterToInterpreterBridge(art::Thread*, art::CodeItemDataAccessor const&, art::ShadowFrame*, art::JValue*)+448) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #44 pc 0000000000586338  /apex/com.android.art/lib64/libart.so (bool art::interpreter::DoCall<false>(art::ArtMethod*, art::Thread*, art::ShadowFrame&, art::Instruction const*, unsigned short, bool, art::JValue*)+3696) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #45 pc 0000000000490364  /apex/com.android.art/lib64/libart.so (void art::interpreter::ExecuteSwitchImplCpp<false>(art::interpreter::SwitchImplContext*)+1484) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #46 pc 00000000003d1718  /apex/com.android.art/lib64/libart.so (ExecuteSwitchImplAsm+8) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #47 pc 00000000003e2e00  /data/app/~~nnNt1w8bY-n9n5_BGCtmyg==/com.anonymous.gurustudy.dev-T-e49b-2iLvRlaaFO4bwgw==/base.apk (offset 0x35b0000) (kotlinx.coroutines.scheduling.CoroutineScheduler$Worker.executeTask+0)
+      #48 pc 00000000003d22e4  /apex/com.android.art/lib64/libart.so (art::interpreter::ArtInterpreterToInterpreterBridge(art::Thread*, art::CodeItemDataAccessor const&, art::ShadowFrame*, art::JValue*)+448) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #49 pc 0000000000586338  /apex/com.android.art/lib64/libart.so (bool art::interpreter::DoCall<false>(art::ArtMethod*, art::Thread*, art::ShadowFrame&, art::Instruction const*, unsigned short, bool, art::JValue*)+3696) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #50 pc 000000000048ff6c  /apex/com.android.art/lib64/libart.so (void art::interpreter::ExecuteSwitchImplCpp<false>(art::interpreter::SwitchImplContext*)+468) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #51 pc 00000000003d1718  /apex/com.android.art/lib64/libart.so (ExecuteSwitchImplAsm+8) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #52 pc 00000000003e2f74  /data/app/~~nnNt1w8bY-n9n5_BGCtmyg==/com.anonymous.gurustudy.dev-T-e49b-2iLvRlaaFO4bwgw==/base.apk (offset 0x35b0000) (kotlinx.coroutines.scheduling.CoroutineScheduler$Worker.runWorker+0)
+      #53 pc 00000000003d22e4  /apex/com.android.art/lib64/libart.so (art::interpreter::ArtInterpreterToInterpreterBridge(art::Thread*, art::CodeItemDataAccessor const&, art::ShadowFrame*, art::JValue*)+448) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #54 pc 0000000000586338  /apex/com.android.art/lib64/libart.so (bool art::interpreter::DoCall<false>(art::ArtMethod*, art::Thread*, art::ShadowFrame&, art::Instruction const*, unsigned short, bool, art::JValue*)+3696) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #55 pc 000000000048ff6c  /apex/com.android.art/lib64/libart.so (void art::interpreter::ExecuteSwitchImplCpp<false>(art::interpreter::SwitchImplContext*)+468) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #56 pc 00000000003d1718  /apex/com.android.art/lib64/libart.so (ExecuteSwitchImplAsm+8) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #57 pc 00000000003e2f5c  /data/app/~~nnNt1w8bY-n9n5_BGCtmyg==/com.anonymous.gurustudy.dev-T-e49b-2iLvRlaaFO4bwgw==/base.apk (offset 0x35b0000) (kotlinx.coroutines.scheduling.CoroutineScheduler$Worker.run+0)
+      #58 pc 00000000003d136c  /apex/com.android.art/lib64/libart.so (art::interpreter::Execute(art::Thread*, art::CodeItemDataAccessor const&, art::ShadowFrame&, art::JValue, bool, bool) (.__uniq.112435418011751916792819755956732575238.llvm.15381326084910962254)+364) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #59 pc 00000000003d0aa0  /apex/com.android.art/lib64/libart.so (artQuickToInterpreterBridge+1020) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #60 pc 00000000002c2438  /apex/com.android.art/lib64/libart.so (art_quick_to_interpreter_bridge+88) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #61 pc 00000000002aaf94  /apex/com.android.art/lib64/libart.so (art_quick_invoke_stub+612) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #62 pc 00000000002709b0  /apex/com.android.art/lib64/libart.so (art::ArtMethod::Invoke(art::Thread*, unsigned int*, unsigned int, art::JValue*, char const*)+220) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #63 pc 00000000004bdfc8  /apex/com.android.art/lib64/libart.so (art::Thread::CreateCallback(void*)+1184) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #64 pc 00000000004bdb18  /apex/com.android.art/lib64/libart.so (art::Thread::CreateCallbackWithUffdGc(void*)+8) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+      #65 pc 0000000000082c4c  /apex/com.android.runtime/lib64/bionic/libc.so (__pthread_start(void*)+236) (BuildId: 1a3e2eff9b521b59ef377e69d16e88b8)
+      #66 pc 00000000000754b0  /apex/com.android.runtime/lib64/bionic/libc.so (__start_thread+64) (BuildId: 1a3e2eff9b521b59ef377e69d16e88b8)
+
+memory near x1 ([anon:stack_and_tls:30229]):
+    00000070835d2ef0 0000000000000001 00000070835d3018  .........0].p...
+    00000070835d2f00 0000000000000000 0000000000000000  ................
+    00000070835d2f10 ffffffffffffffff 0000000000000000  ................
+    00000070835d2f20 00000070835d2f80 00000074cae71a00  ./].p.......t...
+    00000070835d2f30 00000070835d33e0 000000710089d810  .3].p.......q...
+    00000070835d2f40 0000000000000000 00000070835d3520  ........ 5].p...
+    00000070835d2f50 00000070835d3800 0000000000000001  .8].p...........
+    00000070835d2f60 ffffffffffffffff 0000000000000000  ................
+    00000070835d2f70 b40000736e52cb10 b40000736e52cba0  ..Rns.....Rns...
+    00000070835d2f80 b40000736e52cba0 00000074cae6b780  ..Rns.......t...
+    00000070835d2f90 0000000000000001 0000000000000000  ................
+    00000070835d2fa0 0000000000000000 0000000000000000  ................
+    00000070835d2fb0 0000000000000001 0000000000000059  ........Y.......
+    00000070835d2fc0 0000000000000055 b4000071de2eab40  U.......@...q...
+    00000070835d2fd0 0000000000000001 b4000072af4ab430  ........0.J.r...
+    00000070835d2fe0 0000000000000000 00000070835d2fff  ........./].p...
+
+memory near x3 ([anon:stack_and_tls:30229]):
+    00000070835d2c40 b40000736e52cba0 00000070835d2cb0  ..Rns....,].p...
+    00000070835d2c50 0000000000000001 000000720f8800b0  ............r...
+    00000070835d2c60 0000001152100cfc 795300000012000c  ...R..........Sy
+    00000070835d2c70 00000070835d34e0 00000070520fbf2c  .4].p...,..Rp...
+    00000070835d2c80 b40000736e52cba0 00000070835d2cb0  ..Rns....,].p...
+    00000070835d2c90 0000000000000001 b40000731e3ceef0  ..........<.s...
+    00000070835d2ca0 000000705232969c 00000070835d2d10  ..2Rp....-].p...
+    00000070835d2cb0 0000000000000001 0000000000000000  ................
+    00000070835d2cc0 0000000000000000 0000000000000000  ................
+    00000070835d2cd0 b40000720f87eed0 b40000720f87eed0  ....r.......r...
+    00000070835d2ce0 b40000720f87eff0 0000000000000001  ....r...........
+    00000070835d2cf0 0000000000000001 0000000000000000  ................
+    00000070835d2d00 0000000000000000 0000000000000000  ................
+    00000070835d2d10 b40000720f8800b0 b40000720f8800b0  ....r.......r...
+    00000070835d2d20 b40000720f8801d0 0000000000000001  ....r...........
+    00000070835d2d30 0000007052110580 00000070835d2f10  ...Rp..../].p...
+
+memory near x7 ([anon:scudo:secondary]):
+    0000007044107fa0 0000000000000000 0000000000000000  ................
+    0000007044107fb0 0000000000000000 0000000000000000  ................
+    0000007044107fc0 6cfc2a010a0d1722 7f12e1fdfdb63562  "....*.lb5......
+    0000007044107fd0 16161616140726d6 1616161616161616  .&..............
+    0000007044107fe0 1616161616161616 1616161616161616  ................
+    0000007044107ff0 1616161616161616 1616161616161616  ................
+    0000007044108000 1616161616161616 1616161616161616  ................
+    0000007044108010 1616161616161616 1616161616161616  ................
+    0000007044108020 1616161616161616 1616161616161616  ................
+    0000007044108030 1616161616161616 1616161616161616  ................
+    0000007044108040 0000000000000000 0000000000000000  ................
+    0000007044108050 0000000000000000 0000000000000000  ................
+    0000007044108060 0000000000000000 0000000000000000  ................
+    0000007044108070 0000000000000000 0000000000000000  ................
+    0000007044108080 0000000000000000 0000000000000000  ................
+    0000007044108090 0000000000000000 0000000000000000  ................
+
+memory near x16 (/data/app/~~nnNt1w8bY-n9n5_BGCtmyg==/com.anonymous.gurustudy.dev-T-e49b-2iLvRlaaFO4bwgw==/base.apk):
+    0000007052da3330 00000074caea6af0 00000074cae7d740  .j..t...@...t...
+    0000007052da3340 00000074cae9bc60 00000074cae7d640  `...t...@...t...
+    0000007052da3350 00000074cae6b750 00000074cae6b540  P...t...@...t...
+    0000007052da3360 00000074cae96050 00000074cae95ff0  P`..t...._..t...
+    0000007052da3370 00000074efad4d70 00000074efac24b0  pM..t....$..t...
+    0000007052da3380 00000074caec8090 00000074daeaf040  ....t...@...t...
+    0000007052da3390 00000074daeaf020 00000074cae9be20   ...t... ...t...
+    0000007052da33a0 00000074caeee940 00000074cae91a80  @...t.......t...
+    0000007052da33b0 00000074cae8a740 00000074cae9df70  @...t...p...t...
+    0000007052da33c0 00000074caeef580 00000074efad57d0  ....t....W..t...
+    0000007052da33d0 00000074cae6ba00 00000074caea4600  ....t....F..t...
+    0000007052da33e0 00000074cae6b4a0 00000074caea3e70  ....t...p>..t...
+    0000007052da33f0 00000074caea4e90 00000074caea79e0  .N..t....y..t...
+    0000007052da3400 00000074caee1cb0 00000074caea49c0  ....t....I..t...
+    0000007052da3410 00000074caea4a60 00000074caeca210  `J..t.......t...
+    0000007052da3420 00000074cae9c480 00000074caeaad00  ....t.......t...
+
+memory near x17 (/apex/com.android.runtime/lib64/bionic/libc.so):
+    00000074cae6b520 aa1403e3528000a0 9400528daa1303e4  ...R.........R..
+    00000074cae6b530 17ffffedaa1f03e0 0000000000000000  ................
+    00000074cae6b540 105955e9d503201f 91012108aa0903e8  . ...UY......!..
+    00000074cae6b550 b4000180f8bfc108 aa0903ebaa0903ea  ................
+    00000074cae6b560 f9401d4aaa0003e1 8a0a200a3940fd6b  ....J.@.k.@9. ..
+    00000074cae6b570 eb0be15f92481d4a f9401d29540000e1  J.H._......T).@.
+    00000074cae6b580 b50000488a294020 f94005011400187e   @).H...~.....@.
+    00000074cae6b590 a9bf7bfdd61f0020 b0fffe40910003fd   ....{......@...
+    00000074cae6b5a0 94005323912eec00 00000000940253ba  ....#S...S......
+    00000074cae6b5b0 10595269d503201f f8bfc12991012129  . ..iRY.)!..)...
+    00000074cae6b5c0 140018dbb5000049 d61f0000f9400920  I....... .@.....
+    00000074cae6b5d0 10595168d503201f f8bfc10891012108  . ..hQY..!......
+    00000074cae6b5e0 14001fafb5000048 d61f0040f9403502  H........5@.@...
+    00000074cae6b5f0 f9000bf5a9bd7bfd 910003fda9024ff4  .{.......O......
+    00000074cae6b600 31032c1f2a0103f3 3103301f540001c0  ...*.,.1...T.0.1
+    00000074cae6b610 d503201f54000221 aa1403e0104fd634  !..T. ..4.O.....
+
+memory near x18:
+    0000007082558000 0000000000000000 0000000000000000  ................
+    0000007082558010 0000000000000000 0000000000000000  ................
+    0000007082558020 0000000000000000 0000000000000000  ................
+    0000007082558030 0000000000000000 0000000000000000  ................
+    0000007082558040 0000000000000000 0000000000000000  ................
+    0000007082558050 0000000000000000 0000000000000000  ................
+    0000007082558060 0000000000000000 0000000000000000  ................
+    0000007082558070 0000000000000000 0000000000000000  ................
+    0000007082558080 0000000000000000 0000000000000000  ................
+    0000007082558090 0000000000000000 0000000000000000  ................
+    00000070825580a0 0000000000000000 0000000000000000  ................
+    00000070825580b0 0000000000000000 0000000000000000  ................
+    00000070825580c0 0000000000000000 0000000000000000  ................
+    00000070825580d0 0000000000000000 0000000000000000  ................
+    00000070825580e0 0000000000000000 0000000000000000  ................
+    00000070825580f0 0000000000000000 0000000000000000  ................
+
+memory near x19 ([anon:scudo:primary]):
+    000000732ec0e940 0000000000000000 0000000000000000  ................
+    000000732ec0e950 b748000000360110 0000000000000000  ..6...H.........
+    000000732ec0e960 0000000000000000 0000000000000003  ................
+    000000732ec0e970 ffffffffffffffff ffffffffffffffff  ................
+    000000732ec0e980 ffffffffffffffff ffffffffffffffff  ................
+    000000732ec0e990 ffffffffffffffff ffffffffffffffff  ................
+    000000732ec0e9a0 ffffffffffffffff ffffffffffffffff  ................
+    000000732ec0e9b0 ffffffffffffffff ffffffffffffffff  ................
+    000000732ec0e9c0 ffffffffffffffff ffffffffffffffff  ................
+    000000732ec0e9d0 ffffffffffffffff ffffffffffffffff  ................
+    000000732ec0e9e0 ffffffffffffffff ffffffffffffffff  ................
+    000000732ec0e9f0 ffffffffffffffff ffffffffffffffff  ................
+    000000732ec0ea00 ffffffffffffffff ffffffffffffffff  ................
+    000000732ec0ea10 ffffffffffffffff ffffffffffffffff  ................
+    000000732ec0ea20 ffffffffffffffff ffffffffffffffff  ................
+    000000732ec0ea30 ffffffffffffffff 0000000000000001  ................
+
+memory near x20 ([anon:stack_and_tls:30229]):
+    00000070835d3260 00000070835d3200 0000000000000001  .2].p...........
+    00000070835d3270 b4000072af4a4080 0000007000000000  .@J.r.......p...
+    00000070835d3280 00000070835d3858 b4000072ce2e6b60  X8].p...`k..r...
+    00000070835d3290 00000070835d6740 b4000072ce2e6c20  @g].p... l..r...
+    00000070835d32a0 000000005c000001 b4000072af4a3f60  ...\....`?J.r...
+    00000070835d32b0 0000000100000000 4e6d2970df0ef100  ............p)mN
+    00000070835d32c0 b4000072ce2e6b60 b40000739e268ed0  `k..r.....&.s...
+    00000070835d32d0 b40000723e25ced0 b4000072ce2e6b60  ..%>r...`k..r...
+    00000070835d32e0 0000000000005c00 4e6d2970df0ef100  .\..........p)mN
+    00000070835d32f0 00000000835d3300 00000071cce7b700  .3].........q...
+    00000070835d3300 00000070835d3500 b4000072ce2e6b60  .5].p...`k..r...
+    00000070835d3310 00000070835d3858 b4000072ce2e6b00  X8].p....k..r...
+    00000070835d3320 0000000000000000 b4000072ce2e6c20  ........ l..r...
+    00000070835d3330 0000000000000000 b4000072ce2e6b01  .........k..r...
+    00000070835d3340 b4000072af4ab9d0 b4000071ee2f29e0  ..J.r....)/.q...
+    00000070835d3350 b40000732ec0e960 00000070835d34d4  `...s....4].p...
+
+memory near x21 ([anon:stack_and_tls:30229]):
+    00000070835d31c0 00000070835d3260 00000071ccec8610  `2].p.......q...
+    00000070835d31d0 000000710089d810 4e6d2970df0ef1ba  ....q.......p)mN
+    00000070835d31e0 00000070835d3200 00000071ccec8600  .2].p.......q...
+    00000070835d31f0 00000070835d3858 b4000072ce2e6b60  X8].p...`k..r...
+    00000070835d3200 00000071cd6b8000 000000710089d810  ..k.q.......q...
+    00000070835d3210 b40000731e258b00 4e6d2970df0ef100  ..%.s.......p)mN
+    00000070835d3220 00000000835d3300 00000070835d3100  .3]......1].p...
+    00000070835d3230 ffffffff835d3100 0000000000000000  .1].............
+    00000070835d3240 0000000000000000 0000000000000000  ................
+    00000070835d3250 0000007000000000 4e6d2970df0ef1ba  ....p.......p)mN
+    00000070835d3260 00000070835d3200 0000000000000001  .2].p...........
+    00000070835d3270 b4000072af4a4080 0000007000000000  .@J.r.......p...
+    00000070835d3280 00000070835d3858 b4000072ce2e6b60  X8].p...`k..r...
+    00000070835d3290 00000070835d6740 b4000072ce2e6c20  @g].p... l..r...
+    00000070835d32a0 000000005c000001 b4000072af4a3f60  ...\....`?J.r...
+    00000070835d32b0 0000000100000000 4e6d2970df0ef100  ............p)mN
+
+memory near x22 ([anon:stack_and_tls:30229]):
+    00000070835d2e70 0000000000000000 0000000000000000  ................
+    00000070835d2e80 0000000000000000 00000070835d3060  ........`0].p...
+    00000070835d2e90 0000000000000001 b4000072af4a9600  ..........J.r...
+    00000070835d2ea0 00000070835d6740 00000070835d2fe0  @g].p..../].p...
+    00000070835d2eb0 00000070835d3128 b40000741edda590  (1].p.......t...
+    00000070835d2ec0 b40000741edda590 b40000741edda598  ....t.......t...
+    00000070835d2ed0 0000000000000000 00000070835d0100  ..........].p...
+    00000070835d2ee0 00000070835d3018 00000070835d2fe0  .0].p..../].p...
+    00000070835d2ef0 0000000000000001 00000070835d3018  .........0].p...
+    00000070835d2f00 0000000000000000 0000000000000000  ................
+    00000070835d2f10 ffffffffffffffff 0000000000000000  ................
+    00000070835d2f20 00000070835d2f80 00000074cae71a00  ./].p.......t...
+    00000070835d2f30 00000070835d33e0 000000710089d810  .3].p.......q...
+    00000070835d2f40 0000000000000000 00000070835d3520  ........ 5].p...
+    00000070835d2f50 00000070835d3800 0000000000000001  .8].p...........
+    00000070835d2f60 ffffffffffffffff 0000000000000000  ................
+
+memory near x23 ([anon:stack_and_tls:30229]):
+    00000070835d2ef0 0000000000000001 00000070835d3018  .........0].p...
+    00000070835d2f00 0000000000000000 0000000000000000  ................
+    00000070835d2f10 ffffffffffffffff 0000000000000000  ................
+    00000070835d2f20 00000070835d2f80 00000074cae71a00  ./].p.......t...
+    00000070835d2f30 00000070835d33e0 000000710089d810  .3].p.......q...
+    00000070835d2f40 0000000000000000 00000070835d3520  ........ 5].p...
+    00000070835d2f50 00000070835d3800 0000000000000001  .8].p...........
+    00000070835d2f60 ffffffffffffffff 0000000000000000  ................
+    00000070835d2f70 b40000736e52cb10 b40000736e52cba0  ..Rns.....Rns...
+    00000070835d2f80 b40000736e52cba0 00000074cae6b780  ..Rns.......t...
+    00000070835d2f90 0000000000000001 0000000000000000  ................
+    00000070835d2fa0 0000000000000000 0000000000000000  ................
+    00000070835d2fb0 0000000000000001 0000000000000059  ........Y.......
+    00000070835d2fc0 0000000000000055 b4000071de2eab40  U.......@...q...
+    00000070835d2fd0 0000000000000001 b4000072af4ab430  ........0.J.r...
+    00000070835d2fe0 0000000000000000 00000070835d2fff  ........./].p...
+
+memory near x24 ([anon:stack_and_tls:30229]):
+    00000070835d3830 b4000072ce2e6b60 00000070835d39c8  `k..r....9].p...
+    00000070835d3840 00000070835d38c0 00000070835d3858  .8].p...X8].p...
+    00000070835d3850 0000000000000000 0000000003c31128  ........(.......
+    00000070835d3860 00000070835d3a30 00000071cd03033c  0:].p...<...q...
+    00000070835d3870 0000000000000008 0000007100895768  ........hW..q...
+    00000070835d3880 0000000000000008 00000070835d38c0  .........8].p...
+    00000070835d3890 00000070835d3c28 b4000072ce2e6b60  (<].p...`k..r...
+    00000070835d38a0 0000000000000008 b40000725e2510d0  ..........%^r...
+    00000070835d38b0 0000000000000058 0000000000000003  X...............
+    00000070835d38c0 00000070835d3c90 0000007100895768  .<].p...hW..q...
+    00000070835d38d0 0000000000000000 000000300000000b  ............0...
+    00000070835d38e0 03068a1000000000 0210871803068c40  ........@.......
+    00000070835d38f0 02f1f9f800000000 b40000732ec0e960  ........`...s...
+    00000070835d3900 0306882803068c78 0217cf80030689f8  x...(...........
+    00000070835d3910 03068c4003068a10 0000000002108718  ....@...........
+    00000070835d3920 0000000002f1f9f8 03068c7800000000  ............x...
+
+memory near x25 ([anon:stack_and_tls:30229]):
+    00000070835d3500 000000710089d810 b40000725e2510d0  ....q.....%^r...
+    00000070835d3510 00000070835d3660 00000071cd02ff4c  `6].p...L...q...
+    00000070835d3520 0000000000000000 000000710089d810  ............q...
+    00000070835d3530 0000000000000000 0000000000000005  ................
+    00000070835d3540 02f4e8f000000000 b40000732ec0e960  ........`...s...
+    00000070835d3550 03c30ed803c31128 0000000002f4e8f0  (...............
+    00000070835d3560 03c3112800000000 0000000003c30ed8  ....(...........
+    00000070835d3570 0000000000000004 0000000000000000  ................
+    00000070835d3580 0000000000000000 00000070835d3858  ........X8].p...
+    00000070835d3590 0000000000000007 00000070835d3530  ........05].p...
+    00000070835d35a0 00000070835d3570 b4000072ce2e6b60  p5].p...`k..r...
+    00000070835d35b0 b40000734e2605b0 0000000000000001  ..&Ns...........
+    00000070835d35c0 0000000000000005 00000070835d3520  ........ 5].p...
+    00000070835d35d0 00000070835d3544 00000070835d38c0  D5].p....8].p...
+    00000070835d35e0 0000000500000004 0000000700000006  ................
+    00000070835d35f0 b400007300000001 0000000000000000  ....s...........
+
+memory near x27 ([anon:dalvik-LinearAlloc]):
+    000000710089d7f0 1000011102f1f110 ffff001800008a0d  ................
+    000000710089d800 00000071cce7b730 00000071ccd6c270  0...q...p...q...
+    000000710089d810 1000011102f1f110 fffd001900008a0e  ................
+    000000710089d820 00000070520fd968 00000071ccd6c270  h..Rp...p...q...
+    000000710089d830 1000011102f1f110 ffff001a00008a0f  ................
+    000000710089d840 00000071cce7b730 00000071ccd6c270  0...q...p...q...
+    000000710089d850 1020011102f1f110 ffff001b00008a10  ...... .........
+    000000710089d860 00000071cce7b730 00000071ccd6c270  0...q...p...q...
+    000000710089d870 0000005000000002 0000000000000002  ....P...........
+    000000710089d880 1031000002f20f78 ffff000000002fc1  x.....1../......
+    000000710089d890 00000070b5c51ff0 00000071ccd6c3e0  ....p.......q...
+    000000710089d8a0 1030105102f20f78 ffff002300002fc2  x...Q.0../..#...
+    000000710089d8b0 00000070b5c51fc0 00000071ccd6c3e0  ....p.......q...
+    000000710089d8c0 0000016000000000 0000000072151130  ....`...0..r....
+    000000710089d8d0 0000000072151130 0000000072151110  0..r.......r....
+    000000710089d8e0 0000000072151130 0000000072151130  0..r....0..r....
+
+memory near x28 ([anon:stack_and_tls:30229]):
+    00000070835d33c0 0000000000000000 b4000072ce2e6b60  ........`k..r...
+    00000070835d33d0 00000070835d33a8 00000000835d3610  .3].p....6].....
+    00000070835d33e0 000000710089d810 ce2e6b6070ab99d8  ....q......p`k..
+    00000070835d33f0 0000000000000000 0000000000000000  ................
+    00000070835d3400 0000000000000000 0000000000000000  ................
+    00000070835d3410 00000000ffffffff 4010040140100401  ...........@...@
+    00000070835d3420 0000010040101010 8060180680601806  ...@......`...`.
+    00000070835d3430 0000000002f4e8f0 b40000732ec0e960  ........`...s...
+    00000070835d3440 0000000003c31128 0000000003c30ed8  (...............
+    00000070835d3450 00000070b6b97fbb 00000070835d3858  ....p...X8].p...
+    00000070835d3460 00000070835d1dd8 0000000000000000  ..].p...........
+    00000070835d3470 b4000072ce2e6c20 0000000000000000   l..r...........
+    00000070835d3480 b4000072ce2e6b60 00000070835d3858  `k..r...X8].p...
+    00000070835d3490 00000070835d3520 0000000000000000   5].p...........
+    00000070835d34a0 000000710089d810 0000000000000008  ....q...........
+    00000070835d34b0 00000070835d34e0 00000071ccd54f98  .4].p....O..q...
+
+memory near x29 ([anon:stack_and_tls:30229]):
+    00000070835d34c0 0000000000000000 2ec0e96002f1f9f8  ............`...
+    00000070835d34d0 03068c78b4000073 0000007103068c40  s...x...@...q...
+    00000070835d34e0 00000070835d3858 00000070b6b97fbb  X8].p.......p...
+    00000070835d34f0 00000070835d3858 0000000000000005  X8].p...........
+    00000070835d3500 000000710089d810 b40000725e2510d0  ....q.....%^r...
+    00000070835d3510 00000070835d3660 00000071cd02ff4c  `6].p...L...q...
+    00000070835d3520 0000000000000000 000000710089d810  ............q...
+    00000070835d3530 0000000000000000 0000000000000005  ................
+    00000070835d3540 02f4e8f000000000 b40000732ec0e960  ........`...s...
+    00000070835d3550 03c30ed803c31128 0000000002f4e8f0  (...............
+    00000070835d3560 03c3112800000000 0000000003c30ed8  ....(...........
+    00000070835d3570 0000000000000004 0000000000000000  ................
+    00000070835d3580 0000000000000000 00000070835d3858  ........X8].p...
+    00000070835d3590 0000000000000007 00000070835d3530  ........05].p...
+    00000070835d35a0 00000070835d3570 b4000072ce2e6b60  p5].p...`k..r...
+    00000070835d35b0 b40000734e2605b0 0000000000000001  ..&Ns...........
+
+memory near lr (/data/app/~~nnNt1w8bY-n9n5_BGCtmyg==/com.anonymous.gurustudy.dev-T-e49b-2iLvRlaaFO4bwgw==/base.apk):
+    0000007052110570 910723e19107e3e8 97fffc62aa1303e0  .....#......b...
+    0000007052110580 97ffca3c910723e0 f100051ff940ffe8  .#..<.....@.....
+    0000007052110590 9107e3e054002e01 3cc502e097ffc24c  ...T....L......<
+    00000070521105a0 9106c3e1f9419a60 3d8002e09104c3f6  `.A............=
+    00000070521105b0 f9402909f9400008 d63f01209104c3e8  ..@..)@..... .?.
+    00000070521105c0 f100051ff9409be8 9104c3e054002da1  ..@......-.T....
+    00000070521105d0 9102e3e097ffc23e 97ffe7b0910022c1  >........"......
+    00000070521105e0 f901efffa94c23e1 eb08003ff901ebff  .#L.........?...
+    00000070521105f0 cb010108540011e0 9ac90d0852800309  ...T.......R....
+    0000007052110600 54000163f100091f 91026000b0ffd6c0  ....c..T.....`..
+    0000007052110610 528009219400114a 942e69d952800a82  J...!..R...R.i..
+    0000007052110620 910c43e0f9018be0 1400008397ffbabc  .....C..........
+    0000007052110630 910263f7910263e0 f9416276942ef41c  .c...c......vbA.
+    0000007052110640 b24002faf9416679 912246f7b0ffdb77  yfA...@.w....F".
+    0000007052110650 d0ffdb38910b23fb 910a83fc910d0f18  .#..8...........
+    0000007052110660 54000da0eb1902df a94226ca394062c8  .......T.b@9.&B.
+
+memory near sp ([anon:stack_and_tls:30229]):
+    00000070835d2d40 0000000000000001 00000070835d31e0  .........1].p...
+    00000070835d2d50 00000070835d3280 b40000732ec0e960  .2].p...`...s...
+    00000070835d2d60 00000070835d2fe0 000000741edda590  ./].p.......t...
+    00000070835d2d70 0000001152103d08 e8c9000000008001  .=.R............
+    00000070835d2d80 00000070835d34e0 00000070520fdd64  .4].p...d..Rp...
+    00000070835d2d90 00000070835d3018 0000000000000001  .0].p...........
+    00000070835d2da0 00000070835d2fe0 00000070835d3128  ./].p...(1].p...
+    00000070835d2db0 0000007052103b54 00000070835d2eb8  T;.Rp.....].p...
+    00000070835d2dc0 b40000741edd8f32 00000070835d3128  2...t...(1].p...
+    00000070835d2dd0 0000000000000000 0000000000000000  ................
+    00000070835d2de0 00000074caf1e000 0000000000000001  ....t...........
+    00000070835d2df0 00000070835d2e10 00000074cae6b780  ..].p.......t...
+    00000070835d2e00 0000000000000001 eb7c000000020002  ..............|.
+    00000070835d2e10 00000070835d2e30 0000000000000000  0.].p...........
+    00000070835d2e20 00000070835d2edc 0000000000000001  ..].p...........
+    00000070835d2e30 00000070835d34e0 0064e270520fdc4c  .4].p...L..Rp.d.
+
+memory near pc (/data/app/~~nnNt1w8bY-n9n5_BGCtmyg==/com.anonymous.gurustudy.dev-T-e49b-2iLvRlaaFO4bwgw==/base.apk):
+    0000007052110590 9107e3e054002e01 3cc502e097ffc24c  ...T....L......<
+    00000070521105a0 9106c3e1f9419a60 3d8002e09104c3f6  `.A............=
+    00000070521105b0 f9402909f9400008 d63f01209104c3e8  ..@..)@..... .?.
+    00000070521105c0 f100051ff9409be8 9104c3e054002da1  ..@......-.T....
+    00000070521105d0 9102e3e097ffc23e 97ffe7b0910022c1  >........"......
+    00000070521105e0 f901efffa94c23e1 eb08003ff901ebff  .#L.........?...
+    00000070521105f0 cb010108540011e0 9ac90d0852800309  ...T.......R....
+    0000007052110600 54000163f100091f 91026000b0ffd6c0  ....c..T.....`..
+    0000007052110610 528009219400114a 942e69d952800a82  J...!..R...R.i..
+    0000007052110620 910c43e0f9018be0 1400008397ffbabc  .....C..........
+    0000007052110630 910263f7910263e0 f9416276942ef41c  .c...c......vbA.
+    0000007052110640 b24002faf9416679 912246f7b0ffdb77  yfA...@.w....F".
+    0000007052110650 d0ffdb38910b23fb 910a83fc910d0f18  .#..8...........
+    0000007052110660 54000da0eb1902df a94226ca394062c8  .......T.b@9.&B.
+    0000007052110670 97fff692910066cc 9a890180910ee3e8  .f..............
+    0000007052110680 9409a4f49a8a0161 a943a6ca3940c2c8  a.........@9..C.
+
+memory map (5138 entries): (fault address prefixed with --->)
+    00000000'02000000-00000000'11ffffff rw-         0  10000000  [anon:dalvik-main space]
+    00000000'347a1000-00000000'447a0fff rw-         0  10000000  [anon:dalvik-free list large object space]
+    00000000'547a1000-00000000'567a0fff r--         0   2000000  /memfd:jit-zygote-cache (deleted)
+    00000000'567a1000-00000000'587a0fff r-x   2000000   2000000  /memfd:jit-zygote-cache (deleted)
+    00000000'587a1000-00000000'587a4fff rw-         0      4000
+    00000000'587a5000-00000000'5a7a4fff r--         0   2000000  /memfd:jit-cache (deleted)
+    00000000'5a7a5000-00000000'5c7a4fff r-x   2000000   2000000  /memfd:jit-cache (deleted)
+    00000000'70a90000-00000000'721fffff rw-         0   1770000  [anon:dalvik-/data/misc/apexdata/com.android.art/dalvik-cache/boot.art]
+    00000000'72200000-00000000'7258bfff r--         0    38c000  /data/misc/apexdata/com.android.art/dalvik-cache/arm64/boot.oat
+    00000000'7258c000-00000000'73179fff r-x    38c000    bee000  /data/misc/apexdata/com.android.art/dalvik-cache/arm64/boot.oat
+    00000000'7317a000-00000000'7317bfff ---         0      2000  [anon:dalvik-Boot image reservation]
+    00000000'7317c000-00000000'7317cfff rw-         0      1000  [anon:.bss]
+    00000000'7317d000-00000000'7317ffff ---         0      3000  [anon:dalvik-Boot image reservation]
+    00000000'73180000-00000000'7329dfff rw-         0    11e000  /data/misc/apexdata/com.android.art/dalvik-cache/arm64/boot.vdex
+    00000000'7329e000-00000000'7329ffff ---         0      2000  [anon:dalvik-Boot image reservation]
+    00000000'732a0000-00000000'73bdffff rw-         0    940000
+    00000000'73be0000-00000000'73bfbfff r--         0     1c000  /data/misc/apexdata/com.android.art/dalvik-cache/arm64/boot-framework-adservices.oat
+    00000000'73bfc000-00000000'73c30fff rw-         0     35000  /data/misc/apexdata/com.android.art/dalvik-cache/arm64/boot-framework-adservices.vdex
+    00000000'73c31000-00000000'73c33fff ---         0      3000  [anon:dalvik-Boot image reservation]
+    00000000'73c34000-00000000'74302fff rw-         0    6cf000  [anon:dalvik-zygote space]
+    00000000'74303000-00000000'74303fff rw-         0      1000  [anon:dalvik-non moving space]
+    00000000'74304000-00000000'74321fff rw-         0     1e000  [anon:dalvik-non moving space]
+    00000000'74322000-00000000'77434fff ---         0   3113000  [anon:dalvik-non moving space]
+    00000000'77435000-00000000'77c33fff rw-         0    7ff000  [anon:dalvik-non moving space]
+    00000000'ebad6000-00000000'ebad6fff ---         0      1000  [anon:dalvik-Sentinel fault page]
+    00000016'77400000-00000016'777fffff rw-         0    400000  [anon:hermes-rt]
+    00000016'77800000-00000016'77813fff rw-         0     14000  [anon:hades-segment]
+    00000016'77814000-00000016'77814fff ---         0      1000  [anon:hades-segment]
+    00000016'77815000-00000016'77c13fff rw-         0    3ff000  [anon:hades-segment]
+    00000016'77c14000-00000016'77c14fff ---         0      1000  [anon:hades-segment]
+    00000016'77c15000-00000016'78013fff rw-         0    3ff000  [anon:hades-segment]
+    00000016'78014000-00000016'78014fff ---         0      1000  [anon:hades-segment]
+    00000016'78015000-00000016'78413fff rw-         0    3ff000  [anon:hades-segment]
+    00000016'78414000-00000016'78414fff ---         0      1000  [anon:hades-segment]
+    00000016'78415000-00000016'78813fff rw-         0    3ff000  [anon:hades-segment]
+    00000016'78814000-00000016'78814fff ---         0      1000  [anon:hades-segment]
+    00000016'78815000-00000016'78c13fff rw-         0    3ff000  [anon:hades-segment]
+    00000016'78c14000-00000016'78c14fff ---         0      1000  [anon:hades-segment]
+    00000016'78c15000-00000016'79013fff rw-         0    3ff000  [anon:hades-segment]
+    00000016'79014000-00000016'79014fff ---         0      1000  [anon:hades-segment]
+    00000016'79015000-00000016'79413fff rw-         0    3ff000  [anon:hades-segment]
+    00000016'79414000-00000016'79414fff ---         0      1000  [anon:hades-segment]
+    00000016'79415000-00000016'79813fff rw-         0    3ff000  [anon:hades-segment]
+    00000016'79814000-00000016'79814fff ---         0      1000  [anon:hades-segment]
+    00000016'79815000-00000016'79c13fff rw-         0    3ff000  [anon:hades-segment]
+    00000016'79c14000-00000016'79c14fff ---         0      1000  [anon:hades-segment]
+    00000016'79c15000-00000016'7a013fff rw-         0    3ff000  [anon:hades-segment]
+    00000016'7a014000-00000016'7a014fff ---         0      1000  [anon:hades-segment]
+    00000016'7a015000-00000016'7a413fff rw-         0    3ff000  [anon:hades-segment]
+    00000016'7a414000-00000016'7a414fff ---         0      1000  [anon:hades-segment]
+    00000016'7a415000-00000016'7a813fff rw-         0    3ff000  [anon:hades-segment]
+    00000016'7a814000-00000016'7a814fff ---         0      1000  [anon:hades-segment]
+    00000016'7a815000-00000016'7ac13fff rw-         0    3ff000  [anon:hades-segment]
+    00000016'7ac14000-00000016'7ac14fff ---         0      1000  [anon:hades-segment]
+    00000016'7ac15000-00000016'7b013fff rw-         0    3ff000  [anon:hades-segment]
+    00000016'7b014000-00000016'7b014fff ---         0      1000  [anon:hades-segment]
+    00000016'7b015000-00000016'7b413fff rw-         0    3ff000  [anon:hades-segment]
+    00000016'7b414000-00000016'7b414fff ---         0      1000  [anon:hades-segment]
+    00000016'7b415000-00000016'7b7fffff rw-         0    3eb000  [anon:hades-segment]
+    00000016'7b800000-00000017'383fffff ---         0  bcc00000  [anon:hermes-free-heap]
+    00000027'3c800000-00000027'3cbfffff rw-         0    400000  [anon:hermes-rt]
+    00000027'3cc00000-00000027'3cc13fff rw-         0     14000  [anon:hades-segment]
+    00000027'3cc14000-00000027'3cc14fff ---         0      1000  [anon:hades-segment]
+    00000027'3cc15000-00000027'3d013fff rw-         0    3ff000  [anon:hades-segment]
+    00000027'3d014000-00000027'3d014fff ---         0      1000  [anon:hades-segment]
+    00000027'3d015000-00000027'3d3fffff rw-         0    3eb000  [anon:hades-segment]
+    00000027'3d400000-00000027'fd7fffff ---         0  c0400000  [anon:hermes-free-heap]
+    0000005c'86920000-0000005c'86921fff r--         0      2000  /system/bin/app_process64 (BuildId: a794fd51930c7efd2cde1e14d2db11f5)
+    0000005c'86924000-0000005c'86925fff r-x      4000      2000  /system/bin/app_process64 (BuildId: a794fd51930c7efd2cde1e14d2db11f5)
+    0000005c'86928000-0000005c'86928fff r--      8000      1000  /system/bin/app_process64 (BuildId: a794fd51930c7efd2cde1e14d2db11f5)
+    0000005c'8692c000-0000005c'8692cfff rw-      c000      1000  /system/bin/app_process64 (BuildId: a794fd51930c7efd2cde1e14d2db11f5)
+    00000068'c3788000-00000068'f558bfff rw-   a788000  31e04000  /storage/emulated/0/Download/gemma-4-E4B-it.litertlm
+    00000068'f56d3000-00000069'792c3fff r--         0  83bf1000  /data/data/com.anonymous.gurustudy.dev/cache/gemma-4-E4B-it.litertlm.xnnpack_cache
+    00000069'792c4000-00000069'ffe1cfff rw-  506c4000  86b59000  /storage/emulated/0/Download/gemma-4-E4B-it.litertlm
+    0000006a'00000000-0000006a'00000fff ---         0      1000  [anon:partition_alloc]
+    0000006a'00001000-0000006a'00001fff rw-         0      1000  [anon:partition_alloc]
+    0000006a'00002000-0000006a'00200fff ---         0    1ff000  [anon:partition_alloc]
+    0000006a'00201000-0000006a'00201fff rw-         0      1000  [anon:partition_alloc]
+    0000006a'00202000-0000006c'00003fff ---         0  1ffe02000  [anon:partition_alloc]
+    0000006c'00004000-0000006c'00153fff rw-         0    150000  [anon:partition_alloc]
+    0000006c'00154000-0000006c'00203fff ---         0     b0000  [anon:partition_alloc]
+    0000006c'00204000-0000006c'0020bfff rw-         0      8000  [anon:partition_alloc]
+    0000006c'0020c000-0000006f'ffffffff ---         0  3ffdf4000  [anon:partition_alloc]
+    00000070'05950000-00000070'05950fff ---         0      1000
+    00000070'05951000-00000070'05bd1fff rw-         0    281000  [anon:scudo:secondary]
+    00000070'05bd2000-00000070'05bd3fff ---         0      2000
+    00000070'05bd4000-00000070'0687bfff rw-         0    ca8000  [anon:scudo:secondary]
+    00000070'0687c000-00000070'0687dfff ---         0      2000
+    00000070'0687e000-00000070'06ed1fff rw-         0    654000  [anon:scudo:secondary]
+    00000070'06ed2000-00000070'06ed3fff ---         0      2000
+    00000070'06ed4000-00000070'07ea6fff rw-         0    fd3000  [anon:scudo:secondary]
+    00000070'07ea7000-00000070'07ea8fff ---         0      2000
+    00000070'07ea9000-00000070'08692fff rw-         0    7ea000  [anon:scudo:secondary]
+    00000070'08693000-00000070'08694fff ---         0      2000
+    00000070'08695000-00000070'08a89fff rw-         0    3f5000  [anon:scudo:secondary]
+    00000070'08a8a000-00000070'08a8bfff ---         0      2000
+    00000070'08a8c000-00000070'08c70fff rw-         0    1e5000  [anon:scudo:secondary]
+    00000070'08c71000-00000070'08c72fff ---         0      2000
+    00000070'08c73000-00000070'08e57fff rw-         0    1e5000  [anon:scudo:secondary]
+    00000070'08e58000-00000070'08e59fff ---         0      2000
+    00000070'08e5a000-00000070'090a0fff rw-         0    247000  [anon:scudo:secondary]
+    00000070'090a1000-00000070'090a2fff ---         0      2000
+    00000070'090a3000-00000070'09287fff rw-         0    1e5000  [anon:scudo:secondary]
+    00000070'09288000-00000070'09289fff ---         0      2000
+    00000070'0928a000-00000070'0bc2afff rw-         0   29a1000  [anon:scudo:secondary]
+    00000070'0bc2b000-00000070'0bc2cfff ---         0      2000
+    00000070'0bc2d000-00000070'0ee2efff rw-         0   3202000  [anon:scudo:secondary]
+    00000070'0ee2f000-00000070'0ee30fff ---         0      2000
+    00000070'0ee31000-00000070'11831fff rw-         0   2a01000  [anon:scudo:secondary]
+    00000070'11832000-00000070'11832fff ---         0      1000
+    00000070'11833000-00000070'126bbfff ---         0    e89000
+    00000070'126bc000-00000070'126bffff rw-         0      4000
+    00000070'126c0000-00000070'12832fff ---         0    173000
+    00000070'12833000-00000070'12833fff ---         0      1000
+    00000070'12834000-00000070'12834fff ---         0      1000  [anon:stack_and_tls:30575]
+    00000070'12835000-00000070'12c3bfff rw-         0    407000  [anon:stack_and_tls:30575]
+    00000070'12c3c000-00000070'12c3cfff ---         0      1000
+    00000070'12c3d000-00000070'1310bfff ---         0    4cf000
+    00000070'1310c000-00000070'1310ffff rw-         0      4000
+    00000070'13110000-00000070'13c3cfff ---         0    b2d000
+    00000070'13c3d000-00000070'13c3dfff ---         0      1000
+    00000070'13c3e000-00000070'13c3efff ---         0      1000  [anon:stack_and_tls:30573]
+    00000070'13c3f000-00000070'14045fff rw-         0    407000  [anon:stack_and_tls:30573]
+    00000070'14046000-00000070'14046fff ---         0      1000
+    00000070'14047000-00000070'14763fff ---         0    71d000
+    00000070'14764000-00000070'14767fff rw-         0      4000
+    00000070'14768000-00000070'15046fff ---         0    8df000
+    00000070'15047000-00000070'15047fff ---         0      1000
+    00000070'15048000-00000070'15048fff ---         0      1000  [anon:stack_and_tls:30568]
+    00000070'15049000-00000070'1544ffff rw-         0    407000  [anon:stack_and_tls:30568]
+    00000070'15450000-00000070'15451fff ---         0      2000
+    00000070'15452000-00000070'15552fff rw-         0    101000  [anon:scudo:secondary]
+    00000070'15553000-00000070'15553fff ---         0      1000
+    00000070'156c4000-00000070'156c4fff ---         0      1000
+    00000070'156c5000-00000070'1586efff rw-         0    1aa000  [anon:scudo:secondary]
+    00000070'1586f000-00000070'15870fff ---         0      2000
+    00000070'15871000-00000070'15a1afff rw-         0    1aa000  [anon:scudo:secondary]
+    00000070'15a1b000-00000070'15a1cfff ---         0      2000
+    00000070'15a1d000-00000070'15bc1fff rw-         0    1a5000  [anon:scudo:secondary]
+    00000070'15bc2000-00000070'15bc3fff ---         0      2000
+    00000070'15bc4000-00000070'16104fff rw-         0    541000  [anon:scudo:secondary]
+    00000070'16105000-00000070'16106fff ---         0      2000
+    00000070'16107000-00000070'16247fff rw-         0    141000  [anon:scudo:secondary]
+    00000070'16248000-00000070'16249fff ---         0      2000
+    00000070'1624a000-00000070'1634afff rw-         0    101000  [anon:scudo:secondary]
+    00000070'1634b000-00000070'1634cfff ---         0      2000
+    00000070'1634d000-00000070'1644dfff rw-         0    101000  [anon:scudo:secondary]
+    00000070'1644e000-00000070'1644ffff ---         0      2000
+    00000070'16450000-00000070'16550fff rw-         0    101000  [anon:scudo:secondary]
+    00000070'16551000-00000070'16552fff ---         0      2000
+    00000070'16553000-00000070'16653fff rw-         0    101000  [anon:scudo:secondary]
+    00000070'16654000-00000070'16655fff ---         0      2000
+    00000070'16656000-00000070'16756fff rw-         0    101000  [anon:scudo:secondary]
+    00000070'16757000-00000070'16758fff ---         0      2000
+    00000070'16759000-00000070'16859fff rw-         0    101000  [anon:scudo:secondary]
+    00000070'1685a000-00000070'1685bfff ---         0      2000
+    00000070'1685c000-00000070'1695cfff rw-         0    101000  [anon:scudo:secondary]
+    00000070'1695d000-00000070'1695efff ---         0      2000
+    00000070'1695f000-00000070'16a5ffff rw-         0    101000  [anon:scudo:secondary]
+    00000070'16a60000-00000070'16a61fff ---         0      2000
+    00000070'16a62000-00000070'16b62fff rw-         0    101000  [anon:scudo:secondary]
+    00000070'16b63000-00000070'16b64fff ---         0      2000
+    00000070'16b65000-00000070'16c65fff rw-         0    101000  [anon:scudo:secondary]
+    00000070'16c66000-00000070'16c67fff ---         0      2000
+    00000070'16c68000-00000070'16d68fff rw-         0    101000  [anon:scudo:secondary]
+    00000070'16d69000-00000070'16d6afff ---         0      2000
+    00000070'16d6b000-00000070'16e6bfff rw-         0    101000  [anon:scudo:secondary]
+    00000070'16e6c000-00000070'16e6dfff ---         0      2000
+    00000070'16e6e000-00000070'16f6efff rw-         0    101000  [anon:scudo:secondary]
+    00000070'16f6f000-00000070'16f70fff ---         0      2000
+    00000070'16f71000-00000070'17071fff rw-         0    101000  [anon:scudo:secondary]
+    00000070'17072000-00000070'17073fff ---         0      2000
+    00000070'17074000-00000070'17174fff rw-         0    101000  [anon:scudo:secondary]
+    00000070'17175000-00000070'17176fff ---         0      2000
+    00000070'17177000-00000070'17277fff rw-         0    101000  [anon:scudo:secondary]
+    00000070'17278000-00000070'17279fff ---         0      2000
+    00000070'1727a000-00000070'1737afff rw-         0    101000  [anon:scudo:secondary]
+    00000070'1737b000-00000070'1737cfff ---         0      2000
+    00000070'1737d000-00000070'1747dfff rw-         0    101000  [anon:scudo:secondary]
+    00000070'1747e000-00000070'1747ffff ---         0      2000
+    00000070'17480000-00000070'17580fff rw-         0    101000  [anon:scudo:secondary]
+    00000070'17581000-00000070'17582fff ---         0      2000
+    00000070'17583000-00000070'1771ffff rw-         0    19d000  [anon:scudo:secondary]
+    00000070'17720000-00000070'17721fff ---         0      2000
+    00000070'17722000-00000070'17822fff rw-         0    101000  [anon:scudo:secondary]
+    00000070'17823000-00000070'17824fff ---         0      2000
+    00000070'17825000-00000070'17925fff rw-         0    101000  [anon:scudo:secondary]
+    00000070'17926000-00000070'17927fff ---         0      2000
+    00000070'17928000-00000070'17a28fff rw-         0    101000  [anon:scudo:secondary]
+    00000070'17a29000-00000070'17a2afff ---         0      2000
+    00000070'17a2b000-00000070'17b2bfff rw-         0    101000  [anon:scudo:secondary]
+    00000070'17b2c000-00000070'17b2dfff ---         0      2000
+    00000070'17b2e000-00000070'17c2efff rw-         0    101000  [anon:scudo:secondary]
+    00000070'17c2f000-00000070'17c30fff ---         0      2000
+    00000070'17c31000-00000070'17d31fff rw-         0    101000  [anon:scudo:secondary]
+    00000070'17d32000-00000070'17d33fff ---         0      2000
+    00000070'17d34000-00000070'17e34fff rw-         0    101000  [anon:scudo:secondary]
+    00000070'17e35000-00000070'17e36fff ---         0      2000
+    00000070'17e37000-00000070'17f37fff rw-         0    101000  [anon:scudo:secondary]
+    00000070'17f38000-00000070'17f39fff ---         0      2000
+    00000070'17f3a000-00000070'1803afff rw-         0    101000  [anon:scudo:secondary]
+    00000070'1803b000-00000070'1803cfff ---         0      2000
+    00000070'1803d000-00000070'1813dfff rw-         0    101000  [anon:scudo:secondary]
+    00000070'1813e000-00000070'1813ffff ---         0      2000
+    00000070'18140000-00000070'18240fff rw-         0    101000  [anon:scudo:secondary]
+    00000070'18241000-00000070'18242fff ---         0      2000
+    00000070'18243000-00000070'18343fff rw-         0    101000  [anon:scudo:secondary]
+    00000070'18344000-00000070'18345fff ---         0      2000
+    00000070'18346000-00000070'18446fff rw-         0    101000  [anon:scudo:secondary]
+    00000070'18447000-00000070'18448fff ---         0      2000
+    00000070'18449000-00000070'18549fff rw-         0    101000  [anon:scudo:secondary]
+    00000070'1854a000-00000070'1854bfff ---         0      2000
+    00000070'1854c000-00000070'1864cfff rw-         0    101000  [anon:scudo:secondary]
+    00000070'1864d000-00000070'1864efff ---         0      2000
+    00000070'1864f000-00000070'1874ffff rw-         0    101000  [anon:scudo:secondary]
+    00000070'18750000-00000070'18751fff ---         0      2000
+    00000070'18752000-00000070'18852fff rw-         0    101000  [anon:scudo:secondary]
+    00000070'18853000-00000070'18854fff ---         0      2000
+    00000070'18855000-00000070'18955fff rw-         0    101000  [anon:scudo:secondary]
+    00000070'18956000-00000070'18957fff ---         0      2000
+    00000070'18958000-00000070'18a58fff rw-         0    101000  [anon:scudo:secondary]
+    00000070'18a59000-00000070'18a5afff ---         0      2000
+    00000070'18a5b000-00000070'18b5bfff rw-         0    101000  [anon:scudo:secondary]
+    00000070'18b5c000-00000070'18b5dfff ---         0      2000
+    00000070'18b5e000-00000070'18c5efff rw-         0    101000  [anon:scudo:secondary]
+    00000070'18c5f000-00000070'18c60fff ---         0      2000
+    00000070'18c61000-00000070'18d61fff rw-         0    101000  [anon:scudo:secondary]
+    00000070'18d62000-00000070'18d63fff ---         0      2000
+    00000070'18d64000-00000070'18e64fff rw-         0    101000  [anon:scudo:secondary]
+    00000070'18e65000-00000070'18e66fff ---         0      2000
+    00000070'18e67000-00000070'18f67fff rw-         0    101000  [anon:scudo:secondary]
+    00000070'18f68000-00000070'18f69fff ---         0      2000
+    00000070'18f6a000-00000070'1906afff rw-         0    101000  [anon:scudo:secondary]
+    00000070'1906b000-00000070'1906cfff ---         0      2000
+    00000070'1906d000-00000070'1916dfff rw-         0    101000  [anon:scudo:secondary]
+    00000070'1916e000-00000070'1916ffff ---         0      2000
+    00000070'19170000-00000070'19270fff rw-         0    101000  [anon:scudo:secondary]
+    00000070'19271000-00000070'19272fff ---         0      2000
+    00000070'19273000-00000070'193fefff rw-         0    18c000  [anon:scudo:secondary]
+    00000070'193ff000-00000070'19400fff ---         0      2000
+    00000070'19401000-00000070'19501fff rw-         0    101000  [anon:scudo:secondary]
+    00000070'19502000-00000070'19503fff ---         0      2000
+    00000070'19504000-00000070'19604fff rw-         0    101000  [anon:scudo:secondary]
+    00000070'19605000-00000070'19606fff ---         0      2000
+    00000070'19607000-00000070'19707fff rw-         0    101000  [anon:scudo:secondary]
+    00000070'19708000-00000070'19709fff ---         0      2000
+    00000070'1970a000-00000070'1980afff rw-         0    101000  [anon:scudo:secondary]
+    00000070'1980b000-00000070'1980cfff ---         0      2000
+    00000070'1980d000-00000070'1990dfff rw-         0    101000  [anon:scudo:secondary]
+    00000070'1990e000-00000070'1990ffff ---         0      2000
+    00000070'19910000-00000070'19a10fff rw-         0    101000  [anon:scudo:secondary]
+    00000070'19a11000-00000070'19a11fff ---         0      1000
+    00000070'19a12000-00000070'19c93fff ---         0    282000
+    00000070'19c94000-00000070'19c97fff rw-         0      4000
+    00000070'19c98000-00000070'1b453fff ---         0   17bc000
+    00000070'1b454000-00000070'1b457fff rw-         0      4000
+    00000070'1b458000-00000070'1bedffff ---         0    a88000
+    00000070'1bee0000-00000070'1bee3fff rw-         0      4000
+    00000070'1bee4000-00000070'1ca11fff ---         0    b2e000
+    00000070'1ca12000-00000070'1ca12fff ---         0      1000
+    00000070'1ca13000-00000070'1ca13fff ---         0      1000  [anon:stack_and_tls:30485]
+    00000070'1ca14000-00000070'1ce1afff rw-         0    407000  [anon:stack_and_tls:30485]
+    00000070'1ce1b000-00000070'1ce1cfff ---         0      2000
+    00000070'1ce1d000-00000070'1ce1dfff ---         0      1000  [anon:stack_and_tls:30484]
+    00000070'1ce1e000-00000070'1d224fff rw-         0    407000  [anon:stack_and_tls:30484]
+    00000070'1d225000-00000070'1d226fff ---         0      2000
+    00000070'1d227000-00000070'1d227fff ---         0      1000  [anon:stack_and_tls:30482]
+    00000070'1d228000-00000070'1d62efff rw-         0    407000  [anon:stack_and_tls:30482]
+    00000070'1d62f000-00000070'1d630fff ---         0      2000
+    00000070'1d631000-00000070'1d731fff rw-         0    101000  [anon:scudo:secondary]
+    00000070'1d732000-00000070'1d733fff ---         0      2000
+    00000070'1d734000-00000070'1d834fff rw-         0    101000  [anon:scudo:secondary]
+    00000070'1d835000-00000070'1d835fff ---         0      1000
+    00000070'1d836000-00000070'1da5ffff ---         0    22a000
+    00000070'1da60000-00000070'1da63fff rw-         0      4000
+    00000070'1da64000-00000070'1e835fff ---         0    dd2000
+    00000070'1e836000-00000070'1e836fff ---         0      1000
+    00000070'1e837000-00000070'1e837fff ---         0      1000  [anon:stack_and_tls:30476]
+    00000070'1e838000-00000070'1ec3efff rw-         0    407000  [anon:stack_and_tls:30476]
+    00000070'1ec3f000-00000070'1ec40fff ---         0      2000
+    00000070'1ec41000-00000070'1ed41fff rw-         0    101000  [anon:scudo:secondary]
+    00000070'1ed42000-00000070'1ed43fff ---         0      2000
+    00000070'1ed44000-00000070'1ee44fff rw-         0    101000  [anon:scudo:secondary]
+    00000070'1ee45000-00000070'1ee45fff ---         0      1000
+    00000070'1ee46000-00000070'1fe1ffff ---         0    fda000
+    00000070'1fe20000-00000070'1fe23fff rw-         0      4000
+    00000070'1fe24000-00000070'1fe45fff ---         0     22000
+    00000070'1fe46000-00000070'1fe46fff ---         0      1000
+    00000070'1fe47000-00000070'1fe47fff ---         0      1000  [anon:stack_and_tls:30475]
+    00000070'1fe48000-00000070'2024efff rw-         0    407000  [anon:stack_and_tls:30475]
+    00000070'2024f000-00000070'20250fff ---         0      2000
+    00000070'20251000-00000070'20351fff rw-         0    101000  [anon:scudo:secondary]
+    00000070'20352000-00000070'20353fff ---         0      2000
+    00000070'20354000-00000070'20454fff rw-         0    101000  [anon:scudo:secondary]
+    00000070'20455000-00000070'20455fff ---         0      1000
+    00000070'20456000-00000070'20507fff ---         0     b2000
+    00000070'20508000-00000070'2050bfff rw-         0      4000
+    00000070'2050c000-00000070'21455fff ---         0    f4a000
+    00000070'21456000-00000070'21456fff ---         0      1000
+    00000070'21457000-00000070'21457fff ---         0      1000  [anon:stack_and_tls:30471]
+    00000070'21458000-00000070'2185efff rw-         0    407000  [anon:stack_and_tls:30471]
+    00000070'2185f000-00000070'21860fff ---         0      2000
+    00000070'21861000-00000070'21961fff rw-         0    101000  [anon:scudo:secondary]
+    00000070'21962000-00000070'21963fff ---         0      2000
+    00000070'21964000-00000070'21a64fff rw-         0    101000  [anon:scudo:secondary]
+    00000070'21a65000-00000070'21a66fff ---         0      2000
+    00000070'21a67000-00000070'21b67fff rw-         0    101000  [anon:scudo:secondary]
+    00000070'21b68000-00000070'21b69fff ---         0      2000
+    00000070'21b6a000-00000070'21c6afff rw-         0    101000  [anon:scudo:secondary]
+    00000070'21c6b000-00000070'21c6cfff ---         0      2000
+    00000070'21c6d000-00000070'21d6dfff rw-         0    101000  [anon:scudo:secondary]
+    00000070'21d6e000-00000070'21d6ffff ---         0      2000
+    00000070'21d70000-00000070'21e70fff rw-         0    101000  [anon:scudo:secondary]
+    00000070'21e71000-00000070'21e72fff ---         0      2000
+    00000070'21e73000-00000070'21f73fff rw-         0    101000  [anon:scudo:secondary]
+    00000070'21f74000-00000070'21f75fff ---         0      2000
+    00000070'21f76000-00000070'22076fff rw-         0    101000  [anon:scudo:secondary]
+    00000070'22077000-00000070'22078fff ---         0      2000
+    00000070'22079000-00000070'22179fff rw-         0    101000  [anon:scudo:secondary]
+    00000070'2217a000-00000070'2217bfff ---         0      2000
+    00000070'2217c000-00000070'2227cfff rw-         0    101000  [anon:scudo:secondary]
+    00000070'2227d000-00000070'2227efff ---         0      2000
+    00000070'2227f000-00000070'2237ffff rw-         0    101000  [anon:scudo:secondary]
+    00000070'22380000-00000070'22381fff ---         0      2000
+    00000070'22382000-00000070'22482fff rw-         0    101000  [anon:scudo:secondary]
+    00000070'22483000-00000070'22483fff ---         0      1000
+    00000070'22484000-00000070'2c784fff rw-    484000   a301000  /storage/emulated/0/Download/gemma-4-E4B-it.litertlm
+    00000070'2c7ef000-00000070'2c7effff ---         0      1000
+    00000070'2c7f0000-00000070'3a907fff rw-         0   e118000  [anon:scudo:secondary]
+    00000070'3a908000-00000070'3a908fff ---         0      1000
+    00000070'3a90e000-00000070'3a90efff ---         0      1000
+    00000070'3a90f000-00000070'3aa0ffff rw-         0    101000  [anon:scudo:secondary]
+    00000070'3aa10000-00000070'3aa10fff ---         0      1000
+    00000070'3aa11000-00000070'3b67bfff ---         0    c6b000
+    00000070'3b67c000-00[[TRUNCATED]]
+

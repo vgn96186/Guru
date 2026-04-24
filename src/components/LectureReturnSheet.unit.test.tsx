@@ -4,18 +4,21 @@ import { render } from '@testing-library/react-native';
 import LectureReturnSheet from './LectureReturnSheet';
 import { useLecturePipeline } from '../hooks/useLecturePipeline';
 
-jest.mock('./SubjectSelectionCard', () => ({
-  __esModule: true,
-  default: ({ onSelectSubject }: { onSelectSubject: (subject: string) => void }) => (
-    <View>
-      <Text>Subject required</Text>
-      <Text>Choose the lecture subject before saving so topics get filed correctly.</Text>
-      <TouchableOpacity onPress={() => onSelectSubject('Physiology')}>
-        <Text>Physiology</Text>
-      </TouchableOpacity>
-    </View>
-  ),
-}));
+jest.mock('./SubjectSelectionCard', () => {
+  const { Text, TouchableOpacity, View } = require('react-native');
+  return {
+    __esModule: true,
+    default: ({ onSelectSubject }: { onSelectSubject: (subject: string) => void }) => (
+      <View>
+        <Text>Subject required</Text>
+        <Text>Choose the lecture subject before saving so topics get filed correctly.</Text>
+        <TouchableOpacity onPress={() => onSelectSubject('Physiology')}>
+          <Text>Physiology</Text>
+        </TouchableOpacity>
+      </View>
+    ),
+  };
+});
 
 jest.mock('../hooks/useLecturePipeline', () => ({
   useLecturePipeline: jest.fn(),

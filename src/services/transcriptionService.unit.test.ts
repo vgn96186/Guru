@@ -1,22 +1,22 @@
 import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 
-const getProfileMock: any = jest.fn();
-const getInfoAsyncMock: any = jest.fn();
-const transcribeRawWithGroqMock: any = jest.fn();
-const transcribeRawWithHuggingFaceMock: any = jest.fn();
-const transcribeRawWithLocalWhisperMock: any = jest.fn();
-const analyzeTranscriptMock: any = jest.fn();
-const generateEmbeddingMock: any = jest.fn();
+const mockGetProfile: any = jest.fn();
+const mockGetInfoAsync: any = jest.fn();
+const mockTranscribeRawWithGroq: any = jest.fn();
+const mockTranscribeRawWithHuggingFace: any = jest.fn();
+const mockTranscribeRawWithLocalWhisper: any = jest.fn();
+const mockAnalyzeTranscript: any = jest.fn();
+const mockGenerateEmbedding: any = jest.fn();
 
 jest.mock('../db/repositories', () => ({
   profileRepository: {
-    getProfile: () => getProfileMock(),
+    getProfile: () => mockGetProfile(),
   },
 }));
 
 jest.mock('expo-file-system/legacy', () => ({
   __esModule: true,
-  getInfoAsync: (...args: unknown[]) => getInfoAsyncMock(...args),
+  getInfoAsync: (...args: unknown[]) => mockGetInfoAsync(...args),
 }));
 
 jest.mock('./aiService', () => ({
@@ -26,17 +26,17 @@ jest.mock('./aiService', () => ({
 }));
 
 jest.mock('./transcription/engines', () => ({
-  transcribeRawWithGroq: (...args: unknown[]) => transcribeRawWithGroqMock(...args),
-  transcribeRawWithHuggingFace: (...args: unknown[]) => transcribeRawWithHuggingFaceMock(...args),
-  transcribeRawWithLocalWhisper: (...args: unknown[]) => transcribeRawWithLocalWhisperMock(...args),
+  transcribeRawWithGroq: (...args: unknown[]) => mockTranscribeRawWithGroq(...args),
+  transcribeRawWithHuggingFace: (...args: unknown[]) => mockTranscribeRawWithHuggingFace(...args),
+  transcribeRawWithLocalWhisper: (...args: unknown[]) => mockTranscribeRawWithLocalWhisper(...args),
 }));
 
 jest.mock('./transcription/analysis', () => ({
-  analyzeTranscript: (...args: unknown[]) => analyzeTranscriptMock(...args),
+  analyzeTranscript: (...args: unknown[]) => mockAnalyzeTranscript(...args),
 }));
 
 jest.mock('./ai/embeddingService', () => ({
-  generateEmbedding: (...args: unknown[]) => generateEmbeddingMock(...args),
+  generateEmbedding: (...args: unknown[]) => mockGenerateEmbedding(...args),
 }));
 
 describe('transcriptionService', () => {
@@ -46,8 +46,8 @@ describe('transcriptionService', () => {
     // @ts-expect-error test env global
     globalThis.__DEV__ = false;
 
-    getInfoAsyncMock.mockResolvedValue({ exists: true, size: 1024 });
-    getProfileMock.mockResolvedValue({
+    mockGetInfoAsync.mockResolvedValue({ exists: true, size: 1024 });
+    mockGetProfile.mockResolvedValue({
       groqApiKey: '',
       huggingFaceToken: '',
       huggingFaceTranscriptionModel: 'openai/whisper-large-v3',
@@ -55,7 +55,7 @@ describe('transcriptionService', () => {
       useLocalWhisper: false,
       localWhisperPath: null,
     });
-    analyzeTranscriptMock.mockResolvedValue({
+    mockAnalyzeTranscript.mockResolvedValue({
       subject: 'Physiology',
       topics: ['RAAS'],
       keyConcepts: ['Renin'],
@@ -63,11 +63,11 @@ describe('transcriptionService', () => {
       estimatedConfidence: 2,
       highYieldPoints: ['Renin is an enzyme'],
     });
-    generateEmbeddingMock.mockResolvedValue([0.1, 0.2, 0.3]);
+    mockGenerateEmbedding.mockResolvedValue([0.1, 0.2, 0.3]);
   });
 
   it('prefers Groq first when auto mode has Groq configured', async () => {
-    transcribeRawWithGroqMock.mockResolvedValue('groq transcript');
+    mockTranscribeRawWithGroq.mockResolvedValue('groq transcript');
     const { transcribeAudio } = await import('./transcriptionService');
 
     const result = await transcribeAudio({
@@ -78,14 +78,14 @@ describe('transcriptionService', () => {
     });
 
     expect(result.transcript).toBe('groq transcript');
-    expect(transcribeRawWithGroqMock).toHaveBeenCalledTimes(1);
-    expect(transcribeRawWithHuggingFaceMock).not.toHaveBeenCalled();
-    expect(transcribeRawWithLocalWhisperMock).not.toHaveBeenCalled();
+    expect(mockTranscribeRawWithGroq).toHaveBeenCalledTimes(1);
+    expect(mockTranscribeRawWithHuggingFace).not.toHaveBeenCalled();
+    expect(mockTranscribeRawWithLocalWhisper).not.toHaveBeenCalled();
   });
 
   it('uses Hugging Face first when selected, then falls back to local Whisper', async () => {
-    transcribeRawWithHuggingFaceMock.mockRejectedValue(new Error('hf failed'));
-    transcribeRawWithLocalWhisperMock.mockResolvedValue('local fallback transcript');
+    mockTranscribeRawWithHuggingFace.mockRejectedValue(new Error('hf failed'));
+    mockTranscribeRawWithLocalWhisper.mockResolvedValue('local fallback transcript');
     const { transcribeAudio } = await import('./transcriptionService');
 
     const result = await transcribeAudio({
@@ -98,8 +98,8 @@ describe('transcriptionService', () => {
     });
 
     expect(result.transcript).toBe('local fallback transcript');
-    expect(transcribeRawWithHuggingFaceMock).toHaveBeenCalledTimes(1);
-    expect(transcribeRawWithLocalWhisperMock).toHaveBeenCalledTimes(1);
+    expect(mockTranscribeRawWithHuggingFace).toHaveBeenCalledTimes(1);
+    expect(mockTranscribeRawWithLocalWhisper).toHaveBeenCalledTimes(1);
   });
 
   it('throws when no transcription backend is available', async () => {
@@ -118,8 +118,8 @@ describe('transcriptionService', () => {
   });
 
   it('returns analysis without embedding when embedding generation fails', async () => {
-    transcribeRawWithLocalWhisperMock.mockResolvedValue('full transcript text');
-    generateEmbeddingMock.mockRejectedValue(new Error('embedding offline'));
+    mockTranscribeRawWithLocalWhisper.mockResolvedValue('full transcript text');
+    mockGenerateEmbedding.mockRejectedValue(new Error('embedding offline'));
     const { transcribeAudio } = await import('./transcriptionService');
 
     const result = await transcribeAudio({
@@ -131,11 +131,11 @@ describe('transcriptionService', () => {
 
     expect(result.transcript).toBe('full transcript text');
     expect(result).not.toHaveProperty('embedding');
-    expect(generateEmbeddingMock).toHaveBeenCalledTimes(1);
+    expect(mockGenerateEmbedding).toHaveBeenCalledTimes(1);
   });
 
   it('returns no-speech analysis when local Whisper yields an empty transcript', async () => {
-    transcribeRawWithLocalWhisperMock.mockResolvedValue('');
+    mockTranscribeRawWithLocalWhisper.mockResolvedValue('');
     const { transcribeAudio } = await import('./transcriptionService');
 
     const result = await transcribeAudio({
@@ -152,7 +152,7 @@ describe('transcriptionService', () => {
         lectureSummary: 'No speech detected in recording (silent or very short audio)',
       }),
     );
-    expect(analyzeTranscriptMock).not.toHaveBeenCalled();
-    expect(generateEmbeddingMock).not.toHaveBeenCalled();
+    expect(mockAnalyzeTranscript).not.toHaveBeenCalled();
+    expect(mockGenerateEmbedding).not.toHaveBeenCalled();
   });
 });

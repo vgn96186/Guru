@@ -1,21 +1,21 @@
 import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 
-const getProfileMock: any = jest.fn();
-const saveGeneratedStudyImageMock: any = jest.fn();
-const generateImageMock: any = jest.fn();
+const mockGetProfile: any = jest.fn();
+const mockSaveGeneratedStudyImage: any = jest.fn();
+const mockGenerateImage: any = jest.fn();
 
 jest.mock('../db/repositories', () => ({
   profileRepository: {
-    getProfile: () => getProfileMock(),
+    getProfile: () => mockGetProfile(),
   },
 }));
 
 jest.mock('./ai/imageGeneration', () => ({
-  generateImage: (...args: unknown[]) => generateImageMock(...args),
+  generateImage: (...args: unknown[]) => mockGenerateImage(...args),
 }));
 
 jest.mock('../db/queries/generatedStudyImages', () => ({
-  saveGeneratedStudyImage: (...args: unknown[]) => saveGeneratedStudyImageMock(...args),
+  saveGeneratedStudyImage: (...args: unknown[]) => mockSaveGeneratedStudyImage(...args),
 }));
 
 describe('studyImageService', () => {
@@ -23,19 +23,19 @@ describe('studyImageService', () => {
     jest.resetModules();
     jest.clearAllMocks();
     (globalThis as any).__DEV__ = false;
-    getProfileMock.mockResolvedValue({
+    mockGetProfile.mockResolvedValue({
       geminiKey: 'gemini-key',
       cloudflareAccountId: 'cf-account',
       cloudflareApiToken: 'cf-token',
     });
-    generateImageMock.mockResolvedValue({
+    mockGenerateImage.mockResolvedValue({
       uri: 'file:///test-docs/generated-study-images/example.png',
       modelUsed: '@cf/black-forest-labs/flux-2-dev',
       prompt: 'provider prompt',
       provider: 'cloudflare',
       mimeType: 'image/png',
     });
-    saveGeneratedStudyImageMock.mockImplementation(async (input: any) => ({
+    mockSaveGeneratedStudyImage.mockImplementation(async (input: any) => ({
       id: 42,
       createdAt: 1234567890,
       ...input,
@@ -67,13 +67,13 @@ describe('studyImageService', () => {
       style: 'chart',
     });
 
-    expect(generateImageMock).toHaveBeenCalledWith(
+    expect(mockGenerateImage).toHaveBeenCalledWith(
       expect.stringContaining(
         'NEET-PG / INICET study diagram (chart style) for topic: Renal Physiology.',
       ),
       { steps: 28 },
     );
-    expect(saveGeneratedStudyImageMock).toHaveBeenCalledWith(
+    expect(mockSaveGeneratedStudyImage).toHaveBeenCalledWith(
       expect.objectContaining({
         contextType: 'chat',
         contextKey: 'General Medicine:100',
@@ -88,7 +88,7 @@ describe('studyImageService', () => {
   });
 
   it('persists Google-generated images for topic notes', async () => {
-    generateImageMock.mockResolvedValueOnce({
+    mockGenerateImage.mockResolvedValueOnce({
       uri: 'file:///test-docs/generated-study-images/google.png',
       modelUsed: 'gemini-3-pro-image-preview',
       prompt: 'provider prompt',
@@ -106,7 +106,7 @@ describe('studyImageService', () => {
       style: 'illustration',
     });
 
-    expect(saveGeneratedStudyImageMock).toHaveBeenCalledWith(
+    expect(mockSaveGeneratedStudyImage).toHaveBeenCalledWith(
       expect.objectContaining({
         contextType: 'topic_note',
         topicId: 77,

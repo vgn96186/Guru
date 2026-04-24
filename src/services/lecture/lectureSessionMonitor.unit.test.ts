@@ -103,12 +103,12 @@ jest.mock('../ai/embeddingService', () => ({
   generateEmbedding: jest.fn(),
 }));
 
-const readLiveTranscriptMock = jest.fn<(recordingPath: string) => Promise<string | null>>();
-const readLectureInsightsMock = jest.fn<(recordingPath: string) => Promise<string | null>>();
+const mockReadLiveTranscript = jest.fn<(recordingPath: string) => Promise<string | null>>();
+const mockReadLectureInsights = jest.fn<(recordingPath: string) => Promise<string | null>>();
 
 jest.mock('../../../modules/app-launcher', () => ({
-  readLiveTranscript: (recordingPath: string) => readLiveTranscriptMock(recordingPath),
-  readLectureInsights: (recordingPath: string) => readLectureInsightsMock(recordingPath),
+  readLiveTranscript: (recordingPath: string) => mockReadLiveTranscript(recordingPath),
+  readLectureInsights: (recordingPath: string) => mockReadLectureInsights(recordingPath),
 }));
 
 describe('retryFailedTranscriptions', () => {
@@ -127,8 +127,8 @@ describe('retryFailedTranscriptions', () => {
     persistenceMock.saveLecturePersistence.mockResolvedValue(999);
     transcriptionServiceMock.generateADHDNote.mockResolvedValue('');
     aiCacheMock.getLectureNoteById.mockResolvedValue({ id: 999, note: 'Saved quick note' });
-    readLiveTranscriptMock.mockReset();
-    readLectureInsightsMock.mockReset();
+    mockReadLiveTranscript.mockReset();
+    mockReadLectureInsights.mockReset();
     lectureSessionMonitor = require('./lectureSessionMonitor');
   });
 
@@ -243,8 +243,8 @@ describe('transcribeLectureWithRecovery', () => {
     transcriptionServiceMock = require('../transcriptionService');
     externalLogsMock = require('../../db/queries/externalLogs');
     lectureSessionMonitor = require('./lectureSessionMonitor');
-    readLiveTranscriptMock.mockReset();
-    readLectureInsightsMock.mockReset();
+    mockReadLiveTranscript.mockReset();
+    mockReadLectureInsights.mockReset();
   });
 
   afterEach(() => {
@@ -256,8 +256,8 @@ describe('transcribeLectureWithRecovery', () => {
       'Medicine lecture covering acute coronary syndrome, troponin patterns, STEMI ECG findings, ' +
       'aspirin loading, anticoagulation, and immediate reperfusion strategy in the emergency room.';
 
-    readLiveTranscriptMock.mockResolvedValue(liveTranscript);
-    readLectureInsightsMock.mockResolvedValue(
+    mockReadLiveTranscript.mockResolvedValue(liveTranscript);
+    mockReadLectureInsights.mockResolvedValue(
       JSON.stringify({
         subject: 'Medicine',
         topics: ['Acute coronary syndrome', 'STEMI'],
@@ -303,7 +303,7 @@ describe('transcribeLectureWithRecovery', () => {
       includeEmbedding: false,
     });
 
-    expect(readLectureInsightsMock).toHaveBeenCalledWith('/mock/path/live-ready.m4a');
+    expect(mockReadLectureInsights).toHaveBeenCalledWith('/mock/path/live-ready.m4a');
     expect(transcriptionServiceMock.analyzeTranscript).not.toHaveBeenCalled();
     expect(transcriptionServiceMock.transcribeAudio).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -331,8 +331,8 @@ describe('transcribeLectureWithRecovery', () => {
       'The professor discussed STEMI diagnosis, ECG changes, troponin rise, ' +
       'early aspirin, anticoagulation, and urgent reperfusion workflow.';
 
-    readLectureInsightsMock.mockResolvedValue(null);
-    readLiveTranscriptMock.mockResolvedValue(liveTranscript);
+    mockReadLectureInsights.mockResolvedValue(null);
+    mockReadLiveTranscript.mockResolvedValue(liveTranscript);
     transcriptionServiceMock.transcribeAudio.mockRejectedValue(new Error('groq failed'));
     transcriptionServiceMock.analyzeTranscript.mockResolvedValue({
       subject: 'Medicine',
@@ -349,7 +349,7 @@ describe('transcribeLectureWithRecovery', () => {
       includeEmbedding: false,
     });
 
-    expect(readLiveTranscriptMock).toHaveBeenCalledWith('/mock/path/live.m4a');
+    expect(mockReadLiveTranscript).toHaveBeenCalledWith('/mock/path/live.m4a');
     expect(transcriptionServiceMock.transcribeAudio).toHaveBeenCalled();
     expect(transcriptionServiceMock.analyzeTranscript).toHaveBeenCalledWith(
       liveTranscript,

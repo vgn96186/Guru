@@ -102,7 +102,6 @@ jest.mock('../components/ScreenHeader', () => {
 });
 
 jest.mock('../motion/ScreenMotion', () => {
-  const ReactNative = require('react-native');
   return ({
     children,
     isEntryComplete,
@@ -110,6 +109,8 @@ jest.mock('../motion/ScreenMotion', () => {
     children?: React.ReactNode;
     isEntryComplete?: () => void;
   }) => {
+    const React = require('react');
+    const ReactNative = require('react-native');
     React.useEffect(() => {
       isEntryComplete?.();
     }, [isEntryComplete]);

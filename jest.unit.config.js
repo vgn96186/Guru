@@ -1,7 +1,6 @@
-/* global module */
+/* global module, require */
 /** @type {import('@jest/types').Config.InitialOptions} */
 module.exports = {
-  preset: 'ts-jest',
   testEnvironment: 'node',
   roots: ['<rootDir>/src'],
   testMatch: ['**/*.unit.test.ts', '**/*.unit.test.tsx', '**/*.db.test.ts'],
@@ -24,7 +23,6 @@ module.exports = {
     '!src/**/*.d.ts',
   ],
   coveragePathIgnorePatterns: ['/node_modules/', '/e2e/'],
-  /** CI gates use `jest.unit.logic.config.js` (logic allowlist). Full-tree runs are informational. */
   moduleNameMapper: {
     '^expo-updates$': '<rootDir>/__mocks__/expo-updates.js',
     '^expo-asset$': '<rootDir>/__mocks__/expo-asset.js',
@@ -41,21 +39,9 @@ module.exports = {
     '^@shopify/flash-list$': '<rootDir>/__mocks__/shopify-flash-list.js',
   },
   transform: {
-    '^.+\\.(ts|tsx)$': [
-      'ts-jest',
-      {
-        tsconfig: {
-          module: 'commonjs',
-          jsx: 'react',
-          rootDir: '.',
-          ignoreDeprecations: '5.0',
-        },
-      },
-    ],
-    '^.+\\.(js|jsx)$': 'babel-jest',
-    'node_modules/.+\\.(js|jsx|ts|tsx)$': 'babel-jest',
+    '^.+\\.(js|jsx|ts|tsx)$': ['babel-jest', { configFile: './babel.config.js' }],
   },
   transformIgnorePatterns: [
-    'node_modules/(?!(jest-runner|@react-native|react-native|react-native-gesture-handler|react-native-reanimated|react-native-css-interop|react-native-markdown-display|@react-navigation|expo/.*|expo-.*|@expo/.*|@unimodules/.*|unimodules|sentry-expo|native-base|@sentry/.*|jsonrepair)/)',
+    'node_modules/(?!(jest-runner|@react-native|react-native|@testing-library|react-native-gesture-handler|react-native-reanimated|react-native-css-interop|react-native-markdown-display|@react-navigation|expo/.*|expo-.*|@expo/.*|@unimodules/.*|unimodules|sentry-expo|native-base|@sentry/.*|jsonrepair)/)',
   ],
 };

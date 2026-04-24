@@ -39,7 +39,7 @@ async function loadService() {
     copyFileToPublicBackup: jest.fn(async () => true),
   }));
 
-  const service = await import('./transcriptStorage');
+  const service = require('./transcriptStorage');
   return { service, mockFileSystem };
 }
 
@@ -198,7 +198,7 @@ describe('transcriptStorage', () => {
 
       // Public local backup
       // In the module mock we defined copyFileToPublicBackup, let's just get it and check
-      const appLauncher = await import('../../modules/app-launcher');
+      const appLauncher = require('../../modules/app-launcher');
       expect(appLauncher.copyFileToPublicBackup).toHaveBeenCalledWith(
         expect.stringMatching(
           /^\/data\/user\/0\/com\.app\/files\/transcripts\/anatomy_upper-limb_transcript_\d{4}-\d{2}-\d{2}_\d{4}\.txt$/,

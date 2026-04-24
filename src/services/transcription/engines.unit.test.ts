@@ -2,14 +2,11 @@ const mockGetInfoAsync = jest.fn();
 const mockConvertToWav = jest.fn();
 const mockLoadModelFromFilePath = jest.fn();
 const mockGetContext = jest.fn();
-const mockBatchTranscribe = jest.fn();
+(global as any).mockBatchTranscribe = jest.fn();
+const mockBatchTranscribe = (global as any).mockBatchTranscribe as jest.Mock;
 const mockWhisperSingleShotTranscribe = jest.fn();
 
-class MockBatchTranscriber {
-  transcribe(...args: unknown[]) {
-    return mockBatchTranscribe(...args);
-  }
-}
+
 
 jest.mock('expo-file-system/legacy', () => ({
   __esModule: true,
@@ -28,9 +25,13 @@ jest.mock('../offlineTranscription/whisperModelManager', () => ({
   }),
 }));
 
-jest.mock('../offlineTranscription/batchTranscriber', () => ({
-  BatchTranscriber: MockBatchTranscriber,
-}));
+jest.mock('../offlineTranscription/batchTranscriber', () => {
+  return {
+    BatchTranscriber: class {
+      transcribe = (...args: any[]) => (global as any).mockBatchTranscribe(...args);
+    },
+  };
+});
 
 import {
   transcribeRawWithGroq,

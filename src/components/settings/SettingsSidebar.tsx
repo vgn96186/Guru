@@ -4,6 +4,7 @@ import { SidebarNavItem } from './SidebarNavItem';
 
 export type SettingsCategory =
   | 'dashboard'
+  | 'appearance'
   | 'profile'
   | 'planning'
   | 'interventions'
@@ -20,6 +21,7 @@ export const SETTINGS_CATEGORIES: {
   iconName: string;
 }[] = [
   { id: 'dashboard', label: 'Dashboard', iconName: 'grid-outline' },
+  { id: 'appearance', label: 'Appearance', iconName: 'color-palette-outline' },
   { id: 'profile', label: 'Profile & Experience', iconName: 'person-outline' },
   { id: 'planning', label: 'Goals & Timeline', iconName: 'flag-outline' },
   { id: 'interventions', label: 'Focus & Rules', iconName: 'shield-half-outline' },

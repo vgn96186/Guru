@@ -26,16 +26,19 @@ jest.mock('../../db/queries/topics', () => ({
 
 jest.mock('../../components/SubjectSelectionCard', () => ({
   __esModule: true,
-  default: ({ onSelectSubject }: { onSelectSubject: (subject: string) => void }) => (
-    <View>
-      <Text>Subject required</Text>
-      <Text>Choose the lecture subject before saving so topics get filed correctly.</Text>
-      <Text>Detected: Unknown</Text>
-      <TouchableOpacity onPress={() => onSelectSubject('Physiology')}>
-        <Text>Physiology</Text>
-      </TouchableOpacity>
-    </View>
-  ),
+  default: ({ onSelectSubject }: { onSelectSubject: (subject: string) => void }) => {
+    const { View, Text, TouchableOpacity } = require('react-native');
+    return (
+      <View>
+        <Text>Subject required</Text>
+        <Text>Choose the lecture subject before saving so topics get filed correctly.</Text>
+        <Text>Detected: Unknown</Text>
+        <TouchableOpacity onPress={() => onSelectSubject('Physiology')}>
+          <Text>Physiology</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  },
 }));
 
 jest.mock('../../db/queries/aiCache', () => ({

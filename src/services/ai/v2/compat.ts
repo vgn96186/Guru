@@ -6,7 +6,7 @@
  * Each function here mirrors the signature of its legacy counterpart.
  *
  * Once all callers have migrated, the legacy implementations in
- * `llmRouting.ts` / `generate.ts` can be deleted.
+ * `localLlmInfra.ts` keeps local LLM concerns; `generate.ts` is a thin re-export layer.
  */
 
 import type { z } from 'zod';

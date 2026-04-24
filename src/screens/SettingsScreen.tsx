@@ -134,6 +134,7 @@ import { useLiveGuruChatModels } from '../hooks/useLiveGuruChatModels';
 import { getLocalLlmRamWarning, isLocalLlmAllowedOnThisDevice } from '../services/deviceMemory';
 import ScreenHeader from '../components/ScreenHeader';
 import { GeneralOverviewSection } from './settings/sections/GeneralOverviewSection';
+import { AppearanceSection } from './settings/sections/AppearanceSection';
 import { InterventionsSection } from './settings/sections/InterventionsSection';
 import { AppIntegrationsSection } from './settings/sections/AppIntegrationsSection';
 import { PlanningAlertsSection } from './settings/sections/PlanningAlertsSection';
@@ -386,6 +387,7 @@ export default function SettingsScreen() {
   );
   const [focusSubjectIds, setFocusSubjectIds] = useState<number[]>([]);
   const [subjects, setSubjects] = useState<Subject[]>([]);
+  const [loadingOrbStyle, setLoadingOrbStyle] = useState<'classic' | 'turbulent'>('turbulent');
 
   const [, setFetchingDates] = useState(false);
   const [, setFetchDatesMsg] = useState('');
@@ -1449,6 +1451,7 @@ export default function SettingsScreen() {
       setAutoBackupFrequency(profile.autoBackupFrequency ?? 'off');
       setAutoRepairLegacyNotes(profile.autoRepairLegacyNotesEnabled ?? false);
       setScanOrphanedTranscripts(profile.scanOrphanedTranscriptsEnabled ?? false);
+      setLoadingOrbStyle(profile.loadingOrbStyle ?? 'turbulent');
       profileHydrationSignatureRef.current = nextSignature;
       profileLoaded.current = true;
     }
@@ -1521,6 +1524,7 @@ export default function SettingsScreen() {
         autoBackupFrequency,
         autoRepairLegacyNotesEnabled: autoRepairLegacyNotes,
         scanOrphanedTranscriptsEnabled: scanOrphanedTranscripts,
+        loadingOrbStyle,
       });
       if (notifs) {
         try {
@@ -1818,7 +1822,8 @@ export default function SettingsScreen() {
     SETTINGS_CATEGORIES[0];
 
   const categoryDescriptions: Record<SettingsCategory, string> = {
-    dashboard: 'Identity, targets, appearance, and the settings control-room overview.',
+    dashboard: 'Identity, targets, and the settings control-room overview.',
+    appearance: 'UI settings, themes, and display options.',
     profile: 'Profile setup and preferences.',
     ai: 'Provider keys, routing order, local inference, and Guru chat defaults.',
     interventions: 'Strict mode, focus guardrails, and break-enforcement controls.',
@@ -1866,8 +1871,20 @@ export default function SettingsScreen() {
               styles={styles}
               SectionToggle={SectionToggle}
               navigation={navigation}
+              name={name}
+              setName={setName}
+              loadingOrbStyle={loadingOrbStyle}
+              setLoadingOrbStyle={setLoadingOrbStyle}
             />
           </>
+        );
+      case 'appearance':
+        return (
+          <AppearanceSection
+            SectionToggle={SectionToggle}
+            loadingOrbStyle={loadingOrbStyle}
+            setLoadingOrbStyle={setLoadingOrbStyle}
+          />
         );
       case 'ai':
         return (
@@ -2491,7 +2508,7 @@ const styles = StyleSheet.create({
     marginTop: 0,
   },
   categoryContent: {
-    flex: 1,
+    // flex: 1 removed to fix scrolling in dashboard
   },
   categoryStack: {
     gap: n.spacing.lg,

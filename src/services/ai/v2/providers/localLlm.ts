@@ -17,7 +17,7 @@ import type {
   ToolCallPart,
   ToolDescription,
 } from '../spec';
-import { chatWithLocalNative } from '../../llmRouting';
+import { chatWithLocalNative } from '../../localLlmInfra';
 import * as samsungPerf from '../../../samsungPerf';
 import type { ChatMessage } from 'local-llm';
 import * as LocalLlm from 'local-llm';

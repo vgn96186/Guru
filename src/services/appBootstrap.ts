@@ -300,7 +300,7 @@ export async function runAppBootstrap(): Promise<BootstrapOutcome> {
       // Warm up Gemma LiteRT on supported devices with local model enabled
       void runOptionalStartupStep('Local LLM warmup (background)', async () => {
         try {
-          const { warmupLocalModelOnBootstrap } = await import('./ai/llmRouting');
+          const { warmupLocalModelOnBootstrap } = await import('./ai/localLlmInfra');
           const profile = await profileRepository.getProfile();
           if (profile?.useLocalModel && profile.localModelPath) {
             await warmupLocalModelOnBootstrap(profile.localModelPath);
@@ -312,7 +312,7 @@ export async function runAppBootstrap(): Promise<BootstrapOutcome> {
       // Warm up Gemini Nano (AICore) on supported devices — no model file needed
       void runOptionalStartupStep('Gemini Nano warmup (background)', async () => {
         try {
-          const { ensureNanoReady } = await import('./ai/llmRouting');
+          const { ensureNanoReady } = await import('./ai/localLlmInfra');
           const result = await ensureNanoReady();
           if (result.status === 'AVAILABLE') {
             console.log('[AppBootstrap] Gemini Nano warmed up');

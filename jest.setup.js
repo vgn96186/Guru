@@ -1,5 +1,22 @@
 /* global jest, require, module, __DEV__, console, global, beforeEach */
 
+jest.mock('react-native-css-interop', () => {
+  const React = require('react');
+  return {
+    styled: (Component) => Component,
+    withExpoSnack: (Component) => Component,
+    cssInterop: jest.fn(),
+    remapProps: jest.fn(),
+    useColorScheme: () => ({
+      colorScheme: 'dark',
+      setColorScheme: jest.fn(),
+      toggleColorScheme: jest.fn(),
+    }),
+    createInteropElement: (type, props, ...children) =>
+      React.createElement(type, props, ...children),
+  };
+});
+
 const nodeCrypto = require('crypto');
 // Always use Node's Web Crypto so `subtle.importKey` / `deriveKey` work (some tests replace `subtle` — see localModelBootstrap.unit.test).
 Object.defineProperty(globalThis, 'crypto', {
@@ -321,7 +338,27 @@ jest.mock('expo-modules-core', () => ({
     OS: 'android',
     select: (objs) => objs.android || objs.default,
   },
-  requireNativeModule: jest.fn(() => ({})),
+  requireNativeModule: jest.fn((name) => {
+    if (name === 'LocalLlm') {
+      return {
+        initialize: jest.fn(async () => ({ backend: 'gpu' })),
+        isInitialized: jest.fn(async () => true),
+        getBackend: jest.fn(async () => 'gpu'),
+        chat: jest.fn(async () => ({ text: '' })),
+        chatStream: jest.fn(async () => ({ status: 'ok' })),
+        cancel: jest.fn(async () => {}),
+        release: jest.fn(async () => {}),
+        resetSession: jest.fn(async () => {}),
+        warmup: jest.fn(async () => ({ backend: 'gpu', warmedUp: true })),
+        nanoCheckStatus: jest.fn(async () => ({ status: 'AVAILABLE' })),
+        nanoDownloadIfNeeded: jest.fn(async () => ({ status: 'AVAILABLE' })),
+        nanoWarmup: jest.fn(async () => true),
+        nanoGenerate: jest.fn(async () => ({ text: '' })),
+        nanoGradeAnswer: jest.fn(async () => ({ text: '' })),
+      };
+    }
+    return {};
+  }),
   requireOptionalNativeModule: jest.fn(() => ({})),
   EventEmitter: class EventEmitter {
     addListener() {
@@ -341,6 +378,10 @@ jest.mock('expo-sqlite', () => ({
       getAllAsync: jest.fn(async () => []),
       isInTransactionAsync: jest.fn(async () => false),
       closeSync: jest.fn(),
+      prepareSync: jest.fn(() => ({
+        executeSync: jest.fn(() => ({ rows: [] })),
+        bindSync: jest.fn(),
+      })),
     };
   }),
 }));
@@ -380,6 +421,21 @@ jest.mock('expo-notifications', () => ({
   removeNotificationSubscription: jest.fn(),
   AndroidImportance: { MAX: 5, HIGH: 4, DEFAULT: 3, LOW: 2, MIN: 1 },
   SchedulableTriggerInputTypes: { TIME_INTERVAL: 'timeInterval', DAILY: 'daily' },
+  default: {
+    getPermissionsAsync: jest.fn(async () => ({ status: 'granted' })),
+    requestPermissionsAsync: jest.fn(async () => ({ status: 'granted' })),
+    getExpoPushTokenAsync: jest.fn(async () => ({ data: 'ExponentPushToken[test]' })),
+    scheduleNotificationAsync: jest.fn(async () => 'notification-id'),
+    cancelScheduledNotificationAsync: jest.fn(async () => {}),
+    cancelAllScheduledNotificationsAsync: jest.fn(async () => {}),
+    getAllScheduledNotificationsAsync: jest.fn(async () => []),
+    setNotificationHandler: jest.fn(),
+    addNotificationReceivedListener: jest.fn(() => ({ remove: jest.fn() })),
+    addNotificationResponseReceivedListener: jest.fn(() => ({ remove: jest.fn() })),
+    removeNotificationSubscription: jest.fn(),
+    AndroidImportance: { MAX: 5, HIGH: 4, DEFAULT: 3, LOW: 2, MIN: 1 },
+    SchedulableTriggerInputTypes: { TIME_INTERVAL: 'timeInterval', DAILY: 'daily' },
+  },
 }));
 
 jest.mock('@tanstack/react-query', () => {

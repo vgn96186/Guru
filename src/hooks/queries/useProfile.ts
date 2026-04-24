@@ -13,7 +13,7 @@ import { profileRepositoryDrizzle } from '../../db/repositories/profileRepositor
 import { queryKeys } from './keys';
 import { getLevelInfo } from '../../services/xpService';
 import { getLocalLlmRamWarning, isLocalLlmAllowedOnThisDevice } from '../../services/deviceMemory';
-import { clearWarmupState } from '../../services/ai/llmRouting';
+import { clearWarmupState } from '../../services/ai/localLlmInfra';
 import { showToast } from '../../components/Toast';
 import type { UserProfile, LevelInfo, StudyResourceMode } from '../../types';
 

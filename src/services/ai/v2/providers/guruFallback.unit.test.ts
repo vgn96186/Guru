@@ -7,7 +7,7 @@ jest.mock('./fallback', () => ({
   })),
 }));
 
-function makeMockModel(provider: string, modelId: string) {
+function mockMakeMockModel(provider: string, modelId: string) {
   return {
     specificationVersion: 'v2' as const,
     provider,
@@ -18,32 +18,32 @@ function makeMockModel(provider: string, modelId: string) {
 }
 
 jest.mock('./presets', () => ({
-  createGroqModel: jest.fn(({ modelId }: { modelId: string }) => makeMockModel('groq', modelId)),
+  createGroqModel: jest.fn(({ modelId }: { modelId: string }) => mockMakeMockModel('groq', modelId)),
   createOpenRouterModel: jest.fn(({ modelId }: { modelId: string }) => ({
-    ...makeMockModel('openrouter', modelId),
+    ...mockMakeMockModel('openrouter', modelId),
   })),
   createDeepSeekModel: jest.fn(({ modelId }: { modelId: string }) => ({
-    ...makeMockModel('deepseek', modelId),
+    ...mockMakeMockModel('deepseek', modelId),
   })),
   createCloudflareModel: jest.fn(({ modelId }: { modelId: string }) => ({
-    ...makeMockModel('cloudflare', modelId),
+    ...mockMakeMockModel('cloudflare', modelId),
   })),
   createGitHubModelsModel: jest.fn(({ modelId }: { modelId: string }) => ({
-    ...makeMockModel('github', modelId),
+    ...mockMakeMockModel('github', modelId),
   })),
 }));
 
 jest.mock('./openaiCompatible', () => ({
   createOpenAICompatibleModel: jest.fn(
     ({ provider, modelId }: { provider: string; modelId: string }) => ({
-      ...makeMockModel(provider, modelId),
+      ...mockMakeMockModel(provider, modelId),
     }),
   ),
 }));
 
 jest.mock('./gemini', () => ({
   createGeminiModel: jest.fn(({ modelId }: { modelId: string }) => ({
-    ...makeMockModel('gemini', modelId),
+    ...mockMakeMockModel('gemini', modelId),
   })),
 }));
 
@@ -66,28 +66,28 @@ jest.mock('./localLlm', () => ({
 
 jest.mock('./chatgpt', () => ({
   createChatGptModel: jest.fn(({ modelId }: { modelId: string }) => ({
-    ...makeMockModel('chatgpt', modelId),
+    ...mockMakeMockModel('chatgpt', modelId),
   })),
 }));
 
 jest.mock('./githubCopilot', () => ({
   createGitHubCopilotModel: jest.fn(({ modelId }: { modelId: string }) => ({
-    ...makeMockModel('github_copilot', modelId),
+    ...mockMakeMockModel('github_copilot', modelId),
   })),
 }));
 
 jest.mock('./gitlabDuo', () => ({
   createGitLabDuoModel: jest.fn(({ modelId }: { modelId: string }) => ({
-    ...makeMockModel('gitlab_duo', modelId),
+    ...mockMakeMockModel('gitlab_duo', modelId),
   })),
 }));
 
 jest.mock('./poe', () => ({
-  createPoeModel: jest.fn(({ modelId }: { modelId: string }) => makeMockModel('poe', modelId)),
+  createPoeModel: jest.fn(({ modelId }: { modelId: string }) => mockMakeMockModel('poe', modelId)),
 }));
 
 jest.mock('./qwen', () => ({
-  createQwenModel: jest.fn(({ modelId }: { modelId: string }) => makeMockModel('qwen', modelId)),
+  createQwenModel: jest.fn(({ modelId }: { modelId: string }) => mockMakeMockModel('qwen', modelId)),
 }));
 
 import { createGuruFallbackModel } from './guruFallback';
@@ -135,16 +135,16 @@ describe('createGuruFallbackModel', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     (createGroqModel as jest.Mock).mockImplementation(({ modelId }: any) => ({
-      ...makeMockModel('groq', modelId),
+      ...mockMakeMockModel('groq', modelId),
     }));
     (createOpenRouterModel as jest.Mock).mockImplementation(({ modelId }: any) => ({
-      ...makeMockModel('openrouter', modelId),
+      ...mockMakeMockModel('openrouter', modelId),
     }));
     (createGeminiModel as jest.Mock).mockImplementation(({ modelId }: any) => ({
-      ...makeMockModel('gemini', modelId),
+      ...mockMakeMockModel('gemini', modelId),
     }));
     (createChatGptModel as jest.Mock).mockImplementation(({ modelId }: any) => ({
-      ...makeMockModel('chatgpt', modelId),
+      ...mockMakeMockModel('chatgpt', modelId),
     }));
     (createLocalLlmModel as jest.Mock).mockImplementation(({ modelPath }: any) => ({
       specificationVersion: 'v2',

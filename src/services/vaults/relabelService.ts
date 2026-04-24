@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { generateJSONWithRouting } from '../ai/generate';
+import { generateJSONV2 } from '../ai/v2/compat';
 import type { Message } from '../ai/types';
 
 export const NoteLabelSchema = z.object({
@@ -34,14 +34,12 @@ Subject must be one of: Anatomy, Physiology, Biochemistry, Pathology, Pharmacolo
       },
       { role: 'user', content: snippet },
     ];
-    const { parsed } = await generateJSONWithRouting(
+    const { object } = await generateJSONV2(
       messages,
       NoteLabelSchema,
-      'low',
-      false,
-      'groq',
+      { providerOrderOverride: ['groq'] },
     );
-    return parsed;
+    return object;
   } catch {
     return null;
   }

@@ -17,7 +17,11 @@ import { AccessibilityInfo } from 'react-native';
 
 jest.mock('../motion/ScreenMotion', () => ({
   __esModule: true,
-  default: (props: Record<string, unknown>) => React.createElement(Text, props, 'screen-motion'),
+  default: (props: Record<string, unknown>) => {
+    const React = require('react');
+    const { Text } = require('react-native');
+    return React.createElement(Text, props, 'screen-motion');
+  },
 }));
 
 describe('motion presets', () => {

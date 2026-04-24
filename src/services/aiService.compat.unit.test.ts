@@ -6,7 +6,7 @@ describe('ai service compat exports', () => {
       generateTextV2: jest.fn(),
     }));
 
-    const mod = await import('./aiService');
+    const mod = require('./aiService');
 
     expect(typeof mod.addLlmStateListener).toBe('function');
   });

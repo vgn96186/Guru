@@ -7,15 +7,15 @@ import { useGuruChatModels } from '../hooks/useGuruChatModels';
 import { useGuruChat } from '../hooks/useGuruChat';
 import { buildBoundedGuruChatStudyContext } from '../services/guruChatStudyContext';
 
-const sendMessageMock = jest.fn();
-const setMessagesMock = jest.fn();
-const setCurrentThreadMock = jest.fn();
-const getOrCreateLatestGuruChatThreadMock = jest.fn(async () => ({
+const mockSendMessage = jest.fn();
+const mockSetMessages = jest.fn();
+const mockSetCurrentThread = jest.fn();
+const mockGetOrCreateLatestGuruChatThread = jest.fn(async () => ({
   id: 7,
   topicName: 'Cardiology',
 }));
-const getChatHistoryMock = jest.fn(async () => []);
-const listGeneratedStudyImagesForTopicMock = jest.fn(async () => []);
+const mockGetChatHistory = jest.fn(async () => []);
+const mockListGeneratedStudyImagesForTopic = jest.fn(async () => []);
 
 jest.mock('./ImageLightbox', () => ({
   ImageLightbox: () => null,
@@ -36,7 +36,7 @@ jest.mock('../hooks/queries/useProfile', () => ({
 jest.mock('../hooks/useGuruChatSession', () => ({
   useGuruChatSession: jest.fn(() => ({
     currentThread: undefined,
-    setCurrentThread: setCurrentThreadMock,
+    setCurrentThread: mockSetCurrentThread,
     refreshThreads: jest.fn(),
     isHydratingThread: false,
     sessionSummary: '',
@@ -60,9 +60,9 @@ jest.mock('../hooks/useGuruChatModels', () => ({
 jest.mock('../hooks/useGuruChat', () => ({
   useGuruChat: jest.fn(() => ({
     messages: [],
-    setMessages: setMessagesMock,
+    setMessages: mockSetMessages,
     status: 'ready',
-    sendMessage: sendMessageMock,
+    sendMessage: mockSendMessage,
   })),
 }));
 
@@ -85,14 +85,14 @@ jest.mock('../services/ai/v2', () => ({
 }));
 
 jest.mock('../db/queries/aiCache', () => ({
-  getChatHistory: (...args: unknown[]) => Reflect.apply(getChatHistoryMock, null, args),
+  getChatHistory: (...args: unknown[]) => Reflect.apply(mockGetChatHistory, null, args),
   getOrCreateLatestGuruChatThread: (...args: unknown[]) =>
-    Reflect.apply(getOrCreateLatestGuruChatThreadMock, null, args),
+    Reflect.apply(mockGetOrCreateLatestGuruChatThread, null, args),
 }));
 
 jest.mock('../db/queries/generatedStudyImages', () => ({
   listGeneratedStudyImagesForTopic: (...args: unknown[]) =>
-    Reflect.apply(listGeneratedStudyImagesForTopicMock, null, args),
+    Reflect.apply(mockListGeneratedStudyImagesForTopic, null, args),
 }));
 
 jest.mock('../screens/guruChatLoadingState', () => ({
@@ -107,7 +107,7 @@ describe('GuruChatOverlay', () => {
     (useProfileQuery as jest.Mock).mockReturnValue({ data: null });
     (useGuruChatSession as jest.Mock).mockReturnValue({
       currentThread: undefined,
-      setCurrentThread: setCurrentThreadMock,
+      setCurrentThread: mockSetCurrentThread,
       refreshThreads: jest.fn(),
       isHydratingThread: false,
       sessionSummary: '',
@@ -125,27 +125,27 @@ describe('GuruChatOverlay', () => {
     });
     (useGuruChat as jest.Mock).mockReturnValue({
       messages: [],
-      setMessages: setMessagesMock,
+      setMessages: mockSetMessages,
       status: 'ready',
-      sendMessage: sendMessageMock,
+      sendMessage: mockSendMessage,
       stop: jest.fn(),
     });
     (buildBoundedGuruChatStudyContext as jest.Mock).mockImplementation(
       async (_profile: unknown, syllabusTopicId?: number) =>
         syllabusTopicId ? `Syllabus topic id: ${syllabusTopicId}` : undefined,
     );
-    sendMessageMock.mockResolvedValue({
+    mockSendMessage.mockResolvedValue({
       id: 'assistant-1',
       role: 'guru',
       text: 'Mocked guru reply',
       timestamp: 123,
     });
-    getOrCreateLatestGuruChatThreadMock.mockResolvedValue({
+    mockGetOrCreateLatestGuruChatThread.mockResolvedValue({
       id: 7,
       topicName: 'Cardiology',
     });
-    getChatHistoryMock.mockResolvedValue([]);
-    listGeneratedStudyImagesForTopicMock.mockResolvedValue([]);
+    mockGetChatHistory.mockResolvedValue([]);
+    mockListGeneratedStudyImagesForTopic.mockResolvedValue([]);
   });
 
   it('shows the current header and topic when visible', () => {
@@ -192,7 +192,7 @@ describe('GuruChatOverlay', () => {
     fireEvent.press(getByLabelText('Send message'));
 
     await waitFor(() => {
-      expect(sendMessageMock).toHaveBeenCalledWith(
+      expect(mockSendMessage).toHaveBeenCalledWith(
         'Why is lead III elevated?',
         expect.objectContaining({
           sessionSummary: undefined,
@@ -221,7 +221,7 @@ describe('GuruChatOverlay', () => {
     fireEvent.press(getByLabelText('Send message'));
 
     await waitFor(() => {
-      expect(sendMessageMock).toHaveBeenCalledWith(
+      expect(mockSendMessage).toHaveBeenCalledWith(
         'Hi',
         expect.objectContaining({
           studyContext: 'Syllabus topic id: 42\n\nScreen context.',

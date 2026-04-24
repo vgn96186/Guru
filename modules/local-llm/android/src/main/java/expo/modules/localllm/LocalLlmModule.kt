@@ -222,7 +222,9 @@ class LocalLlmModule : Module() {
                     }
                     val preferCpu = lastPreferredBackend.equals("cpu", ignoreCase = true)
                     val lease = LocalModelRuntime.acquireSharedEngine(context, modelPath, preferCpu)
-                    // Run a dummy inference to warm up KV cache and tokenizer
+                    /* 
+                    // [Antigravity Fix]: Run a dummy inference to warm up KV cache and tokenizer.
+                    // DISABLED: This call causes a SIGSEGV in liblitertlm_jni.so during startup on some devices.
                     LocalModelRuntime.runChat(
                         context = context,
                         modelPath = modelPath,
@@ -232,6 +234,7 @@ class LocalLlmModule : Module() {
                         preferCpu = preferCpu,
                         toolsJson = null,
                     )
+                    */
                     promise.resolve(mapOf(
                         "backend" to lease.backendLabel,
                         "warmedUp" to true,

@@ -1,4 +1,4 @@
-import React from 'react';
+import * as React from 'react';
 import { render } from '@testing-library/react-native';
 import { RevealSection } from './GuruChatRevealSection';
 
@@ -18,7 +18,7 @@ describe('RevealSection', () => {
         };
       }, []);
 
-      return React.createElement('Probe');
+      return null;
     }
 
     const { rerender } = render(

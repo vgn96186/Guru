@@ -33,8 +33,8 @@ export type {
 // JsonRepair — robust JSON extraction and repair
 export { parseStructuredJson } from './jsonRepair';
 
-// LlmRouter — local vs cloud fallbacks, mutexes
-export { releaseLlamaContext } from './llmRouting';
+// Local LLM infrastructure — context lifecycle, warmup
+export { releaseLlamaContext } from './localLlmInfra';
 
 // MedicalGrounding — Wikipedia, PubMed, EuropePMC
 export {

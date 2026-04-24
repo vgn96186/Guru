@@ -2,13 +2,14 @@ import React from 'react';
 import { render } from '@testing-library/react-native';
 import LoadingOrb from './LoadingOrb';
 
-const turbulentOrbMock = jest.fn((props: any) =>
-  React.createElement('TurbulentOrb', { testID: 'turbulent-orb', ...props }),
-);
+const mockTurbulentOrb = jest.fn((props: any) => {
+  const React = require('react');
+  return React.createElement('TurbulentOrb', { testID: 'turbulent-orb', ...props });
+});
 
 jest.mock('./TurbulentOrb', () => ({
   __esModule: true,
-  default: (props: any) => turbulentOrbMock(props),
+  default: (props: any) => mockTurbulentOrb(props),
 }));
 
 jest.mock('../hooks/queries/useProfile', () => ({
@@ -40,23 +41,23 @@ jest.mock('react-native-reanimated', () => {
 
 describe('LoadingOrb', () => {
   beforeEach(() => {
-    turbulentOrbMock.mockClear();
+    mockTurbulentOrb.mockClear();
   });
 
   it('renders without crashing on mount', () => {
     expect(() => render(<LoadingOrb />)).not.toThrow();
-    expect(turbulentOrbMock).toHaveBeenCalled();
+    expect(mockTurbulentOrb).toHaveBeenCalled();
   });
 
   it('renders with custom size', () => {
     expect(() => render(<LoadingOrb size={120} />)).not.toThrow();
-    expect(turbulentOrbMock).toHaveBeenCalled();
+    expect(mockTurbulentOrb).toHaveBeenCalled();
   });
 
   it('renders the turbulent orb variant when the profile is not classic', () => {
     render(<LoadingOrb message="Loading..." size={140} />);
 
-    expect(turbulentOrbMock).toHaveBeenCalledWith(
+    expect(mockTurbulentOrb).toHaveBeenCalledWith(
       expect.objectContaining({
         message: 'Loading...',
         size: 140,

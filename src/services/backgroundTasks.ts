@@ -32,7 +32,7 @@ export async function warmAiContentCache(options?: {
   topicLimit?: number;
   refreshNotifications?: boolean;
 }): Promise<number> {
-  const { prefetchTopicContent } = await import('./aiService');
+  const { prefetchTopicContent } = require('./aiService');
   const profile = await profileRepository.getProfile();
   const allTopics = await getAllTopicsWithProgress();
   const candidates = selectPrefetchCandidates(

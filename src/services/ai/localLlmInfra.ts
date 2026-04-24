@@ -1,24 +1,19 @@
 /**
  * Local LLM infrastructure — warmup, context management, and on-device inference.
  *
- * Cloud AI routing has been fully migrated to the v2 framework:
+ * Cloud AI routing lives exclusively in the v2 framework:
  *   createGuruFallbackModel() → createFallbackModel() in v2/providers/guruFallback.ts
  *   with centralized logging via createLoggingMiddleware() in v2/middleware.ts
  *
- * This module retains only local-LLM concerns:
+ * This module provides only local-LLM concerns:
  *   - Native context lifecycle (load, release, warmup, mutex)
- *   - Gemini Nano (AICore) helpers
+ *   - Gemini Nano (AICore) status & download helpers
  *   - chatWithLocalNative (used by v2/providers/localLlm.ts)
- *   - Legacy attemptLocalLLM / attemptLocalLLMStream (still called from some services)
- *   - clampMessagesForStructuredJsonRouting
  */
 
 import { AppState } from 'react-native';
 import * as LocalLlm from '../../../modules/local-llm';
 import { WARMUP_DEBOUNCE_MS } from './constants';
-import type { Message } from './types';
-import { profileRepository } from '../../db/repositories';
-import { clampMessagesToCharBudget } from './providers/utils';
 
 let localLlmLoaded = false;
 let currentLlamaPath: string | null = null;
@@ -157,34 +152,6 @@ if (prevSub?.remove) prevSub.remove();
   },
 ) as AppStateSubscription;
 
-async function callLocalLLM(
-  messages: Message[],
-  modelPath: string,
-  _textMode = false,
-): Promise<string> {
-  await ensureLocalLlmLoaded(modelPath);
-  const release = await acquireContextLock();
-  try {
-    const systemMsg = messages.find((m) => m.role === 'system');
-    const chatMessages: LocalLlm.ChatMessage[] = messages
-      .filter((m) => m.role !== 'system')
-      .map((m) => ({
-        role: m.role,
-        content: m.content,
-      }));
-    const result = await LocalLlm.chat(chatMessages, {
-      modelPath,
-      systemInstruction: systemMsg?.content,
-      temperature: 0.7,
-      topP: 0.9,
-    });
-    return result.text;
-  } finally {
-    await releaseAfterGeneration();
-    release();
-  }
-}
-
 // LiteRT-LM Conversation state corrupts after one generation on some devices
 // (SIGSEGV in nativeSendMessage, "Failed to invoke the compiled model").
 // Edge Gallery pattern: reset Conversation between one-shot calls, keep Engine warm.
@@ -200,7 +167,7 @@ async function releaseAfterGeneration(): Promise<void> {
 /**
  * LiteRT on-device chat with optional OpenAPI tools (wired to native
  * `ConversationConfig.tools` + `automaticToolCalling = false`).
- * Uses the same mutex as {@link callLocalLLM}.
+ * This is the primary interface used by v2/providers/localLlm.ts.
  */
 export async function chatWithLocalNative(options: {
   chatMessages: LocalLlm.ChatMessage[];
@@ -236,20 +203,6 @@ export async function chatWithLocalNative(options: {
   }
 }
 
-/**
- * Single ceiling for {@link generateJSONWithRouting} before any cloud/local structured call.
- * Avoids ~hundreds-of-kB prompts that exhaust Groq, Copilot (even after per-provider clamps), and GitLab.
- */
-const STRUCTURED_JSON_ROUTING_CHAR_BUDGET = 56_000;
-
-export function clampMessagesForStructuredJsonRouting(messages: Message[]): Message[] {
-  return clampMessagesToCharBudget(
-    messages,
-    STRUCTURED_JSON_ROUTING_CHAR_BUDGET,
-    'Structured JSON routing',
-  );
-}
-
 /** Check whether Gemini Nano (AICore) is available on this device. */
 export async function isNanoAvailable(): Promise<boolean> {
   try {
@@ -271,158 +224,4 @@ export async function ensureNanoReady(): Promise<LocalLlm.NanoStatusResult> {
   } catch (err) {
     return { status: 'ERROR', errorMessage: (err as Error)?.message };
   }
-}
-
-/**
- * Attempt generation via Gemini Nano (AICore).
- * No model file or API key needed — runs on-device via system service.
- * Best for short tasks: quiz grading, confidence checks, quick summaries.
- * Max output ~256 tokens, max input ~4000 tokens.
- */
-export async function attemptNanoLLM(
-  messages: Message[],
-  options?: { temperature?: number; maxOutputTokens?: number },
-): Promise<{ text: string; modelUsed: string }> {
-  const systemMsg = messages.find((m) => m.role === 'system');
-  const userMsgs = messages.filter((m) => m.role !== 'system');
-  const prompt = userMsgs.map((m) => m.content).join('\n');
-
-  const result = await LocalLlm.nanoGenerate({
-    prompt,
-    systemInstruction: systemMsg?.content,
-    temperature: options?.temperature ?? 0.3,
-    topK: 40,
-    maxOutputTokens: options?.maxOutputTokens ?? 256,
-  });
-
-  if (!result.text?.trim()) {
-    throw new Error('Gemini Nano returned empty response');
-  }
-  return { text: result.text, modelUsed: 'nano/gemini-nano' };
-}
-
-/** Quick MCQ/short-answer grading via Gemini Nano. */
-export async function attemptNanoGrade(
-  question: string,
-  userAnswer: string,
-  correctAnswer?: string,
-): Promise<{ text: string; modelUsed: string }> {
-  const result = await LocalLlm.nanoGradeAnswer({ question, userAnswer, correctAnswer });
-  if (!result.text?.trim()) {
-    throw new Error('Gemini Nano grading returned empty response');
-  }
-  return { text: result.text, modelUsed: 'nano/gemini-nano' };
-}
-
-export async function attemptLocalLLM(
-  messages: Message[],
-  localModelPath: string,
-  textMode: boolean,
-): Promise<{ text: string; modelUsed: string }> {
-  const isQwen = localModelPath.toLowerCase().includes('qwen');
-  const isMedGemma = localModelPath.toLowerCase().includes('medgemma');
-  const isE2b = localModelPath.toLowerCase().includes('e2b');
-  const isE4b = localModelPath.toLowerCase().includes('e4b');
-  const isGemma = localModelPath.toLowerCase().includes('gemma');
-  const cleanPath = localModelPath.replace(/^file:\/\//, '');
-  const modelUsed = isMedGemma
-    ? 'local-medgemma-4b'
-    : isQwen
-      ? 'local-qwen-2.5-3b'
-      : isE2b
-        ? 'local-gemma-4-e2b'
-        : isE4b
-          ? 'local-gemma-4-e4b'
-          : isGemma
-            ? 'local-gemma'
-            : 'local-llama-3.2-1b';
-  try {
-    const text = await callLocalLLM(messages, cleanPath, textMode);
-    if (!text || !text.trim()) {
-      throw new Error('Local model returned an empty response');
-    }
-    return { text, modelUsed };
-  } catch (err: unknown) {
-    const msg = (err as Error)?.message ?? String(err);
-    // If the model file failed to load (corrupt/missing), clear the stored path
-    // so the bootstrap will re-download it on next startup.
-    if (
-      msg.toLowerCase().includes('failed to load') ||
-      msg.toLowerCase().includes('no such file') ||
-      msg.toLowerCase().includes('invalid model')
-    ) {
-      // Important: free native memory on load failures to prevent leaks.
-      if (!isContextInUse() && localLlmLoaded) {
-        try {
-          await LocalLlm.release();
-        } catch (releaseErr) {
-          console.warn('[LLM] Failed to release native context after load error:', releaseErr);
-        }
-      }
-      localLlmLoaded = false;
-      currentLlamaPath = null;
-      clearWarmupState(); // Clear warmup state when model is invalid
-      llamaContextPromise = null;
-      profileRepository
-        .updateProfile({ localModelPath: null, useLocalModel: false })
-        .catch(() => {});
-      throw new Error(
-        'Local model file is missing or corrupt — it will re-download on next startup.',
-        { cause: err },
-      );
-    }
-    throw err;
-  }
-}
-
-export async function attemptLocalLLMStream(
-  messages: Message[],
-  localModelPath: string,
-  _textMode: boolean,
-  onDelta: (delta: string) => void,
-): Promise<void> {
-  const cleanPath = localModelPath.replace(/^file:\/\//, '');
-  await ensureLocalLlmLoaded(cleanPath);
-  const release = await acquireContextLock();
-  return new Promise<void>((resolve, reject) => {
-    const systemMsg = messages.find((m) => m.role === 'system');
-    const chatMessages: LocalLlm.ChatMessage[] = messages
-      .filter((m) => m.role !== 'system')
-      .map((m) => ({
-        role: m.role,
-        content: m.content,
-      }));
-
-    const tokenSub = LocalLlm.addLlmTokenListener(({ token }) => {
-      onDelta(token);
-    });
-    const completeSub = LocalLlm.addLlmCompleteListener(() => {
-      tokenSub.remove();
-      completeSub.remove();
-      errorSub.remove();
-      release();
-      resolve();
-    });
-    const errorSub = LocalLlm.addLlmErrorListener(({ error }) => {
-      tokenSub.remove();
-      completeSub.remove();
-      errorSub.remove();
-      release();
-      reject(new Error(error));
-    });
-
-    LocalLlm.chatStream(chatMessages, {
-      modelPath: cleanPath,
-      systemInstruction: systemMsg?.content,
-      temperature: 0.7,
-      topP: 0.9,
-      toolsJson: undefined,
-    }).catch((err: unknown) => {
-      tokenSub.remove();
-      completeSub.remove();
-      errorSub.remove();
-      release();
-      reject(err);
-    });
-  });
 }

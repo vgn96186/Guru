@@ -1,7 +1,7 @@
-const requireNativeModuleMock = jest.fn();
+const mockRequireNativeModule = jest.fn();
 
 jest.mock('expo-modules-core', () => ({
-  requireNativeModule: (...args: unknown[]) => requireNativeModuleMock(...args),
+  requireNativeModule: (...args: unknown[]) => mockRequireNativeModule(...args),
 }));
 
 describe('app launcher module compatibility', () => {
@@ -15,7 +15,7 @@ describe('app launcher module compatibility', () => {
       .fn()
       .mockRejectedValueOnce(new Error('Expected 1 arguments, got 3'))
       .mockResolvedValueOnce('/mock/legacy-recording.m4a');
-    requireNativeModuleMock.mockReturnValue({
+    mockRequireNativeModule.mockReturnValue({
       startRecording: startRecordingMock,
     });
     const consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
@@ -39,7 +39,7 @@ describe('app launcher module compatibility', () => {
       .fn()
       .mockRejectedValueOnce(new Error('Received 2 arguments, but 1 was expected'))
       .mockResolvedValueOnce('/mock/legacy-recording.m4a');
-    requireNativeModuleMock.mockReturnValue({
+    mockRequireNativeModule.mockReturnValue({
       startRecording: startRecordingMock,
     });
     const consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});

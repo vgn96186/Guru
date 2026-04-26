@@ -42,7 +42,7 @@ import { createQwenModel } from './qwen';
 export interface GuruFallbackOptions {
   profile: UserProfile;
   /** Override model ids per provider. Defaults chosen to match existing routing. */
-  modelIds?: Partial<Record<ProviderId | 'local', string>>;
+  modelIds?: Partial<Record<ProviderId, string>>;
   /** Explicit UI-selected model id, e.g. `groq/...`, `gemini/...`, raw OpenRouter id, or `local`. */
   chosenModel?: string;
   /** Force a specific provider chain (ignores profile order). */
@@ -55,7 +55,7 @@ export interface GuruFallbackOptions {
   onProviderSuccess?: (provider: string, modelId: string) => void;
 }
 
-const DEFAULT_MODEL_IDS: Record<ProviderId | 'local', string> = {
+const DEFAULT_MODEL_IDS: Record<ProviderId, string> = {
   groq: 'llama-3.3-70b-versatile',
   openrouter: 'meta-llama/llama-3.3-70b-instruct:free',
   deepseek: 'deepseek-chat',
@@ -76,7 +76,7 @@ const DEFAULT_MODEL_IDS: Record<ProviderId | 'local', string> = {
 
 type ChosenModelSelection = {
   forceOrder?: ProviderId[];
-  modelIds?: Partial<Record<ProviderId | 'local', string>>;
+  modelIds?: Partial<Record<ProviderId, string>>;
   localOnly?: boolean;
 };
 
@@ -146,15 +146,8 @@ export function createGuruFallbackModel(opts: GuruFallbackOptions): LanguageMode
   const localOnly = chosenSelection.localOnly === true;
   const explicitCloudOnly = Boolean(chosenSelection.forceOrder?.length) && !localOnly;
 
-  // Local LiteRT model goes first if enabled and path is a real, non-empty string.
-  const localPath = profile.localModelPath?.trim();
-  if (profile.useLocalModel && localPath && !opts.disableLocal && !explicitCloudOnly) {
-    models.push(
-      createLocalLlmModel({
-        modelPath: ids.local || localPath,
-        textMode: opts.textMode ?? false,
-      }),
-    );
+  if (!explicitCloudOnly && localOnly) {
+    models.push(...createLocalProviderModels(profile, ids, opts.textMode ?? false));
   }
 
   if (localOnly) {
@@ -172,20 +165,15 @@ export function createGuruFallbackModel(opts: GuruFallbackOptions): LanguageMode
     });
   }
 
-  // Gemini Nano (AICore) — available on supported devices, no API key needed.
-  // Placed after LiteRT (which has higher quality + longer context) but before
-  // cloud providers. Best for quick grading, confidence checks, short summaries.
-  // Respects the useNano toggle from profile settings.
-  if (profile.useNano !== false && !opts.disableLocal && !explicitCloudOnly) {
-    try {
-      models.push(createNanoModel());
-    } catch {
-      // Nano not available on this device — skip silently
-    }
-  }
-
   for (const providerId of order) {
     if (disabled.has(providerId)) continue;
+    if (providerId === 'local') {
+      if (!opts.disableLocal && !explicitCloudOnly) {
+        models.push(...createLocalProviderModels(profile, ids, opts.textMode ?? false));
+      }
+      continue;
+    }
+
     const model = tryCreateProvider(providerId, profile, ids);
     if (model) models.push(model);
   }
@@ -211,7 +199,7 @@ export function createGuruFallbackModel(opts: GuruFallbackOptions): LanguageMode
 function tryCreateProvider(
   providerId: ProviderId,
   profile: UserProfile,
-  ids: Record<ProviderId | 'local', string>,
+  ids: Record<ProviderId, string>,
 ): LanguageModelV2 | null {
   switch (providerId) {
     case 'groq':
@@ -306,7 +294,40 @@ function tryCreateProvider(
           })
         : null;
 
+    case 'local':
+      return null;
+
     default:
       return null;
   }
+}
+
+function createLocalProviderModels(
+  profile: UserProfile,
+  ids: Record<ProviderId, string>,
+  textMode: boolean,
+): LanguageModelV2[] {
+  const models: LanguageModelV2[] = [];
+  const localPath = profile.localModelPath?.trim();
+
+  if (profile.useLocalModel && localPath) {
+    models.push(
+      createLocalLlmModel({
+        modelPath: ids.local || localPath,
+        textMode,
+      }),
+    );
+  }
+
+  // Gemini Nano (AICore) lives under the "On-device" routing option. LiteRT is
+  // tried first when configured because it has stronger quality and context.
+  if (profile.useNano !== false) {
+    try {
+      models.push(createNanoModel());
+    } catch {
+      // Nano not available on this device - skip silently.
+    }
+  }
+
+  return models;
 }

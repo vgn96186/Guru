@@ -46,7 +46,8 @@
         "android.permission.SYSTEM_ALERT_WINDOW",
         "android.permission.FOREGROUND_SERVICE",
         "android.permission.READ_EXTERNAL_STORAGE",
-        "android.permission.WRITE_EXTERNAL_STORAGE"
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.MANAGE_EXTERNAL_STORAGE"
       ]
     },
     "web": {
@@ -65,7 +66,15 @@
       "expo-media-library",
       "expo-notifications",
       "./modules/app-launcher/withAppLauncher",
-      "expo-build-properties",
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "compileSdkVersion": 36,
+            "minSdkVersion": 26
+          }
+        }
+      ],
       "expo-font",
       "@config-plugins/detox",
       "@react-native-google-signin/google-signin"

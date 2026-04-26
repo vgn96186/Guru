@@ -1,22 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import {
-  View,
-  TouchableOpacity,
-  ScrollView,
-  StyleSheet,
-  StatusBar,
-  ActivityIndicator,
-  Linking,
-  Platform,
-  PermissionsAndroid,
-  Modal,
-  Pressable,
-  KeyboardAvoidingView,
-  useWindowDimensions,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import LinearSurface from '../components/primitives/LinearSurface';
-import LinearText from '../components/primitives/LinearText';
+import { View, StatusBar, Linking, Platform, useWindowDimensions } from 'react-native';
 import {
   useNavigation,
   useIsFocused,
@@ -24,9 +7,6 @@ import {
 } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { MenuStackParamList, RootStackParamList } from '../navigation/types';
-import * as Notifications from 'expo-notifications';
-import { Audio } from 'expo-av';
-import { canDrawOverlays, requestOverlayPermission } from '../../modules/app-launcher';
 import {
   showInfo,
   showSuccess,
@@ -49,22 +29,11 @@ import {
 } from '../services/notificationService';
 import { fetchExamDates } from '../services/aiService';
 import {
-  testGroqConnection,
-  testHuggingFaceConnection,
-  testOpenRouterConnection,
-  testGeminiConnection,
-  testCloudflareConnection,
-  testBraveSearchConnection,
-  testFalConnection,
-  testGitHubModelsConnection,
   testGitHubCopilotConnection,
   testGitLabDuoConnection,
-  testKiloConnection,
-  testDeepgramConnection,
-  testVertexConnection,
-  testQwenConnection,
 } from '../services/ai/providerHealth';
-import type { ChatGptAccountSlot, ContentType, ProviderId, Subject, UserProfile } from '../types';
+import type { ChatGptAccountSlot, ContentType, Subject, UserProfile } from '../types';
+import { PROVIDER_DISPLAY_NAMES } from '../types';
 import { sanitizeProviderOrder } from '../utils/providerOrder';
 import {
   requestDeviceCode,
@@ -107,41 +76,17 @@ import {
   pollForToken as pollQwenToken,
   saveQwenTokens,
   clearQwenTokens,
-  getQwenAccessToken,
 } from '../services/ai/qwen';
 import { linearTheme as n } from '../theme/linearTheme';
-import {
-  whiteAlpha,
-  blackAlpha,
-  errorAlpha,
-  captureFillAlpha,
-  captureBorderAlpha,
-} from '../theme/colorUtils';
 import {
   DEFAULT_HF_TRANSCRIPTION_MODEL,
   DEFAULT_INICET_DATE,
   DEFAULT_IMAGE_GENERATION_MODEL,
   DEFAULT_NEET_DATE,
-  FAL_IMAGE_GENERATION_MODEL_OPTIONS,
-  GITHUB_COPILOT_MODELS,
   GOOGLE_WEB_CLIENT_ID,
-  GITLAB_DUO_MODELS,
-  IMAGE_GENERATION_MODEL_OPTIONS,
   normalizeImageGenerationModel,
 } from '../config/appConfig';
-import { formatGuruChatModelChipLabel } from '../services/ai/guruChatModelPreference';
 import { useLiveGuruChatModels } from '../hooks/useLiveGuruChatModels';
-import { getLocalLlmRamWarning, isLocalLlmAllowedOnThisDevice } from '../services/deviceMemory';
-import ScreenHeader from '../components/ScreenHeader';
-import { GeneralOverviewSection } from './settings/sections/GeneralOverviewSection';
-import { AppearanceSection } from './settings/sections/AppearanceSection';
-import { InterventionsSection } from './settings/sections/InterventionsSection';
-import { AppIntegrationsSection } from './settings/sections/AppIntegrationsSection';
-import { PlanningAlertsSection } from './settings/sections/PlanningAlertsSection';
-import { DeviceSyncSection } from './settings/sections/DeviceSyncSection';
-import { DashboardOverview } from './settings/sections/DashboardOverview';
-import StorageSections from './settings/sections/StorageSections';
-import AiProvidersSection from './settings/sections/ai-providers';
 import {
   SettingsSectionAccordion,
   SettingsSubSectionAccordion,
@@ -155,149 +100,27 @@ import {
   cleanupOldBackups,
   type AutoBackupFrequency,
 } from '../services/unifiedBackupService';
-import { isSamsungDevice, isIgnoringBatteryOptimizations } from '../../modules/app-launcher';
 import { profileRepository } from '../db/repositories';
+import { type SettingsCategory } from '../components/settings/SettingsSidebar';
+import { SettingsScreenShell } from './settings/components/SettingsScreenShell';
+import SettingsCategoryContent from './settings/components/SettingsCategoryContent';
+import { settingsStyles as styles } from './settings/settingsStyles';
 import {
-  SettingsSidebar,
-  SETTINGS_CATEGORIES,
-  type SettingsCategory,
-} from '../components/settings/SettingsSidebar';
-
-function SamsungBackgroundRow() {
-  const [isSamsung, setIsSamsung] = useState(false);
-  const [isIgnoring, setIsIgnoring] = useState(false);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- React Navigation requires specific param list type for .navigate() calls
-  const navigation = useNavigation<any>();
-  const isFocused = useIsFocused();
-
-  useEffect(() => {
-    if (isFocused) {
-      isSamsungDevice().then(setIsSamsung);
-      isIgnoringBatteryOptimizations().then(setIsIgnoring);
-    }
-  }, [isFocused]);
-
-  if (!isSamsung) return null;
-
-  return (
-    <LinearSurface compact style={{ marginBottom: n.spacing.md }}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-        <View style={{ flex: 1 }}>
-          <LinearText variant="meta" tone="accent" style={{ letterSpacing: 1.1 }}>
-            SAMSUNG DEVICE
-          </LinearText>
-          <LinearText variant="label" style={{ marginTop: 4 }}>
-            Background reliability
-          </LinearText>
-          <LinearText
-            variant="caption"
-            tone={isIgnoring ? 'success' : 'warning'}
-            style={{ marginTop: 2 }}
-          >
-            {isIgnoring ? '✓ Whitelisted (Never sleeping)' : '⚠ May be killed in background'}
-          </LinearText>
-        </View>
-        <TouchableOpacity
-          style={{
-            backgroundColor: n.colors.card,
-            paddingHorizontal: 12,
-            paddingVertical: 8,
-            borderRadius: 8,
-            borderWidth: 1,
-            borderColor: n.colors.borderHighlight,
-          }}
-          onPress={() => navigation.navigate('SamsungBatterySheet')}
-        >
-          <LinearText variant="chip" tone="accent">
-            Configure
-          </LinearText>
-        </TouchableOpacity>
-      </View>
-    </LinearSurface>
-  );
-}
-
-function hasValue(value: string | null | undefined): boolean {
-  return Boolean(value?.trim());
-}
-
-function sanitizeGithubCopilotPreferredModel(value: string): string {
-  const t = value.trim();
-  if (!t) return '';
-  return (GITHUB_COPILOT_MODELS as readonly string[]).includes(t) ? t : '';
-}
-
-function sanitizeGitlabDuoPreferredModel(value: string): string {
-  const t = value.trim();
-  if (!t) return '';
-  return (GITLAB_DUO_MODELS as readonly string[]).includes(t) ? t : '';
-}
-
-const LOCAL_FILE_ACCESS_PERMISSION =
-  PermissionsAndroid.PERMISSIONS.READ_MEDIA_AUDIO ??
-  PermissionsAndroid.PERMISSIONS.READ_EXTERNAL_STORAGE;
-
-type ValidationProviderId = ProviderId | 'deepgram' | 'fal' | 'brave' | 'google';
-type ApiValidationEntry = { verified: boolean; verifiedAt: number; fingerprint: string };
-type ApiValidationState = Partial<Record<ValidationProviderId, ApiValidationEntry>>;
-type ChatGptAccountSettings = {
-  primary: { enabled: boolean; connected: boolean };
-  secondary: { enabled: boolean; connected: boolean };
-};
-
-function defaultChatGptAccountSettings(): ChatGptAccountSettings {
-  return {
-    primary: { enabled: true, connected: false },
-    secondary: { enabled: false, connected: false },
-  };
-}
-
-function sanitizeChatGptAccountSettings(value: unknown): ChatGptAccountSettings {
-  const fallback = defaultChatGptAccountSettings();
-  if (!value || typeof value !== 'object' || Array.isArray(value)) return fallback;
-  const root = value as Record<string, unknown>;
-  const readSlot = (slot: ChatGptAccountSlot) => {
-    const raw = root[slot];
-    if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return fallback[slot];
-    const record = raw as Record<string, unknown>;
-    return {
-      enabled: typeof record.enabled === 'boolean' ? record.enabled : fallback[slot].enabled,
-      connected:
-        typeof record.connected === 'boolean' ? record.connected : fallback[slot].connected,
-    };
-  };
-  return {
-    primary: readSlot('primary'),
-    secondary: readSlot('secondary'),
-  };
-}
-
-function isChatGptEnabled(settings: ChatGptAccountSettings): boolean {
-  return (
-    (settings.primary.enabled && settings.primary.connected) ||
-    (settings.secondary.enabled && settings.secondary.connected)
-  );
-}
-
-function fingerprintSecret(secret: string): string {
-  // Lightweight stable fingerprint so we never persist raw secret copies.
-  let hash = 5381;
-  for (let i = 0; i < secret.length; i += 1) {
-    hash = (hash * 33) ^ secret.charCodeAt(i);
-  }
-  return `fp_${(hash >>> 0).toString(16)}`;
-}
-
-function sanitizeApiValidationState(value: unknown): ApiValidationState {
-  if (!value || typeof value !== 'object' || Array.isArray(value)) return {};
-  return value as ApiValidationState;
-}
-
-function getErrorMessage(error: unknown): string {
-  if (error instanceof Error && error.message) return error.message;
-  if (typeof error === 'string' && error.trim()) return error;
-  return 'Unknown error';
-}
+  sanitizeGithubCopilotPreferredModel,
+  sanitizeGitlabDuoPreferredModel,
+  defaultChatGptAccountSettings,
+  sanitizeChatGptAccountSettings,
+  isChatGptEnabled,
+  sanitizeApiValidationState,
+} from './settings/utils';
+import { type ChatGptAccountSettings } from './settings/types';
+import { useSettingsPermissions } from './settings/hooks/useSettingsPermissions';
+import { useApiKeyTesting } from './settings/hooks/useApiKeyTesting';
+import { useSettingsDerivedStatus } from './settings/hooks/useSettingsDerivedStatus';
+import { useSettingsSummaryState } from './settings/hooks/useSettingsSummaryState';
+import { useProviderApiKeyTests } from './settings/hooks/useProviderApiKeyTests';
+import { useProviderReadyCount } from './settings/hooks/useProviderReadyCount';
+import { getSettingsCategoryMeta } from './settings/settingsCategoryMeta';
 
 export default function SettingsScreen() {
   const navigation =
@@ -344,13 +167,15 @@ export default function SettingsScreen() {
     );
   }
 
-  // Permissions State
-  const [permStatus, setPermStatus] = useState({
-    notifs: 'undetermined',
-    overlay: 'undetermined',
-    mic: 'undetermined',
-    localFiles: 'undetermined',
-  });
+  const {
+    permStatus,
+    checkPermissions,
+    onRequestNotifications,
+    onRequestMic,
+    onRequestLocalFiles,
+    onRequestOverlay,
+    requestPomodoroOverlay,
+  } = useSettingsPermissions();
 
   const [groqKey, setGroqKey] = useState('');
   const [orKey, setOrKey] = useState('');
@@ -391,21 +216,78 @@ export default function SettingsScreen() {
 
   const [, setFetchingDates] = useState(false);
   const [, setFetchDatesMsg] = useState('');
-  const [testingGroqKey, setTestingGroqKey] = useState(false);
-  const [groqKeyTestResult, setGroqKeyTestResult] = useState<'ok' | 'fail' | null>(null);
-  const [_testingQwenKey, _setTestingQwenKey] = useState(false);
-  const [_qwenKeyTestResult, _setQwenKeyTestResult] = useState<'ok' | 'fail' | null>(null);
+  const apiKeyTesting = useApiKeyTesting();
+  const {
+    apiValidation,
+    setApiValidation,
+    markProviderValidated,
+    clearProviderValidated,
+    resolveValidationStatus,
+    testingGroqKey,
+    setTestingGroqKey,
+    groqKeyTestResult,
+    setGroqKeyTestResult,
+    _setTestingQwenKey,
+    _setQwenKeyTestResult,
+    testingGithubPat,
+    setTestingGithubPat,
+    githubPatTestResult,
+    setGithubPatTestResult,
+    testingOpenRouterKey,
+    setTestingOpenRouterKey,
+    openRouterKeyTestResult,
+    setOpenRouterKeyTestResult,
+    _setTestingHuggingFaceToken,
+    _setHuggingFaceTokenTestResult,
+    testingGeminiKey,
+    setTestingGeminiKey,
+    geminiKeyTestResult,
+    setGeminiKeyTestResult,
+    testingCloudflare,
+    setTestingCloudflare,
+    cloudflareTestResult,
+    setCloudflareTestResult,
+    testingVertexKey,
+    setTestingVertexKey,
+    vertexKeyTestResult,
+    setVertexKeyTestResult,
+    testingFalKey,
+    setTestingFalKey,
+    falKeyTestResult,
+    setFalKeyTestResult,
+    testingBraveSearchKey,
+    setTestingBraveSearchKey,
+    braveSearchKeyTestResult,
+    setBraveSearchKeyTestResult,
+    _setTestingGoogleCustomSearchKey,
+    googleCustomSearchKeyTestResult,
+    setGoogleCustomSearchKeyTestResult,
+    testingKiloKey,
+    setTestingKiloKey,
+    kiloKeyTestResult,
+    setKiloKeyTestResult,
+    testingDeepseekKey,
+    setTestingDeepseekKey,
+    deepseekKeyTestResult,
+    setDeepseekKeyTestResult,
+    testingAgentRouterKey,
+    setTestingAgentRouterKey,
+    agentRouterKeyTestResult,
+    setAgentRouterKeyTestResult,
+    testingDeepgramKey,
+    setTestingDeepgramKey,
+    deepgramKeyTestResult,
+    setDeepgramKeyTestResult,
+    testingGitHubCopilotOAuth,
+    setTestingGitHubCopilotOAuth,
+    githubCopilotOAuthTestResult,
+    setGithubCopilotOAuthTestResult,
+    testingGitLabDuoOAuth,
+    setTestingGitLabDuoOAuth,
+    gitlabDuoOAuthTestResult,
+    setGitlabDuoOAuthTestResult,
+  } = apiKeyTesting;
   const [githubModelsPat, setGithubModelsPat] = useState('');
-  const [testingGithubPat, setTestingGithubPat] = useState(false);
-  const [githubPatTestResult, setGithubPatTestResult] = useState<'ok' | 'fail' | null>(null);
-  const [testingOpenRouterKey, setTestingOpenRouterKey] = useState(false);
-  const [openRouterKeyTestResult, setOpenRouterKeyTestResult] = useState<'ok' | 'fail' | null>(
-    null,
-  );
-  const [_testingHuggingFaceToken, _setTestingHuggingFaceToken] = useState(false);
-  const [_huggingFaceTokenTestResult, _setHuggingFaceTokenTestResult] = useState<
-    'ok' | 'fail' | null
-  >(null);
   const [geminiKey, setGeminiKey] = useState('');
   const [cfAccountId, setCfAccountId] = useState('');
   const [cfApiToken, setCfApiToken] = useState('');
@@ -415,37 +297,10 @@ export default function SettingsScreen() {
   const [falApiKey, setFalApiKey] = useState('');
   const [braveSearchApiKey, setBraveSearchApiKey] = useState('');
   const [googleCustomSearchApiKey, setGoogleCustomSearchApiKey] = useState('');
-  const [testingGeminiKey, setTestingGeminiKey] = useState(false);
-  const [geminiKeyTestResult, setGeminiKeyTestResult] = useState<'ok' | 'fail' | null>(null);
-  const [testingCloudflare, setTestingCloudflare] = useState(false);
-  const [cloudflareTestResult, setCloudflareTestResult] = useState<'ok' | 'fail' | null>(null);
-  const [testingVertexKey, setTestingVertexKey] = useState(false);
-  const [vertexKeyTestResult, setVertexKeyTestResult] = useState<'ok' | 'fail' | null>(null);
-  const [testingFalKey, setTestingFalKey] = useState(false);
-  const [falKeyTestResult, setFalKeyTestResult] = useState<'ok' | 'fail' | null>(null);
-  const [testingBraveSearchKey, setTestingBraveSearchKey] = useState(false);
-  const [braveSearchKeyTestResult, setBraveSearchKeyTestResult] = useState<'ok' | 'fail' | null>(
-    null,
-  );
-  const [_testingGoogleCustomSearchKey, _setTestingGoogleCustomSearchKey] = useState(false);
-  const [googleCustomSearchKeyTestResult, setGoogleCustomSearchKeyTestResult] = useState<
-    'ok' | 'fail' | null
-  >(null);
   const [kiloApiKey, setKiloApiKey] = useState('');
-  const [testingKiloKey, setTestingKiloKey] = useState(false);
-  const [kiloKeyTestResult, setKiloKeyTestResult] = useState<'ok' | 'fail' | null>(null);
   const [deepseekKey, setDeepseekKey] = useState('');
-  const [testingDeepseekKey, setTestingDeepseekKey] = useState(false);
-  const [deepseekKeyTestResult, setDeepseekKeyTestResult] = useState<'ok' | 'fail' | null>(null);
   const [agentRouterKey, setAgentRouterKey] = useState('');
-  const [testingAgentRouterKey, setTestingAgentRouterKey] = useState(false);
-  const [agentRouterKeyTestResult, setAgentRouterKeyTestResult] = useState<'ok' | 'fail' | null>(
-    null,
-  );
   const [deepgramApiKey, setDeepgramApiKey] = useState('');
-  const [testingDeepgramKey, setTestingDeepgramKey] = useState(false);
-  const [deepgramKeyTestResult, setDeepgramKeyTestResult] = useState<'ok' | 'fail' | null>(null);
-  const [apiValidation, setApiValidation] = useState<ApiValidationState>({});
   const [chatgptAccounts, setChatgptAccounts] = useState<ChatGptAccountSettings>(
     defaultChatGptAccountSettings(),
   );
@@ -468,14 +323,6 @@ export default function SettingsScreen() {
   const [gitlabOauthClientId, setGitlabOauthClientId] = useState('');
   /** Only in memory / SecureStore â€” never loaded from backup (confidential OAuth secret). */
   const [gitlabOauthClientSecret, setGitlabOauthClientSecret] = useState('');
-  const [testingGitHubCopilotOAuth, setTestingGitHubCopilotOAuth] = useState(false);
-  const [githubCopilotOAuthTestResult, setGithubCopilotOAuthTestResult] = useState<
-    'ok' | 'fail' | null
-  >(null);
-  const [testingGitLabDuoOAuth, setTestingGitLabDuoOAuth] = useState(false);
-  const [gitlabDuoOAuthTestResult, setGitlabDuoOAuthTestResult] = useState<'ok' | 'fail' | null>(
-    null,
-  );
   const [poeConnecting, setPoeConnecting] = useState(false);
   const [poeDeviceCode, setPoeDeviceCode] = useState<Awaited<
     ReturnType<typeof requestPoeDeviceCode>
@@ -491,6 +338,8 @@ export default function SettingsScreen() {
   const [imageGenerationModel, setImageGenerationModel] = useState<string>(
     DEFAULT_IMAGE_GENERATION_MODEL,
   );
+  const [imageGenerationOrder, setImageGenerationOrder] = useState<string[]>([]);
+  const [transcriptionOrder, setTranscriptionOrder] = useState<string[]>([]);
   const [guruMemoryNotes, setGuruMemoryNotes] = useState('');
   const [preferGeminiStructuredJson, setPreferGeminiStructuredJson] = useState(true);
   const [providerOrder, setProviderOrder] = useState<import('../types').ProviderId[]>([]);
@@ -498,45 +347,6 @@ export default function SettingsScreen() {
     new Set(),
   );
   const profileHydrationSignatureRef = useRef<string | null>(null);
-
-  const markProviderValidated = useCallback((provider: ValidationProviderId, secret: string) => {
-    const normalized = secret.trim();
-    if (!normalized) return;
-    setApiValidation((prev) => ({
-      ...sanitizeApiValidationState(prev),
-      [provider]: {
-        verified: true,
-        verifiedAt: Date.now(),
-        fingerprint: fingerprintSecret(normalized),
-      },
-    }));
-  }, []);
-
-  const clearProviderValidated = useCallback((provider: ValidationProviderId) => {
-    setApiValidation((prev) => {
-      const safePrev = sanitizeApiValidationState(prev);
-      if (!safePrev[provider]) return safePrev;
-      const next = { ...safePrev };
-      delete next[provider];
-      return next;
-    });
-  }, []);
-
-  const resolveValidationStatus = useCallback(
-    (
-      provider: ValidationProviderId,
-      liveResult: 'ok' | 'fail' | null,
-      secret: string,
-    ): 'ok' | 'fail' | null => {
-      if (liveResult) return liveResult;
-      const normalized = secret.trim();
-      if (!normalized) return null;
-      const persisted = sanitizeApiValidationState(apiValidation)[provider];
-      if (!persisted?.verified || !persisted.fingerprint) return null;
-      return persisted.fingerprint === fingerprintSecret(normalized) ? 'ok' : null;
-    },
-    [apiValidation],
-  );
 
   const liveGuruChatModels = useLiveGuruChatModels(profile ?? null, {
     groqApiKey: groqKey,
@@ -551,210 +361,83 @@ export default function SettingsScreen() {
     chatgptConnected: isChatGptEnabled(chatgptAccounts),
   });
 
+  const {
+    testGroqKey,
+    testGithubModelsPat,
+    testOpenRouterKey,
+    testKiloKey,
+    testDeepseekKey,
+    testAgentRouterKey,
+    testVertexKey,
+    testDeepgramKey,
+    testGeminiKey,
+    testCloudflareKeys,
+    testFalKey,
+    testBraveSearchKey,
+  } = useProviderApiKeyTests({
+    profile,
+    qwenConnected,
+    keys: {
+      groqKey,
+      githubModelsPat,
+      openrouterKey: orKey,
+      kiloApiKey,
+      deepseekKey,
+      agentRouterKey,
+      huggingFaceToken,
+      huggingFaceModel,
+      vertexAiProject,
+      vertexAiLocation,
+      vertexAiToken,
+      deepgramApiKey,
+      geminiKey,
+      cloudflareAccountId: cfAccountId,
+      cloudflareApiToken: cfApiToken,
+      falApiKey,
+      braveSearchApiKey,
+      googleCustomSearchApiKey,
+    },
+    setters: {
+      setTestingGroqKey,
+      setGroqKeyTestResult,
+      setTestingQwenKey: _setTestingQwenKey,
+      setQwenKeyTestResult: _setQwenKeyTestResult,
+      setTestingGithubPat,
+      setGithubPatTestResult,
+      setTestingOpenRouterKey,
+      setOpenRouterKeyTestResult,
+      setTestingKiloKey,
+      setKiloKeyTestResult,
+      setTestingDeepseekKey,
+      setDeepseekKeyTestResult,
+      setTestingAgentRouterKey,
+      setAgentRouterKeyTestResult,
+      setTestingHuggingFaceToken: _setTestingHuggingFaceToken,
+      setHuggingFaceTokenTestResult: _setHuggingFaceTokenTestResult,
+      setTestingVertexKey,
+      setVertexKeyTestResult,
+      setTestingDeepgramKey,
+      setDeepgramKeyTestResult,
+      setTestingGeminiKey,
+      setGeminiKeyTestResult,
+      setTestingCloudflare,
+      setCloudflareTestResult,
+      setTestingFalKey,
+      setFalKeyTestResult,
+      setTestingBraveSearchKey,
+      setBraveSearchKeyTestResult,
+      setTestingGoogleCustomSearchKey: _setTestingGoogleCustomSearchKey,
+      setGoogleCustomSearchKeyTestResult,
+    },
+    markProviderValidated,
+    clearProviderValidated,
+  });
+
   useEffect(() => {
     if (isFocused) {
       checkPermissions();
     }
-  }, [isFocused]);
-
-  async function testGroqKey() {
-    const key = groqKey.trim() || profile?.groqApiKey || '';
-    if (!key) {
-      showWarning('No key', 'Enter a Groq API key first.');
-      return;
-    }
-    setTestingGroqKey(true);
-    setGroqKeyTestResult(null);
-    const res = await testGroqConnection(key);
-    setGroqKeyTestResult(res.ok ? 'ok' : 'fail');
-    if (res.ok) markProviderValidated('groq', key);
-    else clearProviderValidated('groq');
-    setTestingGroqKey(false);
-  }
-
-  async function _testQwenKey() {
-    if (!profile?.qwenConnected && !qwenConnected) {
-      showWarning('Not connected', 'Connect Qwen OAuth first to validate the connection.');
-      return;
-    }
-    _setTestingQwenKey(true);
-    _setQwenKeyTestResult(null);
-    try {
-      const tokenResult = await getQwenAccessToken();
-      if (!tokenResult || !tokenResult.accessToken) {
-        _setQwenKeyTestResult('fail');
-        showError('No OAuth token available. Try reconnecting Qwen.');
-        _setTestingQwenKey(false);
-        return;
-      }
-      const res = await testQwenConnection(
-        tokenResult.accessToken,
-        tokenResult.apiKey,
-        tokenResult.resourceUrl,
-      );
-      _setQwenKeyTestResult(res.ok ? 'ok' : 'fail');
-      if (res.ok) markProviderValidated('qwen', tokenResult.accessToken);
-      else clearProviderValidated('qwen');
-      if (!res.ok) {
-        showError(res.message || 'Qwen API returned an error.');
-      }
-    } catch (err: unknown) {
-      _setQwenKeyTestResult('fail');
-      showError(getErrorMessage(err));
-    }
-    _setTestingQwenKey(false);
-  }
-
-  async function testGithubModelsPat() {
-    const pat = githubModelsPat.trim() || profile?.githubModelsPat || '';
-    if (!pat) {
-      showWarning('No token', 'Enter a GitHub personal access token with Models access first.');
-      return;
-    }
-    setTestingGithubPat(true);
-    setGithubPatTestResult(null);
-    const res = await testGitHubModelsConnection(pat);
-    setGithubPatTestResult(res.ok ? 'ok' : 'fail');
-    if (res.ok) markProviderValidated('github', pat);
-    else clearProviderValidated('github');
-    setTestingGithubPat(false);
-  }
-
-  async function testOpenRouterKey() {
-    const key = orKey.trim() || profile?.openrouterKey || '';
-    if (!key) {
-      showWarning('No key', 'Enter an OpenRouter API key first.');
-      return;
-    }
-    setTestingOpenRouterKey(true);
-    setOpenRouterKeyTestResult(null);
-    const res = await testOpenRouterConnection(key);
-    setOpenRouterKeyTestResult(res.ok ? 'ok' : 'fail');
-    if (res.ok) markProviderValidated('openrouter', key);
-    else clearProviderValidated('openrouter');
-    setTestingOpenRouterKey(false);
-  }
-
-  async function testKiloKey() {
-    const key = kiloApiKey.trim() || profile?.kiloApiKey || '';
-    setTestingKiloKey(true);
-    setKiloKeyTestResult(null);
-    const res = await testKiloConnection(key);
-    setKiloKeyTestResult(res.ok ? 'ok' : 'fail');
-    if (res.ok) markProviderValidated('kilo', key);
-    else clearProviderValidated('kilo');
-    setTestingKiloKey(false);
-  }
-
-  async function testDeepseekKey() {
-    const key = deepseekKey.trim() || profile?.deepseekKey || '';
-    if (!key) {
-      showWarning('No key', 'Enter a DeepSeek API key first.');
-      return;
-    }
-    setTestingDeepseekKey(true);
-    setDeepseekKeyTestResult(null);
-    try {
-      const res = await fetch('https://api.deepseek.com/models', {
-        headers: { Authorization: `Bearer ${key}` },
-      });
-      setDeepseekKeyTestResult(res.ok ? 'ok' : 'fail');
-      if (res.ok) markProviderValidated('deepseek', key);
-      else clearProviderValidated('deepseek');
-    } catch {
-      setDeepseekKeyTestResult('fail');
-      clearProviderValidated('deepseek');
-    }
-    setTestingDeepseekKey(false);
-  }
-
-  async function testAgentRouterKey() {
-    const key = agentRouterKey.trim() || profile?.agentRouterKey || '';
-    if (!key) {
-      showWarning('No key', 'Enter an AgentRouter key first.');
-      return;
-    }
-    setTestingAgentRouterKey(true);
-    setAgentRouterKeyTestResult(null);
-    try {
-      const res = await fetch('https://agentrouter.org/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${key}`,
-          'User-Agent': 'Kilo-Code/5.11.0',
-          'HTTP-Referer': 'https://kilocode.ai',
-          'X-Title': 'Kilo Code',
-          'X-KiloCode-Version': '5.11.0',
-          'x-stainless-arch': 'x64',
-          'x-stainless-lang': 'js',
-          'x-stainless-os': 'Android',
-          'x-stainless-package-version': '6.32.0',
-          'x-stainless-retry-count': '0',
-          'x-stainless-runtime': 'node',
-          'x-stainless-runtime-version': 'v20.20.0',
-        },
-        body: JSON.stringify({
-          model: 'deepseek-v3.2',
-          messages: [{ role: 'user', content: 'hi' }],
-          max_tokens: 5,
-        }),
-      });
-      setAgentRouterKeyTestResult(res.ok ? 'ok' : 'fail');
-      if (res.ok) markProviderValidated('agentrouter', key);
-      else clearProviderValidated('agentrouter');
-    } catch {
-      setAgentRouterKeyTestResult('fail');
-      clearProviderValidated('agentrouter');
-    }
-    setTestingAgentRouterKey(false);
-  }
-
-  async function _testHuggingFaceKey() {
-    const token = huggingFaceToken.trim() || profile?.huggingFaceToken || '';
-    if (!token) {
-      showWarning('No token', 'Enter a Hugging Face token first.');
-      return;
-    }
-    _setTestingHuggingFaceToken(true);
-    _setHuggingFaceTokenTestResult(null);
-    const res = await testHuggingFaceConnection(token, huggingFaceModel.trim());
-    _setHuggingFaceTokenTestResult(res.ok ? 'ok' : 'fail');
-    _setTestingHuggingFaceToken(false);
-  }
-
-  async function testVertexKey() {
-    const p = vertexAiProject.trim() || profile?.vertexAiProject || '';
-    const l = vertexAiLocation.trim() || profile?.vertexAiLocation || '';
-    const t = vertexAiToken.trim() || profile?.vertexAiToken || '';
-    if (!p || !l || !t) {
-      showWarning('Missing info', 'Project, Location, and Token required.');
-      return;
-    }
-    setTestingVertexKey(true);
-    setVertexKeyTestResult(null);
-    const res = await testVertexConnection(p, l, t);
-    setVertexKeyTestResult(res.ok ? 'ok' : 'fail');
-    if (res.ok) markProviderValidated('vertex', t);
-    else clearProviderValidated('vertex');
-    setTestingVertexKey(false);
-  }
-
-  async function testDeepgramKey() {
-    const key = deepgramApiKey.trim() || profile?.deepgramApiKey || '';
-    if (!key) {
-      showWarning('No key', 'Enter a Deepgram API key first.');
-      return;
-    }
-    setTestingDeepgramKey(true);
-    setDeepgramKeyTestResult(null);
-    const res = await testDeepgramConnection(key);
-    setDeepgramKeyTestResult(res.ok ? 'ok' : 'fail');
-    if (res.ok) markProviderValidated('deepgram', key);
-    else clearProviderValidated('deepgram');
-    setTestingDeepgramKey(false);
-  }
-
+  }, [isFocused, checkPermissions]);
   async function connectChatGpt(slot: ChatGptAccountSlot) {
     setChatgptConnectingSlot(slot);
     try {
@@ -1112,100 +795,6 @@ export default function SettingsScreen() {
     setQwenConnected(false);
     refreshProfile();
   }
-
-  async function testGeminiKey() {
-    const key = geminiKey.trim() || profile?.geminiKey || '';
-    if (!key) {
-      showWarning('No key', 'Enter a Google AI (Gemini) API key first.');
-      return;
-    }
-    setTestingGeminiKey(true);
-    setGeminiKeyTestResult(null);
-    const res = await testGeminiConnection(key);
-    setGeminiKeyTestResult(res.ok ? 'ok' : 'fail');
-    if (res.ok) markProviderValidated('gemini', key);
-    else clearProviderValidated('gemini');
-    setTestingGeminiKey(false);
-  }
-
-  async function testCloudflareKeys() {
-    const aid = cfAccountId.trim() || profile?.cloudflareAccountId || '';
-    const tok = cfApiToken.trim() || profile?.cloudflareApiToken || '';
-    if (!aid || !tok) {
-      showWarning(
-        'Missing credentials',
-        'Enter your Cloudflare Account ID and API token (Workers AI permissions).',
-      );
-      return;
-    }
-    setTestingCloudflare(true);
-    setCloudflareTestResult(null);
-    const res = await testCloudflareConnection(aid, tok);
-    setCloudflareTestResult(res.ok ? 'ok' : 'fail');
-    if (res.ok) markProviderValidated('cloudflare', `${aid}:${tok}`);
-    else clearProviderValidated('cloudflare');
-    setTestingCloudflare(false);
-  }
-
-  async function testFalKey() {
-    const key = falApiKey.trim() || profile?.falApiKey || '';
-    if (!key) {
-      showWarning('No key', 'Enter a fal API key first.');
-      return;
-    }
-    setTestingFalKey(true);
-    setFalKeyTestResult(null);
-    const res = await testFalConnection(key);
-    setFalKeyTestResult(res.ok ? 'ok' : 'fail');
-    if (res.ok) markProviderValidated('fal', key);
-    else clearProviderValidated('fal');
-    setTestingFalKey(false);
-  }
-
-  async function testBraveSearchKey() {
-    const key = braveSearchApiKey.trim() || profile?.braveSearchApiKey || '';
-    if (!key) {
-      showWarning('No key', 'Enter a Brave Search API key first.');
-      return;
-    }
-    setTestingBraveSearchKey(true);
-    setBraveSearchKeyTestResult(null);
-    const res = await testBraveSearchConnection(key);
-    setBraveSearchKeyTestResult(res.ok ? 'ok' : 'fail');
-    if (res.ok) markProviderValidated('brave', key);
-    else clearProviderValidated('brave');
-    setTestingBraveSearchKey(false);
-  }
-
-  async function _testGoogleCustomSearchKey() {
-    const key = googleCustomSearchApiKey.trim() || profile?.googleCustomSearchApiKey || '';
-    if (!key) {
-      showWarning('No key', 'Enter a Google Custom Search API key first.');
-      return;
-    }
-    _setTestingGoogleCustomSearchKey(true);
-    setGoogleCustomSearchKeyTestResult(null);
-    // Test by making a simple image search request
-    try {
-      const cx = '5085c21a1fd974c13';
-      const url = `https://www.googleapis.com/customsearch/v1?key=${encodeURIComponent(
-        key,
-      )}&cx=${cx}&q=test&searchType=image&num=1`;
-      const res = await fetch(url);
-      if (res.ok) {
-        setGoogleCustomSearchKeyTestResult('ok');
-        markProviderValidated('google', key);
-      } else {
-        setGoogleCustomSearchKeyTestResult('fail');
-        clearProviderValidated('google');
-      }
-    } catch {
-      setGoogleCustomSearchKeyTestResult('fail');
-      clearProviderValidated('google');
-    }
-    _setTestingGoogleCustomSearchKey(false);
-  }
-
   async function _handleAutoFetchDates() {
     setFetchingDates(true);
     setFetchDatesMsg('');
@@ -1227,49 +816,6 @@ export default function SettingsScreen() {
     }
   }
 
-  async function checkPermissions() {
-    const n = await Notifications.getPermissionsAsync();
-    const m = await Audio.getPermissionsAsync();
-    let o = 'undetermined';
-    let localFiles = 'undetermined';
-    if (Platform.OS === 'android') {
-      const hasOverlay = await canDrawOverlays();
-      o = hasOverlay ? 'granted' : 'denied';
-      const hasLocalFileAccess = await PermissionsAndroid.check(LOCAL_FILE_ACCESS_PERMISSION);
-      localFiles = hasLocalFileAccess ? 'granted' : 'denied';
-    }
-
-    setPermStatus({
-      notifs: n.status,
-      mic: m.status,
-      overlay: o,
-      localFiles,
-    });
-  }
-
-  async function onRequestNotifications() {
-    await Notifications.requestPermissionsAsync();
-    checkPermissions();
-  }
-
-  async function onRequestMic() {
-    await Audio.requestPermissionsAsync();
-    checkPermissions();
-  }
-
-  async function onRequestLocalFiles() {
-    await PermissionsAndroid.request(LOCAL_FILE_ACCESS_PERMISSION);
-    checkPermissions();
-  }
-
-  async function onRequestOverlay() {
-    await requestOverlayPermission();
-    showInfo(
-      'Overlay Permission',
-      'Please enable Guru in the settings screen that just opened, then return to the app.',
-    );
-  }
-
   function onOpenSystemSettings() {
     Linking.openSettings();
   }
@@ -1277,11 +823,6 @@ export default function SettingsScreen() {
   function onOpenDevConsole() {
     const { devConsole } = require('../components/DevConsole');
     devConsole.show();
-  }
-
-  async function requestPomodoroOverlay() {
-    await requestOverlayPermission();
-    await checkPermissions();
   }
 
   async function signInToGDrive(clientId: string) {
@@ -1400,6 +941,8 @@ export default function SettingsScreen() {
       setApiValidation(sanitizeApiValidationState((profile as UserProfile).apiValidation));
       setGuruChatDefaultModel(profile.guruChatDefaultModel ?? 'auto');
       setImageGenerationModel(profile.imageGenerationModel ?? DEFAULT_IMAGE_GENERATION_MODEL);
+      setImageGenerationOrder(profile.imageGenerationOrder ?? []);
+      setTranscriptionOrder(profile.transcriptionOrder ?? []);
       setGuruMemoryNotes(profile.guruMemoryNotes ?? '');
       setPreferGeminiStructuredJson(profile.preferGeminiStructuredJson !== false);
       setHuggingFaceToken(profile.huggingFaceToken ?? '');
@@ -1455,7 +998,7 @@ export default function SettingsScreen() {
       profileHydrationSignatureRef.current = nextSignature;
       profileLoaded.current = true;
     }
-  }, [buildProfileHydrationSignature, profile]);
+  }, [buildProfileHydrationSignature, profile, setApiValidation]);
 
   // â”€â”€ Debounced auto-save â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const autoSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -1493,6 +1036,8 @@ export default function SettingsScreen() {
         gdriveWebClientId: gdriveWebClientId.trim(),
         guruChatDefaultModel: guruChatDefaultModel.trim() || 'auto',
         imageGenerationModel: normalizeImageGenerationModel(imageGenerationModel),
+        imageGenerationOrder,
+        transcriptionOrder,
         guruMemoryNotes: guruMemoryNotes.trim(),
         preferGeminiStructuredJson,
         huggingFaceToken: huggingFaceToken.trim(),
@@ -1560,6 +1105,8 @@ export default function SettingsScreen() {
     googleCustomSearchApiKey,
     guruChatDefaultModel,
     imageGenerationModel,
+    imageGenerationOrder,
+    transcriptionOrder,
     guruMemoryNotes,
     preferGeminiStructuredJson,
     chatgptAccounts,
@@ -1594,6 +1141,7 @@ export default function SettingsScreen() {
     autoBackupFrequency,
     autoRepairLegacyNotes,
     scanOrphanedTranscripts,
+    loadingOrbStyle,
   ]);
 
   // Fire auto-save 600ms after any setting changes (skip initial profile load)
@@ -1693,284 +1241,190 @@ export default function SettingsScreen() {
     }
   }
 
-  const groqValidationStatus = resolveValidationStatus(
-    'groq',
-    groqKeyTestResult,
-    groqKey.trim() || profile?.groqApiKey || '',
-  );
-  const githubValidationStatus = resolveValidationStatus(
-    'github',
-    githubPatTestResult,
-    githubModelsPat.trim() || profile?.githubModelsPat || '',
-  );
-  const openRouterValidationStatus = resolveValidationStatus(
-    'openrouter',
-    openRouterKeyTestResult,
-    orKey.trim() || profile?.openrouterKey || '',
-  );
-  const kiloValidationStatus = resolveValidationStatus(
-    'kilo',
-    kiloKeyTestResult,
-    kiloApiKey.trim() || profile?.kiloApiKey || '',
-  );
-  const deepseekValidationStatus = resolveValidationStatus(
-    'deepseek',
-    deepseekKeyTestResult,
-    deepseekKey.trim() || profile?.deepseekKey || '',
-  );
-  const agentRouterValidationStatus = resolveValidationStatus(
-    'agentrouter',
-    agentRouterKeyTestResult,
-    agentRouterKey.trim() || profile?.agentRouterKey || '',
-  );
-  const geminiValidationStatus = resolveValidationStatus(
-    'gemini',
-    geminiKeyTestResult,
-    geminiKey.trim() || profile?.geminiKey || '',
-  );
-  const deepgramValidationStatus = resolveValidationStatus(
-    'deepgram',
-    deepgramKeyTestResult,
-    deepgramApiKey.trim() || profile?.deepgramApiKey || '',
-  );
-  const hasPomodoroOverlayPermission = permStatus.overlay === 'granted';
-  const hasPomodoroGroqKey = !!(groqKey.trim() || profile?.groqApiKey || '');
-  const hasPomodoroDeepgramKey = !!(deepgramApiKey.trim() || profile?.deepgramApiKey || '');
+  const {
+    groqValidationStatus,
+    githubValidationStatus,
+    openRouterValidationStatus,
+    kiloValidationStatus,
+    deepseekValidationStatus,
+    agentRouterValidationStatus,
+    geminiValidationStatus,
+    deepgramValidationStatus,
+    cloudflareValidationStatus,
+    vertexValidationStatus,
+    falValidationStatus,
+    braveValidationStatus,
+    hasPomodoroOverlayPermission,
+    hasPomodoroGroqKey,
+    hasPomodoroDeepgramKey,
+  } = useSettingsDerivedStatus({
+    profile,
+    permStatus,
+    resolveValidationStatus,
+    keys: {
+      groqKey,
+      githubModelsPat,
+      openrouterKey: orKey,
+      kiloApiKey,
+      deepseekKey,
+      agentRouterKey,
+      geminiKey,
+      deepgramApiKey,
+      cloudflareAccountId: cfAccountId,
+      cloudflareApiToken: cfApiToken,
+      vertexAiToken,
+      falApiKey,
+      braveSearchApiKey,
+      googleCustomSearchApiKey,
+    },
+    testResults: {
+      groqKeyTestResult,
+      githubPatTestResult,
+      openRouterKeyTestResult,
+      kiloKeyTestResult,
+      deepseekKeyTestResult,
+      agentRouterKeyTestResult,
+      geminiKeyTestResult,
+      deepgramKeyTestResult,
+      cloudflareTestResult,
+      vertexKeyTestResult,
+      falKeyTestResult,
+      braveSearchKeyTestResult,
+      googleCustomSearchKeyTestResult,
+    },
+  });
   const pomodoroLectureQuizReady =
     hasPomodoroOverlayPermission && hasPomodoroGroqKey && hasPomodoroDeepgramKey;
-  const cloudflareValidationStatus = resolveValidationStatus(
-    'cloudflare',
-    cloudflareTestResult,
-    `${cfAccountId.trim() || profile?.cloudflareAccountId || ''}:${
-      cfApiToken.trim() || profile?.cloudflareApiToken || ''
-    }`,
-  );
-  const vertexValidationStatus = resolveValidationStatus(
-    'vertex',
-    vertexKeyTestResult,
-    vertexAiToken.trim() || profile?.vertexAiToken || '',
-  );
-  const falValidationStatus = resolveValidationStatus(
-    'fal',
-    falKeyTestResult,
-    falApiKey.trim() || profile?.falApiKey || '',
-  );
-  const braveValidationStatus = resolveValidationStatus(
-    'brave',
-    braveSearchKeyTestResult,
-    braveSearchApiKey.trim() || profile?.braveSearchApiKey || '',
-  );
-  const _googleValidationStatus = resolveValidationStatus(
-    'google',
-    googleCustomSearchKeyTestResult,
-    googleCustomSearchApiKey.trim() || profile?.googleCustomSearchApiKey || '',
-  );
-  const localLlmPath = profile?.localModelPath ?? '';
-  const localLlmReady = Boolean(localLlmPath);
-  const localWhisperPath = profile?.localWhisperPath ?? '';
-  const localWhisperReady = Boolean(localWhisperPath);
-  const localAiEnabled = Boolean(
-    profile?.useLocalModel || profile?.useLocalWhisper || profile?.useNano,
-  );
-  const localLlmAllowed = isLocalLlmAllowedOnThisDevice();
-  const localLlmWarning = getLocalLlmRamWarning();
-  const localLlmFileName = localLlmPath
-    ? decodeURIComponent(localLlmPath.split('/').pop() || localLlmPath)
-    : '';
-  const imageGenerationOptions = [
-    ...(Array.isArray(FAL_IMAGE_GENERATION_MODEL_OPTIONS)
-      ? FAL_IMAGE_GENERATION_MODEL_OPTIONS
-      : []),
-    ...(Array.isArray(IMAGE_GENERATION_MODEL_OPTIONS) ? IMAGE_GENERATION_MODEL_OPTIONS : []),
-  ];
-  const localWhisperFileName = localWhisperPath
-    ? decodeURIComponent(localWhisperPath.split('/').pop() || localWhisperPath)
-    : '';
-  const permissionReadyCount = Object.values(permStatus).filter(
-    (status) => status === 'granted',
-  ).length;
-  const planningAnchorCount = [dbmciClassStartDate, btrStartDate, inicetDate, neetDate].filter(
-    hasValue,
-  ).length;
-  const providerReadyCount = [
-    isChatGptEnabled(chatgptAccounts),
+  const providerReadyCount = useProviderReadyCount({
+    profile,
+    chatgptAccounts,
     githubCopilotConnected,
     gitlabDuoConnected,
     poeConnected,
     qwenConnected,
-    hasValue(groqKey),
-    hasValue(githubModelsPat),
-    hasValue(orKey),
-    hasValue(kiloApiKey),
-    hasValue(deepseekKey),
-    hasValue(agentRouterKey),
-    hasValue(geminiKey),
-    hasValue(deepgramApiKey),
-    hasValue(falApiKey),
-    hasValue(braveSearchApiKey),
-    hasValue(cfAccountId) && hasValue(cfApiToken),
-    localAiEnabled && (localLlmReady || localWhisperReady || (profile?.useNano ?? true)),
-  ].filter(Boolean).length;
-  const settingsSummaryCards = [
-    { label: 'Providers ready', value: providerReadyCount, tone: 'accent' as const },
-    { label: 'Permissions ready', value: `${permissionReadyCount}/4`, tone: 'success' as const },
-    { label: 'Plan anchors set', value: `${planningAnchorCount}/4`, tone: 'warning' as const },
-  ];
+    keys: {
+      groqKey,
+      githubModelsPat,
+      openrouterKey: orKey,
+      kiloApiKey,
+      deepseekKey,
+      agentRouterKey,
+      geminiKey,
+      deepgramApiKey,
+      falApiKey,
+      braveSearchApiKey,
+      cloudflareAccountId: cfAccountId,
+      cloudflareApiToken: cfApiToken,
+    },
+  });
+  const {
+    localLlmReady,
+    localWhisperReady,
+    localAiEnabled,
+    localLlmAllowed,
+    localLlmWarning,
+    localLlmFileName,
+    localWhisperFileName,
+    imageGenerationOptions,
+    settingsSummaryCards,
+  } = useSettingsSummaryState({
+    profile,
+    permStatus,
+    dbmciClassStartDate,
+    btrStartDate,
+    inicetDate,
+    neetDate,
+    providerReadyCount,
+    activeCategory,
+    topProviderName: PROVIDER_DISPLAY_NAMES[providerOrder[0]] || 'Auto',
+    guruChatDefaultModel,
+  });
 
-  const activeCategoryMeta =
-    SETTINGS_CATEGORIES.find((category) => category.id === activeCategory) ??
-    SETTINGS_CATEGORIES[0];
-
-  const categoryDescriptions: Record<SettingsCategory, string> = {
-    dashboard: 'Identity, targets, and the settings control-room overview.',
-    appearance: 'UI settings, themes, and display options.',
-    profile: 'Profile setup and preferences.',
-    ai: 'Provider keys, routing order, local inference, and Guru chat defaults.',
-    interventions: 'Strict mode, focus guardrails, and break-enforcement controls.',
-    integrations: 'Permissions, external app hooks, diagnostics, and Samsung reliability.',
-    planning: 'Exam anchors, alerts, pacing, and notification timing.',
-    sync: 'Body doubling and cross-device presence settings.',
-    storage: 'Backups, vault maintenance, restore flows, and data housekeeping.',
-    advanced: 'Advanced diagnostics and app maintenance.',
-  };
-
-  function renderMobileCategoryNav() {
-    return (
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.mobileCategoryNav}
-        style={styles.mobileCategoryScroller}
+  const activeCategoryMeta = getSettingsCategoryMeta(activeCategory);
+  return (
+    <>
+      <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
+      <SettingsScreenShell
+        activeCategory={activeCategory}
+        activeCategoryLabel={activeCategoryMeta.label}
+        isTabletLayout={isTabletLayout}
+        isSaving={saving}
+        profileName={profile?.displayName}
+        totalXp={profile?.totalXp}
+        summaryCards={settingsSummaryCards}
+        onBackPress={() => navigation.navigate('MenuHome')}
+        onSelectCategory={setActiveCategory}
       >
-        {SETTINGS_CATEGORIES.map((category) => {
-          const active = activeCategory === category.id;
-          return (
-            <TouchableOpacity
-              key={category.id}
-              style={[styles.mobileCategoryButton, active && styles.mobileCategoryButtonActive]}
-              onPress={() => setActiveCategory(category.id)}
-              activeOpacity={0.8}
-            >
-              <LinearText variant="chip" tone={active ? 'accent' : 'secondary'}>
-                {category.label}
-              </LinearText>
-            </TouchableOpacity>
-          );
-        })}
-      </ScrollView>
-    );
-  }
-
-  function renderActiveCategoryContent() {
-    switch (activeCategory) {
-      case 'dashboard':
-        return (
-          <>
-            <DashboardOverview isTablet={isTabletLayout} setActiveCategory={setActiveCategory} />
-            <GeneralOverviewSection
-              styles={styles}
-              SectionToggle={SectionToggle}
-              navigation={navigation}
-              name={name}
-              setName={setName}
-              loadingOrbStyle={loadingOrbStyle}
-              setLoadingOrbStyle={setLoadingOrbStyle}
-            />
-          </>
-        );
-      case 'appearance':
-        return (
-          <AppearanceSection
-            SectionToggle={SectionToggle}
-            loadingOrbStyle={loadingOrbStyle}
-            setLoadingOrbStyle={setLoadingOrbStyle}
-          />
-        );
-      case 'ai':
-        return (
-          <AiProvidersSection
+        <View style={styles.categoryContent}>
+          <SettingsCategoryContent
+            activeCategory={activeCategory}
+            isTabletLayout={isTabletLayout}
+            setActiveCategory={setActiveCategory}
             styles={styles}
             SectionToggle={SectionToggle}
             SubSectionToggle={SubSectionToggle}
             navigation={navigation}
-            profile={profile!}
-            guruChat={{
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any -- model shape varies by provider
-              models: liveGuruChatModels as any,
-              defaultModel: guruChatDefaultModel,
-              setDefaultModel: setGuruChatDefaultModel,
-              formatModelChipLabel: formatGuruChatModelChipLabel,
-            }}
-            guruMemory={{
-              notes: guruMemoryNotes,
-              setNotes: setGuruMemoryNotes,
-            }}
-            chatgpt={{
-              connectingSlot: chatgptConnectingSlot,
-              deviceCode: chatgptDeviceCode,
-              accounts: chatgptAccounts,
-              setAccounts: setChatgptAccounts,
-              connect: connectChatGpt,
-              disconnect: disconnectChatGpt,
-            }}
-            githubCopilot={{
-              connecting: githubCopilotConnecting,
-              deviceCode: githubCopilotDeviceCode,
-              connected: githubCopilotConnected,
-              connect: connectGitHubCopilot,
-              disconnect: disconnectGitHubCopilot,
-              testResult: githubCopilotOAuthTestResult,
-              validateConnection: validateGitHubCopilotConnection,
-              testingOAuth: testingGitHubCopilotOAuth,
-              preferredModel: githubCopilotPreferredModel,
-              setPreferredModel: setGithubCopilotPreferredModel,
-            }}
-            gitlabDuo={{
-              connecting: gitlabDuoConnecting,
-              connected: gitlabDuoConnected,
-              connect: connectGitLabDuo,
-              disconnect: disconnectGitLabDuo,
-              clientId: gitlabOauthClientId,
-              setClientId: setGitlabOauthClientId,
-              clientSecret: gitlabOauthClientSecret,
-              setClientSecret: setGitlabOauthClientSecret,
-              testResult: gitlabDuoOAuthTestResult,
-              validateConnection: validateGitLabDuoConnection,
-              testingOAuth: testingGitLabDuoOAuth,
-              preferredModel: gitlabDuoPreferredModel,
-              setPreferredModel: setGitlabDuoPreferredModel,
-              pasteModalVisible: gitlabPasteModalVisible,
-              setPasteModalVisible: setGitlabPasteModalVisible,
-              pasteUrl: gitlabPasteUrl,
-              setPasteUrl: setGitlabPasteUrl,
-              submitPasteUrl: submitGitLabPasteUrl,
-              pasteSubmitting: gitlabPasteSubmitting,
-            }}
-            poe={{
-              connecting: poeConnecting,
-              deviceCode: poeDeviceCode,
-              connected: poeConnected,
-              connect: connectPoe,
-              disconnect: disconnectPoe,
-            }}
-            qwen={{
-              connecting: qwenConnecting,
-              deviceCode: qwenDeviceCode,
-              connected: qwenConnected,
-              connect: connectQwen,
-              disconnect: disconnectQwen,
-            }}
+            profile={profile}
+            name={name}
+            setName={setName}
+            loadingOrbStyle={loadingOrbStyle}
+            setLoadingOrbStyle={setLoadingOrbStyle}
+            liveGuruChatModels={liveGuruChatModels}
+            guruChatDefaultModel={guruChatDefaultModel}
+            setGuruChatDefaultModel={setGuruChatDefaultModel}
+            guruMemoryNotes={guruMemoryNotes}
+            setGuruMemoryNotes={setGuruMemoryNotes}
+            chatgptConnectingSlot={chatgptConnectingSlot}
+            chatgptDeviceCode={chatgptDeviceCode}
+            chatgptAccounts={chatgptAccounts}
+            setChatgptAccounts={setChatgptAccounts}
+            connectChatGpt={connectChatGpt}
+            disconnectChatGpt={disconnectChatGpt}
+            githubCopilotConnecting={githubCopilotConnecting}
+            githubCopilotDeviceCode={githubCopilotDeviceCode}
+            githubCopilotConnected={githubCopilotConnected}
+            connectGitHubCopilot={connectGitHubCopilot}
+            disconnectGitHubCopilot={disconnectGitHubCopilot}
+            githubCopilotOAuthTestResult={githubCopilotOAuthTestResult}
+            validateGitHubCopilotConnection={validateGitHubCopilotConnection}
+            testingGitHubCopilotOAuth={testingGitHubCopilotOAuth}
+            githubCopilotPreferredModel={githubCopilotPreferredModel}
+            setGithubCopilotPreferredModel={setGithubCopilotPreferredModel}
+            gitlabDuoConnecting={gitlabDuoConnecting}
+            gitlabDuoConnected={gitlabDuoConnected}
+            connectGitLabDuo={connectGitLabDuo}
+            disconnectGitLabDuo={disconnectGitLabDuo}
+            gitlabOauthClientId={gitlabOauthClientId}
+            setGitlabOauthClientId={setGitlabOauthClientId}
+            gitlabOauthClientSecret={gitlabOauthClientSecret}
+            setGitlabOauthClientSecret={setGitlabOauthClientSecret}
+            gitlabDuoOAuthTestResult={gitlabDuoOAuthTestResult}
+            validateGitLabDuoConnection={validateGitLabDuoConnection}
+            testingGitLabDuoOAuth={testingGitLabDuoOAuth}
+            gitlabDuoPreferredModel={gitlabDuoPreferredModel}
+            setGitlabDuoPreferredModel={setGitlabDuoPreferredModel}
+            gitlabPasteModalVisible={gitlabPasteModalVisible}
+            setGitlabPasteModalVisible={setGitlabPasteModalVisible}
+            gitlabPasteUrl={gitlabPasteUrl}
+            setGitlabPasteUrl={setGitlabPasteUrl}
+            submitGitLabPasteUrl={submitGitLabPasteUrl}
+            gitlabPasteSubmitting={gitlabPasteSubmitting}
+            poeConnecting={poeConnecting}
+            poeDeviceCode={poeDeviceCode}
+            poeConnected={poeConnected}
+            connectPoe={connectPoe}
+            disconnectPoe={disconnectPoe}
+            qwenConnecting={qwenConnecting}
+            qwenDeviceCode={qwenDeviceCode}
+            qwenConnected={qwenConnected}
+            connectQwen={connectQwen}
+            disconnectQwen={disconnectQwen}
             apiKeys={{
               groq: {
                 value: groqKey,
                 setValue: setGroqKey,
                 setTestResult: setGroqKeyTestResult,
-                validationStatus:
-                  groqValidationStatus === 'ok'
-                    ? 'valid'
-                    : groqValidationStatus === 'fail'
-                      ? 'invalid'
-                      : 'idle',
+                validationStatus: groqValidationStatus,
                 test: testGroqKey,
                 testing: testingGroqKey,
               },
@@ -1978,12 +1432,7 @@ export default function SettingsScreen() {
                 value: githubModelsPat,
                 setValue: setGithubModelsPat,
                 setTestResult: setGithubPatTestResult,
-                validationStatus:
-                  githubValidationStatus === 'ok'
-                    ? 'valid'
-                    : githubValidationStatus === 'fail'
-                      ? 'invalid'
-                      : 'idle',
+                validationStatus: githubValidationStatus,
                 test: testGithubModelsPat,
                 testing: testingGithubPat,
               },
@@ -1991,12 +1440,7 @@ export default function SettingsScreen() {
                 value: orKey,
                 setValue: setOrKey,
                 setTestResult: setOpenRouterKeyTestResult,
-                validationStatus:
-                  openRouterValidationStatus === 'ok'
-                    ? 'valid'
-                    : openRouterValidationStatus === 'fail'
-                      ? 'invalid'
-                      : 'idle',
+                validationStatus: openRouterValidationStatus,
                 test: testOpenRouterKey,
                 testing: testingOpenRouterKey,
               },
@@ -2004,12 +1448,7 @@ export default function SettingsScreen() {
                 value: kiloApiKey,
                 setValue: setKiloApiKey,
                 setTestResult: setKiloKeyTestResult,
-                validationStatus:
-                  kiloValidationStatus === 'ok'
-                    ? 'valid'
-                    : kiloValidationStatus === 'fail'
-                      ? 'invalid'
-                      : 'idle',
+                validationStatus: kiloValidationStatus,
                 test: testKiloKey,
                 testing: testingKiloKey,
               },
@@ -2017,12 +1456,7 @@ export default function SettingsScreen() {
                 value: deepseekKey,
                 setValue: setDeepseekKey,
                 setTestResult: setDeepseekKeyTestResult,
-                validationStatus:
-                  deepseekValidationStatus === 'ok'
-                    ? 'valid'
-                    : deepseekValidationStatus === 'fail'
-                      ? 'invalid'
-                      : 'idle',
+                validationStatus: deepseekValidationStatus,
                 test: testDeepseekKey,
                 testing: testingDeepseekKey,
               },
@@ -2030,12 +1464,7 @@ export default function SettingsScreen() {
                 value: agentRouterKey,
                 setValue: setAgentRouterKey,
                 setTestResult: setAgentRouterKeyTestResult,
-                validationStatus:
-                  agentRouterValidationStatus === 'ok'
-                    ? 'valid'
-                    : agentRouterValidationStatus === 'fail'
-                      ? 'invalid'
-                      : 'idle',
+                validationStatus: agentRouterValidationStatus,
                 test: testAgentRouterKey,
                 testing: testingAgentRouterKey,
               },
@@ -2043,27 +1472,34 @@ export default function SettingsScreen() {
                 value: geminiKey,
                 setValue: setGeminiKey,
                 setTestResult: setGeminiKeyTestResult,
-                validationStatus:
-                  geminiValidationStatus === 'ok'
-                    ? 'valid'
-                    : geminiValidationStatus === 'fail'
-                      ? 'invalid'
-                      : 'idle',
+                validationStatus: geminiValidationStatus,
                 test: testGeminiKey,
                 testing: testingGeminiKey,
+              },
+              huggingface: {
+                value: huggingFaceToken,
+                setValue: setHuggingFaceToken,
+                setTestResult: () => {}, // Handled by TranscriptionSettingsPanel or generic test
+                validationStatus: null,
+                test: async () => {
+                  const { testHuggingFaceConnection } =
+                    await import('../services/ai/providerHealth');
+                  const r = await testHuggingFaceConnection(huggingFaceToken, huggingFaceModel);
+                  if (!r.ok) throw new Error('Hugging Face test failed');
+                },
+                testing: false,
               },
               deepgram: {
                 value: deepgramApiKey,
                 setValue: setDeepgramApiKey,
                 setTestResult: setDeepgramKeyTestResult,
-                validationStatus:
-                  deepgramValidationStatus === 'ok'
-                    ? 'valid'
-                    : deepgramValidationStatus === 'fail'
-                      ? 'invalid'
-                      : 'idle',
-                test: testDeepgramKey,
-                testing: testingDeepgramKey,
+                validationStatus: deepgramValidationStatus,
+                test: async () => {
+                  const { testDeepgramConnection } = await import('../services/ai/providerHealth');
+                  const r = await testDeepgramConnection(deepgramApiKey);
+                  if (!r.ok) throw new Error('Deepgram test failed');
+                },
+                testing: false,
               },
               vertex: {
                 project: vertexAiProject,
@@ -2073,12 +1509,7 @@ export default function SettingsScreen() {
                 token: vertexAiToken,
                 setToken: setVertexAiToken,
                 setTestResult: setVertexKeyTestResult,
-                validationStatus:
-                  vertexValidationStatus === 'ok'
-                    ? 'valid'
-                    : vertexValidationStatus === 'fail'
-                      ? 'invalid'
-                      : 'idle',
+                validationStatus: vertexValidationStatus,
                 test: testVertexKey,
                 testing: testingVertexKey,
               },
@@ -2088,12 +1519,7 @@ export default function SettingsScreen() {
                 apiToken: cfApiToken,
                 setApiToken: setCfApiToken,
                 setTestResult: setCloudflareTestResult,
-                validationStatus:
-                  cloudflareValidationStatus === 'ok'
-                    ? 'valid'
-                    : cloudflareValidationStatus === 'fail'
-                      ? 'invalid'
-                      : 'idle',
+                validationStatus: cloudflareValidationStatus,
                 test: testCloudflareKeys,
                 testing: testingCloudflare,
               },
@@ -2101,12 +1527,7 @@ export default function SettingsScreen() {
                 value: falApiKey,
                 setValue: setFalApiKey,
                 setTestResult: setFalKeyTestResult,
-                validationStatus:
-                  falValidationStatus === 'ok'
-                    ? 'valid'
-                    : falValidationStatus === 'fail'
-                      ? 'invalid'
-                      : 'idle',
+                validationStatus: falValidationStatus,
                 test: testFalKey,
                 testing: testingFalKey,
               },
@@ -2114,50 +1535,35 @@ export default function SettingsScreen() {
                 value: braveSearchApiKey,
                 setValue: setBraveSearchApiKey,
                 setTestResult: setBraveSearchKeyTestResult,
-                validationStatus:
-                  braveValidationStatus === 'ok'
-                    ? 'valid'
-                    : braveValidationStatus === 'fail'
-                      ? 'invalid'
-                      : 'idle',
+                validationStatus: braveValidationStatus,
                 test: testBraveSearchKey,
                 testing: testingBraveSearchKey,
               },
             }}
-            gemini={{
-              preferStructuredJson: preferGeminiStructuredJson,
-              setPrefer: setPreferGeminiStructuredJson,
-            }}
-            routing={{
-              providerOrder: providerOrder,
-              moveProvider: moveProvider,
-              setProviderOrder: setProviderOrder,
-            }}
-            imageGen={{
-              options: imageGenerationOptions,
-              model: imageGenerationModel,
-              setModel: setImageGenerationModel,
-            }}
-            localAi={{
-              enabled: localAiEnabled,
-              llmReady: localLlmReady,
-              llmFileName: localLlmFileName,
-              whisperReady: localWhisperReady,
-              whisperFileName: localWhisperFileName,
-              llmAllowed: localLlmAllowed,
-              llmWarning: localLlmWarning ?? '',
-              useNano: profile?.useNano ?? true,
-            }}
+            preferGeminiStructuredJson={preferGeminiStructuredJson}
+            setPreferGeminiStructuredJson={setPreferGeminiStructuredJson}
+            transcriptionProvider={transcriptionProvider}
+            setTranscriptionProvider={setTranscriptionProvider}
+            providerOrder={providerOrder}
+            moveProvider={moveProvider}
+            setProviderOrder={setProviderOrder}
+            imageGenerationOptions={imageGenerationOptions}
+            imageGenerationModel={imageGenerationModel}
+            setImageGenerationModel={setImageGenerationModel}
+            imageGenerationOrder={imageGenerationOrder}
+            setImageGenerationOrder={setImageGenerationOrder}
+            transcriptionOrder={transcriptionOrder}
+            setTranscriptionOrder={setTranscriptionOrder}
+            localAiEnabled={localAiEnabled}
+            localLlmReady={localLlmReady}
+            localLlmFileName={localLlmFileName}
+            localWhisperReady={localWhisperReady}
+            localWhisperFileName={localWhisperFileName}
+            localLlmAllowed={localLlmAllowed}
+            localLlmWarning={localLlmWarning}
             updateUserProfile={updateUserProfile}
             refreshProfile={refreshProfile}
             clearProviderValidated={clearProviderValidated}
-          />
-        );
-      case 'interventions':
-        return (
-          <InterventionsSection
-            styles={styles}
-            SectionToggle={SectionToggle}
             strictMode={strictMode}
             setStrictMode={setStrictMode}
             bodyDoubling={bodyDoubling}
@@ -2180,27 +1586,11 @@ export default function SettingsScreen() {
             requestPomodoroOverlay={requestPomodoroOverlay}
             pomodoroInterval={pomodoroInterval}
             setPomodoroInterval={setPomodoroInterval}
-          />
-        );
-      case 'integrations':
-        return (
-          <>
-            <AppIntegrationsSection
-              styles={styles}
-              permStatus={permStatus}
-              onRequestNotifications={onRequestNotifications}
-              onRequestMic={onRequestMic}
-              onRequestLocalFiles={onRequestLocalFiles}
-              onRequestOverlay={onRequestOverlay}
-            />
-            <SamsungBackgroundRow />
-          </>
-        );
-      case 'planning':
-        return (
-          <PlanningAlertsSection
-            styles={styles}
-            SectionToggle={SectionToggle}
+            permStatus={permStatus}
+            onRequestNotifications={onRequestNotifications}
+            onRequestMic={onRequestMic}
+            onRequestLocalFiles={onRequestLocalFiles}
+            onRequestOverlay={onRequestOverlay}
             dbmciClassStartDate={dbmciClassStartDate}
             setDbmciClassStartDate={setDbmciClassStartDate}
             btrStartDate={btrStartDate}
@@ -2218,25 +1608,12 @@ export default function SettingsScreen() {
             testNotification={testNotification}
             guruFrequency={guruFrequency}
             setGuruFrequency={setGuruFrequency}
-          />
-        );
-      case 'sync':
-        return <DeviceSyncSection SectionToggle={SectionToggle} />;
-      case 'storage':
-        return (
-          <StorageSections
-            styles={styles}
-            SectionToggle={SectionToggle}
-            navigation={navigation}
-            profile={profile}
             backupBusy={backupBusy}
             setBackupBusy={setBackupBusy}
-            refreshProfile={refreshProfile}
             clearAiCache={clearAiCache}
             resetStudyProgress={resetStudyProgress}
             exportUnifiedBackup={exportUnifiedBackup}
             importUnifiedBackup={importUnifiedBackup}
-            updateUserProfile={updateUserProfile}
             autoBackupFrequency={autoBackupFrequency}
             setAutoBackupFrequency={setAutoBackupFrequency}
             runAutoBackup={runAutoBackup}
@@ -2250,930 +1627,11 @@ export default function SettingsScreen() {
             maintenanceBusy={maintenanceBusy}
             runMaintenanceTask={runMaintenanceTask}
             getUserProfile={getUserProfile}
+            onOpenSystemSettings={onOpenSystemSettings}
+            onOpenDevConsole={onOpenDevConsole}
           />
-        );
-      case 'advanced':
-        return (
-          <>
-            <SectionToggle
-              id="adv_developer"
-              title="Developer Options"
-              icon="code-slash"
-              tint="#ef4444"
-            >
-              <LinearText variant="body" tone="secondary" style={{ marginBottom: 16 }}>
-                Internal debugging tools and unstable experiments. Proceed with caution.
-              </LinearText>
-              <TouchableOpacity style={styles.testBtn} onPress={onOpenSystemSettings}>
-                <LinearText variant="body" style={styles.testBtnText}>
-                  Open System Settings
-                </LinearText>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.testBtn, { marginTop: 8 }]}
-                onPress={onOpenDevConsole}
-              >
-                <LinearText variant="body" style={styles.testBtnText}>
-                  Open Dev Console
-                </LinearText>
-              </TouchableOpacity>
-            </SectionToggle>
-          </>
-        );
-      default:
-        return null;
-    }
-  }
-  return (
-    // eslint-disable-next-line guru/prefer-screen-shell -- settings uses custom layout with KeyboardAvoidingView
-    <SafeAreaView style={styles.safe}>
-      <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
-      <KeyboardAvoidingView
-        style={styles.flex}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      >
-        <View style={styles.settingsShell}>
-          {isTabletLayout ? (
-            <SettingsSidebar
-              activeCategory={activeCategory}
-              onSelectCategory={setActiveCategory}
-              isCollapsed={false}
-              profileName={profile?.displayName}
-              totalXp={profile?.totalXp}
-            />
-          ) : null}
-          <View style={styles.settingsMain}>
-            <ScrollView
-              contentContainerStyle={styles.content}
-              showsVerticalScrollIndicator={false}
-              keyboardShouldPersistTaps="handled"
-              keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'none'}
-              overScrollMode="never"
-            >
-              <ScreenHeader
-                title="Settings"
-                onBackPress={() => navigation.navigate('MenuHome')}
-                rightElement={
-                  saving ? <ActivityIndicator size="small" color={n.colors.textMuted} /> : null
-                }
-              />
-
-              {!isTabletLayout ? renderMobileCategoryNav() : null}
-
-              {activeCategory !== 'dashboard' && (
-                <LinearSurface compact style={[styles.summaryCard, styles.shellSummaryCard]}>
-                  <View style={styles.summaryRow}>
-                    <View style={styles.summaryCopy}>
-                      <LinearText variant="meta" tone="accent" style={styles.summaryEyebrow}>
-                        {activeCategoryMeta.label.toUpperCase()}
-                      </LinearText>
-                      <LinearText variant="title" style={styles.summaryTitle}>
-                        {activeCategoryMeta.label}
-                      </LinearText>
-                      <LinearText variant="body" tone="secondary" style={styles.summaryText}>
-                        {categoryDescriptions[activeCategory]}
-                      </LinearText>
-                    </View>
-                  </View>
-                  <View style={styles.summaryMetricsRow}>
-                    {settingsSummaryCards.map((card) => (
-                      <View key={card.label} style={styles.summaryMetricCard}>
-                        <LinearText
-                          variant="title"
-                          tone={card.tone}
-                          style={styles.summaryMetricValue}
-                        >
-                          {card.value}
-                        </LinearText>
-                        <LinearText
-                          variant="caption"
-                          tone="secondary"
-                          style={styles.summaryMetricLabel}
-                        >
-                          {card.label}
-                        </LinearText>
-                      </View>
-                    ))}
-                  </View>
-                </LinearSurface>
-              )}
-
-              <View style={styles.categoryContent}>{renderActiveCategoryContent()}</View>
-
-              <LinearText style={styles.footer}>Guru AI · v1.0.0</LinearText>
-            </ScrollView>
-          </View>
         </View>
-      </KeyboardAvoidingView>
-    </SafeAreaView>
-  );
-}
-
-function _PermissionRow({
-  label,
-  status,
-  onFix,
-}: {
-  label: string;
-  status: string;
-  onFix: () => void;
-}) {
-  const isOk = status === 'granted';
-  return (
-    <View style={styles.permRow}>
-      <View style={{ flex: 1 }}>
-        <LinearText style={styles.permLabel}>{label}</LinearText>
-        <LinearText style={[styles.permStatus, isOk ? styles.permOk : styles.permError]}>
-          {isOk ? 'âœ“ Active' : status === 'denied' ? 'âœ— Disabled' : 'â—‹ Not Set'}
-        </LinearText>
-      </View>
-      {!isOk && (
-        <TouchableOpacity style={styles.fixBtn} onPress={onFix}>
-          <LinearText style={styles.fixBtnText}>Fix</LinearText>
-        </TouchableOpacity>
-      )}
-    </View>
-  );
-}
-
-function Label({ text }: { text: string }) {
-  return <LinearText style={styles.label}>{text}</LinearText>;
-}
-
-/** Dropdown picker for model selection â€” replaces congested chip rows. */
-function _ModelDropdown({
-  label,
-  value,
-  options,
-  onSelect,
-}: {
-  label: string;
-  value: string;
-  options: Array<{ id: string; label: string; group?: string }>;
-  onSelect: (id: string) => void;
-}) {
-  const open = false;
-  const setOpen = (_next: boolean) => {};
-  const selectedLabel = options.find((o) => o.id === value)?.label ?? (value || 'Select...');
-
-  return (
-    <>
-      <Label text={label} />
-      <TouchableOpacity
-        style={styles.dropdownTrigger}
-        onPress={() => setOpen(true)}
-        activeOpacity={0.8}
-      >
-        <LinearText style={styles.dropdownValue} numberOfLines={2}>
-          {selectedLabel}
-        </LinearText>
-        <LinearText style={styles.dropdownArrow}>â–¾</LinearText>
-      </TouchableOpacity>
-      <Modal visible={open} transparent animationType="fade" onRequestClose={() => setOpen(false)}>
-        <Pressable style={styles.dropdownBackdrop} onPress={() => setOpen(false)}>
-          <LinearSurface padded={false} style={styles.dropdownSheet}>
-            <LinearText style={styles.dropdownSheetTitle}>{label}</LinearText>
-            <ScrollView style={{ maxHeight: 400 }} showsVerticalScrollIndicator>
-              {options.map((opt, idx) => {
-                const showGroup = opt.group && (idx === 0 || options[idx - 1]?.group !== opt.group);
-                return (
-                  <React.Fragment key={opt.id}>
-                    {showGroup && (
-                      <LinearText style={styles.dropdownGroupLabel}>{opt.group}</LinearText>
-                    )}
-                    <TouchableOpacity
-                      style={[styles.dropdownItem, value === opt.id && styles.dropdownItemActive]}
-                      onPress={() => {
-                        onSelect(opt.id);
-                        setOpen(false);
-                      }}
-                      activeOpacity={0.7}
-                    >
-                      <LinearText
-                        style={[
-                          styles.dropdownItemText,
-                          value === opt.id && styles.dropdownItemTextActive,
-                        ]}
-                        numberOfLines={2}
-                      >
-                        {opt.label}
-                      </LinearText>
-                      {value === opt.id && (
-                        <LinearText style={styles.dropdownCheck}>âœ“</LinearText>
-                      )}
-                    </TouchableOpacity>
-                  </React.Fragment>
-                );
-              })}
-            </ScrollView>
-          </LinearSurface>
-        </Pressable>
-      </Modal>
+      </SettingsScreenShell>
     </>
   );
 }
-
-const styles = StyleSheet.create({
-  flex: { flex: 1 },
-  safe: { flex: 1, backgroundColor: n.colors.background },
-  settingsShell: {
-    flex: 1,
-    flexDirection: 'row',
-  },
-  settingsMain: {
-    flex: 1,
-    minWidth: 0,
-  },
-  content: { padding: n.spacing.lg, paddingBottom: 60 },
-  mobileCategoryScroller: {
-    marginBottom: n.spacing.md,
-  },
-  mobileCategoryNav: {
-    gap: 8,
-    paddingRight: n.spacing.sm,
-  },
-  mobileCategoryButton: {
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderRadius: 999,
-    borderWidth: 1,
-    borderColor: n.colors.border,
-    backgroundColor: n.colors.surface,
-  },
-  mobileCategoryButtonActive: {
-    borderColor: n.colors.borderHighlight,
-    backgroundColor: n.colors.primaryTintSoft,
-  },
-  shellSummaryCard: {
-    marginTop: 0,
-  },
-  categoryContent: {
-    // flex: 1 removed to fix scrolling in dashboard
-  },
-  categoryStack: {
-    gap: n.spacing.lg,
-  },
-  summaryCard: {
-    marginTop: n.spacing.sm,
-    marginBottom: n.spacing.lg,
-  },
-  summaryCardCompact: {
-    marginBottom: n.spacing.md,
-  },
-  summaryRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    justifyContent: 'space-between',
-    gap: n.spacing.md,
-  },
-  summaryCopy: {
-    flex: 1,
-  },
-  summaryEyebrow: {
-    letterSpacing: 1.1,
-  },
-  summaryTitle: {
-    marginTop: n.spacing.xs,
-  },
-  summaryText: {
-    marginTop: n.spacing.xs,
-    maxWidth: 560,
-  },
-  summaryPill: {
-    backgroundColor: n.colors.primaryTintSoft,
-    borderRadius: n.radius.full,
-    borderWidth: 1,
-    borderColor: n.colors.borderHighlight,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-  },
-  summaryMetricsRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 10,
-    marginTop: n.spacing.md,
-  },
-  summaryMetricCard: {
-    flexGrow: 1,
-    minWidth: 110,
-    backgroundColor: n.colors.background,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: n.colors.border,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-  },
-  summaryMetricValue: {
-    marginBottom: 2,
-  },
-  summaryMetricLabel: {
-    lineHeight: 16,
-  },
-  title: {
-    color: n.colors.textPrimary,
-    fontSize: 26,
-    fontWeight: '900',
-    marginBottom: 20,
-    marginTop: 8,
-  },
-  section: {
-    marginBottom: n.spacing.md,
-    borderRadius: 18,
-    borderWidth: 1,
-    borderColor: n.colors.border,
-    backgroundColor: n.colors.surface,
-    overflow: 'hidden',
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: n.spacing.lg,
-    paddingVertical: 14,
-    minHeight: 68,
-  },
-  sectionHeaderLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: n.spacing.md,
-    flex: 1,
-  },
-  sectionIconWrap: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-  },
-  sectionTitle: {
-    color: n.colors.textPrimary,
-    fontSize: 16,
-    fontWeight: '700',
-  },
-  categoryLabel: {
-    color: n.colors.textMuted,
-    fontSize: 12,
-    fontWeight: '800',
-    letterSpacing: 1.2,
-    marginTop: n.spacing.xl,
-    marginBottom: n.spacing.sm,
-  },
-  sectionContent: {
-    borderRadius: 0,
-    borderTopWidth: 1,
-    borderTopColor: n.colors.border,
-    padding: n.spacing.lg,
-    backgroundColor: whiteAlpha['1.5'],
-  },
-  label: { color: n.colors.textSecondary, fontSize: 13, marginBottom: 6, marginTop: 8 },
-  input: {
-    backgroundColor: n.colors.background,
-    borderRadius: 10,
-    padding: 12,
-    color: n.colors.textPrimary,
-    fontSize: 14,
-    borderWidth: 1,
-    borderColor: n.colors.border,
-    marginBottom: 4,
-  },
-  apiKeyRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  apiKeyInput: { flex: 1, marginBottom: 0 },
-  inputSuccess: { borderColor: n.colors.success },
-  inputError: { borderColor: n.colors.error },
-  validateBtn: {
-    backgroundColor: n.colors.border,
-    borderRadius: 10,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-    minWidth: 52,
-    borderWidth: 1,
-    borderColor: n.colors.borderLight,
-  },
-  validateBtnSuccess: {
-    backgroundColor: n.colors.successSurface,
-    borderColor: n.colors.success,
-  },
-  validateBtnError: { backgroundColor: n.colors.errorSurface, borderColor: n.colors.error },
-  validateBtnOk: {
-    backgroundColor: n.colors.successSurface,
-    borderColor: n.colors.success,
-  },
-  validateBtnFail: {
-    backgroundColor: n.colors.errorSurface,
-    borderColor: n.colors.error,
-  },
-  validateBtnTesting: { backgroundColor: n.colors.card, borderColor: n.colors.accent },
-  validateBtnText: { color: n.colors.textPrimary, fontWeight: '700', fontSize: 14 },
-  validationMsg: { fontSize: 12, marginTop: 6, marginBottom: 2 },
-  validationSuccess: { color: n.colors.success },
-  validationError: { color: n.colors.error },
-  hint: { color: n.colors.textMuted, fontSize: 12, marginBottom: 4 },
-  subSectionPanel: {
-    backgroundColor: n.colors.card,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: n.colors.border,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-  },
-  subSectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    gap: n.spacing.sm,
-    minHeight: 34,
-  },
-  subSectionHeaderLeft: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-  },
-  subSectionAccent: {
-    width: 7,
-    height: 7,
-    borderRadius: 999,
-    backgroundColor: n.colors.accent,
-  },
-  subSectionLabel: {
-    color: n.colors.accent,
-    fontSize: 11,
-    fontWeight: '800',
-    letterSpacing: 1,
-  },
-  subSectionBody: {
-    paddingTop: 10,
-  },
-  subSectionDivider: {
-    height: 1,
-    backgroundColor: n.colors.border,
-    marginVertical: 12,
-  },
-  localModelBtn: {
-    marginTop: 12,
-    flexDirection: 'row',
-    backgroundColor: n.colors.surface,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: n.colors.border,
-    padding: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  localModelBtnText: { color: n.colors.textPrimary, fontWeight: '700', fontSize: 14 },
-  localAiStatusText: {
-    color: n.colors.textSecondary,
-    fontSize: 13,
-    lineHeight: 19,
-  },
-  localAiStatusRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    justifyContent: 'space-between',
-    marginBottom: 6,
-  },
-  localAiStatusTextWrap: {
-    flex: 1,
-    paddingRight: 12,
-  },
-  localAiEnabledHint: {
-    color: n.colors.success,
-    marginBottom: 8,
-  },
-  localAiWarningHint: {
-    color: n.colors.warning,
-    marginTop: 4,
-  },
-  localAiModelName: {
-    color: n.colors.warning,
-    fontWeight: '700',
-  },
-  localAiModelMissing: {
-    color: n.colors.textMuted,
-    fontWeight: '600',
-  },
-  localAiActiveDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: n.colors.success,
-    marginLeft: 12,
-    flexShrink: 0,
-  },
-  localAiCard: {
-    marginTop: 10,
-    padding: 12,
-    borderWidth: 1,
-    borderColor: n.colors.border,
-    borderRadius: 12,
-    backgroundColor: n.colors.background,
-  },
-  localAiCardHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 4,
-  },
-  localAiCardLabelRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    flex: 1,
-  },
-  localAiCardIcon: {
-    width: 28,
-    height: 28,
-    borderRadius: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  localAiBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 6,
-    backgroundColor: n.colors.success + '22',
-  },
-  localAiBadgeText: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: n.colors.success,
-  },
-  localAiBadgeWarning: {
-    backgroundColor: n.colors.warning + '22',
-  },
-  localAiBadgeWarningText: {
-    color: n.colors.warning,
-  },
-  localAiBadgeMuted: {
-    backgroundColor: n.colors.textMuted + '22',
-  },
-  localAiBadgeMutedText: {
-    color: n.colors.textMuted,
-  },
-  autoFetchBtn: {
-    marginTop: 10,
-    backgroundColor: n.colors.card,
-    borderRadius: 10,
-    paddingVertical: 10,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: n.colors.borderHighlight,
-  },
-  autoFetchBtnDisabled: { opacity: 0.5 },
-  autoFetchBtnText: { color: n.colors.accent, fontSize: 13, fontWeight: '600' },
-  switchRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
-  switchLabel: {
-    color: n.colors.textPrimary,
-    fontWeight: '600',
-    fontSize: 15,
-    marginBottom: 2,
-  },
-  testBtn: {
-    marginTop: 12,
-    backgroundColor: n.colors.card,
-    borderRadius: 10,
-    padding: 12,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: n.colors.borderHighlight,
-  },
-  testBtnText: { color: n.colors.accent, fontWeight: '600', fontSize: 14 },
-  providerRow: {
-    flexDirection: 'row' as const,
-    alignItems: 'flex-start' as const,
-    backgroundColor: n.colors.surface,
-    borderRadius: 10,
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    marginBottom: 4,
-  },
-  providerIndex: {
-    color: n.colors.textMuted,
-    fontSize: 13,
-    width: 20,
-    lineHeight: 20,
-    fontWeight: '600' as const,
-  },
-  providerDot: { width: 8, height: 8, borderRadius: 4, marginRight: 10 },
-  providerName: { flex: 1, fontSize: 14, lineHeight: 20, fontWeight: '500' as const },
-  providerActions: {
-    flexDirection: 'row' as const,
-    flexWrap: 'wrap' as const,
-    gap: 6,
-    marginLeft: 8,
-    justifyContent: 'flex-end' as const,
-  },
-  providerActionBtn: {
-    width: 34,
-    height: 34,
-    borderRadius: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: n.colors.background,
-    borderWidth: 1,
-    borderColor: n.colors.border,
-  },
-  providerActionBtnDisabled: { opacity: 0.25 },
-  providerActionBtnPressed: { backgroundColor: n.colors.card },
-  saveBtn: {
-    backgroundColor: captureFillAlpha['14'],
-    borderWidth: 1,
-    borderColor: captureBorderAlpha['24'],
-    borderRadius: 16,
-    padding: 18,
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexDirection: 'row' as const,
-    marginTop: 8,
-  },
-  saveBtnDisabled: { opacity: 0.5 },
-  saveBtnText: { color: n.colors.textPrimary, fontWeight: '800', fontSize: 17 },
-  backupRow: { flexDirection: 'row', gap: 10, marginTop: 8 },
-  backupBtn: {
-    flex: 1,
-    backgroundColor: whiteAlpha['6'],
-    borderRadius: 14,
-    padding: 14,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: whiteAlpha['14'],
-  },
-  backupBtnText: { color: n.colors.accent, fontWeight: '700', fontSize: 14 },
-  backupDate: {
-    color: n.colors.textMuted,
-    fontSize: 11,
-    textAlign: 'center',
-    fontStyle: 'italic',
-    marginBottom: 8,
-  },
-  frequencyRow: {
-    flexDirection: 'row',
-    gap: 8,
-    marginTop: 8,
-    marginBottom: 4,
-    flexWrap: 'wrap',
-    alignItems: 'center',
-  },
-  frequencyChip: {
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 16,
-    backgroundColor: n.colors.background,
-    borderWidth: 1,
-    borderColor: n.colors.border,
-  },
-  frequencyChipActive: {
-    backgroundColor: n.colors.borderHighlight,
-    borderColor: n.colors.accent,
-  },
-  frequencyChipText: {
-    fontSize: 13,
-    color: n.colors.textMuted,
-    fontWeight: '500',
-  },
-  frequencyChipTextActive: {
-    color: n.colors.accent,
-    fontWeight: '700',
-  },
-  guruMemoryInput: {
-    minHeight: 88,
-    paddingTop: 12,
-  },
-  liveModelsRefreshRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    marginTop: 8,
-    marginBottom: 4,
-    flexWrap: 'wrap',
-  },
-  modelChipRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-    marginTop: 8,
-    marginBottom: 8,
-  },
-  freqBtn: {
-    backgroundColor: n.colors.background,
-    borderRadius: 10,
-    paddingVertical: 10,
-    paddingHorizontal: 14,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: n.colors.border,
-  },
-  freqBtnActive: {
-    backgroundColor: n.colors.primaryTintSoft,
-    borderColor: n.colors.accent,
-  },
-  freqText: { color: n.colors.textSecondary, fontSize: 12, fontWeight: '600' },
-  freqTextActive: { color: n.colors.accent, fontWeight: '700' },
-  footer: {
-    color: n.colors.borderLight,
-    fontSize: 11,
-    textAlign: 'center',
-    marginTop: 24,
-    lineHeight: 18,
-  },
-  chipGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 8 },
-  typeChip: {
-    backgroundColor: n.colors.background,
-    borderRadius: 20,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderWidth: 1,
-    borderColor: n.colors.border,
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  typeChipBlocked: {
-    backgroundColor: n.colors.errorSurface,
-    borderColor: errorAlpha['8'],
-  },
-  typeChipLocked: { borderColor: n.colors.borderHighlight, opacity: 0.5 },
-  typeChipText: { color: n.colors.textPrimary, fontSize: 13, fontWeight: '600' },
-  typeChipTextBlocked: { color: n.colors.error },
-  typeChipX: { color: n.colors.error, fontSize: 11 },
-  clearBtn: { marginTop: 10, padding: 10, alignItems: 'center' },
-  clearBtnText: { color: n.colors.textMuted, fontSize: 13 },
-  maintenanceBtn: {
-    marginTop: 10,
-    backgroundColor: whiteAlpha['6'],
-    borderRadius: 14,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: whiteAlpha['14'],
-  },
-  maintenanceBtnText: { color: n.colors.textPrimary, fontWeight: '700', fontSize: 14 },
-  dangerBtn: {
-    backgroundColor: n.colors.errorSurface,
-    borderRadius: 14,
-    padding: 14,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: n.colors.error,
-  },
-  dangerBtnText: { color: n.colors.accent, fontWeight: '700', fontSize: 14 },
-  modelSelector: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    backgroundColor: n.colors.background,
-    borderRadius: 10,
-    padding: 12,
-    borderWidth: 1,
-    borderColor: n.colors.border,
-    marginBottom: 8,
-  },
-  modelSelectorText: { color: n.colors.textPrimary, fontSize: 14, fontWeight: '600' },
-  modelSelectorArrow: { color: n.colors.textMuted, fontSize: 12 },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: blackAlpha['82'],
-    justifyContent: 'flex-end',
-  },
-  modalContent: {
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    padding: 20,
-    maxHeight: '60%',
-  },
-  modalTitle: {
-    color: n.colors.textPrimary,
-    fontSize: 18,
-    fontWeight: '700',
-    marginBottom: n.spacing.lg,
-    textAlign: 'center',
-  },
-  modelItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 14,
-    borderBottomWidth: 1,
-    borderBottomColor: n.colors.borderLight,
-  },
-  modelItemActive: {
-    backgroundColor: n.colors.border,
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    borderBottomWidth: 0,
-  },
-  modelItemText: { color: n.colors.textSecondary, fontSize: 15 },
-  modelItemTextActive: { color: n.colors.accent, fontWeight: '700' },
-  checkMark: { color: n.colors.accent, fontWeight: 'bold' },
-  closeBtn: {
-    marginTop: n.spacing.lg,
-    padding: 14,
-    alignItems: 'center',
-    backgroundColor: n.colors.border,
-    borderRadius: 12,
-  },
-  closeBtnText: { color: n.colors.textPrimary, fontWeight: '600' },
-  // Diagnostics
-  permRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: n.colors.border,
-  },
-  permLabel: { color: n.colors.textPrimary, fontSize: 14, fontWeight: '600' },
-  permStatus: { fontSize: 12, marginTop: 2 },
-  permOk: { color: n.colors.success },
-  permError: { color: n.colors.error },
-  fixBtn: {
-    backgroundColor: n.colors.primaryTintSoft,
-    borderWidth: 1,
-    borderColor: n.colors.accent,
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-  },
-  fixBtnText: { color: n.colors.accent, fontSize: 12, fontWeight: '800' },
-  diagBtn: { marginTop: 12, alignItems: 'center', padding: 10 },
-  diagBtnText: { color: n.colors.textMuted, fontSize: 13, textDecorationLine: 'underline' },
-  // Dropdown styles
-  dropdownTrigger: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    justifyContent: 'space-between',
-    backgroundColor: n.colors.background,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: n.colors.border,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    marginTop: 6,
-    marginBottom: 8,
-  },
-  dropdownValue: {
-    color: n.colors.textPrimary,
-    fontSize: 14,
-    lineHeight: 20,
-    fontWeight: '600',
-    flex: 1,
-  },
-  dropdownArrow: { color: n.colors.textMuted, fontSize: 16, marginLeft: 8 },
-  dropdownBackdrop: {
-    flex: 1,
-    backgroundColor: blackAlpha['60'],
-    justifyContent: 'center',
-    padding: 24,
-  },
-  dropdownSheet: {
-    borderRadius: 16,
-    paddingVertical: 12,
-    maxHeight: '80%',
-  },
-  dropdownSheetTitle: {
-    color: n.colors.textPrimary,
-    fontSize: 16,
-    fontWeight: '800',
-    paddingHorizontal: 16,
-    paddingBottom: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: n.colors.border,
-  },
-  dropdownGroupLabel: {
-    color: n.colors.accent,
-    fontSize: 12,
-    fontWeight: '700',
-    letterSpacing: 0.5,
-    textTransform: 'uppercase',
-    paddingHorizontal: 16,
-    paddingTop: 14,
-    paddingBottom: 4,
-  },
-  dropdownItem: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-  },
-  dropdownItemActive: { backgroundColor: n.colors.primaryTintSoft },
-  dropdownItemText: { color: n.colors.textPrimary, fontSize: 14, lineHeight: 20, flex: 1 },
-  dropdownItemTextActive: { color: n.colors.accent, fontWeight: '700' },
-  dropdownCheck: { color: n.colors.accent, fontSize: 16, fontWeight: '700', marginLeft: 8 },
-  // Flagged content row
-  settingRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 12,
-    marginTop: 4,
-  },
-  settingRowLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: n.spacing.md,
-    flex: 1,
-  },
-});

@@ -13,10 +13,14 @@ import LinearText from '../../../components/primitives/LinearText';
 import { linearTheme } from '../../../theme/linearTheme';
 
 // Enable LayoutAnimation on Android (Skip on New Architecture to avoid warnings)
-// eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
+type FabricGlobal = typeof globalThis & {
+  nativeFabricUIManager?: unknown;
+  RN$Bridgeless?: unknown;
+};
+
 const isFabric =
   typeof global !== 'undefined' &&
-  !!((global as any).nativeFabricUIManager || (global as any).RN$Bridgeless);
+  !!((global as FabricGlobal).nativeFabricUIManager || (global as FabricGlobal).RN$Bridgeless);
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental && !isFabric) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
 }

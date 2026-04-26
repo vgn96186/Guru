@@ -228,8 +228,8 @@ export default React.memo(function ReviewCalendar() {
                         t.confidence >= 3
                           ? n.colors.success
                           : t.confidence >= 2
-                          ? n.colors.warning
-                          : n.colors.error,
+                            ? n.colors.warning
+                            : n.colors.error,
                     },
                   ]}
                 />
@@ -247,7 +247,7 @@ export default React.memo(function ReviewCalendar() {
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: n.colors.surface,
+    backgroundColor: '#161618',
     borderRadius: n.radius.lg,
     padding: n.spacing.lg,
     marginBottom: 16,

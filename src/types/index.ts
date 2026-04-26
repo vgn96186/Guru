@@ -178,6 +178,10 @@ export interface UserProfile {
    * an OpenRouter image model id, or a `@cf/...` Workers AI image model id.
    */
   imageGenerationModel?: string;
+  /** Drag-ordered fallback list of image generation model ids. First = preferred. */
+  imageGenerationOrder?: string[];
+  /** Drag-ordered fallback list of transcription provider ids. First = preferred. */
+  transcriptionOrder?: string[];
   /** Optional facts Guru should remember across chats (exam goals, weak areas, etc.). */
   guruMemoryNotes?: string;
   /**
@@ -278,7 +282,8 @@ export type ProviderId =
   | 'gitlab_duo'
   | 'poe'
   | 'qwen'
-  | 'vertex';
+  | 'vertex'
+  | 'local';
 
 export const DEFAULT_PROVIDER_ORDER: ProviderId[] = [
   'chatgpt',
@@ -296,6 +301,7 @@ export const DEFAULT_PROVIDER_ORDER: ProviderId[] = [
   'gemini',
   'gemini_fallback',
   'cloudflare',
+  'local',
 ];
 
 export const NON_STUDY_PROVIDER_ORDER: ProviderId[] = [
@@ -313,6 +319,7 @@ export const NON_STUDY_PROVIDER_ORDER: ProviderId[] = [
   'openrouter',
   'vertex',
   'cloudflare',
+  'local',
 ];
 
 export const PROVIDER_DISPLAY_NAMES: Record<ProviderId, string> = {
@@ -331,6 +338,7 @@ export const PROVIDER_DISPLAY_NAMES: Record<ProviderId, string> = {
   cloudflare: 'Cloudflare',
   qwen: 'Qwen (Free OAuth)',
   vertex: 'Vertex AI',
+  local: 'On-device',
 };
 
 // AI Content shapes

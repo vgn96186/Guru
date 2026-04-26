@@ -255,12 +255,8 @@ export default function StorageSections(props: any) {
         icon="logo-google"
         tint="#4285F4"
       >
-        <LinearText variant="body" tone="muted" style={styles.hint}>
-          Back up to Google Drive to sync between devices and survive app reinstalls.
-        </LinearText>
         <SettingsField
           label="Google Web Client ID"
-          hint="Paste your Google OAuth Web application client ID here once. Guru stores it in your profile so future sign-ins do not require a rebuild."
           value={gdriveWebClientId}
           onChangeText={setGdriveWebClientId}
           placeholder="Your Google Web Client ID"

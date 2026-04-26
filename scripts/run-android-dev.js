@@ -8,7 +8,7 @@ const { resolveAdbCommand } = require('./android-tooling');
 
 const ADB_PORT = '8081';
 const APP_PACKAGE = 'com.anonymous.gurustudy.dev';
-const APP_ACTIVITY = 'com.anonymous.gurustudy.MainActivity';
+const APP_ACTIVITY = 'com.anonymous.gurustudy.dev.MainActivity';
 const DEV_CLIENT_URL =
   `exp+guru-study://expo-development-client/?url=` +
   encodeURIComponent(`http://127.0.0.1:${ADB_PORT}`);
@@ -66,6 +66,35 @@ function readLogTail(filePath, maxLines = 30) {
   } catch {
     return '';
   }
+}
+
+// ─── Step 0: Ensure native android project exists (expo prebuild) ──────────
+
+function ensureNativeProject() {
+  const gradlew = path.join(ANDROID_DIR, GRADLE_CMD);
+  if (fs.existsSync(gradlew)) {
+    log('Native android project found, skipping prebuild.');
+    return;
+  }
+
+  log('Native android project not found. Running expo prebuild...');
+  const result = spawnSync('npx', ['expo', 'prebuild', '--platform', 'android'], {
+    stdio: 'inherit',
+    shell: process.platform === 'win32',
+    cwd: process.cwd(),
+    env: process.env,
+    timeout: 300_000,
+  });
+
+  if (result.error || (typeof result.status === 'number' && result.status !== 0)) {
+    fail('expo prebuild failed. Check the output above for details.');
+  }
+
+  if (!fs.existsSync(gradlew)) {
+    fail(`expo prebuild completed but ${GRADLE_CMD} is still missing in android/.`);
+  }
+
+  log('Native android project generated successfully.');
 }
 
 // ─── Step 1: Get ADB into a healthy state ───────────────────────────────────
@@ -289,7 +318,7 @@ function installApp() {
   const deviceAbi = getDevicePrimaryAbi();
   const archArg = envArch || deviceAbi;
 
-  const gradleArgs = [':app:installDevDebug', '--console=plain', '--build-cache'];
+  const gradleArgs = [':app:installDebug', '--console=plain', '--build-cache'];
   // Speed: single ABI matching the connected device/emulator. Omit to use android/gradle.properties
   // (slower first build). Typical AVDs are x86_64; ARM tablets/phones are arm64-v8a.
   if (archArg) {
@@ -330,8 +359,6 @@ function installApp() {
 // ─── Step 6: Open the app ───────────────────────────────────────────────────
 
 function openApp() {
-  const preferDeepLink =
-    process.env.GURU_OPEN_MODE === 'deeplink' || process.argv.includes('--deeplink');
   for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
     log(
       attempt === 1
@@ -339,19 +366,17 @@ function openApp() {
         : `Open app attempt ${attempt}/${MAX_RETRIES}...`,
     );
 
-    const args = preferDeepLink
-      ? [
-          'shell',
-          'am',
-          'start',
-          '-n',
-          `${APP_PACKAGE}/${APP_ACTIVITY}`,
-          '-a',
-          'android.intent.action.VIEW',
-          '-d',
-          DEV_CLIENT_URL,
-        ]
-      : ['shell', 'am', 'start', '-n', `${APP_PACKAGE}/${APP_ACTIVITY}`];
+    const args = [
+      'shell',
+      'am',
+      'start',
+      '-n',
+      `${APP_PACKAGE}/${APP_ACTIVITY}`,
+      '-a',
+      'android.intent.action.VIEW',
+      '-d',
+      DEV_CLIENT_URL,
+    ];
 
     const result = adb(args, { stdio: 'inherit', timeout: 10_000 });
 
@@ -379,6 +404,7 @@ function openApp() {
 async function main() {
   log('=== Guru Android Dev Launch ===');
 
+  ensureNativeProject();
   ensureHealthyAdb();
   ensureDevice();
   ensureReverse();

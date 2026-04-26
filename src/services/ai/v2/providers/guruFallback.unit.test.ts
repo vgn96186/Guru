@@ -18,7 +18,9 @@ function mockMakeMockModel(provider: string, modelId: string) {
 }
 
 jest.mock('./presets', () => ({
-  createGroqModel: jest.fn(({ modelId }: { modelId: string }) => mockMakeMockModel('groq', modelId)),
+  createGroqModel: jest.fn(({ modelId }: { modelId: string }) =>
+    mockMakeMockModel('groq', modelId),
+  ),
   createOpenRouterModel: jest.fn(({ modelId }: { modelId: string }) => ({
     ...mockMakeMockModel('openrouter', modelId),
   })),
@@ -87,7 +89,9 @@ jest.mock('./poe', () => ({
 }));
 
 jest.mock('./qwen', () => ({
-  createQwenModel: jest.fn(({ modelId }: { modelId: string }) => mockMakeMockModel('qwen', modelId)),
+  createQwenModel: jest.fn(({ modelId }: { modelId: string }) =>
+    mockMakeMockModel('qwen', modelId),
+  ),
 }));
 
 import { createGuruFallbackModel } from './guruFallback';
@@ -236,7 +240,39 @@ describe('createGuruFallbackModel', () => {
       modelPath: '/models/local.gguf',
       textMode: false,
     });
-    expect(createNanoModel).not.toHaveBeenCalled();
-    expect(jest.mocked(createFallbackModel).mock.calls[0]?.[0].models).toHaveLength(1);
+    expect(getFallbackTargets()).toEqual([
+      { provider: 'local', modelId: '/models/local.gguf' },
+      { provider: 'nano', modelId: 'nano' },
+    ]);
+  });
+
+  it('follows provider order instead of pinning local first', () => {
+    createGuruFallbackModel({
+      profile: makeProfile({
+        providerOrder: ['groq', 'local', 'openrouter'],
+      }),
+    });
+
+    expect(getFallbackTargets()).toEqual([
+      { provider: 'groq', modelId: 'llama-3.3-70b-versatile' },
+      { provider: 'local', modelId: '/models/local.gguf' },
+      { provider: 'nano', modelId: 'nano' },
+      { provider: 'openrouter', modelId: 'meta-llama/llama-3.3-70b-instruct:free' },
+    ]);
+  });
+
+  it('can route local first when settings puts on-device first', () => {
+    createGuruFallbackModel({
+      profile: makeProfile({
+        providerOrder: ['local', 'groq', 'openrouter'],
+      }),
+    });
+
+    expect(getFallbackTargets()).toEqual([
+      { provider: 'local', modelId: '/models/local.gguf' },
+      { provider: 'nano', modelId: 'nano' },
+      { provider: 'groq', modelId: 'llama-3.3-70b-versatile' },
+      { provider: 'openrouter', modelId: 'meta-llama/llama-3.3-70b-instruct:free' },
+    ]);
   });
 });

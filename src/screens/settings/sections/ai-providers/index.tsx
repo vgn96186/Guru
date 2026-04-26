@@ -1,6 +1,5 @@
 import React from 'react';
 import type { AiProvidersProps } from './types';
-import SummaryHeader, { useSummaryMetrics } from './components/SummaryHeader';
 import ChatModelSection from './subsections/ChatModelSection';
 import MemorySection from './subsections/MemorySection';
 import ChatGptOAuthSection from './subsections/ChatGptOAuthSection';
@@ -33,6 +32,10 @@ export default function AiProvidersSection(props: AiProvidersProps) {
     apiKeys,
     routing,
     imageGen,
+    transcriptionOrder,
+    setTranscriptionOrder,
+    transcriptionProvider,
+    setTranscriptionProvider,
     localAi,
     updateUserProfile,
     refreshProfile,
@@ -41,29 +44,7 @@ export default function AiProvidersSection(props: AiProvidersProps) {
 
   return (
     <>
-      <SummaryHeader metrics={useSummaryMetrics(props)} styles={styles} />
-      <ChatModelSection
-        guruChat={guruChat}
-        useLocalModel={profile?.useLocalModel ?? false}
-        localModelPath={profile?.localModelPath ?? null}
-        SectionToggle={SectionToggle}
-        styles={styles}
-      />
-
-      <MemorySection guruMemory={guruMemory} SectionToggle={SectionToggle} styles={styles} />
-
-      <SectionToggle id="ai_oauth" title="Connected AI Accounts" icon="link" tint="#14B8A6">
-        <ChatGptOAuthSection chatgpt={chatgpt} SectionToggle={SubSectionToggle} styles={styles} />
-        <GithubCopilotSection
-          githubCopilot={githubCopilot}
-          SectionToggle={SubSectionToggle}
-          styles={styles}
-        />
-        <GitlabDuoSection gitlabDuo={gitlabDuo} SectionToggle={SubSectionToggle} styles={styles} />
-        <PoeOAuthSection poe={poe} SectionToggle={SubSectionToggle} styles={styles} />
-        <QwenOAuthSection qwen={qwen} SectionToggle={SubSectionToggle} styles={styles} />
-      </SectionToggle>
-
+      {/* 1. API KEYS */}
       <ApiKeysSection
         apiKeys={apiKeys}
         clearProviderValidated={clearProviderValidated}
@@ -71,38 +52,70 @@ export default function AiProvidersSection(props: AiProvidersProps) {
         styles={styles}
       />
 
-      <RoutingSection
-        routing={routing}
-        DEFAULT_PROVIDER_ORDER={DEFAULT_PROVIDER_ORDER}
-        sanitizeProviderOrder={sanitizeProviderOrder}
+      {/* 2. OAUTH */}
+      <SectionToggle id="ai_oauth" title="OAuth" icon="link" tint="#14B8A6">
+        <ChatGptOAuthSection chatgpt={chatgpt} styles={styles} />
+        <GithubCopilotSection githubCopilot={githubCopilot} styles={styles} />
+        <GitlabDuoSection gitlabDuo={gitlabDuo} styles={styles} />
+        <PoeOAuthSection poe={poe} styles={styles} />
+        <QwenOAuthSection qwen={qwen} styles={styles} />
+      </SectionToggle>
+
+      {/* 3. DEFAULTS */}
+      <SectionToggle id="ai_defaults" title="Default Models" icon="options-outline" tint="#EC4899">
+        <ChatModelSection
+          guruChat={guruChat}
+          useLocalModel={profile?.useLocalModel ?? false}
+          localModelPath={profile?.localModelPath ?? null}
+          SectionToggle={SectionToggle}
+          styles={styles}
+        />
+
+        <ImageGenSection
+          imageGen={imageGen}
+          falValidationStatus={apiKeys.fal.validationStatus}
+          falApiKey={apiKeys.fal.value}
+          setFalApiKey={apiKeys.fal.setValue}
+          setFalKeyTestResult={apiKeys.fal.setTestResult}
+          testFalKey={apiKeys.fal.test}
+          testingFalKey={apiKeys.fal.testing}
+          clearProviderValidated={clearProviderValidated}
+          SectionToggle={SectionToggle}
+          styles={styles}
+        />
+        <TranscriptionSection
+          transcriptionProvider={transcriptionProvider}
+          setTranscriptionProvider={setTranscriptionProvider}
+        />
+      </SectionToggle>
+
+      {/* 4. ROUTING */}
+      <SectionToggle id="ai_routing" title="Provider Routing" icon="git-network" tint="#6C63FF">
+        <RoutingSection
+          routing={routing}
+          DEFAULT_PROVIDER_ORDER={DEFAULT_PROVIDER_ORDER}
+          sanitizeProviderOrder={sanitizeProviderOrder}
+          imageGen={imageGen}
+          transcriptionOrder={transcriptionOrder}
+          setTranscriptionOrder={setTranscriptionOrder}
+          updateUserProfile={updateUserProfile}
+          refreshProfile={refreshProfile}
+          styles={styles}
+        />
+      </SectionToggle>
+
+      {/* 3. ON-DEVICE AI */}
+      <LocalAiSection
+        localAi={localAi}
+        profile={profile}
         updateUserProfile={updateUserProfile}
         refreshProfile={refreshProfile}
         SectionToggle={SectionToggle}
         styles={styles}
       />
 
-      <ImageGenSection
-        imageGen={imageGen}
-        falValidationStatus={apiKeys.fal.validationStatus}
-        falApiKey={apiKeys.fal.value}
-        setFalApiKey={apiKeys.fal.setValue}
-        setFalKeyTestResult={apiKeys.fal.setTestResult}
-        testFalKey={apiKeys.fal.test}
-        testingFalKey={apiKeys.fal.testing}
-        clearProviderValidated={clearProviderValidated}
-        SectionToggle={SectionToggle}
-        styles={styles}
-      />
-
-      <TranscriptionSection SectionToggle={SectionToggle} styles={styles} />
-
-      <LocalAiSection
-        localAi={localAi}
-        profile={profile}
-        updateUserProfile={updateUserProfile}
-        SectionToggle={SectionToggle}
-        styles={styles}
-      />
+      {/* 4. MEMORY */}
+      <MemorySection guruMemory={guruMemory} SectionToggle={SectionToggle} styles={styles} />
     </>
   );
 }

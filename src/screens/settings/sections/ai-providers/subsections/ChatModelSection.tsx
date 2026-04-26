@@ -1,6 +1,5 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, ActivityIndicator } from 'react-native';
-import { linearTheme } from '../../../../../theme/linearTheme';
+import { View } from 'react-native';
 import SettingsModelDropdown from '../../../components/SettingsModelDropdown';
 import type { GuruChatState } from '../types';
 
@@ -29,25 +28,9 @@ export default function ChatModelSection({
   } = guruChat;
 
   return (
-    <SectionToggle id="ai_chat_model" title="Chat Model" icon="chatbubbles" tint="#6C63FF">
-      <Text style={styles.hint}>Default model for Guru Chat (changeable per session).</Text>
-      <View style={styles.liveModelsRefreshRow}>
-        <TouchableOpacity
-          style={[styles.testBtn, { marginBottom: 0, flexShrink: 1 }]}
-          onPress={liveGuruChatModels.refresh}
-          disabled={liveGuruChatModels.loading}
-          activeOpacity={0.8}
-        >
-          <Text style={styles.testBtnText}>
-            {liveGuruChatModels.loading ? 'Loading live models…' : 'Refresh live model lists'}
-          </Text>
-        </TouchableOpacity>
-        {liveGuruChatModels.loading && (
-          <ActivityIndicator size="small" color={linearTheme.colors.accent} />
-        )}
-      </View>
+    <View style={{ marginBottom: 12 }}>
       <SettingsModelDropdown
-        label="Guru Chat — default model"
+        label="Guru Chat"
         value={guruChatDefaultModel}
         onSelect={setGuruChatDefaultModel}
         options={[
@@ -117,6 +100,6 @@ export default function ChatModelSection({
           })),
         ]}
       />
-    </SectionToggle>
+    </View>
   );
 }

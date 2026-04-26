@@ -10,7 +10,6 @@ export function AppearanceSection(props: any) {
       <SectionToggle id="profile_appearance" title="Appearance" icon="color-palette" tint="#EAB308">
         <SettingsToggleRow
           label="Turbulent Loading Orb"
-          hint="Use the hyper-smooth fluid dynamics orb instead of the classic rings."
           value={loadingOrbStyle === 'turbulent'}
           onValueChange={(val: boolean) => setLoadingOrbStyle(val ? 'turbulent' : 'classic')}
         />

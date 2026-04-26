@@ -234,6 +234,20 @@ export function mapUserProfileRow(row: UserProfileRow | undefined): UserProfile 
     googleCustomSearchApiKey: row.googleCustomSearchApiKey ?? '',
     guruChatDefaultModel: row.guruChatDefaultModel ?? 'auto',
     imageGenerationModel: row.imageGenerationModel ?? 'auto',
+    imageGenerationOrder: (() => {
+      try {
+        return JSON.parse(row.imageGenerationOrder ?? '[]') as string[];
+      } catch {
+        return [];
+      }
+    })(),
+    transcriptionOrder: (() => {
+      try {
+        return JSON.parse(row.transcriptionOrder ?? '[]') as string[];
+      } catch {
+        return [];
+      }
+    })(),
     guruMemoryNotes: row.guruMemoryNotes ?? '',
     preferGeminiStructuredJson: row.preferGeminiStructuredJson === 1,
     githubModelsPat: row.githubModelsPat ?? '',
@@ -467,6 +481,12 @@ export function mapToDrizzleUpdate(updates: Partial<UserProfile>): Partial<NewUs
   if ('providerOrder' in updates) {
     drizzleUpdate.providerOrder = JSON.stringify(updates.providerOrder ?? []);
   }
+  if ('imageGenerationOrder' in updates) {
+    drizzleUpdate.imageGenerationOrder = JSON.stringify(updates.imageGenerationOrder ?? []);
+  }
+  if ('transcriptionOrder' in updates) {
+    drizzleUpdate.transcriptionOrder = JSON.stringify(updates.transcriptionOrder ?? []);
+  }
   if ('disabledProviders' in updates) {
     drizzleUpdate.disabledProviders = JSON.stringify(updates.disabledProviders ?? []);
   }
@@ -555,6 +575,8 @@ export function createDefaultUserProfile(): UserProfile {
     googleCustomSearchApiKey: '',
     guruChatDefaultModel: 'auto',
     imageGenerationModel: 'auto',
+    imageGenerationOrder: [],
+    transcriptionOrder: [],
     guruMemoryNotes: '',
     preferGeminiStructuredJson: true,
     githubModelsPat: '',

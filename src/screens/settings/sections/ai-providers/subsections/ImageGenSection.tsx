@@ -1,10 +1,16 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, ActivityIndicator } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { linearTheme } from '../../../../../theme/linearTheme';
-import LinearTextInput from '../../../../../components/primitives/LinearTextInput';
+import { View } from 'react-native';
 import SettingsModelDropdown from '../../../components/SettingsModelDropdown';
 import type { ImageGenState } from '../types';
+
+const IMAGE_PROVIDERS = [
+  { id: 'google', label: 'Google (Gemini)' },
+  { id: 'fal', label: 'Fal AI' },
+  { id: 'cloudflare', label: 'Cloudflare' },
+  { id: 'openrouter', label: 'OpenRouter' },
+];
+
+const DEFAULT_IMAGE_ORDER = IMAGE_PROVIDERS.map((p) => p.id);
 
 interface Props {
   imageGen: ImageGenState;
@@ -36,81 +42,39 @@ export default function ImageGenSection({
   SectionToggle,
   styles,
 }: Props) {
-  const { options, model, setModel } = imageGen;
+  const { options, model, setModel, order, setOrder } = imageGen;
+
+  const allIds = new Set(IMAGE_PROVIDERS.map((p) => p.id));
+  const saved = order.filter((id) => allIds.has(id));
+  const missing = IMAGE_PROVIDERS.map((p) => p.id).filter((id) => !saved.includes(id));
+  const effectiveOrder = [...saved, ...missing];
+
+  const items = effectiveOrder.map((id) => {
+    const p = IMAGE_PROVIDERS.find((x) => x.id === id);
+    return { id, label: p?.label ?? id };
+  });
 
   return (
-    <SectionToggle id="ai_image" title="Image Generation" icon="image" tint="#8B5CF6">
-      <Text style={styles.hint}>
-        Diagrams and study images. fal uses a separate API key and does not reuse ChatGPT Plus
-        login.
-      </Text>
-
+    <View style={{ marginBottom: 12 }}>
       <SettingsModelDropdown
-        label="Image Generation Model"
+        label="Image Generation"
         value={model}
         onSelect={setModel}
-        options={options.map((opt) => ({
-          id: opt.value,
-          label: opt.label,
-          group: 'Image Models',
-        }))}
-      />
+        options={options.map((opt) => {
+          let group = 'Other';
+          if (opt.label.includes('Google')) group = 'Google';
+          else if (opt.label.includes('Cloudflare')) group = 'Cloudflare';
+          else if (opt.label.includes('fal')) group = 'Fal AI';
+          else if (opt.label.includes('OpenRouter')) group = 'OpenRouter';
+          else if (opt.label.includes('Auto')) group = 'General';
 
-      <Text style={[styles.label, { marginTop: 16 }]}>fal API Key</Text>
-      <View style={styles.apiKeyRow}>
-        <LinearTextInput
-          style={[
-            styles.input,
-            styles.apiKeyInput,
-            falValidationStatus === 'ok' && styles.inputSuccess,
-            falValidationStatus === 'fail' && styles.inputError,
-          ]}
-          placeholder="fal key"
-          placeholderTextColor={linearTheme.colors.textMuted}
-          value={falApiKey}
-          onChangeText={(value) => {
-            setFalApiKey(value);
-            setFalKeyTestResult(null);
-            clearProviderValidated('fal');
-          }}
-          secureTextEntry
-          autoCapitalize="none"
-          autoCorrect={false}
-        />
-        <TouchableOpacity
-          style={[
-            styles.validateBtn,
-            falValidationStatus === 'ok' && styles.validateBtnOk,
-            falValidationStatus === 'fail' && styles.validateBtnFail,
-          ]}
-          onPress={testFalKey}
-          disabled={testingFalKey}
-          activeOpacity={0.8}
-        >
-          {testingFalKey ? (
-            <ActivityIndicator size="small" color={linearTheme.colors.accent} />
-          ) : (
-            <Ionicons
-              name={
-                falValidationStatus === 'ok'
-                  ? 'checkmark-circle'
-                  : falValidationStatus === 'fail'
-                    ? 'close-circle'
-                    : 'flash-outline'
-              }
-              size={20}
-              color={
-                falValidationStatus === 'ok'
-                  ? linearTheme.colors.success
-                  : falValidationStatus === 'fail'
-                    ? linearTheme.colors.error
-                    : linearTheme.colors.accent
-              }
-            />
-          )}
-        </TouchableOpacity>
-      </View>
-      <Text style={styles.hint}>Validate your fal API key with fal's model catalog endpoint.</Text>
-    </SectionToggle>
+          return {
+            id: opt.value,
+            label: opt.label,
+            group,
+          };
+        })}
+      />
+    </View>
   );
 }

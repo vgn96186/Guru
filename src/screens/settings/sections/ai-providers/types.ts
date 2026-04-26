@@ -111,6 +111,8 @@ export interface ImageGenState {
   options: { label: string; value: string }[];
   model: string;
   setModel: (m: string) => void;
+  order: string[];
+  setOrder: (order: string[]) => void;
 }
 
 export interface LocalAiState {
@@ -161,6 +163,7 @@ export interface AiProvidersProps {
     gemini: ApiKeyField;
     vertex: VertexKeyField;
     deepgram: ApiKeyField;
+    huggingface: ApiKeyField;
     cloudflare: CloudflareKeyField;
     fal: ApiKeyField;
     braveSearch: ApiKeyField;
@@ -174,6 +177,10 @@ export interface AiProvidersProps {
     setProviderOrder: (order: ProviderId[]) => void;
   };
   imageGen: ImageGenState;
+  transcriptionOrder: string[];
+  setTranscriptionOrder: (order: string[]) => void;
+  transcriptionProvider: string;
+  setTranscriptionProvider: (v: string) => void;
   localAi: LocalAiState;
 
   updateUserProfile: (patch: Partial<UserProfile>) => Promise<void>;

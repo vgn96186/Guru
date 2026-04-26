@@ -1,7 +1,9 @@
 import React from 'react';
-import { View, Text } from 'react-native';
+import { View, Text, TouchableOpacity } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
-import LocalAiCard from '../components/LocalAiCard';
+import SettingsToggleRow from '../../../components/SettingsToggleRow';
+import { linearTheme as n } from '../../../../../theme/linearTheme';
 import type { LocalAiState } from '../types';
 
 interface Props {
@@ -10,6 +12,7 @@ interface Props {
   profile: any;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
   updateUserProfile: (p: any) => Promise<void>;
+  refreshProfile: () => Promise<void>;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
   SectionToggle: any;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
@@ -20,71 +23,100 @@ export default function LocalAiSection({
   localAi,
   profile,
   updateUserProfile,
+  refreshProfile,
   SectionToggle,
-  styles,
 }: Props) {
+  const navigation = useNavigation<any>();
   const { llmReady, llmFileName, whisperReady, whisperFileName, llmAllowed, llmWarning, useNano } =
     localAi;
 
+  const updateLocalAiPreference = async (patch: {
+    useNano?: boolean;
+    useLocalModel?: boolean;
+    useLocalWhisper?: boolean;
+  }) => {
+    await updateUserProfile(patch);
+    await refreshProfile();
+  };
+
   return (
     <SectionToggle id="ai_local" title="Local Inference" icon="hardware-chip" tint="#6366F1">
-      {/* ── Gemini Nano (AICore) ── */}
-      <LocalAiCard
-        title="Gemini Nano"
-        iconName="sparkles"
-        iconColor="#4285F4"
-        isActive={useNano}
-        onToggle={(val) => updateUserProfile({ useNano: val })}
-        hint="~256 token output · No model file needed"
-        styles={styles}
+      <SettingsToggleRow
+        label="Gemini Nano"
+        hint="~256 token output · No download"
+        value={useNano}
+        onValueChange={(val: boolean) => updateLocalAiPreference({ useNano: val })}
+        labelIcon={<Ionicons name="sparkles" size={16} color="#4285F4" />}
       />
 
-      <View style={{ height: 16 }} />
-
-      {/* ── Local LLM ── */}
-      <LocalAiCard
-        title="Local LLM"
-        iconName="cpu"
-        iconColor="#F59E0B"
-        isActive={!!profile?.useLocalModel}
-        onToggle={(val) => updateUserProfile({ useLocalModel: val })}
-        disableToggle={!llmReady}
-        hint={
-          !llmAllowed
-            ? 'Device incompatible'
-            : !llmReady
-              ? 'Model not downloaded'
-              : llmFileName
-                ? llmFileName
-                : 'Ready'
-        }
-        styles={styles}
+      <SettingsToggleRow
+        label="Local LLM"
+        hint={!llmAllowed ? 'Incompatible' : !llmReady ? 'Missing model' : llmFileName || 'Ready'}
+        value={!!profile?.useLocalModel}
+        onValueChange={(val: boolean) => updateLocalAiPreference({ useLocalModel: val })}
+        disabled={!llmReady}
+        labelIcon={<Ionicons name="hardware-chip" size={16} color="#F59E0B" />}
       />
 
-      <View style={{ height: 16 }} />
-
-      {/* ── Local Whisper ── */}
-      <LocalAiCard
-        title="Local Whisper"
-        iconName="mic"
-        iconColor="#10B981"
-        isActive={!!profile?.useLocalWhisper}
-        onToggle={(val) => updateUserProfile({ useLocalWhisper: val })}
-        disableToggle={!whisperReady}
-        hint={!whisperReady ? 'Model not downloaded' : whisperFileName ? whisperFileName : 'Ready'}
-        styles={styles}
+      <SettingsToggleRow
+        label="Local Whisper"
+        hint={!whisperReady ? 'Missing model' : whisperFileName || 'Ready'}
+        value={!!profile?.useLocalWhisper}
+        onValueChange={(val: boolean) => updateLocalAiPreference({ useLocalWhisper: val })}
+        disabled={!whisperReady}
+        labelIcon={<Ionicons name="mic" size={16} color="#10B981" />}
       />
+
+      <TouchableOpacity
+        style={localStyles.manageBtn}
+        onPress={() => navigation.navigate('LocalModel')}
+      >
+        <Ionicons name="folder-open-outline" size={16} color={n.colors.accent} />
+        <Text style={localStyles.manageBtnText}>Manage On-Device Models</Text>
+      </TouchableOpacity>
 
       {llmWarning ? (
-        <View style={styles.localAiWarning}>
+        <View style={localStyles.localAiWarning}>
           <Ionicons name="warning" size={18} color="#F59E0B" />
-          <Text style={styles.localAiWarningText}>{llmWarning}</Text>
+          <Text style={localStyles.localAiWarningText}>{llmWarning}</Text>
         </View>
       ) : null}
-
-      <Text style={[styles.hint, { marginTop: 16 }]}>
-        To download or change models, open Guru Chat and tap the model chip.
-      </Text>
     </SectionToggle>
   );
 }
+
+const localStyles = {
+  manageBtn: {
+    marginTop: 12,
+    backgroundColor: 'rgba(94, 106, 210, 0.05)',
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(94, 106, 210, 0.15)',
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
+    gap: 8,
+  },
+  manageBtnText: {
+    color: n.colors.accent,
+    fontWeight: '700' as const,
+    fontSize: 13,
+  },
+  localAiWarning: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    backgroundColor: 'rgba(245, 158, 11, 0.05)',
+    padding: 12,
+    borderRadius: 12,
+    marginTop: 12,
+    gap: 10,
+  },
+  localAiWarningText: {
+    color: '#F59E0B',
+    fontSize: 12,
+    flex: 1,
+    lineHeight: 18,
+  },
+};

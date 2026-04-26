@@ -1,5 +1,4 @@
 import React from 'react';
-import { Text } from 'react-native';
 import { linearTheme } from '../../../../../theme/linearTheme';
 import LinearTextInput from '../../../../../components/primitives/LinearTextInput';
 
@@ -11,16 +10,13 @@ interface Props {
   styles: any;
 }
 
-export default function MemorySection({ guruMemory, SectionToggle, styles }: Props) {
+export default function MemorySection({ guruMemory, SectionToggle, styles: _styles }: Props) {
   const { notes, setNotes } = guruMemory;
 
   return (
-    <SectionToggle id="ai_memory" title="Guru Memory" icon="brain" tint="#EC4899">
-      <Text style={styles.hint}>
-        Persistent notes Guru uses in every chat. Session memory is built automatically.
-      </Text>
+    <SectionToggle id="ai_memory" title="Guru Memory" icon="bulb" tint="#EC4899">
       <LinearTextInput
-        style={[styles.input, styles.guruMemoryInput]}
+        containerStyle={{ minHeight: 96, alignItems: 'flex-start', paddingVertical: 8 }}
         placeholder="e.g. INICET May 2026 · weak in renal · prefers concise answers"
         placeholderTextColor={linearTheme.colors.textMuted}
         value={notes}

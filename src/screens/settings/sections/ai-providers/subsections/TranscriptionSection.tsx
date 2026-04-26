@@ -1,22 +1,33 @@
 import React from 'react';
-import { Text } from 'react-native';
-import TranscriptionSettingsPanel from '../../../../../components/TranscriptionSettingsPanel';
+import { View } from 'react-native';
+import SettingsModelDropdown from '../../../components/SettingsModelDropdown';
 
 interface Props {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
-  SectionToggle: any;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
-  styles: any;
+  transcriptionProvider: string;
+  setTranscriptionProvider: (v: string) => void;
 }
 
-export default function TranscriptionSection({ SectionToggle, styles }: Props) {
+export default function TranscriptionSection({
+  transcriptionProvider,
+  setTranscriptionProvider,
+}: Props) {
+  const options = [
+    { id: 'auto', label: 'Auto (Fallback Routing)', group: 'General' },
+    { id: 'groq', label: 'Groq', group: 'Providers' },
+    { id: 'huggingface', label: 'Hugging Face', group: 'Providers' },
+    { id: 'cloudflare', label: 'Cloudflare', group: 'Providers' },
+    { id: 'deepgram', label: 'Deepgram', group: 'Providers' },
+    { id: 'local', label: 'Local (Whisper)', group: 'On-Device' },
+  ];
+
   return (
-    <SectionToggle id="ai_transcription" title="Audio Transcription" icon="mic" tint="#10B981">
-      <Text style={styles.hint}>
-        Configure transcription providers and keys used by Recording Vault and external lecture
-        processing.
-      </Text>
-      <TranscriptionSettingsPanel embedded />
-    </SectionToggle>
+    <View style={{ marginBottom: 12 }}>
+      <SettingsModelDropdown
+        label="Audio Transcription"
+        value={transcriptionProvider}
+        onSelect={setTranscriptionProvider}
+        options={options}
+      />
+    </View>
   );
 }

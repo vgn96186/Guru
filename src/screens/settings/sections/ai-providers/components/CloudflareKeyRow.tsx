@@ -1,9 +1,10 @@
 import React from 'react';
-import { View, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { View, TouchableOpacity, ActivityIndicator, useWindowDimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { linearTheme } from '../../../../../theme/linearTheme';
 import LinearTextInput from '../../../../../components/primitives/LinearTextInput';
-import SettingsLabel from '../../../components/SettingsLabel';
+import LinearText from '../../../../../components/primitives/LinearText';
+import { SettingsStatusPill } from '../../../components/SettingsStatusPill';
 import type { CloudflareKeyField } from '../types';
 
 interface Props extends CloudflareKeyField {
@@ -27,13 +28,81 @@ export default function CloudflareKeyRow({
   clearProviderValidated,
   providerId,
 }: Props) {
+  const { width } = useWindowDimensions();
+  const stackValidate = width < 520;
+  const hasCredentials = accountId.trim() && apiToken.trim();
+  const statusLabel =
+    validationStatus === 'valid'
+      ? 'Validated'
+      : validationStatus === 'invalid'
+        ? 'Failed'
+        : hasCredentials
+          ? 'Needs test'
+          : 'Not set';
+  const statusTone =
+    validationStatus === 'valid'
+      ? 'success'
+      : validationStatus === 'invalid'
+        ? 'error'
+        : hasCredentials
+          ? 'warning'
+          : 'muted';
+
   return (
-    <>
-      <SettingsLabel text="Cloudflare AI" />
-      <View style={styles.apiKeyRow}>
-        <View style={{ flex: 1, gap: 8 }}>
+    <View style={styles.apiKeyCard}>
+      {/* ── Header ──────────────────────────── */}
+      <View style={styles.apiKeyCardHeader}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1, minWidth: 0, gap: 10 }}>
+          <View
+            style={{
+              width: 30,
+              height: 30,
+              borderRadius: 9,
+              alignItems: 'center',
+              justifyContent: 'center',
+              backgroundColor:
+                validationStatus === 'valid'
+                  ? linearTheme.colors.success + '18'
+                  : hasCredentials
+                    ? linearTheme.colors.accent + '18'
+                    : 'rgba(255,255,255,0.04)',
+            }}
+          >
+            <Ionicons
+              name="cloudy-outline"
+              size={15}
+              color={
+                validationStatus === 'valid'
+                  ? linearTheme.colors.success
+                  : hasCredentials
+                    ? linearTheme.colors.accent
+                    : linearTheme.colors.textMuted
+              }
+            />
+          </View>
+          <View style={{ flex: 1, minWidth: 0 }}>
+            <LinearText variant="label" style={{ fontWeight: '700' }}>
+              Cloudflare AI
+            </LinearText>
+            <LinearText variant="caption" tone="muted" style={{ marginTop: 1 }}>
+              Workers AI account and token
+            </LinearText>
+          </View>
+        </View>
+        <SettingsStatusPill label={statusLabel} tone={statusTone} />
+      </View>
+
+      {/* ── Inputs ──────────────────────────── */}
+      <View
+        style={[
+          styles.apiKeyRow,
+          stackValidate && styles.apiKeyRowStacked,
+          { alignItems: 'flex-end' },
+        ]}
+      >
+        <View style={{ flex: 1, minWidth: 0, gap: 8 }}>
           <LinearTextInput
-            style={[styles.input, styles.apiKeyInput, { width: '100%' }]}
+            containerStyle={[styles.apiKeyInput, { width: '100%' }]}
             placeholder="Account ID"
             placeholderTextColor={linearTheme.colors.textMuted}
             value={accountId}
@@ -48,7 +117,7 @@ export default function CloudflareKeyRow({
             autoCorrect={false}
           />
           <LinearTextInput
-            style={[styles.input, styles.apiKeyInput, { width: '100%' }]}
+            containerStyle={[styles.apiKeyInput, { width: '100%' }]}
             placeholder="API Token (Workers AI Read)"
             placeholderTextColor={linearTheme.colors.textMuted}
             value={apiToken}
@@ -67,9 +136,9 @@ export default function CloudflareKeyRow({
         <TouchableOpacity
           style={[
             styles.validateBtn,
+            stackValidate && styles.validateBtnWide,
             validationStatus === 'valid' && styles.validateBtnOk,
             validationStatus === 'invalid' && styles.validateBtnFail,
-            { alignSelf: 'stretch', height: 'auto', minHeight: 44 },
           ]}
           onPress={test}
           disabled={testing}
@@ -98,6 +167,6 @@ export default function CloudflareKeyRow({
           )}
         </TouchableOpacity>
       </View>
-    </>
+    </View>
   );
 }

@@ -45,8 +45,7 @@ export function InterventionsSection(props: any) {
         tint="#F87171"
       >
         <SettingsToggleRow
-          label="Strict Mode (Punishment Mode)"
-          hint="Nag you instantly if you leave the app or are idle. Idle time won't count towards session duration."
+          label="Strict Mode"
           value={strictMode}
           onValueChange={setStrictMode}
           activeTrackColor={linearTheme.colors.error}
@@ -56,14 +55,12 @@ export function InterventionsSection(props: any) {
         />
         <SettingsToggleRow
           label="Doomscroll Shield"
-          hint="Detect app switching via AppState"
           value={doomscrollShield}
           onValueChange={setDoomscrollShield}
           style={{ marginTop: 16 }}
         />
         <SettingsToggleRow
-          label="Face Tracking (ML Kit)"
-          hint="Alert if absent/drowsy during lectures"
+          label="Face Tracking"
           value={faceTracking}
           onValueChange={setFaceTracking}
           style={{ marginTop: 16 }}
@@ -72,14 +69,14 @@ export function InterventionsSection(props: any) {
 
       <SectionToggle id="interv_breaks" title="Session Rules & Breaks" icon="cafe" tint="#60A5FA">
         <SettingsField
-          label="Idle timeout (minutes before auto-pause)"
+          label="Idle timeout (min)"
           value={idleTimeoutStr}
           onChangeText={(val) => setIdleTimeout(parseInt(val, 10) || 2)}
           keyboardType="number-pad"
           placeholderTextColor={linearTheme.colors.textMuted}
         />
         <SettingsField
-          label="Break duration between topics (minutes)"
+          label="Break duration (min)"
           value={breakDurationStr}
           onChangeText={(val) => setBreakDuration(parseInt(val, 10) || 5)}
           keyboardType="number-pad"
@@ -94,8 +91,7 @@ export function InterventionsSection(props: any) {
         tint="#FB923C"
       >
         <SettingsToggleRow
-          label="Enable Pomodoro Suggestion"
-          hint="Auto-expand the external lecture overlay every interval to suggest a break."
+          label="Pomodoro suggestions"
           value={pomodoroEnabled ?? true}
           onValueChange={(val) => setPomodoroEnabled(val)}
         />

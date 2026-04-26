@@ -198,6 +198,8 @@ export const userProfile = sqliteTable('user_profile', {
   guruChatDefaultModel: text('guru_chat_default_model').notNull().default('auto'),
   guruMemoryNotes: text('guru_memory_notes').notNull().default(''),
   imageGenerationModel: text('image_generation_model').notNull().default('auto'),
+  imageGenerationOrder: text('image_generation_order').notNull().default('[]'),
+  transcriptionOrder: text('transcription_order').notNull().default('[]'),
   examType: text('exam_type').notNull().default('INICET'),
   preferGeminiStructuredJson: integer('prefer_gemini_structured_json').notNull().default(1),
   githubModelsPat: text('github_models_pat').notNull().default(''),

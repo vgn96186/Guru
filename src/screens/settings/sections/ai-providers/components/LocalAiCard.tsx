@@ -16,6 +16,7 @@ interface Props {
   showToggle?: boolean;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
   styles: any;
+  children?: React.ReactNode;
 }
 
 export default function LocalAiCard({
@@ -29,6 +30,7 @@ export default function LocalAiCard({
   extraInfo,
   showToggle = true,
   styles,
+  children,
 }: Props) {
   return (
     <View style={styles.localAiCard}>
@@ -72,6 +74,7 @@ export default function LocalAiCard({
           <Text style={styles.hint}>{extraInfo}</Text>
         </View>
       )}
+      {children}
     </View>
   );
 }

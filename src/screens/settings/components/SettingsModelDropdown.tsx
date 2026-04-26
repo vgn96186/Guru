@@ -26,6 +26,27 @@ export default function SettingsModelDropdown({
   const selectedLabel =
     options.find((option) => option.id === value)?.label ?? (value || 'Select...');
 
+  // Group options by their `group` property.
+  const groupedOptions = React.useMemo(() => {
+    const groups: { name: string; items: SettingsModelOption[] }[] = [];
+    const ungrouped: SettingsModelOption[] = [];
+
+    options.forEach((opt) => {
+      if (!opt.group) {
+        ungrouped.push(opt);
+        return;
+      }
+      let g = groups.find((x) => x.name === opt.group);
+      if (!g) {
+        g = { name: opt.group, items: [] };
+        groups.push(g);
+      }
+      g.items.push(opt);
+    });
+
+    return { groups, ungrouped };
+  }, [options]);
+
   return (
     <>
       <SettingsLabel text={label} />
@@ -46,50 +67,160 @@ export default function SettingsModelDropdown({
         open={open}
         onClose={() => setOpen(false)}
         title={label}
-        snapPoints={['72%']}
+        snapPoints={['85%']}
         scrollable
       >
-        {options.map((option, index) => {
-          const showGroup =
-            option.group && (index === 0 || options[index - 1]?.group !== option.group);
-          return (
-            <React.Fragment key={option.id}>
-              {showGroup ? (
-                <LinearText variant="caption" tone="accent" style={styles.dropdownGroupLabel}>
-                  {option.group}
-                </LinearText>
-              ) : null}
-              <TouchableOpacity
-                style={[styles.dropdownItem, value === option.id && styles.dropdownItemActive]}
-                onPress={() => {
-                  onSelect(option.id);
-                  setOpen(false);
-                }}
-                activeOpacity={0.7}
-              >
-                <View style={styles.dropdownItemBody}>
-                  <LinearText
-                    variant="body"
-                    style={[
-                      styles.dropdownItemText,
-                      value === option.id && styles.dropdownItemTextActive,
-                    ]}
-                    numberOfLines={2}
-                  >
-                    {option.label}
-                  </LinearText>
-                </View>
-                {value === option.id ? (
-                  <LinearText tone="accent" style={styles.dropdownCheck}>
-                    ✓
-                  </LinearText>
-                ) : null}
-              </TouchableOpacity>
-            </React.Fragment>
-          );
-        })}
+        <View style={{ paddingBottom: 40 }}>
+          {/* Ungrouped items */}
+          {groupedOptions.ungrouped.map((option) => (
+            <DropdownItem
+              key={option.id}
+              option={option}
+              isActive={value === option.id}
+              onPress={() => {
+                onSelect(option.id);
+                setOpen(false);
+              }}
+            />
+          ))}
+
+          {/* Collapsible groups */}
+          {groupedOptions.groups.map((group) => (
+            <CollapsibleGroup
+              key={group.name}
+              name={group.name}
+              items={group.items}
+              currentValue={value}
+              onSelect={(id) => {
+                onSelect(id);
+                setOpen(false);
+              }}
+            />
+          ))}
+        </View>
       </AppBottomSheet>
     </>
+  );
+}
+
+// ─── Subcomponents ─────────────────────────────────────────────────────────
+
+function CollapsibleGroup({
+  name,
+  items,
+  currentValue,
+  onSelect,
+}: {
+  name: string;
+  items: SettingsModelOption[];
+  currentValue: string;
+  onSelect: (id: string) => void;
+}) {
+  // Auto-expand if the currently selected value is in this group
+  const isSelectedInGroup = items.some((i) => i.id === currentValue);
+  const [expanded, setExpanded] = React.useState(isSelectedInGroup);
+
+  const toggle = () => {
+    // Requires UIManager.setLayoutAnimationEnabledExperimental(true) globally on Android
+    // Assuming it's enabled in the app root or ApiKeysSection.
+    const { LayoutAnimation } = require('react-native');
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    setExpanded((v) => !v);
+  };
+
+  return (
+    <View style={{ marginBottom: 4 }}>
+      <TouchableOpacity
+        style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          paddingVertical: 12,
+          paddingHorizontal: 14,
+          backgroundColor: linearTheme.colors.background,
+          borderRadius: 12,
+          borderWidth: 1,
+          borderColor: expanded ? linearTheme.colors.borderHighlight : 'transparent',
+        }}
+        onPress={toggle}
+        activeOpacity={0.7}
+      >
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+          <LinearText
+            variant="label"
+            style={{
+              fontWeight: '700',
+              textTransform: 'uppercase',
+              letterSpacing: 0.5,
+              fontSize: 12,
+            }}
+          >
+            {name}
+          </LinearText>
+          <View
+            style={{
+              backgroundColor: linearTheme.colors.primaryTintSoft,
+              paddingHorizontal: 8,
+              paddingVertical: 2,
+              borderRadius: 999,
+            }}
+          >
+            <LinearText variant="caption" tone="accent" style={{ fontWeight: '700', fontSize: 10 }}>
+              {items.length}
+            </LinearText>
+          </View>
+        </View>
+        <LinearText variant="caption" tone="muted">
+          {expanded ? '▲' : '▼'}
+        </LinearText>
+      </TouchableOpacity>
+
+      {expanded && (
+        <View style={{ marginTop: 4, paddingLeft: 8 }}>
+          {items.map((option) => (
+            <DropdownItem
+              key={option.id}
+              option={option}
+              isActive={currentValue === option.id}
+              onPress={() => onSelect(option.id)}
+            />
+          ))}
+        </View>
+      )}
+    </View>
+  );
+}
+
+function DropdownItem({
+  option,
+  isActive,
+  onPress,
+}: {
+  option: SettingsModelOption;
+  isActive: boolean;
+  onPress: () => void;
+}) {
+  return (
+    <TouchableOpacity
+      style={[styles.dropdownItem, isActive && styles.dropdownItemActive]}
+      onPress={onPress}
+      activeOpacity={0.7}
+    >
+      <View style={styles.dropdownItemBody}>
+        <LinearText
+          variant="body"
+          style={[styles.dropdownItemText, isActive && styles.dropdownItemTextActive]}
+          numberOfLines={2}
+        >
+          {option.label}
+        </LinearText>
+      </View>
+      {isActive ? (
+        <LinearText tone="accent" style={styles.dropdownCheck}>
+          ✓
+        </LinearText>
+      ) : null}
+    </TouchableOpacity>
   );
 }
 

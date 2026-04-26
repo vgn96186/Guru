@@ -1,16 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, StatusBar, ScrollView } from 'react-native';
+import { View, StyleSheet, StatusBar, ScrollView, TouchableOpacity, Text } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as FileSystem from 'expo-file-system/legacy';
 import { pickDocumentOnce } from '../services/documentPicker';
 import { useProfileQuery, useProfileActions } from '../hooks/queries/useProfile';
 import ScreenHeader from '../components/ScreenHeader';
-import { ResponsiveContainer } from '../hooks/useResponsive';
 import { getLocalLlmRamWarning, isLocalLlmAllowedOnThisDevice } from '../services/deviceMemory';
 import { linearTheme as n } from '../theme/linearTheme';
-import LinearButton from '../components/primitives/LinearButton';
-import LinearDivider from '../components/primitives/LinearDivider';
 import LinearSurface from '../components/primitives/LinearSurface';
 import LinearText from '../components/primitives/LinearText';
 import {
@@ -554,310 +551,203 @@ export default function LocalModelScreen() {
     }
   };
 
+  const renderModelList = (
+    models: typeof RECOMMENDED_MODELS,
+    type: 'llm' | 'whisper',
+    existingFiles: Set<string>,
+  ) => (
+    <View>
+      {models.map((model, idx) => {
+        const isDownloaded = existingFiles.has(model.id);
+        const isCurrent =
+          (type === 'llm' && localModelPath?.endsWith(model.name)) ||
+          (type === 'whisper' && localWhisperPath?.endsWith(model.name));
+
+        return (
+          <View key={model.id}>
+            <View style={styles.modelRow}>
+              <View style={{ flex: 1, marginRight: 8 }}>
+                <LinearText variant="bodySmall" style={{ fontWeight: '700' }}>
+                  {model.name}
+                </LinearText>
+                <LinearText
+                  variant="caption"
+                  tone="secondary"
+                  numberOfLines={1}
+                  style={{ fontSize: 11 }}
+                >
+                  {model.desc.split('.')[0]}
+                </LinearText>
+              </View>
+              {isCurrent ? (
+                <View style={styles.activeBadge}>
+                  <Ionicons name="checkmark-circle" size={14} color={n.colors.success} />
+                  <LinearText
+                    variant="caption"
+                    style={{
+                      color: n.colors.success,
+                      fontWeight: '800',
+                      marginLeft: 4,
+                      fontSize: 11,
+                    }}
+                  >
+                    Active
+                  </LinearText>
+                </View>
+              ) : (
+                <TouchableOpacity
+                  style={[styles.miniDownloadBtn, isDownloaded && styles.miniDownloadBtnOwned]}
+                  onPress={() => handleDownload(model, type)}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons
+                    name={isDownloaded ? 'swap-horizontal' : 'download-outline'}
+                    size={14}
+                    color={isDownloaded ? n.colors.textPrimary : '#fff'}
+                  />
+                  <Text
+                    style={[
+                      styles.miniDownloadBtnText,
+                      isDownloaded && styles.miniDownloadBtnTextOwned,
+                    ]}
+                  >
+                    {isDownloaded ? 'Use' : 'Get'}
+                  </Text>
+                </TouchableOpacity>
+              )}
+            </View>
+            {idx < models.length - 1 && <View style={styles.rowDivider} />}
+          </View>
+        );
+      })}
+    </View>
+  );
+
   return (
     // eslint-disable-next-line guru/prefer-screen-shell -- SafeAreaView needed here
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
       <ScrollView contentContainerStyle={styles.content}>
-        <ResponsiveContainer>
-          <ScreenHeader title="On-Device AI Setup" showSettings />
-          <LinearText variant="title" style={styles.sectionHeader}>
-            Study AI (Text Model)
-          </LinearText>
-          <LinearText variant="body" tone="secondary" style={styles.desc}>
-            Powers flashcards, summaries, and quizzes offline.
-          </LinearText>
-          <LinearButton
-            label={
-              isLlmDownloaded
-                ? 'Replace with Another .litertlm File'
-                : 'Import Existing .litertlm File'
-            }
-            variant="secondary"
-            style={styles.importBtn}
-            onPress={() => handleImportModel('llm')}
-            leftIcon={
-              <Ionicons name="folder-open-outline" size={18} color={n.colors.textPrimary} />
-            }
-          />
+        <ScreenHeader title="On-Device Models" />
+
+        <LinearSurface padded={false} style={styles.masterCard}>
+          {/* ── SECTION: STUDY AI ── */}
+          <View style={styles.sectionHeaderRow}>
+            <LinearText variant="caption" style={{ fontWeight: '800', letterSpacing: 1 }}>
+              STUDY AI (TEXT)
+            </LinearText>
+            {isLlmDownloaded && (
+              <TouchableOpacity onPress={() => handleDelete('llm')}>
+                <LinearText variant="caption" style={{ color: n.colors.error, fontSize: 11 }}>
+                  Delete
+                </LinearText>
+              </TouchableOpacity>
+            )}
+          </View>
+
           {localLlmWarning ? (
-            <LinearSurface padded={false} style={styles.warningCard}>
-              <LinearText variant="label" tone="warning" style={styles.warningTitle}>
-                Low-RAM guardrail active
-              </LinearText>
-              <LinearText variant="bodySmall" tone="secondary" style={styles.warningText}>
+            <View style={styles.compactWarning}>
+              <Ionicons name="warning" size={14} color={n.colors.warning} />
+              <LinearText variant="caption" tone="warning" style={{ flex: 1, fontSize: 11 }}>
                 {localLlmWarning}
               </LinearText>
-            </LinearSurface>
+            </View>
           ) : null}
 
-          {isLlmDownloaded ? (
-            <LinearSurface padded={false} style={styles.card}>
-              <View style={styles.statusBox}>
-                <LinearText variant="label" tone="success" style={styles.statusText}>
-                  Model is downloaded and ready
-                </LinearText>
-                <LinearText variant="sectionTitle" style={styles.modelName}>
-                  {localModelPath.split('/').pop()}
-                </LinearText>
-                <LinearButton
-                  label={
-                    localLlmBlocked
-                      ? 'Needs >= 4 GB RAM'
-                      : useLocalModel
-                        ? 'Local Text AI Enabled'
-                        : 'Enable Local Text AI'
-                  }
-                  variant={useLocalModel && !localLlmBlocked ? 'primary' : 'secondary'}
-                  style={[styles.toggleBtn, localLlmBlocked && styles.toggleBtnDisabled]}
-                  textStyle={[localLlmBlocked && styles.toggleBtnTextDisabled]}
-                  onPress={async () => {
-                    if (localLlmBlocked) {
-                      void showWarning(
-                        'Requires More RAM',
-                        localLlmWarning ?? 'This device cannot safely run the local text model.',
-                      );
-                      return;
-                    }
-                    setUseLocalModel(!useLocalModel);
-                  }}
-                />
-                <LinearButton
-                  label="Delete LLM"
-                  variant="ghost"
-                  style={styles.deleteBtn}
-                  textStyle={styles.deleteBtnText}
-                  onPress={() => handleDelete('llm')}
-                />
-                <LinearButton
-                  label="Replace LLM File"
-                  variant="secondary"
-                  style={styles.importBtn}
-                  onPress={() => handleImportModel('llm')}
-                  leftIcon={
-                    <Ionicons
-                      name="swap-horizontal-outline"
-                      size={18}
-                      color={n.colors.textPrimary}
-                    />
-                  }
-                />
-              </View>
-            </LinearSurface>
-          ) : downloadingLlm || isGlobalInstalling('llm') ? (
-            <LinearSurface padded={false} style={styles.card}>
-              <View style={styles.downloadBox}>
-                {(() => {
-                  const llmInstall =
-                    installSnap?.visible && installSnap.type === 'llm' ? installSnap : null;
-                  const llmPct = progressPercentFor('llm', progressLlm, downloadingLlm);
-                  const llmPrimary =
-                    llmInstall?.stage === 'verifying'
-                      ? (llmInstall.message ?? 'Verifying model integrity')
-                      : llmInstall?.stage === 'preparing'
-                        ? (llmInstall.message ?? 'Preparing download')
-                        : `Downloading: ${llmPct}%`;
-                  const dl = llmInstall?.downloadedBytes;
-                  const tl = llmInstall?.totalBytes;
-                  const llmSub =
-                    llmInstall?.stage === 'downloading' && dl && tl
-                      ? `${formatInstallBytes(dl)} / ${formatInstallBytes(tl)}`
-                      : null;
-                  return (
-                    <>
-                      <LinearText variant="bodySmall" style={styles.progressText}>
-                        {llmPrimary}
+          {downloadingLlm || isGlobalInstalling('llm') ? (
+            <View style={styles.compactProgress}>
+              {(() => {
+                const llmPct = progressPercentFor('llm', progressLlm, downloadingLlm);
+                return (
+                  <>
+                    <View
+                      style={{
+                        flexDirection: 'row',
+                        justifyContent: 'space-between',
+                        marginBottom: 4,
+                      }}
+                    >
+                      <LinearText variant="caption" style={{ fontWeight: '700', fontSize: 11 }}>
+                        Downloading... {llmPct}%
                       </LinearText>
-                      {llmSub ? (
-                        <LinearText
-                          variant="bodySmall"
-                          tone="secondary"
-                          style={styles.progressSubText}
-                        >
-                          {llmSub}
-                        </LinearText>
-                      ) : null}
-                      <View style={styles.progressBarBg}>
-                        <View style={[styles.progressBarFill, { width: `${llmPct}%` }]} />
-                      </View>
-                      <LinearText variant="bodySmall" tone="secondary" style={styles.progressHint}>
-                        Matches the install banner (startup + this screen share one status).
-                      </LinearText>
-                    </>
-                  );
-                })()}
-                <LinearButton
-                  label="Cancel"
-                  variant="ghost"
-                  style={styles.cancelBtn}
-                  textStyle={styles.cancelBtnText}
-                  onPress={() => cancelDownload('llm')}
-                />
-              </View>
-            </LinearSurface>
+                      <TouchableOpacity onPress={() => cancelDownload('llm')}>
+                        <Text style={{ color: n.colors.error, fontSize: 11 }}>Cancel</Text>
+                      </TouchableOpacity>
+                    </View>
+                    <View style={styles.progressBarBg}>
+                      <View style={[styles.progressBarFill, { width: `${llmPct}%` }]} />
+                    </View>
+                  </>
+                );
+              })()}
+            </View>
           ) : (
-            RECOMMENDED_MODELS.map((model) => (
-              <LinearSurface key={model.id} padded={false} style={[styles.card, styles.modelCard]}>
-                <LinearText variant="sectionTitle" style={styles.modelName}>
-                  {model.name}
-                </LinearText>
-                <LinearText variant="bodySmall" tone="secondary" style={styles.modelDesc}>
-                  {model.desc}
-                </LinearText>
-                {existingLlmFiles.has(model.id) ? (
-                  <LinearButton
-                    label="On Device - Use This"
-                    variant="secondary"
-                    style={styles.downloadBtn}
-                    onPress={() => handleDownload(model, 'llm')}
-                    leftIcon={
-                      <Ionicons name="checkmark-circle" size={18} color={n.colors.success} />
-                    }
-                  />
-                ) : (
-                  <LinearButton
-                    label="Download"
-                    style={styles.downloadBtn}
-                    variant="primary"
-                    onPress={() => handleDownload(model, 'llm')}
-                    leftIcon={<Ionicons name="arrow-down-outline" size={18} color="#fff" />}
-                  />
-                )}
-              </LinearSurface>
-            ))
+            renderModelList(RECOMMENDED_MODELS, 'llm', existingLlmFiles)
           )}
 
-          <LinearDivider style={styles.divider} />
+          <TouchableOpacity
+            style={styles.compactImportBtn}
+            onPress={() => handleImportModel('llm')}
+          >
+            <Ionicons name="folder-open-outline" size={12} color={n.colors.textMuted} />
+            <Text style={styles.compactImportBtnText}>Import custom .litertlm</Text>
+          </TouchableOpacity>
 
-          <LinearText variant="title" style={styles.sectionHeader}>
-            Transcriber (Whisper Model)
-          </LinearText>
-          <LinearText variant="body" tone="secondary" style={styles.desc}>
-            Powers offline audio transcription for Hostage Mode automatically. Only
-            `whisper.cpp`-compatible files work here; Hugging Face Whisper Turbo is available as a
-            cloud provider in Settings.
-          </LinearText>
-          {!isWhisperDownloaded ? (
-            <LinearButton
-              label="Import Existing Whisper .bin File"
-              variant="secondary"
-              style={styles.importBtn}
-              onPress={() => handleImportModel('whisper')}
-              leftIcon={
-                <Ionicons name="folder-open-outline" size={18} color={n.colors.textPrimary} />
-              }
-            />
-          ) : null}
+          <View style={styles.sectionDivider} />
 
-          {isWhisperDownloaded ? (
-            <LinearSurface padded={false} style={styles.card}>
-              <View style={styles.statusBox}>
-                <LinearText variant="label" tone="success" style={styles.statusText}>
-                  Whisper is downloaded
+          {/* ── SECTION: TRANSCRIBER ── */}
+          <View style={styles.sectionHeaderRow}>
+            <LinearText variant="caption" style={{ fontWeight: '800', letterSpacing: 1 }}>
+              TRANSCRIBER (AUDIO)
+            </LinearText>
+            {isWhisperDownloaded && (
+              <TouchableOpacity onPress={() => handleDelete('whisper')}>
+                <LinearText variant="caption" style={{ color: n.colors.error, fontSize: 11 }}>
+                  Delete
                 </LinearText>
-                <LinearText variant="sectionTitle" style={styles.modelName}>
-                  {localWhisperPath.split('/').pop()}
-                </LinearText>
-                <LinearButton
-                  label={
-                    useLocalWhisper ? 'Local Transcription Enabled' : 'Enable Local Transcription'
-                  }
-                  variant={useLocalWhisper ? 'primary' : 'secondary'}
-                  style={styles.toggleBtn}
-                  onPress={() => setUseLocalWhisper(!useLocalWhisper)}
-                />
-                <LinearButton
-                  label="Delete Whisper"
-                  variant="ghost"
-                  style={styles.deleteBtn}
-                  textStyle={styles.deleteBtnText}
-                  onPress={() => handleDelete('whisper')}
-                />
-              </View>
-            </LinearSurface>
-          ) : downloadingWhisper || isGlobalInstalling('whisper') ? (
-            <LinearSurface padded={false} style={styles.card}>
-              <View style={styles.downloadBox}>
-                {(() => {
-                  const wInstall =
-                    installSnap?.visible && installSnap.type === 'whisper' ? installSnap : null;
-                  const wPct = progressPercentFor('whisper', progressWhisper, downloadingWhisper);
-                  const wPrimary =
-                    wInstall?.stage === 'verifying'
-                      ? (wInstall.message ?? 'Verifying model integrity')
-                      : wInstall?.stage === 'preparing'
-                        ? (wInstall.message ?? 'Preparing download')
-                        : `Downloading: ${wPct}%`;
-                  const dl = wInstall?.downloadedBytes;
-                  const tl = wInstall?.totalBytes;
-                  const wSub =
-                    wInstall?.stage === 'downloading' && dl && tl
-                      ? `${formatInstallBytes(dl)} / ${formatInstallBytes(tl)}`
-                      : null;
-                  return (
-                    <>
-                      <LinearText variant="bodySmall" style={styles.progressText}>
-                        {wPrimary}
+              </TouchableOpacity>
+            )}
+          </View>
+
+          {downloadingWhisper || isGlobalInstalling('whisper') ? (
+            <View style={styles.compactProgress}>
+              {(() => {
+                const wPct = progressPercentFor('whisper', progressWhisper, downloadingWhisper);
+                return (
+                  <>
+                    <View
+                      style={{
+                        flexDirection: 'row',
+                        justifyContent: 'space-between',
+                        marginBottom: 4,
+                      }}
+                    >
+                      <LinearText variant="caption" style={{ fontWeight: '700', fontSize: 11 }}>
+                        Downloading... {wPct}%
                       </LinearText>
-                      {wSub ? (
-                        <LinearText
-                          variant="bodySmall"
-                          tone="secondary"
-                          style={styles.progressSubText}
-                        >
-                          {wSub}
-                        </LinearText>
-                      ) : null}
-                      <View style={styles.progressBarBg}>
-                        <View style={[styles.progressBarFill, { width: `${wPct}%` }]} />
-                      </View>
-                      <LinearText variant="bodySmall" tone="secondary" style={styles.progressHint}>
-                        Matches the install banner (startup + this screen share one status).
-                      </LinearText>
-                    </>
-                  );
-                })()}
-                <LinearButton
-                  label="Cancel"
-                  variant="ghost"
-                  style={styles.cancelBtn}
-                  textStyle={styles.cancelBtnText}
-                  onPress={() => cancelDownload('whisper')}
-                />
-              </View>
-            </LinearSurface>
+                      <TouchableOpacity onPress={() => cancelDownload('whisper')}>
+                        <Text style={{ color: n.colors.error, fontSize: 11 }}>Cancel</Text>
+                      </TouchableOpacity>
+                    </View>
+                    <View style={styles.progressBarBg}>
+                      <View style={[styles.progressBarFill, { width: `${wPct}%` }]} />
+                    </View>
+                  </>
+                );
+              })()}
+            </View>
           ) : (
-            WHISPER_MODELS.map((model) => (
-              <LinearSurface key={model.id} padded={false} style={[styles.card, styles.modelCard]}>
-                <LinearText variant="sectionTitle" style={styles.modelName}>
-                  {model.name}
-                </LinearText>
-                <LinearText variant="bodySmall" tone="secondary" style={styles.modelDesc}>
-                  {model.desc}
-                </LinearText>
-                {existingWhisperFiles.has(model.id) ? (
-                  <LinearButton
-                    label="On Device - Use This"
-                    variant="secondary"
-                    style={styles.downloadBtn}
-                    onPress={() => handleDownload(model, 'whisper')}
-                    leftIcon={
-                      <Ionicons name="checkmark-circle" size={18} color={n.colors.success} />
-                    }
-                  />
-                ) : (
-                  <LinearButton
-                    label="Download"
-                    style={styles.downloadBtn}
-                    variant="primary"
-                    onPress={() => handleDownload(model, 'whisper')}
-                    leftIcon={<Ionicons name="arrow-down-outline" size={18} color="#fff" />}
-                  />
-                )}
-              </LinearSurface>
-            ))
+            renderModelList(WHISPER_MODELS, 'whisper', existingWhisperFiles)
           )}
-        </ResponsiveContainer>
+
+          <TouchableOpacity
+            style={styles.compactImportBtn}
+            onPress={() => handleImportModel('whisper')}
+          >
+            <Ionicons name="folder-open-outline" size={12} color={n.colors.textMuted} />
+            <Text style={styles.compactImportBtnText}>Import custom Whisper .bin</Text>
+          </TouchableOpacity>
+        </LinearSurface>
       </ScrollView>
     </SafeAreaView>
   );
@@ -865,49 +755,102 @@ export default function LocalModelScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: n.colors.background },
-  content: { padding: 20, paddingBottom: 60 },
-  screenHeader: { marginBottom: 24 },
-  screenHeaderTitle: { fontSize: 24, fontWeight: '800' },
-  sectionHeader: { marginBottom: 8 },
-  divider: { marginVertical: 30 },
-  desc: { lineHeight: 22, marginBottom: 20 },
-  importBtn: { marginBottom: 12 },
-  warningCard: {
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 16,
-  },
-  warningTitle: { marginBottom: 6 },
-  warningText: { lineHeight: 19 },
-  card: {
-    borderRadius: 12,
-    padding: 20,
-  },
-  modelCard: { marginBottom: 16 },
-  modelName: { marginBottom: 6 },
-  modelDesc: { marginBottom: 20 },
-  downloadBtn: { borderRadius: 10 },
-  downloadBox: { marginTop: 10 },
-  progressText: { marginBottom: 8 },
-  progressSubText: { marginTop: -4, marginBottom: 8 },
-  progressHint: { marginTop: 4, marginBottom: 4, lineHeight: 18 },
-  progressBarBg: {
-    height: 8,
-    backgroundColor: n.colors.surface,
-    borderRadius: 4,
+  content: { padding: 12, paddingBottom: 30 },
+  masterCard: {
+    borderRadius: 20,
     overflow: 'hidden',
-    marginBottom: 12,
+    backgroundColor: 'rgba(255, 255, 255, 0.02)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.06)',
+    paddingBottom: 8,
   },
-  progressBarFill: { height: '100%', backgroundColor: n.colors.success },
-  cancelBtn: {},
-  cancelBtnText: { color: n.colors.error },
-  statusBox: { marginTop: 10 },
-  statusText: { marginBottom: 20 },
-  toggleBtn: {
+  sectionHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingTop: 16,
+    paddingBottom: 8,
+  },
+  modelRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+  },
+  rowDivider: {
+    height: 1,
+    backgroundColor: 'rgba(255, 255, 255, 0.04)',
+    marginHorizontal: 16,
+  },
+  sectionDivider: {
+    height: 1,
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    marginTop: 8,
+  },
+  activeBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(63, 185, 80, 0.1)',
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: 'rgba(63, 185, 80, 0.2)',
+  },
+  miniDownloadBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: n.colors.accent,
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderRadius: 8,
+    gap: 4,
+  },
+  miniDownloadBtnOwned: {
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  miniDownloadBtnText: {
+    color: '#FFFFFF',
+    fontWeight: '700',
+    fontSize: 12,
+  },
+  miniDownloadBtnTextOwned: {
+    color: n.colors.textPrimary,
+  },
+  compactImportBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    gap: 6,
+  },
+  compactImportBtnText: {
+    color: n.colors.textMuted,
+    fontSize: 11,
+    fontWeight: '500',
+  },
+  compactWarning: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(217, 119, 6, 0.05)',
+    marginHorizontal: 16,
+    padding: 8,
+    borderRadius: 8,
     marginBottom: 8,
+    gap: 8,
   },
-  toggleBtnDisabled: { opacity: 0.6 },
-  toggleBtnTextDisabled: { color: '#B79C72' },
-  deleteBtn: {},
-  deleteBtnText: { color: n.colors.error },
+  compactProgress: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+  },
+  progressBarBg: {
+    height: 4,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderRadius: 2,
+    overflow: 'hidden',
+  },
+  progressBarFill: { height: '100%', backgroundColor: n.colors.accent },
 });

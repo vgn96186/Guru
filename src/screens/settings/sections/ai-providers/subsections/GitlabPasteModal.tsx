@@ -46,16 +46,7 @@ export default function GitlabPasteModal({
             </Text>
 
             <LinearTextInput
-              style={{
-                borderWidth: 1,
-                borderColor: 'rgba(255,255,255,0.1)',
-                backgroundColor: 'rgba(0,0,0,0.3)',
-                padding: 14,
-                borderRadius: 12,
-                color: '#fff',
-                fontSize: 14,
-                marginBottom: 24,
-              }}
+              containerStyle={{ marginBottom: 24 }}
               placeholder="guru://gitlab-oauth?code=..."
               placeholderTextColor={linearTheme.colors.textMuted}
               value={pasteUrl}

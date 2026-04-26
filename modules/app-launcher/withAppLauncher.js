@@ -26,6 +26,7 @@ function withAppLauncher(config) {
       'android.permission.FOREGROUND_SERVICE_CAMERA',
       'android.permission.FOREGROUND_SERVICE_SPECIAL_USE',
       'android.permission.FOREGROUND_SERVICE_DATA_SYNC',
+      'android.permission.MANAGE_EXTERNAL_STORAGE',
     ];
     for (const perm of needed) {
       if (!perms.some((p) => p.$?.['android:name'] === perm)) {

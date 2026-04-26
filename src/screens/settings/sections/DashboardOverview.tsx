@@ -63,8 +63,6 @@ export function DashboardOverview(props: any) {
   }
 
   const isStrict = profile?.strictModeEnabled;
-  const faceTrack = profile?.faceTrackingEnabled ?? true;
-
   const topProvider = sanitizeProviderOrder(profile?.providerOrder)[0];
   // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
   const topProviderName = (PROVIDER_DISPLAY_NAMES as any)[topProvider] ?? 'Auto';
@@ -94,7 +92,11 @@ export function DashboardOverview(props: any) {
           <View style={[styles.iconWrap, { backgroundColor: `${color}15` }]}>
             <Ionicons name={icon} size={18} color={color} />
           </View>
-          <Ionicons name={onPressOverride ? "swap-horizontal" : "arrow-forward"} size={16} color="rgba(255,255,255,0.2)" />
+          <Ionicons
+            name={onPressOverride ? 'swap-horizontal' : 'arrow-forward'}
+            size={16}
+            color="rgba(255,255,255,0.2)"
+          />
         </View>
         <View style={{ marginTop: 'auto' }}>
           <LinearText variant="title" style={{ fontSize: 18, color: '#E8E8E8' }}>
@@ -108,7 +110,12 @@ export function DashboardOverview(props: any) {
             {subtitle}
           </LinearText>
           {progress !== undefined && (
-            <View style={[styles.track, { marginTop: 8, height: 4, backgroundColor: 'rgba(255,255,255,0.05)' }]}>
+            <View
+              style={[
+                styles.track,
+                { marginTop: 8, height: 4, backgroundColor: 'rgba(255,255,255,0.05)' },
+              ]}
+            >
               <View style={[styles.fill, { width: `${progress}%`, backgroundColor: color }]} />
             </View>
           )}
@@ -137,7 +144,11 @@ export function DashboardOverview(props: any) {
                 </LinearText>
               </View>
               <View style={{ flex: 1 }}>
-                <LinearText variant="meta" tone="accent" style={{ fontSize: 11, letterSpacing: 0.5, marginBottom: 2 }}>
+                <LinearText
+                  variant="meta"
+                  tone="accent"
+                  style={{ fontSize: 11, letterSpacing: 0.5, marginBottom: 2 }}
+                >
                   {greeting.toUpperCase()}
                 </LinearText>
                 <LinearText variant="title" style={{ fontSize: 24, marginBottom: 4 }}>
@@ -160,7 +171,7 @@ export function DashboardOverview(props: any) {
                 {isLocalReady ? '🟢 LOCAL LLM' : '🟡 CLOUD AI'}
               </LinearText>
               <LinearText variant="meta" tone="muted" style={{ fontSize: 10 }}>
-                {profile?.deviceSyncCode ? '🟢 SYNCED' : '⚪ STANDALONE'}
+                {profile?.syncCode ? 'SYNCED' : 'STANDALONE'}
               </LinearText>
             </View>
 

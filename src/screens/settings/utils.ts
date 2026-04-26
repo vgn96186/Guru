@@ -77,3 +77,13 @@ export function sanitizeApiValidationState(value: unknown): ApiValidationState {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return {};
   return value as ApiValidationState;
 }
+
+export function hasValue(value: string | null | undefined): boolean {
+  return Boolean(value?.trim());
+}
+
+export function getErrorMessage(error: unknown): string {
+  if (error instanceof Error && error.message) return error.message;
+  if (typeof error === 'string' && error.trim()) return error;
+  return 'Unknown error';
+}

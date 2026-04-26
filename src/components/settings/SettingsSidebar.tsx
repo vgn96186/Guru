@@ -25,7 +25,7 @@ export const SETTINGS_CATEGORIES: {
   { id: 'profile', label: 'Profile & Experience', iconName: 'person-outline' },
   { id: 'planning', label: 'Goals & Timeline', iconName: 'flag-outline' },
   { id: 'interventions', label: 'Focus & Rules', iconName: 'shield-half-outline' },
-  { id: 'ai', label: 'AI Intelligence', iconName: 'sparkles-outline' },
+  { id: 'ai', label: 'AI & Models', iconName: 'sparkles-outline' },
   { id: 'integrations', label: 'Integrations & OS', iconName: 'apps-outline' },
   { id: 'sync', label: 'Device Sync', iconName: 'sync-outline' },
   { id: 'storage', label: 'Data & Storage', iconName: 'server-outline' },

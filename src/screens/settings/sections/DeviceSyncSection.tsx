@@ -10,8 +10,7 @@ export function DeviceSyncSection(props: any) {
   return (
     <SectionToggle id="device_sync" title="Device Sync & Body Doubling" icon="sync" tint="#38BDF8">
       <SettingsToggleRow
-        label="Guru presence during sessions"
-        hint="Ambient toast messages and pulsing dot while you study. Helps with focus."
+        label="Body doubling"
         value={bodyDoubling}
         onValueChange={setBodyDoubling}
       />

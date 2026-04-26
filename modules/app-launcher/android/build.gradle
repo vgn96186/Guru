@@ -16,6 +16,7 @@ buildscript {
     dependencies {
         classpath("com.android.tools.build:gradle:${appLauncherAgpVersion}")
         classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:${appLauncherKotlinVersion}")
+        classpath("org.jetbrains.kotlin:compose-compiler-gradle-plugin:${appLauncherKotlinVersion}")
     }
 }
 

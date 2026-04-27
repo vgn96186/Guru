@@ -55,16 +55,22 @@ export function createGeminiModel(config: GeminiConfig): LanguageModelV2 {
     }
     if (Object.keys(generationConfig).length) body.generationConfig = generationConfig;
 
-    if (options.tools?.length) {
-      body.tools = [
-        {
+    if (options.tools?.length || options.webSearch) {
+      const toolsArray: Record<string, unknown>[] = [];
+      if (options.webSearch) {
+        toolsArray.push({ googleSearch: {} });
+      }
+      if (options.tools?.length) {
+        toolsArray.push({
           functionDeclarations: options.tools.map((t) => ({
             name: t.name,
             description: t.description,
-            parameters: t.inputSchema,
+            parameters: sanitizeForGeminiSchema(t.inputSchema),
           })),
-        },
-      ];
+        });
+      }
+      body.tools = toolsArray;
+
       if (options.toolChoice) {
         body.toolConfig = {
           functionCallingConfig:
@@ -90,11 +96,19 @@ export function createGeminiModel(config: GeminiConfig): LanguageModelV2 {
     const headers: Record<string, string> = { 'Content-Type': 'application/json' };
 
     if (config.isVertex && config.vertexProject && config.vertexLocation) {
-      url = `https://${config.vertexLocation}-aiplatform.googleapis.com/v1/projects/${config.vertexProject}/locations/${config.vertexLocation}/publishers/google/models/${config.modelId}:${path}`;
+      const location = config.vertexLocation;
+      url = `https://${location}-aiplatform.googleapis.com/v1/projects/${config.vertexProject}/locations/${location}/publishers/google/models/${config.modelId}:${path}`;
       headers['Authorization'] = `Bearer ${config.apiKey}`;
     } else {
-      const base = config.baseUrl ?? 'https://generativelanguage.googleapis.com/v1beta';
-      url = `${base}/models/${config.modelId}:${path}?key=${config.apiKey}`;
+      const version =
+        config.modelId.includes('preview') || config.modelId.includes('exp') ? 'v1alpha' : 'v1beta';
+      const base = config.baseUrl ?? `https://generativelanguage.googleapis.com/${version}`;
+      const separator = path.includes('?') ? '&' : '?';
+      url = `${base}/models/${config.modelId}:${path}${separator}key=${config.apiKey}`;
+    }
+
+    if (__DEV__) {
+      console.log(`[gemini] Requesting: ${url}`);
     }
 
     return doFetch(url, {
@@ -131,6 +145,33 @@ export function createGeminiModel(config: GeminiConfig): LanguageModelV2 {
       return { stream: geminiSseToStreamParts(response), rawResponse: response };
     },
   };
+}
+
+// ─── Schema sanitization ────────────────────────────────────────────────────
+
+/**
+ * Gemini's `function_declarations.parameters` is an OpenAPI 3.0 subset and
+ * rejects standard JSON Schema keywords like `additionalProperties`, `$schema`,
+ * `$ref`, `$defs`, etc. Strip them recursively before sending.
+ */
+const GEMINI_DROP_KEYS = new Set([
+  'additionalProperties',
+  '$schema',
+  '$id',
+  '$ref',
+  '$defs',
+  'definitions',
+]);
+
+function sanitizeForGeminiSchema(schema: unknown): unknown {
+  if (!schema || typeof schema !== 'object') return schema;
+  if (Array.isArray(schema)) return schema.map(sanitizeForGeminiSchema);
+  const out: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(schema as Record<string, unknown>)) {
+    if (GEMINI_DROP_KEYS.has(k)) continue;
+    out[k] = sanitizeForGeminiSchema(v);
+  }
+  return out;
 }
 
 // ─── Message conversion ─────────────────────────────────────────────────────
@@ -334,4 +375,24 @@ async function* geminiSseToStreamParts(
       return;
     }
   }
+}
+
+export interface GroundingChunk {
+  title: string;
+  url: string;
+}
+
+/** Extract Google Search grounding metadata from a raw Gemini API response. */
+export function extractGroundingMetadata(rawResponse: unknown): GroundingChunk[] {
+  if (!rawResponse || typeof rawResponse !== 'object') return [];
+  const candidate = Array.isArray((rawResponse as any).candidates)
+    ? (rawResponse as any).candidates[0]
+    : null;
+  if (!candidate?.groundingMetadata?.groundingChunks) return [];
+  return candidate.groundingMetadata.groundingChunks
+    .filter((chunk: any) => chunk.web)
+    .map((chunk: any) => ({
+      title: chunk.web.title ?? '',
+      url: chunk.web.uri ?? '',
+    }));
 }

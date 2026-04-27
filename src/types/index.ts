@@ -20,6 +20,9 @@ export type {
   DailyLog,
 };
 
+export * from './settings';
+export * from './studyImages';
+
 export type ChatGptAccountSlot = 'primary' | 'secondary';
 
 export interface ChatGptAccountState {
@@ -265,6 +268,10 @@ export interface UserProfile {
   orbEffect?: string;
   samsungBatteryPromptShownAt?: number;
   useSPenControls?: boolean;
+  /** Configured web search provider fallback order (first = preferred). undefined = use DEFAULT_WEB_SEARCH_ORDER. */
+  webSearchOrder?: WebSearchProviderId[];
+  /** Web search providers the user has explicitly disabled. */
+  disabledWebSearchProviders?: WebSearchProviderId[];
 }
 
 export type ProviderId =
@@ -284,6 +291,22 @@ export type ProviderId =
   | 'qwen'
   | 'vertex'
   | 'local';
+
+export type WebSearchProviderId = 'brave' | 'gemini_grounding' | 'deepseek_web' | 'duckduckgo';
+
+export const DEFAULT_WEB_SEARCH_ORDER: WebSearchProviderId[] = [
+  'brave',
+  'gemini_grounding',
+  'deepseek_web',
+  'duckduckgo',
+];
+
+export const WEB_SEARCH_DISPLAY_NAMES: Record<WebSearchProviderId, string> = {
+  brave: 'Brave Search',
+  gemini_grounding: 'Gemini Grounding',
+  deepseek_web: 'DeepSeek Web Search',
+  duckduckgo: 'DuckDuckGo',
+};
 
 export const DEFAULT_PROVIDER_ORDER: ProviderId[] = [
   'chatgpt',
@@ -332,7 +355,7 @@ export const PROVIDER_DISPLAY_NAMES: Record<ProviderId, string> = {
   kilo: 'Kilo',
   deepseek: 'DeepSeek',
   agentrouter: 'AgentRouter',
-  gemini: 'Gemini',
+  gemini: 'AI Studio',
   gemini_fallback: 'Gemini (Free)',
   openrouter: 'OpenRouter',
   cloudflare: 'Cloudflare',

@@ -35,8 +35,6 @@ export interface GeminiConfig {
 }
 
 export function createGeminiModel(config: GeminiConfig): LanguageModelV2 {
-  const doFetch = config.fetch ?? fetch;
-
   const buildBody = (options: LanguageModelV2CallOptions): Record<string, unknown> => {
     const { systemInstruction, contents } = convertMessagesToGemini(options.prompt);
     const body: Record<string, unknown> = { contents };
@@ -50,7 +48,7 @@ export function createGeminiModel(config: GeminiConfig): LanguageModelV2 {
     if (options.responseFormat?.type === 'json') {
       generationConfig.responseMimeType = 'application/json';
       if (options.responseFormat.schema) {
-        generationConfig.responseSchema = options.responseFormat.schema;
+        generationConfig.responseSchema = sanitizeForGeminiSchema(options.responseFormat.schema);
       }
     }
     if (Object.keys(generationConfig).length) body.generationConfig = generationConfig;
@@ -95,9 +93,23 @@ export function createGeminiModel(config: GeminiConfig): LanguageModelV2 {
     let url: string;
     const headers: Record<string, string> = { 'Content-Type': 'application/json' };
 
-    if (config.isVertex && config.vertexProject && config.vertexLocation) {
-      const location = config.vertexLocation;
-      url = `https://${location}-aiplatform.googleapis.com/v1/projects/${config.vertexProject}/locations/${location}/publishers/google/models/${config.modelId}:${path}`;
+    // Fetch override (e.g. for testing)
+    const doFetch = config.fetch ?? globalThis.fetch;
+
+    if (config.isVertex) {
+      if (config.vertexProject && config.vertexLocation) {
+        // Vertex AI API (Service Account or AQ key)
+        const location = config.vertexLocation;
+        url = `https://${location}-aiplatform.googleapis.com/v1/projects/${config.vertexProject}/locations/${location}/publishers/google/models/${config.modelId}:${path}`;
+      } else {
+        // Agent Platform API Key (Vertex Express mode)
+        const version =
+          config.modelId.includes('preview') || config.modelId.includes('exp')
+            ? 'v1alpha'
+            : 'v1beta';
+        const separator = path.includes('?') ? '&' : '?';
+        url = `https://aiplatform.googleapis.com/${version}/publishers/google/models/${config.modelId}:${path}${separator}key=${config.apiKey}`;
+      }
       const isApiKey = config.apiKey.startsWith('AIza') || config.apiKey.startsWith('AQ');
       if (isApiKey) {
         headers['x-goog-api-key'] = config.apiKey;
@@ -112,15 +124,20 @@ export function createGeminiModel(config: GeminiConfig): LanguageModelV2 {
       url = `${base}/models/${config.modelId}:${path}${separator}key=${config.apiKey}`;
     }
 
-    if (__DEV__) {
+    if (typeof __DEV__ !== 'undefined' && __DEV__) {
       console.log(`[gemini] Requesting: ${url}`);
     }
 
+    // Pass the standard react-native RequestInit, ensuring we don't accidentally pass
+    // an abort controller that crashes the native fetch implementation if it's polyfilled weirdly
     return doFetch(url, {
       method: 'POST',
       headers,
       body: JSON.stringify(body),
-      signal,
+      // Only pass signal if it's explicitly provided, some older polyfills choke on undefined
+      ...(signal ? { signal } : {}),
+      // @ts-ignore - react-native specific flag to enable streaming fetch in some environments
+      reactNative: { textStreaming: true },
     });
   };
 
@@ -144,9 +161,6 @@ export function createGeminiModel(config: GeminiConfig): LanguageModelV2 {
         buildBody(options),
         options.abortSignal,
       );
-      if (!response.ok) {
-        throw new Error(`[gemini] ${response.status}: ${await response.text()}`);
-      }
       return { stream: geminiSseToStreamParts(response), rawResponse: response };
     },
   };
@@ -160,9 +174,20 @@ export function createGeminiModel(config: GeminiConfig): LanguageModelV2 {
  * `$ref`, `$defs`, etc. Strip them recursively before sending.
  */
 const GEMINI_DROP_KEYS = new Set([
+  'propertyNames',
   'additionalProperties',
+  'patternProperties',
   '$schema',
   '$id',
+  'oneOf',
+  'anyOf',
+  'allOf',
+  'not',
+  'if',
+  'then',
+  'else',
+  'dependentSchemas',
+  'unevaluatedProperties',
   '$ref',
   '$defs',
   'definitions',
@@ -267,7 +292,6 @@ function parseGeminiResponse(json: unknown): LanguageModelV2GenerateResult {
   const r = json as GeminiResponseJson;
   const candidate = r?.candidates?.[0];
   const parts: Array<TextPart | ToolCallPart> = [];
-  let toolCallCounter = 0;
   for (const p of candidate?.content?.parts ?? []) {
     if (typeof p['text'] === 'string' && p['text'])
       parts.push({ type: 'text', text: p['text'] as string });
@@ -275,7 +299,7 @@ function parseGeminiResponse(json: unknown): LanguageModelV2GenerateResult {
     if (fc) {
       parts.push({
         type: 'tool-call',
-        toolCallId: `gemini_tc_${++toolCallCounter}`,
+        toolCallId: `gemini_tc_${Math.random().toString(36).slice(2)}`,
         toolName: fc.name,
         input: fc.args ?? {},
       });
@@ -309,108 +333,265 @@ function mapGeminiFinish(r: string | undefined): FinishReason {
 
 // ─── Streaming ──────────────────────────────────────────────────────────────
 
-async function* geminiSseToStreamParts(
-  response: Response,
-): AsyncGenerator<LanguageModelV2StreamPart> {
-  const reader = response.body?.getReader();
-  if (!reader) {
-    yield { type: 'error', error: new Error('No readable body') };
-    return;
-  }
-  const decoder = new TextDecoder();
-  let buffer = '';
+/** Helper to parse a chunk of SSE data from Gemini */
+function* parseSseChunks(buffer: string): IterableIterator<LanguageModelV2StreamPart> {
+  const boundaryRegex = /\r?\n\r?\n/g;
+  let match: RegExpExecArray | null;
+  let remainingBuffer = buffer;
   let textStarted = false;
   const textId = 'text-0';
   let finishReason: FinishReason = 'stop';
   const usage: LanguageModelV2Usage = {};
   let toolCallCounter = 0;
 
-  while (true) {
-    const { done, value } = await reader.read();
-    if (value) buffer += decoder.decode(value, { stream: true });
-    if (done) buffer += decoder.decode();
+  // Process all complete chunks
+  while ((match = boundaryRegex.exec(remainingBuffer)) !== null) {
+    const boundary = match.index;
+    const boundaryLength = match[0].length;
+    const rawEvent = remainingBuffer.slice(0, boundary);
+    remainingBuffer = remainingBuffer.slice(boundary + boundaryLength);
+    boundaryRegex.lastIndex = 0;
 
-    let match: RegExpExecArray | null;
-    const boundaryRegex = /\r?\n\r?\n/g;
-
-    // Process all complete chunks
-    while ((match = boundaryRegex.exec(buffer)) !== null) {
-      const boundary = match.index;
-      const boundaryLength = match[0].length;
-      const rawEvent = buffer.slice(0, boundary);
-      buffer = buffer.slice(boundary + boundaryLength);
-      boundaryRegex.lastIndex = 0;
-      for (const line of rawEvent.split('\n')) {
-        const trimmed = line.trim();
-        if (!trimmed.startsWith('data:')) continue;
-        const payload = trimmed.slice(5).trim();
-        if (!payload) continue;
-        try {
-          const json = JSON.parse(payload);
-          const candidate = json?.candidates?.[0];
-          for (const p of candidate?.content?.parts ?? []) {
-            if (typeof p.text === 'string' && p.text) {
-              if (!textStarted) {
-                textStarted = true;
-                yield { type: 'text-start', id: textId };
-              }
-              yield { type: 'text-delta', id: textId, delta: p.text };
+    for (const line of rawEvent.split('\n')) {
+      const trimmed = line.trim();
+      if (!trimmed.startsWith('data:')) continue;
+      const payload = trimmed.slice(5).trim();
+      if (!payload) continue;
+      try {
+        const json = JSON.parse(payload);
+        const candidate = json?.candidates?.[0];
+        for (const p of candidate?.content?.parts ?? []) {
+          if (typeof p.text === 'string' && p.text) {
+            if (!textStarted) {
+              textStarted = true;
+              yield { type: 'text-start', id: textId };
             }
-            if (p.thought) {
-              yield { type: 'text-delta', id: 'reasoning-0', delta: String(p.thought) };
-            }
-            if (p.functionCall) {
-              yield {
-                type: 'tool-call',
-                toolCallId: `gemini_tc_${++toolCallCounter}`,
-                toolName: p.functionCall.name,
-                input: p.functionCall.args ?? {},
-              };
-            }
+            yield { type: 'text-delta', id: textId, delta: p.text };
           }
-          if (candidate?.finishReason) finishReason = mapGeminiFinish(candidate.finishReason);
-          if (json?.usageMetadata) {
-            usage.inputTokens = json.usageMetadata.promptTokenCount;
-            usage.outputTokens = json.usageMetadata.candidatesTokenCount;
-            usage.totalTokens = json.usageMetadata.totalTokenCount;
+          if (p.thought) {
+            yield { type: 'text-delta', id: 'reasoning-0', delta: String(p.thought) };
           }
-        } catch {
-          // ignore malformed chunks
+          if (p.functionCall) {
+            yield {
+              type: 'tool-call',
+              toolCallId: `gemini_tc_${++toolCallCounter}`,
+              toolName: p.functionCall.name,
+              input: p.functionCall.args ?? {},
+            };
+          }
         }
+        if (candidate?.finishReason) finishReason = mapGeminiFinish(candidate.finishReason);
+        if (json?.usageMetadata) {
+          usage.inputTokens = json.usageMetadata.promptTokenCount;
+          usage.outputTokens = json.usageMetadata.candidatesTokenCount;
+          usage.totalTokens = json.usageMetadata.totalTokenCount;
+        }
+      } catch {
+        // ignore malformed chunks
       }
     }
+  }
 
-    if (done) {
-      // Process any remaining buffer that didn't end with a newline boundary
-      if (buffer.trim()) {
-        for (const line of buffer.split('\n')) {
-          const trimmed = line.trim();
-          if (!trimmed.startsWith('data:')) continue;
-          const payload = trimmed.slice(5).trim();
-          if (!payload) continue;
-          try {
-            const json = JSON.parse(payload);
-            const candidate = json?.candidates?.[0];
-            for (const p of candidate?.content?.parts ?? []) {
-              if (typeof p.text === 'string' && p.text) {
-                if (!textStarted) {
-                  textStarted = true;
-                  yield { type: 'text-start', id: textId };
-                }
-                yield { type: 'text-delta', id: textId, delta: p.text };
-              }
-            }
-          } catch {
-            // ignore
+  return remainingBuffer;
+}
+
+/**
+ * Same logic as parseSseChunks, but designed to process the entire remaining buffer
+ * when the stream is finished (or if the whole response came as one string).
+ */
+function* parseRemainingSseBuffer(buffer: string): IterableIterator<LanguageModelV2StreamPart> {
+  if (!buffer.trim()) return;
+
+  let textStarted = false;
+  const textId = 'text-0';
+  let finishReason: FinishReason = 'stop';
+  const usage: LanguageModelV2Usage = {};
+  let toolCallCounter = 0;
+
+  for (const line of buffer.split('\n')) {
+    const trimmed = line.trim();
+    if (!trimmed.startsWith('data:')) continue;
+    const payload = trimmed.slice(5).trim();
+    if (!payload) continue;
+    try {
+      const json = JSON.parse(payload);
+      const candidate = json?.candidates?.[0];
+      for (const p of candidate?.content?.parts ?? []) {
+        if (typeof p.text === 'string' && p.text) {
+          if (!textStarted) {
+            textStarted = true;
+            yield { type: 'text-start', id: textId };
           }
+          yield { type: 'text-delta', id: textId, delta: p.text };
+        }
+        if (p.thought) {
+          yield { type: 'text-delta', id: 'reasoning-0', delta: String(p.thought) };
+        }
+        if (p.functionCall) {
+          yield {
+            type: 'tool-call',
+            toolCallId: `gemini_tc_${++toolCallCounter}`,
+            toolName: p.functionCall.name,
+            input: p.functionCall.args ?? {},
+          };
         }
       }
+      if (candidate?.finishReason) finishReason = mapGeminiFinish(candidate.finishReason);
+      if (json?.usageMetadata) {
+        usage.inputTokens = json.usageMetadata.promptTokenCount;
+        usage.outputTokens = json.usageMetadata.candidatesTokenCount;
+        usage.totalTokens = json.usageMetadata.totalTokenCount;
+      }
+    } catch {
+      // ignore
+    }
+  }
 
-      if (textStarted) yield { type: 'text-end', id: textId };
-      yield { type: 'finish', finishReason, usage };
+  if (textStarted) yield { type: 'text-end', id: textId };
+  yield { type: 'finish', finishReason, usage };
+}
+
+async function* geminiSseToStreamParts(
+  response: Response,
+): AsyncGenerator<LanguageModelV2StreamPart> {
+  if (!response.body) {
+    // If we don't have a body at all, try to read the text if possible
+    try {
+      const text = await response.text();
+
+      if (!response.ok) {
+        yield { type: 'error', error: new Error(`[gemini] ${response.status}: ${text}`) };
+        return;
+      }
+      // Try to parse it as JSON first, in case it's a full JSON response and not SSE
+      try {
+        if (text.trim().startsWith('data:')) {
+          yield* parseRemainingSseBuffer(text);
+          return;
+        }
+
+        const json = JSON.parse(text);
+        const parsed = parseGeminiResponse(json);
+        for (const part of parsed.content) {
+          if (part.type === 'text') {
+            yield { type: 'text-start', id: 'text-0' };
+            yield { type: 'text-delta', id: 'text-0', delta: part.text };
+            yield { type: 'text-end', id: 'text-0' };
+          } else if (part.type === 'tool-call') {
+            yield part;
+          }
+        }
+        if (parsed.finishReason) {
+          yield { type: 'finish', finishReason: parsed.finishReason, usage: parsed.usage || {} };
+        }
+        return;
+      } catch {
+        // It's not raw JSON, it's probably SSE data that arrived all at once
+        yield {
+          type: 'error',
+          error: new Error(
+            `Streaming not supported in this environment, and response was not valid JSON. Response text: ${text.slice(0, 100)}...`,
+          ),
+        };
+        return;
+      }
+    } catch (e: any) {
+      yield {
+        type: 'error',
+        error: new Error(
+          `No readable body (Status: ${response.status}). Also failed to read text: ${e?.message ?? e}`,
+        ),
+      };
       return;
     }
   }
+
+  // React Native's fetch doesn't natively support getReader on response.body
+  // in older versions without a polyfill. We handle both cases.
+  if (!response.body || typeof (response.body as any).getReader !== 'function') {
+    // If we can't stream, we fall back to reading the entire response text
+    // and yielding it as a single chunk.
+    try {
+      const text = await response.text();
+
+      // If response is not ok, format it nicely
+      if (!response.ok) {
+        yield { type: 'error', error: new Error(`[gemini] ${response.status}: ${text}`) };
+        return;
+      }
+      // Try to parse it as JSON first, in case it's a full JSON response and not SSE
+      try {
+        const json = JSON.parse(text);
+        const parsed = parseGeminiResponse(json);
+        for (const part of parsed.content) {
+          if (part.type === 'text') {
+            yield { type: 'text-start', id: 'text-0' };
+            yield { type: 'text-delta', id: 'text-0', delta: part.text };
+            yield { type: 'text-end', id: 'text-0' };
+          } else if (part.type === 'tool-call') {
+            yield part;
+          }
+        }
+        if (parsed.finishReason) {
+          yield { type: 'finish', finishReason: parsed.finishReason, usage: parsed.usage || {} };
+        }
+        return;
+      } catch {
+        // It's not raw JSON, it's probably SSE data that arrived all at once
+        yield {
+          type: 'error',
+          error: new Error(
+            `Streaming not supported in this environment, and response was not valid JSON. Response text: ${text.slice(0, 100)}...`,
+          ),
+        };
+        return;
+      }
+    } catch (e: any) {
+      yield { type: 'error', error: new Error(`Failed to read response body: ${e?.message ?? e}`) };
+      return;
+    }
+  }
+
+  // In environments where streaming works, check if the response was ok
+  if (!response.ok) {
+    try {
+      const text = await response.text();
+      yield { type: 'error', error: new Error(`[gemini] ${response.status}: ${text}`) };
+    } catch {
+      yield { type: 'error', error: new Error(`[gemini] Status ${response.status}`) };
+    }
+    return;
+  }
+
+  // Double check reader is a function to prevent crashes in weird edge cases
+  if (typeof (response.body as any).getReader !== 'function') {
+    yield {
+      type: 'error',
+      error: new Error(
+        `Streaming not supported in this environment, getReader is not a function. Status: ${response.status}`,
+      ),
+    };
+    return;
+  }
+
+  const reader = (response.body as any).getReader();
+  const decoder = new TextDecoder();
+  let buffer = '';
+
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      buffer = yield* parseSseChunks(buffer);
+    }
+  } finally {
+    reader.releaseLock();
+  }
+
+  // flush remaining
+  buffer += decoder.decode();
+  yield* parseRemainingSseBuffer(buffer);
 }
 
 export interface GroundingChunk {

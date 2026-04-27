@@ -14,6 +14,7 @@ import {
 } from '../db/database';
 import { startMissingTopicEmbeddingSeed } from './ai/embeddingService';
 import { registerBackgroundFetch } from './backgroundTasks';
+import { registerPyqBackgroundFetch } from './pyqBackgroundTask';
 import { bootstrapLocalModels } from './localModelBootstrap';
 import { profileRepository, dailyLogRepository } from '../db/repositories';
 import { registerOfflineQueueProcessors } from './offlineQueueBootstrap';
@@ -270,6 +271,10 @@ export async function runAppBootstrap(): Promise<BootstrapOutcome> {
     }).catch((e) => console.warn('[OfflineQueue] bootstrap processing failed:', e));
     await registerBackgroundFetch().catch((e: unknown) => {
       if (__DEV__) console.warn('[AppBootstrap] Background task not registered:', e);
+    });
+
+    await registerPyqBackgroundFetch().catch((e: unknown) => {
+      if (__DEV__) console.warn('[AppBootstrap] PYQ Background task not registered:', e);
     });
 
     console.log('[AppBootstrap] Applying confidence decay...');

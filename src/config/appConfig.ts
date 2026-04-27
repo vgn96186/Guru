@@ -141,12 +141,16 @@ export const GITHUB_COPILOT_MODELS = [
 
 const GITHUB_COPILOT_MODEL_ID_SET = new Set<string>([...GITHUB_COPILOT_MODELS]);
 
-export function orderedGitHubCopilotModels(preferred?: string | null): readonly string[] {
+export function orderedGitHubCopilotModels(
+  preferred?: string | null,
+  liveModels?: readonly string[],
+): readonly string[] {
+  const baseList = liveModels && liveModels.length > 0 ? liveModels : GITHUB_COPILOT_MODELS;
   const p = (preferred ?? '').trim();
-  if (!p || !GITHUB_COPILOT_MODEL_ID_SET.has(p)) {
-    return GITHUB_COPILOT_MODELS;
+  if (!p || !baseList.includes(p)) {
+    return baseList;
   }
-  const rest = (GITHUB_COPILOT_MODELS as readonly string[]).filter((m) => m !== p);
+  const rest = baseList.filter((m) => m !== p);
   return [p, ...rest];
 }
 
@@ -212,6 +216,7 @@ export const CHATGPT_MODELS = [
   'gpt-5.1-codex',
   'gpt-5.1-codex-mini',
   'gpt-5-codex',
+  'gpt-4.1-mini',
 ] as const;
 
 /**
@@ -219,11 +224,7 @@ export const CHATGPT_MODELS = [
  * Prefer stable **2.5 / 2.0 Flash** first (better free-tier behavior and fewer surprises than preview).
  * **Preview** last so it only runs if listed models fail (saves quota for experimental IDs).
  */
-export const GEMINI_MODELS = [
-  'gemini-2.5-flash',
-  'gemini-2.0-flash',
-  'gemini-3-flash-preview',
-] as const;
+export const GEMINI_MODELS = ['gemini-2.5-flash', 'gemini-2.0-flash'] as const;
 
 /**
  * Native JSON + `responseJsonSchema` — stable IDs only (no preview) so quizzes/plans/catalyst

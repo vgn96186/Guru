@@ -15,6 +15,7 @@ import { requestNotifications } from '../services/appPermissions';
 import { warmAiContentCache } from '../services/backgroundTasks';
 import { tryCompleteGitLabDuoOAuth } from '../services/ai/gitlab';
 import { validateAiProvidersOnBoot } from '../services/ai/bootProviderValidation';
+import { fetchAllLiveGuruChatModelIds } from '../services/ai/liveModelCatalog';
 import { shouldRunAutoBackup, runAutoBackup } from '../services/unifiedBackupService';
 import { reportStartupHealth } from '../services/startupHealth';
 import { maybePromptSamsungBattery } from '../services/samsungBatteryPrompt';
@@ -160,6 +161,22 @@ export function useAppBootstrap(onFatalError?: (message: string) => void): void 
       validateTimerRef.current = setTimeout(() => {
         validateAiProvidersOnBoot().catch((e) =>
           console.warn('[AI_BOOT] Provider validation failed:', e instanceof Error ? e.message : e),
+        );
+        fetchAllLiveGuruChatModelIds({
+          chatgptConnected: currentProfile?.chatgptConnected,
+          githubCopilotConnected: currentProfile?.githubCopilotConnected,
+          gitlabDuoConnected: currentProfile?.gitlabDuoConnected,
+          poeConnected: currentProfile?.poeConnected,
+          groqKey: currentProfile?.groqApiKey,
+          orKey: currentProfile?.openrouterKey,
+          geminiKey: currentProfile?.geminiKey,
+          cfAccountId: currentProfile?.cloudflareAccountId,
+          cfApiToken: currentProfile?.cloudflareApiToken,
+          kiloApiKey: currentProfile?.kiloApiKey,
+          deepseekKey: currentProfile?.deepseekKey,
+          agentRouterKey: currentProfile?.agentRouterKey,
+        }).catch((e) =>
+          console.warn('[AI_BOOT] Live model fetch failed:', e instanceof Error ? e.message : e),
         );
       }, 2500);
       // Auto-retry disabled — users process recordings manually via Recording Vault.

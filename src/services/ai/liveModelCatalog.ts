@@ -3,7 +3,6 @@
  * Falls back to curated lists in `appConfig` when a request fails or returns nothing.
  */
 import {
-  CHATGPT_MODELS,
   CLOUDFLARE_MODELS,
   DEEPSEEK_MODELS,
   GEMINI_MODELS,
@@ -11,11 +10,19 @@ import {
   KILO_MODELS,
   AGENTROUTER_MODELS,
   OPENROUTER_FREE_MODELS,
+  CHATGPT_MODELS,
+  GITHUB_COPILOT_MODELS,
+  GITLAB_DUO_MODELS,
+  POE_MODELS,
 } from '../../config/appConfig';
 import {
   fetchGeminiChatModelIdsViaSdk,
   mergeGeminiListWithDefaults,
 } from './google/geminiListModels';
+import { getValidAccessToken, getAccountId } from './chatgpt/chatgptTokenStore';
+import { getValidGitHubToken } from './github/githubTokenStore';
+import { buildGitHubCopilotHeaders } from './github/githubCopilotClient';
+import { getGitHubCopilotApiOrigin } from './github/githubCopilotEnv';
 
 export interface LiveModelFetchMeta {
   source: 'live' | 'fallback';
@@ -144,7 +151,7 @@ async function fetchGeminiChatModelIdsRest(
         return name.startsWith('models/') ? name.slice('models/'.length) : name;
       })
       .filter((id) => id.length > 0 && !id.includes('embedding') && !id.includes('embed'));
-    const ids = mergeUnique(raw, GEMINI_MODELS);
+    const ids = mergeGeminiListWithDefaults(raw);
     return { ids, source: raw.length ? 'live' : 'fallback' };
   } catch (e) {
     return {
@@ -269,7 +276,89 @@ export async function fetchKiloModelIds(
   }
 }
 
-/** DeepSeek — static model list (direct API at api.deepseek.com). */
+/** ChatGPT Responses API — fetch models via backend-api/models. */
+export async function fetchChatGptModelIds(
+  connected: boolean,
+): Promise<{ ids: string[] } & LiveModelFetchMeta> {
+  if (!connected) {
+    return { ids: [], source: 'fallback' };
+  }
+  try {
+    // Attempt dynamic fetch from ChatGPT Backend API
+    const accessToken = await getValidAccessToken('primary');
+    const accountId = await getAccountId('primary');
+
+    const headers: Record<string, string> = {
+      Authorization: `Bearer ${accessToken}`,
+    };
+    if (accountId) headers['chatgpt-account-id'] = accountId;
+
+    const res = await fetch('https://chatgpt.com/backend-api/models', { headers });
+    if (!res.ok) {
+      return {
+        ids: [...CHATGPT_MODELS],
+        source: 'fallback',
+        error: await res.text().catch(() => String(res.status)),
+      };
+    }
+    const data = (await res.json()) as { models?: { slug?: string }[] };
+    const raw = (data.models ?? [])
+      .map((m) => m.slug)
+      .filter((id): id is string => typeof id === 'string' && id.length > 0);
+
+    // Fall back to config if live models list is somehow empty
+    // Put newest/highest version models at the front of the list by reversing the sorted result
+    const sortedRaw = raw.sort((a, b) => b.localeCompare(a));
+    const ids = mergeUnique(sortedRaw, CHATGPT_MODELS);
+    return { ids, source: raw.length ? 'live' : 'fallback' };
+  } catch (e) {
+    return {
+      ids: [...CHATGPT_MODELS],
+      source: 'fallback',
+      error: e instanceof Error ? e.message : 'network error',
+    };
+  }
+}
+
+/** GitHub Copilot — fetch models via api.githubcopilot.com/models. */
+export async function fetchGitHubCopilotModelIds(
+  connected: boolean,
+): Promise<{ ids: string[] } & LiveModelFetchMeta> {
+  if (!connected) {
+    return { ids: [], source: 'fallback' };
+  }
+  try {
+    const token = await getValidGitHubToken();
+    if (!token) throw new Error('No GitHub Copilot token');
+    const headers = buildGitHubCopilotHeaders(token);
+
+    // We only need a GET request for models
+    const res = await fetch(`${getGitHubCopilotApiOrigin()}/models`, { headers });
+    if (!res.ok) {
+      return {
+        ids: [...GITHUB_COPILOT_MODELS],
+        source: 'fallback',
+        error: await res.text().catch(() => String(res.status)),
+      };
+    }
+    const data = (await res.json()) as { data?: { id?: string }[] };
+    const raw = (data.data ?? [])
+      .map((m) => m.id)
+      .filter((id): id is string => typeof id === 'string' && id.length > 0)
+      .filter((id) => !id.includes('embedding') && !id.includes('embed'));
+
+    // Sort so newest models appear first
+    const sortedRaw = raw.sort((a, b) => b.localeCompare(a));
+    const ids = mergeUnique(sortedRaw, GITHUB_COPILOT_MODELS);
+    return { ids, source: raw.length ? 'live' : 'fallback' };
+  } catch (e) {
+    return {
+      ids: [...GITHUB_COPILOT_MODELS],
+      source: 'fallback',
+      error: e instanceof Error ? e.message : 'network error',
+    };
+  }
+}
 export function fetchDeepSeekModelIds(): { ids: string[] } & LiveModelFetchMeta {
   return { ids: [...DEEPSEEK_MODELS], source: 'fallback' };
 }
@@ -288,6 +377,9 @@ export interface LiveGuruChatModelIds {
   kilo: string[];
   deepseek: string[];
   agentrouter: string[];
+  githubCopilot: string[];
+  gitlabDuo: string[];
+  poe: string[];
   /** True if any provider returned live data this refresh */
   anyLive: boolean;
   /** Last error strings per provider (debug) */
@@ -300,14 +392,23 @@ export interface LiveGuruChatModelIds {
       | 'cloudflare'
       | 'kilo'
       | 'deepseek'
-      | 'agentrouter',
+      | 'agentrouter'
+      | 'githubCopilot'
+      | 'gitlabDuo'
+      | 'poe',
       string
     >
   >;
 }
 
+// Global cache for fallback model creation to use the absolute latest from live fetch
+export let LIVE_MODEL_CACHE: LiveGuruChatModelIds | null = null;
+
 export async function fetchAllLiveGuruChatModelIds(keys: {
   chatgptConnected?: boolean;
+  githubCopilotConnected?: boolean;
+  gitlabDuoConnected?: boolean;
+  poeConnected?: boolean;
   groqKey?: string;
   orKey?: string;
   geminiKey?: string;
@@ -317,12 +418,14 @@ export async function fetchAllLiveGuruChatModelIds(keys: {
   deepseekKey?: string;
   agentRouterKey?: string;
 }): Promise<LiveGuruChatModelIds> {
-  const [groqR, orR, gemR, cfR, kiloR] = await Promise.all([
+  const [groqR, orR, gemR, cfR, kiloR, chatgptR, copilotR] = await Promise.all([
     fetchGroqChatModelIds(keys.groqKey ?? ''),
     fetchOpenRouterFreeModelIds(keys.orKey ?? ''),
     fetchGeminiChatModelIds(keys.geminiKey ?? ''),
     fetchCloudflareChatModelIds(keys.cfAccountId ?? '', keys.cfApiToken ?? ''),
     fetchKiloModelIds(keys.kiloApiKey ?? ''),
+    fetchChatGptModelIds(!!keys.chatgptConnected),
+    fetchGitHubCopilotModelIds(!!keys.githubCopilotConnected),
   ]);
   const dsR = fetchDeepSeekModelIds();
   const arR = fetchAgentRouterModelIds();
@@ -333,16 +436,20 @@ export async function fetchAllLiveGuruChatModelIds(keys: {
   if (gemR.error) errors.gemini = gemR.error;
   if (cfR.error) errors.cloudflare = cfR.error;
   if (kiloR.error) errors.kilo = kiloR.error;
+  if (chatgptR.error) errors.chatgpt = chatgptR.error;
+  if (copilotR.error) errors.githubCopilot = copilotR.error;
 
   const anyLive =
     groqR.source === 'live' ||
     orR.source === 'live' ||
     gemR.source === 'live' ||
     cfR.source === 'live' ||
-    kiloR.source === 'live';
+    kiloR.source === 'live' ||
+    chatgptR.source === 'live' ||
+    copilotR.source === 'live';
 
-  return {
-    chatgpt: keys.chatgptConnected ? [...CHATGPT_MODELS] : [],
+  const result: LiveGuruChatModelIds = {
+    chatgpt: chatgptR.ids,
     groq: groqR.ids,
     openrouter: orR.ids,
     gemini: gemR.ids,
@@ -350,7 +457,13 @@ export async function fetchAllLiveGuruChatModelIds(keys: {
     kilo: kiloR.ids,
     deepseek: dsR.ids,
     agentrouter: arR.ids,
+    githubCopilot: copilotR.ids,
+    gitlabDuo: keys.gitlabDuoConnected ? [...GITLAB_DUO_MODELS] : [],
+    poe: keys.poeConnected ? [...POE_MODELS] : [],
     anyLive,
     errors,
   };
+
+  LIVE_MODEL_CACHE = result;
+  return result;
 }

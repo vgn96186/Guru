@@ -85,7 +85,7 @@ describe('Drizzle query parity (in-memory SQLite)', () => {
   });
 
   async function seedSubjectAndTopics(): Promise<void> {
-    const db = (await import('./database')).getDb();
+    const db = require('./database').getDb();
 
     await db.runAsync(
       `INSERT INTO subjects

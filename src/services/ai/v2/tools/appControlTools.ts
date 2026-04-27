@@ -1,8 +1,25 @@
 import { tool } from '../tool';
 import { z } from 'zod';
-import { profileRepository } from '../../../../db/repositories';
+import { profileRepository, dailyLogRepository } from '../../../../db/repositories';
 import { grantXp } from '../../../xpService';
 import { sendSyncMessage } from '../../../deviceSyncService';
+
+// --- Daily Logging ---
+
+export const logDailyReflectionTool = tool({
+  name: 'log_daily_reflection',
+  description:
+    "Log the user's mood and reflection for the day based on their conversation. Call this when the user explicitly expresses their energy levels, burnout, or satisfaction with their study session.",
+  inputSchema: z.object({
+    mood: z
+      .enum(['energetic', 'good', 'okay', 'tired', 'stressed', 'distracted'])
+      .describe('The parsed mood of the user'),
+  }),
+  execute: async ({ mood }) => {
+    await dailyLogRepository.checkinToday(mood);
+    return { success: true, mood };
+  },
+});
 
 // --- Profile & Settings Management ---
 
@@ -94,6 +111,66 @@ export const consumeStreakShieldTool = tool({
   },
 });
 
+// --- Study Session Control ---
+
+export const startStudySessionTool = tool({
+  name: 'start_study_session',
+  description:
+    'Start a study or review session for the user. Call this when the user says "Let\'s start", "I am ready", or "Start studying now".',
+  inputSchema: z.object({
+    actionType: z.enum(['study', 'review', 'deep_dive']).describe('The focus of the session'),
+    mood: z
+      .enum(['energetic', 'good', 'okay', 'tired', 'stressed', 'distracted'])
+      .optional()
+      .describe('Current user mood'),
+    durationMinutes: z.number().optional().describe('Forced strict timer in minutes'),
+  }),
+  execute: async ({ actionType, mood, durationMinutes }) => {
+    const { navigationRef } = await import('../../../../navigation/navigationRef');
+    if (navigationRef.isReady()) {
+      navigationRef.navigate('Tabs', {
+        screen: 'HomeTab',
+        params: {
+          screen: 'Session',
+          params: {
+            mood: mood ?? 'good',
+            mode: 'sprint',
+            preferredActionType: actionType,
+            forcedMinutes: durationMinutes,
+          },
+        },
+      });
+      return { success: true, action: 'navigated to session screen' };
+    }
+    return { success: false, error: 'Navigation not ready' };
+  },
+});
+
+export const startLectureModeTool = tool({
+  name: 'start_lecture_mode',
+  description:
+    'Start lecture transcription mode. Call this when the user says they are about to watch a video lecture or listen to an audio class.',
+  inputSchema: z.object({
+    subjectId: z.number().optional().describe('ID of the subject being studied, if known'),
+  }),
+  execute: async ({ subjectId }) => {
+    const { navigationRef } = await import('../../../../navigation/navigationRef');
+    if (navigationRef.isReady()) {
+      navigationRef.navigate('Tabs', {
+        screen: 'HomeTab',
+        params: {
+          screen: 'LectureMode',
+          params: {
+            subjectId,
+          },
+        },
+      });
+      return { success: true, action: 'navigated to lecture mode screen' };
+    }
+    return { success: false, error: 'Navigation not ready' };
+  },
+});
+
 // --- Device Sync / Body Doubling ---
 
 export const triggerDeviceSyncTool = tool({
@@ -114,7 +191,7 @@ export const triggerDeviceSyncTool = tool({
     subjectId: z.number().optional().describe('Required if action is LECTURE_STARTED'),
   }),
   execute: async ({ action, durationSeconds, subjectId }) => {
-    let payload: any = { type: action };
+    const payload: any = { type: action };
 
     if (action === 'BREAK_STARTED') {
       payload.durationSeconds = durationSeconds ?? 300;

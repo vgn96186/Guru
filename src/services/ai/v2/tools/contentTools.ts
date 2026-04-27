@@ -8,6 +8,69 @@ import { getDrizzleDb } from '../../../../db/drizzle';
 import { topics, questionBank, aiCache } from '../../../../db/drizzleSchema';
 import { sql, like, eq } from 'drizzle-orm';
 
+import { contentFlagsRepositoryDrizzle } from '../../../../db/repositories/contentFlagsRepository.drizzle';
+import type { ContentType } from '../../../../types';
+
+/**
+ * flag_content — Allow the AI to flag inaccurate content on the user's behalf.
+ */
+export const flagContentTool = tool({
+  name: 'flag_content',
+  description: 'Flag inaccurate, outdated, or missing medical content for manual review.',
+  inputSchema: z.object({
+    topicName: z.string().describe('The medical topic name to flag'),
+    contentType: z.string().describe('The content type (e.g., keypoints, must_know, quiz, story)'),
+    reason: z.enum(['incorrect_fact', 'outdated_info', 'wrong_dosage', 'missing_concept', 'other']),
+    note: z.string().optional().describe('Specific details about what is wrong'),
+  }),
+  execute: async ({ topicName, contentType, reason, note }) => {
+    const db = getDrizzleDb();
+
+    const rows = await db
+      .select({ id: topics.id })
+      .from(topics)
+      .where(like(sql`lower(${topics.name})`, `%${topicName.toLowerCase()}%`))
+      .limit(1);
+
+    if (!rows.length) return { error: `Topic "${topicName}" not found.` };
+
+    await contentFlagsRepositoryDrizzle.flagContentWithReason(
+      rows[0].id,
+      contentType as ContentType,
+      reason,
+      note,
+    );
+
+    return { success: true, message: `Successfully flagged ${contentType} for ${topicName}.` };
+  },
+});
+
+/**
+ * resolve_content_flag — Allow the AI to dismiss a flag.
+ */
+export const resolveContentFlagTool = tool({
+  name: 'resolve_content_flag',
+  description: 'Dismiss or resolve a flag on a piece of content after reviewing it.',
+  inputSchema: z.object({
+    topicName: z.string().describe('The medical topic name'),
+    contentType: z.string().describe('The content type (e.g., keypoints, must_know)'),
+  }),
+  execute: async ({ topicName, contentType }) => {
+    const db = getDrizzleDb();
+
+    const rows = await db
+      .select({ id: topics.id })
+      .from(topics)
+      .where(like(sql`lower(${topics.name})`, `%${topicName.toLowerCase()}%`))
+      .limit(1);
+
+    if (!rows.length) return { error: `Topic "${topicName}" not found.` };
+
+    await contentFlagsRepositoryDrizzle.resolveContentFlags(rows[0].id, contentType as ContentType);
+    return { success: true, message: `Flag resolved for ${topicName}.` };
+  },
+});
+
 /**
  * create_quiz — Generate a custom quiz for a specific topic or subject.
  */

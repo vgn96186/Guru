@@ -45,14 +45,14 @@ export default function ScreenBannerFrame({
           <LinearText
             style={[styles.title, titleStyle]}
             numberOfLines={titleNumberOfLines}
-            variant="sectionTitle"
+            variant="title"
           >
             {title}
           </LinearText>
           {subtitle ? (
             <LinearText
               style={[styles.subtitle, subtitleStyle]}
-              variant="bodySmall"
+              variant="sectionTitle"
               tone="secondary"
             >
               {subtitle}
@@ -81,6 +81,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: density.comfortable.paddingHorizontal,
     paddingVertical: density.comfortable.paddingVertical,
+    minHeight: 68, // Ensures consistent height even if rightElement is missing
   },
   backSpacer: {
     width: 48,
@@ -92,6 +93,7 @@ const styles = StyleSheet.create({
   },
   title: {
     letterSpacing: 0.3,
+    fontWeight: '800',
   },
   subtitle: {
     marginTop: 4,

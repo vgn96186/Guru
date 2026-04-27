@@ -73,7 +73,7 @@ async function loadAppLauncher({
     ensureOverlayPermission: ensureOverlayPermissionMock,
   }));
 
-  return import('./appLauncher');
+  return require('./appLauncher');
 }
 
 describe('appLauncher mock external lecture flow', () => {

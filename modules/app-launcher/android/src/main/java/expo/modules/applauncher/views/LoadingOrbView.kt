@@ -54,20 +54,24 @@ class LoadingOrbView(context: Context, appContext: AppContext) : ExpoView(contex
         }
     }
 
-    private val composeView = ComposeView(context).apply {
+    private val composeView = object : ComposeView(context) {
+        override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
+            if (!isAttachedToWindow) {
+                setMeasuredDimension(0, 0)
+                return
+            }
+            super.onMeasure(widthMeasureSpec, heightMeasureSpec)
+        }
+    }.apply {
         setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnDetachedFromWindowOrReleasedFromPool)
         layoutParams = FrameLayout.LayoutParams(
             FrameLayout.LayoutParams.MATCH_PARENT,
             FrameLayout.LayoutParams.MATCH_PARENT
         )
-        setContent {
-            LoadingOrbCompose(
-                message = messageState.value,
-                isTurbulent = isTurbulentState.value,
-                pathIntensity = pathIntensityState.value,
-                breathIntensity = breathIntensityState.value
-            )
-        }
+    }
+
+    override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
+        super.onMeasure(widthMeasureSpec, heightMeasureSpec)
     }
 
     init {
@@ -79,6 +83,15 @@ class LoadingOrbView(context: Context, appContext: AppContext) : ExpoView(contex
         composeView.setViewTreeLifecycleOwner(lifecycleOwner)
         composeView.setViewTreeSavedStateRegistryOwner(lifecycleOwner)
         lifecycleOwner.registry.currentState = Lifecycle.State.RESUMED
+        
+        composeView.setContent {
+            LoadingOrbCompose(
+                message = messageState.value,
+                isTurbulent = isTurbulentState.value,
+                pathIntensity = pathIntensityState.value,
+                breathIntensity = breathIntensityState.value
+            )
+        }
     }
 
     override fun onDetachedFromWindow() {

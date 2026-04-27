@@ -296,7 +296,7 @@ export async function seedTopics(_db: SQLite.SQLiteDatabase): Promise<void> {
   // Lazy import: TOPICS_SEED (~14,780 rows, loaded from 19 JSON assets) is
   // only needed here. On normal cold starts (topicCount > 0) this module
   // never loads, keeping the JS heap smaller.
-  const { TOPICS_SEED } = await import('../constants/syllabus/topics');
+  const { TOPICS_SEED } = require('../constants/syllabus/topics');
   await runInTransaction(async (db) => {
     // Pass 1: Insert all topics without parent links (ensures parents exist).
     // Batched multi-VALUES INSERTs to minimize JS↔native bridge crossings.

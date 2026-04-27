@@ -70,7 +70,7 @@ async function loadAiService(opts?: {
     isLocalLlmAllowedOnThisDevice: jest.fn(() => localAllowed),
   }));
 
-  const aiService = await import('./aiService');
+  const aiService = require('./aiService');
   return { aiService, chatMock };
 }
 

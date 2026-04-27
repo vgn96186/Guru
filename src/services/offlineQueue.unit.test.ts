@@ -229,7 +229,7 @@ describe('offlineQueue', () => {
         nowTs: jest.fn(() => 1000000),
       }));
 
-      const isolatedModule = await import('./offlineQueue');
+      const isolatedModule = require('./offlineQueue');
 
       await isolatedModule.processQueue();
       expect(isolatedDb.getAllAsync).toHaveBeenCalledTimes(1);
@@ -269,7 +269,7 @@ describe('offlineQueue', () => {
         nowTs: jest.fn(() => 1000000),
       }));
 
-      await import('./offlineQueue');
+      require('./offlineQueue');
 
       const activeListener = addEventListener.mock.calls.find(
         ([eventName]: [string]) => eventName === 'change',

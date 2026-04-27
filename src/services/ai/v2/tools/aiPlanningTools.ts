@@ -118,8 +118,15 @@ export const accountabilityMessagesTool = tool({
       { role: 'system', content: SYSTEM_PROMPT },
       { role: 'user', content: userPrompt },
     ];
+
+    const profile = await profileRepository.getProfile();
+    const isGpt4MiniSupported = profile?.chatgptConnected;
+    const forceOrder: ProviderId[] = isGpt4MiniSupported
+      ? ['chatgpt']
+      : ['gemini', 'openrouter', 'groq'];
+
     const { object } = await generateObject({
-      model: await buildModel(),
+      model: createGuruFallbackModel({ profile, forceOrder }),
       messages,
       schema: AccountabilityOutputSchema,
     });

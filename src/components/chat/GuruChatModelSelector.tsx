@@ -7,6 +7,7 @@ import {
   StyleSheet,
   View,
   useWindowDimensions,
+  ScrollView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import LinearText from '../primitives/LinearText';
@@ -244,9 +245,13 @@ export const GuruChatModelSelector = memo(function GuruChatModelSelector({
             </View>
           ) : null}
 
-          {/* ── Provider chip grid (wrapping, side by side) ──────── */}
+          {/* ── Provider chip grid (horizontal scroll) ──────── */}
           <View style={styles.chipScrollOuter}>
-            <View style={styles.chipScrollContent}>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.chipScrollContent}
+            >
               <View style={styles.chipGrid}>
                 {groupInfos.map(({ group, count }) => {
                   const meta = PROVIDER_META[group] ?? DEFAULT_META;
@@ -291,7 +296,7 @@ export const GuruChatModelSelector = memo(function GuruChatModelSelector({
                   );
                 })}
               </View>
-            </View>
+            </ScrollView>
           </View>
 
           {/* ── Search (scoped to selected provider) ─────────────── */}
@@ -469,7 +474,6 @@ const styles = StyleSheet.create({
   },
   chipGrid: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
     gap: n.spacing.xs + 2,
   },
   chip: {

@@ -68,7 +68,7 @@ describe('transcriptionService', () => {
 
   it('prefers Groq first when auto mode has Groq configured', async () => {
     mockTranscribeRawWithGroq.mockResolvedValue('groq transcript');
-    const { transcribeAudio } = await import('./transcriptionService');
+    const { transcribeAudio } = require('./transcriptionService');
 
     const result = await transcribeAudio({
       audioFilePath: '/tmp/lecture.m4a',
@@ -86,7 +86,7 @@ describe('transcriptionService', () => {
   it('uses Hugging Face first when selected, then falls back to local Whisper', async () => {
     mockTranscribeRawWithHuggingFace.mockRejectedValue(new Error('hf failed'));
     mockTranscribeRawWithLocalWhisper.mockResolvedValue('local fallback transcript');
-    const { transcribeAudio } = await import('./transcriptionService');
+    const { transcribeAudio } = require('./transcriptionService');
 
     const result = await transcribeAudio({
       audioFilePath: '/tmp/lecture.wav',
@@ -103,7 +103,7 @@ describe('transcriptionService', () => {
   });
 
   it('throws when no transcription backend is available', async () => {
-    const { transcribeAudio } = await import('./transcriptionService');
+    const { transcribeAudio } = require('./transcriptionService');
 
     await expect(
       transcribeAudio({
@@ -120,7 +120,7 @@ describe('transcriptionService', () => {
   it('returns analysis without embedding when embedding generation fails', async () => {
     mockTranscribeRawWithLocalWhisper.mockResolvedValue('full transcript text');
     mockGenerateEmbedding.mockRejectedValue(new Error('embedding offline'));
-    const { transcribeAudio } = await import('./transcriptionService');
+    const { transcribeAudio } = require('./transcriptionService');
 
     const result = await transcribeAudio({
       audioFilePath: '/tmp/lecture.wav',
@@ -136,7 +136,7 @@ describe('transcriptionService', () => {
 
   it('returns no-speech analysis when local Whisper yields an empty transcript', async () => {
     mockTranscribeRawWithLocalWhisper.mockResolvedValue('');
-    const { transcribeAudio } = await import('./transcriptionService');
+    const { transcribeAudio } = require('./transcriptionService');
 
     const result = await transcribeAudio({
       audioFilePath: '/tmp/lecture.wav',

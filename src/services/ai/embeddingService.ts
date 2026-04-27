@@ -10,8 +10,11 @@ import { getApiKeys } from './config';
  * Gemini `embedContent` is intentionally not mixed in here: stored vectors are not
  * dimension-compatible without a one-time re-embed migration (see product plan / Phase 5).
  */
-let _embeddingFailCount = 0;
-const EMBEDDING_FAIL_THRESHOLD = 2;
+let _geminiEmbeddingQuotaExceeded = false;
+let _openRouterEmbeddingFailCount = 0;
+const OPENROUTER_EMBEDDING_FAIL_THRESHOLD = 2;
+let _geminiEmbeddingFailCount = 0;
+const GEMINI_EMBEDDING_FAIL_THRESHOLD = 2;
 
 /** Serialize embedding work so session circuit state and logging stay coherent under concurrency. */
 let _embeddingMutexChain: Promise<void> = Promise.resolve();
@@ -44,7 +47,9 @@ function logEmbeddingDegradedOnce(message: string): void {
 
 /** Test helper — Jest runs many cases in one worker; module state must not leak across tests. */
 export function __resetEmbeddingSessionStateForTests(): void {
-  _embeddingFailCount = 0;
+  _geminiEmbeddingFailCount = 0;
+  _geminiEmbeddingQuotaExceeded = false;
+  _openRouterEmbeddingFailCount = 0;
   _jinaDisabledForSession = false;
   _embeddingOptionalNoticeLogged = false;
   _jinaNonAuthErrorLogged = false;
@@ -56,9 +61,6 @@ export function generateEmbedding(text: string): Promise<number[] | null> {
 }
 
 async function generateEmbeddingCore(text: string): Promise<number[] | null> {
-  // Circuit breaker: stop trying after repeated auth failures this session
-  if (_embeddingFailCount >= EMBEDDING_FAIL_THRESHOLD) return null;
-
   const normalized = text.trim();
   if (!normalized) return null;
 
@@ -66,7 +68,7 @@ async function generateEmbeddingCore(text: string): Promise<number[] | null> {
   const { orKey, geminiKey, jinaKey } = getApiKeys(profile);
 
   // 1. Primary: Use Gemini (text-embedding-004) if key is present (High quality, high free quota)
-  if (geminiKey) {
+  if (geminiKey && !_geminiEmbeddingQuotaExceeded) {
     try {
       const response = await fetch(
         `https://generativelanguage.googleapis.com/v1beta/models/gemini-embedding-001:embedContent?key=${geminiKey}`,
@@ -76,24 +78,36 @@ async function generateEmbeddingCore(text: string): Promise<number[] | null> {
           body: JSON.stringify({
             model: 'models/gemini-embedding-001',
             content: { parts: [{ text: normalized.slice(0, 10000) }] },
-            // Matryoshka learning supports scaling dimensions.
-            // 768 is a good balance, or leave default (3072).
-            // We'll use 768 as it's the most common stable dimension for this model series.
             outputDimensionality: 768,
           }),
         },
       );
 
       if (response.ok) {
+        _geminiEmbeddingFailCount = 0;
         const data = await response.json();
         const vector = data?.embedding?.values;
         if (Array.isArray(vector) && vector.length > 0) {
-          if (__DEV__) console.log(`[Embedding] Gemini success: 004 (${vector.length} dims)`);
+          if (__DEV__) console.log(`[Embedding] Gemini success: 001 (${vector.length} dims)`);
           return vector;
         }
       } else {
+        if (response.status === 429) {
+          _geminiEmbeddingFailCount++;
+          if (_geminiEmbeddingFailCount >= GEMINI_EMBEDDING_FAIL_THRESHOLD) {
+            _geminiEmbeddingQuotaExceeded = true;
+            if (__DEV__)
+              console.log(
+                '[Embedding] Gemini quota exhausted. Falling back permanently for this session.',
+              );
+          }
+        }
         const err = await response.text();
-        if (__DEV__) console.log('[Embedding] Gemini endpoint failed, trying OpenRouter:', err);
+        if (__DEV__)
+          console.log(
+            `[Embedding] Gemini endpoint failed (${response.status}), trying OpenRouter:`,
+            err,
+          );
       }
     } catch (err) {
       if (__DEV__) console.log('[Embedding] Gemini exception:', err);
@@ -101,7 +115,7 @@ async function generateEmbeddingCore(text: string): Promise<number[] | null> {
   }
 
   // 2. Fallback: OpenRouter OpenAI text-embedding-3-small (Requires credits)
-  if (orKey) {
+  if (orKey && _openRouterEmbeddingFailCount < OPENROUTER_EMBEDDING_FAIL_THRESHOLD) {
     try {
       const response = await fetch('https://openrouter.ai/api/v1/embeddings', {
         method: 'POST',
@@ -116,7 +130,7 @@ async function generateEmbeddingCore(text: string): Promise<number[] | null> {
       });
 
       if (response.ok) {
-        _embeddingFailCount = 0;
+        _openRouterEmbeddingFailCount = 0;
         const data = await response.json();
         const embedding = data?.data?.[0]?.embedding;
         if (Array.isArray(embedding) && embedding.length > 0) {
@@ -125,7 +139,9 @@ async function generateEmbeddingCore(text: string): Promise<number[] | null> {
           return embedding;
         }
       } else {
-        if (response.status === 401 || response.status === 403) _embeddingFailCount++;
+        if (response.status === 401 || response.status === 403 || response.status === 429) {
+          _openRouterEmbeddingFailCount++;
+        }
         if (__DEV__) console.log(`[Embedding] OpenRouter ${response.status}, skipping`);
       }
     } catch {

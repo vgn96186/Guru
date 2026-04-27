@@ -8,7 +8,7 @@
 import { z } from 'zod';
 import { tool } from '../tool';
 import { profileRepository } from '../../../../db/repositories/profileRepository';
-import { NON_STUDY_PROVIDER_ORDER } from '../../../../types';
+import { ProviderId } from '../../../../types';
 import { createGuruFallbackModel } from '../providers/guruFallback';
 import { generateObject } from '../generateObject';
 import { generateText } from '../generateText';
@@ -27,7 +27,11 @@ export const wakeUpMessageTool = tool({
 Generate a short, sharp, and motivating wake-up call. Reference "Doctor" and the morning ahead.
 Return JSON: { "title": "...", "body": "..." }`;
     const profile = await profileRepository.getProfile();
-    const model = createGuruFallbackModel({ profile });
+    const isGpt4MiniSupported = profile?.chatgptConnected;
+    const forceOrder: ProviderId[] = isGpt4MiniSupported
+      ? ['chatgpt']
+      : ['gemini', 'openrouter', 'groq'];
+    const model = createGuruFallbackModel({ profile, forceOrder });
     const { object } = await generateObject({
       model,
       messages: [
@@ -50,9 +54,13 @@ Generate exactly 8 increasingly aggressive, sharp, and sarcastic one-line remind
 Mention INI-CET/NEET-PG pressure. Be blunt. No JSON, just one message per line.`;
     const userPrompt = `The break is over. They are still on their phone. Give me 8 lines.`;
     const profile = await profileRepository.getProfile();
+    const isGpt4MiniSupported = profile?.chatgptConnected;
+    const forceOrder: ProviderId[] = isGpt4MiniSupported
+      ? ['chatgpt']
+      : ['gemini', 'openrouter', 'groq'];
     const model = createGuruFallbackModel({
       profile,
-      forceOrder: NON_STUDY_PROVIDER_ORDER,
+      forceOrder,
     });
     const { text } = await generateText({
       model,

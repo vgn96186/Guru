@@ -72,7 +72,7 @@ const styles = StyleSheet.create({
   container: {
     overflow: 'hidden',
     borderRadius: 16,
-    backgroundColor: 'transparent',
+    backgroundColor: 'rgba(6, 8, 12, 0.75)',
   },
   borderLayer: {
     ...StyleSheet.absoluteFillObject,

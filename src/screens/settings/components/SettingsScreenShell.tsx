@@ -238,7 +238,7 @@ function SettingsCategorySummary({
   return (
     <View style={{ marginBottom: 24 }}>
       <View style={{ paddingHorizontal: 4, marginBottom: 12 }}>
-        <LinearText variant="title" style={{ fontSize: 24, fontWeight: '800' }}>
+        <LinearText variant="title" style={{ fontWeight: '800' }}>
           {label}
         </LinearText>
       </View>

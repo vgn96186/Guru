@@ -4,7 +4,7 @@ import { getSessionMemoryRow, upsertSessionMemory } from '../db/queries/guruChat
 import { profileRepository } from '../db/repositories/profileRepository';
 import { createGuruFallbackModel } from './ai/v2/providers/guruFallback';
 import { generateObject } from './ai/v2/generateObject';
-import { NON_STUDY_PROVIDER_ORDER } from '../types';
+import { ProviderId } from '../types';
 import type { ModelMessage } from './ai/v2/spec';
 
 /** Regenerate rolling summary after this many new chat_history rows since last summary. */
@@ -82,13 +82,50 @@ const SummaryPayloadSchema = z.preprocess(
   (raw) => {
     if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) return raw;
     const obj = raw as Record<string, unknown>;
+
+    // Ensure summaryBullets is an array
+    if (!Array.isArray(obj.summaryBullets)) {
+      obj.summaryBullets = [];
+    }
+
+    // Normalize activeMode
+    if (obj.state && typeof obj.state === 'object' && !Array.isArray(obj.state)) {
+      const stateObj = obj.state as Record<string, unknown>;
+      if (
+        typeof stateObj.activeMode === 'string' &&
+        !GURU_TUTOR_ACTIVE_MODES.includes(stateObj.activeMode as any)
+      ) {
+        stateObj.activeMode = 'recap';
+      }
+      if (
+        typeof stateObj.lastStudentIntent === 'string' &&
+        !GURU_TUTOR_INTENTS.includes(stateObj.lastStudentIntent as any)
+      ) {
+        stateObj.lastStudentIntent = 'recap';
+      }
+    }
+
     if (obj.state !== undefined) return obj; // already nested — pass through
 
     const state: Record<string, unknown> = {};
     const rest: Record<string, unknown> = {};
     for (const [k, v] of Object.entries(obj)) {
       if (STATE_KEYS.has(k)) {
-        state[k] = v;
+        if (
+          k === 'activeMode' &&
+          typeof v === 'string' &&
+          !GURU_TUTOR_ACTIVE_MODES.includes(v as any)
+        ) {
+          state[k] = 'recap';
+        } else if (
+          k === 'lastStudentIntent' &&
+          typeof v === 'string' &&
+          !GURU_TUTOR_INTENTS.includes(v as any)
+        ) {
+          state[k] = 'recap';
+        } else {
+          state[k] = v;
+        }
       } else {
         rest[k] = v;
       }
@@ -99,13 +136,18 @@ const SummaryPayloadSchema = z.preprocess(
     return rest;
   },
   z.object({
-    summaryBullets: z.array(z.string()).min(1).max(6),
+    summaryBullets: z.array(z.string()).default([]),
     state: TutorStateSchema,
   }),
 );
 
 const SUMMARY_SYSTEM = `You compress NEET-PG/INICET tutoring chats into compact memory.
-Return strict JSON only.
+Return ONLY valid JSON.
+
+Required fields:
+- summaryBullets: string[] (array of strings, 2 to 6 short bullets, each concrete)
+- state.activeMode: MUST be one of ["diagnose", "explain", "checkpoint", "advance", "recap", "compare", "tangent_parked"]
+- state.lastStudentIntent: MUST be one of ["clarify_doubt", "direct_teach", "quiz_me", "compare", "explain_wrong_answer", "recap", "tangent", "advance"]
 
 Goals:
 - Preserve what the student is currently stuck on.
@@ -114,7 +156,7 @@ Goals:
 - Preserve the next micro-goal so future turns keep progressing.
 
 Rules:
-- summaryBullets: 2 to 6 short bullets, each one concrete.
+- Do not invent enum values for activeMode or lastStudentIntent.
 - state.questionConceptsAlreadyAsked and state.avoidReaskingConcepts should use short concept keys or phrases, not full sentences.
 - If the student said "I don't know", asked for direct teaching, or failed a concept, include that concept in avoidReaskingConcepts.
 - If the conversation drifted, capture the side topic in tangentParkingLot and keep nextMicroGoal focused on the main topic.
@@ -188,19 +230,21 @@ export async function maybeSummarizeGuruSession(
     '\nReturn updated memory JSON.',
   ].join('\n');
 
-  const messages: ModelMessage[] = [
-    { role: 'system', content: SUMMARY_SYSTEM },
-    { role: 'user', content: userContent.slice(0, 12000) },
-  ];
+  const messages: ModelMessage[] = [{ role: 'user', content: userContent.slice(0, 12000) }];
 
   try {
     const profile = await profileRepository.getProfile();
+    const isGpt4MiniSupported = profile?.chatgptConnected;
+    const forceOrder: ProviderId[] = isGpt4MiniSupported
+      ? ['chatgpt']
+      : ['gemini', 'openrouter', 'groq'];
     const model = createGuruFallbackModel({
       profile,
-      forceOrder: NON_STUDY_PROVIDER_ORDER,
+      forceOrder,
     });
     const { object: parsed } = await generateObject({
       model,
+      system: SUMMARY_SYSTEM,
       messages,
       schema: SummaryPayloadSchema,
     });

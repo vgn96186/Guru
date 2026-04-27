@@ -149,6 +149,7 @@ export function useChat(options: UseChatOptions): UseChatReturn {
           options.context?.referenceImages) as MedicalGroundingSource[] | undefined,
         searchQuery: (optionsOverride?.contextOverride?.searchQuery ??
           options.context?.searchQuery) as string | undefined,
+        modelUsed: options.model ? `${options.model.provider}/${options.model.modelId}` : undefined,
       };
       setMessages((prev) => [...prev, assistantMsg]);
 

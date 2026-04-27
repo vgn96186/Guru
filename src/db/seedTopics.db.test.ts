@@ -24,6 +24,8 @@ const SNAPSHOT = JSON.parse(
   perSubjectCounts: Record<string, number>;
 };
 
+import { getDb } from './database';
+
 describe('seedSubjects + seedTopics (integration)', () => {
   let dispose: (() => void) | null = null;
 
@@ -43,14 +45,14 @@ describe('seedSubjects + seedTopics (integration)', () => {
   });
 
   it('inserts all 19 subjects', async () => {
-    const db = (await import('./database')).getDb();
+    const db = getDb();
     await seedSubjects(db);
     const row = await db.getFirstAsync<{ c: number }>('SELECT COUNT(*) AS c FROM subjects');
     expect(row?.c).toBe(SNAPSHOT.subjectsCount);
   });
 
   it('inserts every topic tuple without data loss and wires parent links', async () => {
-    const db = (await import('./database')).getDb();
+    const db = getDb();
     await seedSubjects(db);
     await seedTopics(db);
 
@@ -90,7 +92,7 @@ describe('seedSubjects + seedTopics (integration)', () => {
   });
 
   it('is idempotent: running seedTopics twice leaves row counts unchanged', async () => {
-    const db = (await import('./database')).getDb();
+    const db = getDb();
     await seedSubjects(db);
     await seedTopics(db);
     await seedTopics(db);

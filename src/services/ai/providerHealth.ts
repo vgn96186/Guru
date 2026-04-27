@@ -560,11 +560,6 @@ export async function testVertexConnection(
   const t = token.trim();
   if (!t) return { ok: false, status: 0, message: 'API key or token required' };
 
-  // API Key mode: no project/location → test via AI Studio endpoint
-  if (!p || !l) {
-    return testGeminiConnection(t);
-  }
-
   const isApiKey = t.startsWith('AIza') || t.startsWith('AQ');
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
@@ -575,7 +570,31 @@ export async function testVertexConnection(
     headers['Authorization'] = `Bearer ${t}`;
   }
 
-  // Service Account mode: test via Vertex AI endpoint
+  // Agent Platform API Key mode (no project/location)
+  if (!p || !l) {
+    try {
+      const res = await fetch(
+        `https://aiplatform.googleapis.com/v1beta/publishers/google/models/gemini-2.0-flash:generateContent?key=${t}`,
+        {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({
+            contents: [{ role: 'user', parts: [{ text: 'Reply with one word: ok' }] }],
+            generationConfig: { maxOutputTokens: 8 },
+          }),
+        },
+      );
+      return toHealthResult(res);
+    } catch (error) {
+      return {
+        ok: false,
+        status: 0,
+        message: error instanceof Error ? error.message : 'Unknown connection error',
+      };
+    }
+  }
+
+  // Service Account / Full Vertex mode: test via Vertex AI endpoint
   try {
     const res = await fetch(
       `https://${l}-aiplatform.googleapis.com/v1/projects/${p}/locations/${l}/publishers/google/models/gemini-2.0-flash:generateContent`,

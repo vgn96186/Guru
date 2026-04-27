@@ -15,7 +15,6 @@ import {
   guruChatPickerNameForGroqModel,
   guruChatPickerNameForOpenRouterSlug,
 } from '../services/ai/guruChatModelPreference';
-import { VERTEX_MODELS } from '../config/appConfig';
 import { isAuthorizationKey } from '../services/ai/config';
 
 const MODEL_GROUP_ORDER: ModelOption['group'][] = [
@@ -101,9 +100,7 @@ export function useGuruChatModels(options: UseGuruChatModelsOptions): UseGuruCha
       vertexAiLocation,
     } = getApiKeys(profile);
 
-    // When Vertex is in API Key mode (no project/location), treat the token as an AI Studio key
-    const hasEffectiveGeminiKey =
-      Boolean(geminiKey) || (Boolean(vertexAiToken) && !vertexAiProject && !vertexAiLocation);
+    const hasEffectiveGeminiKey = Boolean(geminiKey);
 
     const list: ModelOption[] = [{ id: 'auto', name: 'Auto Route (Smart)', group: 'Local' }];
 
@@ -153,11 +150,13 @@ export function useGuruChatModels(options: UseGuruChatModelsOptions): UseGuruCha
 
     // Vertex AI models: available when project+location+token configured,
     // OR when AQ authorization key is in AI Studio field + project+location
+    // OR when Vertex token is set but project/location are empty (API key mode)
     const hasVertexServiceAccount = vertexAiToken && vertexAiProject && vertexAiLocation;
     const hasVertexViaAuthKey =
       isAuthorizationKey(geminiKey) && vertexAiProject && vertexAiLocation;
-    if (hasVertexServiceAccount || hasVertexViaAuthKey) {
-      VERTEX_MODELS.forEach((model) => {
+    const hasVertexApiKeyOnly = vertexAiToken && !vertexAiProject && !vertexAiLocation;
+    if (hasVertexServiceAccount || hasVertexViaAuthKey || hasVertexApiKeyOnly) {
+      geminiModelIds.forEach((model) => {
         list.push({
           id: `vertex/${model}`,
           name: guruChatPickerNameForGeminiModel(model),

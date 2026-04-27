@@ -2,6 +2,7 @@ package expo.modules.applauncher.views
 
 import android.content.Context
 import android.widget.FrameLayout
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.lifecycle.Lifecycle
@@ -17,6 +18,10 @@ import expo.modules.applauncher.ui.BootTransitionCompose
 
 class BootTransitionView(context: Context, appContext: AppContext) : ExpoView(context, appContext) {
 
+    private val bootPhaseState = mutableStateOf("booting")
+    private val isTurbulentState = mutableStateOf(true)
+    private var isAttached = false
+
     private val lifecycleOwner = object : LifecycleOwner, SavedStateRegistryOwner {
         val registry = LifecycleRegistry(this)
         val savedStateController = SavedStateRegistryController.create(this)
@@ -27,7 +32,15 @@ class BootTransitionView(context: Context, appContext: AppContext) : ExpoView(co
         }
     }
 
-    private val composeView = ComposeView(context).apply {
+    private val composeView = object : ComposeView(context) {
+        override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
+            if (!isAttachedToWindow) {
+                setMeasuredDimension(0, 0)
+                return
+            }
+            super.onMeasure(widthMeasureSpec, heightMeasureSpec)
+        }
+    }.apply {
         setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnDetachedFromWindowOrReleasedFromPool)
         layoutParams = FrameLayout.LayoutParams(
             FrameLayout.LayoutParams.MATCH_PARENT,
@@ -35,31 +48,39 @@ class BootTransitionView(context: Context, appContext: AppContext) : ExpoView(co
         )
     }
 
+    override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
+        super.onMeasure(widthMeasureSpec, heightMeasureSpec)
+    }
+
     init {
         addView(composeView)
-        updateCompose()
     }
 
-    var bootPhase: String = "booting"
-        set(value) { field = value; updateCompose() }
+    var bootPhase: String
+        get() = bootPhaseState.value
+        set(value) { bootPhaseState.value = value }
 
-    var isTurbulent: Boolean = true
-        set(value) { field = value; updateCompose() }
-
-    private fun updateCompose() {
-        composeView.setContent {
-            BootTransitionCompose(bootPhase = bootPhase, isTurbulent = isTurbulent)
-        }
-    }
+    var isTurbulent: Boolean
+        get() = isTurbulentState.value
+        set(value) { isTurbulentState.value = value }
 
     override fun onAttachedToWindow() {
         super.onAttachedToWindow()
+        isAttached = true
         composeView.setViewTreeLifecycleOwner(lifecycleOwner)
         composeView.setViewTreeSavedStateRegistryOwner(lifecycleOwner)
         lifecycleOwner.registry.currentState = Lifecycle.State.RESUMED
+        
+        composeView.setContent {
+            BootTransitionCompose(
+                bootPhase = bootPhaseState.value, 
+                isTurbulent = isTurbulentState.value
+            )
+        }
     }
 
     override fun onDetachedFromWindow() {
+        isAttached = false
         lifecycleOwner.registry.currentState = Lifecycle.State.DESTROYED
         super.onDetachedFromWindow()
     }

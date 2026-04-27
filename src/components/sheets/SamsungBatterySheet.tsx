@@ -105,6 +105,7 @@ const styles = StyleSheet.create({
     padding: n.spacing.lg,
     borderTopLeftRadius: n.radius.lg,
     borderTopRightRadius: n.radius.lg,
+    backgroundColor: 'rgba(10, 12, 16, 0.98)',
   },
   title: {
     marginBottom: n.spacing.md,

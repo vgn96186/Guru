@@ -22,12 +22,18 @@ import {
   generateErrorHuntTool,
   generateDetectiveTool,
   generateSocraticTool,
+  flagContentTool,
+  resolveContentFlagTool,
 } from './contentTools';
 import {
   guruMedicalTools,
   generateMindmapTool,
   generateFlashcardsTool,
   fetchExamDatesTool,
+  updateFlashcardTool,
+  deleteFlashcardTool,
+  scheduleNotificationTool,
+  fetchPyqTool,
 } from './medicalTools';
 import {
   guruAiPlanningTools,
@@ -65,6 +71,8 @@ export const guruContentTools = {
   generate_error_hunt: generateErrorHuntTool,
   generate_detective: generateDetectiveTool,
   generate_socratic: generateSocraticTool,
+  flag_content: flagContentTool,
+  resolve_content_flag: resolveContentFlagTool,
 };
 
 export const guruAppControlTools = {
@@ -99,6 +107,10 @@ export {
   generateMindmapTool,
   generateFlashcardsTool,
   fetchExamDatesTool,
+  updateFlashcardTool,
+  deleteFlashcardTool,
+  scheduleNotificationTool,
+  fetchPyqTool,
   generateKeypointsTool,
   generateMustKnowTool,
   generateStoryTool,
@@ -107,6 +119,8 @@ export {
   generateErrorHuntTool,
   generateDetectiveTool,
   generateSocraticTool,
+  flagContentTool,
+  resolveContentFlagTool,
   planSessionAiTool,
   accountabilityMessagesTool,
   guruPresenceMessagesTool,

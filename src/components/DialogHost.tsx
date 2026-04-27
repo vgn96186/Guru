@@ -47,8 +47,8 @@ function actionStyle(action: DialogAction, loadingActionId: string | null) {
       destructive
         ? styles.actionButtonDestructive
         : action.variant === 'secondary'
-        ? styles.actionButtonSecondary
-        : styles.actionButtonPrimary,
+          ? styles.actionButtonSecondary
+          : styles.actionButtonPrimary,
       isLoading ? styles.actionButtonDisabled : null,
     ],
     text: [
@@ -56,8 +56,8 @@ function actionStyle(action: DialogAction, loadingActionId: string | null) {
       destructive
         ? styles.actionTextDestructive
         : action.variant === 'secondary'
-        ? styles.actionTextSecondary
-        : styles.actionTextPrimary,
+          ? styles.actionTextSecondary
+          : styles.actionTextPrimary,
     ],
   };
 }
@@ -174,15 +174,15 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
   },
   dialog: {
-    backgroundColor: n.colors.surface,
+    backgroundColor: 'rgba(10, 12, 16, 0.98)',
     borderRadius: 20,
     borderWidth: 1,
     padding: n.spacing.xl,
-    shadowColor: n.colors.background,
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 16 },
-    shadowOpacity: 0.28,
+    shadowOpacity: 0.6,
     shadowRadius: 24,
-    elevation: 12,
+    elevation: 24,
   },
   badge: {
     alignSelf: 'flex-start',

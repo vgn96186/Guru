@@ -518,6 +518,149 @@ Return valid JSON matching the flashcards schema.`;
 });
 
 /** Standard tool set Guru Chat should expose. */
+import { getCachedContent, setCachedContent } from '../../../../db/queries/aiCache';
+
+/**
+ * update_flashcard — update the front or back of an existing flashcard in the AI cache.
+ */
+export const updateFlashcardTool = tool({
+  name: 'update_flashcard',
+  description: 'Update the front or back of an existing flashcard for a given topic.',
+  inputSchema: z.object({
+    topicId: z.number().describe('The ID of the topic the flashcard belongs to'),
+    cardIndex: z.number().describe('The index of the card to update (0-based)'),
+    front: z.string().optional().describe('The new front text (question)'),
+    back: z.string().optional().describe('The new back text (answer)'),
+  }),
+  execute: async ({ topicId, cardIndex, front, back }) => {
+    try {
+      const content = await getCachedContent(topicId, 'flashcards');
+      if (!content || content.type !== 'flashcards') {
+        return { success: false, error: 'No flashcards found for this topic.' };
+      }
+      if (cardIndex < 0 || cardIndex >= content.cards.length) {
+        return { success: false, error: 'Invalid card index.' };
+      }
+
+      if (front) content.cards[cardIndex].front = front;
+      if (back) content.cards[cardIndex].back = back;
+
+      await setCachedContent(topicId, 'flashcards', content, 'tool-update');
+      return { success: true, message: `Updated flashcard ${cardIndex} for topic ${topicId}.` };
+    } catch (error) {
+      return { success: false, error: error instanceof Error ? error.message : String(error) };
+    }
+  },
+});
+
+/**
+ * delete_flashcard — delete an existing flashcard from the AI cache.
+ */
+export const deleteFlashcardTool = tool({
+  name: 'delete_flashcard',
+  description: 'Delete a flashcard for a given topic by its index.',
+  inputSchema: z.object({
+    topicId: z.number().describe('The ID of the topic the flashcard belongs to'),
+    cardIndex: z.number().describe('The index of the card to delete (0-based)'),
+  }),
+  execute: async ({ topicId, cardIndex }) => {
+    try {
+      const content = await getCachedContent(topicId, 'flashcards');
+      if (!content || content.type !== 'flashcards') {
+        return { success: false, error: 'No flashcards found for this topic.' };
+      }
+      if (cardIndex < 0 || cardIndex >= content.cards.length) {
+        return { success: false, error: 'Invalid card index.' };
+      }
+
+      content.cards.splice(cardIndex, 1);
+
+      await setCachedContent(topicId, 'flashcards', content, 'tool-delete');
+      return { success: true, message: `Deleted flashcard ${cardIndex} for topic ${topicId}.` };
+    } catch (error) {
+      return { success: false, error: error instanceof Error ? error.message : String(error) };
+    }
+  },
+});
+
+/**
+ * schedule_notification — schedule a local push notification using expo-notifications.
+ */
+export const scheduleNotificationTool = tool({
+  name: 'schedule_notification',
+  description: 'Schedule a local push notification (reminder, study alert, etc.) for the user.',
+  inputSchema: z.object({
+    title: z.string().describe('Notification title (e.g., "Time to Review!")'),
+    body: z.string().describe('Notification body content'),
+    hour: z.number().min(0).max(23).describe('Hour of the day to trigger (0-23)'),
+    minute: z.number().min(0).max(59).describe('Minute of the hour to trigger (0-59)'),
+  }),
+  execute: async ({ title, body, hour, minute }) => {
+    try {
+      const Notifications = await import('expo-notifications');
+
+      const { status } = await Notifications.getPermissionsAsync();
+      if (status !== 'granted') {
+        return { success: false, error: 'Notifications are not permitted on this device.' };
+      }
+
+      const id = await Notifications.scheduleNotificationAsync({
+        content: {
+          title,
+          body,
+          sound: true,
+        },
+        trigger: {
+          type: Notifications.SchedulableTriggerInputTypes.DAILY,
+          hour,
+          minute,
+        },
+      });
+      return {
+        success: true,
+        message: `Notification scheduled for ${hour}:${minute.toString().padStart(2, '0')}`,
+        id,
+      };
+    } catch (error) {
+      return { success: false, error: error instanceof Error ? error.message : String(error) };
+    }
+  },
+});
+
+export const fetchPyqTool = tool({
+  name: 'fetch_pyq',
+  description:
+    'Fetch Previous Year Questions (PYQs) for a specific medical topic from the internet.',
+  inputSchema: z.object({
+    topic: z.string().describe('The medical topic to find PYQs for (e.g., "Tuberculosis")'),
+    exam: z.enum(['neetpg', 'inicet']).optional().describe('The specific exam to target'),
+  }),
+  execute: async ({ topic, exam }) => {
+    const { searchWeb } = await import('../../../webSearch');
+    const { profileRepository } = await import('../../../../db/repositories');
+
+    const profile = await profileRepository.getProfile().catch(() => null);
+    if (!profile) return { error: 'Profile required for web search' };
+
+    const query = `${exam ?? 'NEET-PG'} ${topic} previous year questions pyq`;
+    const results = await searchWeb({
+      query,
+      maxResults: 5,
+      profile,
+    });
+
+    return {
+      success: true,
+      results: results.map((r) => ({
+        title: r.title,
+        url: r.url,
+        snippet: r.snippet,
+        source: r.source ?? r.provider,
+      })),
+    };
+  },
+});
+
 export const guruMedicalTools = {
   search_medical: searchMedicalTool,
   lookup_topic: lookupTopicTool,
@@ -529,4 +672,8 @@ export const guruMedicalTools = {
   fetch_exam_dates: fetchExamDatesTool,
   generate_mindmap: generateMindmapTool,
   generate_flashcards: generateFlashcardsTool,
+  update_flashcard: updateFlashcardTool,
+  delete_flashcard: deleteFlashcardTool,
+  schedule_notification: scheduleNotificationTool,
+  fetch_pyq: fetchPyqTool,
 };

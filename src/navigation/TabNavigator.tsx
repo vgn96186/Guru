@@ -749,7 +749,7 @@ const styles = StyleSheet.create({
   },
   sheet: {
     position: 'absolute',
-    backgroundColor: n.colors.card,
+    backgroundColor: 'rgba(10, 12, 16, 0.98)',
     borderRadius: 24,
     borderWidth: 1,
     borderColor: n.colors.borderHighlight,

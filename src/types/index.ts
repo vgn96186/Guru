@@ -400,7 +400,8 @@ export type QuestionBankSource =
   | 'lecture_quiz'
   | 'mock_test'
   | 'live_lecture'
-  | 'manual';
+  | 'manual'
+  | 'pyq';
 
 export interface QuestionBankItem {
   id: number;

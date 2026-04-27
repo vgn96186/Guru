@@ -61,11 +61,11 @@ export default function EmptyState({
         <Texture />
       </View>
       <Ionicons name={icon} size={iconSize} color={iconColor ?? n.colors.textMuted} />
-      <LinearText variant="sectionTitle" tone="primary" style={styles.title}>
+      <LinearText variant="title" tone="primary" style={styles.title}>
         {title}
       </LinearText>
       {subtitle ? (
-        <LinearText variant="bodySmall" tone="muted" style={styles.subtitle}>
+        <LinearText variant="body" tone="muted" style={styles.subtitle}>
           {subtitle}
         </LinearText>
       ) : null}

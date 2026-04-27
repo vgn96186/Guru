@@ -39,6 +39,7 @@ import { createGitHubCopilotModel } from './githubCopilot';
 import { createGitLabDuoModel } from './gitlabDuo';
 import { createPoeModel } from './poe';
 import { createQwenModel } from './qwen';
+import { LIVE_MODEL_CACHE } from '../../liveModelCatalog';
 
 export interface GuruFallbackOptions {
   profile: UserProfile;
@@ -63,10 +64,10 @@ const DEFAULT_MODEL_IDS: Record<ProviderId, string> = {
   cloudflare: '@cf/meta/llama-3.3-70b-instruct-fp8-fast',
   github: 'gpt-4o-mini',
   gemini: 'gemini-2.0-flash',
-  gemini_fallback: 'gemini-1.5-flash',
+  gemini_fallback: 'gemini-2.0-flash',
   agentrouter: 'gpt-4o-mini',
   kilo: 'gpt-4o-mini',
-  chatgpt: 'gpt-4o-mini',
+  chatgpt: 'gpt-4o',
   github_copilot: 'gpt-4o',
   gitlab_duo: 'gpt-4o',
   poe: 'GPT-4o-Mini',
@@ -139,6 +140,20 @@ export function createGuruFallbackModel(opts: GuruFallbackOptions): LanguageMode
     (profile.providerOrder?.length ? profile.providerOrder : DEFAULT_PROVIDER_ORDER);
   const ids = {
     ...DEFAULT_MODEL_IDS,
+    ...(LIVE_MODEL_CACHE?.groq?.[0] ? { groq: LIVE_MODEL_CACHE.groq[0] } : {}),
+    ...(LIVE_MODEL_CACHE?.openrouter?.[0] ? { openrouter: LIVE_MODEL_CACHE.openrouter[0] } : {}),
+    ...(LIVE_MODEL_CACHE?.gemini?.[0] ? { gemini: LIVE_MODEL_CACHE.gemini[0] } : {}),
+    ...(LIVE_MODEL_CACHE?.gemini?.[1] ? { gemini_fallback: LIVE_MODEL_CACHE.gemini[1] } : {}),
+    ...(LIVE_MODEL_CACHE?.cloudflare?.[0] ? { cloudflare: LIVE_MODEL_CACHE.cloudflare[0] } : {}),
+    ...(LIVE_MODEL_CACHE?.kilo?.[0] ? { kilo: LIVE_MODEL_CACHE.kilo[0] } : {}),
+    ...(LIVE_MODEL_CACHE?.deepseek?.[0] ? { deepseek: LIVE_MODEL_CACHE.deepseek[0] } : {}),
+    ...(LIVE_MODEL_CACHE?.agentrouter?.[0] ? { agentrouter: LIVE_MODEL_CACHE.agentrouter[0] } : {}),
+    ...(LIVE_MODEL_CACHE?.chatgpt?.[0] ? { chatgpt: LIVE_MODEL_CACHE.chatgpt[0] } : {}),
+    ...(LIVE_MODEL_CACHE?.githubCopilot?.[0]
+      ? { github_copilot: LIVE_MODEL_CACHE.githubCopilot[0] }
+      : {}),
+    ...(LIVE_MODEL_CACHE?.gitlabDuo?.[0] ? { gitlab_duo: LIVE_MODEL_CACHE.gitlabDuo[0] } : {}),
+    ...(LIVE_MODEL_CACHE?.poe?.[0] ? { poe: LIVE_MODEL_CACHE.poe[0] } : {}),
     ...(opts.modelIds ?? {}),
     ...(chosenSelection.modelIds ?? {}),
   };

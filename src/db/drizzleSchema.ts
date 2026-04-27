@@ -7,7 +7,7 @@
 
 import { blob, integer, real, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core';
 
-const DB_DEFAULT_INICET_DATE = '2026-05-17';
+const DB_DEFAULT_INICET_DATE = '2026-11-08';
 const DB_DEFAULT_NEET_DATE = '2026-08-30';
 
 export const subjects = sqliteTable('subjects', {
@@ -232,6 +232,8 @@ export const userProfile = sqliteTable('user_profile', {
   btrStartDate: text('btr_start_date'),
   homeNoveltyCooldownHours: integer('home_novelty_cooldown_hours').notNull().default(6),
   disabledProviders: text('disabled_providers').notNull().default('[]'),
+  webSearchOrder: text('web_search_order'),
+  disabledWebSearchProviders: text('disabled_web_search_providers').notNull().default('[]'),
   jinaApiKey: text('jina_api_key').notNull().default(''),
   vertexAiProject: text('vertex_ai_project').notNull().default(''),
   vertexAiLocation: text('vertex_ai_location').notNull().default(''),

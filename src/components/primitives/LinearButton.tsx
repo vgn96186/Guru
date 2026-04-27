@@ -1,8 +1,9 @@
 import React, { useCallback, useMemo } from 'react';
-import { ActivityIndicator, Pressable, View, type PressableProps } from 'react-native';
+import { Pressable, View, type PressableProps } from 'react-native';
 import { tv } from 'tailwind-variants';
 import * as Haptics from 'expo-haptics';
 import LinearText, { type LinearTextTone } from './LinearText';
+import LoadingIndicator from './LoadingIndicator';
 
 export type LinearButtonVariant = 'primary' | 'secondary' | 'ghost';
 export type LinearButtonTone = 'neutral' | 'danger';
@@ -90,7 +91,7 @@ export default function LinearButton({
   const resolvedLabel = loading ? (loadingLabel ?? null) : label;
   const spinnerColor = getSpinnerColor(textTn);
   const leadingDecoration = loading ? (
-    <ActivityIndicator size="small" color={spinnerColor} />
+    <LoadingIndicator size="small" color={spinnerColor} />
   ) : (
     leftIcon
   );

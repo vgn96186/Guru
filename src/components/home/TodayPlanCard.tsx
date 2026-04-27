@@ -1,11 +1,12 @@
 import React, { useMemo, useState } from 'react';
-import { View, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { View, StyleSheet, TouchableOpacity } from 'react-native';
 import { type NavigationProp } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import type { TabParamList } from '../../navigation/types';
 import { linearTheme as n } from '../../theme/linearTheme';
 import LinearSurface from '../primitives/LinearSurface';
 import LinearText from '../primitives/LinearText';
+import LoadingIndicator from '../primitives/LoadingIndicator';
 import { useProfileQuery } from '../../hooks/queries/useProfile';
 import { useAppStore } from '../../store/useAppStore';
 import { getTodaysAgendaWithTimes, type TodayTask } from '../../services/studyPlanner';
@@ -127,7 +128,7 @@ export default function TodayPlanCard() {
           accessibilityLabel="Generate daily plan"
         >
           {isGenerating ? (
-            <ActivityIndicator color={n.colors.textPrimary} size="small" />
+            <LoadingIndicator color={n.colors.textPrimary} size="small" />
           ) : (
             <LinearText variant="chip" style={styles.generateBtnText}>
               GENERATE PLAN
@@ -160,7 +161,7 @@ export default function TodayPlanCard() {
           accessibilityLabel="Generate daily plan"
         >
           {isGenerating ? (
-            <ActivityIndicator color={n.colors.textPrimary} size="small" />
+            <LoadingIndicator color={n.colors.textPrimary} size="small" />
           ) : (
             <LinearText variant="chip" style={styles.generateBtnText}>
               GENERATE PLAN

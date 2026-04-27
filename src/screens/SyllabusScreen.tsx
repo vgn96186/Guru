@@ -1,13 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import {
-  View,
-  StyleSheet,
-  StatusBar,
-  FlatList,
-  TouchableOpacity,
-  ActivityIndicator,
-  ScrollView,
-} from 'react-native';
+import { View, StyleSheet, StatusBar, FlatList, TouchableOpacity, ScrollView } from 'react-native';
 import { showInfo } from '../components/dialogService';
 import ReAnimated, {
   useSharedValue,
@@ -666,7 +658,7 @@ function SyllabusScreenContent() {
                   accessibilityLabel={refreshing ? 'Syncing' : 'Refresh syllabus'}
                 >
                   {refreshing ? (
-                    <ActivityIndicator size="small" color={n.colors.textSecondary} />
+                    <LoadingOrb size="small" color={n.colors.textSecondary} />
                   ) : (
                     <Ionicons name="sync-outline" size={17} color={n.colors.textSecondary} />
                   )}
@@ -833,7 +825,7 @@ function SyllabusScreenContent() {
                         activeOpacity={0.8}
                       >
                         {busy ? (
-                          <ActivityIndicator size="small" color={n.colors.textPrimary} />
+                          <LoadingOrb size="small" color={n.colors.textPrimary} />
                         ) : (
                           <LinearText variant="caption" style={styles.suggestionApproveText}>
                             Add to syllabus

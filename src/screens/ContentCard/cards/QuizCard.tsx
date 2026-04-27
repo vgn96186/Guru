@@ -1,12 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import {
-  View,
-  ScrollView,
-  TouchableOpacity,
-  ActivityIndicator,
-  useWindowDimensions,
-  Platform,
-} from 'react-native';
+import { View, ScrollView, TouchableOpacity, useWindowDimensions, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import LinearText from '../../../components/primitives/LinearText';
@@ -16,6 +9,7 @@ import { explainTopicDeeper, generateEscalatingQuiz } from '../../../services/ai
 import { ContentFlagButton } from '../../../components/ContentFlagButton';
 import { s } from '../styles';
 import { linearTheme as n } from '../../../theme/linearTheme';
+import LoadingIndicator from '../../../components/primitives/LoadingIndicator';
 import { Props, ContextUpdater } from '../types';
 import type { QuizContent } from '../../../types';
 import { QuestionImage } from '../shared/QuestionImage';
@@ -393,14 +387,14 @@ export function QuizCard({
       )}
       {isLoadingDeepExpl && (
         <View style={s.deepExplLoading}>
-          <ActivityIndicator size="small" color={n.colors.accent} />
+          <LoadingIndicator size="small" color={n.colors.accent} />
           <LinearText style={s.deepExplLoadingText}>Guru is explaining...</LinearText>
         </View>
       )}
       {deepExplanation && <DeepExplanationBlock explanation={deepExplanation} />}
       {isLoadingEscalated && (
         <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 16, gap: 8 }}>
-          <ActivityIndicator size="small" color={n.colors.accent} />
+          <LoadingIndicator size="small" color={n.colors.accent} />
           <LinearText style={{ color: n.colors.textSecondary, fontSize: 13 }}>
             Loading harder questions...
           </LinearText>

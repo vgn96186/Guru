@@ -2,8 +2,15 @@
  * Guru Core Tools — aggregated tool sets for the AI SDK.
  */
 
-import { planSessionTool, dailyAgendaTool } from './planningTools';
+import { planSessionTool, dailyAgendaTool, updateDailyAgendaTool } from './planningTools';
 import { analyzeLectureTool, catalyzeTranscriptTool } from './lectureTools';
+import {
+  updatePreferencesTool,
+  awardXpTool,
+  consumeStreakShieldTool,
+  triggerDeviceSyncTool,
+} from './appControlTools';
+import { tagNoteTool } from '../../tools/noteLinkingTools';
 import {
   createQuizTool,
   fetchContentTool,
@@ -39,6 +46,7 @@ import {
 export const guruPlanningTools = {
   plan_session: planSessionTool,
   daily_agenda: dailyAgendaTool,
+  update_daily_agenda: updateDailyAgendaTool,
 };
 
 export const guruLectureTools = {
@@ -59,6 +67,14 @@ export const guruContentTools = {
   generate_socratic: generateSocraticTool,
 };
 
+export const guruAppControlTools = {
+  update_preferences: updatePreferencesTool,
+  award_xp: awardXpTool,
+  consume_streak_shield: consumeStreakShieldTool,
+  trigger_device_sync: triggerDeviceSyncTool,
+  tag_note: tagNoteTool,
+};
+
 /**
  * The complete suite of tools available to the Guru AI agent.
  */
@@ -69,6 +85,7 @@ export const guruCoreTools = {
   ...guruLectureTools,
   ...guruContentTools,
   ...guruNotificationTools,
+  ...guruAppControlTools,
 };
 
 // Re-export individual tools for direct usage if needed

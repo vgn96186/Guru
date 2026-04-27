@@ -12,10 +12,11 @@
  */
 
 import React from 'react';
-import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView } from 'react-native';
 import { styles } from './lectureReturn/LectureReturnSheet.styles';
 import { Ionicons } from '@expo/vector-icons';
 import { linearTheme as n } from '../theme/linearTheme';
+import LoadingIndicator from './primitives/LoadingIndicator';
 
 import { type LecturePipelineStage } from '../services/lecture/lectureSessionMonitor';
 // CONFIDENCE_LABELS and CONFIDENCE_LABELS_WITH_EMOJI removed — unused imports
@@ -363,7 +364,7 @@ export default function LectureReturnSheet(props: Props) {
               <ScrollView showsVerticalScrollIndicator={false}>
                 {isSaving && (
                   <View style={styles.inlineStatusCard}>
-                    <ActivityIndicator color={n.colors.accent} size="small" />
+                    <LoadingIndicator color={n.colors.accent} size="small" />
                     <Text style={styles.inlineStatusTitle}>Saving lecture summary</Text>
                     <Text style={styles.inlineStatusHint}>
                       Topics are being marked now. The detailed note will be enhanced in the
@@ -443,7 +444,7 @@ export default function LectureReturnSheet(props: Props) {
                         activeOpacity={0.8}
                       >
                         {generatingTopics ? (
-                          <ActivityIndicator color={n.colors.accent} size="small" />
+                          <LoadingIndicator color={n.colors.accent} size="small" />
                         ) : (
                           <>
                             <Ionicons name="sparkles-outline" size={16} color={n.colors.accent} />
@@ -462,7 +463,7 @@ export default function LectureReturnSheet(props: Props) {
               <ScrollView showsVerticalScrollIndicator={false}>
                 {quizLoading && !q ? (
                   <View style={styles.centeredBlock}>
-                    <ActivityIndicator color={n.colors.accent} size="large" />
+                    <LoadingIndicator color={n.colors.accent} size="large" />
                     <Text style={[styles.spinnerText, { marginTop: 12 }]}>Generating quiz</Text>
                   </View>
                 ) : q ? (

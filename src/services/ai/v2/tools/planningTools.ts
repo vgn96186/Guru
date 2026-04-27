@@ -90,10 +90,28 @@ export const planSessionTool = tool({
   },
 });
 
+import { dailyAgendaRepository } from '../../../../db/repositories';
+import { DailyAgendaSchema } from '../../schemas';
+
 /**
- * daily_agenda — Generate full-day study schedule based on syllabus progress.
- * Balances subjects, incorporates breaks, and upcoming mock tests.
+ * update_daily_agenda — Update the daily agenda blocks and log the planning event.
  */
+export const updateDailyAgendaTool = tool({
+  name: 'update_daily_agenda',
+  description:
+    'Update the daily agenda blocks and log the planning event. Useful for granular schedule adjustments.',
+  inputSchema: z.object({
+    date: z.string().describe('The date for the agenda (YYYY-MM-DD)'),
+    plan: DailyAgendaSchema.describe('The new daily agenda blocks'),
+    eventType: z.string().describe('Reason for update (e.g., "agenda_regenerated")'),
+    eventPayload: z.record(z.any()).describe('Metadata about the update'),
+  }),
+  execute: async ({ date, plan, eventType, eventPayload }) => {
+    await dailyAgendaRepository.saveDailyAgenda(date, plan, 'ai_agent');
+    await dailyAgendaRepository.logPlanEvent(date, eventType as any, eventPayload);
+    return { success: true, date, eventType };
+  },
+});
 export const dailyAgendaTool = tool({
   name: 'daily_agenda',
   description:

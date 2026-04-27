@@ -13,7 +13,6 @@ import {
   FlatList,
   StyleSheet,
   StatusBar,
-  ActivityIndicator,
   Modal,
   ScrollView,
   AppState,
@@ -50,12 +49,14 @@ import { TranscriptCardItem, TranscriptFile } from './vaults/components/Transcri
 import { linearTheme as n } from '../theme/linearTheme';
 import { whiteAlpha, captureBorderAlpha } from '../theme/colorUtils';
 import { EmptyState } from '../components/primitives';
-import LoadingOrb from '../components/LoadingOrb';
+import LoadingIndicator from '../components/primitives/LoadingIndicator';
 import ScreenHeader from '../components/ScreenHeader';
 import LinearButton from '../components/primitives/LinearButton';
 import LinearSurface from '../components/primitives/LinearSurface';
-import { generateJSONV2 } from '../services/ai/v2/compat';
-import type { Message } from '../services/ai/types';
+import { generateObject } from '../services/ai/v2/generateObject';
+import { createGuruFallbackModel } from '../services/ai/v2/providers/guruFallback';
+import { profileRepository } from '../db/repositories/profileRepository';
+import type { ModelMessage } from '../services/ai/v2/spec';
 import { analyzeTranscript } from '../services/transcription/analysis';
 import { generateADHDNote } from '../services/transcription/noteGeneration';
 import { saveLectureTranscript } from '../db/queries/aiCache';
@@ -121,9 +122,11 @@ const TranscriptLabelSchema = z.object({
 /** Use AI to extract a clean subject + topic label from transcript text */
 async function aiExtractLabel(text: string): Promise<{ subject: string; topic: string } | null> {
   try {
+    const profile = await profileRepository.getProfile();
+    const model = await createGuruFallbackModel({ profile, forceOrder: ['groq'] });
     // Send only first ~800 words to keep it fast and cheap
     const snippet = text.split(/\s+/).slice(0, 800).join(' ');
-    const messages: Message[] = [
+    const messages: ModelMessage[] = [
       {
         role: 'system',
         content: `You label medical lecture transcripts. Return subject and topic.
@@ -138,11 +141,11 @@ If unclear, make your best guess from the content.`,
       },
       { role: 'user', content: snippet },
     ];
-    const { object } = await generateJSONV2(
+    const { object } = await generateObject({
+      model,
       messages,
-      TranscriptLabelSchema,
-      { providerOrderOverride: ['groq'] },
-    );
+      schema: TranscriptLabelSchema,
+    });
     if (object.subject && object.topic) return object;
     return null;
   } catch {
@@ -849,7 +852,7 @@ export default function TranscriptVaultScreen() {
                 disabled={isImportingText}
                 leftIcon={
                   isImportingText ? (
-                    <ActivityIndicator size="small" color={n.colors.accent} />
+                    <LoadingIndicator size="small" color={n.colors.accent} />
                   ) : (
                     <Ionicons name="document-attach-outline" size={18} color={n.colors.accent} />
                   )
@@ -968,7 +971,7 @@ export default function TranscriptVaultScreen() {
           {/* Rename progress */}
           {renameProgress && (
             <View style={styles.renameBanner}>
-              <ActivityIndicator size="small" color={n.colors.accent} />
+              <LoadingIndicator size="small" color={n.colors.accent} />
               <LinearText style={styles.cleanupText} numberOfLines={2}>
                 {renameProgress}
               </LinearText>
@@ -978,7 +981,7 @@ export default function TranscriptVaultScreen() {
           {/* Process progress */}
           {processProgress && (
             <View style={styles.processBanner}>
-              <ActivityIndicator size="small" color={n.colors.success ?? n.colors.success} />
+              <LoadingIndicator size="small" color={n.colors.success ?? n.colors.success} />
               <LinearText style={styles.cleanupText}>
                 Processing transcript {processProgress}...
               </LinearText>
@@ -1023,7 +1026,7 @@ export default function TranscriptVaultScreen() {
 
           {loading ? (
             <View style={styles.center}>
-              <LoadingOrb message="Scanning transcripts..." size={120} />
+              <LoadingIndicator size="large" color={n.colors.accent} />
             </View>
           ) : (
             <FlatList

@@ -1,6 +1,8 @@
 import { z } from 'zod';
-import { generateJSONV2 } from '../ai/v2/compat';
-import type { Message } from '../ai/types';
+import { generateObject } from '../ai/v2/generateObject';
+import { createGuruFallbackModel } from '../ai/v2/providers/guruFallback';
+import { profileRepository } from '../../db/repositories/profileRepository';
+import type { ModelMessage } from '../ai/v2/spec';
 
 export const NoteLabelSchema = z.object({
   subject: z
@@ -18,8 +20,10 @@ export async function aiRelabelNote(
   noteText: string,
 ): Promise<{ subject: string; title: string; topics: string[] } | null> {
   try {
+    const profile = await profileRepository.getProfile();
+    const model = await createGuruFallbackModel({ profile, forceOrder: ['groq'] });
     const snippet = noteText.split(/\s+/).slice(0, 800).join(' ');
-    const messages: Message[] = [
+    const messages: ModelMessage[] = [
       {
         role: 'system',
         content: `You label medical study notes. Return a subject, title, and topics.
@@ -34,11 +38,11 @@ Subject must be one of: Anatomy, Physiology, Biochemistry, Pathology, Pharmacolo
       },
       { role: 'user', content: snippet },
     ];
-    const { object } = await generateJSONV2(
+    const { object } = await generateObject({
+      model,
       messages,
-      NoteLabelSchema,
-      { providerOrderOverride: ['groq'] },
-    );
+      schema: NoteLabelSchema,
+    });
     return object;
   } catch {
     return null;

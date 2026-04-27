@@ -69,8 +69,10 @@ describe('guruChatModelPreference', () => {
   });
 
   describe('guruChatPickerNameForGeminiModel', () => {
-    it('uppercases', () => {
-      expect(guruChatPickerNameForGeminiModel('gemini-2.0-flash')).toBe('GEMINI-2.0-FLASH');
+    it('returns model string without gemini- prefix', () => {
+      expect(guruChatPickerNameForGeminiModel('gemini-2.0-flash')).toBe('2.0-flash');
+      expect(guruChatPickerNameForGeminiModel('gemini-1.5-pro')).toBe('1.5-pro');
+      expect(guruChatPickerNameForGeminiModel('other-model')).toBe('other-model');
     });
   });
 

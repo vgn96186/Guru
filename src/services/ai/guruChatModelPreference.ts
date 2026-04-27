@@ -26,7 +26,11 @@ export function formatGuruChatModelChipLabel(modelId: string): string {
   }
   if (modelId.startsWith('gemini/')) {
     const m = modelId.slice(7);
-    return m.length > 22 ? `${m.slice(0, 20)}…` : m;
+    return `AI Studio: ${m}`;
+  }
+  if (modelId.startsWith('vertex/')) {
+    const m = modelId.slice(7);
+    return `Vertex: ${m}`;
   }
   if (modelId.startsWith('cf/')) {
     const tail = modelId.split('/').pop() ?? modelId;
@@ -69,7 +73,7 @@ export function guruChatPickerNameForOpenRouterSlug(slug: string): string {
 }
 
 export function guruChatPickerNameForGeminiModel(model: string): string {
-  return model.toUpperCase();
+  return model.replace(/^gemini-/i, '');
 }
 
 export function guruChatPickerNameForCfModel(model: string): string {

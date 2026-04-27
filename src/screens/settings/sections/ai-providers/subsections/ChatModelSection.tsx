@@ -91,7 +91,7 @@ export default function ChatModelSection({
           ...(liveGuruChatModels.gemini || []).map((m: string) => ({
             id: `gemini/${m}`,
             label: formatGuruChatModelChipLabel(`gemini/${m}`),
-            group: 'Gemini',
+            group: 'Gemini (AI Studio)',
           })),
           ...(liveGuruChatModels.cloudflare || []).map((m: string) => ({
             id: `cf/${m}`,

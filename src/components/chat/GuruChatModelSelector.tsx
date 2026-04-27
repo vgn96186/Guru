@@ -25,7 +25,7 @@ const PROVIDER_META: Record<string, { icon: string; color: string }> = {
   'Qwen (Free)': { icon: 'globe-outline', color: '#6366F1' },
   Groq: { icon: 'flash-outline', color: '#F97316' },
   OpenRouter: { icon: 'git-branch-outline', color: '#6D99FF' },
-  Gemini: { icon: 'star-outline', color: '#8B5CF6' },
+  'Gemini (AI Studio)': { icon: 'star-outline', color: '#8B5CF6' },
   'Vertex AI': { icon: 'server-outline', color: '#4285F4' },
   Cloudflare: { icon: 'cloud-outline', color: '#F48120' },
   'GitHub Models': { icon: 'logo-github', color: '#A0A0A5' },

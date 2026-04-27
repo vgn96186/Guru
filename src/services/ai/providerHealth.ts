@@ -9,7 +9,6 @@ import {
   AGENTROUTER_MODELS,
   GITHUB_MODELS_API_VERSION,
   getGitHubModelsChatCompletionsUrl,
-  VERTEX_MODELS,
 } from '../../config/appConfig';
 import { getGitLabInstanceUrl } from './gitlab/gitlabAuth';
 import {
@@ -566,16 +565,23 @@ export async function testVertexConnection(
     return testGeminiConnection(t);
   }
 
+  const isApiKey = t.startsWith('AIza') || t.startsWith('AQ');
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+  };
+  if (isApiKey) {
+    headers['x-goog-api-key'] = t;
+  } else {
+    headers['Authorization'] = `Bearer ${t}`;
+  }
+
   // Service Account mode: test via Vertex AI endpoint
   try {
     const res = await fetch(
-      `https://${l}-aiplatform.googleapis.com/v1/projects/${p}/locations/${l}/publishers/google/models/${VERTEX_MODELS[0]}:generateContent`,
+      `https://${l}-aiplatform.googleapis.com/v1/projects/${p}/locations/${l}/publishers/google/models/gemini-2.0-flash:generateContent`,
       {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${t}`,
-        },
+        headers,
         body: JSON.stringify({
           contents: [{ role: 'user', parts: [{ text: 'Reply with one word: ok' }] }],
           generationConfig: { maxOutputTokens: 8 },

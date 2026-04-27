@@ -1,11 +1,12 @@
 import React, { memo } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { FormattedGuruMessage } from './ChatFormatter';
 import { ChatImagePreview } from './ChatImagePreview';
 import { MessageSources } from './MessageSources';
 import { TypingDots } from './TypingDots';
 import LinearText from '../primitives/LinearText';
+import LoadingIndicator from '../primitives/LoadingIndicator';
 import { linearTheme as n } from '../../theme/linearTheme';
 import { whiteAlpha, accentAlpha } from '../../theme/colorUtils';
 import { ChatMessage } from '../../types/chat';
@@ -252,7 +253,7 @@ const ChatBubbleComponent = ({
                     disabled={!!imageJobKey}
                   >
                     {isGenerating ? (
-                      <ActivityIndicator size="small" color={n.colors.textPrimary} />
+                      <LoadingIndicator size="small" color={n.colors.textPrimary} />
                     ) : (
                       <Ionicons
                         name={style === 'illustration' ? 'image-outline' : 'git-network-outline'}
@@ -268,7 +269,7 @@ const ChatBubbleComponent = ({
 
           {!isUser && imageJobKey?.startsWith(`${message.id}:`) && (
             <View style={styles.responseStatusRow}>
-              <ActivityIndicator size="small" color={n.colors.accent} />
+              <LoadingIndicator size="small" color={n.colors.accent} />
               <LinearText style={styles.responseStatusText}>
                 {imageJobKey.endsWith(':chart')
                   ? 'Generating chart...'

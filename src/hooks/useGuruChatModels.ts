@@ -24,7 +24,7 @@ const MODEL_GROUP_ORDER: ModelOption['group'][] = [
   'Qwen (Free)',
   'Groq',
   'OpenRouter',
-  'Gemini',
+  'Gemini (AI Studio)',
   'Vertex AI',
   'Cloudflare',
   'GitHub Models',
@@ -102,8 +102,8 @@ export function useGuruChatModels(options: UseGuruChatModelsOptions): UseGuruCha
     } = getApiKeys(profile);
 
     // When Vertex is in API Key mode (no project/location), treat the token as an AI Studio key
-    const hasEffectiveGeminiKey = Boolean(geminiKey) ||
-      (Boolean(vertexAiToken) && !vertexAiProject && !vertexAiLocation);
+    const hasEffectiveGeminiKey =
+      Boolean(geminiKey) || (Boolean(vertexAiToken) && !vertexAiProject && !vertexAiLocation);
 
     const list: ModelOption[] = [{ id: 'auto', name: 'Auto Route (Smart)', group: 'Local' }];
 
@@ -146,7 +146,7 @@ export function useGuruChatModels(options: UseGuruChatModelsOptions): UseGuruCha
         list.push({
           id: `gemini/${model}`,
           name: guruChatPickerNameForGeminiModel(model),
-          group: 'Gemini',
+          group: 'Gemini (AI Studio)',
         });
       });
     }
@@ -154,7 +154,8 @@ export function useGuruChatModels(options: UseGuruChatModelsOptions): UseGuruCha
     // Vertex AI models: available when project+location+token configured,
     // OR when AQ authorization key is in AI Studio field + project+location
     const hasVertexServiceAccount = vertexAiToken && vertexAiProject && vertexAiLocation;
-    const hasVertexViaAuthKey = isAuthorizationKey(geminiKey) && vertexAiProject && vertexAiLocation;
+    const hasVertexViaAuthKey =
+      isAuthorizationKey(geminiKey) && vertexAiProject && vertexAiLocation;
     if (hasVertexServiceAccount || hasVertexViaAuthKey) {
       VERTEX_MODELS.forEach((model) => {
         list.push({
@@ -276,7 +277,11 @@ export function useGuruChatModels(options: UseGuruChatModelsOptions): UseGuruCha
     if (chosenModel === 'auto') return 'Auto';
     const found = availableModels.find((model) => model.id === chosenModel);
     if (!found) return 'Auto';
-    const name = found.name;
+
+    let name = found.name;
+    if (found.group === 'Gemini (AI Studio)') name = `AI Studio: ${name}`;
+    else if (found.group === 'Vertex AI') name = `Vertex: ${name}`;
+
     return name.length > 24 ? name.slice(0, 22) + '...' : name;
   }, [availableModels, chosenModel]);
 

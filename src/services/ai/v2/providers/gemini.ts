@@ -98,7 +98,12 @@ export function createGeminiModel(config: GeminiConfig): LanguageModelV2 {
     if (config.isVertex && config.vertexProject && config.vertexLocation) {
       const location = config.vertexLocation;
       url = `https://${location}-aiplatform.googleapis.com/v1/projects/${config.vertexProject}/locations/${location}/publishers/google/models/${config.modelId}:${path}`;
-      headers['Authorization'] = `Bearer ${config.apiKey}`;
+      const isApiKey = config.apiKey.startsWith('AIza') || config.apiKey.startsWith('AQ');
+      if (isApiKey) {
+        headers['x-goog-api-key'] = config.apiKey;
+      } else {
+        headers['Authorization'] = `Bearer ${config.apiKey}`;
+      }
     } else {
       const version =
         config.modelId.includes('preview') || config.modelId.includes('exp') ? 'v1alpha' : 'v1beta';
@@ -325,10 +330,16 @@ async function* geminiSseToStreamParts(
     if (value) buffer += decoder.decode(value, { stream: true });
     if (done) buffer += decoder.decode();
 
-    let boundary: number;
-    while ((boundary = buffer.indexOf('\n\n')) !== -1) {
+    let match: RegExpExecArray | null;
+    const boundaryRegex = /\r?\n\r?\n/g;
+
+    // Process all complete chunks
+    while ((match = boundaryRegex.exec(buffer)) !== null) {
+      const boundary = match.index;
+      const boundaryLength = match[0].length;
       const rawEvent = buffer.slice(0, boundary);
-      buffer = buffer.slice(boundary + 2);
+      buffer = buffer.slice(boundary + boundaryLength);
+      boundaryRegex.lastIndex = 0;
       for (const line of rawEvent.split('\n')) {
         const trimmed = line.trim();
         if (!trimmed.startsWith('data:')) continue;
@@ -370,6 +381,31 @@ async function* geminiSseToStreamParts(
     }
 
     if (done) {
+      // Process any remaining buffer that didn't end with a newline boundary
+      if (buffer.trim()) {
+        for (const line of buffer.split('\n')) {
+          const trimmed = line.trim();
+          if (!trimmed.startsWith('data:')) continue;
+          const payload = trimmed.slice(5).trim();
+          if (!payload) continue;
+          try {
+            const json = JSON.parse(payload);
+            const candidate = json?.candidates?.[0];
+            for (const p of candidate?.content?.parts ?? []) {
+              if (typeof p.text === 'string' && p.text) {
+                if (!textStarted) {
+                  textStarted = true;
+                  yield { type: 'text-start', id: textId };
+                }
+                yield { type: 'text-delta', id: textId, delta: p.text };
+              }
+            }
+          } catch {
+            // ignore
+          }
+        }
+      }
+
       if (textStarted) yield { type: 'text-end', id: textId };
       yield { type: 'finish', finishReason, usage };
       return;

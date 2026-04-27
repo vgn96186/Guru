@@ -1,8 +1,8 @@
 import React, { useCallback, useMemo } from 'react';
-import { ActivityIndicator, Pressable, View, type PressableProps } from 'react-native';
+import { Pressable, View, type PressableProps } from 'react-native';
 import { tv } from 'tailwind-variants';
 import * as Haptics from 'expo-haptics';
-
+import LoadingIndicator from './LoadingIndicator';
 export type LinearIconButtonVariant = 'ghost' | 'secondary' | 'accent' | 'danger';
 export type LinearIconButtonSize = 'sm' | 'md' | 'lg';
 export type LinearIconButtonShape = 'rounded' | 'round';
@@ -129,7 +129,7 @@ export default function LinearIconButton({
       }}
     >
       <View className={`items-center justify-center ${contentClassName ?? ''}`}>
-        {loading ? <ActivityIndicator size="small" color={finalSpinnerColor} /> : children}
+        {loading ? <LoadingIndicator size="small" color={finalSpinnerColor} /> : children}
       </View>
     </Pressable>
   );

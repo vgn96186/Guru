@@ -1,10 +1,11 @@
 import React from 'react';
-import { ActivityIndicator, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { StyleSheet, TouchableOpacity, View } from 'react-native';
 import { getAllSubjects } from '../db/queries/topics';
 import type { Subject } from '../types';
 import { linearTheme as n } from '../theme/linearTheme';
 import LinearSurface from './primitives/LinearSurface';
 import LinearText from './primitives/LinearText';
+import LoadingIndicator from './primitives/LoadingIndicator';
 
 interface Props {
   detectedSubjectName?: string | null;
@@ -52,7 +53,7 @@ export default function SubjectSelectionCard({
       )}
       {isLoading ? (
         <View style={styles.loadingRow}>
-          <ActivityIndicator color={n.colors.accent} size="small" />
+          <LoadingIndicator color={n.colors.accent} size="small" />
           <LinearText variant="bodySmall" tone="secondary">
             Loading subjects…
           </LinearText>

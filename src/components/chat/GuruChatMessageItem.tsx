@@ -1,6 +1,5 @@
 import React, { memo } from 'react';
 import {
-  ActivityIndicator,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -10,6 +9,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import LinearText from '../primitives/LinearText';
+import LoadingIndicator from '../primitives/LoadingIndicator';
 import { ChatImagePreview } from './ChatImagePreview';
 import { FormattedGuruMessage } from './FormattedGuruMessage';
 import { MessageSources } from './MessageSources';
@@ -83,7 +83,7 @@ function ActionButton({
       accessibilityLabel={accessibilityLabel}
     >
       {loading ? (
-        <ActivityIndicator size="small" color={n.colors.textPrimary} />
+        <LoadingIndicator size="small" color={n.colors.textPrimary} />
       ) : (
         <Ionicons name={icon} size={17} color={active ? n.colors.textPrimary : n.colors.accent} />
       )}
@@ -281,7 +281,7 @@ export const GuruChatMessageItem = memo(function GuruChatMessageItem({
 
               {isGeneratingImage ? (
                 <View style={styles.responseStatusRow}>
-                  <ActivityIndicator size="small" color={n.colors.accent} />
+                  <LoadingIndicator size="small" color={n.colors.accent} />
                   <LinearText style={styles.responseStatusText}>
                     {imageJobKey?.endsWith(':chart')
                       ? 'Generating chart...'
@@ -292,7 +292,7 @@ export const GuruChatMessageItem = memo(function GuruChatMessageItem({
 
               {showPendingState ? (
                 <View style={styles.responseStatusRow}>
-                  <ActivityIndicator size="small" color={n.colors.accent} />
+                  <LoadingIndicator size="small" color={n.colors.accent} />
                   <LinearText style={styles.responseStatusText}>Finishing response...</LinearText>
                 </View>
               ) : null}

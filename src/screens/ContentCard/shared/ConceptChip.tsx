@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
-import { View, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { View, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import LinearText from '../../../components/primitives/LinearText';
 import StudyMarkdown from '../../../components/StudyMarkdown';
 import { emphasizeHighYieldMarkdown } from '../../../utils/highlightMarkdown';
 import { explainQuizConcept } from '../../../services/ai';
 import { linearTheme as n } from '../../../theme/linearTheme';
+import LoadingIndicator from '../../../components/primitives/LoadingIndicator';
 
 export function ConceptChip({ concept, topicName }: { concept: string; topicName: string }) {
   const [expanded, setExpanded] = useState(false);
@@ -71,7 +72,7 @@ export function ConceptChip({ concept, topicName }: { concept: string; topicName
         >
           {loading ? (
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-              <ActivityIndicator size="small" color={n.colors.accent} />
+              <LoadingIndicator size="small" color={n.colors.accent} />
               <LinearText style={{ color: n.colors.textSecondary, fontSize: 12 }}>
                 Explaining...
               </LinearText>

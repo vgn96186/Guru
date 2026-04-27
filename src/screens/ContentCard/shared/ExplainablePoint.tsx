@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { View, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import LinearText from '../../../components/primitives/LinearText';
 import StudyMarkdown from '../../../components/StudyMarkdown';
@@ -7,6 +7,7 @@ import { emphasizeHighYieldMarkdown } from '../../../utils/highlightMarkdown';
 import { explainMostTestedRationale } from '../../../services/ai';
 import { s } from '../styles';
 import { linearTheme as n } from '../../../theme/linearTheme';
+import LoadingIndicator from '../../../components/primitives/LoadingIndicator';
 
 // ── Must Know & Most Tested ──────────────────────────────────────
 
@@ -45,7 +46,7 @@ export function ExplainablePoint({
         </View>
       ) : loading ? (
         <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 8, gap: 6 }}>
-          <ActivityIndicator size="small" color={n.colors.accent} />
+          <LoadingIndicator size="small" color={n.colors.accent} />
           <LinearText style={{ color: n.colors.textSecondary, fontSize: 13, fontStyle: 'italic' }}>
             Explaining...
           </LinearText>

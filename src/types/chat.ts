@@ -36,7 +36,7 @@ export type ModelOption = {
     | 'ChatGPT Codex'
     | 'Groq'
     | 'OpenRouter'
-    | 'Gemini'
+    | 'Gemini (AI Studio)'
     | 'Cloudflare'
     | 'GitHub Models'
     | 'GitHub Copilot'

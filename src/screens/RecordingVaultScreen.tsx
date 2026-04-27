@@ -13,11 +13,11 @@ import {
   FlatList,
   StyleSheet,
   StatusBar,
-  ActivityIndicator,
   AppState,
 } from 'react-native';
 import LinearText from '../components/primitives/LinearText';
 import { EmptyState } from '../components/primitives';
+import LoadingIndicator from '../components/primitives/LoadingIndicator';
 import { whiteAlpha } from '../theme/colorUtils';
 import * as Haptics from 'expo-haptics';
 import { Ionicons } from '@expo/vector-icons';
@@ -386,7 +386,7 @@ export default function RecordingVaultScreen() {
               {isProcessing && processingMsg ? (
                 <View style={styles.statusRow}>
                   {processingState === 'transcribing' || processingState === 'saving' ? (
-                    <ActivityIndicator
+                    <LoadingIndicator
                       size="small"
                       color={n.colors.accent}
                       style={{ marginRight: 6 }}
@@ -428,7 +428,7 @@ export default function RecordingVaultScreen() {
                     </TouchableOpacity>
                   </>
                 ) : (
-                  <ActivityIndicator size="small" color={n.colors.accent} />
+                  <LoadingIndicator size="small" color={n.colors.accent} />
                 )}
               </View>
             )}
@@ -585,7 +585,7 @@ export default function RecordingVaultScreen() {
               disabled={isUploadingAudio}
               leftIcon={
                 isUploadingAudio ? (
-                  <ActivityIndicator size="small" color={n.colors.accent} />
+                  <LoadingIndicator size="small" color={n.colors.accent} />
                 ) : (
                   <Ionicons name="cloud-upload-outline" size={18} color={n.colors.accent} />
                 )

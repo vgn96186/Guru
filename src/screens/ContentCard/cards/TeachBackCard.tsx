@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, ScrollView, TouchableOpacity, TextInput, ActivityIndicator } from 'react-native';
+import { View, ScrollView, TouchableOpacity, TextInput } from 'react-native';
 import LinearText from '../../../components/primitives/LinearText';
 import StudyMarkdown from '../../../components/StudyMarkdown';
 import { emphasizeHighYieldMarkdown } from '../../../utils/highlightMarkdown';
@@ -7,6 +7,7 @@ import { askGuru } from '../../../services/ai';
 import { ContentFlagButton } from '../../../components/ContentFlagButton';
 import { s } from '../styles';
 import { linearTheme as n } from '../../../theme/linearTheme';
+import LoadingIndicator from '../../../components/primitives/LoadingIndicator';
 import { Props, ContextUpdater } from '../types';
 import type { TeachBackContent } from '../../../types';
 import { TopicImage } from '../shared/TopicImage';
@@ -112,7 +113,7 @@ export function TeachBackCard({
             disabled={validating}
           >
             {validating ? (
-              <ActivityIndicator color="#fff" />
+              <LoadingIndicator color="#fff" />
             ) : (
               <LinearText style={s.doneBtnText}>Submit to Guru →</LinearText>
             )}

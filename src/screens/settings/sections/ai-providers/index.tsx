@@ -12,6 +12,7 @@ import RoutingSection from './subsections/RoutingSection';
 import ImageGenSection from './subsections/ImageGenSection';
 import TranscriptionSection from './subsections/TranscriptionSection';
 import LocalAiSection from './subsections/LocalAiSection';
+import WebSearchSection from './subsections/WebSearchSection';
 
 import { DEFAULT_PROVIDER_ORDER } from '../../../../types';
 import { sanitizeProviderOrder } from '../../../../utils/providerOrder';
@@ -20,7 +21,7 @@ export default function AiProvidersSection(props: AiProvidersProps) {
   const {
     styles,
     SectionToggle,
-    SubSectionToggle,
+    SubSectionToggle: _SubSectionToggle,
     profile,
     guruChat,
     guruMemory,
@@ -114,7 +115,16 @@ export default function AiProvidersSection(props: AiProvidersProps) {
         styles={styles}
       />
 
-      {/* 4. MEMORY */}
+      {/* 5. WEB SEARCH */}
+      <WebSearchSection
+        styles={styles}
+        SectionToggle={SectionToggle}
+        profile={profile}
+        updateUserProfile={updateUserProfile}
+        refreshProfile={refreshProfile}
+      />
+
+      {/* 6. MEMORY */}
       <MemorySection guruMemory={guruMemory} SectionToggle={SectionToggle} styles={styles} />
     </>
   );

@@ -12,6 +12,7 @@ import type {
 } from '../../types';
 import { DEFAULT_INICET_DATE, DEFAULT_NEET_DATE } from '../../config/appConfig';
 import { sanitizeProviderOrder } from '../../utils/providerOrder';
+import { sanitizeWebSearchOrder } from '../../utils/webSearchOrder';
 import type { WebSearchProviderId } from '../../types';
 
 // Enum allow-lists copied from progress.ts
@@ -304,9 +305,7 @@ export function mapUserProfileRow(row: UserProfileRow | undefined): UserProfile 
     })() as ProviderId[],
     webSearchOrder: (() => {
       try {
-        const parsed = JSON.parse(row.webSearchOrder ?? 'null');
-        if (Array.isArray(parsed)) return parsed as WebSearchProviderId[];
-        return undefined;
+        return sanitizeWebSearchOrder(JSON.parse(row.webSearchOrder ?? 'null'));
       } catch {
         return undefined;
       }

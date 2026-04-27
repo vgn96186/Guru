@@ -9,6 +9,7 @@ import { generateStudyImage, buildChatImageContextKey } from '../studyImageServi
 import type { GeneratedStudyImageStyle } from '../../db/queries/generatedStudyImages';
 import type { ToolSet } from './v2/tool';
 import { guruCoreTools } from './v2/tools';
+import { profileRepository } from '../../db/repositories';
 
 // Search medical schema
 const searchMedicalSchema = z.object({
@@ -33,7 +34,12 @@ const generateImageSchema = z.object({
 // Tool implementations
 const searchMedicalImpl = async (args: z.infer<typeof searchMedicalSchema>) => {
   try {
-    const results = await searchLatestMedicalSources(args.query, args.limit ?? 5);
+    const profile = await profileRepository.getProfile().catch(() => null);
+    const results = await searchLatestMedicalSources(
+      args.query,
+      args.limit ?? 5,
+      profile ?? undefined,
+    );
     return {
       results: results.map((r) => ({
         id: r.id,
@@ -55,7 +61,8 @@ const searchMedicalImpl = async (args: z.infer<typeof searchMedicalSchema>) => {
 
 const searchReferenceImagesImpl = async (args: z.infer<typeof searchReferenceImagesSchema>) => {
   try {
-    const results = await searchMedicalImages(args.query, args.limit ?? 3);
+    const profile = await profileRepository.getProfile().catch(() => null);
+    const results = await searchMedicalImages(args.query, args.limit ?? 3, profile ?? undefined);
     return {
       results: results
         .filter((r) => r.imageUrl)

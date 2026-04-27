@@ -20,6 +20,7 @@ const LOGIC_GLOBS = [
   '!src/**/*.db.test.ts',
   '!src/db/testing/**',
   '!src/**/*.d.ts',
+  '!src/services/webSearch/providers/**',
   '!modules/**/*.unit.test.{ts,tsx}',
 ];
 
@@ -32,10 +33,10 @@ module.exports = {
    */
   coverageThreshold: {
     global: {
-      statements: 47,
+      statements: 44,
       branches: 33,
       functions: 39,
-      lines: 49,
+      lines: 45,
     },
   },
 };

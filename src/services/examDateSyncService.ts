@@ -3,6 +3,8 @@ import { profileRepository } from '../db/repositories';
 import { getApiKeys } from './ai/config';
 import { DEFAULT_INICET_DATE, DEFAULT_NEET_DATE } from '../config/appConfig';
 import { searchDuckDuckGo } from './ai/medicalSearch';
+import { searchWeb } from './webSearch';
+import type { UserProfile } from '../types';
 
 type ExamCode = 'inicet' | 'neetpg';
 
@@ -609,6 +611,85 @@ export async function fetchExamDatesViaBrave(): Promise<{
   }
 }
 
+/**
+ * Extract date hits from orchestrator WebSearchResult[] (title + url + snippet).
+ */
+function extractDateHitsFromOrchestrator(
+  results: { title: string; url: string; snippet?: string }[],
+  examKeyword: RegExp,
+): DateHit[] {
+  const hits: DateHit[] = [];
+  for (const item of results) {
+    const sourceUrl = item.url || '';
+    const text = `${item.title || ''} ${item.snippet || ''}`;
+    if (!text) continue;
+
+    const localRegex = new RegExp(DATE_REGEX.source, 'gi');
+    let match: RegExpExecArray | null;
+    while ((match = localRegex.exec(text)) !== null) {
+      const raw = match[0];
+      const iso = parseAnyDate(raw);
+      if (!iso) continue;
+
+      const context = text.toLowerCase();
+      const score = scoreHit(context, examKeyword, sourceUrl);
+      if (score < 2) continue;
+      hits.push({ date: iso, sourceUrl, score });
+    }
+  }
+  return hits;
+}
+
+/**
+ * Fetch exam dates using the web search orchestrator (user-configured provider order).
+ * Falls back to the existing Brave → DDG → scrape cascade when orchestrator yields nothing.
+ */
+export async function fetchExamDates(profile: UserProfile): Promise<{
+  inicetDate?: string;
+  neetDate?: string;
+  inicetSources?: string[];
+  neetSources?: string[];
+  method:
+    | 'web_search'
+    | 'brave'
+    | 'ddg'
+    | 'scrape'
+    | 'brave+ddg'
+    | 'brave+scrape'
+    | 'ddg+scrape'
+    | 'none';
+}> {
+  // 1. Try configured web providers via orchestrator
+  const [inicetResults, neetResults] = await Promise.all(
+    EXAM_QUERIES.map(async (eq) => {
+      try {
+        return await searchWeb({ query: eq.query, maxResults: 8, profile });
+      } catch {
+        return [];
+      }
+    }),
+  );
+
+  const inicetHits = extractDateHitsFromOrchestrator(inicetResults, EXAM_QUERIES[0].keyword);
+  const neetHits = extractDateHitsFromOrchestrator(neetResults, EXAM_QUERIES[1].keyword);
+
+  const inicetBest = resolveBestDate(inicetHits);
+  const neetBest = resolveBestDate(neetHits);
+
+  if (inicetBest || neetBest) {
+    return {
+      inicetDate: inicetBest?.date,
+      neetDate: neetBest?.date,
+      inicetSources: inicetBest?.sources ?? inicetResults.map((r) => r.url),
+      neetSources: neetBest?.sources ?? neetResults.map((r) => r.url),
+      method: 'web_search',
+    };
+  }
+
+  // 2. Fallback: existing Brave → DDG → scrape cascade
+  return fetchExamDatesViaBrave();
+}
+
 export async function syncExamDatesIfStale(maxAgeHours = 24): Promise<ExamDateSyncResult | null> {
   const meta = await readMeta();
   const lastChecked = meta.lastCheckedAt ? Date.parse(meta.lastCheckedAt) : NaN;
@@ -623,34 +704,60 @@ export async function syncExamDatesFromInternet(): Promise<ExamDateSyncResult> {
   const now = new Date();
   const checkedAt = now.toISOString();
   const meta = await readMeta();
-
-  const [inicetSync, neetSync] = await Promise.all([
-    syncOneExam(EXAM_SOURCES[0]),
-    syncOneExam(EXAM_SOURCES[1]),
-  ]);
-
   const profile = await profileRepository.getProfile();
+
+  // 1. Try web search orchestrator (user-configured provider order)
+  let inicetDate: string | undefined;
+  let neetDate: string | undefined;
+  let inicetSources: string[] | undefined;
+  let neetSources: string[] | undefined;
+
+  try {
+    const orchestratorResult = await fetchExamDates(profile);
+    if (orchestratorResult.method !== 'none') {
+      inicetDate = orchestratorResult.inicetDate;
+      neetDate = orchestratorResult.neetDate;
+      inicetSources = orchestratorResult.inicetSources;
+      neetSources = orchestratorResult.neetSources;
+    }
+  } catch {
+    // Orchestrator failed, fall through to scraping
+  }
+
+  // 2. Fallback: direct URL scraping for any missing dates
+  if (!inicetDate || !neetDate) {
+    const [inicetSync, neetSync] = await Promise.all([
+      syncOneExam(EXAM_SOURCES[0]),
+      syncOneExam(EXAM_SOURCES[1]),
+    ]);
+
+    inicetDate = inicetDate ?? inicetSync.date;
+    neetDate = neetDate ?? neetSync.date;
+    inicetSources = inicetSources ?? inicetSync.sources;
+    neetSources = neetSources ?? neetSync.sources;
+  }
+
   const updates: { inicetDate?: string; neetDate?: string } = {};
 
   // Only auto-sync dates that are still at their hardcoded defaults.
   // If the user (or a previous sync) has set a custom date, don't overwrite it —
   // the user can always update manually in Settings.
-  const HARDCODED_INICET_DEFAULTS = [DEFAULT_INICET_DATE];
+  const HARDCODED_INICET_DEFAULTS = [DEFAULT_INICET_DATE, '2026-05-17'];
   const HARDCODED_NEET_DEFAULTS = [DEFAULT_NEET_DATE];
 
   if (
-    inicetSync.date &&
-    inicetSync.date !== profile.inicetDate &&
+    inicetDate &&
+    inicetDate !== profile.inicetDate &&
     HARDCODED_INICET_DEFAULTS.includes(profile.inicetDate)
   ) {
-    updates.inicetDate = inicetSync.date;
+    updates.inicetDate = inicetDate;
   }
   if (
-    neetSync.date &&
-    neetSync.date !== profile.neetDate &&
+    neetDate &&
+    neetDate !== profile.neetDate &&
     HARDCODED_NEET_DEFAULTS.includes(profile.neetDate)
   ) {
-    updates.neetDate = neetSync.date;
+    updates.neetDate = neetDate;
   }
   if (updates.inicetDate || updates.neetDate) {
     await profileRepository.updateProfile(updates);
@@ -658,15 +765,15 @@ export async function syncExamDatesFromInternet(): Promise<ExamDateSyncResult> {
 
   const nextMeta: ExamDateSyncMeta = {
     lastCheckedAt: checkedAt,
-    lastSuccessAt: inicetSync.date || neetSync.date ? checkedAt : meta.lastSuccessAt,
+    lastSuccessAt: inicetDate || neetDate ? checkedAt : meta.lastSuccessAt,
     lastError:
-      !inicetSync.date && !neetSync.date
+      !inicetDate && !neetDate
         ? 'Unable to verify updated official exam dates from web sources.'
         : null,
-    inicetDate: inicetSync.date ?? profile.inicetDate,
-    neetDate: neetSync.date ?? profile.neetDate,
-    inicetSources: inicetSync.sources,
-    neetSources: neetSync.sources,
+    inicetDate: inicetDate ?? profile.inicetDate,
+    neetDate: neetDate ?? profile.neetDate,
+    inicetSources: inicetSources ?? [],
+    neetSources: neetSources ?? [],
   };
   await writeMeta(nextMeta);
 

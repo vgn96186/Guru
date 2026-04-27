@@ -11,6 +11,7 @@ import { searchLatestMedicalSources } from '../../medicalSearch';
 import { getDrizzleDb } from '../../../../db/drizzle';
 import { topics, topicProgress, questionBank } from '../../../../db/drizzleSchema';
 import { sql, like, eq } from 'drizzle-orm';
+import { profileRepository } from '../../../../db/repositories';
 
 /**
  * search_medical — PubMed / EuropePMC / Wikipedia / Brave (whichever are
@@ -25,7 +26,8 @@ export const searchMedicalTool = tool({
     maxResults: z.number().optional(),
   }),
   execute: async ({ query, maxResults }) => {
-    const sources = await searchLatestMedicalSources(query, maxResults ?? 5);
+    const profile = await profileRepository.getProfile().catch(() => null);
+    const sources = await searchLatestMedicalSources(query, maxResults ?? 5, profile ?? undefined);
     return {
       results: sources.map((s) => ({
         title: s.title,
@@ -272,9 +274,11 @@ export const factCheckTool = tool({
       const searchQuery = [...entities.drugs.slice(0, 3), ...entities.diseases.slice(0, 3)].join(
         ' ',
       );
+      const profile = await profileRepository.getProfile().catch(() => null);
       const searchResults = await searchLatestMedicalSources(
         `${searchQuery} ${topicName ?? ''}`,
         3,
+        profile ?? undefined,
       );
       sources.push(
         ...searchResults.map((s) => ({
@@ -311,13 +315,13 @@ export const factCheckTool = tool({
 });
 
 /**
- * fetch_exam_dates — look up INICET and NEET-PG exam dates via Brave Search
- * (or fall back to web scraping). Returns ISO dates and sources.
+ * fetch_exam_dates — look up INICET and NEET-PG exam dates via web search
+ * (user-configured provider order, falls back to scraping).
  */
 export const fetchExamDatesTool = tool({
   name: 'fetch_exam_dates',
   description:
-    'Fetch the latest official exam dates for INICET and NEET-PG from the web. Uses Brave Search when available, falls back to scraping educational sites. Returns ISO date strings and source URLs.',
+    'Fetch the latest official exam dates for INICET and NEET-PG from the web. Uses user-configured web search providers (Brave, Gemini Grounding, DeepSeek, DuckDuckGo), falls back to scraping educational sites. Returns ISO date strings and source URLs.',
   inputSchema: z.object({
     exams: z
       .array(z.enum(['inicet', 'neetpg']))
@@ -325,8 +329,11 @@ export const fetchExamDatesTool = tool({
       .describe('Which exams to look up. Defaults to both.'),
   }),
   execute: async ({ exams }) => {
-    const { fetchExamDatesViaBrave } = await import('../../../examDateSyncService');
-    const result = await fetchExamDatesViaBrave();
+    const { fetchExamDates } = await import('../../../examDateSyncService');
+    const { profileRepository } = await import('../../../../db/repositories');
+    const profile = await profileRepository.getProfile();
+    if (!profile) return { method: 'none' as const };
+    const result = await fetchExamDates(profile);
     const requested = exams ?? ['inicet', 'neetpg'];
     return {
       method: result.method,

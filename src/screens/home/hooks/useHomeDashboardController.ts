@@ -3,7 +3,7 @@ import { InteractionManager, Animated, View } from 'react-native';
 import { useFocusEffect, useNavigation, type NavigationProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { HomeStackParamList, TabParamList } from '../../../navigation/types';
-import { fetchExamDatesViaBrave } from '../../../services/examDateSyncService';
+import { fetchExamDates } from '../../../services/examDateSyncService';
 import { showInfo } from '../../../components/dialogService';
 import { useAppStore } from '../../../store/useAppStore';
 import { useSessionStore } from '../../../store/useSessionStore';
@@ -206,25 +206,53 @@ export function useHomeDashboardController() {
 
   useEffect(() => {
     if (!isLoading && bootPhase === 'calming') {
+      const calmingDuration = 8000;
+      let isCancelled = false;
+
       const timer = setTimeout(() => {
-        if (startButtonRef.current) {
-          startButtonRef.current.measureInWindow(
-            (x: number, y: number, width: number, height: number) => {
-              setStartButtonLayout({ x, y, width, height });
-              setBootPhase('settling');
-            },
-          );
-        } else {
-          setBootPhase('settling');
-        }
-      }, 100);
-      return () => clearTimeout(timer);
+        if (isCancelled) return;
+
+        const attemptMeasure = (attemptsLeft: number) => {
+          if (isCancelled) return;
+
+          if (startButtonRef.current) {
+            startButtonRef.current.measureInWindow(
+              (x: number, y: number, width: number, height: number) => {
+                if (isCancelled) return;
+
+                // If we get valid dimensions, proceed.
+                if (width > 0 && height > 0) {
+                  setStartButtonLayout({ x, y, width, height });
+                  setBootPhase('settling');
+                } else if (attemptsLeft > 0) {
+                  // Retry if we get zeros (common on Android during initial layout)
+                  setTimeout(() => attemptMeasure(attemptsLeft - 1), 100);
+                } else {
+                  setBootPhase('settling'); // Fallback
+                }
+              },
+            );
+          } else if (attemptsLeft > 0) {
+            setTimeout(() => attemptMeasure(attemptsLeft - 1), 100);
+          } else {
+            setBootPhase('settling'); // Fallback
+          }
+        };
+
+        attemptMeasure(10); // Try for up to 1 second
+      }, calmingDuration);
+
+      return () => {
+        isCancelled = true;
+        clearTimeout(timer);
+      };
     }
   }, [isLoading, bootPhase, setBootPhase, setStartButtonLayout]);
 
   const handleRefreshExamDates = useCallback(async () => {
     try {
-      const result = await fetchExamDatesViaBrave();
+      if (!profile) return;
+      const result = await fetchExamDates(profile);
       const updates: { inicetDate?: string; neetDate?: string } = {};
       if (result.inicetDate && result.inicetDate !== profile?.inicetDate)
         updates.inicetDate = result.inicetDate;

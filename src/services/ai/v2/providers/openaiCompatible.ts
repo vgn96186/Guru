@@ -35,7 +35,10 @@ export interface OpenAICompatibleConfig {
    */
   headers: () => Record<string, string> | Promise<Record<string, string>>;
   /** Optional request body transform (e.g. provider-specific fields). */
-  transformRequestBody?: (body: Record<string, unknown>) => Record<string, unknown>;
+  transformRequestBody?: (
+    body: Record<string, unknown>,
+    options: LanguageModelV2CallOptions,
+  ) => Record<string, unknown>;
   fetch?: typeof fetch;
 }
 
@@ -79,7 +82,7 @@ export function createOpenAICompatibleModel(config: OpenAICompatibleConfig): Lan
           }
         : { type: 'json_object' };
     }
-    return config.transformRequestBody ? config.transformRequestBody(body) : body;
+    return config.transformRequestBody ? config.transformRequestBody(body, options) : body;
   };
 
   return {

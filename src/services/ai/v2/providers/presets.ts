@@ -43,6 +43,12 @@ export function createDeepSeekModel(opts: { modelId: string; apiKey: string }): 
     modelId: opts.modelId,
     url: 'https://api.deepseek.com/v1/chat/completions',
     headers: () => ({ Authorization: `Bearer ${opts.apiKey}` }),
+    transformRequestBody: (body, options) => {
+      if (options.webSearch) {
+        body.web_search = true;
+      }
+      return body;
+    },
   });
 }
 

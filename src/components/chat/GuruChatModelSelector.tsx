@@ -1,4 +1,4 @@
-import React, { memo, useCallback, useEffect, useMemo, useState } from 'react';
+import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   FlatList,
   Modal,
@@ -82,13 +82,16 @@ export const GuruChatModelSelector = memo(function GuruChatModelSelector({
   }, [availableModels]);
 
   // ── Auto-select group of current model on open ────────────────
+  const prevVisible = useRef(visible);
   useEffect(() => {
-    if (!visible) return;
-    const found = availableModels.find((m) => m.id === chosenModel);
-    if (found && found.group !== activeGroup) {
-      setTimeout(() => setActiveGroup(found.group), 0);
+    if (visible && !prevVisible.current) {
+      const found = availableModels.find((m) => m.id === chosenModel);
+      if (found) {
+        setActiveGroup(found.group);
+      }
     }
-  }, [visible, availableModels, chosenModel, activeGroup]);
+    prevVisible.current = visible;
+  }, [visible, availableModels, chosenModel]);
 
   // ── Models for active group, filtered by search ───────────────
   const filteredModels = useMemo(() => {
@@ -142,7 +145,12 @@ export const GuruChatModelSelector = memo(function GuruChatModelSelector({
                 {item.name}
               </LinearText>
               {showId ? (
-                <LinearText variant="caption" tone="muted" style={styles.rowIdSub} numberOfLines={1}>
+                <LinearText
+                  variant="caption"
+                  tone="muted"
+                  style={styles.rowIdSub}
+                  numberOfLines={1}
+                >
                   {item.id}
                 </LinearText>
               ) : null}
@@ -178,7 +186,9 @@ export const GuruChatModelSelector = memo(function GuruChatModelSelector({
 
           {/* Header */}
           <View style={styles.header}>
-            <LinearText variant="sectionTitle" tone="primary">Models</LinearText>
+            <LinearText variant="sectionTitle" tone="primary">
+              Models
+            </LinearText>
             <LinearIconButton
               variant="ghost"
               shape="round"
@@ -195,13 +205,22 @@ export const GuruChatModelSelector = memo(function GuruChatModelSelector({
             <View style={styles.pinnedCard}>
               <View style={styles.pinnedStripe} />
               <View style={styles.pinnedBody}>
-                <LinearText variant="badge" tone="accent" style={styles.pinnedLabel}>CURRENT</LinearText>
-                <LinearText variant="bodySmall" tone="primary" style={styles.pinnedNameWeight} numberOfLines={1}>
+                <LinearText variant="badge" tone="accent" style={styles.pinnedLabel}>
+                  CURRENT
+                </LinearText>
+                <LinearText
+                  variant="bodySmall"
+                  tone="primary"
+                  style={styles.pinnedNameWeight}
+                  numberOfLines={1}
+                >
                   {currentModel.name}
                 </LinearText>
               </View>
               <View style={styles.pinnedBadge}>
-                <LinearText variant="badge" tone="secondary">{currentModel.group}</LinearText>
+                <LinearText variant="badge" tone="secondary">
+                  {currentModel.group}
+                </LinearText>
               </View>
             </View>
           ) : null}
@@ -229,38 +248,48 @@ export const GuruChatModelSelector = memo(function GuruChatModelSelector({
           <View style={styles.chipScrollOuter}>
             <View style={styles.chipScrollContent}>
               <View style={styles.chipGrid}>
-              {groupInfos.map(({ group, count }) => {
-                const meta = PROVIDER_META[group] ?? DEFAULT_META;
-                const selected = activeGroup === group;
-                return (
-                  <Pressable
-                    key={group}
-                    onPress={() => { setActiveGroup(group); setSearch(''); }}
-                    accessibilityRole="tab"
-                    accessibilityState={{ selected }}
-                  >
-                    <View
-                      style={[
-                        styles.chip,
-                        selected && { backgroundColor: withAlpha(meta.color, 0.15), borderColor: withAlpha(meta.color, 0.3) },
-                      ]}
+                {groupInfos.map(({ group, count }) => {
+                  const meta = PROVIDER_META[group] ?? DEFAULT_META;
+                  const selected = activeGroup === group;
+                  return (
+                    <Pressable
+                      key={group}
+                      onPress={() => {
+                        setActiveGroup(group);
+                        setSearch('');
+                      }}
+                      accessibilityRole="tab"
+                      accessibilityState={{ selected }}
                     >
-                      <View style={[styles.chipDot, { backgroundColor: meta.color }]} />
-                      <LinearText
-                        variant="chip"
-                        tone="secondary"
-                        style={selected ? { color: meta.color } : undefined}
-                        numberOfLines={1}
+                      <View
+                        style={[
+                          styles.chip,
+                          selected && {
+                            backgroundColor: withAlpha(meta.color, 0.15),
+                            borderColor: withAlpha(meta.color, 0.3),
+                          },
+                        ]}
                       >
-                        {group}
-                      </LinearText>
-                      <LinearText variant="badge" tone="muted" style={selected ? { color: withAlpha(meta.color, 0.7) } : undefined}>
-                        {count}
-                      </LinearText>
-                    </View>
-                  </Pressable>
-                );
-              })}
+                        <View style={[styles.chipDot, { backgroundColor: meta.color }]} />
+                        <LinearText
+                          variant="chip"
+                          tone="secondary"
+                          style={selected ? { color: meta.color } : undefined}
+                          numberOfLines={1}
+                        >
+                          {group}
+                        </LinearText>
+                        <LinearText
+                          variant="badge"
+                          tone="muted"
+                          style={selected ? { color: withAlpha(meta.color, 0.7) } : undefined}
+                        >
+                          {count}
+                        </LinearText>
+                      </View>
+                    </Pressable>
+                  );
+                })}
               </View>
             </View>
           </View>

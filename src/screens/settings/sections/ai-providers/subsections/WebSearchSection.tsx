@@ -1,6 +1,6 @@
 import React, { useCallback, useMemo } from 'react';
 import { View, Switch } from 'react-native';
-import { LinearText } from '../../../../../components/primitives/LinearText';
+import LinearText from '../../../../../components/primitives/LinearText';
 import ProviderOrderEditor from '../../../components/ProviderOrderEditor';
 import { DEFAULT_WEB_SEARCH_ORDER, WEB_SEARCH_DISPLAY_NAMES } from '../../../../../types';
 import type { WebSearchProviderId, UserProfile } from '../../../../../types';

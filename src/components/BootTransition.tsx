@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { View, StyleSheet, useWindowDimensions, type ViewStyle } from 'react-native';
+import { View, StyleSheet, useWindowDimensions } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -13,7 +13,6 @@ import Animated, {
   interpolate,
   runOnJS,
 } from 'react-native-reanimated';
-import Svg, { Defs, RadialGradient, Stop, Ellipse } from 'react-native-svg';
 import { NativeLoadingOrbView } from '../../modules/app-launcher';
 
 const AnimatedNativeOrb = Animated.createAnimatedComponent(NativeLoadingOrbView);
@@ -30,25 +29,23 @@ const MIN_BOOT_DISPLAY_MS = 800;
 const ORB_HALF = 180 / 2; // Used for static particle styling
 
 // ── Master calming curve ──────────────────────────────────────────
-// One master `progress` 0→1 drives multiple derived energy values so
-// deformation, breathing, jitter, and motion each decelerate at their
-// own pace.  This prevents the single pathIntensity from collapsing
-// everything at once and creating a "state switch" feel.
 function smoothstep(t: number) {
   'worklet';
   return t * t * (3 - 2 * t);
 }
-function calmCurve(t: number) {
+
+function liquidSettleCurve(t: number) {
   'worklet';
-  // Exponential saturation: slow visible change at the start of calming,
-  // accelerating through the middle, then asymptotically approaching calm.
-  // Never hits exactly 1 so `energy` is always > 0.
-  const eased = smoothstep(t);
-  return 1 - Math.exp(-3.2 * eased);
+  // Zero-gravity metal: loses violent energy early,
+  // but keeps visible deformation for a long time.
+  const early = smoothstep(Math.min(t / 0.35, 1));
+  const late = smoothstep(Math.max((t - 0.35) / 0.65, 0));
+
+  const energy = 1 - (0.55 * early + 0.45 * late);
+  return Math.max(0, energy);
 }
-const DEFORMATION_EXPONENT = 0.72; // blob shape — slowest decay
+
 const JITTER_EXPONENT = 1.4; // positional jitter — fastest decay
-const INTENSITY_FLOOR = 0.08; // never drop below this (prevents static sphere)
 // ──────────────────────────────────────────────────────────────────
 
 const MESSAGE_VARIATIONS: Record<string, string[]> = {
@@ -102,21 +99,14 @@ export default function BootTransition() {
 
   // --- Path animation ---
   const pathTime = useSharedValue(0);
-  // Linear progress 0→1; pathIntensity is derived as (1-progress)² for perceptually even visual change
-  const calmProgress = useSharedValue(0);
+  // Linear progress 0→1; tracks the shape calming and settling
+  const shapeSettleProgress = useSharedValue(0);
 
   const animatedOrbProps = useAnimatedProps(() => {
-    // pathIntensity: blob deformation only — decays from 1.0 → INTENSITY_FLOOR.
-    // breathIntensity: kept at 0 during boot — breathing (scale pulse) belongs
-    // on StartButton post-boot, not on the turbulent blob.
-    const p = calmProgress.value;
-    const calm = calmCurve(p);
-    const energy = 1 - calm;
-    const deformationEnergy = Math.pow(energy, DEFORMATION_EXPONENT);
+    const energy = liquidSettleCurve(shapeSettleProgress.value);
 
-    // Keep intensity slightly higher than floor to retain liquid movement
     return {
-      pathIntensity: INTENSITY_FLOOR + (1 - INTENSITY_FLOOR) * deformationEnergy,
+      pathIntensity: energy,
       breathIntensity: 0,
     };
   });
@@ -228,7 +218,7 @@ export default function BootTransition() {
     highlightOpacity.value = withRepeat(withTiming(0.55, fastCore), -1, true);
     jitterDamping.value = 1;
 
-    // Stay turbulent during boot — calmProgress held at 0 so intensity stays 1.0.
+    // Stay turbulent during boot — shapeSettleProgress held at 0 so intensity stays 1.0.
     // Jitter eases slightly so orb doesn't feel chaotic forever.
     jitterDamping.value = withDelay(
       800,
@@ -305,13 +295,14 @@ export default function BootTransition() {
       setBootPhase('settling');
     }, 10000);
 
-    // Master progress 0→1 linear over 8000ms.
-    // calmCurve + per-energy exponents derive pathIntensity + breathIntensity
-    // separately so blob deformation decays slower than jitter, and breathing
-    // stays alive after the shape is nearly round.
-    calmProgress.value = withTiming(1, { duration: 8000, easing: Easing.linear });
-    // Reset jitter to full strength (booting may have damped it to 0.6)
-    jitterDamping.value = 1;
+    shapeSettleProgress.value = withTiming(0.82, { duration: 8000, easing: Easing.linear });
+
+    // Let jitter fade out completely, do not snap it back to 1
+    cancelAnimation(jitterDamping);
+    jitterDamping.value = withTiming(0, {
+      duration: 2600,
+      easing: Easing.out(Easing.cubic),
+    });
 
     // Fade floating particles after 2s — they're a boot-only flourish.
     const particlesTimer = setTimeout(() => {
@@ -347,10 +338,8 @@ export default function BootTransition() {
     opacityRing3.value = withTiming(0, { duration: 1000 });
     opacityGlow.value = withTiming(0, { duration: 1200 });
 
-    // Defensive snap: calmProgress→1 gives energy ≈ 0.041, pathIntensity ≈ 0.17,
-    // breathIntensity ≈ 0.13 — the orb retains subtle wobble + breathing through the glide.
-    // Jitter is left to the energy curve (pow 1.4 kills it fast enough without a hard snap).
-    calmProgress.value = 1;
+    // Complete the shape settling
+    shapeSettleProgress.value = withTiming(1, { duration: 2400, easing: settleEasing });
 
     // Capture glide target NOW so any later layout updates can't snap the worklet mid-animation.
     // Fall back to center if layout still missing (orb stays put rather than snapping).
@@ -401,11 +390,10 @@ export default function BootTransition() {
     const currentY = interpolate(settleProgress.value, [0, 1], [centerY, targetY]);
     // Jitter uses the fastest-decaying exponent (1.4) so positional shake
     // fades before blob deformation, keeping the orb's shape alive longer.
-    const p = calmProgress.value;
-    const energy = 1 - calmCurve(p);
+    const p = shapeSettleProgress.value;
+    const energy = liquidSettleCurve(p);
     const jitterEnergy = Math.pow(energy, JITTER_EXPONENT);
-    const jitterMult =
-      (INTENSITY_FLOOR + (1 - INTENSITY_FLOOR) * jitterEnergy) * jitterDamping.value;
+    const jitterMult = jitterEnergy * jitterDamping.value;
 
     return {
       position: 'absolute',

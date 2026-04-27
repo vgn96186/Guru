@@ -114,7 +114,7 @@ const styles = StyleSheet.create({
   chip: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.03)',
+    backgroundColor: n.colors.card,
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 16,

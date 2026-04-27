@@ -28,11 +28,11 @@ group = 'expo.modules.applauncher'
 
 android {
     namespace = "expo.modules.applauncher"
-    compileSdkVersion safeExtGet("compileSdkVersion", 36)
+    compileSdkVersion = safeExtGet("compileSdkVersion", 36)
 
     defaultConfig {
-        minSdkVersion safeExtGet("minSdkVersion", 24)
-        targetSdkVersion safeExtGet("targetSdkVersion", 36)
+        minSdkVersion = safeExtGet("minSdkVersion", 24)
+        targetSdkVersion = safeExtGet("targetSdkVersion", 36)
         consumerProguardFiles 'proguard-rules.pro'
     }
 

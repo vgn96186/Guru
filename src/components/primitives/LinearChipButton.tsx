@@ -93,7 +93,7 @@ export default function LinearChipButton({
       }}
       className={chipVariants({ selected, tone, disabled: resolvedDisabled, className })}
       style={({ pressed }) => [
-        { opacity: pressed ? 0.88 : 1 },
+        { opacity: pressed ? 0.5 : 1 },
         typeof style === 'function' ? style({ pressed }) : style,
         selected &&
           (typeof selectedStyle === 'function' ? selectedStyle({ pressed }) : selectedStyle),

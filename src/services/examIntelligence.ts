@@ -155,20 +155,27 @@ function pickUpcomingTarget(args: {
 }): { exam: ExamName; date: string; days: number; secondary?: { exam: ExamName; days: number } } {
   const { preferredExam, daysToInicet, daysToNeetPg, inicetDate, neetDate } = args;
 
-  const options: Array<{ exam: ExamName; date: string; days: number }> = [
+  const all: Array<{ exam: ExamName; date: string; days: number }> = [
     { exam: 'INICET', date: inicetDate, days: daysToInicet },
     { exam: 'NEET-PG', date: neetDate, days: daysToNeetPg },
   ];
 
-  const nearest = [...options].sort((a, b) => a.days - b.days)[0] ?? options[0];
-  const preferred = options.find((option) => option.exam === preferredExam) ?? options[0];
+  // Only consider exams that are still upcoming (days > 0). getDaysToExam clamps to 0 for past dates.
+  const options = all.filter((o) => o.days > 0);
+  // If both exams have passed, fall back to the preferred exam so we don't crash.
+  const pool = options.length > 0 ? options : all;
+
+  const nearest = [...pool].sort((a, b) => a.days - b.days)[0] ?? pool[0];
+  const preferred = pool.find((option) => option.exam === preferredExam) ?? pool[0];
 
   // If both exams are upcoming and very close, honor user preference.
   // If one exam is materially nearer, prioritize the nearer target.
-  const shouldPreferNearest = Math.abs(daysToInicet - daysToNeetPg) > 14;
+  const upcoming0Days = options.length > 0 ? options[0].days : 0;
+  const upcoming1Days = options.length > 1 ? options[1].days : 0;
+  const shouldPreferNearest = options.length === 1 || Math.abs(upcoming0Days - upcoming1Days) > 14;
   const chosen = shouldPreferNearest ? nearest : preferred;
 
-  const secondary = options.find((option) => option.exam !== chosen.exam);
+  const secondary = pool.find((option) => option.exam !== chosen.exam);
   return {
     exam: chosen.exam,
     date: chosen.date,

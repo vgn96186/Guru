@@ -1,18 +1,7 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, ScrollView } from 'react-native';
 import { SidebarNavItem } from './SidebarNavItem';
-
-export type SettingsCategory =
-  | 'dashboard'
-  | 'appearance'
-  | 'profile'
-  | 'planning'
-  | 'interventions'
-  | 'ai'
-  | 'integrations'
-  | 'sync'
-  | 'storage'
-  | 'advanced';
+import type { SettingsCategory, CategoryBadgeInfo } from '../../types';
 
 export const SETTINGS_CATEGORIES: {
   id: SettingsCategory;
@@ -38,8 +27,17 @@ interface SettingsSidebarProps {
   isCollapsed: boolean;
   profileName?: string;
   totalXp?: number;
+  categoryBadges?: Record<SettingsCategory, CategoryBadgeInfo | null>;
   onLogout?: () => void;
 }
+
+const BADGE_TONE_COLORS: Record<string, string> = {
+  success: '#3FB950',
+  warning: '#D97706',
+  error: '#F14C4C',
+  accent: '#5E6AD2',
+  muted: '#939396',
+};
 
 export function SettingsSidebar({
   activeCategory,
@@ -47,6 +45,7 @@ export function SettingsSidebar({
   isCollapsed,
   profileName = 'User',
   totalXp = 0,
+  categoryBadges,
   onLogout,
 }: SettingsSidebarProps) {
   const level = Math.floor(Math.sqrt(totalXp / 100)) + 1; // Simple dummy logic
@@ -130,17 +129,21 @@ export function SettingsSidebar({
           </View>
         )}
 
-        {SETTINGS_CATEGORIES.map((category) => (
-          <SidebarNavItem
-            key={category.id}
-            label={category.label}
-            badge={category.badge}
-            iconName={category.iconName}
-            isActive={activeCategory === category.id}
-            isCollapsed={isCollapsed}
-            onPress={() => onSelectCategory(category.id)}
-          />
-        ))}
+        {SETTINGS_CATEGORIES.map((category) => {
+          const badge = categoryBadges?.[category.id];
+          return (
+            <SidebarNavItem
+              key={category.id}
+              label={category.label}
+              badge={category.badge}
+              iconName={category.iconName}
+              isActive={activeCategory === category.id}
+              isCollapsed={isCollapsed}
+              statusDotColor={badge ? BADGE_TONE_COLORS[badge.tone] : undefined}
+              onPress={() => onSelectCategory(category.id)}
+            />
+          );
+        })}
       </ScrollView>
 
       {/* Footer */}

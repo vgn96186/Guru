@@ -1,5 +1,4 @@
 import React from 'react';
-import { Text, TouchableOpacity, View } from 'react-native';
 import { render } from '@testing-library/react-native';
 import LectureReturnSheet from './LectureReturnSheet';
 import { useLecturePipeline } from '../hooks/useLecturePipeline';

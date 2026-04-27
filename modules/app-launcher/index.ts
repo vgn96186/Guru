@@ -1,6 +1,26 @@
-import { requireNativeModule } from 'expo-modules-core';
+import { requireNativeModule, requireNativeViewManager } from 'expo-modules-core';
+import type { ViewProps, ViewStyle, StyleProp } from 'react-native';
 
 export const GuruAppLauncher = requireNativeModule('GuruAppLauncher');
+
+export interface NativeLoadingOrbViewProps extends ViewProps {
+  message?: string;
+  isTurbulent?: boolean;
+  pathIntensity?: number;
+  /** Breathing amplitude (core scale + opacity oscillation). Separated from pathIntensity
+   *  so deformation can calm down while breathing stays alive. Range 0-1. */
+  breathIntensity?: number;
+  style?: StyleProp<ViewStyle>;
+}
+
+export const NativeLoadingOrbView = requireNativeViewManager<NativeLoadingOrbViewProps>(
+  'GuruAppLauncher',
+  'AppLoadingOrb',
+);
+export const NativeBootTransitionView = requireNativeViewManager(
+  'GuruAppLauncher',
+  'BootTransition',
+);
 
 /** Wraps a native promise with a timeout to prevent indefinite hangs. */
 function withTimeout<T>(promise: Promise<T>, ms: number, name: string): Promise<T> {

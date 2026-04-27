@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import LinearSurface from '../../../components/primitives/LinearSurface';
 import LinearText from '../../../components/primitives/LinearText';
+import SkeletonPlaceholder from '../../../components/primitives/SkeletonPlaceholder';
 import { useProfileQuery, useLevelInfo } from '../../../hooks/queries/useProfile';
 import { PROVIDER_DISPLAY_NAMES } from '../../../types';
 import { sanitizeProviderOrder } from '../../../utils/providerOrder';
@@ -14,7 +15,7 @@ import { updateUserProfile } from '../../../db/queries/progress';
 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
 export function DashboardOverview(props: any) {
   const { setActiveCategory, isTablet } = props;
-  const { data: profile } = useProfileQuery();
+  const { data: profile, isLoading } = useProfileQuery();
   const levelInfo = useLevelInfo();
   const queryClient = useQueryClient();
 
@@ -41,27 +42,26 @@ export function DashboardOverview(props: any) {
   else if (hour < 17) greeting = 'Good Afternoon';
   else if (hour > 22) greeting = 'Late Night Grind';
 
-  // Determine next exam
+  // Determine next exam — pick nearest upcoming exam regardless of type
   let examName = 'Target Exam';
   let daysLeft = null;
   const now = Date.now();
 
+  const candidates: Array<{ name: string; ms: number }> = [];
   if (profile?.inicetDate) {
     const ms = new Date(profile.inicetDate).getTime() - now;
-    if (ms > 0) {
-      examName = 'INICET';
-      daysLeft = Math.ceil(ms / 86400000);
-    }
+    if (ms > 0) candidates.push({ name: 'INICET', ms });
   }
-
-  if (daysLeft === null && profile?.neetDate) {
+  if (profile?.neetDate) {
     const ms = new Date(profile.neetDate).getTime() - now;
-    if (ms > 0) {
-      examName = 'NEET-PG';
-      daysLeft = Math.ceil(ms / 86400000);
-    }
+    if (ms > 0) candidates.push({ name: 'NEET-PG', ms });
   }
-
+  if (candidates.length > 0) {
+    candidates.sort((a, b) => a.ms - b.ms);
+    const next = candidates[0];
+    examName = next.name;
+    daysLeft = Math.ceil(next.ms / 86400000);
+  }
   const isStrict = profile?.strictModeEnabled;
   const topProvider = sanitizeProviderOrder(profile?.providerOrder)[0];
   // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
@@ -136,7 +136,11 @@ export function DashboardOverview(props: any) {
       {/* Left Column: Player Card */}
       <View style={{ flex: isTablet ? 1 : undefined }}>
         <LinearSurface compact style={[styles.playerCard, { flex: 1 }]}>
-          <View>
+          {isLoading ? (
+            <DashboardSkeleton />
+          ) : (
+            <>
+              <View>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16, marginBottom: 16 }}>
               <View style={styles.avatarLarge}>
                 <LinearText variant="title" style={{ fontSize: 28, color: '#FFFFFF' }}>
@@ -217,7 +221,9 @@ export function DashboardOverview(props: any) {
                 style={[styles.fill, { width: `${Math.min(100, Math.max(0, xpProgress))}%` }]}
               />
             </View>
-          </View>
+              </View>
+            </>
+          )}
         </LinearSurface>
       </View>
 
@@ -256,6 +262,50 @@ export function DashboardOverview(props: any) {
             isLocalReady ? 'Local + Cloud AI' : 'Cloud Routing',
           )}
         </View>
+      </View>
+    </View>
+  );
+}
+
+function DashboardSkeleton() {
+  return (
+    <View>
+      {/* Avatar + name area */}
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16, marginBottom: 16 }}>
+        <SkeletonPlaceholder circle size={64} />
+        <View style={{ flex: 1, gap: 8 }}>
+          <SkeletonPlaceholder width="30%" height={10} borderRadius={4} />
+          <SkeletonPlaceholder width="55%" height={20} borderRadius={6} />
+          <SkeletonPlaceholder width="40%" height={12} borderRadius={4} />
+        </View>
+      </View>
+
+      {/* Status tags */}
+      <View style={{ flexDirection: 'row', gap: 12, marginBottom: 24 }}>
+        <SkeletonPlaceholder width={80} height={10} borderRadius={4} />
+        <SkeletonPlaceholder width={65} height={10} borderRadius={4} />
+      </View>
+
+      {/* Stats row */}
+      <View style={{ flexDirection: 'row', gap: 24, marginTop: 8 }}>
+        <View style={{ gap: 6 }}>
+          <SkeletonPlaceholder width={60} height={18} borderRadius={6} />
+          <SkeletonPlaceholder width={50} height={10} borderRadius={4} />
+        </View>
+        <View style={{ width: 1, backgroundColor: 'rgba(255, 255, 255, 0.1)' }} />
+        <View style={{ gap: 6 }}>
+          <SkeletonPlaceholder width={40} height={18} borderRadius={6} />
+          <SkeletonPlaceholder width={55} height={10} borderRadius={4} />
+        </View>
+      </View>
+
+      {/* Level progress bar */}
+      <View style={{ marginTop: 24, gap: 8 }}>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+          <SkeletonPlaceholder width="30%" height={10} borderRadius={4} />
+          <SkeletonPlaceholder width="20%" height={10} borderRadius={4} />
+        </View>
+        <SkeletonPlaceholder width="100%" height={6} borderRadius={3} />
       </View>
     </View>
   );
@@ -311,9 +361,9 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 20,
     borderRadius: 16,
-    backgroundColor: 'rgba(255, 255, 255, 0.03)',
+    backgroundColor: n.colors.card,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.06)',
+    borderColor: n.colors.border,
     minHeight: 130,
   },
   chipHeader: {

@@ -5,9 +5,10 @@ import { BUNDLED_GOOGLE_WEB_CLIENT_ID } from './bundledEnv';
  * Decouples hardcoded values from migrations, schema, and services.
  */
 
-/** Default INICET exam date (YYYY-MM-DD). Override via EXPO_PUBLIC_DEFAULT_INICET_DATE. */
+/** Default INICET exam date (YYYY-MM-DD). Override via EXPO_PUBLIC_DEFAULT_INICET_DATE.
+ *  INICET runs twice yearly — update this to the next upcoming session when one passes. */
 export const DEFAULT_INICET_DATE =
-  (process.env.EXPO_PUBLIC_DEFAULT_INICET_DATE ?? '2026-05-17').trim() || '2026-05-17';
+  (process.env.EXPO_PUBLIC_DEFAULT_INICET_DATE ?? '2026-11-08').trim() || '2026-11-08';
 
 /** Default NEET-PG exam date (YYYY-MM-DD). Override via EXPO_PUBLIC_DEFAULT_NEET_DATE. */
 export const DEFAULT_NEET_DATE =

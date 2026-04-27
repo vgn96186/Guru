@@ -294,8 +294,8 @@ export function useProviderApiKeyTests({
     const p = keys.vertexAiProject.trim() || profile?.vertexAiProject || '';
     const l = keys.vertexAiLocation.trim() || profile?.vertexAiLocation || '';
     const t = keys.vertexAiToken.trim() || profile?.vertexAiToken || '';
-    if (!p || !l || !t) {
-      showWarning('Missing info', 'Project, Location, and Token required.');
+    if (!t) {
+      showWarning('Missing info', 'Enter an API key or access token.');
       return;
     }
     setters.setTestingVertexKey(true);
@@ -341,7 +341,7 @@ export function useProviderApiKeyTests({
   const testGeminiKey = useCallback(async () => {
     const key = keys.geminiKey.trim() || profile?.geminiKey || '';
     if (!key) {
-      showWarning('No key', 'Enter a Google AI (Gemini) API key first.');
+      showWarning('No key', 'Enter an AI Studio (Gemini) API key first.');
       return;
     }
     setters.setTestingGeminiKey(true);

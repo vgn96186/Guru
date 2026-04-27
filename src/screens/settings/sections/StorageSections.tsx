@@ -1,6 +1,7 @@
 import React from 'react';
 import { ActivityIndicator, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
 import { showError, showSuccess, showWarning, showInfo } from '../../../components/dialogService';
 import SettingsField from '../components/SettingsField';
 import LinearText from '../../../components/primitives/LinearText';
@@ -81,7 +82,10 @@ export default function StorageSections(props: any) {
       <SectionToggle id="storage_data" title="Data Management" icon="trash-outline" tint="#F44336">
         <TouchableOpacity
           style={styles.dangerBtn}
-          onPress={() => handleClearAiCache(clearAiCache)}
+          onPress={() => {
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+            handleClearAiCache(clearAiCache);
+          }}
           activeOpacity={0.8}
         >
           <LinearText variant="body" style={styles.dangerBtnText}>
@@ -96,7 +100,10 @@ export default function StorageSections(props: any) {
             styles.dangerBtn,
             { borderColor: linearTheme.colors.error + '55', marginTop: 10 },
           ]}
-          onPress={() => handleResetProgress(resetStudyProgress, refreshProfile)}
+          onPress={() => {
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+            handleResetProgress(resetStudyProgress, refreshProfile);
+          }}
           activeOpacity={0.8}
         >
           <LinearText

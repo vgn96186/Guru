@@ -156,7 +156,7 @@ export default function LinearButton({
       // @ts-expect-error - Pressable style callback returning mixed array is valid RN pattern
       style={({ pressed }) => {
         const baseOpacity = resolvedDisabled ? 0.55 : 1;
-        const pressedOpacity = pressed ? 0.88 : 1;
+        const pressedOpacity = pressed ? 0.5 : 1;
         const dynamicStyleFn = dynamicStyle;
         return [
           { opacity: baseOpacity * pressedOpacity },

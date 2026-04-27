@@ -1,5 +1,5 @@
 import React, { memo, useCallback } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { type FlashListRef, type ListRenderItem } from '@shopify/flash-list';
 import { AppFlashList } from '../primitives/AppFlashList';
@@ -24,7 +24,6 @@ interface GuruChatMessageListProps {
   sessionSummary?: string;
   isGeneralChat: boolean;
   topicName: string;
-  bannerVisible: boolean;
   imageJobKey: string | null;
   expandedSourcesMessageId: string | null;
   flatListRef: React.RefObject<FlashListRef<ChatItem> | null>;
@@ -36,7 +35,6 @@ interface GuruChatMessageListProps {
   onOpenSource: (url: string) => void;
   onSetLightboxUri: (uri: string) => void;
   onSelectStarter: (text: string) => void;
-  onBannerDismiss: () => void;
 }
 
 function getLatestGuruMessageId(messages: ChatMessage[]): string | null {
@@ -115,7 +113,6 @@ export const GuruChatMessageList = memo(function GuruChatMessageList({
   sessionSummary,
   isGeneralChat,
   topicName,
-  bannerVisible,
   imageJobKey,
   expandedSourcesMessageId,
   flatListRef,
@@ -127,7 +124,6 @@ export const GuruChatMessageList = memo(function GuruChatMessageList({
   onOpenSource,
   onSetLightboxUri,
   onSelectStarter,
-  onBannerDismiss,
 }: GuruChatMessageListProps) {
   const latestGuruMessageId = getLatestGuruMessageId(messages);
 
@@ -181,7 +177,7 @@ export const GuruChatMessageList = memo(function GuruChatMessageList({
 
   if (showEmptyState) {
     return (
-      <View style={styles.chatSurface}>
+      <View style={styles.emptySurface}>
         <GuruChatStarters
           starters={starters}
           sessionSummary={sessionSummary}
@@ -196,23 +192,6 @@ export const GuruChatMessageList = memo(function GuruChatMessageList({
 
   return (
     <View style={styles.contentWrap}>
-      {bannerVisible ? (
-        <View style={styles.infoBanner}>
-          <Ionicons
-            name="library-outline"
-            size={14}
-            color={n.colors.accent}
-            style={styles.bannerIcon}
-          />
-          <LinearText style={styles.infoText}>
-            Grounded with Wikipedia, Europe PMC and PubMed. Sources are linked inline.
-          </LinearText>
-          <Pressable onPress={onBannerDismiss} hitSlop={8}>
-            <Ionicons name="close" size={14} color={n.colors.textMuted} />
-          </Pressable>
-        </View>
-      ) : null}
-
       <View style={styles.chatSurface}>
         <AppFlashList
           key={`chat-list-${viewportWidth}`}
@@ -242,27 +221,6 @@ const styles = StyleSheet.create({
     paddingBottom: n.spacing.sm,
     gap: 0,
   },
-  infoBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    marginHorizontal: 4,
-    marginTop: 4,
-    borderRadius: n.radius.md,
-    backgroundColor: `${n.colors.accent}10`,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: `${n.colors.accent}25`,
-  },
-  bannerIcon: {
-    marginTop: 0,
-  },
-  infoText: {
-    ...n.typography.caption,
-    color: n.colors.textSecondary,
-    flex: 1,
-  },
   chatSurface: {
     flex: 1,
     borderRadius: n.radius.lg,
@@ -272,13 +230,16 @@ const styles = StyleSheet.create({
     marginTop: 6,
     overflow: 'hidden',
   },
+  emptySurface: {
+    flex: 1,
+  },
   messages: {
     flex: 1,
   },
   messagesContent: {
     paddingHorizontal: n.spacing.xs,
     paddingTop: n.spacing.sm,
-    paddingBottom: 132,
+    paddingBottom: 180,
     gap: n.spacing.sm,
     flexGrow: 1,
     justifyContent: 'flex-end',
@@ -329,7 +290,7 @@ const styles = StyleSheet.create({
     color: n.colors.textPrimary,
   },
   msgMetaDivider: {
-    color: '#66718C',
+    color: n.colors.textMuted,
     fontSize: 11,
   },
   msgMetaText: {

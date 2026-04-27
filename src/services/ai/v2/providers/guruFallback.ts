@@ -20,6 +20,7 @@
  */
 
 import { DEFAULT_PROVIDER_ORDER, type ProviderId, type UserProfile } from '../../../../types';
+import { isAuthorizationKey } from '../../config';
 import type { LanguageModelV2 } from '../spec';
 import { createFallbackModel } from './fallback';
 import { withMiddleware, createLoggingMiddleware } from '../middleware';
@@ -283,16 +284,42 @@ function tryCreateProvider(
     case 'qwen':
       return profile.qwenConnected ? createQwenModel({ modelId: ids.qwen }) : null;
 
-    case 'vertex':
-      return profile.vertexAiToken && profile.vertexAiProject && profile.vertexAiLocation
-        ? createGeminiModel({
-            modelId: ids.vertex,
-            apiKey: profile.vertexAiToken,
-            isVertex: true,
-            vertexProject: profile.vertexAiProject,
-            vertexLocation: profile.vertexAiLocation,
-          })
-        : null;
+    case 'vertex': {
+      // Priority 1: explicit Vertex token with project+location → Vertex AI endpoint
+      if (profile.vertexAiToken && profile.vertexAiProject && profile.vertexAiLocation) {
+        return createGeminiModel({
+          modelId: ids.vertex,
+          apiKey: profile.vertexAiToken,
+          isVertex: true,
+          vertexProject: profile.vertexAiProject,
+          vertexLocation: profile.vertexAiLocation,
+        });
+      }
+      // Priority 2: AQ authorization key from AI Studio field + project+location → Vertex AI endpoint
+      if (
+        profile.geminiKey &&
+        isAuthorizationKey(profile.geminiKey) &&
+        profile.vertexAiProject &&
+        profile.vertexAiLocation
+      ) {
+        return createGeminiModel({
+          modelId: ids.vertex,
+          apiKey: profile.geminiKey,
+          isVertex: true,
+          vertexProject: profile.vertexAiProject,
+          vertexLocation: profile.vertexAiLocation,
+        });
+      }
+      // Priority 3: Vertex token without project/location → AI Studio endpoint
+      if (profile.vertexAiToken) {
+        return createGeminiModel({
+          modelId: ids.vertex,
+          apiKey: profile.vertexAiToken,
+          isVertex: false,
+        });
+      }
+      return null;
+    }
 
     case 'local':
       return null;

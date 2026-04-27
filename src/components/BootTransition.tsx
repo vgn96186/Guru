@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { View, StyleSheet, useWindowDimensions } from 'react-native';
+import { View, StyleSheet, useWindowDimensions, type ViewStyle } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -11,77 +11,45 @@ import Animated, {
   Easing,
   cancelAnimation,
   interpolate,
+  runOnJS,
 } from 'react-native-reanimated';
-import Svg, { Defs, RadialGradient, Stop, Circle, Ellipse, Path } from 'react-native-svg';
+import Svg, { Defs, RadialGradient, Stop, Ellipse } from 'react-native-svg';
+import { NativeLoadingOrbView } from '../../modules/app-launcher';
+
+const AnimatedNativeOrb = Animated.createAnimatedComponent(NativeLoadingOrbView);
 import { linearTheme as n } from '../theme/linearTheme';
 import { useAppStore } from '../store/useAppStore';
 import { useProfileQuery } from '../hooks/queries/useProfile';
-import SharedOrbShell from './SharedOrbShell';
+import LinearText from './primitives/LinearText';
 
-const AnimatedPath = Animated.createAnimatedComponent(Path);
-
-const createViscousBlobPath = (
-  t: number,
-  intensity: number,
-  layerOffset: number = 0,
-  cyOffset: number = 0,
-  yScale: number = 1,
-) => {
-  'worklet';
-  const cx = 70;
-  const cy = 70 + cyOffset;
-  const baseR = 50;
-  const N = 60;
-
-  const pts: { x: number; y: number }[] = [];
-
-  for (let i = 0; i < N; i++) {
-    const angle = (i * Math.PI * 2) / N;
-    const phase = angle + layerOffset * 5.0;
-    const speed = t * (1 + layerOffset * 0.18);
-
-    const noise =
-      Math.sin(phase * 2 + speed * 0.7) * 0.5 +
-      Math.sin(phase * 3 - speed * 1.1) * 0.28 +
-      Math.cos(phase * 4 + speed * 1.6) * 0.12 +
-      Math.sin(phase * 5 - speed * 2.0) * 0.04;
-
-    const maxDeform = 28 - layerOffset * 5;
-    const smoothNoise = noise / (1 + Math.abs(noise) * 0.12);
-    const currentR = baseR - layerOffset * 2.5 + smoothNoise * intensity * maxDeform;
-
-    pts.push({
-      x: cx + Math.cos(angle) * currentR,
-      y: cy + Math.sin(angle) * currentR * yScale,
-    });
-  }
-
-  let d = `M ${Math.round(pts[0].x * 10) / 10} ${Math.round(pts[0].y * 10) / 10} `;
-  for (let i = 0; i < N; i++) {
-    const p0 = pts[(i - 1 + N) % N];
-    const p1 = pts[i];
-    const p2 = pts[(i + 1) % N];
-    const p3 = pts[(i + 2) % N];
-
-    const cp1x = p1.x + (p2.x - p0.x) / 6;
-    const cp1y = p1.y + (p2.y - p0.y) / 6;
-    const cp2x = p2.x - (p3.x - p1.x) / 6;
-    const cp2y = p2.y - (p3.y - p1.y) / 6;
-
-    d += `C ${Math.round(cp1x * 10) / 10} ${Math.round(cp1y * 10) / 10} ${
-      Math.round(cp2x * 10) / 10
-    } ${Math.round(cp2y * 10) / 10} ${Math.round(p2.x * 10) / 10} ${Math.round(p2.y * 10) / 10} `;
-  }
-
-  return d;
-};
-
-const ORB_SIZE = 180;
-const ORB_HALF = ORB_SIZE / 2;
-const PHONE_BUTTON_SIZE = 156;
+const PHONE_BUTTON_SIZE = 180;
 const TABLET_BUTTON_SIZE = 220;
 const TABLET_BREAKPOINT = 600;
+const GENTLE_EASE = Easing.bezier(0.25, 0.1, 0.25, 1); // Near-linear: perceptible change at every moment
 const MIN_BOOT_DISPLAY_MS = 800;
+const ORB_HALF = 180 / 2; // Used for static particle styling
+
+// ── Master calming curve ──────────────────────────────────────────
+// One master `progress` 0→1 drives multiple derived energy values so
+// deformation, breathing, jitter, and motion each decelerate at their
+// own pace.  This prevents the single pathIntensity from collapsing
+// everything at once and creating a "state switch" feel.
+function smoothstep(t: number) {
+  'worklet';
+  return t * t * (3 - 2 * t);
+}
+function calmCurve(t: number) {
+  'worklet';
+  // Exponential saturation: slow visible change at the start of calming,
+  // accelerating through the middle, then asymptotically approaching calm.
+  // Never hits exactly 1 so `energy` is always > 0.
+  const eased = smoothstep(t);
+  return 1 - Math.exp(-3.2 * eased);
+}
+const DEFORMATION_EXPONENT = 0.72; // blob shape — slowest decay
+const JITTER_EXPONENT = 1.4; // positional jitter — fastest decay
+const INTENSITY_FLOOR = 0.08; // never drop below this (prevents static sphere)
+// ──────────────────────────────────────────────────────────────────
 
 const MESSAGE_VARIATIONS: Record<string, string[]> = {
   'Guru is waking up...': [
@@ -116,6 +84,8 @@ export default function BootTransition() {
   const { width: screenWidth, height: screenHeight } = useWindowDimensions();
   const isTablet = screenWidth >= TABLET_BREAKPOINT;
   const targetSize = isTablet ? TABLET_BUTTON_SIZE : PHONE_BUTTON_SIZE;
+  // Orb matches button size so settling is just a position glide, no resize
+  const ORB_SIZE = targetSize;
 
   const bootPhase = useAppStore((s) => s.bootPhase);
   const startButtonLayout = useAppStore((s) => s.startButtonLayout);
@@ -125,13 +95,31 @@ export default function BootTransition() {
 
   const bootStartTime = useRef(Date.now());
   const hasEnteredCalming = useRef(false);
+  const hasEnteredSettling = useRef(false);
 
   // --- Messages ---
   const [displayMessage, setDisplayMessage] = React.useState('Guru is waking up...');
 
   // --- Path animation ---
   const pathTime = useSharedValue(0);
-  const pathIntensity = useSharedValue(1);
+  // Linear progress 0→1; pathIntensity is derived as (1-progress)² for perceptually even visual change
+  const calmProgress = useSharedValue(0);
+
+  const animatedOrbProps = useAnimatedProps(() => {
+    // pathIntensity: blob deformation only — decays from 1.0 → INTENSITY_FLOOR.
+    // breathIntensity: kept at 0 during boot — breathing (scale pulse) belongs
+    // on StartButton post-boot, not on the turbulent blob.
+    const p = calmProgress.value;
+    const calm = calmCurve(p);
+    const energy = 1 - calm;
+    const deformationEnergy = Math.pow(energy, DEFORMATION_EXPONENT);
+
+    // Keep intensity slightly higher than floor to retain liquid movement
+    return {
+      pathIntensity: INTENSITY_FLOOR + (1 - INTENSITY_FLOOR) * deformationEnergy,
+      breathIntensity: 0,
+    };
+  });
 
   useEffect(() => {
     if (bootPhase === 'done' || bootPhase === 'calming') return;
@@ -146,7 +134,7 @@ export default function BootTransition() {
   // --- Shared values ---
   // Entry animation
   const mountProgress = useSharedValue(0);
-  const mountScale = useSharedValue(0.45);
+  const mountScale = useSharedValue(0);
   // Core breathing
   const scaleCore = useSharedValue(0.95);
   const opacityCore = useSharedValue(0.85);
@@ -170,9 +158,16 @@ export default function BootTransition() {
   const jitterDamping = useSharedValue(1);
   // Settle
   const settleProgress = useSharedValue(0);
+  // Glide target — captured once at settle start so layout updates can't snap mid-animation
+  const targetXShared = useSharedValue(0);
+  const targetYShared = useSharedValue(0);
   const bgOpacity = useSharedValue(1);
   const loadingTextOpacity = useSharedValue(1);
   const ctaTextOpacity = useSharedValue(0);
+  const shellOpacity = useSharedValue(0);
+  const nativeOrbOpacity = useSharedValue(1);
+  const overlayOpacity = useSharedValue(1);
+  const [unmounted, setUnmounted] = React.useState(false);
   // Floating particles
   const particlesOpacity = useSharedValue(0);
   const p1FloatY = useSharedValue(0);
@@ -187,9 +182,14 @@ export default function BootTransition() {
     const fastCore = { duration: 1200, easing: Easing.inOut(Easing.ease) };
     const fastEmit = { duration: 2300, easing: Easing.out(Easing.quad) };
 
-    mountProgress.value = withTiming(1, { duration: 650, easing: Easing.out(Easing.ease) });
-    mountScale.value = withTiming(1, { duration: 850, easing: Easing.out(Easing.cubic) });
-    particlesOpacity.value = withDelay(700, withTiming(0.9, { duration: 600 }));
+    // Organic emergence: start invisible, scale up with a gentle overshoot
+    mountProgress.value = withTiming(1, { duration: 1000, easing: Easing.out(Easing.cubic) });
+    mountScale.value = withSequence(
+      withTiming(0.85, { duration: 600, easing: Easing.out(Easing.cubic) }),
+      withTiming(1.05, { duration: 400, easing: Easing.inOut(Easing.ease) }),
+      withTiming(1, { duration: 300, easing: Easing.inOut(Easing.ease) }),
+    );
+    particlesOpacity.value = withDelay(900, withTiming(0.9, { duration: 600 }));
 
     pathTime.value = withRepeat(
       withTiming(100, { duration: 40000, easing: Easing.linear }),
@@ -197,8 +197,9 @@ export default function BootTransition() {
       false,
     );
 
-    scaleCore.value = withRepeat(withTiming(1.1, fastCore), -1, true);
-    opacityCore.value = withRepeat(withTiming(1, fastCore), -1, true);
+    // Keep core scale and opacity stable during turbulent boot (no breathing/pulsing)
+    scaleCore.value = 1;
+    opacityCore.value = 1;
     opacityGlow.value = withRepeat(withTiming(0.7, fastCore), -1, true);
 
     scaleRing0.value = withDelay(
@@ -226,6 +227,13 @@ export default function BootTransition() {
     highlightTranslateY.value = withRepeat(withTiming(3, fastCore), -1, true);
     highlightOpacity.value = withRepeat(withTiming(0.55, fastCore), -1, true);
     jitterDamping.value = 1;
+
+    // Stay turbulent during boot — calmProgress held at 0 so intensity stays 1.0.
+    // Jitter eases slightly so orb doesn't feel chaotic forever.
+    jitterDamping.value = withDelay(
+      800,
+      withTiming(0.6, { duration: 4000, easing: Easing.linear }),
+    );
 
     jitterX.value = withDelay(
       500,
@@ -293,80 +301,36 @@ export default function BootTransition() {
     if (bootPhase !== 'calming' || hasEnteredCalming.current) return;
     hasEnteredCalming.current = true;
 
-    const elapsed = Date.now() - bootStartTime.current;
-    const delay = Math.max(0, MIN_BOOT_DISPLAY_MS - elapsed);
-
     const safetyTimer = setTimeout(() => {
       setBootPhase('settling');
-    }, 4000);
+    }, 10000);
 
-    const timer = setTimeout(() => {
-      jitterDamping.value = withTiming(0, {
-        duration: 1400,
-        easing: Easing.bezier(0.22, 1, 0.36, 1),
-      });
+    // Master progress 0→1 linear over 8000ms.
+    // calmCurve + per-energy exponents derive pathIntensity + breathIntensity
+    // separately so blob deformation decays slower than jitter, and breathing
+    // stays alive after the shape is nearly round.
+    calmProgress.value = withTiming(1, { duration: 8000, easing: Easing.linear });
+    // Reset jitter to full strength (booting may have damped it to 0.6)
+    jitterDamping.value = 1;
 
-      const normalCore = { duration: 1800, easing: Easing.inOut(Easing.ease) };
-      const normalEmit = { duration: 3500, easing: Easing.out(Easing.quad) };
-
+    // Fade floating particles after 2s — they're a boot-only flourish.
+    const particlesTimer = setTimeout(() => {
       particlesOpacity.value = withTiming(0, { duration: 900 });
-      pathIntensity.value = withTiming(0.4, { duration: 1800, easing: Easing.out(Easing.quad) });
-
-      opacityGlow.value = withSequence(
-        withTiming(0.95, { duration: 250 }),
-        withTiming(0.55, { duration: 450 }),
-        withRepeat(withTiming(0.5, normalCore), -1, true),
-      );
-
-      cancelAnimation(scaleCore);
-      cancelAnimation(opacityCore);
-      scaleCore.value = withDelay(50, withRepeat(withTiming(1.06, normalCore), -1, true));
-      opacityCore.value = withDelay(50, withRepeat(withTiming(1, normalCore), -1, true));
-
-      cancelAnimation(scaleRing0);
-      cancelAnimation(opacityRing0);
-      scaleRing0.value = withDelay(
-        100,
-        withRepeat(withTiming(1.9, { duration: 1800, easing: Easing.out(Easing.quad) }), -1, false),
-      );
-      opacityRing0.value = withDelay(
-        100,
-        withRepeat(withTiming(0, { duration: 1800, easing: Easing.out(Easing.quad) }), -1, false),
-      );
-
-      cancelAnimation(scaleRing1);
-      cancelAnimation(opacityRing1);
-      scaleRing1.value = withDelay(100, withRepeat(withTiming(3.0, normalEmit), -1, false));
-      opacityRing1.value = withDelay(100, withRepeat(withTiming(0, normalEmit), -1, false));
-
-      cancelAnimation(scaleRing2);
-      cancelAnimation(opacityRing2);
-      scaleRing2.value = withDelay(1100, withRepeat(withTiming(4.5, normalEmit), -1, false));
-      opacityRing2.value = withDelay(1100, withRepeat(withTiming(0, normalEmit), -1, false));
-
-      cancelAnimation(scaleRing3);
-      cancelAnimation(opacityRing3);
-      scaleRing3.value = withDelay(
-        2300,
-        withRepeat(withTiming(6.5, { ...normalEmit, duration: 4000 }), -1, false),
-      );
-      opacityRing3.value = withDelay(
-        2300,
-        withRepeat(withTiming(0, { ...normalEmit, duration: 4000 }), -1, false),
-      );
-    }, delay);
+    }, 2000);
 
     return () => {
-      clearTimeout(timer);
+      clearTimeout(particlesTimer);
       clearTimeout(safetyTimer);
     };
   }, [bootPhase, setBootPhase]);
 
   // --- Phase 3: Settle ---
   useEffect(() => {
-    if (bootPhase !== 'settling') return;
+    if (bootPhase !== 'settling' || hasEnteredSettling.current) return;
+    hasEnteredSettling.current = true;
 
-    const settleEasing = Easing.bezier(0.4, 0.0, 0.2, 1);
+    // Smooth, fluid easing for the glide up to the button slot
+    const settleEasing = Easing.bezier(0.22, 1, 0.36, 1);
 
     cancelAnimation(scaleRing0);
     cancelAnimation(opacityRing0);
@@ -382,20 +346,39 @@ export default function BootTransition() {
     opacityRing2.value = withTiming(0, { duration: 1000 });
     opacityRing3.value = withTiming(0, { duration: 1000 });
     opacityGlow.value = withTiming(0, { duration: 1200 });
+
+    // Defensive snap: calmProgress→1 gives energy ≈ 0.041, pathIntensity ≈ 0.17,
+    // breathIntensity ≈ 0.13 — the orb retains subtle wobble + breathing through the glide.
+    // Jitter is left to the energy curve (pow 1.4 kills it fast enough without a hard snap).
+    calmProgress.value = 1;
+
+    // Capture glide target NOW so any later layout updates can't snap the worklet mid-animation.
+    // Fall back to center if layout still missing (orb stays put rather than snapping).
+    if (startButtonLayout) {
+      targetXShared.value = startButtonLayout.x + startButtonLayout.width / 2;
+      targetYShared.value = startButtonLayout.y + startButtonLayout.height / 2;
+    } else {
+      targetXShared.value = centerX;
+      targetYShared.value = centerY;
+    }
+    cancelAnimation(scaleCore);
+    cancelAnimation(opacityCore);
     scaleCore.value = withTiming(1, { duration: 1600, easing: settleEasing });
     opacityCore.value = withTiming(1, { duration: 1600 });
-    pathIntensity.value = withTiming(0, { duration: 1600, easing: Easing.inOut(Easing.quad) });
 
+    // Glide to target position — slight delay so calm→glide feels sequential
     settleProgress.value = withDelay(100, withTiming(1, { duration: 2400, easing: settleEasing }));
 
-    bgOpacity.value = withTiming(0, { duration: 1800, easing: settleEasing });
-    loadingTextOpacity.value = withTiming(0, { duration: 600 });
+    bgOpacity.value = withTiming(0, { duration: 1600, easing: settleEasing });
+    loadingTextOpacity.value = withTiming(0, { duration: 400 });
+
+    // Fade in the "START" text after the orb arrives
     ctaTextOpacity.value = withDelay(800, withTiming(1, { duration: 800 }));
 
     cancelAnimation(highlightOpacity);
-    highlightOpacity.value = withTiming(0.45, { duration: 1600 });
+    highlightOpacity.value = withTiming(0.45, { duration: 1200 });
     cancelAnimation(highlightTranslateY);
-    highlightTranslateY.value = withTiming(0, { duration: 1600 });
+    highlightTranslateY.value = withTiming(0, { duration: 1200 });
 
     const completeTimer = setTimeout(() => {
       setBootPhase('done');
@@ -409,13 +392,20 @@ export default function BootTransition() {
   const centerY = screenHeight / 2;
 
   const styleOrb = useAnimatedStyle(() => {
-    const currentSize = interpolate(settleProgress.value, [0, 1], [ORB_SIZE, targetSize]);
-    const targetX = startButtonLayout ? startButtonLayout.x + startButtonLayout.width / 2 : centerX;
-    const targetY = startButtonLayout
-      ? startButtonLayout.y + startButtonLayout.height / 2
-      : centerY;
+    const currentSize = ORB_SIZE; // Same size throughout — no resize jank
+    // Read captured target from shared values — set once at settle start, never changes after.
+    // Falls back to centerX/Y while still 0 (pre-settle) so orb sits centered.
+    const targetX = targetXShared.value || centerX;
+    const targetY = targetYShared.value || centerY;
     const currentX = interpolate(settleProgress.value, [0, 1], [centerX, targetX]);
     const currentY = interpolate(settleProgress.value, [0, 1], [centerY, targetY]);
+    // Jitter uses the fastest-decaying exponent (1.4) so positional shake
+    // fades before blob deformation, keeping the orb's shape alive longer.
+    const p = calmProgress.value;
+    const energy = 1 - calmCurve(p);
+    const jitterEnergy = Math.pow(energy, JITTER_EXPONENT);
+    const jitterMult =
+      (INTENSITY_FLOOR + (1 - INTENSITY_FLOOR) * jitterEnergy) * jitterDamping.value;
 
     return {
       position: 'absolute',
@@ -425,14 +415,13 @@ export default function BootTransition() {
       left: currentX - currentSize / 2,
       top: currentY - currentSize / 2,
       transform: [
-        { translateX: jitterX.value * jitterDamping.value },
-        { translateY: jitterY.value * jitterDamping.value },
+        { translateX: jitterX.value * jitterMult },
+        { translateY: jitterY.value * jitterMult },
       ],
     };
   });
 
   const styleCore = useAnimatedStyle(() => ({
-    transform: [{ scale: scaleCore.value * mountScale.value }],
     opacity: opacityCore.value * mountProgress.value,
   }));
 
@@ -460,28 +449,9 @@ export default function BootTransition() {
     opacity: opacityRing3.value * mountProgress.value,
   }));
 
-  const animatedGroundShadowProps = useAnimatedProps(() => ({
-    d: createViscousBlobPath(pathTime.value, pathIntensity.value * 0.6, 0, 18, 0.3),
-  }));
-
-  const animatedGlowProps = useAnimatedProps(() => ({
-    d: createViscousBlobPath(pathTime.value, pathIntensity.value * 1.15, -0.3),
-  }));
-
-  const animatedBodyProps = useAnimatedProps(() => ({
-    d: createViscousBlobPath(pathTime.value, pathIntensity.value, 0),
-  }));
-
-  const animatedSubsurfaceProps = useAnimatedProps(() => ({
-    d: createViscousBlobPath(pathTime.value, pathIntensity.value, 1.2),
-  }));
-
-  const animatedCausticProps = useAnimatedProps(() => ({
-    d: createViscousBlobPath(pathTime.value, pathIntensity.value, 2.0),
-  }));
-
-  const animatedReflectionProps = useAnimatedProps(() => ({
-    d: createViscousBlobPath(pathTime.value, pathIntensity.value, 1.5),
+  const styleNativeOrb = useAnimatedStyle(() => ({
+    opacity: nativeOrbOpacity.value,
+    transform: [{ scale: scaleCore.value * mountScale.value }],
   }));
 
   const styleBg = useAnimatedStyle(() => ({
@@ -514,10 +484,26 @@ export default function BootTransition() {
     transform: [{ translateY: p3FloatY.value }],
   }));
 
-  if (bootPhase === 'done') return null;
+  // --- Phase 4: Fade out overlay to reveal StartButton underneath ---
+  useEffect(() => {
+    if (bootPhase !== 'done') return;
+    overlayOpacity.value = withTiming(
+      0,
+      { duration: 350, easing: Easing.out(Easing.quad) },
+      (finished) => {
+        if (finished) runOnJS(setUnmounted)(true);
+      },
+    );
+  }, [bootPhase]);
+
+  const styleOverlay = useAnimatedStyle(() => ({
+    opacity: overlayOpacity.value,
+  }));
+
+  if (unmounted) return null;
 
   return (
-    <View style={styles.overlay} pointerEvents="none">
+    <Animated.View style={[styles.overlay, styleOverlay]} pointerEvents="none">
       <Animated.View style={[styles.background, styleBg]} />
 
       <Animated.View style={styleOrb}>
@@ -552,169 +538,70 @@ export default function BootTransition() {
           {!isTurbulent && <Animated.View style={[styles.glowShadow, styleGlow]} />}
 
           <View style={[styles.coreInner, isTurbulent && { overflow: 'visible', borderRadius: 0 }]}>
-            {/* During settling phase, both modes use SharedOrbShell */}
-            {bootPhase === 'settling' ? (
-              <SharedOrbShell
-                size={targetSize}
-                color={n.colors.accent}
-                label={startButtonLabel}
-                sublabel={startButtonSublabel}
-                bodyAnimatedStyle={styleCore}
-                glowAnimatedStyle={styleGlow}
-                highlightAnimatedStyle={styleHighlight}
-                labelAnimatedStyle={styleCtaText}
-              />
-            ) : isTurbulent ? (
-              /* Turbulent mode - custom SVG layers */
-              <Svg
-                height="160%"
-                width="160%"
-                viewBox="0 0 140 140"
-                style={{ position: 'absolute', top: '-30%', left: '-30%' }}
-              >
-                <Defs>
-                  <RadialGradient id="orbGroundShadow" cx="50%" cy="50%" rx="50%" ry="50%">
-                    <Stop offset="0%" stopColor="#1E1B4B" stopOpacity="0.55" />
-                    <Stop offset="35%" stopColor="#0F0D2E" stopOpacity="0.3" />
-                    <Stop offset="65%" stopColor="#000000" stopOpacity="0.12" />
-                    <Stop offset="100%" stopColor="#000000" stopOpacity="0" />
-                  </RadialGradient>
-                  <RadialGradient id="orbGlow" cx="50%" cy="50%" rx="50%" ry="50%">
-                    <Stop offset="0%" stopColor="#818CF8" stopOpacity="0.4" />
-                    <Stop offset="35%" stopColor="#6366F1" stopOpacity="0.18" />
-                    <Stop offset="65%" stopColor="#4F46E5" stopOpacity="0.06" />
-                    <Stop offset="100%" stopColor="#4F46E5" stopOpacity="0" />
-                  </RadialGradient>
-                  <RadialGradient id="orbBody" cx="35%" cy="30%" rx="75%" ry="75%">
-                    <Stop offset="0%" stopColor="#C7D2FE" stopOpacity="1" />
-                    <Stop offset="12%" stopColor="#A5B4FC" stopOpacity="1" />
-                    <Stop offset="30%" stopColor="#818CF8" stopOpacity="1" />
-                    <Stop offset="50%" stopColor="#4F46E5" stopOpacity="1" />
-                    <Stop offset="72%" stopColor="#3730A3" stopOpacity="1" />
-                    <Stop offset="88%" stopColor="#1E1B4B" stopOpacity="1" />
-                    <Stop offset="100%" stopColor="#0F0D2E" stopOpacity="1" />
-                  </RadialGradient>
-                  <RadialGradient id="orbAO" cx="50%" cy="85%" rx="65%" ry="40%">
-                    <Stop offset="0%" stopColor="#000000" stopOpacity="0.45" />
-                    <Stop offset="30%" stopColor="#000000" stopOpacity="0.2" />
-                    <Stop offset="60%" stopColor="#000000" stopOpacity="0.05" />
-                    <Stop offset="100%" stopColor="#000000" stopOpacity="0" />
-                  </RadialGradient>
-                  <RadialGradient id="orbSubsurface" cx="62%" cy="68%" rx="50%" ry="50%">
-                    <Stop offset="0%" stopColor="#DDD6FE" stopOpacity="0.6" />
-                    <Stop offset="20%" stopColor="#C7D2FE" stopOpacity="0.35" />
-                    <Stop offset="45%" stopColor="#A5B4FC" stopOpacity="0.15" />
-                    <Stop offset="70%" stopColor="#818CF8" stopOpacity="0.05" />
-                    <Stop offset="100%" stopColor="#6366F1" stopOpacity="0" />
-                  </RadialGradient>
-                  <RadialGradient id="orbSpecular" cx="25%" cy="18%" rx="50%" ry="50%">
-                    <Stop offset="0%" stopColor="#FFFFFF" stopOpacity="0.95" />
-                    <Stop offset="8%" stopColor="#F5F3FF" stopOpacity="0.8" />
-                    <Stop offset="18%" stopColor="#E0E7FF" stopOpacity="0.5" />
-                    <Stop offset="32%" stopColor="#C7D2FE" stopOpacity="0.2" />
-                    <Stop offset="50%" stopColor="#000000" stopOpacity="0.0" />
-                    <Stop offset="70%" stopColor="#000000" stopOpacity="0.12" />
-                    <Stop offset="85%" stopColor="#000000" stopOpacity="0.3" />
-                    <Stop offset="95%" stopColor="#000000" stopOpacity="0.5" />
-                  </RadialGradient>
-                  <RadialGradient id="orbFresnel" cx="50%" cy="50%" rx="50%" ry="50%">
-                    <Stop offset="0%" stopColor="#FFFFFF" stopOpacity="0" />
-                    <Stop offset="50%" stopColor="#FFFFFF" stopOpacity="0" />
-                    <Stop offset="72%" stopColor="#C7D2FE" stopOpacity="0.06" />
-                    <Stop offset="85%" stopColor="#A5B4FC" stopOpacity="0.18" />
-                    <Stop offset="93%" stopColor="#A5B4FC" stopOpacity="0.35" />
-                    <Stop offset="97%" stopColor="#C7D2FE" stopOpacity="0.45" />
-                    <Stop offset="100%" stopColor="#E0E7FF" stopOpacity="0.2" />
-                  </RadialGradient>
-                  <RadialGradient id="orbCaustic" cx="70%" cy="78%" rx="45%" ry="40%">
-                    <Stop offset="0%" stopColor="#EDE9FE" stopOpacity="0.65" />
-                    <Stop offset="15%" stopColor="#DDD6FE" stopOpacity="0.45" />
-                    <Stop offset="35%" stopColor="#C7D2FE" stopOpacity="0.25" />
-                    <Stop offset="55%" stopColor="#A5B4FC" stopOpacity="0.1" />
-                    <Stop offset="100%" stopColor="#818CF8" stopOpacity="0" />
-                  </RadialGradient>
-                  <RadialGradient id="orbReflection" cx="75%" cy="78%" rx="35%" ry="30%">
-                    <Stop offset="0%" stopColor="#E0E7FF" stopOpacity="0.3" />
-                    <Stop offset="25%" stopColor="#C7D2FE" stopOpacity="0.15" />
-                    <Stop offset="50%" stopColor="#A5B4FC" stopOpacity="0.05" />
-                    <Stop offset="100%" stopColor="#818CF8" stopOpacity="0" />
-                  </RadialGradient>
-                </Defs>
-                {/* Layers 0-8 */}
-                <AnimatedPath
-                  animatedProps={animatedGroundShadowProps}
-                  fill="url(#orbGroundShadow)"
+            {/* The liquid orb, rendered natively via Jetpack Compose */}
+            {isTurbulent ? (
+              <Animated.View style={[StyleSheet.absoluteFill, styleNativeOrb]}>
+                <AnimatedNativeOrb
+                  isTurbulent={true}
+                  animatedProps={animatedOrbProps}
+                  style={{
+                    position: 'absolute',
+                    top: '-30%',
+                    left: '-30%',
+                    width: '160%',
+                    height: '160%',
+                  }}
                 />
-                <AnimatedPath animatedProps={animatedGlowProps} fill="url(#orbGlow)" />
-                <AnimatedPath animatedProps={animatedBodyProps} fill="url(#orbBody)" />
-                <AnimatedPath animatedProps={animatedBodyProps} fill="url(#orbAO)" />
-                <AnimatedPath animatedProps={animatedSubsurfaceProps} fill="url(#orbSubsurface)" />
-                <AnimatedPath animatedProps={animatedBodyProps} fill="url(#orbSpecular)" />
-                <AnimatedPath animatedProps={animatedBodyProps} fill="url(#orbFresnel)" />
-                <AnimatedPath animatedProps={animatedCausticProps} fill="url(#orbCaustic)" />
-                <AnimatedPath animatedProps={animatedReflectionProps} fill="url(#orbReflection)" />
-              </Svg>
+              </Animated.View>
             ) : (
-              /* Classic mode - standard orb */
-              <Svg height="100%" width="100%" viewBox="0 0 100 100" style={StyleSheet.absoluteFill}>
-                <Defs>
-                  <RadialGradient
-                    id="btColorGrad"
-                    cx="45%"
-                    cy="45%"
-                    rx="55%"
-                    ry="55%"
-                    fx="45%"
-                    fy="45%"
-                  >
-                    <Stop offset="0%" stopColor={n.colors.accent} stopOpacity="1" />
-                    <Stop offset="40%" stopColor={n.colors.accent} stopOpacity="1" />
-                    <Stop offset="72%" stopColor={n.colors.accent} stopOpacity="1" />
-                    <Stop offset="100%" stopColor={n.colors.accent} stopOpacity="1" />
-                  </RadialGradient>
-                  <RadialGradient
-                    id="btLightGrad"
-                    cx="30%"
-                    cy="28%"
-                    rx="65%"
-                    ry="65%"
-                    fx="30%"
-                    fy="28%"
-                  >
-                    <Stop offset="0%" stopColor="#ffffff" stopOpacity="0.6" />
-                    <Stop offset="35%" stopColor="#ffffff" stopOpacity="0.1" />
-                    <Stop offset="65%" stopColor="#000000" stopOpacity="0.0" />
-                    <Stop offset="85%" stopColor="#000000" stopOpacity="0.25" />
-                    <Stop offset="100%" stopColor="#000000" stopOpacity="0.5" />
-                  </RadialGradient>
-                </Defs>
-                <Circle cx="50" cy="50" r="50" fill="url(#btColorGrad)" />
-                <Circle cx="50" cy="50" r="50" fill="url(#btLightGrad)" />
-              </Svg>
+              /* Classic profile — solid sphere natively rendered */
+              <Animated.View style={[StyleSheet.absoluteFill, styleNativeOrb]}>
+                <NativeLoadingOrbView
+                  isTurbulent={false}
+                  style={{
+                    position: 'absolute',
+                    top: '-20%',
+                    left: '-20%',
+                    width: '140%',
+                    height: '140%',
+                  }}
+                />
+              </Animated.View>
             )}
-          </View>
 
-          {!isTurbulent && bootPhase !== 'settling' && (
-            <Animated.View style={[styles.specularContainer, styleHighlight]}>
-              <Svg width={40} height={25} viewBox="0 0 40 25">
-                <Defs>
-                  <RadialGradient id="btSpecular" cx="50%" cy="50%" rx="50%" ry="50%">
-                    <Stop offset="0%" stopColor="#ffffff" stopOpacity="0.9" />
-                    <Stop offset="60%" stopColor="#ffffff" stopOpacity="0.3" />
-                    <Stop offset="100%" stopColor="#ffffff" stopOpacity="0" />
-                  </RadialGradient>
-                </Defs>
-                <Ellipse cx="20" cy="12.5" rx="18" ry="10" fill="url(#btSpecular)" />
-              </Svg>
+            {/* CTA text fades in over the native orb — no crossfade needed */}
+            <Animated.View style={[styles.textOverlay, styleCtaText]} pointerEvents="none">
+              <LinearText
+                variant="body"
+                tone="inverse"
+                style={styles.ctaLabel}
+                numberOfLines={2}
+                adjustsFontSizeToFit
+                minimumFontScale={0.75}
+              >
+                {startButtonLabel || 'START SESSION'}
+              </LinearText>
+              {startButtonSublabel ? (
+                <LinearText
+                  variant="bodySmall"
+                  tone="muted"
+                  style={styles.ctaSublabel}
+                  numberOfLines={2}
+                  adjustsFontSizeToFit
+                  minimumFontScale={0.85}
+                >
+                  {startButtonSublabel}
+                </LinearText>
+              ) : null}
             </Animated.View>
-          )}
+          </View>
         </Animated.View>
       </Animated.View>
 
       <Animated.View style={[styles.textContainer, styleLoadingText]} pointerEvents="none">
         <Animated.Text style={styles.text}>{displayMessage.replace(/^\s*\+\s*/, '')}</Animated.Text>
       </Animated.View>
-    </View>
+    </Animated.View>
   );
 }
 
@@ -765,7 +652,6 @@ const styles = StyleSheet.create({
     elevation: 30,
   },
   coreInner: { ...StyleSheet.absoluteFillObject, borderRadius: 9999, overflow: 'hidden' },
-  specularContainer: { position: 'absolute', top: '15%', left: '18%' },
   textContainer: { position: 'absolute', bottom: '30%', left: 0, right: 0, alignItems: 'center' },
   text: {
     color: n.colors.textMuted,
@@ -786,4 +672,30 @@ const styles = StyleSheet.create({
   particle1: { width: 8, height: 8, left: ORB_HALF + 52, top: ORB_HALF - 70, shadowRadius: 8 },
   particle2: { width: 6, height: 6, left: ORB_HALF - 82, top: ORB_HALF + 28, shadowRadius: 6 },
   particle3: { width: 5, height: 5, left: ORB_HALF + 64, top: ORB_HALF + 58, shadowRadius: 5 },
+  textOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    zIndex: 3,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  ctaLabel: {
+    color: '#FFF',
+    fontWeight: '900',
+    fontSize: 17,
+    letterSpacing: 1.2,
+    textAlign: 'center',
+    textShadowColor: 'rgba(0,0,0,0.4)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 3,
+  },
+  ctaSublabel: {
+    color: 'rgba(255,255,255,0.75)',
+    fontSize: 12,
+    marginTop: 6,
+    textAlign: 'center',
+    lineHeight: 17,
+    textShadowColor: 'rgba(0,0,0,0.3)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
+  },
 });

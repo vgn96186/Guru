@@ -3,6 +3,7 @@ type MockProfile = {
   groqApiKey?: string;
   useLocalModel?: boolean;
   localModelPath?: string | null;
+  providerOrder?: string[];
 };
 
 const baseProfile: MockProfile = {
@@ -165,7 +166,7 @@ describe('aiService routing policy', () => {
 
   it('falls back to cloud if local fails', async () => {
     const { aiService, chatMock } = await loadAiService({
-      profile: { useLocalModel: true },
+      profile: { useLocalModel: true, providerOrder: ['local', 'groq', 'openrouter'] },
       localCompletionText: 'local-success',
     });
     chatMock.mockRejectedValueOnce(new Error('local down'));

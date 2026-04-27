@@ -10,7 +10,7 @@ export function getGoogleGenAI(apiKey: string): GoogleGenAI {
   }
   let c = clientByKey.get(k);
   if (!c) {
-    c = new GoogleGenAI({ apiKey: k, vertexai: false });
+    c = new GoogleGenAI({ apiKey: k });
     clientByKey.set(k, c);
   }
   return c;

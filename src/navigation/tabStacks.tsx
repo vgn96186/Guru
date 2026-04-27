@@ -50,6 +50,7 @@ const stackScreenOptions = {
   animation: 'slide_from_right' as const,
   contentStyle: { backgroundColor: n.colors.background },
   statusBarStyle: 'light' as const,
+  gestureEnabled: true,
 };
 
 export function HomeStackNav() {

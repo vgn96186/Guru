@@ -24,6 +24,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { linearTheme as n } from '../theme/linearTheme';
 import LinearText from './primitives/LinearText';
+import LoadingOrb from './LoadingOrb';
 
 interface LoadingOverlayProps {
   /** Whether the overlay is visible */
@@ -229,7 +230,7 @@ export default function LoadingOverlay({
           ]}
         >
           <Animated.View style={[styles.content, contentStyle]}>
-            {icon ?? <BouncyDots />}
+            {icon ?? <LoadingOrb message="" size={140} />}
             {message && (
               <LinearText variant="body" tone="secondary" style={styles.message}>
                 {message}

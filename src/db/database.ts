@@ -460,6 +460,8 @@ export async function ensureCriticalColumns(db: SQLite.SQLiteDatabase): Promise<
       ['guru_chat_default_model', "TEXT NOT NULL DEFAULT 'auto'"],
       ['guru_memory_notes', "TEXT NOT NULL DEFAULT ''"],
       ['image_generation_model', "TEXT NOT NULL DEFAULT 'auto'"],
+      ['image_generation_order', "TEXT NOT NULL DEFAULT '[]'"],
+      ['transcription_order', "TEXT NOT NULL DEFAULT '[]'"],
       ['exam_type', "TEXT NOT NULL DEFAULT 'INICET'"],
       ['prefer_gemini_structured_json', 'INTEGER NOT NULL DEFAULT 1'],
       ['github_models_pat', "TEXT NOT NULL DEFAULT ''"],
@@ -500,6 +502,8 @@ export async function ensureCriticalColumns(db: SQLite.SQLiteDatabase): Promise<
       ['scan_orphaned_transcripts_enabled', 'INTEGER NOT NULL DEFAULT 0'],
       ['samsungBatteryPromptShownAt', 'INTEGER DEFAULT 0'],
       ['orb_effect', "TEXT NOT NULL DEFAULT 'ripple'"],
+      ['web_search_order', 'TEXT DEFAULT NULL'],
+      ['disabled_web_search_providers', "TEXT NOT NULL DEFAULT '[]'"],
     ],
     topics: [
       ['parent_topic_id', 'INTEGER REFERENCES topics(id) ON DELETE SET NULL'],

@@ -1,5 +1,5 @@
 import { desc, eq } from 'drizzle-orm';
-import type { DailyAgenda } from '../../services/ai';
+import type { DailyAgenda } from '../../services/ai/types';
 import { getDrizzleDb } from '../drizzle';
 import { dailyAgenda, planEvents } from '../drizzleSchema';
 

@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
-import { View, TextInput, TouchableOpacity, ScrollView, StyleSheet, StatusBar } from 'react-native';
+import { View, TextInput, TouchableOpacity, ScrollView, StyleSheet, StatusBar, KeyboardAvoidingView } from 'react-native';
 import LinearText from '../components/primitives/LinearText';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { MenuStackParamList } from '../navigation/types';

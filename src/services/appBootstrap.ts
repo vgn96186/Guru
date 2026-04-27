@@ -250,7 +250,9 @@ export async function runAppBootstrap(): Promise<BootstrapOutcome> {
       });
     }
 
+    console.log('[AppBootstrap] Initializing database...');
     await initDatabase();
+    console.log('[AppBootstrap] Database initialized.');
     await runOptionalStartupStep('backup restore check', async () => {
       await checkAndRestoreFromPublicBackup();
     });
@@ -270,11 +272,12 @@ export async function runAppBootstrap(): Promise<BootstrapOutcome> {
       if (__DEV__) console.warn('[AppBootstrap] Background task not registered:', e);
     });
 
+    console.log('[AppBootstrap] Applying confidence decay...');
     try {
       const { decayed } = await profileRepository.applyConfidenceDecay();
-      if (decayed > 0 && __DEV__) console.log(`[ConfidenceDecay] ${decayed} topics decayed`);
+      console.log(`[AppBootstrap] Confidence decay complete: ${decayed} decayed`);
     } catch (e) {
-      console.warn('[ConfidenceDecay] Error:', e);
+      console.error('[AppBootstrap] Confidence decay FAILED:', e);
     }
 
     // Dispatch maintenance tasks without awaiting to keep startup snappy.
@@ -295,18 +298,25 @@ export async function runAppBootstrap(): Promise<BootstrapOutcome> {
         });
       }, 15000);
       void runOptionalStartupStep('local model bootstrap (background)', async () => {
+        console.log('[AppBootstrap] Starting local model bootstrap...');
         await bootstrapLocalModels();
+        console.log('[AppBootstrap] Local model bootstrap finished.');
       });
       // Warm up Gemma LiteRT on supported devices with local model enabled
       void runOptionalStartupStep('Local LLM warmup (background)', async () => {
         try {
+          console.log('[AppBootstrap] Local LLM warmup check...');
           const { warmupLocalModelOnBootstrap } = await import('./ai/localLlmInfra');
           const profile = await profileRepository.getProfile();
           if (profile?.useLocalModel && profile.localModelPath) {
+            console.log(`[AppBootstrap] Warming up local LLM: ${profile.localModelPath}`);
             await warmupLocalModelOnBootstrap(profile.localModelPath);
+            console.log('[AppBootstrap] Local LLM warmup complete.');
+          } else {
+            console.log('[AppBootstrap] Local LLM warmup skipped (not enabled or no path).');
           }
         } catch (e) {
-          console.warn('[Bootstrap] Local LLM warmup skipped:', e);
+          console.warn('[Bootstrap] Local LLM warmup failed:', e);
         }
       });
       // Warm up Gemini Nano (AICore) on supported devices — no model file needed

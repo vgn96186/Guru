@@ -585,7 +585,7 @@ export default function GuruChatOverlay({
 
       <KeyboardAvoidingView
         style={s.kvWrapper}
-        behavior="translate-with-padding"
+        behavior="padding"
         enabled={!lightboxUri}
       >
         <Animated.View style={[s.panel, { transform: [{ translateY: slideAnim }] }]}>
@@ -651,7 +651,6 @@ export default function GuruChatOverlay({
                 sessionSummary={sessionSummaryCtx}
                 isGeneralChat={false}
                 topicName={topicName}
-                bannerVisible={bannerVisible}
                 imageJobKey={imageJobKey}
                 expandedSourcesMessageId={expandedSourcesMessageId}
                 flatListRef={flatListRef}
@@ -667,7 +666,6 @@ export default function GuruChatOverlay({
                 onOpenSource={openSource}
                 onSetLightboxUri={setLightboxUri}
                 onSelectStarter={(text: string) => void handleSend(text)}
-                onBannerDismiss={() => setBannerVisible(false)}
               />
             </View>
           )}
@@ -678,10 +676,7 @@ export default function GuruChatOverlay({
                 input={input}
                 onChangeText={setInput}
                 onSend={handleSend}
-                onModelPress={() => {
-                  setPickerTab(currentModelGroup);
-                  setShowModelPicker(true);
-                }}
+                onModelPress={() => setShowModelPicker(true)}
                 currentModelLabel={currentModelLabel}
                 isLoading={loading}
               />
@@ -832,9 +827,12 @@ const s = StyleSheet.create({
     lineHeight: 16,
   },
   composerBar: {
-    width: '100%',
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
     backgroundColor: n.colors.background,
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: 'rgba(255, 255, 255, 0.06)',
+    borderTopColor: 'rgba(255, 255, 255, 0.1)',
   },
 });

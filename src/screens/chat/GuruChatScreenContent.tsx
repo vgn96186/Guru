@@ -8,6 +8,7 @@ import {
   useWindowDimensions,
   View,
 } from 'react-native';
+
 import { type FlashListRef } from '@shopify/flash-list';
 import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
 import { ImageLightbox } from '../../components/ImageLightbox';
@@ -191,7 +192,7 @@ export default function GuruChatScreenContent() {
   const modelForVercel = useMemo(() => {
     if (!profile) return null;
     try {
-      const { createGuruFallbackModel } = require('../services/ai/v2');
+      const { createGuruFallbackModel } = require('../../services/ai/v2');
       return createGuruFallbackModel({
         profile,
         chosenModel: chosenModel === 'auto' ? undefined : chosenModel,
@@ -236,6 +237,18 @@ export default function GuruChatScreenContent() {
       setSessionSummary(summaryText);
       setSessionStateJson(stateJson);
     },
+    onError: (err) => {
+      const message = err instanceof Error ? err.message : String(err);
+      setMessages((current) => [
+        ...current,
+        {
+          id: `g-err-${Date.now()}`,
+          role: 'guru',
+          text: `⚠️ Error: ${message}`,
+          timestamp: Date.now(),
+        },
+      ]);
+    },
     finalizeAssistantMessage: async (assistantMessage) => {
       let finalText = assistantMessage.text;
       let finalImages = assistantMessage.images;
@@ -277,9 +290,6 @@ export default function GuruChatScreenContent() {
         text: finalText,
         images: finalImages,
       };
-    },
-    onError: (err) => {
-      console.error('GuruChat error:', err);
     },
   });
   const messages = guruChat.messages;
@@ -599,7 +609,7 @@ export default function GuruChatScreenContent() {
 
   return (
     // eslint-disable-next-line guru/prefer-screen-shell -- SafeAreaView needed here
-    <SafeAreaView style={styles.safe} testID="guru-chat-screen">
+    <SafeAreaView style={styles.safe} edges={['top', 'left', 'right']} testID="guru-chat-screen">
       <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
       <View style={styles.flex}>
         <ScreenMotion
@@ -609,7 +619,8 @@ export default function GuruChatScreenContent() {
         >
           <KeyboardAvoidingView
             style={styles.flex}
-            behavior="translate-with-padding"
+            behavior="padding"
+            keyboardVerticalOffset={0}
             enabled={!lightboxUri}
           >
             <ResponsiveContainer style={styles.flex}>
@@ -694,7 +705,7 @@ export default function GuruChatScreenContent() {
 
               <RevealSection active={entryComplete} delayMs={80} style={styles.flex}>
                 <View style={styles.contentWrap}>
-                  {bannerVisible ? (
+                  {bannerVisible && messages.length > 0 ? (
                     <GuruChatInfoBanner onDismiss={() => setBannerVisible(false)} />
                   ) : null}
 
@@ -710,7 +721,6 @@ export default function GuruChatScreenContent() {
                     sessionSummary={sessionSummary}
                     isGeneralChat={isGeneralChat}
                     topicName={topicName}
-                    bannerVisible={bannerVisible}
                     imageJobKey={imageJobKey}
                     expandedSourcesMessageId={expandedSourcesMessageId}
                     flatListRef={flatListRef}
@@ -726,7 +736,6 @@ export default function GuruChatScreenContent() {
                     onOpenSource={openSource}
                     onSetLightboxUri={setLightboxUri}
                     onSelectStarter={(text: string) => handleSend(text)}
-                    onBannerDismiss={() => setBannerVisible(false)}
                   />
                 </View>
               </RevealSection>
@@ -737,10 +746,7 @@ export default function GuruChatScreenContent() {
                     input={input}
                     onChangeText={setInput}
                     onSend={handleSend}
-                    onModelPress={() => {
-                      setPickerTab(currentModelGroup);
-                      setShowModelPicker(true);
-                    }}
+                    onModelPress={() => setShowModelPicker(true)}
                     currentModelLabel={currentModelLabel}
                     isLoading={loading}
                     autoFocus={!!route.params?.autoFocusComposer}
@@ -768,10 +774,15 @@ const styles = StyleSheet.create({
   flex: {
     flex: 1,
   },
-  /** Opaque strip so the message list does not show through when the keyboard lifts the composer. */
+  /** Floating composer bar with solid background for visibility. */
   keyboardComposerBar: {
-    width: '100%',
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
     backgroundColor: n.colors.background,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: 'rgba(255, 255, 255, 0.1)',
   },
   contentWrap: {
     flex: 1,

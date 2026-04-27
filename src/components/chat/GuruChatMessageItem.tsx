@@ -85,7 +85,7 @@ function ActionButton({
       {loading ? (
         <ActivityIndicator size="small" color={n.colors.textPrimary} />
       ) : (
-        <Ionicons name={icon} size={14} color={active ? n.colors.textPrimary : n.colors.accent} />
+        <Ionicons name={icon} size={17} color={active ? n.colors.textPrimary : n.colors.accent} />
       )}
     </Pressable>
   );
@@ -391,7 +391,7 @@ const styles = StyleSheet.create({
     fontSize: 13,
   },
   msgMetaDivider: {
-    color: '#66718C',
+    color: n.colors.textMuted,
     fontSize: 11,
   },
   msgMetaText: {
@@ -399,15 +399,15 @@ const styles = StyleSheet.create({
     color: n.colors.textMuted,
   },
   msgModelPill: {
-    paddingHorizontal: 7,
-    paddingVertical: 2,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
     borderRadius: 999,
-    backgroundColor: whiteAlpha['2'],
+    backgroundColor: accentAlpha['10'],
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: whiteAlpha['8'],
+    borderColor: accentAlpha['25'],
   },
   msgModelPillText: {
-    color: n.colors.textMuted,
+    color: n.colors.accent,
     fontSize: 10,
     fontWeight: '700',
   },
@@ -473,8 +473,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     flexWrap: 'wrap',
-    gap: 6,
-    marginTop: 10,
+    gap: 10,
+    marginTop: 12,
   },
   responseStatusRow: {
     flexDirection: 'row',
@@ -492,12 +492,12 @@ const styles = StyleSheet.create({
   responseActionBtn: {
     alignItems: 'center',
     justifyContent: 'center',
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: whiteAlpha['2'],
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: whiteAlpha['3'],
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: whiteAlpha['8'],
+    borderColor: whiteAlpha['12'],
   },
   responseActionBtnActive: {
     backgroundColor: accentAlpha['10'],

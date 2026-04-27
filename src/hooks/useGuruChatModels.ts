@@ -15,6 +15,8 @@ import {
   guruChatPickerNameForGroqModel,
   guruChatPickerNameForOpenRouterSlug,
 } from '../services/ai/guruChatModelPreference';
+import { VERTEX_MODELS } from '../config/appConfig';
+import { isAuthorizationKey } from '../services/ai/config';
 
 const MODEL_GROUP_ORDER: ModelOption['group'][] = [
   'Local',
@@ -23,6 +25,7 @@ const MODEL_GROUP_ORDER: ModelOption['group'][] = [
   'Groq',
   'OpenRouter',
   'Gemini',
+  'Vertex AI',
   'Cloudflare',
   'GitHub Models',
   'GitHub Copilot',
@@ -93,7 +96,14 @@ export function useGuruChatModels(options: UseGuruChatModelsOptions): UseGuruCha
       gitlabDuoConnected,
       poeConnected,
       qwenConnected,
+      vertexAiToken,
+      vertexAiProject,
+      vertexAiLocation,
     } = getApiKeys(profile);
+
+    // When Vertex is in API Key mode (no project/location), treat the token as an AI Studio key
+    const hasEffectiveGeminiKey = Boolean(geminiKey) ||
+      (Boolean(vertexAiToken) && !vertexAiProject && !vertexAiLocation);
 
     const list: ModelOption[] = [{ id: 'auto', name: 'Auto Route (Smart)', group: 'Local' }];
 
@@ -131,12 +141,26 @@ export function useGuruChatModels(options: UseGuruChatModelsOptions): UseGuruCha
       });
     }
 
-    if (geminiKey) {
+    if (hasEffectiveGeminiKey) {
       geminiModelIds.forEach((model) => {
         list.push({
           id: `gemini/${model}`,
           name: guruChatPickerNameForGeminiModel(model),
           group: 'Gemini',
+        });
+      });
+    }
+
+    // Vertex AI models: available when project+location+token configured,
+    // OR when AQ authorization key is in AI Studio field + project+location
+    const hasVertexServiceAccount = vertexAiToken && vertexAiProject && vertexAiLocation;
+    const hasVertexViaAuthKey = isAuthorizationKey(geminiKey) && vertexAiProject && vertexAiLocation;
+    if (hasVertexServiceAccount || hasVertexViaAuthKey) {
+      VERTEX_MODELS.forEach((model) => {
+        list.push({
+          id: `vertex/${model}`,
+          name: guruChatPickerNameForGeminiModel(model),
+          group: 'Vertex AI',
         });
       });
     }

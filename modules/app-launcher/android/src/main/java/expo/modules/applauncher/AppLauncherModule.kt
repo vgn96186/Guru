@@ -28,6 +28,9 @@ import java.nio.ByteOrder
 import android.content.BroadcastReceiver
 import android.content.IntentFilter
 
+import expo.modules.applauncher.views.LoadingOrbView
+import expo.modules.applauncher.views.BootTransitionView
+
 class AppLauncherModule : Module() {
     private var fgsReceiver: BroadcastReceiver? = null
     private var spen: SPenController? = null
@@ -1097,6 +1100,19 @@ class AppLauncherModule : Module() {
                 Log.e(TAG, "concatenateFiles failed", e)
                 false
             }
+        }
+
+        View(LoadingOrbView::class) {
+            Name("AppLoadingOrb")
+            Prop("message") { view: LoadingOrbView, prop: String -> view.message = prop }
+            Prop("isTurbulent") { view: LoadingOrbView, prop: Boolean -> view.isTurbulent = prop }
+            Prop("pathIntensity") { view: LoadingOrbView, prop: Float -> view.pathIntensity = prop }
+        }
+
+        View(BootTransitionView::class) {
+            Name("BootTransition")
+            Prop("bootPhase") { view: BootTransitionView, prop: String -> view.bootPhase = prop }
+            Prop("isTurbulent") { view: BootTransitionView, prop: Boolean -> view.isTurbulent = prop }
         }
     }
 

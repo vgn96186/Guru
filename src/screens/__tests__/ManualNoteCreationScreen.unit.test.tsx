@@ -1,5 +1,5 @@
 import React from 'react';
-import { Alert, Text, TouchableOpacity, View } from 'react-native';
+import { Alert } from 'react-native';
 import { fireEvent, render, waitFor } from '@testing-library/react-native';
 import ManualNoteCreationScreen from '../ManualNoteCreationScreen';
 import type { MenuStackParamList } from '../../navigation/types';

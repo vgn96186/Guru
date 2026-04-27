@@ -1,0 +1,47 @@
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  Modal,
+  View,
+  TouchableOpacity,
+  StyleSheet,
+  Keyboard,
+  Linking,
+  Animated,
+  StatusBar,
+  useWindowDimensions,
+  KeyboardAvoidingView,
+} from 'react-native';
+import { type FlashListRef } from '@shopify/flash-list';
+import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
+import Clipboard from '@react-native-clipboard/clipboard';
+import LinearText from './primitives/LinearText';
+import { ImageLightbox } from './ImageLightbox';
+import { getApiKeys } from '../services/ai';
+import { showInfo, showError, confirm } from './dialogService';
+import { useProfileQuery } from '../hooks/queries/useProfile';
+import { buildBoundedGuruChatStudyContext } from '../services/guruChatStudyContext';
+import { linearTheme as n } from '../theme/linearTheme';
+import { motion } from '../motion/presets';
+import { addLlmStateListener } from '../services/aiService';
+import { getLocalLlmRamWarning } from '../services/deviceMemory';
+import { createGuruFallbackModel } from '../services/ai/v2';
+import { useGuruChatSession } from '../hooks/useGuruChatSession';
+import { useGuruChatModels } from '../hooks/useGuruChatModels';
+import { useGuruChat } from '../hooks/useGuruChat';
+import { GuruChatMessageList } from './chat/GuruChatMessageList';
+import { GuruChatInput } from './chat/GuruChatInput';
+import { GuruChatModelSelector } from './chat/GuruChatModelSelector';
+import {
+  getChatHistory,
+  getOrCreateLatestGuruChatThread,
+  type GuruChatThread,
+} from '../db/queries/aiCache';
+import {
+  listGeneratedStudyImagesForTopic,
+  type GeneratedStudyImageRecord,
+  type GeneratedStudyImageStyle,
+} from '../db/queries/generatedStudyImages';
+import { buildChatImageContextKey, generateStudyImage } from '../services/studyImageService';
+import type { ChatItem, ChatMessage } from '../types/chat';
+import { shouldShowGuruChatSkeleton } from '../screens/guruChatLoadingState';

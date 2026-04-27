@@ -352,9 +352,9 @@ Always call `refreshProfile()` after XP or profile mutations so UI reflects chan
 ## Testing
 
 - **Strategy:** `docs/TESTING_STRATEGY.md` — Jest **logic allowlist** (`jest.unit.logic.config.js`, `npm run test:unit:coverage:logic`) + **Detox** for UI/native (`e2e/`, `npm run detox:test:critical`).
-- **Genymotion Workflow (Metro + Debug):**
+- **Genymotion/ADB Workflow (Metro + Debug):** (Works for both Genymotion and connected USB devices)
   1. `npm start` (Metro bundler)
-  2. `npm run detox:build:android:genymotion:dev` (Build debug binaries)
+  2. `npm run detox:build:android:genymotion:dev` (Build debug binaries - script auto-detects USB devices)
   3. `npm run detox:test:critical:genymotion:dev` (Run critical tests)
 - **CI-style check:** `npm run verify:ci` (lint, unit tests, logic coverage gate). Optional: `npm run verify:ci:with-format` (scoped Prettier). `npm run verify:strict` runs typecheck + the same tests and coverage gate.
 

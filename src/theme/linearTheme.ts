@@ -73,7 +73,7 @@ export const linearTheme = {
   },
 
   alpha: {
-    pressed: 0.88,
+    pressed: 0.5,
     disabled: 0.55,
   },
 

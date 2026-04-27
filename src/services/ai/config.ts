@@ -160,6 +160,8 @@ export function getApiKeys(
   vertexAiProject: string | undefined;
   vertexAiLocation: string | undefined;
   vertexAiToken: string | undefined;
+  /** True when the geminiKey is an AQ-prefixed authorization key (bound to a service account). */
+  geminiKeyIsAuthorizationKey: boolean;
 } {
   if (!profile) {
     return {
@@ -187,6 +189,7 @@ export function getApiKeys(
       vertexAiProject: BUNDLED_VERTEX_AI_PROJECT || undefined,
       vertexAiLocation: BUNDLED_VERTEX_AI_LOCATION || undefined,
       vertexAiToken: BUNDLED_VERTEX_AI_TOKEN || undefined,
+      geminiKeyIsAuthorizationKey: isAuthorizationKey(BUNDLED_GEMINI_KEY),
     };
   }
   return {
@@ -214,5 +217,20 @@ export function getApiKeys(
     vertexAiProject: profile.vertexAiProject?.trim() || BUNDLED_VERTEX_AI_PROJECT || undefined,
     vertexAiLocation: profile.vertexAiLocation?.trim() || BUNDLED_VERTEX_AI_LOCATION || undefined,
     vertexAiToken: profile.vertexAiToken?.trim() || BUNDLED_VERTEX_AI_TOKEN || undefined,
+    geminiKeyIsAuthorizationKey: isAuthorizationKey(profile.geminiKey?.trim() || BUNDLED_GEMINI_KEY),
   };
+}
+
+/**
+ * Detect Google Cloud authorization keys (AQ prefix).
+ * Authorization keys are API keys bound to a service account.
+ * Unlike standard keys (AIzaSy...), they work on BOTH:
+ *   - generativelanguage.googleapis.com (Gemini Developer API)
+ *   - aiplatform.googleapis.com (Vertex AI)
+ * See: https://docs.cloud.google.com/docs/authentication/api-keys#authorization-keys
+ */
+export function isAuthorizationKey(key?: string | null): boolean {
+  if (!key) return false;
+  const k = key.trim();
+  return k.startsWith('AQ');
 }

@@ -11,7 +11,7 @@ async function loadModule(configOverrides?: {
   jest.resetModules();
   (globalThis as any).__DEV__ = false;
 
-  jest.doMock('../../db/repositories', () => ({
+  jest.doMock('../../db/repositories/profileRepository', () => ({
     profileRepository: {
       getProfile: () => getProfileMock(),
     },

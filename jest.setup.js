@@ -360,6 +360,10 @@ jest.mock('expo-modules-core', () => ({
     return {};
   }),
   requireOptionalNativeModule: jest.fn(() => ({})),
+  requireNativeViewManager: jest.fn(() => {
+    const React = require('react');
+    return ({ children, ...props }) => React.createElement('View', props, children);
+  }),
   EventEmitter: class EventEmitter {
     addListener() {
       return { remove: jest.fn() };

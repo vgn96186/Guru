@@ -8,6 +8,9 @@ jest.mock('../db/repositories', () => ({
   profileRepository: {
     getProfile: () => mockGetProfile(),
   },
+  generatedStudyImagesRepositoryDrizzle: {
+    saveGeneratedStudyImage: (...args: unknown[]) => mockSaveGeneratedStudyImage(...args),
+  },
 }));
 
 jest.mock('./ai/imageGeneration', () => ({

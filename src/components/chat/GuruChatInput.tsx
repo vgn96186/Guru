@@ -1,5 +1,5 @@
 import React, { memo } from 'react';
-import { Platform, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import { Platform, Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import LinearText from '../primitives/LinearText';
 import { linearTheme as n } from '../../theme/linearTheme';
@@ -28,50 +28,46 @@ export const GuruChatInput = memo(function GuruChatInput({
   autoFocus,
   showQuickReplies = true,
 }: GuruChatInputProps) {
+  const canSend = input.trim().length > 0 && !isLoading;
+
   return (
     <View style={styles.composerOuter}>
       {showQuickReplies ? (
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          keyboardShouldPersistTaps="handled"
-          contentContainerStyle={styles.quickRepliesContent}
-          style={styles.quickRepliesScroll}
-        >
+        <View style={styles.quickRepliesWrap}>
           {QUICK_REPLY_OPTIONS.map((option) => (
             <Pressable
               key={option.key}
-              style={({ pressed }) => [
-                styles.quickReplyChip,
-                pressed && !isLoading && styles.pressed,
-                isLoading && styles.quickReplyChipDisabled,
-              ]}
               onPress={() => onSend(option.prompt)}
               disabled={isLoading}
+              className="bg-white/10 border border-white/20 px-4 py-2 rounded-full mx-1 my-1"
               accessibilityRole="button"
               accessibilityLabel={`Send quick reply: ${option.label}`}
             >
-              <LinearText style={styles.quickReplyChipText} numberOfLines={1}>
+              <LinearText
+                tone="primary"
+                className="text-[13px] font-semibold"
+                numberOfLines={1}
+              >
                 {option.label}
               </LinearText>
             </Pressable>
           ))}
-        </ScrollView>
+        </View>
       ) : null}
 
-      <View style={styles.composerWrap}>
-        <View style={styles.composerRow}>
+      <View className="flex-1 px-3 py-2 rounded-[24px] bg-[#1A1A1A] border border-white/10 mx-3">
+        <View className="flex-row items-center gap-2 min-h-[38px]">
           <Pressable
-            style={({ pressed }) => [styles.modelPillInline, pressed && styles.pressed]}
             onPress={onModelPress}
+            className="flex-row items-center gap-1 px-2 py-1 rounded-full border border-white/10 bg-white/5 shrink"
             accessibilityRole="button"
             accessibilityLabel={`Current model: ${currentModelLabel}. Tap to change.`}
           >
-            <View style={styles.modelDot} />
-            <LinearText style={styles.modelPillText} numberOfLines={1}>
+            <Ionicons name="hardware-chip-outline" size={13} color={n.colors.textMuted} />
+            <LinearText tone="secondary" className="text-[12px] shrink" numberOfLines={1}>
               {currentModelLabel}
             </LinearText>
-            <Ionicons name="chevron-down" size={11} color={n.colors.textMuted} />
+            <Ionicons name="chevron-down" size={13} color={n.colors.textMuted} />
           </Pressable>
 
           <TextInput
@@ -84,6 +80,11 @@ export const GuruChatInput = memo(function GuruChatInput({
             multiline
             blurOnSubmit={false}
             maxLength={1000}
+            returnKeyType="send"
+            enterKeyHint="send"
+            onSubmitEditing={() => {
+              if (canSend) onSend();
+            }}
             selectionColor={n.colors.accent}
             textAlignVertical={Platform.OS === 'android' ? 'top' : 'center'}
             underlineColorAndroid="transparent"
@@ -92,19 +93,19 @@ export const GuruChatInput = memo(function GuruChatInput({
           <Pressable
             style={({ pressed }) => [
               styles.sendBtn,
-              (!input.trim() || isLoading) && styles.sendBtnDisabled,
-              pressed && input.trim() && !isLoading && styles.pressed,
+              !canSend && styles.sendBtnDisabled,
+              pressed && canSend && styles.pressed,
             ]}
-            android_ripple={{ color: '#ffffff18', radius: 20 }}
+            android_ripple={{ color: whiteAlpha['12'], radius: 20 }}
             onPress={() => onSend()}
-            disabled={!input.trim() || isLoading}
+            disabled={!canSend}
             accessibilityRole="button"
             accessibilityLabel="Send message"
           >
             <Ionicons
-              name={isLoading ? 'ellipse-outline' : 'arrow-up'}
-              size={17}
-              color={n.colors.textPrimary}
+              name={isLoading ? 'ellipsis-horizontal' : 'arrow-up'}
+              size={20}
+              color={canSend ? '#FFFFFF' : n.colors.textMuted}
             />
           </Pressable>
         </View>
@@ -113,131 +114,119 @@ export const GuruChatInput = memo(function GuruChatInput({
   );
 });
 
-/** Solid fill (no alpha) so chat messages never bleed through behind the composer or TextInput. */
-const COMPOSER_SURFACE = '#12151c';
-
 const styles = StyleSheet.create({
   composerOuter: {
     width: '100%',
     alignSelf: 'stretch',
-    alignItems: 'stretch',
-    paddingHorizontal: 0,
-    paddingTop: 6,
-    paddingBottom: 0,
+    paddingHorizontal: 12,
+    paddingTop: 12,
+    paddingBottom: Platform.OS === 'ios' ? 24 : 12,
     backgroundColor: n.colors.background,
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: n.colors.border,
+    borderTopColor: 'rgba(255, 255, 255, 0.12)',
   },
-  quickRepliesScroll: {
-    alignSelf: 'stretch',
-    maxHeight: 40,
-    marginBottom: 8,
-  },
-  quickRepliesContent: {
+  quickRepliesWrap: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
     alignItems: 'center',
-    gap: 8,
+    gap: 10,
     paddingHorizontal: 12,
-    paddingBottom: 2,
+    marginBottom: 10,
+    width: '100%',
   },
   quickReplyChip: {
-    flexShrink: 0,
-    paddingVertical: 7,
+    paddingVertical: 6,
     paddingHorizontal: 12,
-    borderRadius: 999,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: whiteAlpha['12'],
-    backgroundColor: '#1a1e28',
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: n.colors.accent,
+    backgroundColor: 'rgba(94, 106, 210, 0.15)',
+    margin: 4,
   },
   quickReplyChipDisabled: {
-    opacity: 0.45,
+    opacity: 0.5,
   },
   quickReplyChipText: {
-    color: n.colors.textSecondary,
+    color: n.colors.accent,
     fontSize: 13,
     fontWeight: '600',
+    fontFamily: 'Inter_600SemiBold',
   },
   composerWrap: {
     alignSelf: 'stretch',
     width: '100%',
     paddingHorizontal: 12,
-    paddingVertical: 5,
-    borderRadius: 20,
-    backgroundColor: COMPOSER_SURFACE,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: whiteAlpha['10'],
+    paddingVertical: 8,
+    borderRadius: 24,
+    backgroundColor: '#1A1A1A', // Slightly lighter than pure black to be seen
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
   },
   composerRow: {
     flexDirection: 'row',
     alignItems: 'flex-end',
     gap: 8,
-    minHeight: 34,
+    minHeight: 36,
   },
-  modelPillInline: {
+  modelInlineButton: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 5,
     maxWidth: 132,
-    height: 34,
-    borderRadius: 999,
+    minHeight: 36,
+    paddingHorizontal: 9,
+    borderRadius: 18,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: whiteAlpha['8'],
-    backgroundColor: '#1a1e28',
-    paddingHorizontal: 9,
+    backgroundColor: whiteAlpha['2'],
     flexShrink: 0,
   },
-  modelPillText: {
+  modelInlineText: {
+    ...n.typography.meta,
     color: n.colors.textSecondary,
-    fontSize: 11,
-    fontWeight: '600',
     flexShrink: 1,
-  },
-  modelDot: {
-    width: 7,
-    height: 7,
-    borderRadius: 4,
-    backgroundColor: n.colors.accent,
-    shadowColor: '#5E6AD2',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.6,
-    shadowRadius: 4,
   },
   input: {
     flex: 1,
-    minHeight: 34,
-    maxHeight: 96,
+    minHeight: 36,
+    maxHeight: 120,
     color: n.colors.textPrimary,
-    backgroundColor: COMPOSER_SURFACE,
+    backgroundColor: n.colors.surfaceInset,
+    fontFamily: 'Inter_400Regular',
     fontSize: 15,
     lineHeight: 20,
     paddingHorizontal: 4,
-    paddingTop: Platform.OS === 'android' ? 6 : 5,
-    paddingBottom: Platform.OS === 'android' ? 6 : 5,
-    borderRadius: 10,
+    paddingTop: Platform.OS === 'android' ? 8 : 8,
+    paddingBottom: Platform.OS === 'android' ? 8 : 8,
+    borderRadius: n.radius.sm,
   },
   sendBtn: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     backgroundColor: n.colors.accent,
     alignItems: 'center',
     justifyContent: 'center',
     flexShrink: 0,
-    shadowColor: '#5E6AD2',
+    shadowColor: n.colors.accent,
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.35,
+    shadowOpacity: 0.4,
     shadowRadius: 8,
     elevation: 4,
   },
   sendBtnDisabled: {
     backgroundColor: whiteAlpha['4'],
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: n.colors.border,
+    borderColor: whiteAlpha['8'],
     shadowOpacity: 0,
     elevation: 0,
   },
   pressed: {
     opacity: n.alpha.pressed,
-    transform: [{ scale: 0.98 }],
+    transform: [{ scale: 0.97 }],
+  },
+  pressedSubtle: {
+    opacity: n.alpha.pressed,
   },
 });

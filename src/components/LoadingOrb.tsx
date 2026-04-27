@@ -14,6 +14,9 @@ import LinearText from './primitives/LinearText';
 import { useProfileQuery } from '../hooks/queries/useProfile';
 import TurbulentOrb from './TurbulentOrb';
 
+import { Platform } from 'react-native';
+import { NativeLoadingOrbView } from '../../modules/app-launcher';
+
 // Derived accent shades for 3-D glass-sphere look
 const ACCENT_LIGHT = '#9BA3EE';
 const ACCENT_DEEP = '#4450C0';
@@ -212,6 +215,18 @@ export default React.memo(function LoadingOrb({
     transform: [{ translateY: highlightTranslateY.value }],
     opacity: highlightOpacity.value,
   }));
+
+  if (Platform.OS === 'android') {
+    return (
+      <View style={styles.container}>
+        <NativeLoadingOrbView
+          style={{ width: size, height: size }}
+          message={message}
+          isTurbulent={isTurbulent}
+        />
+      </View>
+    );
+  }
 
   if (isTurbulent) {
     return <TurbulentOrb message={message} size={size} />;

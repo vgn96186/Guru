@@ -43,14 +43,15 @@ Increase `coverageThreshold` in `jest.unit.logic.config.js` as tests improve. Do
 | `npm run detox:build:android:emu:debug`      | Build app + test APK (tablet profile)                         |
 | `npm run detox:test:android:emu:debug`       | Full Detox suite                                              |
 | `npm run detox:test:critical`                | **Smaller** subset for smoke / PR checks (see `package.json`) |
-| `npm run detox:build:android:genymotion:dev` | Build debug binaries for Genymotion                           |
-| `npm run detox:test:critical:genymotion:dev` | Run critical tests on Genymotion                              |
+| `npm run detox:build:android:genymotion:dev` | Build debug binaries for Genymotion or Attached USB devices   |
+| `npm run detox:test:critical:genymotion:dev` | Run critical tests on Genymotion or Attached USB devices      |
 
-**Genymotion Workflow (Metro + Debug):**
+**Genymotion/ADB Workflow (Metro + Debug):**
+*(Note: Despite the `genymotion` name in the command, these scripts use `scripts/detox-with-connected-device.js` which will automatically fall back to ANY connected ADB device if Genymotion is not running.)*
 
 1. Start Metro: `npm start`
 2. Build debug binaries once: `npm run detox:build:android:genymotion:dev`
-3. Run tests: `npm run detox:test:critical:genymotion:dev` (Ensure Genymotion tablet is running and visible in `adb devices`)
+3. Run tests: `npm run detox:test:critical:genymotion:dev` (Ensure device/tablet is running and visible in `adb devices`)
 
 Prerequisites: Android SDK, emulator (e.g. `Medium_Tablet`), and a successful build.
 

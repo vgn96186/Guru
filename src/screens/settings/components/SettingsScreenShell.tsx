@@ -16,7 +16,7 @@ import LinearText from '../../../components/primitives/LinearText';
 import { SettingsSidebar, SETTINGS_CATEGORIES } from '../../../components/settings/SettingsSidebar';
 import { linearTheme as n } from '../../../theme/linearTheme';
 import { settingsStyles as styles } from '../settingsStyles';
-import type { SettingsCategory } from '../../../components/settings/SettingsSidebar';
+import type { SettingsCategory, CategoryBadgeInfo } from '../../../types';
 
 type SummaryCard = {
   label: string;
@@ -32,6 +32,7 @@ type SettingsScreenShellProps = {
   profileName?: string;
   totalXp?: number;
   summaryCards: SummaryCard[];
+  categoryBadges?: Record<SettingsCategory, CategoryBadgeInfo | null>;
   onBackPress: () => void;
   onSelectCategory: (category: SettingsCategory) => void;
   children: React.ReactNode;
@@ -102,6 +103,7 @@ export function SettingsScreenShell({
   profileName,
   totalXp,
   summaryCards,
+  categoryBadges,
   onBackPress,
   onSelectCategory,
   children,
@@ -121,6 +123,7 @@ export function SettingsScreenShell({
               isCollapsed={false}
               profileName={profileName}
               totalXp={totalXp}
+              categoryBadges={categoryBadges}
             />
           ) : null}
           <View style={styles.settingsMain}>
@@ -144,6 +147,7 @@ export function SettingsScreenShell({
                   <SettingsMobileCategoryNav
                     activeCategory={activeCategory}
                     onSelectCategory={onSelectCategory}
+                    categoryBadges={categoryBadges}
                   />
                 ) : null}
 
@@ -167,12 +171,22 @@ export function SettingsScreenShell({
   );
 }
 
+const BADGE_TONE_COLORS: Record<string, string> = {
+  success: '#3FB950',
+  warning: '#D97706',
+  error: '#F14C4C',
+  accent: '#5E6AD2',
+  muted: '#939396',
+};
+
 function SettingsMobileCategoryNav({
   activeCategory,
   onSelectCategory,
+  categoryBadges,
 }: {
   activeCategory: SettingsCategory;
   onSelectCategory: (category: SettingsCategory) => void;
+  categoryBadges?: Record<SettingsCategory, CategoryBadgeInfo | null>;
 }) {
   return (
     <ScrollView
@@ -183,6 +197,7 @@ function SettingsMobileCategoryNav({
     >
       {SETTINGS_CATEGORIES.map((category) => {
         const active = activeCategory === category.id;
+        const badge = categoryBadges?.[category.id];
         return (
           <TouchableOpacity
             key={category.id}
@@ -190,9 +205,21 @@ function SettingsMobileCategoryNav({
             onPress={() => onSelectCategory(category.id)}
             activeOpacity={0.8}
           >
-            <LinearText variant="chip" tone={active ? 'accent' : 'secondary'}>
-              {category.label}
-            </LinearText>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
+              <LinearText variant="chip" tone={active ? 'accent' : 'secondary'}>
+                {category.label}
+              </LinearText>
+              {badge ? (
+                <View
+                  style={{
+                    width: 6,
+                    height: 6,
+                    borderRadius: 3,
+                    backgroundColor: BADGE_TONE_COLORS[badge.tone] || '#939396',
+                  }}
+                />
+              ) : null}
+            </View>
           </TouchableOpacity>
         );
       })}

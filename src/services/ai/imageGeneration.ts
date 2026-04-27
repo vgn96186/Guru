@@ -5,7 +5,7 @@ import {
   GEMINI_IMAGE_MODELS,
   OPENROUTER_IMAGE_MODELS,
 } from './config';
-import { profileRepository } from '../../db/repositories';
+import { profileRepository } from '../../db/repositories/profileRepository';
 import { getApiKeys } from './config';
 import { normalizeImageGenerationModel } from '../../config/appConfig';
 import { geminiInteractionImageSdk } from './google/geminiImage';

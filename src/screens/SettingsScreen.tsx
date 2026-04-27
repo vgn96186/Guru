@@ -101,7 +101,7 @@ import {
   type AutoBackupFrequency,
 } from '../services/unifiedBackupService';
 import { profileRepository } from '../db/repositories';
-import { type SettingsCategory } from '../components/settings/SettingsSidebar';
+import { type SettingsCategory } from '../types';
 import { SettingsScreenShell } from './settings/components/SettingsScreenShell';
 import SettingsCategoryContent from './settings/components/SettingsCategoryContent';
 import { settingsStyles as styles } from './settings/settingsStyles';
@@ -120,6 +120,7 @@ import { useSettingsDerivedStatus } from './settings/hooks/useSettingsDerivedSta
 import { useSettingsSummaryState } from './settings/hooks/useSettingsSummaryState';
 import { useProviderApiKeyTests } from './settings/hooks/useProviderApiKeyTests';
 import { useProviderReadyCount } from './settings/hooks/useProviderReadyCount';
+import { useSettingsCategoryBadges } from './settings/hooks/useSettingsCategoryBadges';
 import { getSettingsCategoryMeta } from './settings/settingsCategoryMeta';
 
 export default function SettingsScreen() {
@@ -1340,6 +1341,16 @@ export default function SettingsScreen() {
     guruChatDefaultModel,
   });
 
+  const categoryBadges = useSettingsCategoryBadges({
+    profile,
+    permStatus,
+    providerReadyCount,
+    dbmciClassStartDate,
+    btrStartDate,
+    inicetDate,
+    neetDate,
+  });
+
   const activeCategoryMeta = getSettingsCategoryMeta(activeCategory);
   return (
     <>
@@ -1352,6 +1363,7 @@ export default function SettingsScreen() {
         profileName={profile?.displayName}
         totalXp={profile?.totalXp}
         summaryCards={settingsSummaryCards}
+        categoryBadges={categoryBadges}
         onBackPress={() => navigation.navigate('MenuHome')}
         onSelectCategory={setActiveCategory}
       >

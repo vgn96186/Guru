@@ -1,5 +1,6 @@
 import React from 'react';
 import { render } from '@testing-library/react-native';
+import { Platform } from 'react-native';
 import LoadingOrb from './LoadingOrb';
 
 const mockTurbulentOrb = jest.fn((props: any) => {
@@ -40,8 +41,13 @@ jest.mock('react-native-reanimated', () => {
 });
 
 describe('LoadingOrb', () => {
+  const originalOS = Platform.OS;
   beforeEach(() => {
     mockTurbulentOrb.mockClear();
+    Platform.OS = 'ios';
+  });
+  afterEach(() => {
+    Platform.OS = originalOS;
   });
 
   it('renders without crashing on mount', () => {

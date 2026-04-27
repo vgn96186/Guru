@@ -4,9 +4,6 @@ import LinearText from '../primitives/LinearText';
 import { linearTheme as n } from '../../theme/linearTheme';
 import { accentAlpha, whiteAlpha, withAlpha } from '../../theme/colorUtils';
 
-/** Brighter than theme `warning` so emphasis reads clearly as orange on true-black chat. */
-const GURU_ORANGE_EMPHASIS = '#FB923C';
-
 type InlineToken = {
   text: string;
   bold?: boolean;
@@ -467,7 +464,7 @@ const styles = StyleSheet.create({
   },
   /** `**markdown bold**` — models rarely emit `!!`; same orange as high-yield so "important" is visible. */
   guruStrongText: {
-    color: GURU_ORANGE_EMPHASIS,
+    color: n.colors.warning,
     fontWeight: '700',
   },
   /** No size/color/weight — must inherit parent (heading scale + bold, body 15/400, quote muted). */
@@ -486,11 +483,11 @@ const styles = StyleSheet.create({
     paddingVertical: 1,
   },
   highYieldText: {
-    color: GURU_ORANGE_EMPHASIS,
+    color: n.colors.warning,
     fontWeight: '800',
-    backgroundColor: withAlpha(GURU_ORANGE_EMPHASIS, 0.14),
+    backgroundColor: withAlpha(n.colors.warning, 0.14),
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: withAlpha(GURU_ORANGE_EMPHASIS, 0.38),
+    borderColor: withAlpha(n.colors.warning, 0.38),
     borderRadius: 8,
     overflow: 'hidden',
     paddingHorizontal: 5,

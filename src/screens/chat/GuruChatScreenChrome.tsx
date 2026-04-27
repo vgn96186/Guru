@@ -34,7 +34,8 @@ export function GuruChatHeader({
 }: GuruChatHeaderProps) {
   return (
     <ScreenHeader
-      title=""
+      title="Guru Chat"
+      titleNumberOfLines={1}
       onBackPress={canGoBack ? onBackPress : undefined}
       rightElement={
         <View style={styles.minimalHeaderRight}>

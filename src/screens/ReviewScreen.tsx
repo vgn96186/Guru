@@ -138,7 +138,10 @@ export default function ReviewScreen() {
     PanResponder.create({
       onMoveShouldSetPanResponder: (_, gs) => {
         if (!isFlippedRef.current) return false;
-        return Math.abs(gs.dx) > 10 || Math.abs(gs.dy) > 10;
+        // Only trigger pan responder if horizontal/vertical movement is intentional and significant
+        const isHorizontalSwipe = Math.abs(gs.dx) > 25 && Math.abs(gs.dx) > Math.abs(gs.dy);
+        const isVerticalSwipe = Math.abs(gs.dy) > 25 && Math.abs(gs.dy) > Math.abs(gs.dx);
+        return isHorizontalSwipe || isVerticalSwipe;
       },
       onPanResponderMove: Animated.event([null, { dx: panXY.x }], { useNativeDriver: false }),
       onPanResponderRelease: (_, gs) => {

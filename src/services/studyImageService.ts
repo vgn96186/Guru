@@ -1,9 +1,9 @@
 import { generateImage } from './ai/imageGeneration';
-import {
-  saveGeneratedStudyImage,
-  type GeneratedStudyImageContextType,
-  type GeneratedStudyImageRecord,
-  type GeneratedStudyImageStyle,
+import { generatedStudyImagesRepositoryDrizzle as repo } from '../db/repositories';
+import type {
+  GeneratedStudyImageContextType,
+  GeneratedStudyImageRecord,
+  GeneratedStudyImageStyle,
 } from '../db/queries/generatedStudyImages';
 
 export interface BuildStudyImagePromptInput {
@@ -93,7 +93,7 @@ export async function generateStudyImage(
     steps: input.style === 'chart' ? 28 : 24,
   });
 
-  return saveGeneratedStudyImage({
+  return repo.saveGeneratedStudyImage({
     contextType: input.contextType,
     contextKey: input.contextKey,
     topicId: input.topicId ?? null,

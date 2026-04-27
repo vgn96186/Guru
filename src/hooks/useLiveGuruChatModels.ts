@@ -31,6 +31,10 @@ export type LiveGuruChatDraftKeys = {
   deepseekKey?: string;
   agentRouterKey?: string;
   chatgptConnected?: boolean;
+  /** Vertex AI token — when set without project/location, acts as an AI Studio key */
+  vertexAiToken?: string;
+  vertexAiProject?: string;
+  vertexAiLocation?: string;
 };
 
 function mergeDraftProfile(profile: UserProfile, draft: LiveGuruChatDraftKeys): UserProfile {
@@ -49,7 +53,27 @@ function mergeDraftProfile(profile: UserProfile, draft: LiveGuruChatDraftKeys): 
       typeof draft.chatgptConnected === 'boolean'
         ? draft.chatgptConnected
         : profile.chatgptConnected,
+    vertexAiToken: draft.vertexAiToken?.trim() || profile.vertexAiToken || '',
+    vertexAiProject: draft.vertexAiProject?.trim() || profile.vertexAiProject || '',
+    vertexAiLocation: draft.vertexAiLocation?.trim() || profile.vertexAiLocation || '',
   };
+}
+
+/**
+ * Resolve the effective AI Studio key for Gemini model listing.
+ * When Vertex is in API Key mode (token set, no project/location),
+ * the vertexAiToken works the same as a geminiKey.
+ */
+function resolveEffectiveGeminiKey(profile: UserProfile): string {
+  const gemini = profile.geminiKey?.trim() || '';
+  const vertexToken = profile.vertexAiToken?.trim() || '';
+  const vertexProject = profile.vertexAiProject?.trim() || '';
+  const vertexLocation = profile.vertexAiLocation?.trim() || '';
+  // Vertex API Key mode (no project/location) → token is an AI Studio key
+  if (vertexToken && !vertexProject && !vertexLocation) {
+    return gemini || vertexToken;
+  }
+  return gemini;
 }
 
 function useDebouncedValue<T>(value: T, delayMs: number): T {
@@ -97,6 +121,9 @@ export function useLiveGuruChatModels(
             draft.deepseekKey ?? '',
             draft.agentRouterKey ?? '',
             draft.chatgptConnected ? '1' : '0',
+            draft.vertexAiToken ?? '',
+            draft.vertexAiProject ?? '',
+            draft.vertexAiLocation ?? '',
           ].join('\0')
         : '',
     [draft],
@@ -120,6 +147,9 @@ export function useLiveGuruChatModels(
       k.githubCopilotConnected ? '1' : '0',
       k.gitlabDuoConnected ? '1' : '0',
       k.poeConnected ? '1' : '0',
+      k.vertexAiToken ?? '',
+      k.vertexAiProject ?? '',
+      k.vertexAiLocation ?? '',
     ].join('\0');
   }, [profile]);
 
@@ -151,14 +181,18 @@ export function useLiveGuruChatModels(
     const {
       groqKey,
       orKey,
-      geminiKey,
       cfAccountId,
       cfApiToken,
       kiloApiKey,
       deepseekKey,
       agentRouterKey,
       chatgptConnected,
+      vertexAiProject,
+      vertexAiLocation,
+      vertexAiToken,
     } = getApiKeys(mergedProfile);
+    // When Vertex is in API Key mode (no project/location), treat the token as an AI Studio key
+    const effectiveGeminiKey = mergedProfile ? resolveEffectiveGeminiKey(mergedProfile) : '';
 
     // Defer network fetch behind InteractionManager so tab-switch animation isn't blocked
     const task = InteractionManager.runAfterInteractions(() => {
@@ -166,7 +200,7 @@ export function useLiveGuruChatModels(
         chatgptConnected,
         groqKey,
         orKey,
-        geminiKey,
+        geminiKey: effectiveGeminiKey ?? '',
         cfAccountId,
         cfApiToken,
         kiloApiKey,
@@ -199,7 +233,7 @@ export function useLiveGuruChatModels(
     ? [
         resolvedKeys.groqKey ? '1' : '0',
         resolvedKeys.orKey ? '1' : '0',
-        resolvedKeys.geminiKey ? '1' : '0',
+        (resolvedKeys.geminiKey || (resolvedKeys.vertexAiToken && !resolvedKeys.vertexAiProject && !resolvedKeys.vertexAiLocation)) ? '1' : '0',
         resolvedKeys.cfAccountId && resolvedKeys.cfApiToken ? '1' : '0',
         resolvedKeys.githubModelsPat ? '1' : '0',
         resolvedKeys.githubCopilotConnected ? '1' : '0',
@@ -209,6 +243,9 @@ export function useLiveGuruChatModels(
         resolvedKeys.deepseekKey ? '1' : '0',
         resolvedKeys.agentRouterKey ? '1' : '0',
         resolvedKeys.chatgptConnected ? '1' : '0',
+        resolvedKeys.vertexAiToken ? '1' : '0',
+        resolvedKeys.vertexAiProject ? '1' : '0',
+        resolvedKeys.vertexAiLocation ? '1' : '0',
       ].join('')
     : '';
 
@@ -231,7 +268,10 @@ export function useLiveGuruChatModels(
     [providerKeyString, live?.openrouter],
   );
   const geminiModelIds = useMemo(
-    () => (resolvedKeys?.geminiKey ? (live?.gemini ?? [...GEMINI_MODELS]) : EMPTY),
+    () =>
+      (resolvedKeys?.geminiKey || (resolvedKeys?.vertexAiToken && !resolvedKeys?.vertexAiProject && !resolvedKeys?.vertexAiLocation))
+        ? (live?.gemini ?? [...GEMINI_MODELS])
+        : EMPTY,
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [providerKeyString, live?.gemini],
   );

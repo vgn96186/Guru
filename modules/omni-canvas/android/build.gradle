@@ -20,15 +20,15 @@ apply plugin: 'kotlin-android'
 apply plugin: 'org.jetbrains.kotlin.plugin.compose'
 
 android {
-    namespace 'expo.modules.omnicanvas'
-    compileSdk safeExtGet("compileSdkVersion", 36)
+    namespace = 'expo.modules.omnicanvas'
+    compileSdk = safeExtGet("compileSdkVersion", 36)
 
     defaultConfig {
-        minSdk safeExtGet("minSdkVersion", 24)
+        minSdk = safeExtGet("minSdkVersion", 24)
     }
 
     buildFeatures {
-        compose true
+        compose = true
     }
 
     compileOptions {

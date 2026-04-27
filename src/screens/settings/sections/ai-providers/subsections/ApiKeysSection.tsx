@@ -226,9 +226,9 @@ export default function ApiKeysSection({
         element: (
           <ApiKeyRow
             {...apiKeys.gemini}
-            label="Gemini"
-            placeholder="AIzaSy..."
-            purpose="Structured reasoning"
+            label="AI Studio"
+            placeholder="AIzaSy... or AQ..."
+            purpose="Gemini models via API key"
             styles={styles}
             clearProviderValidated={clearProviderValidated}
             providerId="gemini"
@@ -406,11 +406,7 @@ export default function ApiKeysSection({
       {
         id: 'vertex',
         category: 'infra',
-        configured: Boolean(
-          apiKeys.vertex.project.trim() &&
-          apiKeys.vertex.location.trim() &&
-          apiKeys.vertex.token.trim(),
-        ),
+        configured: Boolean(apiKeys.vertex.token.trim()),
         testing: apiKeys.vertex.testing,
         test: apiKeys.vertex.test,
         element: (

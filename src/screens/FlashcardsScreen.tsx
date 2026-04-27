@@ -163,7 +163,8 @@ export default function FlashcardsScreen() {
     PanResponder.create({
       onMoveShouldSetPanResponder: (_, gs) => {
         if (!isFlippedRef.current || isAnimatingRef.current) return false;
-        return Math.abs(gs.dx) > 10;
+        // Only trigger pan responder for intentional horizontal swipes
+        return Math.abs(gs.dx) > 25 && Math.abs(gs.dx) > Math.abs(gs.dy);
       },
       onPanResponderMove: Animated.event([null, { dx: panXY.x }], { useNativeDriver: false }),
       onPanResponderRelease: (_, gs) => {

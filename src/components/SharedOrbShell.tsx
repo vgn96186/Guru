@@ -1,7 +1,6 @@
 import React from 'react';
 import { View, StyleSheet, useWindowDimensions } from 'react-native';
 import Animated from 'react-native-reanimated';
-import Svg, { Defs, RadialGradient, Stop, Circle, Ellipse } from 'react-native-svg';
 import { linearTheme as n } from '../theme/linearTheme';
 import LinearText from './primitives/LinearText';
 
@@ -9,11 +8,17 @@ const PHONE_SIZE = 156;
 const TABLET_SIZE = 220;
 const TABLET_BREAKPOINT = 600;
 
+import { NativeLoadingOrbView } from '../../modules/app-launcher';
+
 interface SharedOrbShellProps {
   size?: number;
   color?: string;
   label?: string;
   sublabel?: string;
+  /** Whether to use the native liquid/turbulent shader (true) or static mercurial sphere (false) */
+  isTurbulent?: boolean;
+  /** Deformity intensity for turbulent mode (0.0 to 1.0) */
+  pathIntensity?: number;
   /** Animated style for the orb body (scale, opacity, etc.) */
   bodyAnimatedStyle?: any;
   /** Animated style for the glow layer */
@@ -26,6 +31,7 @@ interface SharedOrbShellProps {
   testID?: string;
 }
 
+
 /**
  * Shared visual-only orb shell component used by StartButton and BootTransition.
  * This contains the 3D glass-sphere visual treatment without any interaction logic.
@@ -35,6 +41,8 @@ const SharedOrbShell = React.memo(function SharedOrbShell({
   color = n.colors.accent,
   label = '',
   sublabel = '',
+  isTurbulent = false,
+  pathIntensity = 0,
   bodyAnimatedStyle,
   glowAnimatedStyle,
   highlightAnimatedStyle,
@@ -66,60 +74,29 @@ const SharedOrbShell = React.memo(function SharedOrbShell({
         <View
           style={[
             styles.orbCore,
-            { width: size, height: size, borderRadius: radius, backgroundColor: color },
+            { width: size, height: size, borderRadius: radius },
+            !isTurbulent && { backgroundColor: color, overflow: 'hidden' },
           ]}
         >
-          <View style={[StyleSheet.absoluteFill, { borderRadius: radius, overflow: 'hidden' }]}>
-            <Svg width={size} height={size} viewBox="0 0 100 100">
-              <Defs>
-                <RadialGradient
-                  id="shellColorGrad"
-                  cx="45%"
-                  cy="45%"
-                  rx="55%"
-                  ry="55%"
-                  fx="45%"
-                  fy="45%"
-                >
-                  <Stop offset="0%" stopColor={n.colors.accent} stopOpacity="1" />
-                  <Stop offset="60%" stopColor={n.colors.accent} stopOpacity="1" />
-                  <Stop offset="100%" stopColor={n.colors.accent} stopOpacity="1" />
-                </RadialGradient>
-                <RadialGradient
-                  id="shellLightGrad"
-                  cx="30%"
-                  cy="28%"
-                  rx="65%"
-                  ry="65%"
-                  fx="30%"
-                  fy="28%"
-                >
-                  <Stop offset="0%" stopColor="#ffffff" stopOpacity="0.6" />
-                  <Stop offset="35%" stopColor="#ffffff" stopOpacity="0.1" />
-                  <Stop offset="65%" stopColor="#000000" stopOpacity="0.0" />
-                  <Stop offset="85%" stopColor="#000000" stopOpacity="0.25" />
-                  <Stop offset="100%" stopColor="#000000" stopOpacity="0.5" />
-                </RadialGradient>
-              </Defs>
-              <Circle cx="50" cy="50" r="50" fill="url(#shellColorGrad)" />
-              <Circle cx="50" cy="50" r="50" fill="url(#shellLightGrad)" />
-            </Svg>
-          </View>
+          {/* 
+            Native High-Fidelity Mercurial Orb 
+            isTurbulent=true → Liquid booting animation
+            isTurbulent=false → Static mercurial sphere for StartButton
+          */}
+          <NativeLoadingOrbView
+            isTurbulent={isTurbulent}
+            pathIntensity={pathIntensity}
+            style={[
+              { position: 'absolute' },
+              isTurbulent 
+                ? { top: '-30%', left: '-30%', width: '160%', height: '160%' }
+                : { top: '-20%', left: '-20%', width: '140%', height: '140%' },
+            ]}
+          />
 
-          <Animated.View style={[styles.specularContainer, highlightAnimatedStyle]}>
-            <Svg width={40} height={25} viewBox="0 0 40 25">
-              <Defs>
-                <RadialGradient id="shellSpecularHighlight" cx="50%" cy="50%" rx="50%" ry="50%">
-                  <Stop offset="0%" stopColor="#ffffff" stopOpacity="0.9" />
-                  <Stop offset="60%" stopColor="#ffffff" stopOpacity="0.3" />
-                  <Stop offset="100%" stopColor="#ffffff" stopOpacity="0" />
-                </RadialGradient>
-              </Defs>
-              <Ellipse cx="20" cy="12.5" rx="18" ry="10" fill="url(#shellSpecularHighlight)" />
-            </Svg>
-          </Animated.View>
         </View>
       </Animated.View>
+
 
       {(label || sublabel) && (
         <Animated.View style={[styles.textLayer, labelAnimatedStyle]} pointerEvents="none">
@@ -179,17 +156,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  specularContainer: {
-    position: 'absolute',
-    top: '15%',
-    left: '18%',
-  },
   textLayer: {
     position: 'absolute',
-    width: '90%',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 20,
   },
   label: {
     color: '#FFF',

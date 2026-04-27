@@ -3,7 +3,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import LinearText from '../primitives/LinearText';
 import { linearTheme as n } from '../../theme/linearTheme';
-import { whiteAlpha } from '../../theme/colorUtils';
+import { whiteAlpha, accentAlpha } from '../../theme/colorUtils';
 
 interface StarterItem {
   icon: string;
@@ -28,50 +28,55 @@ export const GuruChatStarters = memo(function GuruChatStarters({
   isLoading,
 }: GuruChatStartersProps) {
   return (
-    <View style={styles.emptyWrap}>
-      <View style={styles.emptyPanel}>
-        <View style={styles.heroRow}>
-          <View style={styles.heroCopy}>
-            <LinearText style={styles.eyebrow}>Guru</LinearText>
-            <LinearText style={styles.emptyTitle}>
-              {isGeneralChat ? 'How can I help you today?' : `How can I help with ${topicName}?`}
-            </LinearText>
-            <LinearText style={styles.emptyHint}>
-              Start with a prompt below or ask anything about your prep.
-            </LinearText>
-          </View>
+    <View className="flex-1 justify-center self-center w-full max-w-[680px] px-4 pt-4 pb-8 gap-4">
+      <View className="gap-1.5 items-center mb-2">
+        <View className="w-8 h-8 rounded-full items-center justify-center bg-accent/10 border border-accent/20 mb-1">
+          <Ionicons name="sparkles" size={12} color={n.colors.accent} />
         </View>
+        <LinearText variant="title" centered className="text-textPrimary">
+          {isGeneralChat ? 'How can I help?' : `Let's tackle ${topicName}`}
+        </LinearText>
+        <LinearText variant="bodySmall" tone="muted" centered className="max-w-[280px]">
+          Ask a doubt, start a quiz, or pick a ready prompt.
+        </LinearText>
+      </View>
 
-        {sessionSummary ? (
-          <View style={styles.sessionSummaryInline}>
-            <LinearText style={styles.sessionSummaryInlineText} numberOfLines={3}>
-              {sessionSummary}
-            </LinearText>
-          </View>
-        ) : null}
-
-        <View style={styles.starterGrid}>
-          {starters.map((starter) => (
-            <Pressable
-              key={starter.text}
-              style={({ pressed }) => [styles.starterChip, pressed && styles.pressed]}
-              android_ripple={{ color: `${n.colors.accent}22` }}
-              onPress={() => onSelectStarter(starter.text)}
-              disabled={isLoading}
-            >
-              <View style={styles.starterIconWrap}>
-                <Ionicons
-                  name={starter.icon as keyof typeof Ionicons.glyphMap}
-                  size={14}
-                  color={n.colors.accent}
-                />
-              </View>
-              <LinearText style={styles.starterChipText} numberOfLines={3}>
-                {starter.text}
-              </LinearText>
-            </Pressable>
-          ))}
+      {sessionSummary ? (
+        <View className="flex-row items-start gap-3 px-4 py-3 rounded-xl bg-white/2 border border-white/8">
+          <Ionicons name="bookmark-outline" size={13} color={n.colors.textMuted} />
+          <LinearText style={styles.sessionSummaryText} numberOfLines={3}>
+            {sessionSummary}
+          </LinearText>
         </View>
+      ) : null}
+
+      <View className="flex-row flex-wrap justify-center gap-2 mt-2 px-2">
+        {starters.map((starter) => (
+          <Pressable
+            key={starter.text}
+            onPress={() => onSelectStarter(starter.text)}
+            disabled={isLoading}
+            className="flex-row items-center gap-2 px-4 py-2.5 rounded-full border border-white/10 bg-white/5"
+            accessibilityRole="button"
+            accessibilityLabel={`Use prompt: ${starter.text}`}
+          >
+            <Ionicons
+              name={starter.icon as keyof typeof Ionicons.glyphMap}
+              size={14}
+              color={n.colors.accent}
+            />
+            <LinearText tone="primary" className="text-[13px] font-medium">
+              {starter.text}
+            </LinearText>
+          </Pressable>
+        ))}
+      </View>
+
+      <View className="flex-row items-center justify-center gap-2 px-4">
+        <Ionicons name="library-outline" size={13} color={n.colors.textMuted} />
+        <LinearText variant="caption" tone="muted" centered>
+          Medical sources appear inline when Guru uses them.
+        </LinearText>
       </View>
     </View>
   );
@@ -81,88 +86,102 @@ const styles = StyleSheet.create({
   emptyWrap: {
     flex: 1,
     justifyContent: 'center',
-    paddingHorizontal: 18,
-    paddingVertical: 24,
+    alignSelf: 'center',
+    width: '100%',
+    maxWidth: 680,
+    paddingHorizontal: n.spacing.md,
+    paddingTop: n.spacing.md,
+    paddingBottom: n.spacing.lg,
+    gap: n.spacing.md,
   },
-  emptyPanel: {
-    gap: 18,
+  heroWrap: {
+    gap: n.spacing.sm,
+    alignItems: 'center',
   },
-  heroRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-  },
-  heroCopy: {
-    flex: 1,
-  },
-  eyebrow: {
-    color: n.colors.textMuted,
-    fontSize: 12,
-    fontWeight: '700',
-    letterSpacing: 0.3,
-    marginBottom: 6,
+  avatar: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: accentAlpha['10'],
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: accentAlpha['25'],
   },
   emptyTitle: {
-    ...n.typography.title,
     color: n.colors.textPrimary,
-    fontSize: 28,
-    lineHeight: 34,
+    textAlign: 'center',
   },
   emptyHint: {
-    ...n.typography.bodySmall,
-    color: n.colors.textMuted,
-    lineHeight: 21,
-    marginTop: 8,
+    textAlign: 'center',
+    maxWidth: 360,
   },
-  sessionSummaryInline: {
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    borderRadius: 18,
-    backgroundColor: whiteAlpha['1.5'],
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: whiteAlpha['8'],
-  },
-  sessionSummaryInlineText: {
-    ...n.typography.caption,
-    color: n.colors.textSecondary,
-    lineHeight: 19,
-  },
-  starterGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  starterChip: {
+  sessionSummary: {
     flexDirection: 'row',
     alignItems: 'flex-start',
     gap: 10,
-    borderRadius: 18,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    borderRadius: n.radius.lg,
+    backgroundColor: whiteAlpha['2'],
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: whiteAlpha['8'],
-    backgroundColor: whiteAlpha['1.5'],
-    paddingHorizontal: 14,
-    paddingVertical: 14,
-    flexBasis: '47%',
-    flexGrow: 1,
+  },
+  sessionSummaryText: {
+    ...n.typography.caption,
+    color: n.colors.textSecondary,
+    lineHeight: 19,
+    flex: 1,
+  },
+  starterGrid: {
+    gap: n.spacing.sm,
+  },
+  starterChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    borderRadius: n.radius.md,
+    borderWidth: 1,
+    borderColor: whiteAlpha['20'],
+    backgroundColor: whiteAlpha['10'],
+    paddingHorizontal: n.spacing.md,
+    paddingVertical: 13,
+    minHeight: 62,
   },
   starterIconWrap: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'transparent',
+    backgroundColor: accentAlpha['20'],
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: whiteAlpha['8'],
+    borderColor: accentAlpha['35'],
+    flexShrink: 0,
+  },
+  starterTextWrap: {
+    flex: 1,
+    minWidth: 0,
   },
   starterChipText: {
     color: n.colors.textPrimary,
-    fontSize: 13,
-    flex: 1,
-    lineHeight: 19,
-    fontWeight: '600',
+    fontFamily: 'Inter_600SemiBold',
+    fontSize: 15,
+    lineHeight: 22,
+    includeFontPadding: false,
   },
   pressed: {
     opacity: n.alpha.pressed,
     transform: [{ scale: 0.98 }],
+  },
+  sourceNote: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingHorizontal: n.spacing.sm,
+  },
+  sourceNoteText: {
+    textAlign: 'center',
   },
 });

@@ -1,9 +1,9 @@
-import { and, desc, eq } from 'drizzle-orm';
+import { and, desc, eq, inArray } from 'drizzle-orm';
 import type {
   GeneratedStudyImageContextType,
   GeneratedStudyImageRecord,
   SaveGeneratedStudyImageInput,
-} from '../queries/generatedStudyImages';
+} from '../../types/studyImages';
 import { getDrizzleDb } from '../drizzle';
 import { generatedStudyImages } from '../drizzleSchema';
 
@@ -103,6 +103,49 @@ export const generatedStudyImagesRepositoryDrizzle = {
       .from(generatedStudyImages)
       .orderBy(desc(generatedStudyImages.createdAt))
       .limit(limit);
+
+    return rows.map(mapGeneratedStudyImageRow);
+  },
+
+  async listGeneratedStudyImagesForContexts(
+    contextType: GeneratedStudyImageContextType,
+    contextKeys: string[],
+  ): Promise<GeneratedStudyImageRecord[]> {
+    const normalizedKeys = Array.from(new Set(contextKeys.map((key) => key.trim()).filter(Boolean)));
+    if (normalizedKeys.length === 0) {
+      return [];
+    }
+
+    const db = getDrizzleDb();
+    const rows = await db
+      .select()
+      .from(generatedStudyImages)
+      .where(
+        and(
+          eq(generatedStudyImages.contextType, contextType),
+          inArray(generatedStudyImages.contextKey, normalizedKeys),
+        ),
+      )
+      .orderBy(desc(generatedStudyImages.createdAt));
+
+    return rows.map(mapGeneratedStudyImageRow);
+  },
+
+  async listGeneratedStudyImagesForTopic(
+    contextType: GeneratedStudyImageContextType,
+    topicName: string,
+  ): Promise<GeneratedStudyImageRecord[]> {
+    const db = getDrizzleDb();
+    const rows = await db
+      .select()
+      .from(generatedStudyImages)
+      .where(
+        and(
+          eq(generatedStudyImages.contextType, contextType),
+          eq(generatedStudyImages.topicName, topicName),
+        ),
+      )
+      .orderBy(desc(generatedStudyImages.createdAt));
 
     return rows.map(mapGeneratedStudyImageRow);
   },

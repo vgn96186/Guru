@@ -102,7 +102,7 @@ export async function testHuggingFaceConnection(
   }
 }
 
-/** Minimal chat probe — @google/genai first, then OpenAI-compatible REST (same as `llmRouting` fallback). */
+/** Minimal chat probe — @google/genai first, then native Gemini REST (avoids OpenAI-compat endpoint issues with AQ keys). */
 export async function testGeminiConnection(key: string): Promise<ProviderHealthResult> {
   const trimmed = key.trim();
   if (!trimmed) {
@@ -112,19 +112,16 @@ export async function testGeminiConnection(key: string): Promise<ProviderHealthR
   if (sdk.ok) {
     return sdk;
   }
+  // Fallback: native Gemini REST endpoint (not OpenAI-compat, which breaks with AQ authorization keys)
   try {
     const res = await fetch(
-      'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions',
+      `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODELS[0]}:generateContent?key=${trimmed}`,
       {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${trimmed}`,
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          model: GEMINI_MODELS[0],
-          messages: [{ role: 'user', content: 'Reply with one word: ok' }],
-          max_tokens: 8,
+          contents: [{ role: 'user', parts: [{ text: 'Reply with one word: ok' }] }],
+          generationConfig: { maxOutputTokens: 8 },
         }),
       },
     );
@@ -562,8 +559,14 @@ export async function testVertexConnection(
   const p = project.trim();
   const l = location.trim();
   const t = token.trim();
-  if (!p || !l || !t)
-    return { ok: false, status: 0, message: 'Project, Location, and Token required' };
+  if (!t) return { ok: false, status: 0, message: 'API key or token required' };
+
+  // API Key mode: no project/location → test via AI Studio endpoint
+  if (!p || !l) {
+    return testGeminiConnection(t);
+  }
+
+  // Service Account mode: test via Vertex AI endpoint
   try {
     const res = await fetch(
       `https://${l}-aiplatform.googleapis.com/v1/projects/${p}/locations/${l}/publishers/google/models/${VERTEX_MODELS[0]}:generateContent`,

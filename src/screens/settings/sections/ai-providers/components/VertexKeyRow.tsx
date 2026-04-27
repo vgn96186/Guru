@@ -118,8 +118,9 @@ export default function VertexKeyRow({
             </LinearText>
             <LinearText variant="caption" tone="muted" style={{ marginTop: 1 }}>
               {authMode === 'apiKey'
-                ? 'Google AI API key authentication'
-                : 'Google Cloud project credentials'}
+                ? 'AI Studio or Agent Platform key'
+                : 'Google Cloud project credentials'
+              }
             </LinearText>
           </View>
         </View>
@@ -149,7 +150,7 @@ export default function VertexKeyRow({
                   color: active ? linearTheme.colors.accent : linearTheme.colors.textMuted,
                 }}
               >
-                {mode === 'apiKey' ? 'API Key' : 'Service Account'}
+                {mode === 'apiKey' ? 'API Key' : 'Project + Token'}
               </LinearText>
             </TouchableOpacity>
           );

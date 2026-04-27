@@ -1,7 +1,5 @@
-import {
-  SETTINGS_CATEGORIES,
-  type SettingsCategory,
-} from '../../components/settings/SettingsSidebar';
+import { SETTINGS_CATEGORIES } from '../../components/settings/SettingsSidebar';
+import type { SettingsCategory } from '../../types';
 
 export const SETTINGS_CATEGORY_DESCRIPTIONS: Record<SettingsCategory, string> = {
   dashboard: 'Identity, targets, and the settings control-room overview.',

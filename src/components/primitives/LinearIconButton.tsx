@@ -120,9 +120,10 @@ export default function LinearIconButton({
         busy: loading || accessibilityState?.busy,
       }}
       className={buttonClassName}
+      android_ripple={{ color: 'rgba(255, 255, 255, 0.1)', borderless: false }}
       // @ts-expect-error - Pressable style callback returning mixed array is valid RN pattern
       style={({ pressed }) => {
-        const pressedOpacity = pressed ? 0.88 : resolvedDisabled ? 0.55 : 1;
+        const pressedOpacity = pressed ? 0.5 : resolvedDisabled ? 0.55 : 1;
         const dynamicStyleFn = dynamicStyle;
         return [{ opacity: pressedOpacity }, dynamicStyleFn ? dynamicStyleFn({ pressed }) : style];
       }}

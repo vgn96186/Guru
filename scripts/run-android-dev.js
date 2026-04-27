@@ -8,7 +8,7 @@ const { resolveAdbCommand } = require('./android-tooling');
 
 const ADB_PORT = '8081';
 const APP_PACKAGE = 'com.anonymous.gurustudy.dev';
-const APP_ACTIVITY = 'com.anonymous.gurustudy.dev.MainActivity';
+const APP_ACTIVITY = 'com.anonymous.gurustudy.MainActivity';
 const DEV_CLIENT_URL =
   `exp+guru-study://expo-development-client/?url=` +
   encodeURIComponent(`http://127.0.0.1:${ADB_PORT}`);
@@ -318,7 +318,7 @@ function installApp() {
   const deviceAbi = getDevicePrimaryAbi();
   const archArg = envArch || deviceAbi;
 
-  const gradleArgs = [':app:installDebug', '--console=plain', '--build-cache'];
+  const gradleArgs = [':app:installDevDebug', '--console=plain', '--build-cache'];
   // Speed: single ABI matching the connected device/emulator. Omit to use android/gradle.properties
   // (slower first build). Typical AVDs are x86_64; ARM tablets/phones are arm64-v8a.
   if (archArg) {

@@ -122,12 +122,14 @@ export default function StudyPlanScreen() {
           : Promise.resolve([]),
       ]);
       if (resourceMode === 'dbmci_live' || resourceMode === 'btr') setAllTopics(fetchedAllTopics);
+      // NEET-PG tests breadth; use a slightly lower priority threshold so more topics qualify.
+      const isNeet = profile?.examType === 'NEET';
       const overdue = overdueRaw.filter((topic) => {
         const dueDate = topic.progress.fsrsDue?.slice(0, 10);
         if (!dueDate || dueDate >= todayStr) return false;
-        if (planMode === 'high_yield') return topic.inicetPriority >= 8;
+        if (planMode === 'high_yield') return topic.inicetPriority >= (isNeet ? 7 : 8);
         if (planMode === 'exam_crunch')
-          return topic.inicetPriority >= 7 || topic.progress.confidence < 3;
+          return topic.inicetPriority >= (isNeet ? 6 : 7) || topic.progress.confidence < 3;
         return true;
       });
 

@@ -44,6 +44,22 @@ describe('examIntelligence', () => {
     expect(intel.targetExam).toBe('NEET-PG');
   });
 
+  it('skips past INICET and targets NEET-PG when INICET has passed', () => {
+    const intel = getExamTargetIntelligence(
+      {
+        examType: 'INICET',
+        inicetDate: '2026-05-17',
+        neetDate: '2026-08-30',
+      },
+      // INICET has passed (getDaysToExam returns 0), NEET-PG is upcoming
+      (date) => (date === '2026-05-17' ? 0 : 125),
+    );
+
+    expect(intel.targetExam).toBe('NEET-PG');
+    expect(intel.daysToTarget).toBe(125);
+    expect(intel.phase).not.toBe('exam_day');
+  });
+
   it('returns exam-aware subject weight and contextual brief', () => {
     expect(getExamAwareSubjectWeight({ inicetWeight: 8, neetWeight: 5 }, 'INICET')).toBe(8);
     expect(getExamAwareSubjectWeight({ inicetWeight: 8, neetWeight: 5 }, 'NEET-PG')).toBe(5);

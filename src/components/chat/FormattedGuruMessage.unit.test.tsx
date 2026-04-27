@@ -78,7 +78,7 @@ describe('FormattedGuruMessage', () => {
       expect.objectContaining({ color: n.colors.accent }),
     );
     expect(StyleSheet.flatten(highYield.props.style)).toEqual(
-      expect.objectContaining({ color: '#FB923C' }),
+      expect.objectContaining({ color: n.colors.warning }),
     );
   });
 });

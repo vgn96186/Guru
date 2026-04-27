@@ -44,5 +44,6 @@ export type ModelOption = {
     | 'Poe'
     | 'Kilo'
     | 'AgentRouter'
-    | 'Qwen (Free)';
+    | 'Qwen (Free)'
+    | 'Vertex AI';
 };

@@ -1,4 +1,5 @@
 import React from 'react';
+import Animated, { FadeIn } from 'react-native-reanimated';
 import { DashboardOverview } from '../sections/DashboardOverview';
 import { GeneralOverviewSection } from '../sections/GeneralOverviewSection';
 import { AppearanceSection } from '../sections/AppearanceSection';
@@ -11,13 +12,18 @@ import { DeviceSyncSection } from '../sections/DeviceSyncSection';
 import StorageSections from '../sections/StorageSections';
 import AdvancedSettingsSection from '../sections/AdvancedSettingsSection';
 import { formatGuruChatModelChipLabel } from '../../../services/ai/guruChatModelPreference';
-import type { SettingsCategory } from '../../../components/settings/SettingsSidebar';
+import type { SettingsCategory } from '../../../types';
 
 type ValidationStatus = 'ok' | 'fail' | null;
 
 function toFieldValidationStatus(status: ValidationStatus) {
   return status === 'ok' ? 'valid' : status === 'fail' ? 'invalid' : 'idle';
 }
+
+const CATEGORY_ENTER = FadeIn.duration(180).withInitialValues({
+  opacity: 0,
+  transform: [{ translateY: 10 }],
+});
 
 // SettingsScreen still owns the state. This component only owns category rendering
 // while the remaining refactor breaks the state into smaller domain hooks.
@@ -178,7 +184,8 @@ export default function SettingsCategoryContent(props: any) {
     onOpenDevConsole,
   } = props;
 
-  switch (activeCategory as SettingsCategory) {
+  const content = (() => {
+    switch (activeCategory as SettingsCategory) {
     case 'dashboard':
       return (
         <>
@@ -481,4 +488,13 @@ export default function SettingsCategoryContent(props: any) {
     default:
       return null;
   }
+  })();
+
+  if (!content) return null;
+
+  return (
+    <Animated.View key={activeCategory} entering={CATEGORY_ENTER}>
+      {content}
+    </Animated.View>
+  );
 }

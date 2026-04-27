@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { useWindowDimensions } from 'react-native';
-import type { SettingsCategory } from '../components/settings/SettingsSidebar';
+import type { SettingsCategory } from '../types';
 
 export function useSettingsLayout(initialCategory: SettingsCategory = 'dashboard') {
   const { width } = useWindowDimensions();

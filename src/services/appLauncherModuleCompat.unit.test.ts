@@ -2,6 +2,10 @@ const mockRequireNativeModule = jest.fn();
 
 jest.mock('expo-modules-core', () => ({
   requireNativeModule: (...args: unknown[]) => mockRequireNativeModule(...args),
+  requireNativeViewManager: jest.fn(() => {
+    const React = require('react');
+    return ({ children, ...props }: any) => React.createElement('View', props, children);
+  }),
 }));
 
 describe('app launcher module compatibility', () => {

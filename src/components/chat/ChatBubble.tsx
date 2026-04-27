@@ -362,7 +362,7 @@ const styles = StyleSheet.create({
   msgMetaRowUser: { justifyContent: 'flex-end' },
   msgMetaRowGuru: { justifyContent: 'flex-start' },
   msgAuthor: { ...n.typography.caption, color: n.colors.textPrimary },
-  msgMetaDivider: { color: '#66718C', fontSize: 11 },
+  msgMetaDivider: { color: n.colors.textMuted, fontSize: 11 },
   msgMetaText: { ...n.typography.meta, color: n.colors.textSecondary },
   msgModelPill: {
     paddingHorizontal: 8,

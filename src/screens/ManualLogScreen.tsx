@@ -1,11 +1,10 @@
 import React, { useState } from 'react';
-import { ScrollView, StatusBar, StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
+import { ScrollView, StatusBar, StyleSheet, TextInput, TouchableOpacity, View, KeyboardAvoidingView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Controller, useForm } from 'react-hook-form';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
 import { z } from 'zod';
 import { getAllSubjects, getTopicsBySubject, updateTopicProgress } from '../db/queries/topics';
 import { createSession, endSession } from '../db/queries/sessions';

@@ -8,6 +8,8 @@ interface SidebarNavItemProps {
   iconName?: any;
   icon?: React.ReactNode;
   badge?: string;
+  /** Optional colored dot for at-a-glance category health. */
+  statusDotColor?: string;
   isActive?: boolean;
   onPress: () => void;
   isCollapsed?: boolean;
@@ -18,6 +20,7 @@ export function SidebarNavItem({
   iconName,
   icon,
   badge,
+  statusDotColor,
   isActive,
   onPress,
   isCollapsed,
@@ -46,20 +49,43 @@ export function SidebarNavItem({
           </Text>
         )}
       </View>
-      {!isCollapsed && badge && (
-        <View
-          style={{
-            backgroundColor: 'rgba(239, 68, 68, 0.1)',
-            paddingHorizontal: 6,
-            paddingVertical: 2,
-            borderRadius: 4,
-            borderWidth: 1,
-            borderColor: 'rgba(239, 68, 68, 0.2)',
-          }}
-        >
-          <Text style={{ fontSize: 10, fontWeight: '500', color: '#F87171' }}>{badge}</Text>
-        </View>
-      )}
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+        {statusDotColor && !isCollapsed ? (
+          <View
+            style={{
+              width: 6,
+              height: 6,
+              borderRadius: 3,
+              backgroundColor: statusDotColor,
+            }}
+          />
+        ) : null}
+        {!isCollapsed && badge && (
+          <View
+            style={{
+              backgroundColor: 'rgba(239, 68, 68, 0.1)',
+              paddingHorizontal: 6,
+              paddingVertical: 2,
+              borderRadius: 4,
+              borderWidth: 1,
+              borderColor: 'rgba(239, 68, 68, 0.2)',
+            }}
+          >
+            <Text style={{ fontSize: 10, fontWeight: '500', color: '#F87171' }}>{badge}</Text>
+          </View>
+        )}
+        {isCollapsed && statusDotColor ? (
+          <View
+            style={{
+              width: 6,
+              height: 6,
+              borderRadius: 3,
+              backgroundColor: statusDotColor,
+            }}
+          />
+        ) : null}
+      </View>
     </TouchableOpacity>
   );
 }
+

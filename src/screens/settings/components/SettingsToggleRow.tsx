@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useCallback, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -8,6 +8,7 @@ import {
   type TextStyle,
   type ViewStyle,
 } from 'react-native';
+import * as Haptics from 'expo-haptics';
 
 interface SettingsToggleRowProps {
   label: string;
@@ -39,6 +40,12 @@ export default function SettingsToggleRow({
   style,
 }: SettingsToggleRowProps) {
   const animatedValue = useRef(new Animated.Value(value ? 1 : 0)).current;
+
+  const handleToggle = useCallback(() => {
+    if (disabled) return;
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    onValueChange(!value);
+  }, [disabled, onValueChange, value]);
 
   useEffect(() => {
     Animated.timing(animatedValue, {
@@ -80,7 +87,7 @@ export default function SettingsToggleRow({
         {hint ? <Text style={{ fontSize: 12, color: '#8A8F98', marginTop: 4 }}>{hint}</Text> : null}
       </View>
       <Pressable
-        onPress={() => !disabled && onValueChange(!value)}
+        onPress={handleToggle}
         style={{
           width: 36,
           height: 20,

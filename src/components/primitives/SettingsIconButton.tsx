@@ -35,6 +35,7 @@ export default function SettingsIconButton({
     <Pressable
       onPress={onPress}
       style={({ pressed }) => [styles.button, pressed && styles.pressed, style]}
+      android_ripple={{ color: n.colors.surfaceHover, borderless: true, radius: 24 }}
       accessibilityRole="button"
       accessibilityLabel="Open settings"
       testID={testID}

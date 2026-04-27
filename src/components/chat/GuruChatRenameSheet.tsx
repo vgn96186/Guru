@@ -3,7 +3,7 @@ import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 import LinearSurface from '../primitives/LinearSurface';
 import LinearText from '../primitives/LinearText';
 import { linearTheme as n } from '../../theme/linearTheme';
-import { whiteAlpha } from '../../theme/colorUtils';
+import { blackAlpha, whiteAlpha } from '../../theme/colorUtils';
 
 interface GuruChatRenameSheetProps {
   visible: boolean;
@@ -72,7 +72,7 @@ const styles = StyleSheet.create({
   },
   sheetBackdrop: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.56)',
+    backgroundColor: blackAlpha['56'],
   },
   renameSheet: {
     borderTopLeftRadius: 24,
@@ -125,7 +125,7 @@ const styles = StyleSheet.create({
   renameBtnPrimary: {
     backgroundColor: n.colors.accent,
     borderColor: n.colors.accent,
-    shadowColor: '#5E6AD2',
+    shadowColor: n.colors.accent,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.3,
     shadowRadius: 8,

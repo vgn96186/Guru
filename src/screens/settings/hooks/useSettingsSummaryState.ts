@@ -10,7 +10,7 @@ import {
 } from '../../../services/deviceMemory';
 import { hasValue } from '../utils';
 import type { PermissionStatus } from './useSettingsPermissions';
-import type { SettingsCategory } from '../../../components/settings/SettingsSidebar';
+import type { SettingsCategory } from '../../../types';
 
 type SummaryTone = 'accent' | 'success' | 'warning' | 'error' | 'secondary' | 'primary';
 

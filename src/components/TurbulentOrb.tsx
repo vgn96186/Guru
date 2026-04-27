@@ -134,8 +134,10 @@ export default React.memo(function TurbulentOrb({
     // Continuous time drift for fluid motion
     time.value = withRepeat(withTiming(100, { duration: 50000, easing: Easing.linear }), -1, false);
 
-    // Initial 15-second fluid bridge: highly turbulent -> settles down to smooth flow
-    intensity.value = withTiming(0.1, { duration: 15000, easing: Easing.bezier(0.25, 1, 0.5, 1) });
+    // Continuous fluid bridge: highly turbulent → settles to a subtle perpetual wobble (0.06).
+    // Intensity never reaches zero — matches BootTransition's shared loading animation floor.
+    // The 15s cubic-bezier decay gives ~10 granular steps before hitting the minimal floor.
+    intensity.value = withTiming(0.06, { duration: 15000, easing: Easing.bezier(0.25, 1, 0.5, 1) });
   }, [intensity, time]);
 
   const animatedProps = useAnimatedProps(() => {

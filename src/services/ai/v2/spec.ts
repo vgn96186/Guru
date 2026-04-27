@@ -69,6 +69,9 @@ export interface LanguageModelV2CallOptions {
   abortSignal?: AbortSignal;
   /** Escape hatch for provider-specific fields. */
   providerOptions?: Record<string, unknown>;
+  /** Request web search capability from the model. Provider adapters translate this
+   *  to the appropriate native feature (e.g. googleSearch for Gemini, web_search for DeepSeek). */
+  webSearch?: boolean;
 }
 
 export type FinishReason = 'stop' | 'length' | 'tool-calls' | 'content-filter' | 'error' | 'other';

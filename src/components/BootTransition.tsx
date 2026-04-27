@@ -24,6 +24,7 @@ import LinearText from './primitives/LinearText';
 const PHONE_BUTTON_SIZE = 180;
 const TABLET_BUTTON_SIZE = 220;
 const TABLET_BREAKPOINT = 600;
+const START_BUTTON_HANDOFF_Y_OFFSET = -24; // tune: -16, -24, -32
 const GENTLE_EASE = Easing.bezier(0.25, 0.1, 0.25, 1); // Near-linear: perceptible change at every moment
 const MIN_BOOT_DISPLAY_MS = 800;
 const ORB_HALF = 180 / 2; // Used for static particle styling
@@ -345,7 +346,8 @@ export default function BootTransition() {
     // Fall back to center if layout still missing (orb stays put rather than snapping).
     if (startButtonLayout) {
       targetXShared.value = startButtonLayout.x + startButtonLayout.width / 2;
-      targetYShared.value = startButtonLayout.y + startButtonLayout.height / 2;
+      targetYShared.value =
+        startButtonLayout.y + startButtonLayout.height / 2 + START_BUTTON_HANDOFF_Y_OFFSET;
     } else {
       targetXShared.value = centerX;
       targetYShared.value = centerY;

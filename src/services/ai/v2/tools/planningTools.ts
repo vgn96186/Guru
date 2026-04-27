@@ -104,7 +104,7 @@ export const updateDailyAgendaTool = tool({
     date: z.string().describe('The date for the agenda (YYYY-MM-DD)'),
     plan: DailyAgendaSchema.describe('The new daily agenda blocks'),
     eventType: z.string().describe('Reason for update (e.g., "agenda_regenerated")'),
-    eventPayload: z.record(z.any()).describe('Metadata about the update'),
+    eventPayload: z.record(z.string(), z.any()).describe('Metadata about the update'),
   }),
   execute: async ({ date, plan, eventType, eventPayload }) => {
     await dailyAgendaRepository.saveDailyAgenda(date, plan, 'ai_agent');

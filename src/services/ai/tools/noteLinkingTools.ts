@@ -1,9 +1,10 @@
 // AI SDK tool for semantic note tagging
-import { tool } from 'ai';
+import { tool } from '../v2/tool';
 import { z } from 'zod';
 import { getDb } from '../../../db/database';
 
 export const tagNoteTool = tool({
+  name: 'tag_note',
   description:
     'Tag a note with semantic labels. Tags are stored as JSON metadata in the user_notes field.',
   inputSchema: z.object({

@@ -125,7 +125,7 @@ export default function BootTransition() {
   // Entry animation
   const mountProgress = useSharedValue(0);
   const mountScale = useSharedValue(0);
-  // Core breathing
+  // Core shape
   const scaleCore = useSharedValue(0.95);
   const opacityCore = useSharedValue(0.85);
   // Ambient glow
@@ -187,10 +187,10 @@ export default function BootTransition() {
       false,
     );
 
-    // Keep core scale and opacity stable during turbulent boot (no breathing/pulsing)
+    // Keep core shape, glow, and highlight stable during turbulent boot
     scaleCore.value = 1;
     opacityCore.value = 1;
-    opacityGlow.value = withRepeat(withTiming(0.7, fastCore), -1, true);
+    opacityGlow.value = 0.4;
 
     scaleRing0.value = withDelay(
       200,
@@ -214,8 +214,8 @@ export default function BootTransition() {
       withRepeat(withTiming(0, { ...fastEmit, duration: 2800 }), -1, false),
     );
 
-    highlightTranslateY.value = withRepeat(withTiming(3, fastCore), -1, true);
-    highlightOpacity.value = withRepeat(withTiming(0.55, fastCore), -1, true);
+    highlightTranslateY.value = 0;
+    highlightOpacity.value = 0.45;
     jitterDamping.value = 1;
 
     // Stay turbulent during boot — shapeSettleProgress held at 0 so intensity stays 1.0.

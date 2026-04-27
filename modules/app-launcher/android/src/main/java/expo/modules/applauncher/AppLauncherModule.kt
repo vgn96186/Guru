@@ -1107,6 +1107,7 @@ class AppLauncherModule : Module() {
             Prop("message") { view: LoadingOrbView, prop: String -> view.message = prop }
             Prop("isTurbulent") { view: LoadingOrbView, prop: Boolean -> view.isTurbulent = prop }
             Prop("pathIntensity") { view: LoadingOrbView, prop: Float -> view.pathIntensity = prop }
+            Prop("breathIntensity") { view: LoadingOrbView, prop: Float -> view.breathIntensity = prop }
         }
 
         View(BootTransitionView::class) {

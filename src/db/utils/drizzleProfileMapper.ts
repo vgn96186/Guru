@@ -12,6 +12,7 @@ import type {
 } from '../../types';
 import { DEFAULT_INICET_DATE, DEFAULT_NEET_DATE } from '../../config/appConfig';
 import { sanitizeProviderOrder } from '../../utils/providerOrder';
+import type { WebSearchProviderId } from '../../types';
 
 // Enum allow-lists copied from progress.ts
 const VALID_ENUMS: Record<string, { values: readonly string[]; fallback: string }> = {
@@ -301,6 +302,22 @@ export function mapUserProfileRow(row: UserProfileRow | undefined): UserProfile 
         return [];
       }
     })() as ProviderId[],
+    webSearchOrder: (() => {
+      try {
+        const parsed = JSON.parse(row.webSearchOrder ?? 'null');
+        if (Array.isArray(parsed)) return parsed as WebSearchProviderId[];
+        return undefined;
+      } catch {
+        return undefined;
+      }
+    })(),
+    disabledWebSearchProviders: (() => {
+      try {
+        return JSON.parse(row.disabledWebSearchProviders ?? '[]') as WebSearchProviderId[];
+      } catch {
+        return [];
+      }
+    })(),
     samsungBatteryPromptShownAt: row.samsungBatteryPromptShownAt ?? undefined,
     orbEffect: row.orbEffect ?? 'ripple',
   };
@@ -490,6 +507,14 @@ export function mapToDrizzleUpdate(updates: Partial<UserProfile>): Partial<NewUs
   if ('disabledProviders' in updates) {
     drizzleUpdate.disabledProviders = JSON.stringify(updates.disabledProviders ?? []);
   }
+  if ('webSearchOrder' in updates) {
+    drizzleUpdate.webSearchOrder = JSON.stringify(updates.webSearchOrder ?? null);
+  }
+  if ('disabledWebSearchProviders' in updates) {
+    drizzleUpdate.disabledWebSearchProviders = JSON.stringify(
+      updates.disabledWebSearchProviders ?? [],
+    );
+  }
   if ('apiValidation' in updates) {
     drizzleUpdate.apiValidationJson = JSON.stringify(updates.apiValidation ?? {});
   }
@@ -610,6 +635,8 @@ export function createDefaultUserProfile(): UserProfile {
     vertexAiToken: '',
     qwenConnected: false,
     disabledProviders: [],
+    webSearchOrder: undefined,
+    disabledWebSearchProviders: [],
     samsungBatteryPromptShownAt: undefined,
     orbEffect: 'ripple',
   };

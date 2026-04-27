@@ -3,8 +3,9 @@ import { generateText } from '../v2/generateText';
 import { createGuruFallbackModel } from '../v2/providers/guruFallback';
 import { logGroundingEvent, previewText } from '../runtimeDebug';
 import { profileRepository } from '../../../db/repositories';
-import { DEFAULT_PROVIDER_ORDER } from '../../../types';
+import { DEFAULT_PROVIDER_ORDER, type UserProfile } from '../../../types';
 import { getMedicalImageForTopic } from '../../medicalImageMap';
+import { searchWeb, searchImages } from '../../webSearch';
 
 import { clipText, renderSourcesForPrompt } from './utils';
 import { getCachedImageSearch, setCachedImageSearch } from './cache';
@@ -31,6 +32,7 @@ import { searchPubMedFallback } from './providers/pubmed';
 export async function searchMedicalImages(
   query: string,
   maxResults = 6,
+  profile?: UserProfile,
 ): Promise<MedicalGroundingSource[]> {
   // Check cache first
   const cachedUrl = getCachedImageSearch(query);
@@ -54,6 +56,27 @@ export async function searchMedicalImages(
     maxResults,
   });
   if (__DEV__) console.log('[MedicalSearch] Image query:', query);
+
+  // Try configured web image providers via orchestrator (when profile available)
+  if (profile) {
+    try {
+      const webImages = await searchImages({ query, maxResults, profile });
+      if (webImages.length > 0) {
+        const result = webImages.map((r) => ({
+          id: `webimg-${r.provider}-${r.url.slice(0, 40)}`,
+          title: r.title,
+          url: r.url,
+          imageUrl: r.thumbnailUrl ?? r.url,
+          snippet: r.title,
+          source: (r.source ?? r.provider) as MedicalGroundingSource['source'],
+        }));
+        setCachedImageSearch(query, result[0].imageUrl ?? result[0].url);
+        return result;
+      }
+    } catch (err) {
+      if (__DEV__) console.warn('[MedicalSearch] Web image search failed:', (err as Error).message);
+    }
+  }
 
   async function runImageSearch(searchQuery: string) {
     const [commons, google, wikipedia, openi, duckduckgo, brave] = await Promise.allSettled([
@@ -290,75 +313,39 @@ export async function generateVisualSearchQueries(topicName: string): Promise<st
 }
 
 /**
- * Search for medical articles (text-based grounding).
- * Uses Wikipedia + DuckDuckGo + EuropePMC, with PubMed as fallback.
+ * Hardcoded medical literature cascade (Wikipedia → EuropePMC → PubMed → DDG).
+ * Used as fallback when no profile is available or orchestrator returns no results.
  */
-export async function searchLatestMedicalSources(
+async function searchMedicalLiterature(
   query: string,
-  maxResults = 6,
+  maxResults: number,
 ): Promise<MedicalGroundingSource[]> {
   const collected: MedicalGroundingSource[] = [];
   const wikiLimit = Math.min(3, maxResults);
   const litLimit = maxResults;
   const minStrongResults = Math.min(3, maxResults);
 
-  logGroundingEvent('search_start', {
-    query: previewText(query, 140),
-    maxResults,
-  });
-
   // Brave Search first — highest quality web results when API key is configured
   try {
     const braveResults = await searchBraveText(query, Math.min(4, maxResults));
     if (braveResults.length > 0) {
       collected.push(...braveResults);
-      logGroundingEvent('provider_result', {
-        provider: 'Brave Search',
-        count: braveResults.length,
-        query: previewText(query, 100),
-      });
     }
   } catch (err) {
-    logGroundingEvent('provider_error', {
-      provider: 'Brave Search',
-      error: err instanceof Error ? err.message : String(err),
-      query: previewText(query, 100),
-    });
     if (__DEV__) console.warn('[GuruGrounded] Brave Search failed:', (err as Error).message);
   }
 
   try {
     const wiki = await searchWikipedia(query, wikiLimit);
     collected.push(...wiki);
-    logGroundingEvent('provider_result', {
-      provider: 'Wikipedia',
-      count: wiki.length,
-      query: previewText(query, 100),
-    });
   } catch (err) {
-    logGroundingEvent('provider_error', {
-      provider: 'Wikipedia',
-      error: err instanceof Error ? err.message : String(err),
-      query: previewText(query, 100),
-    });
     if (__DEV__) console.warn('[GuruGrounded] Wikipedia failed:', (err as Error).message);
   }
 
-  // DuckDuckGo — free web search for broader context (no API key needed)
   try {
     const europe = await searchEuropePMC(query, litLimit);
     collected.push(...europe);
-    logGroundingEvent('provider_result', {
-      provider: 'EuropePMC',
-      count: europe.length,
-      query: previewText(query, 100),
-    });
   } catch (err) {
-    logGroundingEvent('provider_error', {
-      provider: 'EuropePMC',
-      error: err instanceof Error ? err.message : String(err),
-      query: previewText(query, 100),
-    });
     if (__DEV__) console.warn('[GuruGrounded] EuropePMC failed:', (err as Error).message);
   }
 
@@ -366,19 +353,7 @@ export async function searchLatestMedicalSources(
     try {
       const pubmed = await searchPubMedFallback(query, litLimit);
       collected.push(...pubmed);
-      logGroundingEvent('provider_result', {
-        provider: 'PubMed',
-        count: pubmed.length,
-        query: previewText(query, 100),
-        fallback: true,
-      });
     } catch (err) {
-      logGroundingEvent('provider_error', {
-        provider: 'PubMed',
-        error: err instanceof Error ? err.message : String(err),
-        query: previewText(query, 100),
-        fallback: true,
-      });
       if (__DEV__) console.warn('[GuruGrounded] PubMed fallback failed:', (err as Error).message);
     }
   }
@@ -387,23 +362,69 @@ export async function searchLatestMedicalSources(
     try {
       const ddg = await searchDuckDuckGo(query, 3);
       collected.push(...ddg);
-      logGroundingEvent('provider_result', {
-        provider: 'DuckDuckGo',
-        count: ddg.length,
-        query: previewText(query, 100),
-        titles: ddg.map((src) => previewText(src.title, 60)),
-        fallback: true,
-      });
     } catch (err) {
-      logGroundingEvent('provider_error', {
-        provider: 'DuckDuckGo',
-        error: err instanceof Error ? err.message : String(err),
-        query: previewText(query, 100),
-        fallback: true,
-      });
       if (__DEV__) console.warn('[GuruGrounded] DuckDuckGo failed:', (err as Error).message);
     }
   }
+
+  return collected;
+}
+
+/**
+ * Search for medical articles (text-based grounding).
+ * When profile is provided, uses the user-configured web search provider order.
+ * Falls back to medical literature databases (Wikipedia, EuropePMC, PubMed, DDG).
+ */
+export async function searchLatestMedicalSources(
+  query: string,
+  maxResults = 6,
+  profile?: UserProfile,
+): Promise<MedicalGroundingSource[]> {
+  logGroundingEvent('search_start', {
+    query: previewText(query, 140),
+    maxResults,
+  });
+
+  let collected: MedicalGroundingSource[] = [];
+
+  // 1. Try configured web providers via orchestrator (when profile available)
+  if (profile) {
+    try {
+      const webResults = await searchWeb({ query, maxResults, profile });
+      if (webResults.length >= maxResults) {
+        const result = webResults.map((r) => ({
+          id: `web-${r.provider}-${r.url.slice(0, 40)}`,
+          title: r.title,
+          url: r.url,
+          snippet: r.snippet ?? '',
+          source: (r.source ?? r.provider) as MedicalGroundingSource['source'],
+        }));
+        logGroundingEvent('search_complete', {
+          query: previewText(query, 140),
+          totalCollected: result.length,
+          totalReturned: result.length,
+          method: 'orchestrator',
+        });
+        return result;
+      }
+      if (webResults.length > 0) {
+        collected = webResults.map((r) => ({
+          id: `web-${r.provider}-${r.url.slice(0, 40)}`,
+          title: r.title,
+          url: r.url,
+          snippet: r.snippet ?? '',
+          source: (r.source ?? r.provider) as MedicalGroundingSource['source'],
+        }));
+      }
+    } catch (err) {
+      if (__DEV__)
+        console.warn('[GuruGrounded] Web search orchestrator failed:', (err as Error).message);
+    }
+  }
+
+  // 2. Fallback: medical literature databases
+  const litResults = await searchMedicalLiterature(query, maxResults);
+  collected.push(...litResults);
 
   const deduped = rankGroundingSources(collected, query, maxResults);
   logGroundingEvent('search_complete', {

@@ -125,7 +125,8 @@ export function createGeminiModel(config: GeminiConfig): LanguageModelV2 {
     }
 
     if (typeof __DEV__ !== 'undefined' && __DEV__) {
-      console.log(`[gemini] Requesting: ${url}`);
+      const safeUrl = url.replace(/([?&]key=)[^&]+/g, '$1REDACTED');
+      console.log(`[gemini] Requesting: ${safeUrl}`);
     }
 
     // Pass the standard react-native RequestInit, ensuring we don't accidentally pass

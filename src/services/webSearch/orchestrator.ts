@@ -33,7 +33,13 @@ export async function searchWeb(params: WebSearchParams): Promise<WebSearchResul
     if (!provider) continue;
 
     if (providerId === 'brave' && !params.profile.braveSearchApiKey) continue;
-    if (providerId === 'gemini_grounding' && !params.profile.geminiKey) continue;
+    if (
+      providerId === 'gemini_grounding' &&
+      !params.profile.geminiKey?.trim() &&
+      !params.profile.vertexAiToken?.trim()
+    ) {
+      continue;
+    }
     if (providerId === 'deepseek_web' && !params.profile.deepseekKey) continue;
 
     try {

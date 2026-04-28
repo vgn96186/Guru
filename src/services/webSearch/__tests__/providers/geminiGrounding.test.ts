@@ -1,19 +1,33 @@
 const mockDoGenerate = jest.fn();
 const mockExtractGrounding = jest.fn();
+const mockCreateGeminiModel = jest.fn();
 
 jest.mock('../../../ai/v2/providers/gemini', () => ({
-  createGeminiModel: () => ({
-    doGenerate: mockDoGenerate,
-    provider: 'gemini',
-    modelId: 'gemini-2.5-flash',
-  }),
+  createGeminiModel: (config: any) => {
+    mockCreateGeminiModel(config);
+    return {
+      doGenerate: mockDoGenerate,
+      provider: 'gemini',
+      modelId: config?.modelId,
+    };
+  },
   extractGroundingMetadata: (raw: unknown) => mockExtractGrounding(raw),
 }));
 
 import { geminiGroundingProvider } from '../../providers/geminiGrounding';
 
-function profile(key?: string) {
-  return { geminiKey: key ?? 'test-gemini-key' } as any;
+function profile(input?: {
+  geminiKey?: string;
+  vertexAiProject?: string;
+  vertexAiLocation?: string;
+  vertexAiToken?: string;
+}) {
+  return {
+    geminiKey: input?.geminiKey ?? 'test-gemini-key',
+    vertexAiProject: input?.vertexAiProject ?? '',
+    vertexAiLocation: input?.vertexAiLocation ?? '',
+    vertexAiToken: input?.vertexAiToken ?? '',
+  } as any;
 }
 
 describe('geminiGroundingProvider', () => {
@@ -25,7 +39,7 @@ describe('geminiGroundingProvider', () => {
     const results = await geminiGroundingProvider.searchText({
       query: 'test',
       maxResults: 5,
-      profile: profile(''),
+      profile: profile({ geminiKey: '' }),
     });
     expect(results).toEqual([]);
     expect(mockDoGenerate).not.toHaveBeenCalled();
@@ -51,6 +65,31 @@ describe('geminiGroundingProvider', () => {
             content: expect.stringContaining('INICET 2026 exam date'),
           }),
         ]),
+      }),
+    );
+  });
+
+  it('uses Vertex AI when vertex token is set', async () => {
+    mockDoGenerate.mockResolvedValueOnce({ rawResponse: {} });
+    mockExtractGrounding.mockReturnValueOnce([]);
+
+    await geminiGroundingProvider.searchText({
+      query: 'test',
+      maxResults: 5,
+      profile: profile({
+        geminiKey: '',
+        vertexAiProject: 'my-project',
+        vertexAiLocation: 'us-central1',
+        vertexAiToken: 'ya29.test',
+      }),
+    });
+
+    expect(mockCreateGeminiModel).toHaveBeenCalledWith(
+      expect.objectContaining({
+        isVertex: true,
+        apiKey: 'ya29.test',
+        vertexProject: 'my-project',
+        vertexLocation: 'us-central1',
       }),
     );
   });

@@ -53,7 +53,7 @@ export default function WebSearchSection({
 
   const keyLabel = (id: WebSearchProviderId): string => {
     if (id === 'brave') return 'Brave API key';
-    if (id === 'gemini_grounding') return 'Gemini API key';
+    if (id === 'gemini_grounding') return 'Gemini API key or Vertex token';
     if (id === 'deepseek_web') return 'DeepSeek API key';
     return 'No key needed';
   };

@@ -21,6 +21,45 @@ jest.mock('../navigation/navigationRef', () => ({
   },
 }));
 
+// Mock gesture handler
+jest.mock('react-native-gesture-handler', () => {
+  const React = require('react');
+  const { View } = require('react-native');
+  return {
+    GestureDetector: ({ children, gesture }: any) => {
+      // Create a mock view that triggers the gesture end when pressed
+      return React.cloneElement(children, {
+        onPress: () => {
+          if (gesture?.config?.callbacks?.onEnd) {
+            gesture.config.callbacks.onEnd();
+          }
+        },
+      });
+    },
+    Gesture: {
+      Tap: () => ({
+        config: { callbacks: {} },
+        onBegin: function (cb: any) {
+          this.config.callbacks.onBegin = cb;
+          return this;
+        },
+        onFinalize: function (cb: any) {
+          this.config.callbacks.onFinalize = cb;
+          return this;
+        },
+        onEnd: function (cb: any) {
+          this.config.callbacks.onEnd = cb;
+          return this;
+        },
+        runOnJS: function (cb: any) {
+          this.config.callbacks.runOnJS = cb;
+          return cb;
+        },
+      }),
+    },
+  };
+});
+
 describe('BrainDumpFab', () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -33,7 +72,7 @@ describe('BrainDumpFab', () => {
     expect(fab).toBeTruthy();
 
     // bottomOffset = Math.max(insets.bottom, 0) + 72 = 20 + 72 = 92
-    // The style is applied to the TouchableOpacity
+    // The style is applied to the Pressable
     expect(fab.props.style).toContainEqual({ bottom: 92 });
   });
 

@@ -10,6 +10,7 @@ import {
 import { syncVaultSeedTopics } from '../db/database';
 import { showDialog } from '../components/dialogService';
 import { showToast } from '../components/Toast';
+import SubjectCard from '../components/SubjectCard';
 
 const mockCapturedScreenMotionProps: Array<Record<string, unknown>> = [];
 const mockCapturedStaggeredProps: Array<Record<string, unknown>> = [];
@@ -160,7 +161,10 @@ jest.mock('../components/primitives/LinearSurface', () => {
 jest.mock('../components/SubjectCard', () => {
   return ({ subject, ...props }: Record<string, unknown>) => {
     const React = require('react');
-    return React.createElement('SubjectCard', { subjectId: (subject as { id: number }).id, ...props });
+    return React.createElement('SubjectCard', {
+      subjectId: (subject as { id: number }).id,
+      ...props,
+    });
   };
 });
 
@@ -287,43 +291,45 @@ describe('SyllabusScreen motion sequencing', () => {
     (getPendingTopicSuggestions as jest.Mock).mockResolvedValue([]);
   });
 
-  it('uses an explicit first-mount trigger and gates section reveals on shell completion', async () => {
+  it('renders subjects quickly without waiting for aggregated stats', async () => {
+    let resolveStats: ((rows: any[]) => void) | undefined;
+    const statsPromise = new Promise<any[]>((resolve) => {
+      resolveStats = resolve;
+    });
+
+    (getSubjectStatsAggregated as jest.Mock).mockReturnValue(statsPromise);
+
+    const screen = render(<SyllabusScreen />);
+
+    await waitFor(() => expect(getAllSubjects).toHaveBeenCalled());
+    await waitFor(() => {
+      expect(screen.UNSAFE_getAllByType(SubjectCard).length).toBeGreaterThan(0);
+    });
+
+    act(() => {
+      resolveStats?.([
+        {
+          subjectId: 1,
+          total: 10,
+          seen: 5,
+          due: 0,
+          highYield: 0,
+          unseen: 0,
+          withNotes: 0,
+          weak: 0,
+        },
+      ]);
+    });
+  });
+
+  it('renders without entrance gating (manual screen motion trigger)', async () => {
     render(<SyllabusScreen />);
 
     await waitFor(() => expect(mockCapturedScreenMotionProps.length).toBeGreaterThan(0));
-    expect(mockCapturedScreenMotionProps[0]).toMatchObject({ trigger: 'first-mount' });
+    expect(mockCapturedScreenMotionProps[0]).toMatchObject({ trigger: 'manual' });
 
-    await waitFor(() => {
-      const sectionProps = new Map<number, Record<string, unknown>>();
-      for (const props of mockCapturedStaggeredProps) {
-        if (typeof props.index === 'number' && props.index <= 2) {
-          sectionProps.set(props.index, props);
-        }
-      }
-      expect(Array.from(sectionProps.keys()).sort()).toEqual([0, 1, 2]);
-      expect(Array.from(sectionProps.values()).every((props) => props.disabled === true)).toBe(
-        true,
-      );
-    });
-
-    expect(typeof mockLatestScreenMotionEntryComplete).toBe('function');
-
-    act(() => {
-      mockLatestScreenMotionEntryComplete?.();
-    });
-
-    await waitFor(() => {
-      const sectionProps = new Map<number, Record<string, unknown>>();
-      for (const props of mockCapturedStaggeredProps) {
-        if (typeof props.index === 'number' && props.index <= 2) {
-          sectionProps.set(props.index, props);
-        }
-      }
-      expect(Array.from(sectionProps.keys()).sort()).toEqual([0, 1, 2]);
-      expect(Array.from(sectionProps.values()).every((props) => props.disabled === false)).toBe(
-        true,
-      );
-    });
+    expect(mockCapturedStaggeredProps.length).toBe(0);
+    expect(mockLatestScreenMotionEntryComplete).toBeUndefined();
   });
 
   it('uses themed dialog for syllabus re-check confirmation and toast for success', async () => {

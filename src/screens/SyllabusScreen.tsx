@@ -1,5 +1,13 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { View, StyleSheet, StatusBar, FlatList, TouchableOpacity, ScrollView } from 'react-native';
+import {
+  View,
+  StyleSheet,
+  StatusBar,
+  FlatList,
+  TouchableOpacity,
+  ScrollView,
+  InteractionManager,
+} from 'react-native';
 import { showInfo } from '../components/dialogService';
 import LoadingIndicator from '../components/primitives/LoadingIndicator';
 import ReAnimated, {
@@ -24,7 +32,6 @@ import { dbEvents, DB_EVENT_KEYS } from '../services/databaseEvents';
 import SubjectCard from '../components/SubjectCard';
 import { showDialog } from '../components/dialogService';
 import ScreenMotion from '../motion/ScreenMotion';
-import StaggeredEntrance from '../motion/StaggeredEntrance';
 import { showToast } from '../components/Toast';
 import type { Subject } from '../types';
 import { ResponsiveContainer } from '../hooks/useResponsive';
@@ -65,10 +72,39 @@ const SORT_OPTIONS: Array<{ key: SubjectSortMode; label: string }> = [
 const EMPTY_COVERAGE = { total: 0, seen: 0 };
 const EMPTY_METRICS: SubjectMetrics = { due: 0, highYield: 0, unseen: 0, withNotes: 0, weak: 0 };
 const SYLLABUS_FOCUS_RELOAD_THROTTLE_MS = 15_000;
-const SYLLABUS_SCREEN_MOTION_TRIGGER = 'first-mount' as const;
-// The screen chrome above the list already fills most of the first viewport.
-// Animate only the first few visible cards; everything else renders statically.
-const FIRST_VISIBLE_SUBJECT_CARD_LIMIT = 3;
+const SYLLABUS_SCREEN_MOTION_TRIGGER = 'manual' as const;
+
+function sortSubjectsWithStats(
+  subs: Subject[],
+  sortMode: SubjectSortMode,
+  coverageMap: Map<number, { total: number; seen: number }>,
+  metricMap: Map<number, SubjectMetrics>,
+) {
+  return [...subs].sort((a, b) => {
+    const aCoverage = coverageMap.get(a.id) ?? EMPTY_COVERAGE;
+    const bCoverage = coverageMap.get(b.id) ?? EMPTY_COVERAGE;
+    const aMetrics = metricMap.get(a.id) ?? EMPTY_METRICS;
+    const bMetrics = metricMap.get(b.id) ?? EMPTY_METRICS;
+    const aPct = aCoverage.total > 0 ? aCoverage.seen / aCoverage.total : 0;
+    const bPct = bCoverage.total > 0 ? bCoverage.seen / bCoverage.total : 0;
+
+    switch (sortMode) {
+      case 'due':
+        return (
+          bMetrics.due - aMetrics.due ||
+          bMetrics.weak - aMetrics.weak ||
+          b.inicetWeight - a.inicetWeight
+        );
+      case 'coverage':
+        return aPct - bPct || bMetrics.unseen - aMetrics.unseen || b.inicetWeight - a.inicetWeight;
+      case 'high_yield':
+        return bMetrics.highYield - aMetrics.highYield || b.inicetWeight - a.inicetWeight;
+      case 'weight':
+      default:
+        return b.inicetWeight - a.inicetWeight || bMetrics.due - aMetrics.due;
+    }
+  });
+}
 
 /** Premium skeleton matching the split SubjectCard layout */
 function SyllabusSkeleton() {
@@ -150,7 +186,6 @@ function SyllabusScreenContent() {
   const [pendingSuggestions, setPendingSuggestions] = useState<TopicSuggestion[]>([]);
   const [suggestionBusyId, setSuggestionBusyId] = useState<number | null>(null);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
-  const [entryComplete, setEntryComplete] = useState(false);
   // Pre-computed aggregates — computed once in loadData, not on every render
   const [aggregateStats, setAggregateStats] = useState<{
     totalTopics: number;
@@ -160,9 +195,8 @@ function SyllabusScreenContent() {
     totalWithNotes: number;
   }>({ totalTopics: 0, seenTopics: 0, totalDue: 0, totalHighYield: 0, totalWithNotes: 0 });
   const isFocusedRef = useRef(isFocused);
-  const entryCompleteRef = useRef(entryComplete);
   const lastLoadedAtRef = useRef(0);
-  const lastLoadedSortModeRef = useRef<SubjectSortMode>(sortMode);
+  const loadIdRef = useRef(0);
   const navLockRef = useRef(false);
   const navUnlockTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   // Debounce ref for event listeners
@@ -190,109 +224,100 @@ function SyllabusScreenContent() {
     isFocusedRef.current = isFocused;
   }, [isFocused]);
 
-  useEffect(() => {
-    entryCompleteRef.current = entryComplete;
-  }, [entryComplete]);
+  const loadSubjectsFast = useCallback(
+    async (loadId: number) => {
+      const subs = await getAllSubjects();
+      if (!isFocusedRef.current || loadIdRef.current !== loadId) return null;
+      setSubjects(
+        sortMode === 'weight' ? [...subs].sort((a, b) => b.inicetWeight - a.inicetWeight) : subs,
+      );
+      setIsInitialLoad(false);
+      return subs;
+    },
+    [sortMode],
+  );
 
-  // Stable sort comparator — memoized, only recomputes when maps change
-  const subjectSortComparator = useMemo(() => {
-    return (a: Subject, b: Subject): number => {
-      const aCoverage = coverage.get(a.id) ?? EMPTY_COVERAGE;
-      const bCoverage = coverage.get(b.id) ?? EMPTY_COVERAGE;
-      const aMetrics = subjectMetrics.get(a.id) ?? EMPTY_METRICS;
-      const bMetrics = subjectMetrics.get(b.id) ?? EMPTY_METRICS;
-      const aPct = aCoverage.total > 0 ? aCoverage.seen / aCoverage.total : 0;
-      const bPct = bCoverage.total > 0 ? bCoverage.seen / bCoverage.total : 0;
+  const loadStatsAndSuggestions = useCallback(
+    async (loadId: number, subs?: Subject[] | null) => {
+      const [combinedRows, suggestions] = await Promise.all([
+        getSubjectStatsAggregated(),
+        getPendingTopicSuggestions(),
+      ]);
 
-      switch (sortMode) {
-        case 'due':
-          return (
-            bMetrics.due - aMetrics.due ||
-            bMetrics.weak - aMetrics.weak ||
-            b.inicetWeight - a.inicetWeight
-          );
-        case 'coverage':
-          return (
-            aPct - bPct || bMetrics.unseen - aMetrics.unseen || b.inicetWeight - a.inicetWeight
-          );
-        case 'high_yield':
-          return bMetrics.highYield - aMetrics.highYield || b.inicetWeight - a.inicetWeight;
-        case 'weight':
-        default:
-          return b.inicetWeight - a.inicetWeight || bMetrics.due - aMetrics.due;
+      if (!isFocusedRef.current || loadIdRef.current !== loadId) return;
+
+      const map = new Map<number, { total: number; seen: number }>();
+      const metricMap = new Map<number, SubjectMetrics>();
+      let totalT = 0,
+        seenT = 0,
+        dueT = 0,
+        hyT = 0,
+        notesT = 0;
+
+      for (const row of combinedRows) {
+        const sId = Number(row.subjectId);
+        const total = row.total ?? 0;
+        const seen = row.seen ?? 0;
+        map.set(sId, { total, seen });
+        metricMap.set(sId, {
+          due: row.due ?? 0,
+          highYield: row.highYield ?? 0,
+          unseen: row.unseen ?? 0,
+          withNotes: row.withNotes ?? 0,
+          weak: row.weak ?? 0,
+        });
+        totalT += total;
+        seenT += seen;
+        dueT += row.due ?? 0;
+        hyT += row.highYield ?? 0;
+        notesT += row.withNotes ?? 0;
       }
-    };
-  }, [coverage, subjectMetrics, sortMode]);
 
-  const loadData = useCallback(async () => {
-    const [subs, combinedRows, suggestions] = await Promise.all([
-      getAllSubjects(),
-      getSubjectStatsAggregated(),
-      getPendingTopicSuggestions(),
-    ]);
-
-    const map = new Map<number, { total: number; seen: number }>();
-    const metricMap = new Map<number, SubjectMetrics>();
-    let totalT = 0,
-      seenT = 0,
-      dueT = 0,
-      hyT = 0,
-      notesT = 0;
-
-    for (const row of combinedRows) {
-      const sId = Number(row.subjectId);
-      const total = row.total ?? 0;
-      const seen = row.seen ?? 0;
-      map.set(sId, { total, seen });
-      metricMap.set(sId, {
-        due: row.due ?? 0,
-        highYield: row.highYield ?? 0,
-        unseen: row.unseen ?? 0,
-        withNotes: row.withNotes ?? 0,
-        weak: row.weak ?? 0,
+      setCoverage(map);
+      setSubjectMetrics(metricMap);
+      setAggregateStats({
+        totalTopics: totalT,
+        seenTopics: seenT,
+        totalDue: dueT,
+        totalHighYield: hyT,
+        totalWithNotes: notesT,
       });
-      totalT += total;
-      seenT += seen;
-      dueT += row.due ?? 0;
-      hyT += row.highYield ?? 0;
-      notesT += row.withNotes ?? 0;
-    }
+      setPendingSuggestions(suggestions);
+      setSubjects((prev) => sortSubjectsWithStats(subs ?? prev, sortMode, map, metricMap));
+      lastLoadedAtRef.current = Date.now();
+    },
+    [sortMode],
+  );
 
-    const sortedSubjects = [...subs].sort(subjectSortComparator);
+  const loadAllData = useCallback(async () => {
+    const loadId = loadIdRef.current + 1;
+    loadIdRef.current = loadId;
 
-    if (!isFocusedRef.current) return;
-    setSubjects(sortedSubjects);
-    setCoverage(map);
-    setSubjectMetrics(metricMap);
-    setAggregateStats({
-      totalTopics: totalT,
-      seenTopics: seenT,
-      totalDue: dueT,
-      totalHighYield: hyT,
-      totalWithNotes: notesT,
-    });
-    setPendingSuggestions(suggestions);
-    setIsInitialLoad(false);
-    lastLoadedAtRef.current = Date.now();
-    lastLoadedSortModeRef.current = sortMode;
-  }, [subjectSortComparator, sortMode]);
+    const subs = await loadSubjectsFast(loadId);
+    await loadStatsAndSuggestions(loadId, subs);
+  }, [loadStatsAndSuggestions, loadSubjectsFast]);
 
   useEffect(() => {
     if (isFocused) {
       unlockNavigation();
       const shouldReload =
-        isInitialLoad ||
-        lastLoadedSortModeRef.current !== sortMode ||
-        Date.now() - lastLoadedAtRef.current > SYLLABUS_FOCUS_RELOAD_THROTTLE_MS;
+        isInitialLoad || Date.now() - lastLoadedAtRef.current > SYLLABUS_FOCUS_RELOAD_THROTTLE_MS;
       if (!shouldReload) {
         return;
       }
       const timer = setTimeout(() => {
-        void loadData();
+        const loadId = loadIdRef.current + 1;
+        loadIdRef.current = loadId;
+        void loadSubjectsFast(loadId).then((subs) => {
+          const handle = InteractionManager.runAfterInteractions(() => {
+            void loadStatsAndSuggestions(loadId, subs);
+          });
+          void handle;
+        });
       }, 150);
       return () => clearTimeout(timer);
     }
-  }, [isFocused, isInitialLoad, sortMode, loadData, unlockNavigation]);
+  }, [isFocused, isInitialLoad, loadStatsAndSuggestions, loadSubjectsFast, unlockNavigation]);
 
   useEffect(() => {
     return () => {
@@ -309,7 +334,9 @@ function SyllabusScreenContent() {
         clearTimeout(eventLoadDebounceRef.current);
       }
       eventLoadDebounceRef.current = setTimeout(() => {
-        void loadData();
+        const loadId = loadIdRef.current + 1;
+        loadIdRef.current = loadId;
+        void loadStatsAndSuggestions(loadId, null);
       }, 300);
     };
     dbEvents.on(DB_EVENT_KEYS.PROGRESS_UPDATED, onProgressOrLecture);
@@ -321,7 +348,12 @@ function SyllabusScreenContent() {
         clearTimeout(eventLoadDebounceRef.current);
       }
     };
-  }, [loadData]);
+  }, [loadStatsAndSuggestions]);
+
+  useEffect(() => {
+    if (subjects.length === 0) return;
+    setSubjects((prev) => sortSubjectsWithStats(prev, sortMode, coverage, subjectMetrics));
+  }, [sortMode, coverage, subjectMetrics, subjects.length]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -387,7 +419,7 @@ function SyllabusScreenContent() {
     setRefreshing(true);
     try {
       await syncVaultSeedTopics();
-      await loadData();
+      await loadAllData();
       showToast({
         title: 'Synced',
         message: 'Guru successfully re-checked your topics. 😏',
@@ -408,7 +440,7 @@ function SyllabusScreenContent() {
     setSuggestionBusyId(suggestion.id);
     try {
       const topicId = await approveTopicSuggestion(suggestion.id);
-      await loadData();
+      await loadAllData();
       showToast({
         title: 'Topic approved',
         message: topicId
@@ -431,7 +463,7 @@ function SyllabusScreenContent() {
     setSuggestionBusyId(suggestion.id);
     try {
       await rejectTopicSuggestion(suggestion.id);
-      await loadData();
+      await loadAllData();
       showToast({
         title: 'Suggestion rejected',
         message: `"${suggestion.name}" will stay out of the syllabus.`,
@@ -544,7 +576,8 @@ function SyllabusScreenContent() {
   handleSubjectPressRef.current = handleSubjectPress;
 
   const renderSubjectItem = useCallback(({ item, index }: { item: Subject; index: number }) => {
-    const card = (
+    void index;
+    return (
       <SubjectCard
         subject={item}
         coverage={coverageRef.current.get(item.id) ?? EMPTY_COVERAGE}
@@ -552,16 +585,6 @@ function SyllabusScreenContent() {
         matchingTopicsCount={searchMatchCountsRef.current.get(item.id)}
         onPress={() => handleSubjectPressRef.current(item)}
       />
-    );
-
-    if (index >= FIRST_VISIBLE_SUBJECT_CARD_LIMIT) {
-      return card;
-    }
-
-    return (
-      <StaggeredEntrance index={index + 3} disabled={!entryCompleteRef.current}>
-        {card}
-      </StaggeredEntrance>
     );
   }, []);
 
@@ -607,9 +630,6 @@ function SyllabusScreenContent() {
   const prevPct = useRef(0);
 
   useEffect(() => {
-    if (!entryComplete) {
-      return;
-    }
     const increased = overallPct > prevPct.current;
     prevPct.current = overallPct;
 
@@ -623,7 +643,7 @@ function SyllabusScreenContent() {
     if (increased && overallPct > 0 && overallPct % 10 === 0) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     }
-  }, [overallPct, progressWidth, entryComplete]);
+  }, [overallPct, progressWidth]);
 
   const progressAnimatedStyle = useAnimatedStyle(() => {
     return {
@@ -635,139 +655,129 @@ function SyllabusScreenContent() {
     // eslint-disable-next-line guru/prefer-screen-shell -- SafeAreaView needed here
     <SafeAreaView style={styles.safe} testID="syllabus-screen">
       <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
-      <ScreenMotion
-        style={styles.motionShell}
-        trigger={SYLLABUS_SCREEN_MOTION_TRIGGER}
-        isEntryComplete={() => setEntryComplete(true)}
-      >
+      <ScreenMotion style={styles.motionShell} trigger={SYLLABUS_SCREEN_MOTION_TRIGGER}>
         <ResponsiveContainer style={styles.content}>
-          <StaggeredEntrance index={0} disabled={!entryComplete}>
-            <ScreenHeader
-              title="Syllabus"
-              searchElement={
-                <BannerSearchBar
-                  value={searchInput}
-                  onChangeText={setSearchInput}
-                  placeholder="Search subjects or topics..."
-                />
-              }
-              rightElement={
-                <BannerIconButton
-                  onPress={handleManualSync}
-                  disabled={refreshing}
-                  accessibilityRole="button"
-                  accessibilityLabel={refreshing ? 'Syncing' : 'Refresh syllabus'}
-                >
-                  {refreshing ? (
-                    <LoadingIndicator size="small" color={n.colors.textSecondary} />
-                  ) : (
-                    <Ionicons name="sync-outline" size={17} color={n.colors.textSecondary} />
-                  )}
-                </BannerIconButton>
-              }
-              showSettings
-            ></ScreenHeader>
-          </StaggeredEntrance>
+          <ScreenHeader
+            title="Syllabus"
+            searchElement={
+              <BannerSearchBar
+                value={searchInput}
+                onChangeText={setSearchInput}
+                placeholder="Search subjects or topics..."
+              />
+            }
+            rightElement={
+              <BannerIconButton
+                onPress={handleManualSync}
+                disabled={refreshing}
+                accessibilityRole="button"
+                accessibilityLabel={refreshing ? 'Syncing' : 'Refresh syllabus'}
+              >
+                {refreshing ? (
+                  <LoadingIndicator size="small" color={n.colors.textSecondary} />
+                ) : (
+                  <Ionicons name="sync-outline" size={17} color={n.colors.textSecondary} />
+                )}
+              </BannerIconButton>
+            }
+            showSettings
+          ></ScreenHeader>
 
-          <StaggeredEntrance index={1} disabled={!entryComplete}>
-            <LinearSurface compact style={styles.heroSurface}>
-              <View style={styles.heroColumn}>
-                <LinearText variant="meta" tone="muted" style={styles.heroEyebrow}>
-                  Overall Syllabus
-                </LinearText>
+          <LinearSurface compact style={styles.heroSurface}>
+            <View style={styles.heroColumn}>
+              <LinearText variant="meta" tone="muted" style={styles.heroEyebrow}>
+                Overall Syllabus
+              </LinearText>
 
-                <View style={styles.heroMainRow}>
-                  <View style={styles.heroStatsRow}>
-                    <LinearText variant="display" style={styles.heroStatsCount}>
-                      {seenTopics}
-                    </LinearText>
-                    <LinearText variant="body" tone="muted" style={styles.heroStatsTotal}>
-                      / {totalTopics > 0 ? totalTopics : '-'}
-                    </LinearText>
-                  </View>
-
-                  <View style={styles.heroProgressTrackMain}>
-                    <ReAnimated.View
-                      style={[
-                        styles.heroProgressFillMain,
-                        progressAnimatedStyle,
-                        overallPct >= 50 && { backgroundColor: n.colors.success },
-                      ]}
-                    />
-                  </View>
-
-                  <LinearText
-                    variant="title"
-                    style={[styles.heroPctMain, overallPct >= 50 && { color: n.colors.success }]}
-                  >
-                    {overallPct}%
+              <View style={styles.heroMainRow}>
+                <View style={styles.heroStatsRow}>
+                  <LinearText variant="display" style={styles.heroStatsCount}>
+                    {seenTopics}
+                  </LinearText>
+                  <LinearText variant="body" tone="muted" style={styles.heroStatsTotal}>
+                    / {totalTopics > 0 ? totalTopics : '-'}
                   </LinearText>
                 </View>
 
-                {seenTopics > 0 ? (
-                  <View style={styles.heroBadgesRow}>
-                    {totalDue > 0 ? (
-                      <View style={styles.badgeDue}>
-                        <LinearText variant="chip" style={styles.labelDue}>
-                          Due {totalDue}
-                        </LinearText>
-                      </View>
-                    ) : null}
-                    {totalHighYield > 0 ? (
-                      <View style={styles.badgeHY}>
-                        <LinearText variant="chip" style={styles.labelHY}>
-                          HY {totalHighYield}
-                        </LinearText>
-                      </View>
-                    ) : null}
-                    {totalWithNotes > 0 ? (
-                      <View style={styles.badgeNotes}>
-                        <LinearText variant="chip" style={styles.labelNotes}>
-                          Notes {totalWithNotes}
-                        </LinearText>
-                      </View>
-                    ) : null}
-                  </View>
-                ) : (
-                  <LinearText variant="caption" tone="muted" style={styles.metaLabelEmpty}>
-                    Complete topics to unlock stats.
-                  </LinearText>
-                )}
-              </View>
-            </LinearSurface>
-          </StaggeredEntrance>
+                <View style={styles.heroProgressTrackMain}>
+                  <ReAnimated.View
+                    style={[
+                      styles.heroProgressFillMain,
+                      progressAnimatedStyle,
+                      overallPct >= 50 && { backgroundColor: n.colors.success },
+                    ]}
+                  />
+                </View>
 
-          <StaggeredEntrance index={2} disabled={!entryComplete}>
-            <View style={styles.controls}>
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.sortContentContainer}
-              >
-                {SORT_OPTIONS.map((option) => (
-                  <TouchableOpacity
-                    key={option.key}
-                    style={[styles.sortChip, sortMode === option.key && styles.sortChipActive]}
-                    onPress={() => setSortMode(option.key)}
-                    activeOpacity={0.8}
-                    accessibilityRole="button"
-                    accessibilityLabel={`Sort by ${option.label}`}
-                    accessibilityState={{ selected: sortMode === option.key }}
-                  >
-                    <LinearText
-                      variant="caption"
-                      style={[
-                        styles.sortChipText,
-                        sortMode === option.key && styles.sortChipTextActive,
-                      ]}
-                    >
-                      {option.label}
-                    </LinearText>
-                  </TouchableOpacity>
-                ))}
-              </ScrollView>
+                <LinearText
+                  variant="title"
+                  style={[styles.heroPctMain, overallPct >= 50 && { color: n.colors.success }]}
+                >
+                  {overallPct}%
+                </LinearText>
+              </View>
+
+              {seenTopics > 0 ? (
+                <View style={styles.heroBadgesRow}>
+                  {totalDue > 0 ? (
+                    <View style={styles.badgeDue}>
+                      <LinearText variant="chip" style={styles.labelDue}>
+                        Due {totalDue}
+                      </LinearText>
+                    </View>
+                  ) : null}
+                  {totalHighYield > 0 ? (
+                    <View style={styles.badgeHY}>
+                      <LinearText variant="chip" style={styles.labelHY}>
+                        HY {totalHighYield}
+                      </LinearText>
+                    </View>
+                  ) : null}
+                  {totalWithNotes > 0 ? (
+                    <View style={styles.badgeNotes}>
+                      <LinearText variant="chip" style={styles.labelNotes}>
+                        Notes {totalWithNotes}
+                      </LinearText>
+                    </View>
+                  ) : null}
+                </View>
+              ) : (
+                <LinearText variant="caption" tone="muted" style={styles.metaLabelEmpty}>
+                  Complete topics to unlock stats.
+                </LinearText>
+              )}
             </View>
-          </StaggeredEntrance>
+          </LinearSurface>
+
+          <View style={styles.controls}>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.sortContentContainer}
+            >
+              {SORT_OPTIONS.map((option) => (
+                <TouchableOpacity
+                  key={option.key}
+                  style={[styles.sortChip, sortMode === option.key && styles.sortChipActive]}
+                  onPress={() => setSortMode(option.key)}
+                  activeOpacity={0.8}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Sort by ${option.label}`}
+                  accessibilityState={{ selected: sortMode === option.key }}
+                >
+                  <LinearText
+                    variant="caption"
+                    style={[
+                      styles.sortChipText,
+                      sortMode === option.key && styles.sortChipTextActive,
+                    ]}
+                  >
+                    {option.label}
+                  </LinearText>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
 
           {pendingSuggestions.length > 0 ? (
             <View style={styles.suggestionSection}>
@@ -845,7 +855,6 @@ function SyllabusScreenContent() {
           ) : (
             <FlatList
               data={filteredSubjects}
-              extraData={entryComplete}
               keyExtractor={keyExtractor}
               keyboardDismissMode="on-drag"
               contentContainerStyle={styles.list}
@@ -861,7 +870,7 @@ function SyllabusScreenContent() {
               })}
               onRefresh={async () => {
                 setRefreshing(true);
-                await loadData();
+                await loadAllData();
                 setRefreshing(false);
               }}
               refreshing={refreshing}

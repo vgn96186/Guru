@@ -36,7 +36,7 @@ import DeviceLinkScreen from '../screens/DeviceLinkScreen';
 import ManualNoteCreationScreen from '../screens/ManualNoteCreationScreen';
 import RecordingVaultScreen from '../screens/RecordingVaultScreen';
 import ImageVaultScreen from '../screens/ImageVaultScreen';
-import NotesVaultScreen from '../screens/NotesVaultScreen';
+import NotesVaultScreen from '../screens/vaults/notes/NotesVaultScreen';
 import TranscriptVaultScreen from '../screens/TranscriptVaultScreen';
 import PdfViewerScreen from '../screens/PdfViewerScreen';
 
@@ -75,7 +75,11 @@ export function HomeStackNav() {
 export function SyllabusStackNav() {
   return (
     <SyllabusStack.Navigator screenOptions={stackScreenOptions}>
-      <SyllabusStack.Screen name="Syllabus" component={SyllabusScreen} />
+      <SyllabusStack.Screen
+        name="Syllabus"
+        component={SyllabusScreen}
+        options={{ animation: 'none' }}
+      />
       <SyllabusStack.Screen
         name="TopicDetail"
         component={TopicDetailScreen}

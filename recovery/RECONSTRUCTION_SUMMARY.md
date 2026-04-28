@@ -32,3 +32,5 @@ Target: `recovery/reconstruction`
   - `rescue/dangling-4e55f7f`
   - `rescue/dangling-dd7f636`
   - `rescue/dangling-dff0790`
+
+- NotesVault audit vs rescue/dangling-4e55f7f: no restores applied (dangling ref contained only stubs / partial legacy diff).

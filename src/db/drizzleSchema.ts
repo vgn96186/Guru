@@ -242,6 +242,8 @@ export const userProfile = sqliteTable('user_profile', {
   scanOrphanedTranscriptsEnabled: integer('scan_orphaned_transcripts_enabled').notNull().default(0),
   samsungBatteryPromptShownAt: integer('samsungBatteryPromptShownAt').default(0),
   orbEffect: text('orb_effect').notNull().default('ripple'),
+  embeddingProvider: text('embedding_provider').notNull().default('gemini'),
+  embeddingModel: text('embedding_model').notNull().default('models/text-embedding-004'),
 });
 
 export const guruChatSessionMemory = sqliteTable('guru_chat_session_memory', {

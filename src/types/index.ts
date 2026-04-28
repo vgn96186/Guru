@@ -205,6 +205,10 @@ export interface UserProfile {
   deepgramApiKey?: string;
   /** Jina AI API key for embeddings (jina-embeddings-v3). */
   jinaApiKey?: string;
+  /** Preferred embedding provider (gemini, openrouter, jina). */
+  embeddingProvider?: string;
+  /** Preferred embedding model id. */
+  embeddingModel?: string;
   /** Persisted provider validation metadata used by Settings key status indicators. */
   apiValidation?: Partial<
     Record<

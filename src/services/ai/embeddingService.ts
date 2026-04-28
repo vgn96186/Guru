@@ -15,6 +15,8 @@ let _openRouterEmbeddingFailCount = 0;
 const OPENROUTER_EMBEDDING_FAIL_THRESHOLD = 2;
 let _geminiEmbeddingFailCount = 0;
 const GEMINI_EMBEDDING_FAIL_THRESHOLD = 2;
+let _jinaEmbeddingFailCount = 0;
+const JINA_EMBEDDING_FAIL_THRESHOLD = 2;
 
 /** Serialize embedding work so session circuit state and logging stay coherent under concurrency. */
 let _embeddingMutexChain: Promise<void> = Promise.resolve();
@@ -50,6 +52,7 @@ export function __resetEmbeddingSessionStateForTests(): void {
   _geminiEmbeddingFailCount = 0;
   _geminiEmbeddingQuotaExceeded = false;
   _openRouterEmbeddingFailCount = 0;
+  _jinaEmbeddingFailCount = 0;
   _jinaDisabledForSession = false;
   _embeddingOptionalNoticeLogged = false;
   _jinaNonAuthErrorLogged = false;
@@ -67,16 +70,21 @@ async function generateEmbeddingCore(text: string): Promise<number[] | null> {
   const profile = await profileRepository.getProfile();
   const { orKey, geminiKey, jinaKey } = getApiKeys(profile);
 
-  // 1. Primary: Use Gemini (text-embedding-004) if key is present (High quality, high free quota)
-  if (geminiKey && !_geminiEmbeddingQuotaExceeded) {
+  const preferredProvider = profile.embeddingProvider || 'gemini';
+  const preferredModel = profile.embeddingModel || 'models/text-embedding-004';
+
+  const tryGemini = async (modelToUse: string): Promise<number[] | null> => {
+    if (!geminiKey || _geminiEmbeddingQuotaExceeded) return null;
     try {
+      // For Gemini, we might receive the model as 'models/text-embedding-004' or similar
+      const apiModel = modelToUse.startsWith('models/') ? modelToUse : `models/${modelToUse}`;
       const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-embedding-001:embedContent?key=${geminiKey}`,
+        `https://generativelanguage.googleapis.com/v1beta/${apiModel}:embedContent?key=${geminiKey}`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            model: 'models/gemini-embedding-001',
+            model: apiModel,
             content: { parts: [{ text: normalized.slice(0, 10000) }] },
             outputDimensionality: 768,
           }),
@@ -88,7 +96,8 @@ async function generateEmbeddingCore(text: string): Promise<number[] | null> {
         const data = await response.json();
         const vector = data?.embedding?.values;
         if (Array.isArray(vector) && vector.length > 0) {
-          if (__DEV__) console.log(`[Embedding] Gemini success: 001 (${vector.length} dims)`);
+          if (__DEV__)
+            console.log(`[Embedding] Gemini success: ${apiModel} (${vector.length} dims)`);
           return vector;
         }
       } else {
@@ -103,19 +112,16 @@ async function generateEmbeddingCore(text: string): Promise<number[] | null> {
           }
         }
         const err = await response.text();
-        if (__DEV__)
-          console.log(
-            `[Embedding] Gemini endpoint failed (${response.status}), trying OpenRouter:`,
-            err,
-          );
+        if (__DEV__) console.log(`[Embedding] Gemini endpoint failed (${response.status}):`, err);
       }
     } catch (err) {
       if (__DEV__) console.log('[Embedding] Gemini exception:', err);
     }
-  }
+    return null;
+  };
 
-  // 2. Fallback: OpenRouter OpenAI text-embedding-3-small (Requires credits)
-  if (orKey && _openRouterEmbeddingFailCount < OPENROUTER_EMBEDDING_FAIL_THRESHOLD) {
+  const tryOpenRouter = async (modelToUse: string): Promise<number[] | null> => {
+    if (!orKey || _openRouterEmbeddingFailCount >= OPENROUTER_EMBEDDING_FAIL_THRESHOLD) return null;
     try {
       const response = await fetch('https://openrouter.ai/api/v1/embeddings', {
         method: 'POST',
@@ -124,7 +130,7 @@ async function generateEmbeddingCore(text: string): Promise<number[] | null> {
           Authorization: `Bearer ${orKey}`,
         },
         body: JSON.stringify({
-          model: 'openai/text-embedding-3-small',
+          model: modelToUse,
           input: normalized.slice(0, 8000),
         }),
       });
@@ -135,7 +141,7 @@ async function generateEmbeddingCore(text: string): Promise<number[] | null> {
         const embedding = data?.data?.[0]?.embedding;
         if (Array.isArray(embedding) && embedding.length > 0) {
           if (__DEV__)
-            console.log(`[Embedding] OpenRouter success: text-3-small (${embedding.length} dims)`);
+            console.log(`[Embedding] OpenRouter success: ${modelToUse} (${embedding.length} dims)`);
           return embedding;
         }
       } else {
@@ -145,15 +151,16 @@ async function generateEmbeddingCore(text: string): Promise<number[] | null> {
         if (__DEV__) console.log(`[Embedding] OpenRouter ${response.status}, skipping`);
       }
     } catch {
-      // Network error — fall through silently
+      // Network error
     }
-  }
+    return null;
+  };
 
-  // 3. Fallback: Jina AI jina-embeddings-v3 (optional key for quota; invalid stored keys get a no-auth retry)
-  if (!_jinaDisabledForSession) {
+  const tryJina = async (modelToUse: string): Promise<number[] | null> => {
+    if (_jinaDisabledForSession) return null;
     try {
       const jinaBody = JSON.stringify({
-        model: 'jina-embeddings-v3',
+        model: modelToUse,
         task: 'text-matching',
         input: [normalized.slice(0, 8192)],
         dimensions: 768,
@@ -177,12 +184,12 @@ async function generateEmbeddingCore(text: string): Promise<number[] | null> {
       }
 
       if (response.ok) {
-        _embeddingFailCount = 0;
+        _jinaEmbeddingFailCount = 0;
         const data = await response.json();
         const embedding = data?.data?.[0]?.embedding;
         if (Array.isArray(embedding) && embedding.length > 0) {
           if (__DEV__)
-            console.log(`[Embedding] Jina success: jina-embeddings-v3 (${embedding.length} dims)`);
+            console.log(`[Embedding] Jina success: ${modelToUse} (${embedding.length} dims)`);
           return embedding;
         }
         if (__DEV__) console.log('[Embedding] Jina OK but missing embedding array');
@@ -191,7 +198,7 @@ async function generateEmbeddingCore(text: string): Promise<number[] | null> {
 
       const st = response.status;
       if (st === 401 || st === 403) {
-        _embeddingFailCount++;
+        _jinaEmbeddingFailCount++;
         _jinaDisabledForSession = true;
         logEmbeddingDegradedOnce(
           '[Embedding] Jina embeddings unavailable (auth/quota). Semantic search falls back to text matching until a valid key or another provider is configured.',
@@ -203,6 +210,40 @@ async function generateEmbeddingCore(text: string): Promise<number[] | null> {
     } catch (err) {
       if (__DEV__) console.log('[Embedding] Jina exception:', err);
     }
+    return null;
+  };
+
+  let result: number[] | null = null;
+
+  // 1. Try Preferred Provider
+  if (preferredProvider === 'gemini' && geminiKey) {
+    result = await tryGemini(preferredModel);
+  } else if (preferredProvider === 'openrouter' && orKey) {
+    result = await tryOpenRouter(preferredModel);
+  } else if (preferredProvider === 'jina') {
+    result = await tryJina(preferredModel);
+  }
+
+  if (result) return result;
+
+  // 2. Fallbacks (if primary failed or key missing)
+  if (preferredProvider !== 'gemini' && geminiKey && !_geminiEmbeddingQuotaExceeded) {
+    result = await tryGemini('models/text-embedding-004');
+    if (result) return result;
+  }
+
+  if (
+    preferredProvider !== 'openrouter' &&
+    orKey &&
+    _openRouterEmbeddingFailCount < OPENROUTER_EMBEDDING_FAIL_THRESHOLD
+  ) {
+    result = await tryOpenRouter('openai/text-embedding-3-small');
+    if (result) return result;
+  }
+
+  if (preferredProvider !== 'jina' && !_jinaDisabledForSession) {
+    result = await tryJina('jina-embeddings-v3');
+    if (result) return result;
   }
 
   logEmbeddingDegradedOnce(

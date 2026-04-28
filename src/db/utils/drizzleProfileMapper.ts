@@ -319,6 +319,8 @@ export function mapUserProfileRow(row: UserProfileRow | undefined): UserProfile 
     })(),
     samsungBatteryPromptShownAt: row.samsungBatteryPromptShownAt ?? undefined,
     orbEffect: row.orbEffect ?? 'ripple',
+    embeddingProvider: row.embeddingProvider ?? 'gemini',
+    embeddingModel: row.embeddingModel ?? 'models/text-embedding-004',
   };
 }
 
@@ -379,6 +381,8 @@ export function mapToDrizzleUpdate(updates: Partial<UserProfile>): Partial<NewUs
     dbmciClassStartDate: 'dbmciClassStartDate',
     btrStartDate: 'btrStartDate',
     samsungBatteryPromptShownAt: 'samsungBatteryPromptShownAt',
+    embeddingProvider: 'embeddingProvider',
+    embeddingModel: 'embeddingModel',
   };
 
   // Boolean fields that need conversion to 0/1
@@ -638,5 +642,7 @@ export function createDefaultUserProfile(): UserProfile {
     disabledWebSearchProviders: [],
     samsungBatteryPromptShownAt: undefined,
     orbEffect: 'ripple',
+    embeddingProvider: 'gemini',
+    embeddingModel: 'models/text-embedding-004',
   };
 }

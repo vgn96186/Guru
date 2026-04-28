@@ -26,10 +26,17 @@ export default function BackIconButton({
     ? `w-12 h-12 overflow-hidden bg-white/[0.06] border-white/[0.18] ${className}`
     : 'w-12 h-12 overflow-hidden bg-white/[0.06] border-white/[0.18]';
 
+  const handlePress = React.useCallback(() => {
+    if (!onPress) return;
+    requestAnimationFrame(() => {
+      onPress();
+    });
+  }, [onPress]);
+
   return (
     <LinearIconButton
       {...rest}
-      onPress={onPress}
+      onPress={handlePress}
       variant="secondary"
       shape="round"
       className={finalClassName}

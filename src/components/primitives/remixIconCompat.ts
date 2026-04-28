@@ -13,6 +13,7 @@ const COMPAT: Record<string, CompatEntry> = {
   'close-circle': { line: 'close-circle-line', fill: 'close-circle-fill' },
   'alert-circle': { line: 'alert-line', fill: 'alert-fill' },
   'information-circle': { line: 'information-line', fill: 'information-fill' },
+  'help-circle': { line: 'questionnaire-line', fill: 'questionnaire-fill' },
   warning: { line: 'error-warning-line', fill: 'error-warning-fill' },
 
   'phone-portrait': { line: 'smartphone-line', fill: 'smartphone-fill' },
@@ -47,7 +48,10 @@ const COMPAT: Record<string, CompatEntry> = {
   bone: { line: 'body-scan-line', fill: 'body-scan-fill' },
   cube: { line: 'box-3-line', fill: 'box-3-fill' },
   flame: { line: 'fire-line', fill: 'fire-fill' },
+  flash: { line: 'flashlight-line', fill: 'flashlight-fill' },
   'shield-checkmark': { line: 'shield-check-line', fill: 'shield-check-fill' },
+  'shield-half': { line: 'shield-line', fill: 'shield-fill' },
+  link: { line: 'link', fill: 'link' },
   key: { line: 'key-2-line', fill: 'key-2-fill' },
   medkit: { line: 'first-aid-kit-line', fill: 'first-aid-kit-fill' },
 
@@ -115,6 +119,9 @@ export function resolveRemixIconName(input: string, style: IconStyle): string {
 
   const base = normalized.startsWith('logo-') ? normalized.replace(/^logo-/, '') : normalized;
   candidates.push(`${base}-${variant}`);
+  if (base.endsWith('s')) {
+    candidates.push(`${base.slice(0, -1)}-${variant}`);
+  }
 
   const picked = pickFirstExisting(candidates);
   if (picked) return picked;

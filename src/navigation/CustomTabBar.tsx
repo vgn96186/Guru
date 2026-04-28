@@ -2,7 +2,7 @@ import React, { useEffect, useMemo } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import type { MaterialTopTabBarProps } from '@react-navigation/material-top-tabs';
-import Svg, { Path } from 'react-native-svg';
+import Svg, { Circle, Path } from 'react-native-svg';
 import LinearText from '../components/primitives/LinearText';
 import { linearTheme as n } from '../theme/linearTheme';
 import type { TabParamList } from './types';
@@ -33,54 +33,62 @@ export const TAB_ITEMS: Array<{
   { name: 'MenuTab', label: 'Menu', icon: 'menu-outline', iconFocused: 'menu', testID: 'tab-menu' },
 ];
 
-const FAB_SIZE = 52;
+const FAB_SIZE = 60;
 const FAB_HITBOX_WIDTH = 84;
 
 function TesseractGlyph({ size, color }: { size: number; color: string }) {
   return (
-    <Svg width={size} height={size} viewBox="0 0 64 64">
+    <Svg width={size} height={size} viewBox="14 8 44 48">
       <Path
-        d="M18 20h26v26H18V20Z"
+        d="M18 22h24v24H18V22Z"
         stroke={color}
-        strokeOpacity={0.96}
+        strokeOpacity={0.98}
         strokeWidth={3.6}
         strokeLinejoin="round"
       />
       <Path
-        d="M26 14h26v26H26V14Z"
+        d="M30 12h24v24H30V12Z"
         stroke={color}
-        strokeOpacity={0.62}
+        strokeOpacity={0.8}
         strokeWidth={3.6}
         strokeLinejoin="round"
       />
       <Path
-        d="M18 20l8-6"
+        d="M18 22l12-10"
         stroke={color}
-        strokeOpacity={0.62}
+        strokeOpacity={0.76}
         strokeWidth={3.6}
         strokeLinecap="round"
       />
       <Path
-        d="M44 20l8-6"
+        d="M42 22l12-10"
         stroke={color}
-        strokeOpacity={0.62}
+        strokeOpacity={0.76}
         strokeWidth={3.6}
         strokeLinecap="round"
       />
       <Path
-        d="M44 46l8-6"
+        d="M42 46l12-10"
         stroke={color}
-        strokeOpacity={0.62}
+        strokeOpacity={0.76}
         strokeWidth={3.6}
         strokeLinecap="round"
       />
       <Path
-        d="M18 46l8-6"
+        d="M18 46l12-10"
         stroke={color}
-        strokeOpacity={0.62}
+        strokeOpacity={0.76}
         strokeWidth={3.6}
         strokeLinecap="round"
       />
+      <Circle cx={18} cy={22} r={2.2} fill={color} opacity={0.7} />
+      <Circle cx={42} cy={22} r={2.2} fill={color} opacity={0.7} />
+      <Circle cx={42} cy={46} r={2.2} fill={color} opacity={0.7} />
+      <Circle cx={18} cy={46} r={2.2} fill={color} opacity={0.7} />
+      <Circle cx={30} cy={12} r={2.2} fill={color} opacity={0.55} />
+      <Circle cx={54} cy={12} r={2.2} fill={color} opacity={0.55} />
+      <Circle cx={54} cy={36} r={2.2} fill={color} opacity={0.55} />
+      <Circle cx={30} cy={36} r={2.2} fill={color} opacity={0.55} />
     </Svg>
   );
 }
@@ -199,22 +207,16 @@ export function CustomTabBar({
               {isActionHubOpen ? (
                 <Ionicons
                   name="close"
-                  size={30}
+                  size={46}
                   color={actionHubEnabled ? n.colors.roles.brand : n.colors.textMuted}
                 />
               ) : (
                 <TesseractGlyph
-                  size={32}
+                  size={64}
                   color={actionHubEnabled ? n.colors.roles.brand : n.colors.textMuted}
                 />
               )}
             </View>
-            <LinearText
-              variant="caption"
-              style={[styles.fabLabel, !actionHubEnabled && styles.fabLabelDisabled]}
-            >
-              Actions
-            </LinearText>
           </View>
         </Pressable>
 
@@ -258,8 +260,8 @@ const styles = StyleSheet.create({
   fabButton: {
     width: FAB_SIZE,
     height: FAB_SIZE,
-    borderRadius: 18,
-    backgroundColor: n.colors.surface,
+    borderRadius: 20,
+    backgroundColor: 'transparent',
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: StyleSheet.hairlineWidth,
@@ -276,16 +278,6 @@ const styles = StyleSheet.create({
   },
   fabButtonDisabled: {
     opacity: 0.72,
-  },
-  fabLabel: {
-    ...n.typography.meta,
-    color: n.colors.roles.brand,
-    fontSize: 10,
-    marginTop: 4,
-    letterSpacing: 0,
-  },
-  fabLabelDisabled: {
-    color: n.colors.textMuted,
   },
   customTabBar: {
     flexDirection: 'row',

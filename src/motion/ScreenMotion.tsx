@@ -27,6 +27,7 @@ export interface ScreenMotionProps {
   children: React.ReactNode;
   style?: StyleProp<ViewStyle>;
   trigger?: ScreenMotionTrigger;
+  animateOnFocus?: boolean;
   isFocused?: boolean;
   isEntryComplete?: () => void;
 }
@@ -39,6 +40,7 @@ function ScreenMotionBase({
   children,
   style,
   trigger = 'first-mount',
+  animateOnFocus = true,
   isFocused,
   isEntryComplete,
 }: ScreenMotionBaseProps) {
@@ -79,6 +81,12 @@ function ScreenMotionBase({
       return undefined;
     }
 
+    if (!animateOnFocus && playedInitialMountRef.current) {
+      progress.value = 1;
+      isEntryCompleteRef.current?.();
+      return undefined;
+    }
+
     const nextPhase: ScreenMotionPhase =
       trigger === 'focus-settle' || playedInitialMountRef.current ? 'focus-settle' : 'first-mount';
 
@@ -90,12 +98,19 @@ function ScreenMotionBase({
         ? 120
         : 90
       : nextPhase === 'first-mount'
-      ? screenEnterTiming.duration
-      : screenSettleTiming.duration;
+        ? screenEnterTiming.duration
+        : screenSettleTiming.duration;
+
+    const easing =
+      typeof (Easing as unknown as { out?: unknown }).out === 'function'
+        ? Easing.out(Easing.cubic)
+        : typeof (Easing as unknown as { cubic?: unknown }).cubic === 'function'
+          ? Easing.cubic
+          : (x: number) => x;
 
     progress.value = withTiming(1, {
       duration,
-      easing: Easing.out(Easing.cubic),
+      easing,
     });
 
     completionTimerRef.current = setTimeout(() => {
@@ -110,7 +125,7 @@ function ScreenMotionBase({
         completionTimerRef.current = null;
       }
     };
-  }, [isFocused, isManual, progress, reducedMotion, trigger]);
+  }, [animateOnFocus, isFocused, isManual, progress, reducedMotion, trigger]);
 
   const animatedStyle = useAnimatedStyle(() => {
     const start = reducedMotion ? REDUCED_START[currentPhase] : NORMAL_START[currentPhase];

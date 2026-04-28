@@ -90,6 +90,8 @@ jest.mock('react-native-reanimated', () => {
       ...mock,
       Easing: {
         ...existingEasing,
+        out: typeof existingEasing.out === 'function' ? existingEasing.out : (fn) => fn,
+        cubic: typeof existingEasing.cubic === 'function' ? existingEasing.cubic : (x) => x,
         linear: existingEasing.linear ?? ((x) => x),
         inOut: existingEasing.inOut ?? ((fn) => fn),
         bezier: existingEasing.bezier ?? (() => (x) => x),

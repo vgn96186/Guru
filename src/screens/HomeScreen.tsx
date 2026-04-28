@@ -100,7 +100,12 @@ function HomeScreenContent() {
   } = controller;
 
   if (isLoading || isProfilePending || !profile || !levelInfo) {
-    return <SafeAreaView style={styles.safe} />;
+    return (
+      <SafeAreaView style={styles.safe}>
+        <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
+        <HomeSkeleton />
+      </SafeAreaView>
+    );
   }
 
   const progressClamped = Math.min(
@@ -155,7 +160,11 @@ function HomeScreenContent() {
         contentContainerStyle={styles.scrollContent}
       >
         <ResponsiveContainer style={styles.content}>
-          <ScreenMotion style={styles.motionShell} isEntryComplete={() => setEntryComplete(true)}>
+          <ScreenMotion
+            style={styles.motionShell}
+            animateOnFocus={false}
+            isEntryComplete={() => setEntryComplete(true)}
+          >
             <StaggeredEntrance index={0}>
               <View style={styles.headerRow}>
                 <View style={styles.headerLeft}>

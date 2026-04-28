@@ -60,20 +60,16 @@ export default function LocalAiCard({
           </View>
           <Text style={styles.hint}>{hint}</Text>
         </View>
-        {showToggle && onToggle && (
-          <SettingsToggleRow
-            label=""
-            value={isActive}
-            onValueChange={onToggle}
-            disabled={disableToggle}
-          />
-        )}
+        {showToggle && onToggle ? (<SettingsToggleRow
+          label=""
+          value={isActive}
+          onValueChange={onToggle}
+          disabled={disableToggle}
+        />) : null}
       </View>
-      {extraInfo && (
-        <View style={{ marginTop: 8 }}>
-          <Text style={styles.hint}>{extraInfo}</Text>
-        </View>
-      )}
+      {extraInfo ? (<View style={{ marginTop: 8 }}>
+        <Text style={styles.hint}>{extraInfo}</Text>
+      </View>) : null}
       {children}
     </View>
   );

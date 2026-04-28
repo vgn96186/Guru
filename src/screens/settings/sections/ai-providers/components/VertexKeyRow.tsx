@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, TouchableOpacity, ActivityIndicator, useWindowDimensions } from 'react-native';
+import { View, ActivityIndicator, useWindowDimensions, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { linearTheme } from '../../../../../theme/linearTheme';
 import LinearTextInput from '../../../../../components/primitives/LinearTextInput';
@@ -126,17 +126,15 @@ export default function VertexKeyRow({
         </View>
         <SettingsStatusPill label={statusLabel} tone={statusTone} />
       </View>
-
       {/* ── Auth mode toggle ────────────────── */}
       <View style={modeToggleStyles.row}>
         {(['apiKey', 'serviceAccount'] as const).map((mode) => {
           const active = authMode === mode;
           return (
-            <TouchableOpacity
+            <Pressable
               key={mode}
               style={[modeToggleStyles.chip, active && modeToggleStyles.chipActive]}
               onPress={() => switchMode(mode)}
-              activeOpacity={0.8}
             >
               <Ionicons
                 name={mode === 'apiKey' ? 'key-outline' : 'server-outline'}
@@ -152,11 +150,10 @@ export default function VertexKeyRow({
               >
                 {mode === 'apiKey' ? 'API Key' : 'Project + Token'}
               </LinearText>
-            </TouchableOpacity>
+            </Pressable>
           );
         })}
       </View>
-
       {/* ── Inputs ──────────────────────────── */}
       <View
         style={[
@@ -166,34 +163,32 @@ export default function VertexKeyRow({
         ]}
       >
         <View style={{ flex: 1, minWidth: 0, gap: 8 }}>
-          {authMode === 'serviceAccount' && (
-            <>
-              <LinearTextInput
-                containerStyle={[styles.apiKeyInput, { width: '100%' }]}
-                placeholder="Project ID (e.g. my-gcp-project)"
-                placeholderTextColor={linearTheme.colors.textMuted}
-                value={project}
-                onChangeText={(value) => {
-                  setProject(value);
-                  clearValidation();
-                }}
-                autoCapitalize="none"
-                autoCorrect={false}
-              />
-              <LinearTextInput
-                containerStyle={[styles.apiKeyInput, { width: '100%' }]}
-                placeholder="Location (e.g. us-central1)"
-                placeholderTextColor={linearTheme.colors.textMuted}
-                value={location}
-                onChangeText={(value) => {
-                  setLocation(value);
-                  clearValidation();
-                }}
-                autoCapitalize="none"
-                autoCorrect={false}
-              />
-            </>
-          )}
+          {authMode === 'serviceAccount' ? (<>
+            <LinearTextInput
+              containerStyle={[styles.apiKeyInput, { width: '100%' }]}
+              placeholder="Project ID (e.g. my-gcp-project)"
+              placeholderTextColor={linearTheme.colors.textMuted}
+              value={project}
+              onChangeText={(value) => {
+                setProject(value);
+                clearValidation();
+              }}
+              autoCapitalize="none"
+              autoCorrect={false}
+            />
+            <LinearTextInput
+              containerStyle={[styles.apiKeyInput, { width: '100%' }]}
+              placeholder="Location (e.g. us-central1)"
+              placeholderTextColor={linearTheme.colors.textMuted}
+              value={location}
+              onChangeText={(value) => {
+                setLocation(value);
+                clearValidation();
+              }}
+              autoCapitalize="none"
+              autoCorrect={false}
+            />
+          </>) : null}
           <LinearTextInput
             containerStyle={[styles.apiKeyInput, { width: '100%' }]}
             placeholder={
@@ -210,7 +205,7 @@ export default function VertexKeyRow({
             autoCorrect={false}
           />
         </View>
-        <TouchableOpacity
+        <Pressable
           style={[
             styles.validateBtn,
             stackValidate && styles.validateBtnWide,
@@ -219,7 +214,6 @@ export default function VertexKeyRow({
           ]}
           onPress={test}
           disabled={testing}
-          activeOpacity={0.8}
         >
           {testing ? (
             <ActivityIndicator size="small" color={linearTheme.colors.accent} />
@@ -242,7 +236,7 @@ export default function VertexKeyRow({
               }
             />
           )}
-        </TouchableOpacity>
+        </Pressable>
       </View>
     </View>
   );

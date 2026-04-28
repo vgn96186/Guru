@@ -1,12 +1,16 @@
-import React from 'react';
-import { View } from 'react-native';
-import SettingsModelDropdown from '../../../components/SettingsModelDropdown';
+import React, { useState } from 'react';
+import { View, Pressable, StyleSheet } from 'react-native';
 import type { GuruChatState } from '../types';
+import { buildAvailableGuruChatModels } from '../../../../../hooks/useGuruChatModels';
+import { GuruChatModelSelector } from '../../../../../components/chat/GuruChatModelSelector';
+import SettingsLabel from '../../../components/SettingsLabel';
+import LinearText from '../../../../../components/primitives/LinearText';
+import { linearTheme as n } from '../../../../../theme/linearTheme';
+import { UserProfile } from '../../../../../types';
 
 interface Props {
+  profile: UserProfile;
   guruChat: GuruChatState;
-  useLocalModel: boolean;
-  localModelPath: string | null;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
   SectionToggle: any;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
@@ -14,92 +18,83 @@ interface Props {
 }
 
 export default function ChatModelSection({
+  profile,
   guruChat,
-  useLocalModel,
-  localModelPath,
   SectionToggle,
   styles,
 }: Props) {
   const {
     models: liveGuruChatModels,
-    formatModelChipLabel: formatGuruChatModelChipLabel,
     defaultModel: guruChatDefaultModel,
     setDefaultModel: setGuruChatDefaultModel,
   } = guruChat;
 
+  const [pickerVisible, setPickerVisible] = useState(false);
+
+  // Derive available models strictly using API keys (same logic as GuruChat)
+  const availableModels = React.useMemo(() => {
+    return buildAvailableGuruChatModels(profile, liveGuruChatModels);
+  }, [profile, liveGuruChatModels]);
+
+  const selectedModel = availableModels.find((m) => m.id === guruChatDefaultModel);
+  const displayLabel = selectedModel ? selectedModel.name : guruChatDefaultModel;
+
   return (
     <View style={{ marginBottom: 12 }}>
-      <SettingsModelDropdown
-        label="Guru Chat"
-        value={guruChatDefaultModel}
-        onSelect={setGuruChatDefaultModel}
-        options={[
-          { id: 'auto', label: formatGuruChatModelChipLabel('auto'), group: 'General' },
-          ...(useLocalModel && localModelPath
-            ? [{ id: 'local', label: formatGuruChatModelChipLabel('local'), group: 'General' }]
-            : []),
-          ...(liveGuruChatModels.chatgpt || []).map((m: string) => ({
-            id: `chatgpt/${m}`,
-            label: formatGuruChatModelChipLabel(`chatgpt/${m}`),
-            group: 'ChatGPT Codex',
-          })),
-          ...(liveGuruChatModels.groq || []).map((m: string) => ({
-            id: `groq/${m}`,
-            label: formatGuruChatModelChipLabel(`groq/${m}`),
-            group: 'Groq',
-          })),
-          ...(liveGuruChatModels.github || []).map((m: string) => ({
-            id: `github/${m}`,
-            label: formatGuruChatModelChipLabel(`github/${m}`),
-            group: 'GitHub Models',
-          })),
-          ...(liveGuruChatModels.githubCopilot || []).map((m: string) => ({
-            id: `github_copilot/${m}`,
-            label: formatGuruChatModelChipLabel(`github_copilot/${m}`),
-            group: 'GitHub Copilot',
-          })),
-          ...(liveGuruChatModels.gitlabDuo || []).map((m: string) => ({
-            id: `gitlab_duo/${m}`,
-            label: formatGuruChatModelChipLabel(`gitlab_duo/${m}`),
-            group: 'GitLab Duo',
-          })),
-          ...(liveGuruChatModels.poe || []).map((m: string) => ({
-            id: `poe/${m}`,
-            label: formatGuruChatModelChipLabel(`poe/${m}`),
-            group: 'Poe',
-          })),
-          ...(liveGuruChatModels.kilo || []).map((m: string) => ({
-            id: `kilo/${m}`,
-            label: formatGuruChatModelChipLabel(`kilo/${m}`),
-            group: 'Kilo',
-          })),
-          ...(liveGuruChatModels.deepseek || []).map((m: string) => ({
-            id: `deepseek/${m}`,
-            label: formatGuruChatModelChipLabel(`deepseek/${m}`),
-            group: 'DeepSeek',
-          })),
-          ...(liveGuruChatModels.agentrouter || []).map((m: string) => ({
-            id: `ar/${m}`,
-            label: formatGuruChatModelChipLabel(`ar/${m}`),
-            group: 'AgentRouter',
-          })),
-          ...(liveGuruChatModels.openrouter || []).map((m: string) => ({
-            id: m,
-            label: formatGuruChatModelChipLabel(m),
-            group: 'OpenRouter (free)',
-          })),
-          ...(liveGuruChatModels.gemini || []).map((m: string) => ({
-            id: `gemini/${m}`,
-            label: formatGuruChatModelChipLabel(`gemini/${m}`),
-            group: 'Gemini (AI Studio)',
-          })),
-          ...(liveGuruChatModels.cloudflare || []).map((m: string) => ({
-            id: `cf/${m}`,
-            label: formatGuruChatModelChipLabel(`cf/${m}`),
-            group: 'Cloudflare',
-          })),
-        ]}
+      <SettingsLabel text="Guru Chat Default Model" />
+      <Pressable
+        style={localStyles.dropdownTrigger}
+        onPress={() => setPickerVisible(true)}
+      >
+        <View style={{ flex: 1 }}>
+          <LinearText variant="body" style={localStyles.dropdownValue} numberOfLines={2}>
+            {displayLabel}
+          </LinearText>
+          {selectedModel && selectedModel.group ? (
+            <LinearText variant="caption" tone="muted" style={{ marginTop: 2 }}>
+              {selectedModel.group}
+            </LinearText>
+          ) : null}
+        </View>
+        <LinearText variant="body" tone="muted" style={localStyles.dropdownArrow}>
+          ▼
+        </LinearText>
+      </Pressable>
+
+      <GuruChatModelSelector
+        visible={pickerVisible}
+        onClose={() => setPickerVisible(false)}
+        availableModels={availableModels}
+        chosenModel={guruChatDefaultModel}
+        onSelectModel={(id) => {
+          setGuruChatDefaultModel(id);
+          setPickerVisible(false);
+        }}
+        localLlmWarning={null}
+        hasMessages={false}
       />
     </View>
   );
 }
+
+const localStyles = StyleSheet.create({
+  dropdownTrigger: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: n.colors.background,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: n.colors.border,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    marginTop: 6,
+    marginBottom: 8,
+  },
+  dropdownValue: {
+    fontSize: 14,
+    lineHeight: 20,
+    fontWeight: '600',
+  },
+  dropdownArrow: { fontSize: 16, marginLeft: 8 },
+});

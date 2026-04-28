@@ -342,10 +342,6 @@ export default function SettingsCategoryContent(props: any) {
               ...apiKeys.fal,
               validationStatus: toFieldValidationStatus(apiKeys.fal.validationStatus),
             },
-            jina: {
-              ...apiKeys.jina,
-              validationStatus: toFieldValidationStatus(apiKeys.jina.validationStatus),
-            },
             braveSearch: {
               ...apiKeys.braveSearch,
               validationStatus: toFieldValidationStatus(apiKeys.braveSearch.validationStatus),

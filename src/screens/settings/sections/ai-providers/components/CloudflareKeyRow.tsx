@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, TouchableOpacity, ActivityIndicator, useWindowDimensions } from 'react-native';
+import { View, ActivityIndicator, useWindowDimensions, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { linearTheme } from '../../../../../theme/linearTheme';
 import LinearTextInput from '../../../../../components/primitives/LinearTextInput';
@@ -133,7 +133,7 @@ export default function CloudflareKeyRow({
             autoCorrect={false}
           />
         </View>
-        <TouchableOpacity
+        <Pressable
           style={[
             styles.validateBtn,
             stackValidate && styles.validateBtnWide,
@@ -142,7 +142,6 @@ export default function CloudflareKeyRow({
           ]}
           onPress={test}
           disabled={testing}
-          activeOpacity={0.8}
         >
           {testing ? (
             <ActivityIndicator size="small" color={linearTheme.colors.accent} />
@@ -165,7 +164,7 @@ export default function CloudflareKeyRow({
               }
             />
           )}
-        </TouchableOpacity>
+        </Pressable>
       </View>
     </View>
   );

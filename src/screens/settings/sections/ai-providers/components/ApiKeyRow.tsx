@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, ActivityIndicator, useWindowDimensions } from 'react-native';
+import { View, Text, ActivityIndicator, useWindowDimensions, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { linearTheme } from '../../../../../theme/linearTheme';
 import LinearTextInput from '../../../../../components/primitives/LinearTextInput';
@@ -142,7 +142,7 @@ export default function ApiKeyRow({
           autoCapitalize="none"
           autoCorrect={false}
         />
-        <TouchableOpacity
+        <Pressable
           style={[
             styles.validateBtn,
             stackValidate && styles.validateBtnWide,
@@ -151,7 +151,6 @@ export default function ApiKeyRow({
           ]}
           onPress={test}
           disabled={testing}
-          activeOpacity={0.8}
         >
           {testing ? (
             <ActivityIndicator size="small" color={linearTheme.colors.accent} />
@@ -174,7 +173,7 @@ export default function ApiKeyRow({
               }
             />
           )}
-        </TouchableOpacity>
+        </Pressable>
       </View>
 
       {/* ── Validation error ───────────────── */}

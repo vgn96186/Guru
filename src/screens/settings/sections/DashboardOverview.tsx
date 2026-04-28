@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, StyleSheet, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import LinearSurface from '../../../components/primitives/LinearSurface';
@@ -83,10 +83,9 @@ export function DashboardOverview(props: any) {
     onPressOverride?: () => void,
   ) => (
     <View style={{ flexBasis: isTablet ? '48%' : '100%', flexGrow: 1 }}>
-      <TouchableOpacity
+      <Pressable
         style={styles.gridChip}
         onPress={onPressOverride || (() => setActiveCategory(category))}
-        activeOpacity={0.8}
       >
         <View style={styles.chipHeader}>
           <View style={[styles.iconWrap, { backgroundColor: `${color}15` }]}>
@@ -109,18 +108,16 @@ export function DashboardOverview(props: any) {
           >
             {subtitle}
           </LinearText>
-          {progress !== undefined && (
-            <View
-              style={[
-                styles.track,
-                { marginTop: 8, height: 4, backgroundColor: 'rgba(255,255,255,0.05)' },
-              ]}
-            >
-              <View style={[styles.fill, { width: `${progress}%`, backgroundColor: color }]} />
-            </View>
-          )}
+          {progress !== undefined ? (<View
+            style={[
+              styles.track,
+              { marginTop: 8, height: 4, backgroundColor: 'rgba(255,255,255,0.05)' },
+            ]}
+          >
+            <View style={[styles.fill, { width: `${progress}%`, backgroundColor: color }]} />
+          </View>) : null}
         </View>
-      </TouchableOpacity>
+      </Pressable>
     </View>
   );
 

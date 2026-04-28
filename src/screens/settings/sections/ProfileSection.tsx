@@ -1,5 +1,5 @@
+import { Pressable } from "react-native";
 import React from 'react';
-import { TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { linearTheme } from '../../../theme/linearTheme';
 import LinearText from '../../../components/primitives/LinearText';
@@ -21,13 +21,12 @@ export default function ProfileSection({
 }) {
   return (
     <SectionToggle id="profile" title="Profile" icon="person-outline" tint="#8EC5FF">
-      <TouchableOpacity
+      <Pressable
         style={[
           styles.testBtn,
           { marginTop: 0, marginBottom: 16, borderColor: `${linearTheme.colors.success}55` },
         ]}
         onPress={onNavigateDeviceLink}
-        activeOpacity={0.8}
       >
         <LinearText
           variant="body"
@@ -41,7 +40,7 @@ export default function ProfileSection({
           />
           Link Another Device (Sync)
         </LinearText>
-      </TouchableOpacity>
+      </Pressable>
       <SettingsField
         label="Your name"
         placeholder="Dr. ..."

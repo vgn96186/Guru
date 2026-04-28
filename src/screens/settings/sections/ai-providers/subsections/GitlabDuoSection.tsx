@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, TouchableOpacity, ActivityIndicator, Text } from 'react-native';
+import { View, ActivityIndicator, Text, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { linearTheme } from '../../../../../theme/linearTheme';
 import LinearTextInput from '../../../../../components/primitives/LinearTextInput';
@@ -101,7 +101,7 @@ export default function GitlabDuoSection({ gitlabDuo, styles }: Props) {
                   { marginTop: 12, justifyContent: 'flex-start', flexWrap: 'wrap' },
                 ]}
               >
-                <TouchableOpacity
+                <Pressable
                   style={[
                     styles.validateBtn,
                     { minWidth: 140, paddingHorizontal: 16 },
@@ -110,7 +110,6 @@ export default function GitlabDuoSection({ gitlabDuo, styles }: Props) {
                   ]}
                   onPress={validateConnection}
                   disabled={testingOAuth}
-                  activeOpacity={0.8}
                 >
                   {testingOAuth ? (
                     <ActivityIndicator size="small" color={linearTheme.colors.accent} />
@@ -153,7 +152,7 @@ export default function GitlabDuoSection({ gitlabDuo, styles }: Props) {
                       </Text>
                     </View>
                   )}
-                </TouchableOpacity>
+                </Pressable>
                 <Text style={styles.hint}>Verifies API access with current token</Text>
               </View>
             </View>

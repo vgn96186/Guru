@@ -9,7 +9,6 @@ import {
   testGitHubModelsConnection,
   testGroqConnection,
   testHuggingFaceConnection,
-  testJinaConnection,
   testKiloConnection,
   testOpenRouterConnection,
   testQwenConnection,
@@ -44,7 +43,6 @@ type UseProviderApiKeyTestsParams = {
     cloudflareAccountId: string;
     cloudflareApiToken: string;
     falApiKey: string;
-    jinaApiKey: string;
     braveSearchApiKey: string;
     googleCustomSearchApiKey: string;
   };
@@ -75,8 +73,6 @@ type UseProviderApiKeyTestsParams = {
     setCloudflareTestResult: SetTestResult;
     setTestingFalKey: SetBool;
     setFalKeyTestResult: SetTestResult;
-    setTestingJinaKey: SetBool;
-    setJinaKeyTestResult: SetTestResult;
     setTestingBraveSearchKey: SetBool;
     setBraveSearchKeyTestResult: SetTestResult;
     setTestingGoogleCustomSearchKey: SetBool;
@@ -399,21 +395,6 @@ export function useProviderApiKeyTests({
     setters.setTestingFalKey(false);
   }, [clearProviderValidated, keys.falApiKey, markProviderValidated, profile?.falApiKey, setters]);
 
-  const testJinaKey = useCallback(async () => {
-    const key = keys.jinaApiKey.trim() || profile?.jinaApiKey || '';
-    if (!key) {
-      showWarning('No key', 'Enter a Jina API key first.');
-      return;
-    }
-    setters.setTestingJinaKey(true);
-    setters.setJinaKeyTestResult(null);
-    const res = await testJinaConnection(key);
-    setters.setJinaKeyTestResult(res.ok ? 'ok' : 'fail');
-    if (res.ok) markProviderValidated('jina', key);
-    else clearProviderValidated('jina');
-    setters.setTestingJinaKey(false);
-  }, [clearProviderValidated, keys.jinaApiKey, markProviderValidated, profile?.jinaApiKey, setters]);
-
   const testBraveSearchKey = useCallback(async () => {
     const key = keys.braveSearchApiKey.trim() || profile?.braveSearchApiKey || '';
     if (!key) {
@@ -479,7 +460,6 @@ export function useProviderApiKeyTests({
     testGeminiKey,
     testCloudflareKeys,
     testFalKey,
-    testJinaKey,
     testBraveSearchKey,
     testGoogleCustomSearchKey,
   };

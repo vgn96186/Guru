@@ -1,5 +1,5 @@
 import React from 'react';
-import { ActivityIndicator, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, View, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { showError, showSuccess, showWarning, showInfo } from '../../../components/dialogService';
@@ -80,22 +80,21 @@ export default function StorageSections(props: any) {
         </LinearText>
       </View>
       <SectionToggle id="storage_data" title="Data Management" icon="trash-outline" tint="#F44336">
-        <TouchableOpacity
+        <Pressable
           style={styles.dangerBtn}
           onPress={() => {
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
             handleClearAiCache(clearAiCache);
           }}
-          activeOpacity={0.8}
         >
           <LinearText variant="body" style={styles.dangerBtnText}>
             Clear AI Content Cache
           </LinearText>
-        </TouchableOpacity>
+        </Pressable>
         <LinearText variant="body" tone="muted" style={styles.hint}>
           Forces fresh generation of all key points, quizzes, stories, etc.
         </LinearText>
-        <TouchableOpacity
+        <Pressable
           style={[
             styles.dangerBtn,
             { borderColor: linearTheme.colors.error + '55', marginTop: 10 },
@@ -104,7 +103,6 @@ export default function StorageSections(props: any) {
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
             handleResetProgress(resetStudyProgress, refreshProfile);
           }}
-          activeOpacity={0.8}
         >
           <LinearText
             variant="body"
@@ -112,26 +110,24 @@ export default function StorageSections(props: any) {
           >
             Reset All Progress
           </LinearText>
-        </TouchableOpacity>
+        </Pressable>
         <LinearText variant="body" tone="muted" style={styles.hint}>
           Wipes XP, streaks, topic statuses, and daily logs. API keys are kept.
         </LinearText>
-        <TouchableOpacity
+        <Pressable
           style={styles.settingRow}
           onPress={() => navigation.navigate('FlaggedContent' as never)}
-          activeOpacity={0.7}
         >
           <View style={styles.settingRowLeft}>
             <Ionicons name="flag" size={18} color={linearTheme.colors.error} />
             <LinearText variant="body">Flagged Content Review</LinearText>
           </View>
           <Ionicons name="chevron-forward" size={16} color={linearTheme.colors.textMuted} />
-        </TouchableOpacity>
+        </Pressable>
         <LinearText variant="body" tone="muted" style={styles.hint}>
           Review topics flagged during lectures for targeted revision.
         </LinearText>
       </SectionToggle>
-
       <SectionToggle
         id="storage_backup"
         title="Unified Backup"
@@ -142,16 +138,12 @@ export default function StorageSections(props: any) {
           Export your entire study data (database, transcripts, images) to a single .guru backup
           file, or restore from a previous backup.
         </LinearText>
-        {profile?.lastAutoBackupAt && (
-          <LinearText variant="caption" style={styles.backupDate}>
-            Last auto-backup: {new Date(profile.lastAutoBackupAt).toLocaleString()}
-          </LinearText>
-        )}
+        {profile?.lastAutoBackupAt ? (<LinearText variant="caption" style={styles.backupDate}>Last auto-backup: {new Date(profile.lastAutoBackupAt).toLocaleString()}
+        </LinearText>) : null}
         <View style={styles.backupRow}>
-          <TouchableOpacity
+          <Pressable
             style={[styles.backupBtn, backupBusy && styles.saveBtnDisabled]}
             disabled={backupBusy}
-            activeOpacity={0.8}
             onPress={() =>
               handleExportBackup({
                 setBackupBusy,
@@ -168,15 +160,14 @@ export default function StorageSections(props: any) {
                 Create Full Backup
               </LinearText>
             )}
-          </TouchableOpacity>
-          <TouchableOpacity
+          </Pressable>
+          <Pressable
             style={[
               styles.backupBtn,
               { borderColor: linearTheme.colors.success + '55' },
               backupBusy && styles.saveBtnDisabled,
             ]}
             disabled={backupBusy}
-            activeOpacity={0.8}
             onPress={() =>
               handleImportBackup({ setBackupBusy, importUnifiedBackup, refreshProfile })
             }
@@ -187,7 +178,7 @@ export default function StorageSections(props: any) {
             >
               Restore from Backup
             </LinearText>
-          </TouchableOpacity>
+          </Pressable>
         </View>
 
         <View style={{ marginTop: 24 }}>
@@ -200,14 +191,13 @@ export default function StorageSections(props: any) {
           <View style={styles.frequencyRow}>
             {(['off', 'daily', '3days', 'weekly', 'monthly'] as AutoBackupFrequency[]).map(
               (freq) => (
-                <TouchableOpacity
+                <Pressable
                   key={freq}
                   style={[
                     styles.frequencyChip,
                     autoBackupFrequency === freq && styles.frequencyChipActive,
                   ]}
                   onPress={() => setAutoBackupFrequency(freq)}
-                  activeOpacity={0.8}
                 >
                   <LinearText
                     variant="body"
@@ -222,14 +212,13 @@ export default function StorageSections(props: any) {
                         ? '3 Days'
                         : freq.charAt(0).toUpperCase() + freq.slice(1)}
                   </LinearText>
-                </TouchableOpacity>
+                </Pressable>
               ),
             )}
           </View>
-          <TouchableOpacity
+          <Pressable
             style={[styles.maintenanceBtn, backupBusy && styles.saveBtnDisabled]}
             disabled={backupBusy}
-            activeOpacity={0.8}
             onPress={() =>
               handleRunAutoBackupNow({
                 setBackupBusy,
@@ -242,20 +231,18 @@ export default function StorageSections(props: any) {
             <LinearText variant="body" style={styles.maintenanceBtnText}>
               Run Auto-Backup Now
             </LinearText>
-          </TouchableOpacity>
-          <TouchableOpacity
+          </Pressable>
+          <Pressable
             style={[styles.maintenanceBtn, backupBusy && styles.saveBtnDisabled]}
             disabled={backupBusy}
-            activeOpacity={0.8}
             onPress={() => handleCleanupOldBackups({ setBackupBusy, cleanupOldBackups })}
           >
             <LinearText variant="body" style={styles.maintenanceBtnText}>
               Clean Up Old Backups
             </LinearText>
-          </TouchableOpacity>
+          </Pressable>
         </View>
       </SectionToggle>
-
       <SectionToggle
         id="storage_gdrive"
         title="Google Drive Sync"
@@ -285,16 +272,12 @@ export default function StorageSections(props: any) {
             <LinearText variant="caption" style={[styles.backupDate, { marginBottom: 8 }]}>
               Connected: {currentProfile.gdriveEmail || 'Google Account'}
             </LinearText>
-            {currentProfile.gdriveLastSyncAt && (
-              <LinearText variant="caption" style={styles.backupDate}>
-                Last sync: {new Date(currentProfile.gdriveLastSyncAt).toLocaleString()}
-              </LinearText>
-            )}
+            {currentProfile.gdriveLastSyncAt ? (<LinearText variant="caption" style={styles.backupDate}>Last sync: {new Date(currentProfile.gdriveLastSyncAt).toLocaleString()}
+            </LinearText>) : null}
             <View style={styles.backupRow}>
-              <TouchableOpacity
+              <Pressable
                 style={[styles.backupBtn, backupBusy && styles.saveBtnDisabled]}
                 disabled={backupBusy}
-                activeOpacity={0.8}
                 onPress={() =>
                   handleSyncGoogleDrive({ setBackupBusy, runAutoBackup, refreshProfile })
                 }
@@ -302,15 +285,14 @@ export default function StorageSections(props: any) {
                 <LinearText variant="body" style={styles.backupBtnText}>
                   Sync Now
                 </LinearText>
-              </TouchableOpacity>
-              <TouchableOpacity
+              </Pressable>
+              <Pressable
                 style={[
                   styles.backupBtn,
                   { borderColor: linearTheme.colors.error },
                   backupBusy && styles.saveBtnDisabled,
                 ]}
                 disabled={backupBusy}
-                activeOpacity={0.8}
                 onPress={() => handleDisconnectGoogleDrive({ signOutGDrive, refreshProfile })}
               >
                 <LinearText
@@ -319,14 +301,13 @@ export default function StorageSections(props: any) {
                 >
                   Disconnect
                 </LinearText>
-              </TouchableOpacity>
+              </Pressable>
             </View>
           </View>
         ) : (
-          <TouchableOpacity
+          <Pressable
             style={[styles.backupBtn, { marginTop: 8 }, backupBusy && styles.saveBtnDisabled]}
             disabled={backupBusy}
-            activeOpacity={0.8}
             onPress={async () => {
               const resolvedGoogleClientId =
                 (gdriveWebClientId ?? '').trim() ||
@@ -374,10 +355,9 @@ export default function StorageSections(props: any) {
             <LinearText variant="body" style={styles.backupBtnText}>
               Connect Google Drive
             </LinearText>
-          </TouchableOpacity>
+          </Pressable>
         )}
       </SectionToggle>
-
       <SectionToggle
         id="storage_maintenance"
         title="Library Maintenance"
@@ -387,10 +367,9 @@ export default function StorageSections(props: any) {
         <LinearText variant="body" tone="muted" style={styles.hint}>
           Run repair and recovery only when you need it instead of during startup.
         </LinearText>
-        <TouchableOpacity
+        <Pressable
           style={[styles.maintenanceBtn, maintenanceBusy !== null && styles.saveBtnDisabled]}
           disabled={maintenanceBusy !== null}
-          activeOpacity={0.8}
           onPress={() =>
             runMaintenanceTask(
               'retry',
@@ -415,11 +394,10 @@ export default function StorageSections(props: any) {
               Retry failed lecture processing
             </LinearText>
           )}
-        </TouchableOpacity>
-        <TouchableOpacity
+        </Pressable>
+        <Pressable
           style={[styles.maintenanceBtn, maintenanceBusy !== null && styles.saveBtnDisabled]}
           disabled={maintenanceBusy !== null}
-          activeOpacity={0.8}
           onPress={() =>
             runMaintenanceTask(
               'legacy',
@@ -443,11 +421,10 @@ export default function StorageSections(props: any) {
               Repair legacy lecture notes
             </LinearText>
           )}
-        </TouchableOpacity>
-        <TouchableOpacity
+        </Pressable>
+        <Pressable
           style={[styles.maintenanceBtn, maintenanceBusy !== null && styles.saveBtnDisabled]}
           disabled={maintenanceBusy !== null}
-          activeOpacity={0.8}
           onPress={() =>
             runMaintenanceTask(
               'transcripts',
@@ -471,11 +448,10 @@ export default function StorageSections(props: any) {
               Recover orphan transcripts
             </LinearText>
           )}
-        </TouchableOpacity>
-        <TouchableOpacity
+        </Pressable>
+        <Pressable
           style={[styles.maintenanceBtn, maintenanceBusy !== null && styles.saveBtnDisabled]}
           disabled={maintenanceBusy !== null}
-          activeOpacity={0.8}
           onPress={() =>
             runMaintenanceTask(
               'recordings',
@@ -499,11 +475,10 @@ export default function StorageSections(props: any) {
               Recover orphan recordings
             </LinearText>
           )}
-        </TouchableOpacity>
-        <TouchableOpacity
+        </Pressable>
+        <Pressable
           style={[styles.maintenanceBtn, maintenanceBusy !== null && styles.saveBtnDisabled]}
           disabled={maintenanceBusy !== null}
-          activeOpacity={0.8}
           onPress={() =>
             runMaintenanceTask(
               'cleanup_artifacts',
@@ -527,7 +502,7 @@ export default function StorageSections(props: any) {
               Clean up failed AI artifacts
             </LinearText>
           )}
-        </TouchableOpacity>
+        </Pressable>
       </SectionToggle>
     </>
   );

@@ -30,7 +30,6 @@ export function AppIntegrationsSection(props: any) {
           since={profile?.btrStartDate}
         />
       </SectionToggle>
-
       <SectionToggle id="integ_permissions" title="Permissions" icon="key" tint="#FBBF24">
         <SettingsPermissionRow
           label="Notifications"
@@ -44,22 +43,18 @@ export function AppIntegrationsSection(props: any) {
           status={permStatus.mic}
           onFix={onRequestMic}
         />
-        {Platform.OS === 'android' && (
-          <SettingsPermissionRow
-            label="File Access"
-            icon="folder-open-outline"
-            status={permStatus.localFiles}
-            onFix={onRequestLocalFiles}
-          />
-        )}
-        {Platform.OS === 'android' && (
-          <SettingsPermissionRow
-            label="Draw Over Apps"
-            icon="albums-outline"
-            status={permStatus.overlay}
-            onFix={onRequestOverlay}
-          />
-        )}
+        {Platform.OS === 'android' ? (<SettingsPermissionRow
+          label="File Access"
+          icon="folder-open-outline"
+          status={permStatus.localFiles}
+          onFix={onRequestLocalFiles}
+        />) : null}
+        {Platform.OS === 'android' ? (<SettingsPermissionRow
+          label="Draw Over Apps"
+          icon="albums-outline"
+          status={permStatus.overlay}
+          onFix={onRequestOverlay}
+        />) : null}
       </SectionToggle>
     </>
   );

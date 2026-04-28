@@ -1,5 +1,5 @@
 import React from 'react';
-import { Modal, Pressable, View, Text, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { Modal, View, Text, ActivityIndicator, Pressable } from 'react-native';
 import { linearTheme } from '../../../../../theme/linearTheme';
 import GlassSurface from '../../../../../components/primitives/GlassSurface';
 import LinearTextInput from '../../../../../components/primitives/LinearTextInput';
@@ -57,16 +57,16 @@ export default function GitlabPasteModal({
             />
 
             <View style={{ flexDirection: 'row', justifyContent: 'flex-end', gap: 12 }}>
-              <TouchableOpacity
+              <Pressable
                 style={{ paddingHorizontal: 16, paddingVertical: 12 }}
                 onPress={onClose}
               >
                 <Text style={{ color: linearTheme.colors.textMuted, fontWeight: '600' }}>
                   Cancel
                 </Text>
-              </TouchableOpacity>
+              </Pressable>
 
-              <TouchableOpacity
+              <Pressable
                 style={{
                   backgroundColor: linearTheme.colors.accent,
                   paddingHorizontal: 20,
@@ -79,14 +79,13 @@ export default function GitlabPasteModal({
                 }}
                 onPress={onSubmit}
                 disabled={!pasteUrl.trim() || submitting}
-                activeOpacity={0.8}
               >
                 {submitting ? (
                   <ActivityIndicator size="small" color="#fff" />
                 ) : (
                   <Text style={{ color: '#fff', fontWeight: '700' }}>Connect</Text>
                 )}
-              </TouchableOpacity>
+              </Pressable>
             </View>
           </GlassSurface>
         </Pressable>

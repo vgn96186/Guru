@@ -26,7 +26,6 @@ type UseSettingsDerivedStatusParams = {
     cloudflareApiToken: string;
     vertexAiToken: string;
     falApiKey: string;
-    jinaApiKey: string;
     braveSearchApiKey: string;
     googleCustomSearchApiKey: string;
   };
@@ -42,7 +41,6 @@ type UseSettingsDerivedStatusParams = {
     cloudflareTestResult: TestResult;
     vertexKeyTestResult: TestResult;
     falKeyTestResult: TestResult;
-    jinaKeyTestResult: TestResult;
     braveSearchKeyTestResult: TestResult;
     googleCustomSearchKeyTestResult: TestResult;
   };
@@ -117,11 +115,6 @@ export function useSettingsDerivedStatus({
         'fal',
         testResults.falKeyTestResult,
         keys.falApiKey.trim() || profile?.falApiKey || '',
-      ),
-      jinaValidationStatus: resolveValidationStatus(
-        'jina',
-        testResults.jinaKeyTestResult,
-        keys.jinaApiKey.trim() || profile?.jinaApiKey || '',
       ),
       braveValidationStatus: resolveValidationStatus(
         'brave',

@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 import { Platform } from 'react-native';
 import * as Notifications from 'expo-notifications';
-import { getRecordingPermissionsAsync, requestRecordingPermissionsAsync } from 'expo-audio';
+import { Audio } from 'expo-av';
 import {
   canDrawOverlays,
   hasAllFilesAccess,
@@ -27,7 +27,7 @@ export function useSettingsPermissions() {
 
   const checkPermissions = useCallback(async () => {
     const n = await Notifications.getPermissionsAsync();
-    const m = await getRecordingPermissionsAsync();
+    const m = await Audio.getPermissionsAsync();
     let o = 'undetermined';
     let localFiles = 'undetermined';
     if (Platform.OS === 'android') {
@@ -51,7 +51,7 @@ export function useSettingsPermissions() {
   }, [checkPermissions]);
 
   const onRequestMic = useCallback(async () => {
-    await requestRecordingPermissionsAsync();
+    await Audio.requestPermissionsAsync();
     checkPermissions();
   }, [checkPermissions]);
 

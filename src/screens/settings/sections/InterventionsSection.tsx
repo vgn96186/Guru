@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, TouchableOpacity } from 'react-native';
+import { View, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import SettingsToggleRow from '../components/SettingsToggleRow';
 import SettingsField from '../components/SettingsField';
@@ -66,7 +66,6 @@ export function InterventionsSection(props: any) {
           style={{ marginTop: 16 }}
         />
       </SectionToggle>
-
       <SectionToggle id="interv_breaks" title="Session Rules & Breaks" icon="cafe" tint="#60A5FA">
         <SettingsField
           label="Idle timeout (min)"
@@ -83,7 +82,6 @@ export function InterventionsSection(props: any) {
           placeholderTextColor={linearTheme.colors.textMuted}
         />
       </SectionToggle>
-
       <SectionToggle
         id="interv_pomodoro"
         title="Pomodoro (Lecture Overlay)"
@@ -116,20 +114,17 @@ export function InterventionsSection(props: any) {
               ? 'Requires overlay permission, Groq, and Deepgram to be fully featured.'
               : 'Pomodoro break suggestions are off.'}
         </LinearText>
-        {!props.hasPomodoroOverlayPermission && (
-          <TouchableOpacity
-            style={[
-              styles.validateBtn,
-              { alignSelf: 'flex-start', paddingHorizontal: 14, marginTop: 6 },
-            ]}
-            onPress={props.requestPomodoroOverlay}
-            activeOpacity={0.8}
-          >
-            <LinearText style={styles.testBtnText} variant="body">
-              Grant Overlay Permission
-            </LinearText>
-          </TouchableOpacity>
-        )}
+        {!props.hasPomodoroOverlayPermission ? (<Pressable
+          style={[
+            styles.validateBtn,
+            { alignSelf: 'flex-start', paddingHorizontal: 14, marginTop: 6 },
+          ]}
+          onPress={props.requestPomodoroOverlay}
+        >
+          <LinearText style={styles.testBtnText} variant="body">
+            Grant Overlay Permission
+          </LinearText>
+        </Pressable>) : null}
         <View style={[styles.chipGrid, { marginTop: 10 }]}>
           {[
             { label: 'Overlay', ready: props.hasPomodoroOverlayPermission },
@@ -170,12 +165,11 @@ export function InterventionsSection(props: any) {
         />
         <View style={styles.modelChipRow}>
           {['5', '10', '20', '25', '30', '40'].map((value) => (
-            <TouchableOpacity
+            <Pressable
               key={value}
               style={[styles.freqBtn, pomodoroIntervalStr === value && styles.freqBtnActive]}
               onPress={() => setPomodoroInterval(parseInt(value, 10))}
               disabled={!pomodoroEnabled}
-              activeOpacity={0.8}
             >
               <LinearText
                 style={[
@@ -187,11 +181,10 @@ export function InterventionsSection(props: any) {
               >
                 {value}m
               </LinearText>
-            </TouchableOpacity>
+            </Pressable>
           ))}
         </View>
       </SectionToggle>
-
       <SectionToggle id="interv_subjects" title="Focus Subjects" icon="book" tint="#34D399">
         <LinearText style={styles.hint} variant="body" tone="muted">
           Pin subjects to limit sessions to those areas only. Clear all to study everything.
@@ -201,7 +194,7 @@ export function InterventionsSection(props: any) {
           {subjects.map((s: any) => {
             const isFocused = focusSubjectIds.includes(s.id);
             return (
-              <TouchableOpacity
+              <Pressable
                 key={s.id}
                 style={[
                   styles.typeChip,
@@ -215,7 +208,6 @@ export function InterventionsSection(props: any) {
                       : [...focusSubjectIds, s.id],
                   )
                 }
-                activeOpacity={0.8}
               >
                 <LinearText
                   style={[styles.typeChipText, isFocused && { color: s.colorHex }]}
@@ -223,19 +215,16 @@ export function InterventionsSection(props: any) {
                 >
                   {s.shortCode}
                 </LinearText>
-              </TouchableOpacity>
+              </Pressable>
             );
           })}
         </View>
-        {focusSubjectIds.length > 0 && (
-          <TouchableOpacity onPress={() => setFocusSubjectIds([])} style={styles.clearBtn}>
-            <LinearText style={styles.clearBtnText} variant="body">
-              Clear focus (study all subjects)
-            </LinearText>
-          </TouchableOpacity>
-        )}
+        {focusSubjectIds.length > 0 ? (<Pressable onPress={() => setFocusSubjectIds([])} style={styles.clearBtn}>
+          <LinearText style={styles.clearBtnText} variant="body">
+            Clear focus (study all subjects)
+          </LinearText>
+        </Pressable>) : null}
       </SectionToggle>
-
       <SectionToggle
         id="interv_content"
         title="Content Type Preferences"
@@ -250,7 +239,7 @@ export function InterventionsSection(props: any) {
             const isBlocked = blockedTypes.includes(type);
             const isLocked = type === 'keypoints';
             return (
-              <TouchableOpacity
+              <Pressable
                 key={type}
                 style={[
                   styles.typeChip,
@@ -266,7 +255,6 @@ export function InterventionsSection(props: any) {
                       : [...blockedTypes, type],
                   );
                 }}
-                activeOpacity={isLocked ? 1 : 0.8}
               >
                 <LinearText
                   style={[styles.typeChipText, isBlocked && styles.typeChipTextBlocked]}
@@ -274,13 +262,10 @@ export function InterventionsSection(props: any) {
                 >
                   {label}
                 </LinearText>
-                {isBlocked && (
-                  <LinearText style={styles.typeChipX} variant="body">
-                    {' '}
-                    X
-                  </LinearText>
-                )}
-              </TouchableOpacity>
+                {isBlocked ? (<LinearText style={styles.typeChipX} variant="body">
+                  {' '}X
+                                    </LinearText>) : null}
+              </Pressable>
             );
           })}
         </View>

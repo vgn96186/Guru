@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, TouchableOpacity } from 'react-native';
+import { View, Text, Pressable } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import SettingsToggleRow from '../../../components/SettingsToggleRow';
@@ -67,13 +67,13 @@ export default function LocalAiSection({
         labelIcon={<Ionicons name="mic" size={16} color="#10B981" />}
       />
 
-      <TouchableOpacity
+      <Pressable
         style={localStyles.manageBtn}
         onPress={() => navigation.navigate('LocalModel')}
       >
         <Ionicons name="folder-open-outline" size={16} color={n.colors.accent} />
         <Text style={localStyles.manageBtnText}>Manage On-Device Models</Text>
-      </TouchableOpacity>
+      </Pressable>
 
       {llmWarning ? (
         <View style={localStyles.localAiWarning}>

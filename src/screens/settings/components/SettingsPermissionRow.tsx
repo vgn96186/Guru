@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, TouchableOpacity, View } from 'react-native';
+import { StyleSheet, View, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { linearTheme as n } from '../../../theme/linearTheme';
 import LinearText from '../../../components/primitives/LinearText';
@@ -48,13 +48,11 @@ export default function SettingsPermissionRow({
           </LinearText>
         </View>
       </View>
-      {!isOk && (
-        <TouchableOpacity style={styles.fixBtn} onPress={onFix} activeOpacity={0.8}>
-          <LinearText variant="caption" style={styles.fixBtnText}>
-            Fix
-          </LinearText>
-        </TouchableOpacity>
-      )}
+      {!isOk ? (<Pressable style={styles.fixBtn} onPress={onFix}>
+        <LinearText variant="caption" style={styles.fixBtnText}>
+          Fix
+        </LinearText>
+      </Pressable>) : null}
     </GlassSurface>
   );
 }

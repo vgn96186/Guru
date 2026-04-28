@@ -1,13 +1,11 @@
 import React from 'react';
-import { View, TouchableOpacity, ActivityIndicator, Modal, Pressable } from 'react-native';
+import { View, Modal, Pressable } from 'react-native';
 import SettingsField from '../components/SettingsField';
 import SettingsLabel from '../components/SettingsLabel';
 import SettingsToggleRow from '../components/SettingsToggleRow';
 import LinearText from '../../../components/primitives/LinearText';
 import LinearSurface from '../../../components/primitives/LinearSurface';
 import { linearTheme } from '../../../theme/linearTheme';
-import { fetchExamDates } from '../../../services/aiService';
-
 const WEEKDAYS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 const MONTH_NAMES = [
   'January',
@@ -121,15 +119,14 @@ function SettingsDatePickerField({
   return (
     <View style={{ marginBottom: 4 }}>
       <SettingsLabel text={label} />
-      <TouchableOpacity
+      <Pressable
         style={[styles.input, { minHeight: 48, justifyContent: 'center' }]}
         onPress={() => setShowPicker(true)}
-        activeOpacity={0.8}
       >
         <LinearText variant="body" tone={value ? 'primary' : 'muted'}>
           {value || placeholder}
         </LinearText>
-      </TouchableOpacity>
+      </Pressable>
       {hint ? (
         <LinearText style={styles.hint} variant="body" tone="muted">
           {hint}
@@ -192,7 +189,7 @@ function SettingsDatePickerField({
                   marginBottom: 14,
                 }}
               >
-                <TouchableOpacity
+                <Pressable
                   onPress={() => moveMonth(-1)}
                   style={{
                     width: 42,
@@ -208,27 +205,26 @@ function SettingsDatePickerField({
                   <LinearText variant="body" style={{ fontSize: 22 }}>
                     ‹
                   </LinearText>
-                </TouchableOpacity>
+                </Pressable>
 
                 <View style={{ alignItems: 'center' }}>
                   <LinearText variant="label">
                     {MONTH_NAMES[visibleMonth.getMonth()]} {visibleMonth.getFullYear()}
                   </LinearText>
-                  <TouchableOpacity
+                  <Pressable
                     onPress={() => {
                       const next = new Date();
                       onChange(formatDateValue(next));
                       setShowPicker(false);
                     }}
-                    activeOpacity={0.8}
                   >
                     <LinearText variant="caption" tone="accent" style={{ marginTop: 3 }}>
                       Jump to today
                     </LinearText>
-                  </TouchableOpacity>
+                  </Pressable>
                 </View>
 
-                <TouchableOpacity
+                <Pressable
                   onPress={() => moveMonth(1)}
                   style={{
                     width: 42,
@@ -244,7 +240,7 @@ function SettingsDatePickerField({
                   <LinearText variant="body" style={{ fontSize: 22 }}>
                     ›
                   </LinearText>
-                </TouchableOpacity>
+                </Pressable>
               </View>
 
               <View style={{ flexDirection: 'row', marginBottom: 8 }}>
@@ -262,13 +258,12 @@ function SettingsDatePickerField({
                   const selected = isSameDate(date, selectedDate);
                   const isToday = isSameDate(date, today);
                   return (
-                    <TouchableOpacity
+                    <Pressable
                       key={date.toISOString()}
                       onPress={() => {
                         onChange(formatDateValue(date));
                         setShowPicker(false);
                       }}
-                      activeOpacity={0.76}
                       style={{
                         width: `${100 / 7}%`,
                         aspectRatio: 1,
@@ -308,14 +303,13 @@ function SettingsDatePickerField({
                           {date.getDate()}
                         </LinearText>
                       </View>
-                    </TouchableOpacity>
+                    </Pressable>
                   );
                 })}
               </View>
 
-              <TouchableOpacity
+              <Pressable
                 onPress={() => setShowPicker(false)}
-                activeOpacity={0.85}
                 style={{
                   marginTop: 14,
                   paddingVertical: 13,
@@ -329,7 +323,7 @@ function SettingsDatePickerField({
                 <LinearText variant="body" tone="secondary" style={{ fontWeight: '700' }}>
                   Cancel
                 </LinearText>
-              </TouchableOpacity>
+              </Pressable>
             </LinearSurface>
           </Pressable>
         </Pressable>
@@ -365,30 +359,6 @@ export function PlanningAlertsSection(props: any) {
     setHomeNoveltyCooldownHours,
   } = props;
 
-  const [fetchingDates, setFetchingDates] = React.useState(false);
-  const [fetchDatesMsg, setFetchDatesMsg] = React.useState('');
-
-  async function handleAutoFetchDates() {
-    setFetchingDates(true);
-    setFetchDatesMsg('');
-    try {
-      const dates = await fetchExamDates('', undefined);
-      setInicetDate(dates.inicetDate);
-      setNeetDate(dates.neetDate);
-      setFetchDatesMsg(
-        `✅ Fetched: INICET ${dates.inicetDate} · NEET-PG ${dates.neetDate}. Verify and save.`,
-      );
-    } catch (e: unknown) {
-      setFetchDatesMsg(
-        `❌ ${
-          (e instanceof Error ? e.message : String(e)) || 'Could not fetch dates. Try manually.'
-        }`,
-      );
-    } finally {
-      setFetchingDates(false);
-    }
-  }
-
   // Convert number to string for text inputs where needed
   const sessionLengthStr = String(sessionLength);
   const dailyGoalStr = String(dailyGoal);
@@ -410,58 +380,6 @@ export function PlanningAlertsSection(props: any) {
           onChange={setNeetDate}
           styles={styles}
         />
-        <TouchableOpacity
-          style={[
-            {
-              marginTop: 8,
-              width: '100%',
-              alignItems: 'center',
-              paddingVertical: 12,
-              backgroundColor: 'rgba(94, 106, 210, 0.05)',
-              borderRadius: 8,
-              borderWidth: 1,
-              borderColor: 'rgba(94, 106, 210, 0.2)',
-            },
-            fetchingDates && { opacity: 0.5 },
-          ]}
-          onPress={handleAutoFetchDates}
-          disabled={fetchingDates}
-          activeOpacity={0.8}
-        >
-          {fetchingDates ? (
-            <ActivityIndicator size="small" color={linearTheme.colors.accent} />
-          ) : (
-            <LinearText
-              variant="body"
-              style={{ fontSize: 13, fontWeight: '500', color: '#5E6AD2' }}
-            >
-              Auto-fetch dates via AI
-            </LinearText>
-          )}
-        </TouchableOpacity>
-        {fetchDatesMsg ? (
-          <LinearText
-            variant="body"
-            style={[
-              { fontSize: 12, marginTop: 8 },
-              styles.hint,
-              fetchDatesMsg.toLowerCase().includes('success') ||
-              fetchDatesMsg.toLowerCase().includes('updated')
-                ? { color: linearTheme.colors.success }
-                : { color: linearTheme.colors.error },
-            ]}
-          >
-            {fetchDatesMsg}
-          </LinearText>
-        ) : (
-          <LinearText
-            variant="body"
-            tone="muted"
-            style={{ fontSize: 12, color: '#8A8F98', marginTop: 8 }}
-          >
-            Uses AI to estimate upcoming exam dates. Always verify on nbe.edu.in.
-          </LinearText>
-        )}
       </SectionToggle>
 
       <SectionToggle id="plan_timeline" title="Study Plan Timeline" icon="time" tint="#A78BFA">
@@ -520,7 +438,7 @@ export function PlanningAlertsSection(props: any) {
         <SettingsLabel text="Guru presence frequency" />
         <View style={styles.frequencyRow}>
           {(['rare', 'normal', 'frequent', 'off'] as const).map((freq) => (
-            <TouchableOpacity
+            <Pressable
               key={freq}
               style={[styles.freqBtn, guruFrequency === freq && styles.freqBtnActive]}
               onPress={() => setGuruFrequency(freq)}
@@ -531,17 +449,17 @@ export function PlanningAlertsSection(props: any) {
               >
                 {freq.charAt(0).toUpperCase() + freq.slice(1)}
               </LinearText>
-            </TouchableOpacity>
+            </Pressable>
           ))}
         </View>
         <LinearText style={styles.hint} variant="body" tone="muted">
           How often Guru sends ambient messages during sessions.
         </LinearText>
-        <TouchableOpacity style={styles.testBtn} onPress={testNotification} activeOpacity={0.8}>
+        <Pressable style={styles.testBtn} onPress={testNotification}>
           <LinearText style={styles.testBtnText} variant="body">
             Schedule Notifications Now
           </LinearText>
-        </TouchableOpacity>
+        </Pressable>
       </SectionToggle>
 
       <SectionToggle id="plan_novelty" title="Novelty Configuration" icon="refresh" tint="#38BDF8">
@@ -550,11 +468,10 @@ export function PlanningAlertsSection(props: any) {
           {[2, 4, 6, 8, 12].map((hrs) => {
             const active = (parseInt(homeNoveltyStr, 10) || 6) === hrs;
             return (
-              <TouchableOpacity
+              <Pressable
                 key={hrs}
                 style={[styles.frequencyChip, active && styles.frequencyChipActive]}
                 onPress={() => setHomeNoveltyCooldownHours(hrs)}
-                activeOpacity={0.8}
               >
                 <LinearText
                   style={[styles.frequencyChipText, active && styles.frequencyChipTextActive]}
@@ -562,7 +479,7 @@ export function PlanningAlertsSection(props: any) {
                 >
                   {hrs}h
                 </LinearText>
-              </TouchableOpacity>
+              </Pressable>
             );
           })}
         </View>

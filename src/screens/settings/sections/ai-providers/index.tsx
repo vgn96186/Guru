@@ -10,7 +10,6 @@ import QwenOAuthSection from './subsections/QwenOAuthSection';
 import ApiKeysSection from './subsections/ApiKeysSection';
 import RoutingSection from './subsections/RoutingSection';
 import ImageGenSection from './subsections/ImageGenSection';
-import EmbeddingSection from './subsections/EmbeddingSection';
 import TranscriptionSection from './subsections/TranscriptionSection';
 import LocalAiSection from './subsections/LocalAiSection';
 import WebSearchSection from './subsections/WebSearchSection';
@@ -66,17 +65,10 @@ export default function AiProvidersSection(props: AiProvidersProps) {
       {/* 3. DEFAULTS */}
       <SectionToggle id="ai_defaults" title="Default Models" icon="options-outline" tint="#EC4899">
         <ChatModelSection
+          profile={profile}
           guruChat={guruChat}
-          useLocalModel={profile?.useLocalModel ?? false}
-          localModelPath={profile?.localModelPath ?? null}
           SectionToggle={SectionToggle}
           styles={styles}
-        />
-
-        <EmbeddingSection
-          profile={profile}
-          updateUserProfile={updateUserProfile}
-          refreshProfile={refreshProfile}
         />
 
         <ImageGenSection

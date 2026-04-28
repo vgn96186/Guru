@@ -1,11 +1,8 @@
 import React from 'react';
-import { Modal, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Modal, StyleSheet, Text, View, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import DraggableFlatList, {
-  ScaleDecorator,
-  type RenderItemParams,
-} from 'react-native-draggable-flatlist';
+import { FlashList } from '@shopify/flash-list';
 import { linearTheme as n } from '../../../theme/linearTheme';
 
 export type ProviderOrderItem = {
@@ -36,14 +33,14 @@ export default function ProviderOrderEditor({
   return (
     <View>
       <View style={[s.actionsRow, { marginBottom: 12 }]}>
-        <TouchableOpacity style={s.primaryBtn} onPress={() => setOpen(true)} activeOpacity={0.85}>
+        <Pressable style={s.primaryBtn} onPress={() => setOpen(true)}>
           <Ionicons name="reorder-three" size={18} color={n.colors.accent} />
           <Text style={s.primaryBtnText}>Reorder</Text>
-        </TouchableOpacity>
+        </Pressable>
         {onReset ? (
-          <TouchableOpacity style={s.resetBtn} onPress={onReset} activeOpacity={0.8}>
+          <Pressable style={s.resetBtn} onPress={onReset}>
             <Text style={s.resetBtnText}>{resetLabel}</Text>
-          </TouchableOpacity>
+          </Pressable>
         ) : null}
       </View>
 
@@ -90,31 +87,62 @@ function ReorderModal({
   onCancel: () => void;
   onSave: () => void;
 }) {
+  const moveUp = (index: number) => {
+    if (index === 0) return;
+    const newOrder = [...order];
+    const temp = newOrder[index - 1];
+    if (temp && newOrder[index]) {
+      newOrder[index - 1] = newOrder[index];
+      newOrder[index] = temp;
+      setOrder(newOrder);
+    }
+  };
+
+  const moveDown = (index: number) => {
+    if (index === order.length - 1) return;
+    const newOrder = [...order];
+    const temp = newOrder[index + 1];
+    if (temp && newOrder[index]) {
+      newOrder[index + 1] = newOrder[index];
+      newOrder[index] = temp;
+      setOrder(newOrder);
+    }
+  };
+
   const renderItem = React.useCallback(
-    ({ item, drag, isActive, getIndex }: RenderItemParams<ProviderOrderItem>) => {
-      const index = getIndex() ?? 0;
+    ({ item, index }: { item: ProviderOrderItem; index: number }) => {
       const isTop = index === 0;
+      const isBottom = index === order.length - 1;
       return (
-        <ScaleDecorator>
-          <TouchableOpacity
-            activeOpacity={0.9}
-            onLongPress={drag}
-            disabled={isActive}
-            delayLongPress={170}
-            style={[s.row, isTop && s.rowTop, isActive && s.rowDragging]}
-          >
-            <View style={[s.numBadge, isTop && s.numBadgeTop]}>
-              <Text style={[s.numText, isTop && s.numTextTop]}>{index + 1}</Text>
-            </View>
-            <Text style={[s.name, isTop && s.nameTop]} numberOfLines={1}>
-              {item.label}
-            </Text>
-            <Ionicons name="reorder-three" size={22} color={n.colors.textMuted} />
-          </TouchableOpacity>
-        </ScaleDecorator>
+        <View style={[s.row, isTop && s.rowTop]}>
+          <View style={[s.numBadge, isTop && s.numBadgeTop]}>
+            <Text style={[s.numText, isTop && s.numTextTop]}>{index + 1}</Text>
+          </View>
+          <Text style={[s.name, isTop && s.nameTop]} numberOfLines={1}>
+            {item.label}
+          </Text>
+          <View style={{ flexDirection: 'row', gap: 8 }}>
+            <Pressable
+              onPress={() => moveUp(index)}
+              disabled={isTop}
+              style={({ pressed }) => [{ opacity: isTop ? 0.3 : pressed ? 0.7 : 1 }]}
+              hitSlop={8}
+            >
+              <Ionicons name="chevron-up" size={24} color={n.colors.textMuted} />
+            </Pressable>
+            <Pressable
+              onPress={() => moveDown(index)}
+              disabled={isBottom}
+              style={({ pressed }) => [{ opacity: isBottom ? 0.3 : pressed ? 0.7 : 1 }]}
+              hitSlop={8}
+            >
+              <Ionicons name="chevron-down" size={24} color={n.colors.textMuted} />
+            </Pressable>
+          </View>
+        </View>
       );
     },
-    [],
+    [order, moveUp, moveDown],
   );
 
   return (
@@ -131,32 +159,29 @@ function ReorderModal({
             <View style={s.modalHeader}>
               <View style={{ flex: 1 }}>
                 <Text style={s.modalTitle}>Reorder providers</Text>
-                <Text style={s.modalHint}>Long-press a row, then drag.</Text>
+                <Text style={s.modalHint}>Use the arrows to reorder.</Text>
               </View>
-              <TouchableOpacity onPress={onCancel} style={s.closeBtn} activeOpacity={0.7}>
+              <Pressable onPress={onCancel} style={s.closeBtn}>
                 <Ionicons name="close" size={22} color={n.colors.textMuted} />
-              </TouchableOpacity>
+              </Pressable>
             </View>
 
-            <DraggableFlatList
-              data={order}
-              keyExtractor={(item) => item.id}
-              renderItem={renderItem}
-              onDragEnd={({ data }) => setOrder(data as ProviderOrderItem[])}
-              activationDistance={8}
-              autoscrollThreshold={40}
-              autoscrollSpeed={40}
-              containerStyle={s.dragList}
-              contentContainerStyle={s.dragListContent}
-            />
+            <View style={s.dragList}>
+               <FlashList
+                 data={order}
+                 keyExtractor={(item) => item.id}
+                 renderItem={renderItem}
+                 contentContainerStyle={s.dragListContent}
+               />
+             </View>
 
             <View style={s.modalFooter}>
-              <TouchableOpacity style={s.cancelBtn} onPress={onCancel} activeOpacity={0.85}>
+              <Pressable style={s.cancelBtn} onPress={onCancel}>
                 <Text style={s.cancelBtnText}>Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={s.saveBtn} onPress={onSave} activeOpacity={0.85}>
+              </Pressable>
+              <Pressable style={s.saveBtn} onPress={onSave}>
                 <Text style={s.saveBtnText}>Save order</Text>
-              </TouchableOpacity>
+              </Pressable>
             </View>
           </View>
         </View>

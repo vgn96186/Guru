@@ -3,10 +3,8 @@ import {
   ActivityIndicator,
   LayoutAnimation,
   Platform,
-  TouchableOpacity,
   UIManager,
-  View,
-} from 'react-native';
+  View, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import LinearText from '../../../../../components/primitives/LinearText';
 import { linearTheme as n } from '../../../../../theme/linearTheme';
@@ -91,7 +89,7 @@ function CategoryGroup({
   return (
     <View style={categoryStyles.container}>
       {/* Tappable header */}
-      <TouchableOpacity style={categoryStyles.header} onPress={toggle} activeOpacity={0.7}>
+      <Pressable style={categoryStyles.header} onPress={toggle}>
         <View style={[categoryStyles.iconWrap, { backgroundColor: meta.tint + '18' }]}>
           <Ionicons name={meta.icon} size={16} color={meta.tint} />
         </View>
@@ -115,16 +113,13 @@ function CategoryGroup({
             color={n.colors.textMuted}
           />
         </View>
-      </TouchableOpacity>
-
+      </Pressable>
       {/* Collapsible body — vertical stack */}
-      {expanded && (
-        <View style={categoryStyles.body}>
-          {items.map((item) => (
-            <React.Fragment key={item.id}>{item.element}</React.Fragment>
-          ))}
-        </View>
-      )}
+      {expanded ? (<View style={categoryStyles.body}>
+        {items.map((item) => (
+          <React.Fragment key={item.id}>{item.element}</React.Fragment>
+        ))}
+      </View>) : null}
     </View>
   );
 }
@@ -387,24 +382,6 @@ export default function ApiKeysSection({
         ),
       },
       {
-        id: 'jina',
-        category: 'search',
-        configured: Boolean(apiKeys.jina.value.trim()),
-        testing: apiKeys.jina.testing,
-        test: apiKeys.jina.test,
-        element: (
-          <ApiKeyRow
-            {...apiKeys.jina}
-            label="Jina AI"
-            placeholder="jina_..."
-            purpose="Embeddings & Search"
-            styles={styles}
-            clearProviderValidated={clearProviderValidated}
-            providerId="jina"
-          />
-        ),
-      },
-      {
         id: 'cloudflare',
         category: 'infra',
         configured: Boolean(
@@ -513,14 +490,13 @@ export default function ApiKeysSection({
             {configuredItems.length}/{items.length} configured
           </LinearText>
         </View>
-        <TouchableOpacity
+        <Pressable
           style={[
             validateBarStyles.btn,
             (!configuredItems.length || isTestingAny) && { opacity: 0.5 },
           ]}
           onPress={validateConfigured}
           disabled={!configuredItems.length || isTestingAny || validatingAll}
-          activeOpacity={0.82}
         >
           {validatingAll ? (
             <ActivityIndicator size="small" color={n.colors.accent} />
@@ -532,13 +508,12 @@ export default function ApiKeysSection({
               </LinearText>
             </View>
           )}
-        </TouchableOpacity>
+        </Pressable>
       </View>
-
       {/* ── Categorised providers ───────────── */}
       {groups.map((group, idx) => (
         <React.Fragment key={group.category}>
-          {idx > 0 && <SectionDivider />}
+          {idx > 0 ? <SectionDivider /> : null}
           <CategoryGroup
             category={group.category}
             items={group.items}

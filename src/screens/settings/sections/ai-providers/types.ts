@@ -126,8 +126,10 @@ export interface LocalAiState {
   useNano: boolean;
 }
 
+import { useLiveGuruChatModels } from '../../../../hooks/useLiveGuruChatModels';
+
 export interface GuruChatState {
-  models: Record<string, readonly string[]> & { loading?: boolean; refresh?: () => void };
+  models: ReturnType<typeof useLiveGuruChatModels>;
   defaultModel: string;
   setDefaultModel: (m: string) => void;
   formatModelChipLabel: (val: string) => string;
@@ -166,7 +168,6 @@ export interface AiProvidersProps {
     huggingface: ApiKeyField;
     cloudflare: CloudflareKeyField;
     fal: ApiKeyField;
-    jina: ApiKeyField;
     braveSearch: ApiKeyField;
   };
 

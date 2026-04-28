@@ -4,9 +4,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+  View, Pressable } from 'react-native';
 import { useIsFocused, useNavigation } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { isIgnoringBatteryOptimizations, isSamsungDevice } from '../../../../modules/app-launcher';
@@ -75,7 +73,7 @@ export function SamsungBackgroundRow() {
             {isIgnoring ? 'Whitelisted (Never sleeping)' : 'May be killed in background'}
           </LinearText>
         </View>
-        <TouchableOpacity
+        <Pressable
           style={{
             backgroundColor: n.colors.card,
             paddingHorizontal: 12,
@@ -89,7 +87,7 @@ export function SamsungBackgroundRow() {
           <LinearText variant="chip" tone="accent">
             Configure
           </LinearText>
-        </TouchableOpacity>
+        </Pressable>
       </View>
     </LinearSurface>
   );
@@ -199,11 +197,10 @@ function SettingsMobileCategoryNav({
         const active = activeCategory === category.id;
         const badge = categoryBadges?.[category.id];
         return (
-          <TouchableOpacity
+          <Pressable
             key={category.id}
             style={[styles.mobileCategoryButton, active && styles.mobileCategoryButtonActive]}
             onPress={() => onSelectCategory(category.id)}
-            activeOpacity={0.8}
           >
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
               <LinearText variant="chip" tone={active ? 'accent' : 'secondary'}>
@@ -220,7 +217,7 @@ function SettingsMobileCategoryNav({
                 />
               ) : null}
             </View>
-          </TouchableOpacity>
+          </Pressable>
         );
       })}
     </ScrollView>
@@ -242,49 +239,47 @@ function SettingsCategorySummary({
           {label}
         </LinearText>
       </View>
-      {summaryCards.length > 0 && (
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{ gap: 10, paddingHorizontal: 4 }}
-        >
-          {summaryCards.map((card) => (
-            <View
-              key={card.label}
+      {summaryCards.length > 0 ? (<ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={{ gap: 10, paddingHorizontal: 4 }}
+      >
+        {summaryCards.map((card) => (
+          <View
+            key={card.label}
+            style={{
+              backgroundColor: n.colors.surface,
+              borderWidth: 1,
+              borderColor: n.colors.border,
+              borderRadius: 16,
+              paddingHorizontal: 16,
+              paddingVertical: 14,
+              minWidth: 120,
+            }}
+          >
+            <LinearText
+              variant="caption"
+              tone="secondary"
               style={{
-                backgroundColor: n.colors.surface,
-                borderWidth: 1,
-                borderColor: n.colors.border,
-                borderRadius: 16,
-                paddingHorizontal: 16,
-                paddingVertical: 14,
-                minWidth: 120,
+                fontSize: 12,
+                fontWeight: '600',
+                textTransform: 'uppercase',
+                letterSpacing: 0.5,
+                marginBottom: 4,
               }}
             >
-              <LinearText
-                variant="caption"
-                tone="secondary"
-                style={{
-                  fontSize: 12,
-                  fontWeight: '600',
-                  textTransform: 'uppercase',
-                  letterSpacing: 0.5,
-                  marginBottom: 4,
-                }}
-              >
-                {card.label}
-              </LinearText>
-              <LinearText
-                variant="title"
-                tone={card.tone}
-                style={{ fontSize: 20, fontWeight: '800' }}
-              >
-                {card.value}
-              </LinearText>
-            </View>
-          ))}
-        </ScrollView>
-      )}
+              {card.label}
+            </LinearText>
+            <LinearText
+              variant="title"
+              tone={card.tone}
+              style={{ fontSize: 20, fontWeight: '800' }}
+            >
+              {card.value}
+            </LinearText>
+          </View>
+        ))}
+      </ScrollView>) : null}
     </View>
   );
 }

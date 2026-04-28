@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, TouchableOpacity, View } from 'react-native';
+import { StyleSheet, View, Pressable } from 'react-native';
 import { linearTheme } from '../../../theme/linearTheme';
 import LinearText from '../../../components/primitives/LinearText';
 import SettingsLabel from './SettingsLabel';
@@ -50,10 +50,9 @@ export default function SettingsModelDropdown({
   return (
     <>
       <SettingsLabel text={label} />
-      <TouchableOpacity
+      <Pressable
         style={styles.dropdownTrigger}
         onPress={() => setOpen(true)}
-        activeOpacity={0.8}
       >
         <LinearText variant="body" style={styles.dropdownValue} numberOfLines={2}>
           {selectedLabel}
@@ -61,7 +60,7 @@ export default function SettingsModelDropdown({
         <LinearText variant="body" tone="muted" style={styles.dropdownArrow}>
           ▼
         </LinearText>
-      </TouchableOpacity>
+      </Pressable>
 
       <AppBottomSheet
         open={open}
@@ -130,7 +129,7 @@ function CollapsibleGroup({
 
   return (
     <View style={{ marginBottom: 4 }}>
-      <TouchableOpacity
+      <Pressable
         style={{
           flexDirection: 'row',
           alignItems: 'center',
@@ -143,7 +142,6 @@ function CollapsibleGroup({
           borderColor: expanded ? linearTheme.colors.borderHighlight : 'transparent',
         }}
         onPress={toggle}
-        activeOpacity={0.7}
       >
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
           <LinearText
@@ -173,20 +171,17 @@ function CollapsibleGroup({
         <LinearText variant="caption" tone="muted">
           {expanded ? '▲' : '▼'}
         </LinearText>
-      </TouchableOpacity>
-
-      {expanded && (
-        <View style={{ marginTop: 4, paddingLeft: 8 }}>
-          {items.map((option) => (
-            <DropdownItem
-              key={option.id}
-              option={option}
-              isActive={currentValue === option.id}
-              onPress={() => onSelect(option.id)}
-            />
-          ))}
-        </View>
-      )}
+      </Pressable>
+      {expanded ? (<View style={{ marginTop: 4, paddingLeft: 8 }}>
+        {items.map((option) => (
+          <DropdownItem
+            key={option.id}
+            option={option}
+            isActive={currentValue === option.id}
+            onPress={() => onSelect(option.id)}
+          />
+        ))}
+      </View>) : null}
     </View>
   );
 }
@@ -201,10 +196,9 @@ function DropdownItem({
   onPress: () => void;
 }) {
   return (
-    <TouchableOpacity
+    <Pressable
       style={[styles.dropdownItem, isActive && styles.dropdownItemActive]}
       onPress={onPress}
-      activeOpacity={0.7}
     >
       <View style={styles.dropdownItemBody}>
         <LinearText
@@ -220,7 +214,7 @@ function DropdownItem({
           ✓
         </LinearText>
       ) : null}
-    </TouchableOpacity>
+    </Pressable>
   );
 }
 

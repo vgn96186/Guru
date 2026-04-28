@@ -1,11 +1,11 @@
 import React from 'react';
 import {
   View,
-  TouchableOpacity,
   ActivityIndicator,
   Text,
   Linking,
   useWindowDimensions,
+  Pressable,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { linearTheme } from '../../../../../theme/linearTheme';
@@ -83,7 +83,7 @@ export default function OAuthCard({
         {secondaryAction}
 
         {/* ── Action Button (Replaces Status Pill) ── */}
-        <TouchableOpacity
+        <Pressable
           style={[
             {
               flexDirection: 'row',
@@ -108,7 +108,6 @@ export default function OAuthCard({
           ]}
           onPress={connected ? disconnect : connect}
           disabled={connecting}
-          activeOpacity={0.8}
         >
           {connecting ? (
             <ActivityIndicator size="small" color={linearTheme.colors.accent} />
@@ -130,7 +129,7 @@ export default function OAuthCard({
               </Text>
             </View>
           )}
-        </TouchableOpacity>
+        </Pressable>
       </View>
 
       {/* ── Device Code ──────── */}
@@ -166,7 +165,7 @@ export default function OAuthCard({
             <ActivityIndicator size="small" color={linearTheme.colors.accent} />
             <Text style={[styles.hint, { marginTop: 0 }]}>Waiting for authorization...</Text>
           </View>
-          <TouchableOpacity
+          <Pressable
             style={{ marginTop: 12, alignSelf: 'center' }}
             onPress={() =>
               deviceCode &&
@@ -174,7 +173,6 @@ export default function OAuthCard({
                 (deviceCode.verification_uri_complete || deviceCode.verification_uri) as string,
               )
             }
-            activeOpacity={0.7}
           >
             <Text
               style={{
@@ -185,7 +183,7 @@ export default function OAuthCard({
             >
               Open login page
             </Text>
-          </TouchableOpacity>
+          </Pressable>
         </View>
       ) : null}
 

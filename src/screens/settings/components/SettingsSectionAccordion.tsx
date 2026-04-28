@@ -1,12 +1,10 @@
 import React, { type ComponentProps } from 'react';
 import {
   StyleSheet,
-  TouchableOpacity,
   View,
   LayoutAnimation,
   UIManager,
-  Platform,
-} from 'react-native';
+  Platform, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import GlassSurface from '../../../components/primitives/GlassSurface';
 import LinearText from '../../../components/primitives/LinearText';
@@ -71,7 +69,7 @@ export function SettingsSectionAccordion({
       style={[styles.section, expanded && styles.sectionExpanded]}
       contentContainerStyle={{ padding: 0 }}
     >
-      <TouchableOpacity style={styles.sectionHeader} onPress={handleToggle} activeOpacity={0.7}>
+      <Pressable style={styles.sectionHeader} onPress={handleToggle}>
         <View style={styles.sectionHeaderLeft}>
           <View
             style={[
@@ -90,7 +88,7 @@ export function SettingsSectionAccordion({
             color={expanded ? linearTheme.colors.accent : linearTheme.colors.textMuted}
           />
         </View>
-      </TouchableOpacity>
+      </Pressable>
       {expanded ? (
         <View style={styles.sectionContent}>
           <View
@@ -120,7 +118,7 @@ export function SettingsSubSectionAccordion({
 
   return (
     <View style={styles.subSectionPanel}>
-      <TouchableOpacity style={styles.subSectionHeader} onPress={handleToggle} activeOpacity={0.7}>
+      <Pressable style={styles.subSectionHeader} onPress={handleToggle}>
         <View style={styles.subSectionHeaderLeft}>
           <LinearText style={[styles.subSectionLabel, expanded && styles.subSectionLabelExpanded]}>
             {title}
@@ -132,7 +130,7 @@ export function SettingsSubSectionAccordion({
           size={14}
           color={expanded ? linearTheme.colors.accent : linearTheme.colors.borderHighlight}
         />
-      </TouchableOpacity>
+      </Pressable>
       {expanded ? <View style={styles.subSectionBody}>{children}</View> : null}
     </View>
   );

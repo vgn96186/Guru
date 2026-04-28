@@ -50,6 +50,7 @@ export interface MedicalGroundingSource {
   title: string;
   url: string;
   imageUrl?: string;
+  thumbnailUrl?: string;
   snippet: string;
   journal?: string;
   publishedAt?: string;

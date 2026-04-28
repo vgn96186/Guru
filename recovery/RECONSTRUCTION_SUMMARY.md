@@ -20,6 +20,8 @@ Target: `recovery/reconstruction`
 - `2769d18` recover(audio): complete expo-audio migration blockers
 - `db0ba13` recover(types): fix webSearch typecheck blockers
 - `ea95a0c` recover(notes-vault): restore decomposed notes vault
+- `3828774` recover(stash4): add mindmap/studyplan/transcripts scaffolding
+- `f4ef9de` recover(navigation): unify tab retap behavior
 
 ## Verification
 

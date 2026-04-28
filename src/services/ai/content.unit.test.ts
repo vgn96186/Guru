@@ -218,6 +218,54 @@ describe('ai content prefetching', () => {
     );
   });
 
+  it('records the winning provider/model when the model is a fallback chain', async () => {
+    (getCachedContent as jest.Mock).mockResolvedValue(null);
+    (setCachedContent as jest.Mock).mockResolvedValue(undefined);
+
+    (createGuruFallbackModel as jest.Mock).mockImplementationOnce((opts: any) => ({
+      provider: 'fallback',
+      modelId: 'groq/a|gemini/b',
+      doGenerate: jest.fn(async () => {
+        opts?.onProviderSuccess?.('gemini', 'gemini-2.0-flash');
+        return { content: [], rawResponse: null };
+      }),
+      doStream: jest.fn(),
+    }));
+
+    (generateObject as jest.Mock).mockImplementationOnce(async ({ model }: any) => {
+      await model.doGenerate({});
+      return {
+        object: {
+          type: 'must_know',
+          topicName: 'Hypertension',
+          mustKnow: [
+            '**Emergency** - Severe BP with end-organ damage needs urgent treatment.',
+            '**Pregnancy** - Labetalol is commonly preferred in severe hypertension.',
+            '**Retina** - Papilledema suggests hypertensive emergency.',
+            '**Pheochromocytoma** - Alpha blockade precedes beta blockade.',
+          ],
+          mostTested: [
+            '**MAP** - Reduce gradually, not abruptly, in hypertensive emergency.',
+            '**Nitroprusside** - Classic IV option for acute BP control.',
+            '**ACE inhibitors** - Contraindicated in pregnancy.',
+            '**End-organ damage** - Defines emergency over urgency.',
+          ],
+          examTip: 'First decide urgency versus emergency before choosing the drug.',
+        },
+        rawText: '',
+      };
+    });
+
+    await fetchContent(topic, 'must_know');
+
+    expect(setCachedContent).toHaveBeenCalledWith(
+      topic.id,
+      'must_know',
+      expect.any(Object),
+      'gemini/gemini-2.0-flash',
+    );
+  });
+
   it('hydrates quiz imageSearchQuery into imageUrl before caching', async () => {
     (getCachedContent as jest.Mock).mockResolvedValue(null);
     (setCachedContent as jest.Mock).mockResolvedValue(undefined);

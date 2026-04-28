@@ -6,6 +6,9 @@ type CompatEntry = { line: string; fill: string };
 const COMPAT: Record<string, CompatEntry> = {
   chatbubbles: { line: 'chat-3-line', fill: 'chat-3-fill' },
 
+  'reorder-three': { line: 'menu-line', fill: 'menu-fill' },
+  create: { line: 'edit-2-line', fill: 'edit-2-fill' },
+
   'checkmark-circle': { line: 'checkbox-circle-line', fill: 'checkbox-circle-fill' },
   'close-circle': { line: 'close-circle-line', fill: 'close-circle-fill' },
   'alert-circle': { line: 'alert-line', fill: 'alert-fill' },

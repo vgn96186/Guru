@@ -1,7 +1,8 @@
-import React, { useEffect, useMemo, useRef } from 'react';
-import { Pressable, StyleSheet, View, Animated } from 'react-native';
+import React, { useEffect, useMemo } from 'react';
+import { Pressable, StyleSheet, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import type { MaterialTopTabBarProps } from '@react-navigation/material-top-tabs';
+import Svg, { Path } from 'react-native-svg';
 import LinearText from '../components/primitives/LinearText';
 import { linearTheme as n } from '../theme/linearTheme';
 import type { TabParamList } from './types';
@@ -32,6 +33,58 @@ export const TAB_ITEMS: Array<{
   { name: 'MenuTab', label: 'Menu', icon: 'menu-outline', iconFocused: 'menu', testID: 'tab-menu' },
 ];
 
+const FAB_SIZE = 52;
+const FAB_HITBOX_WIDTH = 84;
+
+function TesseractGlyph({ size, color }: { size: number; color: string }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 64 64">
+      <Path
+        d="M18 20h26v26H18V20Z"
+        stroke={color}
+        strokeOpacity={0.96}
+        strokeWidth={3.6}
+        strokeLinejoin="round"
+      />
+      <Path
+        d="M26 14h26v26H26V14Z"
+        stroke={color}
+        strokeOpacity={0.62}
+        strokeWidth={3.6}
+        strokeLinejoin="round"
+      />
+      <Path
+        d="M18 20l8-6"
+        stroke={color}
+        strokeOpacity={0.62}
+        strokeWidth={3.6}
+        strokeLinecap="round"
+      />
+      <Path
+        d="M44 20l8-6"
+        stroke={color}
+        strokeOpacity={0.62}
+        strokeWidth={3.6}
+        strokeLinecap="round"
+      />
+      <Path
+        d="M44 46l8-6"
+        stroke={color}
+        strokeOpacity={0.62}
+        strokeWidth={3.6}
+        strokeLinecap="round"
+      />
+      <Path
+        d="M18 46l8-6"
+        stroke={color}
+        strokeOpacity={0.62}
+        strokeWidth={3.6}
+        strokeLinecap="round"
+      />
+    </Svg>
+  );
+}
+
 /**
  * Custom tab bar that replicates the bottom-tabs design + center FAB.
  * Driven by material-top-tabs state for native ViewPager transitions.
@@ -55,33 +108,11 @@ export function CustomTabBar({
   const activeLeafRouteName = useMemo(() => getDeepestFocusedRouteName(state), [state]);
   const actionHubEnabled = isActionHubAllowedForRoute(activeLeafRouteName);
 
-  // Animated rotation for the FAB icon
-  // useRef ensures the Animated.Value is created once and never recreated,
-  // while the useEffect below drives it to the correct value on every change.
-  const rotationAnim = useRef(new Animated.Value(isActionHubOpen ? 1 : 0)).current;
-
-  useEffect(() => {
-    Animated.spring(rotationAnim, {
-      toValue: isActionHubOpen ? 1 : 0,
-      useNativeDriver: true,
-      friction: 8,
-      tension: 40,
-    }).start();
-  }, [isActionHubOpen, rotationAnim]);
-
-  const spin = rotationAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: ['0deg', '135deg'],
-  });
-
   useEffect(() => {
     if (!actionHubEnabled && isActionHubOpen) {
       onCloseActionHub();
     }
   }, [actionHubEnabled, isActionHubOpen, onCloseActionHub]);
-
-  const leftTabs = TAB_ITEMS.slice(0, 2);
-  const rightTabs = TAB_ITEMS.slice(2);
 
   const handleTabPress = (tabName: keyof TabParamList, isFocused: boolean) => {
     if (isFocused) {
@@ -95,6 +126,9 @@ export function CustomTabBar({
     }
   };
 
+  const leftTabs = TAB_ITEMS.slice(0, 2);
+  const rightTabs = TAB_ITEMS.slice(2);
+
   return (
     <View
       style={[
@@ -105,99 +139,116 @@ export function CustomTabBar({
         },
       ]}
     >
-      {leftTabs.map((tab, i) => {
-        const focused = state.index === i;
-        const color = focused ? n.colors.textPrimary : n.colors.textMuted;
-        return (
-          <Pressable
-            key={tab.name}
-            style={styles.tabItem}
-            onPress={() => handleTabPress(tab.name, focused)}
-            testID={tab.testID}
-            accessibilityRole="tab"
-            accessibilityState={{ selected: focused }}
-            accessibilityLabel={`${tab.label} tab`}
-          >
-            <View>
-              <Ionicons name={focused ? tab.iconFocused : tab.icon} size={24} color={color} />
-              {tab.name === 'SyllabusTab' && dueCount > 0 && (
-                <View style={styles.badge}>
-                  <LinearText variant="caption" style={styles.badgeText}>
-                    {dueCount > 99 ? '99+' : dueCount}
-                  </LinearText>
-                </View>
+      <View style={styles.tabsRow}>
+        {leftTabs.map((tab, i) => {
+          const focused = state.index === i;
+          const color = focused ? n.colors.textPrimary : n.colors.textMuted;
+          return (
+            <Pressable
+              key={tab.name}
+              style={styles.tabItem}
+              onPress={() => handleTabPress(tab.name, focused)}
+              testID={tab.testID}
+              accessibilityRole="tab"
+              accessibilityState={{ selected: focused }}
+              accessibilityLabel={`${tab.label} tab`}
+            >
+              <View>
+                <Ionicons name={focused ? tab.iconFocused : tab.icon} size={24} color={color} />
+                {tab.name === 'SyllabusTab' && dueCount > 0 && (
+                  <View style={styles.badge}>
+                    <LinearText variant="caption" style={styles.badgeText}>
+                      {dueCount > 99 ? '99+' : dueCount}
+                    </LinearText>
+                  </View>
+                )}
+              </View>
+              <LinearText variant="caption" style={[styles.tabLabel, { color }]}>
+                {tab.label}
+              </LinearText>
+            </Pressable>
+          );
+        })}
+
+        <Pressable
+          style={({ pressed }) => [
+            styles.tabItem,
+            pressed && actionHubEnabled && styles.actionPressed,
+          ]}
+          onPress={actionHubEnabled ? onToggleActionHub : undefined}
+          disabled={!actionHubEnabled}
+          testID="action-hub-toggle"
+          accessibilityRole="button"
+          accessibilityLabel={actionHubEnabled ? 'Open action hub' : 'Action hub unavailable here'}
+          accessibilityHint={
+            actionHubEnabled
+              ? 'Opens the quick actions sheet'
+              : 'Return to a main tab screen to use quick actions'
+          }
+          accessibilityState={{ disabled: !actionHubEnabled }}
+          hitSlop={{ top: 18, bottom: 8, left: 10, right: 10 }}
+        >
+          <View style={[styles.fabSlot, !actionHubEnabled && styles.fabSlotDisabled]}>
+            <View
+              style={[
+                styles.fabButton,
+                isActionHubOpen && styles.fabButtonOpen,
+                !actionHubEnabled && styles.fabButtonDisabled,
+              ]}
+            >
+              {isActionHubOpen ? (
+                <Ionicons
+                  name="close"
+                  size={30}
+                  color={actionHubEnabled ? n.colors.roles.brand : n.colors.textMuted}
+                />
+              ) : (
+                <TesseractGlyph
+                  size={32}
+                  color={actionHubEnabled ? n.colors.roles.brand : n.colors.textMuted}
+                />
               )}
             </View>
-            <LinearText variant="caption" style={[styles.tabLabel, { color }]}>
-              {tab.label}
+            <LinearText
+              variant="caption"
+              style={[styles.fabLabel, !actionHubEnabled && styles.fabLabelDisabled]}
+            >
+              Actions
             </LinearText>
-          </Pressable>
-        );
-      })}
+          </View>
+        </Pressable>
 
-      <Pressable
-        style={({ pressed }) => [
-          styles.fabSlot,
-          !actionHubEnabled && styles.fabSlotDisabled,
-          pressed && actionHubEnabled && styles.actionPressed,
-        ]}
-        onPress={actionHubEnabled ? onToggleActionHub : undefined}
-        disabled={!actionHubEnabled}
-        testID="action-hub-toggle"
-        accessibilityRole="button"
-        accessibilityLabel={actionHubEnabled ? 'Open action hub' : 'Action hub unavailable here'}
-        accessibilityHint={
-          actionHubEnabled
-            ? 'Opens the quick actions sheet'
-            : 'Return to a main tab screen to use quick actions'
-        }
-        accessibilityState={{ disabled: !actionHubEnabled }}
-      >
-        <View style={styles.fabButton}>
-          <Animated.View style={{ transform: [{ rotate: spin }] }}>
-            <Ionicons
-              name="add"
-              size={26}
-              color={actionHubEnabled ? '#FFFFFF' : n.colors.textMuted}
-            />
-          </Animated.View>
-        </View>
-        <LinearText
-          variant="caption"
-          style={[styles.fabLabel, !actionHubEnabled && styles.fabLabelDisabled]}
-        >
-          Actions
-        </LinearText>
-      </Pressable>
-
-      {rightTabs.map((tab, i) => {
-        const tabIndex = i + 2;
-        const focused = state.index === tabIndex;
-        const color = focused ? n.colors.textPrimary : n.colors.textMuted;
-        return (
-          <Pressable
-            key={tab.name}
-            style={styles.tabItem}
-            onPress={() => handleTabPress(tab.name, focused)}
-            testID={tab.testID}
-            accessibilityRole="tab"
-            accessibilityState={{ selected: focused }}
-            accessibilityLabel={`${tab.label} tab`}
-          >
-            <Ionicons name={focused ? tab.iconFocused : tab.icon} size={24} color={color} />
-            <LinearText variant="caption" style={[styles.tabLabel, { color }]}>
-              {tab.label}
-            </LinearText>
-          </Pressable>
-        );
-      })}
+        {rightTabs.map((tab, i) => {
+          const stateIndex = i + leftTabs.length;
+          const focused = state.index === stateIndex;
+          const color = focused ? n.colors.textPrimary : n.colors.textMuted;
+          return (
+            <Pressable
+              key={tab.name}
+              style={styles.tabItem}
+              onPress={() => handleTabPress(tab.name, focused)}
+              testID={tab.testID}
+              accessibilityRole="tab"
+              accessibilityState={{ selected: focused }}
+              accessibilityLabel={`${tab.label} tab`}
+            >
+              <View>
+                <Ionicons name={focused ? tab.iconFocused : tab.icon} size={24} color={color} />
+              </View>
+              <LinearText variant="caption" style={[styles.tabLabel, { color }]}>
+                {tab.label}
+              </LinearText>
+            </Pressable>
+          );
+        })}
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   fabSlot: {
-    flex: 1,
+    width: FAB_HITBOX_WIDTH,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -205,21 +256,26 @@ const styles = StyleSheet.create({
     opacity: 0.45,
   },
   fabButton: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    backgroundColor: n.colors.roles.brand,
+    width: FAB_SIZE,
+    height: FAB_SIZE,
+    borderRadius: 18,
+    backgroundColor: n.colors.surface,
     alignItems: 'center',
     justifyContent: 'center',
-    // Subtle shadow for elevation
-    shadowColor: n.colors.roles.brand,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.4,
-    shadowRadius: 12,
-    elevation: 8,
-    // Inner border glow effect
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.25)',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: 'transparent',
+    transform: [{ translateY: -12 }],
+    shadowColor: '#000',
+    shadowOpacity: 0.24,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 10,
+  },
+  fabButtonOpen: {
+    borderColor: 'rgba(94, 106, 210, 0.28)',
+  },
+  fabButtonDisabled: {
+    opacity: 0.72,
   },
   fabLabel: {
     ...n.typography.meta,
@@ -239,9 +295,16 @@ const styles = StyleSheet.create({
     paddingTop: 0,
     elevation: 0,
     alignItems: 'center',
+    position: 'relative',
+  },
+  tabsRow: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   tabItem: {
-    flex: 1,
+    flexGrow: 1,
+    flexBasis: 0,
     alignItems: 'center',
     justifyContent: 'center',
     paddingTop: 8,

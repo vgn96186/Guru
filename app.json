@@ -62,7 +62,12 @@
         }
       ],
       "expo-background-task",
-      "expo-sqlite",
+      [
+        "expo-sqlite",
+        {
+          "withSQLiteVecExtension": true
+        }
+      ],
       "expo-media-library",
       "expo-notifications",
       "./modules/app-launcher/withAppLauncher",

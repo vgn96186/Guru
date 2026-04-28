@@ -1,0 +1,385 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Guru — Action Hub layout mockups</title>
+    <style>
+      :root {
+        --bg: #000;
+        --text: #f2f2f2;
+        --muted: #a0a0a5;
+        --border: rgba(255, 255, 255, 0.14);
+        --border2: rgba(255, 255, 255, 0.08);
+        --sheet: rgba(0, 0, 0, 0.94);
+        --sheet2: rgba(8, 10, 14, 0.92);
+        --accent: #5e6ad2;
+        --accent10: rgba(94, 106, 210, 0.1);
+        --accent16: rgba(94, 106, 210, 0.16);
+        --capture: #6d99ff;
+        --capture12: rgba(109, 153, 255, 0.12);
+        --warn: #d97706;
+        --warn12: rgba(217, 119, 6, 0.12);
+        --radius: 22px;
+      }
+
+      * {
+        box-sizing: border-box;
+        font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Inter, Arial;
+      }
+
+      body {
+        margin: 0;
+        background: radial-gradient(1200px 600px at 20% -10%, rgba(94, 106, 210, 0.12), transparent),
+          radial-gradient(900px 540px at 90% 0%, rgba(109, 153, 255, 0.1), transparent),
+          var(--bg);
+        color: var(--text);
+      }
+
+      .wrap {
+        max-width: 1120px;
+        margin: 0 auto;
+        padding: 24px 16px 40px;
+      }
+
+      h1 {
+        margin: 0 0 6px 0;
+        font-size: 16px;
+        letter-spacing: 0.2px;
+      }
+
+      .hint {
+        margin: 0 0 16px 0;
+        font-size: 12px;
+        color: var(--muted);
+        line-height: 18px;
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+        gap: 14px;
+      }
+
+      .sheet {
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.01)),
+          var(--sheet);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        overflow: hidden;
+      }
+
+      .sheetHeader {
+        padding: 14px 14px 10px;
+        border-bottom: 1px solid var(--border2);
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.03), transparent);
+      }
+
+      .eyebrow {
+        font-size: 11px;
+        letter-spacing: 1.6px;
+        color: var(--muted);
+      }
+
+      .content {
+        padding: 12px 14px 14px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+
+      .sectionTitle {
+        font-size: 11px;
+        letter-spacing: 1.6px;
+        color: var(--muted);
+        margin: 2px 0 8px 0;
+      }
+
+      .rowList {
+        display: flex;
+        flex-direction: column;
+        gap: 0;
+        border: 1px solid var(--border2);
+        border-radius: 16px;
+        overflow: hidden;
+        background: rgba(255, 255, 255, 0.02);
+      }
+
+      .row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 12px 12px;
+        border-bottom: 1px solid var(--border2);
+      }
+      .row:last-child {
+        border-bottom: 0;
+      }
+      .rowLeft {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        min-width: 0;
+      }
+      .dot {
+        width: 26px;
+        height: 26px;
+        border-radius: 8px;
+        background: rgba(255, 255, 255, 0.06);
+        border: 1px solid var(--border2);
+      }
+      .rowText {
+        min-width: 0;
+      }
+      .rowTitle {
+        font-size: 13px;
+        font-weight: 700;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .rowSub {
+        font-size: 12px;
+        color: var(--muted);
+        margin-top: 2px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .chev {
+        color: rgba(255, 255, 255, 0.25);
+        font-weight: 900;
+        font-size: 16px;
+        padding-left: 10px;
+      }
+
+      .primaryGrid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+      }
+
+      .tile {
+        border-radius: 16px;
+        border: 1px solid var(--border);
+        padding: 12px;
+        min-height: 74px;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        background: rgba(255, 255, 255, 0.02);
+      }
+
+      .tileCapture {
+        background: var(--capture12);
+        border-color: rgba(130, 170, 255, 0.35);
+      }
+      .tileAccent {
+        background: var(--accent10);
+        border-color: rgba(94, 106, 210, 0.35);
+      }
+      .tileWarn {
+        background: var(--warn12);
+        border-color: rgba(217, 119, 6, 0.3);
+      }
+
+      .tileTitle {
+        font-size: 13px;
+        font-weight: 800;
+      }
+      .tileSub {
+        font-size: 12px;
+        color: rgba(242, 242, 242, 0.72);
+        line-height: 16px;
+      }
+
+      .pillGrid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 8px;
+      }
+
+      .pill {
+        border-radius: 999px;
+        border: 1px solid var(--border);
+        padding: 10px 10px;
+        text-align: center;
+        font-size: 12px;
+        background: rgba(255, 255, 255, 0.02);
+      }
+      .pillAccent {
+        background: var(--accent16);
+        border-color: rgba(94, 106, 210, 0.35);
+      }
+
+      .appsGrid {
+        display: grid;
+        grid-template-columns: repeat(6, 1fr);
+        gap: 10px;
+      }
+
+      .app {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 6px;
+      }
+
+      .circle {
+        width: 38px;
+        height: 38px;
+        border-radius: 50%;
+        border: 1px solid var(--border);
+        background: rgba(255, 255, 255, 0.03);
+      }
+
+      .label {
+        font-size: 11px;
+        color: var(--muted);
+        text-align: center;
+        line-height: 14px;
+      }
+
+      .sheetVariantTitle {
+        font-size: 12px;
+        color: rgba(242, 242, 242, 0.78);
+        margin-top: 8px;
+        letter-spacing: 0.2px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <h1>Action Hub layout mockups</h1>
+      <p class="hint">
+        These are quick visual directions to fix: (1) asymmetry, (2) too-grey sheet surface, (3)
+        empty space from “row list” layouts. Pick the one that feels right, then I’ll translate it
+        into the actual React Native styles.
+      </p>
+
+      <div class="grid">
+        <div class="sheet">
+          <div class="sheetHeader">
+            <div class="eyebrow">OPTION A — “PRIMARY GRID + QUICK PILLS”</div>
+            <div class="sheetVariantTitle">Symmetric, denser, and less list-y.</div>
+          </div>
+          <div class="content">
+            <div>
+              <div class="sectionTitle">PRIMARY</div>
+              <div class="primaryGrid">
+                <div class="tile tileCapture">
+                  <div class="tileTitle">Record Lecture</div>
+                  <div class="tileSub">Auto-mark topics + generate a clean note.</div>
+                </div>
+                <div class="tile tileAccent">
+                  <div class="tileTitle">Search Topics</div>
+                  <div class="tileSub">Jump to any topic instantly.</div>
+                </div>
+                <div class="tile tileWarn">
+                  <div class="tileTitle">Daily Challenge</div>
+                  <div class="tileSub">One high-yield rep on low-energy days.</div>
+                </div>
+                <div class="tile">
+                  <div class="tileTitle">Notes Vault</div>
+                  <div class="tileSub">Transcripts, images, and saved notes.</div>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <div class="sectionTitle">QUICK TOOLS</div>
+              <div class="pillGrid">
+                <div class="pill">Boss Battle</div>
+                <div class="pill">Upload Audio</div>
+                <div class="pill">Transcript Tools</div>
+                <div class="pill pillAccent">Parked Thoughts</div>
+                <div class="pill">Mock Test</div>
+                <div class="pill">Study Plan</div>
+              </div>
+            </div>
+
+            <div>
+              <div class="sectionTitle">LAUNCH EXTERNAL APP</div>
+              <div class="appsGrid">
+                <div class="app"><div class="circle"></div><div class="label">DBMCI</div></div>
+                <div class="app"><div class="circle"></div><div class="label">Marrow</div></div>
+                <div class="app"><div class="circle"></div><div class="label">DAMS</div></div>
+                <div class="app"><div class="circle"></div><div class="label">DocTutorials</div></div>
+                <div class="app"><div class="circle"></div><div class="label">Osmosis</div></div>
+                <div class="app"><div class="circle"></div><div class="label">Pixorize</div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="sheet">
+          <div class="sheetHeader">
+            <div class="eyebrow">OPTION B — “ROW LIST, BUT DENSE + BALANCED”</div>
+            <div class="sheetVariantTitle">Keeps the current mental model, removes emptiness.</div>
+          </div>
+          <div class="content">
+            <div>
+              <div class="sectionTitle">PRIMARY</div>
+              <div class="rowList">
+                <div class="row">
+                  <div class="rowLeft">
+                    <div class="dot"></div>
+                    <div class="rowText">
+                      <div class="rowTitle">Record Lecture</div>
+                      <div class="rowSub">Transcribe + mark topics</div>
+                    </div>
+                  </div>
+                  <div class="chev">›</div>
+                </div>
+                <div class="row">
+                  <div class="rowLeft">
+                    <div class="dot"></div>
+                    <div class="rowText">
+                      <div class="rowTitle">Search Topics</div>
+                      <div class="rowSub">Global search</div>
+                    </div>
+                  </div>
+                  <div class="chev">›</div>
+                </div>
+                <div class="row">
+                  <div class="rowLeft">
+                    <div class="dot"></div>
+                    <div class="rowText">
+                      <div class="rowTitle">Notes Vault</div>
+                      <div class="rowSub">Transcripts + images</div>
+                    </div>
+                  </div>
+                  <div class="chev">›</div>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <div class="sectionTitle">QUICK TOOLS</div>
+              <div class="pillGrid">
+                <div class="pill">Daily Challenge</div>
+                <div class="pill">Boss Battle</div>
+                <div class="pill">Upload Audio</div>
+                <div class="pill">Transcript Tools</div>
+                <div class="pill pillAccent">Parked Thoughts</div>
+                <div class="pill">Study Plan</div>
+              </div>
+            </div>
+
+            <div>
+              <div class="sectionTitle">LAUNCH EXTERNAL APP</div>
+              <div class="appsGrid">
+                <div class="app"><div class="circle"></div><div class="label">DBMCI</div></div>
+                <div class="app"><div class="circle"></div><div class="label">Marrow</div></div>
+                <div class="app"><div class="circle"></div><div class="label">DAMS</div></div>
+                <div class="app"><div class="circle"></div><div class="label">DocTutorials</div></div>
+                <div class="app"><div class="circle"></div><div class="label">Osmosis</div></div>
+                <div class="app"><div class="circle"></div><div class="label">Pixorize</div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

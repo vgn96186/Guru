@@ -1,0 +1,385 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Guru — Action Hub (Orbit)</title>
+    <style>
+      :root {
+        --bg: #000;
+        --text: #f2f2f2;
+        --muted: #a0a0a5;
+        --border: rgba(255, 255, 255, 0.14);
+        --border2: rgba(255, 255, 255, 0.08);
+        --sheet: rgba(0, 0, 0, 0.92);
+        --accent: #5e6ad2;
+        --accentGlow: rgba(94, 106, 210, 0.22);
+        --capture: #6d99ff;
+        --captureGlow: rgba(109, 153, 255, 0.22);
+        --warn: #d97706;
+        --warnGlow: rgba(217, 119, 6, 0.18);
+        --radius: 26px;
+      }
+
+      * {
+        box-sizing: border-box;
+        font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Inter, Arial;
+      }
+
+      body {
+        margin: 0;
+        background: radial-gradient(1100px 680px at 20% -20%, rgba(94, 106, 210, 0.16), transparent),
+          radial-gradient(900px 520px at 85% 0%, rgba(109, 153, 255, 0.13), transparent),
+          #000;
+        color: var(--text);
+      }
+
+      .wrap {
+        max-width: 980px;
+        margin: 0 auto;
+        padding: 24px 16px 40px;
+      }
+
+      h1 {
+        margin: 0 0 6px 0;
+        font-size: 16px;
+        letter-spacing: 0.2px;
+      }
+
+      .hint {
+        margin: 0 0 16px 0;
+        font-size: 12px;
+        color: var(--muted);
+        line-height: 18px;
+      }
+
+      .sheet {
+        background: radial-gradient(700px 300px at 50% -20%, rgba(255, 255, 255, 0.05), transparent),
+          linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.01)),
+          var(--sheet);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        overflow: hidden;
+      }
+
+      .sheetHeader {
+        padding: 14px 14px 10px;
+        border-bottom: 1px solid var(--border2);
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.03), transparent);
+      }
+
+      .eyebrow {
+        font-size: 11px;
+        letter-spacing: 1.6px;
+        color: var(--muted);
+      }
+
+      .content {
+        padding: 14px;
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 14px;
+      }
+
+      .sectionTitle {
+        font-size: 11px;
+        letter-spacing: 1.6px;
+        color: var(--muted);
+        margin: 0 0 10px 0;
+      }
+
+      .orbitCard {
+        border-radius: 20px;
+        border: 1px solid var(--border2);
+        background: rgba(255, 255, 255, 0.015);
+        padding: 12px;
+        overflow: hidden;
+      }
+
+      .orbitCanvas {
+        position: relative;
+        width: 100%;
+        aspect-ratio: 16/9;
+        border-radius: 18px;
+        background: radial-gradient(360px 220px at 50% 55%, rgba(109, 153, 255, 0.08), transparent),
+          radial-gradient(340px 200px at 50% 45%, rgba(94, 106, 210, 0.08), transparent),
+          rgba(0, 0, 0, 0.35);
+        border: 1px solid rgba(255, 255, 255, 0.06);
+      }
+
+      .ring {
+        position: absolute;
+        left: 50%;
+        top: 52%;
+        transform: translate(-50%, -50%);
+        width: 62%;
+        height: 62%;
+        border-radius: 50%;
+        border: 1px dashed rgba(255, 255, 255, 0.14);
+        opacity: 0.55;
+      }
+
+      .ring2 {
+        width: 44%;
+        height: 44%;
+        opacity: 0.35;
+      }
+
+      .hub {
+        position: absolute;
+        left: 50%;
+        top: 52%;
+        transform: translate(-50%, -50%);
+        width: 84px;
+        height: 84px;
+        border-radius: 28px;
+        background: radial-gradient(60px 40px at 30% 20%, rgba(255, 255, 255, 0.12), transparent),
+          rgba(0, 0, 0, 0.55);
+        border: 1px solid rgba(130, 170, 255, 0.26);
+        box-shadow: 0 0 0 1px rgba(109, 153, 255, 0.12), 0 0 24px rgba(109, 153, 255, 0.12);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        text-align: center;
+        padding: 10px;
+      }
+
+      .hubTitle {
+        font-size: 12px;
+        font-weight: 900;
+      }
+
+      .hubSub {
+        font-size: 10px;
+        color: rgba(242, 242, 242, 0.7);
+        line-height: 12px;
+      }
+
+      .node {
+        position: absolute;
+        width: 54px;
+        height: 54px;
+        border-radius: 22px;
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        background: rgba(0, 0, 0, 0.55);
+        box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.02);
+        display: grid;
+        place-items: center;
+      }
+
+      .nodePrimary {
+        border-color: rgba(94, 106, 210, 0.28);
+        box-shadow: 0 0 0 1px rgba(94, 106, 210, 0.14), 0 0 20px rgba(94, 106, 210, 0.12);
+      }
+
+      .nodeDot {
+        width: 22px;
+        height: 22px;
+        border-radius: 10px;
+        background: rgba(255, 255, 255, 0.08);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+      }
+
+      .nodeLabel {
+        position: absolute;
+        left: 50%;
+        top: calc(100% + 8px);
+        transform: translateX(-50%);
+        width: 96px;
+        font-size: 11px;
+        color: rgba(242, 242, 242, 0.78);
+        text-align: center;
+        line-height: 14px;
+      }
+
+      .posTop {
+        left: 50%;
+        top: 12%;
+        transform: translate(-50%, 0);
+      }
+      .posTR {
+        left: 79%;
+        top: 28%;
+        transform: translate(-50%, 0);
+      }
+      .posBR {
+        left: 79%;
+        top: 64%;
+        transform: translate(-50%, 0);
+      }
+      .posBL {
+        left: 21%;
+        top: 64%;
+        transform: translate(-50%, 0);
+      }
+      .posTL {
+        left: 21%;
+        top: 28%;
+        transform: translate(-50%, 0);
+      }
+
+      .posInnerL {
+        left: 35%;
+        top: 52%;
+        transform: translate(-50%, -50%);
+        width: 48px;
+        height: 48px;
+        border-radius: 18px;
+        opacity: 0.9;
+      }
+      .posInnerR {
+        left: 65%;
+        top: 52%;
+        transform: translate(-50%, -50%);
+        width: 48px;
+        height: 48px;
+        border-radius: 18px;
+        opacity: 0.9;
+      }
+
+      .legendRow {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+        margin-top: 12px;
+      }
+
+      .legend {
+        border-radius: 999px;
+        border: 1px solid var(--border2);
+        background: rgba(255, 255, 255, 0.02);
+        padding: 10px 12px;
+        font-size: 12px;
+        color: rgba(242, 242, 242, 0.72);
+        text-align: center;
+      }
+
+      .legendCapture {
+        border-color: rgba(130, 170, 255, 0.25);
+        background: rgba(109, 153, 255, 0.1);
+      }
+      .legendAccent {
+        border-color: rgba(94, 106, 210, 0.25);
+        background: rgba(94, 106, 210, 0.1);
+      }
+
+      .toolsPills {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 10px;
+      }
+
+      .pill {
+        border-radius: 999px;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        background: rgba(255, 255, 255, 0.02);
+        padding: 12px 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        font-size: 12px;
+        font-weight: 800;
+        letter-spacing: 0.1px;
+      }
+
+      .pillDot {
+        width: 9px;
+        height: 9px;
+        border-radius: 5px;
+        background: rgba(255, 255, 255, 0.22);
+      }
+
+      .pillAccent {
+        border-color: rgba(94, 106, 210, 0.28);
+        background: rgba(94, 106, 210, 0.08);
+      }
+      .pillCapture {
+        border-color: rgba(130, 170, 255, 0.28);
+        background: rgba(109, 153, 255, 0.08);
+      }
+      .pillWarn {
+        border-color: rgba(217, 119, 6, 0.28);
+        background: rgba(217, 119, 6, 0.07);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <h1>Action Hub — Orbit launcher (non-boxy experiment)</h1>
+      <p class="hint">
+        This is intentionally “different”: external apps become orbit nodes around a central hub.
+        The visual language is circles + capsules (no tiles). This can feel more “control panel” and
+        less “menu”.
+      </p>
+
+      <div class="sheet">
+        <div class="sheetHeader">
+          <div class="eyebrow">ACTION HUB</div>
+        </div>
+        <div class="content">
+          <div class="orbitCard">
+            <div class="sectionTitle">LAUNCH EXTERNAL APP</div>
+            <div class="orbitCanvas">
+              <div class="ring"></div>
+              <div class="ring ring2"></div>
+
+              <div class="hub">
+                <div class="hubTitle">DBMCI</div>
+                <div class="hubSub">Last used</div>
+              </div>
+
+              <div class="node nodePrimary posTop">
+                <div class="nodeDot"></div>
+                <div class="nodeLabel">Marrow</div>
+              </div>
+              <div class="node posTR">
+                <div class="nodeDot"></div>
+                <div class="nodeLabel">DAMS</div>
+              </div>
+              <div class="node posBR">
+                <div class="nodeDot"></div>
+                <div class="nodeLabel">DocTutorials</div>
+              </div>
+              <div class="node posBL">
+                <div class="nodeDot"></div>
+                <div class="nodeLabel">Osmosis</div>
+              </div>
+              <div class="node posTL">
+                <div class="nodeDot"></div>
+                <div class="nodeLabel">Pixorize</div>
+              </div>
+
+              <div class="node posInnerL">
+                <div class="nodeDot"></div>
+                <div class="nodeLabel">Other</div>
+              </div>
+              <div class="node posInnerR">
+                <div class="nodeDot"></div>
+                <div class="nodeLabel">Search</div>
+              </div>
+            </div>
+            <div class="legendRow">
+              <div class="legend legendCapture">Overlay: ON</div>
+              <div class="legend legendAccent">Face tracking: ON</div>
+            </div>
+          </div>
+
+          <div>
+            <div class="sectionTitle">TOOLS (6)</div>
+            <div class="toolsPills">
+              <div class="pill pillAccent"><span class="pillDot"></span>Study Plan</div>
+              <div class="pill"><span class="pillDot"></span>Stats</div>
+              <div class="pill pillCapture"><span class="pillDot"></span>Question Bank</div>
+              <div class="pill"><span class="pillDot"></span>Flashcards</div>
+              <div class="pill"><span class="pillDot"></span>Notes Vault</div>
+              <div class="pill pillWarn"><span class="pillDot"></span>Transcript Vault</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

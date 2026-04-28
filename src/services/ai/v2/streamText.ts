@@ -29,6 +29,7 @@ export interface StreamTextOptions {
   model: LanguageModelV2;
   messages: ModelMessage[];
   system?: string;
+  webSearch?: boolean;
   tools?: ToolSet;
   toolChoice?: 'auto' | 'required' | 'none' | { type: 'tool'; toolName: string };
   maxOutputTokens?: number;
@@ -193,6 +194,7 @@ export function streamText(options: StreamTextOptions): StreamTextResult {
           temperature: options.temperature,
           topP: options.topP,
           abortSignal: options.abortSignal,
+          webSearch: options.webSearch,
         });
 
         let stepText = '';

@@ -1,8 +1,8 @@
 import React from 'react';
 import { Pressable, StatusBar, StyleSheet, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import BannerIconButton from '../../components/BannerIconButton';
+import Icon from '../../components/primitives/Icon';
 import LinearText from '../../components/primitives/LinearText';
 import ScreenHeader from '../../components/ScreenHeader';
 import { linearTheme as n } from '../../theme/linearTheme';
@@ -44,14 +44,14 @@ export function GuruChatHeader({
             accessibilityLabel="Open chat history"
             style={styles.minimalHeaderIcon}
           >
-            <Ionicons name="reorder-three-outline" size={18} color={n.colors.textSecondary} />
+            <Icon name="reorder-three-outline" size="md" color={n.colors.textSecondary} />
           </BannerIconButton>
           <BannerIconButton
             onPress={onNewChat}
             accessibilityLabel="New chat"
             style={styles.minimalHeaderIcon}
           >
-            <Ionicons name="create-outline" size={18} color={n.colors.textSecondary} />
+            <Icon name="create-outline" size="md" color={n.colors.textSecondary} />
           </BannerIconButton>
         </View>
       }
@@ -67,17 +67,14 @@ type GuruChatInfoBannerProps = {
 export function GuruChatInfoBanner({ onDismiss }: GuruChatInfoBannerProps) {
   return (
     <View style={styles.infoBanner}>
-      <Ionicons
-        name="library-outline"
-        size={14}
-        color={n.colors.accent}
-        style={styles.bannerIcon}
-      />
+      <View style={styles.bannerIcon}>
+        <Icon name="library-outline" size="sm" color={n.colors.accent} />
+      </View>
       <LinearText style={styles.infoText}>
         Grounded with Wikipedia, Europe PMC and PubMed. Sources are linked inline.
       </LinearText>
       <Pressable onPress={onDismiss} hitSlop={8}>
-        <Ionicons name="close" size={14} color={n.colors.textMuted} />
+        <Icon name="close" size="sm" color={n.colors.textMuted} />
       </Pressable>
     </View>
   );

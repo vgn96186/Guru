@@ -23,6 +23,7 @@ export const deepseekWebProvider: WebSearchProvider = {
         },
       ],
       maxOutputTokens: 1024,
+      webSearch: true,
     });
 
     const results: WebSearchResult[] = [];

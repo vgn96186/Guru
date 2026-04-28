@@ -1,0 +1,967 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Action Hub Mock</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500,700&family=IBM+Plex+Sans:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --bg0: #070b10;
+        --bg1: #0a111a;
+        --glass: rgba(255, 255, 255, 0.06);
+        --glass2: rgba(255, 255, 255, 0.1);
+        --stroke: rgba(255, 255, 255, 0.14);
+        --stroke2: rgba(255, 255, 255, 0.22);
+        --text: rgba(255, 255, 255, 0.92);
+        --muted: rgba(255, 255, 255, 0.66);
+        --shadow: rgba(0, 0, 0, 0.62);
+        --a: #c8ff3e;
+        --a2: #47ffd7;
+        --warn: #ffcf3e;
+        --danger: #ff4d7d;
+        --radius: 26px;
+        --radius2: 18px;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        height: 100%;
+      }
+
+      body {
+        margin: 0;
+        color: var(--text);
+        background: radial-gradient(1400px 900px at 22% -10%, rgba(71, 255, 215, 0.12), transparent 60%),
+          radial-gradient(1100px 800px at 78% 14%, rgba(200, 255, 62, 0.11), transparent 55%),
+          radial-gradient(900px 700px at 50% 120%, rgba(255, 77, 125, 0.06), transparent 60%),
+          linear-gradient(180deg, var(--bg0), var(--bg1));
+        font-family: "IBM Plex Sans", ui-sans-serif, system-ui, -apple-system, Segoe UI, sans-serif;
+        display: grid;
+        place-items: center;
+        overflow: hidden;
+      }
+
+      .wrap {
+        width: min(1120px, 96vw);
+        display: grid;
+        grid-template-columns: 1.1fr 0.9fr;
+        gap: 22px;
+        align-items: center;
+      }
+
+      @media (max-width: 920px) {
+        .wrap {
+          grid-template-columns: 1fr;
+          gap: 16px;
+          padding: 18px 0 26px;
+        }
+      }
+
+      .panel {
+        border-radius: 28px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.035));
+        box-shadow: 0 30px 80px rgba(0, 0, 0, 0.55);
+        overflow: hidden;
+      }
+
+      .panelHeader {
+        padding: 18px 18px 14px;
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+        gap: 14px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        backdrop-filter: blur(14px);
+        -webkit-backdrop-filter: blur(14px);
+        background: linear-gradient(180deg, rgba(0, 0, 0, 0.22), rgba(0, 0, 0, 0));
+      }
+
+      .title {
+        display: grid;
+        gap: 3px;
+      }
+
+      .title h1 {
+        margin: 0;
+        font-family: "Fraunces", ui-serif, Georgia, serif;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+        font-size: 22px;
+      }
+
+      .title p {
+        margin: 0;
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.3;
+      }
+
+      .badgeRow {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+      }
+
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 10px;
+        border-radius: 999px;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        background: rgba(255, 255, 255, 0.06);
+        color: rgba(255, 255, 255, 0.82);
+        font-size: 12px;
+        line-height: 1;
+      }
+
+      .dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.8), rgba(255, 255, 255, 0.15));
+        box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.06), 0 0 22px rgba(71, 255, 215, 0.18);
+      }
+
+      .dot.a {
+        background: radial-gradient(circle at 30% 30%, rgba(200, 255, 62, 0.95), rgba(200, 255, 62, 0.18));
+        box-shadow: 0 0 0 2px rgba(200, 255, 62, 0.14), 0 0 22px rgba(200, 255, 62, 0.2);
+      }
+
+      .dot.b {
+        background: radial-gradient(circle at 30% 30%, rgba(71, 255, 215, 0.95), rgba(71, 255, 215, 0.18));
+        box-shadow: 0 0 0 2px rgba(71, 255, 215, 0.14), 0 0 22px rgba(71, 255, 215, 0.2);
+      }
+
+      .screen {
+        position: relative;
+        aspect-ratio: 9 / 19.5;
+        width: min(420px, 92vw);
+        margin: 18px auto 22px;
+        border-radius: 44px;
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        background: radial-gradient(600px 520px at 60% 0%, rgba(200, 255, 62, 0.09), transparent 60%),
+          radial-gradient(520px 460px at 20% 40%, rgba(71, 255, 215, 0.08), transparent 65%),
+          linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.015));
+        box-shadow: 0 26px 80px rgba(0, 0, 0, 0.66);
+        overflow: hidden;
+      }
+
+      .grain {
+        position: absolute;
+        inset: -40px;
+        pointer-events: none;
+        opacity: 0.12;
+        mix-blend-mode: overlay;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='220' height='220' filter='url(%23n)' opacity='.65'/%3E%3C/svg%3E");
+        background-size: 220px 220px;
+        transform: rotate(6deg);
+      }
+
+      .topo {
+        position: absolute;
+        inset: 0;
+        opacity: 0.2;
+        pointer-events: none;
+        background-image: radial-gradient(circle at 20% 15%, rgba(255, 255, 255, 0.1), transparent 42%),
+          radial-gradient(circle at 80% 40%, rgba(255, 255, 255, 0.08), transparent 46%),
+          repeating-radial-gradient(circle at 34% 70%, rgba(255, 255, 255, 0.08) 0 1px, transparent 1px 18px);
+        mask-image: radial-gradient(220px 220px at 70% 30%, black 55%, transparent 78%),
+          radial-gradient(300px 300px at 30% 70%, black 60%, transparent 85%);
+        mask-composite: intersect;
+      }
+
+      .statusBar {
+        position: absolute;
+        top: 12px;
+        left: 16px;
+        right: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        color: rgba(255, 255, 255, 0.72);
+        font-size: 12px;
+        letter-spacing: 0.06em;
+      }
+
+      .pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        padding: 8px 12px;
+        border-radius: 999px;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        background: rgba(0, 0, 0, 0.18);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+      }
+
+      .pill strong {
+        font-weight: 600;
+        color: rgba(255, 255, 255, 0.9);
+      }
+
+      .homeContent {
+        position: absolute;
+        inset: 0;
+        padding: 64px 18px 110px;
+        display: grid;
+        align-content: start;
+        gap: 14px;
+      }
+
+      .card {
+        border-radius: 22px;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.03));
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+        box-shadow: 0 16px 50px rgba(0, 0, 0, 0.45);
+        padding: 14px 14px 16px;
+      }
+
+      .card h2 {
+        margin: 0 0 6px;
+        font-family: "Fraunces", ui-serif, Georgia, serif;
+        font-size: 18px;
+        letter-spacing: -0.01em;
+      }
+
+      .card p {
+        margin: 0;
+        color: rgba(255, 255, 255, 0.7);
+        font-size: 13px;
+        line-height: 1.45;
+      }
+
+      .meter {
+        margin-top: 12px;
+        display: grid;
+        gap: 10px;
+      }
+
+      .meterRow {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 10px;
+        align-items: center;
+      }
+
+      .meterRow span {
+        color: rgba(255, 255, 255, 0.7);
+        font-size: 12px;
+      }
+
+      .bar {
+        height: 10px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.08);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        overflow: hidden;
+      }
+
+      .fill {
+        height: 100%;
+        width: var(--w, 50%);
+        border-radius: 999px;
+        background: linear-gradient(90deg, rgba(200, 255, 62, 0.9), rgba(71, 255, 215, 0.85));
+        box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.25) inset, 0 10px 28px rgba(200, 255, 62, 0.12);
+      }
+
+      .miniGrid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+      }
+
+      .mini {
+        padding: 12px 12px 14px;
+        border-radius: 20px;
+        border: 1px solid rgba(255, 255, 255, 0.11);
+        background: rgba(255, 255, 255, 0.045);
+      }
+
+      .mini .k {
+        font-size: 11px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: rgba(255, 255, 255, 0.66);
+      }
+
+      .mini .v {
+        margin-top: 6px;
+        font-size: 22px;
+        font-family: "Fraunces", ui-serif, Georgia, serif;
+        letter-spacing: -0.02em;
+      }
+
+      .mini .hint {
+        margin-top: 6px;
+        color: rgba(255, 255, 255, 0.62);
+        font-size: 12px;
+      }
+
+      .hub {
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: 16px;
+        display: grid;
+        place-items: center;
+        padding-bottom: env(safe-area-inset-bottom, 0px);
+      }
+
+      .hubDock {
+        position: relative;
+        width: min(360px, calc(100% - 26px));
+        display: grid;
+        place-items: center;
+      }
+
+      .hubGlow {
+        position: absolute;
+        inset: -26px -30px -22px;
+        border-radius: 999px;
+        background: radial-gradient(230px 90px at 50% 65%, rgba(200, 255, 62, 0.22), transparent 62%),
+          radial-gradient(240px 120px at 40% 45%, rgba(71, 255, 215, 0.17), transparent 60%),
+          radial-gradient(220px 90px at 70% 55%, rgba(255, 77, 125, 0.12), transparent 62%);
+        filter: blur(10px);
+        opacity: 0.66;
+        pointer-events: none;
+        transition: opacity 260ms ease, transform 300ms ease;
+      }
+
+      .hub[data-open="true"] .hubGlow {
+        opacity: 0.95;
+        transform: translateY(-6px);
+      }
+
+      .hubButton {
+        width: 100%;
+        border: 0;
+        border-radius: 999px;
+        padding: 12px 14px;
+        cursor: pointer;
+        color: rgba(255, 255, 255, 0.92);
+        background: linear-gradient(180deg, rgba(0, 0, 0, 0.42), rgba(0, 0, 0, 0.2));
+        box-shadow: 0 28px 80px rgba(0, 0, 0, 0.62);
+        position: relative;
+        display: grid;
+        grid-template-columns: auto 1fr auto;
+        gap: 12px;
+        align-items: center;
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+        transition: transform 160ms ease, border-color 220ms ease, background 220ms ease;
+      }
+
+      .hubButton:active {
+        transform: translateY(1px) scale(0.995);
+      }
+
+      .hubButton:focus-visible {
+        outline: none;
+        box-shadow: 0 0 0 4px rgba(200, 255, 62, 0.18), 0 0 0 1px rgba(200, 255, 62, 0.38) inset,
+          0 28px 80px rgba(0, 0, 0, 0.62);
+      }
+
+      .hub[data-open="true"] .hubButton {
+        border-color: rgba(200, 255, 62, 0.38);
+        background: linear-gradient(180deg, rgba(0, 0, 0, 0.48), rgba(0, 0, 0, 0.22));
+      }
+
+      .hubMark {
+        width: 42px;
+        height: 42px;
+        border-radius: 14px;
+        display: grid;
+        place-items: center;
+        background: radial-gradient(circle at 35% 30%, rgba(200, 255, 62, 0.95), rgba(200, 255, 62, 0.18));
+        box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.35) inset, 0 18px 50px rgba(200, 255, 62, 0.12);
+        position: relative;
+        overflow: hidden;
+      }
+
+      .hubMark::after {
+        content: "";
+        position: absolute;
+        inset: -30px;
+        background: conic-gradient(from 120deg, rgba(255, 255, 255, 0.24), transparent 35%, rgba(255, 255, 255, 0.18));
+        opacity: 0.6;
+        animation: spin 6.5s linear infinite;
+      }
+
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      .hubMark svg {
+        position: relative;
+        z-index: 1;
+      }
+
+      .hubText {
+        text-align: left;
+        display: grid;
+        gap: 2px;
+        min-width: 0;
+      }
+
+      .hubText strong {
+        font-weight: 600;
+        letter-spacing: 0.01em;
+        font-size: 14px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .hubText span {
+        font-size: 12px;
+        color: rgba(255, 255, 255, 0.68);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .hubHint {
+        justify-self: end;
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .sig {
+        width: 76px;
+        height: 8px;
+        border-radius: 999px;
+        background: linear-gradient(90deg, rgba(71, 255, 215, 0.6), rgba(200, 255, 62, 0.7), rgba(255, 77, 125, 0.45));
+        opacity: 0.72;
+        filter: saturate(1.1);
+      }
+
+      .chev {
+        width: 30px;
+        height: 30px;
+        border-radius: 999px;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        background: rgba(255, 255, 255, 0.05);
+        display: grid;
+        place-items: center;
+        transition: transform 220ms ease, border-color 220ms ease, background 220ms ease;
+      }
+
+      .hub[data-open="true"] .chev {
+        transform: rotate(180deg);
+        border-color: rgba(200, 255, 62, 0.34);
+        background: rgba(200, 255, 62, 0.08);
+      }
+
+      .hubMenu {
+        position: absolute;
+        left: 50%;
+        bottom: calc(100% + 10px);
+        transform: translateX(-50%);
+        width: min(380px, calc(100vw - 40px));
+        display: grid;
+        gap: 10px;
+        padding: 12px;
+        border-radius: 26px;
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        background: linear-gradient(180deg, rgba(0, 0, 0, 0.52), rgba(0, 0, 0, 0.22));
+        backdrop-filter: blur(18px);
+        -webkit-backdrop-filter: blur(18px);
+        box-shadow: 0 36px 110px rgba(0, 0, 0, 0.72);
+        opacity: 0;
+        pointer-events: none;
+        transform-origin: 50% 100%;
+        transform: translateX(-50%) translateY(8px) scale(0.98);
+        transition: opacity 180ms ease, transform 220ms cubic-bezier(0.2, 0.9, 0.2, 1);
+      }
+
+      .hub[data-open="true"] .hubMenu {
+        opacity: 1;
+        pointer-events: auto;
+        transform: translateX(-50%) translateY(0px) scale(1);
+      }
+
+      .menuRow {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+      }
+
+      .action {
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-radius: 20px;
+        padding: 12px 12px 12px;
+        background: rgba(255, 255, 255, 0.05);
+        display: grid;
+        grid-template-columns: auto 1fr;
+        gap: 12px;
+        align-items: center;
+        cursor: pointer;
+        transition: transform 160ms ease, border-color 200ms ease, background 200ms ease;
+        text-align: left;
+        color: rgba(255, 255, 255, 0.9);
+        min-height: 66px;
+      }
+
+      .action:hover {
+        transform: translateY(-1px);
+        border-color: rgba(255, 255, 255, 0.2);
+        background: rgba(255, 255, 255, 0.07);
+      }
+
+      .action:active {
+        transform: translateY(0px) scale(0.995);
+      }
+
+      .action:focus-visible {
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(200, 255, 62, 0.18), 0 0 0 1px rgba(200, 255, 62, 0.36) inset;
+      }
+
+      .ico {
+        width: 44px;
+        height: 44px;
+        border-radius: 16px;
+        display: grid;
+        place-items: center;
+        position: relative;
+        overflow: hidden;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+      }
+
+      .ico.a {
+        background: radial-gradient(circle at 35% 30%, rgba(200, 255, 62, 0.9), rgba(200, 255, 62, 0.12));
+        box-shadow: 0 12px 30px rgba(200, 255, 62, 0.1);
+      }
+
+      .ico.b {
+        background: radial-gradient(circle at 35% 30%, rgba(71, 255, 215, 0.9), rgba(71, 255, 215, 0.12));
+        box-shadow: 0 12px 30px rgba(71, 255, 215, 0.1);
+      }
+
+      .ico.c {
+        background: radial-gradient(circle at 35% 30%, rgba(255, 207, 62, 0.92), rgba(255, 207, 62, 0.12));
+        box-shadow: 0 12px 30px rgba(255, 207, 62, 0.09);
+      }
+
+      .ico.d {
+        background: radial-gradient(circle at 35% 30%, rgba(255, 77, 125, 0.9), rgba(255, 77, 125, 0.12));
+        box-shadow: 0 12px 30px rgba(255, 77, 125, 0.1);
+      }
+
+      .actionTxt {
+        display: grid;
+        gap: 2px;
+        min-width: 0;
+      }
+
+      .actionTxt strong {
+        font-size: 13px;
+        letter-spacing: 0.01em;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .actionTxt span {
+        font-size: 12px;
+        color: rgba(255, 255, 255, 0.68);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .menuFoot {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 4px 2px 0;
+      }
+
+      .kbd {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        color: rgba(255, 255, 255, 0.62);
+        font-size: 12px;
+      }
+
+      .kbd kbd {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+        font-size: 11px;
+        padding: 5px 8px;
+        border-radius: 10px;
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        background: rgba(255, 255, 255, 0.06);
+        color: rgba(255, 255, 255, 0.78);
+      }
+
+      .tiny {
+        color: rgba(255, 255, 255, 0.62);
+        font-size: 12px;
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .tiny b {
+        color: rgba(255, 255, 255, 0.88);
+        font-weight: 600;
+      }
+
+      .spec {
+        padding: 18px 18px 20px;
+      }
+
+      .spec h3 {
+        margin: 0;
+        font-family: "Fraunces", ui-serif, Georgia, serif;
+        font-size: 18px;
+        letter-spacing: -0.01em;
+      }
+
+      .spec p {
+        margin: 10px 0 0;
+        color: rgba(255, 255, 255, 0.72);
+        font-size: 13px;
+        line-height: 1.55;
+      }
+
+      .specGrid {
+        margin-top: 14px;
+        display: grid;
+        gap: 10px;
+      }
+
+      .specItem {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 10px;
+        align-items: center;
+        padding: 12px 12px;
+        border-radius: 18px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        background: rgba(255, 255, 255, 0.045);
+      }
+
+      .specItem span {
+        color: rgba(255, 255, 255, 0.74);
+        font-size: 13px;
+      }
+
+      .chip {
+        padding: 7px 10px;
+        border-radius: 999px;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        background: rgba(0, 0, 0, 0.18);
+        color: rgba(255, 255, 255, 0.82);
+        font-size: 12px;
+        white-space: nowrap;
+      }
+
+      .sr {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <div class="panel">
+        <div class="panelHeader">
+          <div class="title">
+            <h1>Action Hub</h1>
+            <p>Press the dock to expand. Designed as a calm “one decision” gateway.</p>
+          </div>
+          <div class="badgeRow">
+            <span class="badge"><span class="dot a"></span>High-yield</span>
+            <span class="badge"><span class="dot b"></span>Low friction</span>
+          </div>
+        </div>
+
+        <div class="screen" role="img" aria-label="Mock phone screen with a floating action hub">
+          <div class="grain"></div>
+          <div class="topo"></div>
+
+          <div class="statusBar">
+            <div class="pill"><strong>Guru</strong><span style="opacity: 0.75">NEET-PG</span></div>
+            <div class="pill"><span style="opacity: 0.75">Today</span><strong>04:32</strong></div>
+          </div>
+
+          <div class="homeContent">
+            <div class="card">
+              <h2>Overdue first.</h2>
+              <p>When the pile is heavy, the hub should steer you to the smallest useful action.</p>
+              <div class="meter">
+                <div class="meterRow">
+                  <span>Overdue reviews</span>
+                  <span style="color: rgba(255, 255, 255, 0.88); font-weight: 600">42</span>
+                </div>
+                <div class="bar"><div class="fill" style="--w: 74%"></div></div>
+                <div class="meterRow">
+                  <span>New topics intake</span>
+                  <span style="color: rgba(255, 255, 255, 0.88); font-weight: 600">Throttled</span>
+                </div>
+                <div class="bar"><div class="fill" style="--w: 32%; filter: saturate(0.85) brightness(0.98)"></div></div>
+              </div>
+            </div>
+
+            <div class="miniGrid">
+              <div class="mini">
+                <div class="k">Daily XP</div>
+                <div class="v">138</div>
+                <div class="hint">+42 from transcript</div>
+              </div>
+              <div class="mini">
+                <div class="k">Focus</div>
+                <div class="v">15m</div>
+                <div class="hint">avg streak</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="hub" data-open="false" id="hub">
+            <div class="hubDock">
+              <div class="hubGlow"></div>
+
+              <div class="hubMenu" id="hubMenu" role="menu" aria-label="Action Hub menu">
+                <div class="menuRow">
+                  <button class="action" type="button" role="menuitem" data-action="review">
+                    <span class="ico a" aria-hidden="true">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                        <path
+                          d="M7 7h10M7 12h6M7 17h8"
+                          stroke="rgba(0,0,0,.75)"
+                          stroke-width="2"
+                          stroke-linecap="round"
+                        />
+                      </svg>
+                    </span>
+                    <span class="actionTxt">
+                      <strong>Quick Review</strong>
+                      <span>Burn the overdue pile</span>
+                    </span>
+                  </button>
+
+                  <button class="action" type="button" role="menuitem" data-action="session">
+                    <span class="ico b" aria-hidden="true">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                        <path
+                          d="M12 3v4M12 17v4M4.6 6.2l2.8 2.8M16.6 18.2l2.8 2.8M3 12h4M17 12h4M6.2 19.4l2.8-2.8M18.2 7.4l2.8-2.8"
+                          stroke="rgba(0,0,0,.72)"
+                          stroke-width="2"
+                          stroke-linecap="round"
+                        />
+                      </svg>
+                    </span>
+                    <span class="actionTxt">
+                      <strong>Start Session</strong>
+                      <span>Timed + XP + notes</span>
+                    </span>
+                  </button>
+                </div>
+
+                <div class="menuRow">
+                  <button class="action" type="button" role="menuitem" data-action="lecture">
+                    <span class="ico c" aria-hidden="true">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                        <path
+                          d="M8 4h8a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z"
+                          stroke="rgba(0,0,0,.72)"
+                          stroke-width="2"
+                        />
+                        <path
+                          d="M10 9h4l2 3-2 3h-4V9Z"
+                          fill="rgba(0,0,0,.72)"
+                        />
+                      </svg>
+                    </span>
+                    <span class="actionTxt">
+                      <strong>Lecture Mode</strong>
+                      <span>Auto-scribe pipeline</span>
+                    </span>
+                  </button>
+
+                  <button class="action" type="button" role="menuitem" data-action="dump">
+                    <span class="ico d" aria-hidden="true">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                        <path
+                          d="M7 7c0-2 1.8-3 5-3s5 1 5 3-1.8 3-5 3-5-1-5-3Z"
+                          stroke="rgba(0,0,0,.72)"
+                          stroke-width="2"
+                        />
+                        <path
+                          d="M7 7v10c0 2 1.8 3 5 3s5-1 5-3V7"
+                          stroke="rgba(0,0,0,.72)"
+                          stroke-width="2"
+                        />
+                      </svg>
+                    </span>
+                    <span class="actionTxt">
+                      <strong>Brain Dump</strong>
+                      <span>Offload → distill later</span>
+                    </span>
+                  </button>
+                </div>
+
+                <div class="menuFoot">
+                  <span class="kbd"><kbd>Esc</kbd><span>to close</span></span>
+                  <span class="tiny"><b>Tip</b> pick the smallest useful win</span>
+                </div>
+              </div>
+
+              <button
+                class="hubButton"
+                id="hubButton"
+                type="button"
+                aria-haspopup="menu"
+                aria-expanded="false"
+                aria-controls="hubMenu"
+              >
+                <span class="hubMark" aria-hidden="true">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                    <path
+                      d="M12 5v14M5 12h14"
+                      stroke="rgba(0,0,0,.82)"
+                      stroke-width="2.4"
+                      stroke-linecap="round"
+                    />
+                  </svg>
+                </span>
+
+                <span class="hubText">
+                  <strong>Action Hub</strong>
+                  <span>Review · Session · Lecture · Dump</span>
+                </span>
+
+                <span class="hubHint" aria-hidden="true">
+                  <span class="sig"></span>
+                  <span class="chev">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                      <path
+                        d="M6 9l6 6 6-6"
+                        stroke="rgba(255,255,255,.78)"
+                        stroke-width="2.2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      />
+                    </svg>
+                  </span>
+                </span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="spec">
+          <h3>Design Notes</h3>
+          <p>
+            The hub is a single, calm dock (not a busy FAB). It telegraphs the 4 core “today behaviors” and expands into a
+            tight 2×2 grid, optimized for thumb reach and tablet ergonomics.
+          </p>
+          <div class="specGrid">
+            <div class="specItem">
+              <span>Closed state: summary + mood signal (signature bar)</span>
+              <span class="chip">One decision</span>
+            </div>
+            <div class="specItem">
+              <span>Open state: 4 actions, each with a distinct color memory</span>
+              <span class="chip">2×2 grid</span>
+            </div>
+            <div class="specItem">
+              <span>Motion: scale + lift, minimal jitter, focus-ring for keyboard</span>
+              <span class="chip">Accessible</span>
+            </div>
+            <div class="specItem">
+              <span>Visual language: glass + neon clinical accents + subtle grain</span>
+              <span class="chip">Android vibe</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const hub = document.getElementById("hub");
+      const hubButton = document.getElementById("hubButton");
+      const hubMenu = document.getElementById("hubMenu");
+
+      function setOpen(next) {
+        hub.dataset.open = next ? "true" : "false";
+        hubButton.setAttribute("aria-expanded", next ? "true" : "false");
+        if (next) {
+          const first = hubMenu.querySelector("button.action");
+          if (first) first.focus({ preventScroll: true });
+        } else {
+          hubButton.focus({ preventScroll: true });
+        }
+      }
+
+      function toggle() {
+        setOpen(hub.dataset.open !== "true");
+      }
+
+      hubButton.addEventListener("click", toggle);
+
+      document.addEventListener("click", (e) => {
+        if (hub.dataset.open !== "true") return;
+        const target = e.target;
+        if (!(target instanceof Node)) return;
+        if (!hub.contains(target)) setOpen(false);
+      });
+
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape" && hub.dataset.open === "true") {
+          e.preventDefault();
+          setOpen(false);
+        }
+        if (e.key === "Enter" && document.activeElement === hubButton) toggle();
+      });
+
+      hubMenu.addEventListener("click", (e) => {
+        const el = e.target.closest("button.action");
+        if (!el) return;
+        const action = el.getAttribute("data-action");
+        hubButton.querySelector(".hubText strong").textContent =
+          action === "review"
+            ? "Quick Review"
+            : action === "session"
+              ? "Start Session"
+              : action === "lecture"
+                ? "Lecture Mode"
+                : "Brain Dump";
+        hubButton.querySelector(".hubText span").textContent = "Selected · tap to change";
+        setOpen(false);
+      });
+    </script>
+  </body>
+</html>

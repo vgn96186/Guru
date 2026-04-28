@@ -3,6 +3,7 @@ import { View, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import LinearText from '../../../components/primitives/LinearText';
+import { InlineMarkdownText } from '../../../components/InlineMarkdownText.tsx';
 
 import { ContentFlagButton } from '../../../components/ContentFlagButton';
 import { s, FLASHCARD_RATINGS } from '../styles';
@@ -110,9 +111,11 @@ export function FlashcardCard({
       <TouchableOpacity style={s.flashcardBody} onPress={handleFlip} activeOpacity={0.7}>
         <LinearText style={s.flashcardLabel}>{isFlipped ? 'ANSWER' : 'QUESTION'}</LinearText>
         {card.imageUrl && !isFlipped && <QuestionImage url={card.imageUrl} />}
-        <LinearText style={s.flashcardText} variant="body">
-          {isFlipped ? card.back : card.front}
-        </LinearText>
+        <InlineMarkdownText
+          content={isFlipped ? card.back : card.front}
+          style={s.flashcardText}
+          variant="body"
+        />
         <LinearText style={s.flashcardHint} variant="meta" tone="muted">
           {isFlipped ? 'Tap to go back' : 'Tap to reveal'}
         </LinearText>

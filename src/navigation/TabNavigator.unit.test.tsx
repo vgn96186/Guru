@@ -85,7 +85,7 @@ jest.mock('../screens/DeviceLinkScreen', () => () => null);
 jest.mock('../screens/ManualNoteCreationScreen', () => () => null);
 jest.mock('../screens/RecordingVaultScreen', () => () => null);
 jest.mock('../screens/ImageVaultScreen', () => () => null);
-jest.mock('../screens/NotesVaultScreen', () => () => null);
+jest.mock('../screens/vaults/notes/NotesVaultScreen', () => () => null);
 jest.mock('../screens/TranscriptVaultScreen', () => () => null);
 jest.mock('../components/LectureReturnSheet', () => () => null);
 jest.mock('../components/ConfidenceSelector', () => () => null);

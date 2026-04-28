@@ -20,7 +20,6 @@ class BootTransitionView(context: Context, appContext: AppContext) : ExpoView(co
 
     private val bootPhaseState = mutableStateOf("booting")
     private val isTurbulentState = mutableStateOf(true)
-    private var isAttached = false
 
     private val lifecycleOwner = object : LifecycleOwner, SavedStateRegistryOwner {
         val registry = LifecycleRegistry(this)
@@ -32,15 +31,7 @@ class BootTransitionView(context: Context, appContext: AppContext) : ExpoView(co
         }
     }
 
-    private val composeView = object : ComposeView(context) {
-        override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
-            if (!isAttachedToWindow) {
-                setMeasuredDimension(0, 0)
-                return
-            }
-            super.onMeasure(widthMeasureSpec, heightMeasureSpec)
-        }
-    }.apply {
+    private val composeView = ComposeView(context).apply {
         setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnDetachedFromWindowOrReleasedFromPool)
         layoutParams = FrameLayout.LayoutParams(
             FrameLayout.LayoutParams.MATCH_PARENT,
@@ -49,6 +40,10 @@ class BootTransitionView(context: Context, appContext: AppContext) : ExpoView(co
     }
 
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
+        if (!isAttachedToWindow) {
+            setMeasuredDimension(0, 0)
+            return
+        }
         super.onMeasure(widthMeasureSpec, heightMeasureSpec)
     }
 
@@ -66,7 +61,6 @@ class BootTransitionView(context: Context, appContext: AppContext) : ExpoView(co
 
     override fun onAttachedToWindow() {
         super.onAttachedToWindow()
-        isAttached = true
         composeView.setViewTreeLifecycleOwner(lifecycleOwner)
         composeView.setViewTreeSavedStateRegistryOwner(lifecycleOwner)
         lifecycleOwner.registry.currentState = Lifecycle.State.RESUMED
@@ -80,9 +74,7 @@ class BootTransitionView(context: Context, appContext: AppContext) : ExpoView(co
     }
 
     override fun onDetachedFromWindow() {
-        isAttached = false
         lifecycleOwner.registry.currentState = Lifecycle.State.DESTROYED
         super.onDetachedFromWindow()
     }
 }
-

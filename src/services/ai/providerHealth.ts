@@ -605,6 +605,13 @@ export async function testVertexConnection(
 
   // Agent Platform API Key mode (no project/location)
   if (!p || !l) {
+    if (!isApiKey) {
+      return {
+        ok: false,
+        status: 0,
+        message: 'Vertex token requires project and location',
+      };
+    }
     try {
       const res = await fetch(
         `https://aiplatform.googleapis.com/v1beta/publishers/google/models/gemini-2.0-flash:generateContent?key=${t}`,

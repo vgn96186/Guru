@@ -1,0 +1,267 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Guru — Action Hub (Compact launcher + 6 tools)</title>
+    <style>
+      :root {
+        --bg: #000;
+        --text: #f2f2f2;
+        --muted: #a0a0a5;
+        --border: rgba(255, 255, 255, 0.14);
+        --border2: rgba(255, 255, 255, 0.08);
+        --sheet: rgba(0, 0, 0, 0.92);
+        --accent: #5e6ad2;
+        --accent10: rgba(94, 106, 210, 0.1);
+        --capture: #6d99ff;
+        --capture12: rgba(109, 153, 255, 0.12);
+        --radius: 24px;
+      }
+
+      * {
+        box-sizing: border-box;
+        font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Inter, Arial;
+      }
+
+      body {
+        margin: 0;
+        background: radial-gradient(1200px 700px at 15% -20%, rgba(94, 106, 210, 0.14), transparent),
+          radial-gradient(900px 520px at 90% 0%, rgba(109, 153, 255, 0.12), transparent),
+          #000;
+        color: var(--text);
+      }
+
+      .wrap {
+        max-width: 980px;
+        margin: 0 auto;
+        padding: 24px 16px 40px;
+      }
+
+      h1 {
+        margin: 0 0 6px 0;
+        font-size: 16px;
+        letter-spacing: 0.2px;
+      }
+
+      .hint {
+        margin: 0 0 16px 0;
+        font-size: 12px;
+        color: var(--muted);
+        line-height: 18px;
+      }
+
+      .sheet {
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0.01)),
+          var(--sheet);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        overflow: hidden;
+      }
+
+      .sheetHeader {
+        padding: 14px 14px 10px;
+        border-bottom: 1px solid var(--border2);
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.03), transparent);
+      }
+
+      .eyebrow {
+        font-size: 11px;
+        letter-spacing: 1.6px;
+        color: var(--muted);
+      }
+
+      .content {
+        padding: 12px 14px 14px;
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+      }
+
+      .sectionTitle {
+        font-size: 11px;
+        letter-spacing: 1.6px;
+        color: var(--muted);
+        margin: 0 0 10px 0;
+      }
+
+      .topRow {
+        display: grid;
+        grid-template-columns: 1.2fr 0.8fr;
+        gap: 10px;
+      }
+
+      .search {
+        border: 1px solid var(--border2);
+        border-radius: 999px;
+        padding: 10px 12px;
+        background: rgba(0, 0, 0, 0.28);
+        color: rgba(242, 242, 242, 0.72);
+        font-size: 12px;
+      }
+
+      .toggle {
+        border: 1px solid rgba(130, 170, 255, 0.25);
+        border-radius: 999px;
+        padding: 10px 12px;
+        background: var(--capture12);
+        font-size: 12px;
+        color: rgba(242, 242, 242, 0.86);
+        text-align: center;
+      }
+
+      .iconGrid {
+        display: grid;
+        grid-template-columns: repeat(6, 1fr);
+        gap: 10px;
+        align-items: start;
+      }
+
+      .item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 6px;
+        min-width: 0;
+      }
+
+      .iconCircle {
+        width: 42px;
+        height: 42px;
+        border-radius: 21px;
+        border: 1px solid var(--border);
+        background: rgba(255, 255, 255, 0.03);
+      }
+
+      .iconCircleAccent {
+        border-color: rgba(94, 106, 210, 0.32);
+        background: var(--accent10);
+      }
+
+      .label {
+        font-size: 11px;
+        color: var(--muted);
+        text-align: center;
+        line-height: 14px;
+        width: 100%;
+      }
+
+      .toolsGrid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 10px;
+      }
+
+      .toolBtn {
+        border-radius: 16px;
+        border: 1px solid var(--border2);
+        background: rgba(255, 255, 255, 0.02);
+        padding: 12px 12px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        min-height: 48px;
+      }
+
+      .toolIcon {
+        width: 28px;
+        height: 28px;
+        border-radius: 10px;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        background: rgba(255, 255, 255, 0.04);
+      }
+
+      .toolText {
+        font-size: 12px;
+        font-weight: 800;
+        letter-spacing: 0.1px;
+      }
+
+      .toolBtnAccent {
+        border-color: rgba(94, 106, 210, 0.28);
+        background: rgba(94, 106, 210, 0.08);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <h1>Action Hub — compact external apps + 6 tools</h1>
+      <p class="hint">
+        External apps stay the most used feature, but without big empty tiles. The space you save
+        becomes a 6-item tools grid (customizable from Settings).
+      </p>
+
+      <div class="sheet">
+        <div class="sheetHeader">
+          <div class="eyebrow">ACTION HUB</div>
+        </div>
+        <div class="content">
+          <div>
+            <div class="sectionTitle">LAUNCH EXTERNAL APP</div>
+            <div class="topRow">
+              <div class="search">Search apps…</div>
+              <div class="toggle">Overlay: ON</div>
+            </div>
+            <div style="height: 10px"></div>
+            <div class="iconGrid">
+              <div class="item">
+                <div class="iconCircle iconCircleAccent"></div>
+                <div class="label">DBMCI One</div>
+              </div>
+              <div class="item">
+                <div class="iconCircle"></div>
+                <div class="label">Marrow</div>
+              </div>
+              <div class="item">
+                <div class="iconCircle"></div>
+                <div class="label">DAMS</div>
+              </div>
+              <div class="item">
+                <div class="iconCircle"></div>
+                <div class="label">DocTutorials</div>
+              </div>
+              <div class="item">
+                <div class="iconCircle"></div>
+                <div class="label">Osmosis</div>
+              </div>
+              <div class="item">
+                <div class="iconCircle"></div>
+                <div class="label">Pixorize</div>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <div class="sectionTitle">TOOLS (6)</div>
+            <div class="toolsGrid">
+              <div class="toolBtn toolBtnAccent">
+                <div class="toolIcon"></div>
+                <div class="toolText">Study Plan</div>
+              </div>
+              <div class="toolBtn">
+                <div class="toolIcon"></div>
+                <div class="toolText">Stats</div>
+              </div>
+              <div class="toolBtn">
+                <div class="toolIcon"></div>
+                <div class="toolText">Question Bank</div>
+              </div>
+              <div class="toolBtn">
+                <div class="toolIcon"></div>
+                <div class="toolText">Flashcards</div>
+              </div>
+              <div class="toolBtn">
+                <div class="toolIcon"></div>
+                <div class="toolText">Notes Vault</div>
+              </div>
+              <div class="toolBtn">
+                <div class="toolIcon"></div>
+                <div class="toolText">Transcript Vault</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

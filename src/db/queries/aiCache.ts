@@ -11,7 +11,7 @@ import {
   type ChatHistoryMessage,
 } from '../repositories/guruChatRepository.drizzle';
 import { getDrizzleDb } from '../drizzle';
-import { runInTransaction } from '../database';
+import { getDb, runInTransaction } from '../database';
 import { eq, sql, desc, or, like, and, inArray } from 'drizzle-orm';
 import {
   lectureNotes,
@@ -21,7 +21,7 @@ import {
   guruChatThreads,
   externalAppLogs,
 } from '../drizzleSchema';
-import { embeddingToBlob } from '../../services/ai/embeddingService';
+import { embeddingToBlob, generateEmbedding } from '../../services/ai/embeddingService';
 import { saveTranscriptToFile } from '../../services/transcriptStorage';
 import { safeJsonParse } from '../../utils/safeJsonParse';
 
@@ -328,13 +328,10 @@ export async function getLectureHistory(limit = 50): Promise<LectureHistoryItem[
   }));
 }
 
-import { generateEmbedding } from '../../services/ai/embeddingService';
-import { getDb } from '../database';
-
 export async function searchLectureNotes(query: string, limit = 20): Promise<LectureHistoryItem[]> {
   const db = getDrizzleDb();
   const likeQuery = `%${query}%`;
-  
+
   // 1. LIKE search
   const likeRows = await db
     .select({
@@ -367,7 +364,7 @@ export async function searchLectureNotes(query: string, limit = 20): Promise<Lec
   // 2. Semantic search
   const vector = await generateEmbedding(query);
   let vssRows: typeof likeRows = [];
-  
+
   if (vector) {
     try {
       const rawDb = getDb();
@@ -376,11 +373,11 @@ export async function searchLectureNotes(query: string, limit = 20): Promise<Lec
          FROM vss_lecture_notes
          WHERE embedding MATCH ? AND k = ?
          ORDER BY distance ASC`,
-        [embeddingToBlob(vector), embeddingToBlob(vector), limit]
+        [embeddingToBlob(vector), embeddingToBlob(vector), limit],
       );
-      
+
       const vssIds = vssResults.map((r) => r.id);
-      
+
       if (vssIds.length > 0) {
         // Fetch full rows for semantic hits
         const semanticRows = await db
@@ -401,7 +398,7 @@ export async function searchLectureNotes(query: string, limit = 20): Promise<Lec
           .from(lectureNotes)
           .leftJoin(subjects, eq(lectureNotes.subjectId, subjects.id))
           .where(inArray(lectureNotes.id, vssIds));
-          
+
         // Sort by the VSS distance order
         vssRows = vssIds
           .map((id) => semanticRows.find((r) => r.id === id))
@@ -413,7 +410,7 @@ export async function searchLectureNotes(query: string, limit = 20): Promise<Lec
   }
 
   // 3. Merge results (LIKE hits first, then VSS hits, deduplicated)
-  const mergedMap = new Map<number, typeof likeRows[0]>();
+  const mergedMap = new Map<number, (typeof likeRows)[0]>();
   for (const row of likeRows) {
     if (!mergedMap.has(row.id)) mergedMap.set(row.id, row);
   }

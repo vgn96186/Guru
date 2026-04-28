@@ -144,7 +144,7 @@ const FlashcardsSchema = z.object({
   cards: z
     .unknown()
     .transform((v) => normalizeAiFlashcardsCards(v))
-    .pipe(z.array(FlashcardSchema).min(1).describe('Typically 6-10 cards')),
+    .pipe(z.array(FlashcardSchema).describe('Typically 6-10 cards')),
 });
 
 const ManualSchema = z.object({

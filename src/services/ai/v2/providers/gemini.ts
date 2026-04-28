@@ -97,11 +97,15 @@ export function createGeminiModel(config: GeminiConfig): LanguageModelV2 {
     const doFetch = config.fetch ?? globalThis.fetch;
 
     if (config.isVertex) {
+      const isApiKey = config.apiKey.startsWith('AIza') || config.apiKey.startsWith('AQ');
       if (config.vertexProject && config.vertexLocation) {
         // Vertex AI API (Service Account or AQ key)
         const location = config.vertexLocation;
         url = `https://${location}-aiplatform.googleapis.com/v1/projects/${config.vertexProject}/locations/${location}/publishers/google/models/${config.modelId}:${path}`;
       } else {
+        if (!isApiKey) {
+          throw new Error('[gemini] Vertex token requires vertexProject and vertexLocation');
+        }
         // Agent Platform API Key (Vertex Express mode)
         const version =
           config.modelId.includes('preview') || config.modelId.includes('exp')
@@ -110,7 +114,6 @@ export function createGeminiModel(config: GeminiConfig): LanguageModelV2 {
         const separator = path.includes('?') ? '&' : '?';
         url = `https://aiplatform.googleapis.com/${version}/publishers/google/models/${config.modelId}:${path}${separator}key=${config.apiKey}`;
       }
-      const isApiKey = config.apiKey.startsWith('AIza') || config.apiKey.startsWith('AQ');
       if (isApiKey) {
         headers['x-goog-api-key'] = config.apiKey;
       } else {

@@ -20,7 +20,7 @@ export default function LoadingIndicator({ size = 40, style, color }: LoadingInd
     >
       <NativeLoadingOrbView
         isTurbulent={true}
-        pathIntensity={0.8}
+        pathIntensity={0.4}
         breathIntensity={0}
         style={{
           position: 'absolute',

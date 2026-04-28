@@ -2,6 +2,7 @@ import type { AIContent, AgendaItem, QuestionBankItem } from '../../types';
 
 export function formatSessionModelLabel(modelUsed?: string | null): string {
   if (!modelUsed?.trim()) return 'AI · model not recorded';
+  if (modelUsed.startsWith('fallback/')) return 'AI · Auto (fallback)';
   const m = modelUsed.replace(/^local-/, '');
   if (m.startsWith('groq/')) return `AI · Groq / ${m.slice(5)}`;
   if (m.startsWith('gemini/')) return `AI · Gemini / ${m.slice(7)}`;

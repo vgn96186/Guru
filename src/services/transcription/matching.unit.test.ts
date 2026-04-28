@@ -5,18 +5,6 @@ import { createTestDatabase } from '../../db/testing/createTestDatabase';
 import * as topicsQueries from '../../db/queries/topics';
 import * as embeddingService from '../ai/embeddingService';
 
-jest.mock('../../db/database', () => {
-  const actual = jest.requireActual('../../db/database');
-  return {
-    ...actual,
-    getDb: jest.fn().mockReturnValue({
-      getAllAsync: jest.fn().mockResolvedValue([]),
-    }),
-  };
-});
-
-import { getDb } from '../../db/database';
-
 jest.mock('../../db/queries/topics', () => ({
   queueTopicSuggestionInTx: jest.fn().mockResolvedValue(undefined),
   updateTopicProgressInTx: jest.fn().mockResolvedValue(undefined),
@@ -91,11 +79,9 @@ describe('markTopicsFromLecture', () => {
     (embeddingService.generateEmbedding as jest.Mock).mockResolvedValue([0.1, 0.2, 0.3]);
     (embeddingService.blobToEmbedding as jest.Mock).mockReturnValue([0.1, 0.2, 0.3]);
     (embeddingService.embeddingToBlob as jest.Mock).mockReturnValue(new Uint8Array([1, 2, 3]));
-    
+
     const mockGetAllAsync = jest.fn().mockResolvedValue([{ id: 55, distance: 0.1 }]);
-    (getDb as jest.Mock).mockReturnValue({
-      getAllAsync: mockGetAllAsync,
-    });
+    (db as any).getAllAsync = mockGetAllAsync;
 
     const tx = {};
     await markTopicsFromLecture(tx, [], 2, 'Pathology', 'Some lecture about kidneys', undefined);

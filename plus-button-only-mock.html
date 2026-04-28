@@ -1,0 +1,236 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Plus Button Only Mock</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --bg: #000000;
+        --surface: rgba(255, 255, 255, 0.03);
+        --surfaceHover: rgba(255, 255, 255, 0.06);
+        --border: rgba(255, 255, 255, 0.08);
+        --borderHi: rgba(255, 255, 255, 0.18);
+        --text: #f2f2f2;
+        --muted: #a0a0a5;
+        --muted2: #939396;
+        --brand: #5e6ad2;
+        --error: #f14c4c;
+        --pressed: 0.5;
+        --disabled: 0.55;
+        --scale: 2.05;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        height: 100%;
+      }
+
+      body {
+        margin: 0;
+        font-family: Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, sans-serif;
+        color: var(--text);
+        background: radial-gradient(900px 520px at 50% 20%, rgba(94, 106, 210, 0.12), transparent 60%),
+          radial-gradient(780px 520px at 50% 120%, rgba(255, 255, 255, 0.05), transparent 55%),
+          var(--bg);
+        overflow: hidden;
+      }
+
+      .wrap {
+        height: 100%;
+        display: grid;
+        grid-template-rows: 1fr auto;
+        place-items: center;
+        padding: 22px 16px 20px;
+      }
+
+      .stage {
+        width: min(560px, 92vw);
+        height: min(560px, 72vh);
+        border-radius: 28px;
+        border: 1px solid var(--border);
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0.01), rgba(0, 0, 0, 0));
+        box-shadow: 0 40px 140px rgba(0, 0, 0, 0.7);
+        display: grid;
+        place-items: center;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .plusWrap {
+        position: relative;
+        width: calc(96px * var(--scale));
+        height: calc(96px * var(--scale));
+        display: grid;
+        place-items: center;
+        transform: translateZ(0);
+      }
+
+      .plusGlow {
+        position: absolute;
+        inset: calc(-48px * var(--scale));
+        border-radius: 999px;
+        background: radial-gradient(120px 120px at 50% 55%, rgba(94, 106, 210, 0.24), transparent 62%),
+          radial-gradient(160px 160px at 50% 55%, rgba(94, 106, 210, 0.12), transparent 70%);
+        filter: blur(calc(16px * var(--scale)));
+        opacity: 0.7;
+        pointer-events: none;
+        transition: opacity 220ms ease, transform 260ms ease;
+      }
+
+      .plusWrap[data-open="true"] .plusGlow {
+        opacity: 1;
+        transform: translateY(calc(-4px * var(--scale)));
+      }
+
+      .plusBtn {
+        position: relative;
+        width: calc(52px * var(--scale));
+        height: calc(52px * var(--scale));
+        border-radius: 999px;
+        border: 1px solid rgba(255, 255, 255, 0.25);
+        background: radial-gradient(circle at 30% 28%, rgba(255, 255, 255, 0.12), transparent 55%),
+          linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.02)),
+          var(--brand);
+        box-shadow: 0 calc(4px * var(--scale)) calc(12px * var(--scale)) rgba(94, 106, 210, 0.4),
+          0 calc(18px * var(--scale)) calc(46px * var(--scale)) rgba(0, 0, 0, 0.76);
+        cursor: pointer;
+        display: grid;
+        place-items: center;
+        padding: 0;
+        transition: transform 160ms ease, filter 220ms ease, opacity 220ms ease;
+        user-select: none;
+        -webkit-tap-highlight-color: transparent;
+      }
+
+      .plusBtn:active {
+        transform: translateY(calc(2px * var(--scale))) scale(0.986);
+        opacity: var(--pressed);
+      }
+
+      .plusBtn:focus-visible {
+        outline: none;
+        box-shadow: 0 0 0 calc(5px * var(--scale)) rgba(94, 106, 210, 0.28),
+          0 0 0 1px rgba(94, 106, 210, 0.5) inset, 0 calc(4px * var(--scale)) calc(12px * var(--scale)) rgba(94, 106, 210, 0.4),
+          0 calc(18px * var(--scale)) calc(46px * var(--scale)) rgba(0, 0, 0, 0.76);
+      }
+
+      .plusWrap[data-open="true"] .plusBtn {
+        filter: brightness(1.04) saturate(1.02);
+      }
+
+      .plusWrap[data-disabled="true"] .plusBtn {
+        cursor: not-allowed;
+        opacity: var(--disabled);
+        filter: saturate(0.85) brightness(0.95);
+        transform: none;
+      }
+
+      .plusWrap[data-disabled="true"] .plusGlow {
+        opacity: 0.25;
+      }
+
+      .plusIcon {
+        position: relative;
+        z-index: 1;
+        width: calc(26px * var(--scale));
+        height: calc(26px * var(--scale));
+        transition: transform 240ms cubic-bezier(0.2, 0.9, 0.2, 1);
+        filter: drop-shadow(0 calc(10px * var(--scale)) calc(18px * var(--scale)) rgba(0, 0, 0, 0.5));
+      }
+
+      .plusWrap[data-open="true"] .plusIcon {
+        transform: rotate(135deg);
+      }
+
+      .foot {
+        width: min(560px, 92vw);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        color: var(--muted2);
+        font-size: 12px;
+        padding: 0 6px;
+      }
+
+      .kbd {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .kbd kbd {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+        font-size: 11px;
+        padding: 5px 8px;
+        border-radius: 10px;
+        border: 1px solid var(--border);
+        background: rgba(255, 255, 255, 0.03);
+        color: var(--muted);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <div class="stage">
+        <div class="plusWrap" id="plusWrap" data-open="false" data-disabled="false">
+          <div class="plusGlow"></div>
+          <button class="plusBtn" id="plusBtn" type="button" aria-label="Open action hub" aria-pressed="false">
+            <svg class="plusIcon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path
+                d="M12 5v14M5 12h14"
+                stroke="rgba(255,255,255,.92)"
+                stroke-width="2.8"
+                stroke-linecap="round"
+              />
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <div class="foot">
+        <span class="kbd"><kbd>Click</kbd> toggle · <kbd>Esc</kbd> close · <kbd>D</kbd> disable</span>
+        <span id="state" style="color: var(--muted)">State: closed</span>
+      </div>
+    </div>
+
+    <script>
+      const plusWrap = document.getElementById("plusWrap");
+      const plusBtn = document.getElementById("plusBtn");
+      const state = document.getElementById("state");
+
+      function setOpen(next) {
+        if (plusWrap.dataset.disabled === "true") return;
+        plusWrap.dataset.open = next ? "true" : "false";
+        plusBtn.setAttribute("aria-pressed", next ? "true" : "false");
+        state.textContent = `State: ${next ? "open" : "closed"}${plusWrap.dataset.disabled === "true" ? " (disabled)" : ""}`;
+      }
+
+      function setDisabled(next) {
+        plusWrap.dataset.disabled = next ? "true" : "false";
+        plusBtn.disabled = next;
+        if (next) plusWrap.dataset.open = "false";
+        plusBtn.setAttribute("aria-pressed", "false");
+        state.textContent = `State: ${plusWrap.dataset.open === "true" ? "open" : "closed"}${next ? " (disabled)" : ""}`;
+      }
+
+      plusBtn.addEventListener("click", () => setOpen(plusWrap.dataset.open !== "true"));
+
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") setOpen(false);
+        if (e.key.toLowerCase() === "d") setDisabled(plusWrap.dataset.disabled !== "true");
+      });
+    </script>
+  </body>
+</html>

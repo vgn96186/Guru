@@ -16,6 +16,8 @@ const NPM_CMD = process.platform === 'win32' ? 'npm.cmd' : 'npm';
 const CMD_TIMEOUT = 8_000;
 function envForMetroChild() {
   const base = { ...process.env, NODE_ENV: 'development' };
+  delete base.CI;
+  delete base.CONTINUOUS_INTEGRATION;
   const loaderUrl = pathToFileURL(path.join(ROOT, 'scripts', 'fix-esm-windows.mjs')).href;
   const loaderFlag = `--loader ${loaderUrl}`;
   const cur = String(base.NODE_OPTIONS || '').trim();
@@ -118,7 +120,9 @@ function main() {
   const errFd = fs.openSync(ERR_PATH, 'a');
 
   const openAndroid = process.argv.includes('--android');
-  const metroScript = openAndroid ? 'android:metro -- --android' : 'android:metro';
+  const fresh = process.argv.includes('--fresh') || process.argv.includes('--clear');
+  const baseScript = fresh ? 'android:metro:fresh' : 'android:metro';
+  const metroScript = openAndroid ? `${baseScript} -- --android` : baseScript;
 
   const command = process.platform === 'win32' ? 'cmd.exe' : NPM_CMD;
   const args =

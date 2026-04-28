@@ -29,6 +29,11 @@ interface LinearIconButtonProps extends Omit<PressableProps, 'style' | 'classNam
   onPressIn?: PressableProps['onPressIn'];
   /** Callback when press ends */
   onPressOut?: PressableProps['onPressOut'];
+  enableHaptics?: boolean;
+  rippleColor?: string;
+  rippleBorderless?: boolean;
+  pressedOpacity?: number;
+  pressedScale?: number;
 }
 
 const iconButtonVariants = tv({
@@ -75,6 +80,11 @@ export default function LinearIconButton({
   accessibilityState,
   onPressIn,
   onPressOut,
+  enableHaptics = true,
+  rippleColor = 'rgba(255, 255, 255, 0.1)',
+  rippleBorderless = false,
+  pressedOpacity = 0.5,
+  pressedScale = 1,
   ...props
 }: LinearIconButtonProps) {
   const resolvedDisabled = disabled || loading;
@@ -96,12 +106,12 @@ export default function LinearIconButton({
   // Haptic feedback on press
   const handlePressIn = useCallback(
     (e: Parameters<NonNullable<PressableProps['onPressIn']>>[0]) => {
-      if (!resolvedDisabled) {
+      if (enableHaptics && !resolvedDisabled) {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       }
       onPressIn?.(e);
     },
-    [resolvedDisabled, onPressIn],
+    [enableHaptics, resolvedDisabled, onPressIn],
   );
 
   // Memoize dynamic style function
@@ -120,12 +130,16 @@ export default function LinearIconButton({
         busy: loading || accessibilityState?.busy,
       }}
       className={buttonClassName}
-      android_ripple={{ color: 'rgba(255, 255, 255, 0.1)', borderless: false }}
+      android_ripple={{ color: rippleColor, borderless: rippleBorderless }}
       // @ts-expect-error - Pressable style callback returning mixed array is valid RN pattern
       style={({ pressed }) => {
-        const pressedOpacity = pressed ? 0.5 : resolvedDisabled ? 0.55 : 1;
+        const opacity = pressed ? pressedOpacity : resolvedDisabled ? 0.55 : 1;
+        const scale = pressed ? pressedScale : 1;
         const dynamicStyleFn = dynamicStyle;
-        return [{ opacity: pressedOpacity }, dynamicStyleFn ? dynamicStyleFn({ pressed }) : style];
+        return [
+          { opacity, transform: [{ scale }] },
+          dynamicStyleFn ? dynamicStyleFn({ pressed }) : style,
+        ];
       }}
     >
       <View className={`items-center justify-center ${contentClassName ?? ''}`}>

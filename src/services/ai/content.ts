@@ -233,15 +233,28 @@ export async function fetchContent(
       { role: 'user', content: userPrompt },
     ];
     const profile = await profileRepository.getProfile();
-    const model = createGuruFallbackModel({ profile });
+    let winningProvider: string | null = null;
+    let winningModelId: string | null = null;
+    const model = createGuruFallbackModel({
+      profile,
+      onProviderSuccess: (provider, modelId) => {
+        winningProvider = provider;
+        winningModelId = modelId;
+      },
+    });
     let modelUsed = '';
     let contentWithMeta: AIContent | null = null;
 
     const maxAttempts = 3;
     let lastContent: AIContent | null = null;
     for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+      winningProvider = null;
+      winningModelId = null;
       const generated = await generateObject({ model, messages, schema: AIContentSchema });
-      modelUsed = `${model.provider}/${model.modelId}`;
+      modelUsed =
+        winningProvider && winningModelId
+          ? `${winningProvider}/${winningModelId}`
+          : `${model.provider}/${model.modelId}`;
       contentWithMeta = { ...generated.object, modelUsed } as AIContent;
       if (contentWithMeta.type === 'quiz') {
         contentWithMeta = (await resolveQuizImages(

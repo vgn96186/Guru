@@ -1,0 +1,396 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Guru — Action Hub (External-first) mockups</title>
+    <style>
+      :root {
+        --bg: #000;
+        --text: #f2f2f2;
+        --muted: #a0a0a5;
+        --muted2: rgba(242, 242, 242, 0.72);
+        --border: rgba(255, 255, 255, 0.14);
+        --border2: rgba(255, 255, 255, 0.08);
+        --sheet: rgba(0, 0, 0, 0.94);
+        --sheetTop: rgba(255, 255, 255, 0.05);
+        --sheetBottom: rgba(255, 255, 255, 0.01);
+        --accent: #5e6ad2;
+        --accent10: rgba(94, 106, 210, 0.1);
+        --capture: #6d99ff;
+        --capture10: rgba(109, 153, 255, 0.1);
+        --capture14: rgba(109, 153, 255, 0.14);
+        --warn: #d97706;
+        --warn10: rgba(217, 119, 6, 0.1);
+        --radius: 24px;
+      }
+
+      * {
+        box-sizing: border-box;
+        font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Inter, Arial;
+      }
+
+      body {
+        margin: 0;
+        background: radial-gradient(1200px 700px at 15% -20%, rgba(94, 106, 210, 0.14), transparent),
+          radial-gradient(900px 520px at 90% 0%, rgba(109, 153, 255, 0.12), transparent),
+          #000;
+        color: var(--text);
+      }
+
+      .wrap {
+        max-width: 1120px;
+        margin: 0 auto;
+        padding: 24px 16px 40px;
+      }
+
+      h1 {
+        margin: 0 0 6px 0;
+        font-size: 16px;
+        letter-spacing: 0.2px;
+      }
+
+      .hint {
+        margin: 0 0 16px 0;
+        font-size: 12px;
+        color: var(--muted);
+        line-height: 18px;
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+        gap: 14px;
+      }
+
+      .sheet {
+        background: linear-gradient(180deg, var(--sheetTop), var(--sheetBottom)), var(--sheet);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        overflow: hidden;
+      }
+
+      .sheetHeader {
+        padding: 14px 14px 10px;
+        border-bottom: 1px solid var(--border2);
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.03), transparent);
+      }
+
+      .eyebrow {
+        font-size: 11px;
+        letter-spacing: 1.6px;
+        color: var(--muted);
+      }
+
+      .subTitle {
+        margin-top: 8px;
+        font-size: 12px;
+        color: var(--muted2);
+      }
+
+      .content {
+        padding: 12px 14px 14px;
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+      }
+
+      .sectionTitle {
+        font-size: 11px;
+        letter-spacing: 1.6px;
+        color: var(--muted);
+        margin: 0 0 10px 0;
+      }
+
+      .launcherHero {
+        border: 1px solid rgba(130, 170, 255, 0.25);
+        background: linear-gradient(180deg, rgba(109, 153, 255, 0.14), rgba(109, 153, 255, 0.04));
+        border-radius: 18px;
+        padding: 12px;
+      }
+
+      .launcherTopRow {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        margin-bottom: 10px;
+      }
+
+      .search {
+        flex: 1;
+        border: 1px solid var(--border2);
+        border-radius: 999px;
+        padding: 10px 12px;
+        background: rgba(0, 0, 0, 0.35);
+        color: var(--muted2);
+        font-size: 12px;
+      }
+
+      .chip {
+        border: 1px solid var(--border2);
+        border-radius: 999px;
+        padding: 10px 12px;
+        background: rgba(0, 0, 0, 0.28);
+        font-size: 12px;
+        color: var(--muted2);
+        white-space: nowrap;
+      }
+
+      .appsGrid2 {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 10px;
+      }
+
+      .appCard {
+        border-radius: 16px;
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        background: rgba(0, 0, 0, 0.28);
+        padding: 10px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        min-height: 88px;
+      }
+
+      .appCardPrimary {
+        border-color: rgba(130, 170, 255, 0.35);
+        background: rgba(0, 0, 0, 0.34);
+      }
+
+      .appIcon {
+        width: 34px;
+        height: 34px;
+        border-radius: 12px;
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        background: rgba(255, 255, 255, 0.04);
+      }
+
+      .appName {
+        font-size: 12px;
+        font-weight: 800;
+        letter-spacing: 0.1px;
+      }
+
+      .appMeta {
+        font-size: 11px;
+        color: var(--muted);
+        line-height: 14px;
+      }
+
+      .recentsRow {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+      }
+
+      .recentTile {
+        border-radius: 16px;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        background: rgba(255, 255, 255, 0.02);
+        padding: 12px;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        min-height: 70px;
+      }
+
+      .recentTileCapture {
+        background: var(--capture10);
+        border-color: rgba(130, 170, 255, 0.3);
+      }
+
+      .recentTitle {
+        font-size: 12px;
+        font-weight: 800;
+      }
+
+      .recentSub {
+        font-size: 11px;
+        color: var(--muted2);
+        line-height: 14px;
+      }
+
+      .miniGrid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 8px;
+      }
+
+      .miniPill {
+        border-radius: 999px;
+        border: 1px solid var(--border2);
+        background: rgba(255, 255, 255, 0.02);
+        padding: 10px 10px;
+        text-align: center;
+        font-size: 12px;
+      }
+
+      .miniPillAccent {
+        border-color: rgba(94, 106, 210, 0.35);
+        background: var(--accent10);
+      }
+
+      .miniPillWarn {
+        border-color: rgba(217, 119, 6, 0.3);
+        background: var(--warn10);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <h1>Action Hub — External-first mockups</h1>
+      <p class="hint">
+        External app launcher is treated as the “hero” (top, biggest, fastest). Internal actions
+        become compact. Everything uses a darker base with role-tinted accents (capture/brand) so the
+        surface reads black, not grey.
+      </p>
+
+      <div class="grid">
+        <div class="sheet">
+          <div class="sheetHeader">
+            <div class="eyebrow">OPTION F — “LAUNCHER HERO GRID”</div>
+            <div class="subTitle">Big 3×2 external grid first. Zero asymmetry.</div>
+          </div>
+          <div class="content">
+            <div>
+              <div class="sectionTitle">LAUNCH EXTERNAL APP</div>
+              <div class="launcherHero">
+                <div class="launcherTopRow">
+                  <div class="search">Search apps… (Marrow, DBMCI, DAMS)</div>
+                  <div class="chip">Face tracking: ON</div>
+                </div>
+                <div class="appsGrid2">
+                  <div class="appCard appCardPrimary">
+                    <div class="appIcon"></div>
+                    <div class="appName">DBMCI One</div>
+                    <div class="appMeta">Most used</div>
+                  </div>
+                  <div class="appCard">
+                    <div class="appIcon"></div>
+                    <div class="appName">Marrow</div>
+                    <div class="appMeta">Quick launch</div>
+                  </div>
+                  <div class="appCard">
+                    <div class="appIcon"></div>
+                    <div class="appName">DAMS</div>
+                    <div class="appMeta">Quick launch</div>
+                  </div>
+                  <div class="appCard">
+                    <div class="appIcon"></div>
+                    <div class="appName">DocTutorials</div>
+                    <div class="appMeta">Quick launch</div>
+                  </div>
+                  <div class="appCard">
+                    <div class="appIcon"></div>
+                    <div class="appName">Osmosis</div>
+                    <div class="appMeta">Quick launch</div>
+                  </div>
+                  <div class="appCard">
+                    <div class="appIcon"></div>
+                    <div class="appName">Pixorize</div>
+                    <div class="appMeta">Quick launch</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <div class="sectionTitle">FAST INTERNAL</div>
+              <div class="recentsRow">
+                <div class="recentTile recentTileCapture">
+                  <div class="recentTitle">Record Lecture</div>
+                  <div class="recentSub">In-app lecture mode (auto-scribe)</div>
+                </div>
+                <div class="recentTile">
+                  <div class="recentTitle">Search Topics</div>
+                  <div class="recentSub">Jump to any topic instantly</div>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <div class="sectionTitle">QUICK TOOLS</div>
+              <div class="miniGrid">
+                <div class="miniPill miniPillWarn">Daily Challenge</div>
+                <div class="miniPill">Upload Audio</div>
+                <div class="miniPill">Boss Battle</div>
+                <div class="miniPill miniPillAccent">Parked Thoughts</div>
+                <div class="miniPill">Notes Vault</div>
+                <div class="miniPill">Transcript Tools</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="sheet">
+          <div class="sheetHeader">
+            <div class="eyebrow">OPTION G — “RECENTS STRIP + ALL APPS”</div>
+            <div class="subTitle">If “the last 2 apps” are 80% of usage.</div>
+          </div>
+          <div class="content">
+            <div>
+              <div class="sectionTitle">RECENT LAUNCHES</div>
+              <div class="recentsRow">
+                <div class="recentTile recentTileCapture">
+                  <div class="recentTitle">DBMCI One</div>
+                  <div class="recentSub">Last: 42 min ago</div>
+                </div>
+                <div class="recentTile recentTileCapture">
+                  <div class="recentTitle">Marrow</div>
+                  <div class="recentSub">Last: yesterday</div>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <div class="sectionTitle">ALL EXTERNAL APPS</div>
+              <div class="appsGrid2">
+                <div class="appCard appCardPrimary">
+                  <div class="appIcon"></div>
+                  <div class="appName">DBMCI One</div>
+                  <div class="appMeta">Pinned</div>
+                </div>
+                <div class="appCard">
+                  <div class="appIcon"></div>
+                  <div class="appName">Marrow</div>
+                  <div class="appMeta">Pinned</div>
+                </div>
+                <div class="appCard">
+                  <div class="appIcon"></div>
+                  <div class="appName">DAMS</div>
+                  <div class="appMeta">Pinned</div>
+                </div>
+                <div class="appCard">
+                  <div class="appIcon"></div>
+                  <div class="appName">DocTutorials</div>
+                  <div class="appMeta">All apps</div>
+                </div>
+                <div class="appCard">
+                  <div class="appIcon"></div>
+                  <div class="appName">Osmosis</div>
+                  <div class="appMeta">All apps</div>
+                </div>
+                <div class="appCard">
+                  <div class="appIcon"></div>
+                  <div class="appName">Pixorize</div>
+                  <div class="appMeta">All apps</div>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <div class="sectionTitle">INTERNAL</div>
+              <div class="miniGrid">
+                <div class="miniPill">Record Lecture</div>
+                <div class="miniPill">Search Topics</div>
+                <div class="miniPill miniPillAccent">Notes Vault</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

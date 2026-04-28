@@ -1,0 +1,304 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Tesseract Only — Action Hub Icon Mock</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+    <style>
+      :root {
+        --bg: #000000;
+        --border: rgba(255, 255, 255, 0.08);
+        --borderHi: rgba(255, 255, 255, 0.18);
+        --surface: rgba(255, 255, 255, 0.03);
+        --surfaceHover: rgba(255, 255, 255, 0.06);
+        --text: #f2f2f2;
+        --muted: #a0a0a5;
+        --muted2: #939396;
+        --brand: #5e6ad2;
+        --s: 2.2;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        height: 100%;
+      }
+
+      body {
+        margin: 0;
+        font-family: Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, sans-serif;
+        color: var(--text);
+        background: radial-gradient(980px 520px at 50% 12%, rgba(94, 106, 210, 0.09), transparent 60%),
+          radial-gradient(760px 520px at 50% 120%, rgba(255, 255, 255, 0.04), transparent 58%),
+          var(--bg);
+        overflow: hidden;
+      }
+
+      .wrap {
+        height: 100%;
+        display: grid;
+        grid-template-rows: auto 1fr auto;
+        gap: 14px;
+        place-items: center;
+        padding: 18px 16px 18px;
+      }
+
+      .head {
+        width: min(760px, 96vw);
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 14px;
+      }
+
+      .head h1 {
+        margin: 0;
+        font-weight: 600;
+        font-size: 14px;
+        letter-spacing: 0.02em;
+        color: rgba(255, 255, 255, 0.9);
+      }
+
+      .head p {
+        margin: 6px 0 0;
+        color: var(--muted2);
+        font-size: 12px;
+        line-height: 1.45;
+        max-width: 64ch;
+      }
+
+      .chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 12px;
+        border-radius: 999px;
+        border: 1px solid var(--border);
+        background: rgba(255, 255, 255, 0.03);
+        color: rgba(255, 255, 255, 0.86);
+        box-shadow: 0 18px 70px rgba(0, 0, 0, 0.35);
+      }
+
+      .chip label {
+        font-size: 12px;
+        color: var(--muted);
+      }
+
+      .chip input[type="range"] {
+        width: 160px;
+        accent-color: var(--brand);
+      }
+
+      .chip kbd {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+        font-size: 11px;
+        padding: 4px 8px;
+        border-radius: 10px;
+        border: 1px solid var(--border);
+        background: rgba(255, 255, 255, 0.03);
+        color: var(--muted);
+      }
+
+      .stage {
+        width: min(760px, 96vw);
+        height: min(520px, 72vh);
+        border-radius: 28px;
+        border: 1px solid var(--border);
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.01), rgba(0, 0, 0, 0));
+        box-shadow: 0 40px 140px rgba(0, 0, 0, 0.72);
+        overflow: hidden;
+        display: grid;
+        place-items: center;
+        padding: 22px;
+        position: relative;
+      }
+
+      .stage::before {
+        content: "";
+        position: absolute;
+        inset: -70px;
+        background: radial-gradient(420px 300px at 50% 20%, rgba(94, 106, 210, 0.06), transparent 60%),
+          radial-gradient(520px 380px at 50% 120%, rgba(255, 255, 255, 0.03), transparent 62%);
+        filter: blur(10px);
+        opacity: 1;
+      }
+
+      .hit {
+        position: relative;
+        width: calc(72px * var(--s));
+        height: calc(72px * var(--s));
+        display: grid;
+        place-items: center;
+        color: var(--brand);
+        border-radius: 999px;
+        border: 1px solid rgba(255, 255, 255, 0);
+        background: rgba(255, 255, 255, 0);
+        cursor: pointer;
+        -webkit-tap-highlight-color: transparent;
+        transition: background 180ms ease, border-color 180ms ease, transform 180ms ease, opacity 160ms ease;
+        z-index: 1;
+      }
+
+      .hit:hover {
+        background: rgba(255, 255, 255, 0.015);
+        border-color: rgba(94, 106, 210, 0.22);
+        transform: translateY(-1px);
+      }
+
+      .hit:active {
+        opacity: 0.7;
+        transform: translateY(1px) scale(0.99);
+      }
+
+      .hit:focus-visible {
+        outline: none;
+        border-color: rgba(94, 106, 210, 0.55);
+        box-shadow: 0 0 0 calc(5px * var(--s)) rgba(94, 106, 210, 0.18);
+      }
+
+      .hit[data-open="true"] {
+        background: rgba(255, 255, 255, 0.02);
+        border-color: rgba(94, 106, 210, 0.28);
+      }
+
+      .glyph {
+        width: calc(44px * var(--s));
+        height: calc(44px * var(--s));
+        transform: rotate(-10deg);
+        transition: transform 280ms cubic-bezier(0.2, 0.9, 0.2, 1);
+        filter: drop-shadow(0 calc(10px * var(--s)) calc(18px * var(--s)) rgba(0, 0, 0, 0.55))
+          drop-shadow(0 0 calc(18px * var(--s)) rgba(94, 106, 210, 0.12));
+      }
+
+      .hit[data-open="true"] .glyph {
+        transform: rotate(20deg) scale(0.98);
+      }
+
+      .closeX {
+        position: absolute;
+        inset: 0;
+        display: grid;
+        place-items: center;
+        opacity: 0;
+        transform: scale(0.86);
+        transition: opacity 180ms ease, transform 240ms cubic-bezier(0.2, 0.9, 0.2, 1);
+      }
+
+      .closeX svg {
+        width: calc(30px * var(--s));
+        height: calc(30px * var(--s));
+      }
+
+      .hit[data-open="true"] .closeX {
+        opacity: 1;
+        transform: scale(1);
+      }
+
+      .hit[data-open="true"] .glyph {
+        opacity: 0;
+      }
+
+      .foot {
+        width: min(760px, 96vw);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        color: var(--muted2);
+        font-size: 12px;
+        padding: 0 6px;
+      }
+
+      .state {
+        color: var(--muted);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <div class="head">
+        <div>
+          <h1>Tesseract Only (No Violet Button Fill)</h1>
+          <p>The action hub “button” is just a high-contrast tesseract glyph with a large invisible hit target.</p>
+        </div>
+        <div class="chip">
+          <kbd>Click</kbd><span>toggle</span>
+          <kbd>Esc</kbd><span>close</span>
+          <span style="width: 10px"></span>
+          <label for="s">Scale</label>
+          <input id="s" type="range" min="1.4" max="2.8" step="0.05" value="2.2" />
+          <span id="sv" style="font-size: 12px; color: rgba(255, 255, 255, 0.76)">2.20×</span>
+        </div>
+      </div>
+
+      <div class="stage">
+        <button class="hit" id="hit" type="button" aria-label="Action hub" aria-pressed="false" data-open="false">
+          <svg class="glyph" viewBox="0 0 64 64" fill="none" aria-hidden="true">
+            <path
+              d="M18 20h26v26H18V20Z"
+              stroke="currentColor"
+              stroke-opacity="0.96"
+              stroke-width="3.2"
+              stroke-linejoin="round"
+            />
+            <path
+              d="M26 14h26v26H26V14Z"
+              stroke="currentColor"
+              stroke-opacity="0.62"
+              stroke-width="3.2"
+              stroke-linejoin="round"
+            />
+            <path d="M18 20l8-6" stroke="currentColor" stroke-opacity="0.62" stroke-width="3.2" stroke-linecap="round" />
+            <path d="M44 20l8-6" stroke="currentColor" stroke-opacity="0.62" stroke-width="3.2" stroke-linecap="round" />
+            <path d="M44 46l8-6" stroke="currentColor" stroke-opacity="0.62" stroke-width="3.2" stroke-linecap="round" />
+            <path d="M18 46l8-6" stroke="currentColor" stroke-opacity="0.62" stroke-width="3.2" stroke-linecap="round" />
+          </svg>
+          <span class="closeX" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none">
+              <path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" />
+            </svg>
+          </span>
+        </button>
+      </div>
+
+      <div class="foot">
+        <span class="state" id="state">State: closed</span>
+        <span class="state">This is meant to drop into your tab bar as an icon-first center action.</span>
+      </div>
+    </div>
+
+    <script>
+      const root = document.documentElement;
+      const hit = document.getElementById("hit");
+      const state = document.getElementById("state");
+      const s = document.getElementById("s");
+      const sv = document.getElementById("sv");
+
+      function setOpen(next) {
+        hit.dataset.open = next ? "true" : "false";
+        hit.setAttribute("aria-pressed", next ? "true" : "false");
+        state.textContent = `State: ${next ? "open" : "closed"}`;
+      }
+
+      function syncScale() {
+        const v = Number(s.value);
+        root.style.setProperty("--s", String(v));
+        sv.textContent = `${v.toFixed(2)}×`;
+      }
+
+      hit.addEventListener("click", () => setOpen(hit.dataset.open !== "true"));
+      s.addEventListener("input", syncScale);
+      syncScale();
+
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") setOpen(false);
+      });
+    </script>
+  </body>
+</html>

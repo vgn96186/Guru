@@ -29,6 +29,7 @@ import LoadingOrb from '../components/LoadingOrb';
 import { linearTheme as n } from '../theme/linearTheme';
 import { ResponsiveContainer } from '../hooks/useResponsive';
 import ScreenHeader from '../components/ScreenHeader';
+import { InlineMarkdownText } from '../components/InlineMarkdownText.tsx';
 
 import { MenuNav } from '../navigation/typedHooks';
 /** Flashcard image that hides gracefully when loading fails */
@@ -138,15 +139,11 @@ export default function FlashcardsScreen() {
     // fetchContent handles the cache check internally, but we'll re-verify it's reused.
     fetchContent(currentTopic, 'flashcards')
       .then((c) => {
-        if (c.type === 'flashcards' && c.cards && c.cards.length > 0) {
+        if (c.type === 'flashcards') {
           setCards(c.cards);
+          setLoadError(null);
         } else {
-          // Content generated but not flashcards, or empty cards array
-          setLoadError(
-            c.type !== 'flashcards'
-              ? `AI returned ${c.type} instead of flashcards.`
-              : 'AI generated 0 flashcards for this topic.',
-          );
+          setLoadError(`AI returned ${c.type} instead of flashcards.`);
           setCards([]);
         }
         setLoading(false);
@@ -318,14 +315,12 @@ export default function FlashcardsScreen() {
                   setLoading(true);
                   fetchContent(currentTopic, 'flashcards')
                     .then((c) => {
-                      if (c.type === 'flashcards' && c.cards && c.cards.length > 0) {
+                      if (c.type === 'flashcards') {
                         setCards(c.cards);
+                        setLoadError(null);
                       } else {
-                        setLoadError(
-                          c.type !== 'flashcards'
-                            ? `AI returned ${c.type} instead of flashcards.`
-                            : 'AI generated 0 flashcards for this topic.',
-                        );
+                        setLoadError(`AI returned ${c.type} instead of flashcards.`);
+                        setCards([]);
                       }
                       setLoading(false);
                     })
@@ -398,7 +393,7 @@ export default function FlashcardsScreen() {
                     {currentCard.imageUrl ? (
                       <FlashcardImage url={currentCard.imageUrl} style={styles.cardImage} />
                     ) : null}
-                    <LinearText style={styles.cardContent}>{currentCard.front}</LinearText>
+                    <InlineMarkdownText content={currentCard.front} style={styles.cardContent} />
                     <TouchableOpacity style={styles.tapToReveal} onPress={handleFlip}>
                       <LinearText style={styles.tapText}>Tap to reveal</LinearText>
                     </TouchableOpacity>
@@ -413,7 +408,7 @@ export default function FlashcardsScreen() {
                       {currentCard.imageUrl ? (
                         <FlashcardImage url={currentCard.imageUrl} style={styles.cardImage} />
                       ) : null}
-                      <LinearText style={styles.cardContent}>{currentCard.back}</LinearText>
+                      <InlineMarkdownText content={currentCard.back} style={styles.cardContent} />
                     </ScrollView>
                     {!isLastCard && isFlipped && (
                       <TouchableOpacity style={styles.nextCardBtn} onPress={handleNextCard}>

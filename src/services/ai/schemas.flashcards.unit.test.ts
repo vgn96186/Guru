@@ -33,6 +33,17 @@ describe('AIContentSchema flashcards', () => {
     expect(parsed.cards).toEqual([{ front: 'Why?', back: 'Because.' }]);
   });
 
+  it('allows empty cards', () => {
+    const parsed = AIContentSchema.parse({
+      type: 'flashcards',
+      topicName: 'T',
+      cards: [],
+    });
+    expect(parsed.type).toBe('flashcards');
+    if (parsed.type !== 'flashcards') throw new Error('expected flashcards');
+    expect(parsed.cards).toEqual([]);
+  });
+
   it('preserves optional flashcard image fields', () => {
     const parsed = AIContentSchema.parse({
       type: 'flashcards',

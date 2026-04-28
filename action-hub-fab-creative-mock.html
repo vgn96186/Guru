@@ -1,0 +1,539 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Action Hub FAB — Creative Mock</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+    <style>
+      :root {
+        --bg: #000000;
+        --surface: rgba(255, 255, 255, 0.03);
+        --surfaceHover: rgba(255, 255, 255, 0.06);
+        --border: rgba(255, 255, 255, 0.08);
+        --borderHi: rgba(255, 255, 255, 0.18);
+        --text: #f2f2f2;
+        --muted: #a0a0a5;
+        --muted2: #939396;
+        --brand: #5e6ad2;
+        --danger: #f14c4c;
+        --pressed: 0.5;
+        --disabled: 0.55;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        height: 100%;
+      }
+
+      body {
+        margin: 0;
+        font-family: Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, sans-serif;
+        color: var(--text);
+        background: radial-gradient(900px 520px at 50% 12%, rgba(94, 106, 210, 0.13), transparent 60%),
+          radial-gradient(760px 520px at 50% 120%, rgba(255, 255, 255, 0.05), transparent 58%),
+          var(--bg);
+        overflow: hidden;
+      }
+
+      .wrap {
+        height: 100%;
+        display: grid;
+        grid-template-rows: auto 1fr auto;
+        padding: 18px 16px 18px;
+        gap: 14px;
+        place-items: center;
+      }
+
+      .head {
+        width: min(880px, 96vw);
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 14px;
+      }
+
+      .head h1 {
+        margin: 0;
+        font-weight: 600;
+        font-size: 14px;
+        letter-spacing: 0.02em;
+        color: rgba(255, 255, 255, 0.88);
+      }
+
+      .head p {
+        margin: 6px 0 0;
+        color: var(--muted2);
+        font-size: 12px;
+        line-height: 1.45;
+        max-width: 52ch;
+      }
+
+      .chips {
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+
+      .chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 12px;
+        border-radius: 999px;
+        border: 1px solid var(--border);
+        background: rgba(255, 255, 255, 0.03);
+        color: rgba(255, 255, 255, 0.86);
+      }
+
+      .chip kbd {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+        font-size: 11px;
+        padding: 4px 8px;
+        border-radius: 10px;
+        border: 1px solid var(--border);
+        background: rgba(255, 255, 255, 0.03);
+        color: var(--muted);
+      }
+
+      .stage {
+        width: min(880px, 96vw);
+        height: min(600px, 74vh);
+        border-radius: 28px;
+        border: 1px solid var(--border);
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0.01), rgba(0, 0, 0, 0));
+        box-shadow: 0 40px 140px rgba(0, 0, 0, 0.7);
+        overflow: hidden;
+        display: grid;
+        place-items: center;
+        padding: 22px;
+      }
+
+      .grid {
+        width: 100%;
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 14px;
+        align-items: stretch;
+      }
+
+      @media (max-width: 860px) {
+        .grid {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      .card {
+        border-radius: 22px;
+        border: 1px solid var(--border);
+        background: rgba(255, 255, 255, 0.02);
+        padding: 16px 16px 18px;
+        display: grid;
+        gap: 14px;
+        align-content: start;
+      }
+
+      .title {
+        display: grid;
+        gap: 4px;
+      }
+
+      .title strong {
+        font-weight: 600;
+        font-size: 12px;
+        letter-spacing: 0.02em;
+        color: rgba(255, 255, 255, 0.9);
+      }
+
+      .title span {
+        font-size: 12px;
+        color: var(--muted2);
+        line-height: 1.35;
+      }
+
+      .slot {
+        border-radius: 20px;
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        background: rgba(0, 0, 0, 0.22);
+        height: 180px;
+        display: grid;
+        place-items: center;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .slot::before {
+        content: "";
+        position: absolute;
+        inset: -60px;
+        background: radial-gradient(260px 220px at 50% 30%, rgba(94, 106, 210, 0.08), transparent 60%),
+          radial-gradient(260px 220px at 50% 110%, rgba(255, 255, 255, 0.04), transparent 62%);
+        filter: blur(8px);
+        opacity: 1;
+      }
+
+      .fabWrap {
+        position: relative;
+        width: 140px;
+        height: 140px;
+        display: grid;
+        place-items: center;
+      }
+
+      .glow {
+        position: absolute;
+        inset: -60px;
+        border-radius: 999px;
+        background: radial-gradient(140px 140px at 50% 55%, rgba(94, 106, 210, 0.22), transparent 62%),
+          radial-gradient(220px 220px at 50% 55%, rgba(94, 106, 210, 0.1), transparent 72%);
+        filter: blur(18px);
+        opacity: 0.55;
+        pointer-events: none;
+        transition: opacity 220ms ease, transform 260ms ease;
+      }
+
+      .fabWrap[data-open="true"] .glow {
+        opacity: 0.9;
+        transform: translateY(-4px);
+      }
+
+      .btn {
+        width: 62px;
+        height: 62px;
+        border-radius: 999px;
+        border: 1px solid rgba(255, 255, 255, 0.24);
+        display: grid;
+        place-items: center;
+        padding: 0;
+        cursor: pointer;
+        -webkit-tap-highlight-color: transparent;
+        transition: transform 160ms ease, opacity 160ms ease, filter 220ms ease, box-shadow 220ms ease;
+      }
+
+      .btn:active {
+        transform: translateY(2px) scale(0.986);
+        opacity: var(--pressed);
+      }
+
+      .fabWrap[data-disabled="true"] .btn {
+        cursor: not-allowed;
+        opacity: var(--disabled);
+        transform: none;
+        filter: saturate(0.9) brightness(0.95);
+      }
+
+      .btn:focus-visible {
+        outline: none;
+        box-shadow: 0 0 0 5px rgba(94, 106, 210, 0.28), 0 0 0 1px rgba(94, 106, 210, 0.5) inset;
+      }
+
+      .icon {
+        width: 24px;
+        height: 24px;
+        transition: transform 240ms cubic-bezier(0.2, 0.9, 0.2, 1), opacity 220ms ease;
+        filter: drop-shadow(0 10px 18px rgba(0, 0, 0, 0.5));
+      }
+
+      .fabWrap[data-open="true"] .icon.rotate {
+        transform: rotate(135deg);
+      }
+
+      .btnBrand {
+        background: radial-gradient(circle at 30% 28%, rgba(255, 255, 255, 0.16), transparent 56%),
+          linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0)),
+          var(--brand);
+        box-shadow: 0 4px 12px rgba(94, 106, 210, 0.42), 0 18px 48px rgba(0, 0, 0, 0.76);
+      }
+
+      .btnPortal {
+        background: radial-gradient(circle at 50% 50%, rgba(0, 0, 0, 0.22), rgba(0, 0, 0, 0.02)),
+          conic-gradient(from 220deg, rgba(94, 106, 210, 0.95), rgba(109, 153, 255, 0.85), rgba(94, 106, 210, 0.95));
+        box-shadow: 0 10px 26px rgba(94, 106, 210, 0.24), 0 26px 70px rgba(0, 0, 0, 0.78);
+        border-color: rgba(255, 255, 255, 0.22);
+        position: relative;
+        isolation: isolate;
+      }
+
+      .btnPortal::before {
+        content: "";
+        position: absolute;
+        inset: 2px;
+        border-radius: 999px;
+        background: radial-gradient(circle at 30% 28%, rgba(255, 255, 255, 0.18), transparent 56%),
+          radial-gradient(circle at 50% 110%, rgba(0, 0, 0, 0.38), transparent 62%);
+        opacity: 1;
+        pointer-events: none;
+        z-index: 0;
+      }
+
+      .btnPortal::after {
+        content: "";
+        position: absolute;
+        inset: 1px;
+        border-radius: 999px;
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        opacity: 0.9;
+        pointer-events: none;
+        z-index: 0;
+      }
+
+      .btnPortal .icon {
+        position: relative;
+        z-index: 1;
+      }
+
+      .btnMonogram {
+        background: radial-gradient(circle at 30% 28%, rgba(255, 255, 255, 0.1), transparent 56%),
+          linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0)),
+          rgba(255, 255, 255, 0.05);
+        box-shadow: 0 18px 62px rgba(0, 0, 0, 0.82);
+        border-color: rgba(255, 255, 255, 0.14);
+        position: relative;
+        overflow: hidden;
+      }
+
+      .monoline {
+        position: absolute;
+        inset: -40px;
+        opacity: 0.65;
+        background: repeating-linear-gradient(
+          115deg,
+          rgba(94, 106, 210, 0.24) 0 8px,
+          rgba(255, 255, 255, 0.02) 8px 18px
+        );
+        transform: rotate(12deg);
+        filter: blur(0.2px);
+      }
+
+      .btnMonogram .glyph {
+        position: relative;
+        z-index: 1;
+        width: 26px;
+        height: 26px;
+        transition: transform 240ms cubic-bezier(0.2, 0.9, 0.2, 1), opacity 220ms ease;
+        filter: drop-shadow(0 10px 18px rgba(0, 0, 0, 0.55));
+      }
+
+      .fabWrap[data-open="true"] .btnMonogram .glyph {
+        transform: rotate(90deg) scale(0.98);
+      }
+
+      .badgeDot {
+        position: absolute;
+        top: 10px;
+        right: 12px;
+        width: 10px;
+        height: 10px;
+        border-radius: 999px;
+        background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.92), rgba(255, 255, 255, 0.2)),
+          radial-gradient(circle at 50% 55%, rgba(241, 76, 76, 0.98), rgba(241, 76, 76, 0.22));
+        box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.55), 0 0 22px rgba(241, 76, 76, 0.16);
+        opacity: 0;
+        transform: scale(0.85);
+        transition: opacity 180ms ease, transform 220ms ease;
+        pointer-events: none;
+      }
+
+      .fabWrap[data-badge="true"] .badgeDot {
+        opacity: 1;
+        transform: scale(1);
+      }
+
+      .foot {
+        width: min(880px, 96vw);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        color: var(--muted2);
+        font-size: 12px;
+        padding: 0 6px;
+      }
+
+      .state {
+        color: var(--muted);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <div class="head">
+        <div>
+          <h1>Creative Action Hub Button Concepts (theme: Linear / true black)</h1>
+          <p>
+            Not married to the “+”. Three options: Portal (spark), Monogram (G), and Classic (plus). Each toggles open
+            state and can show a red dot badge.
+          </p>
+        </div>
+        <div class="chips">
+          <span class="chip"><kbd>1</kbd><span>Portal</span></span>
+          <span class="chip"><kbd>2</kbd><span>Monogram</span></span>
+          <span class="chip"><kbd>3</kbd><span>Classic</span></span>
+          <span class="chip"><kbd>B</kbd><span>Badge</span></span>
+          <span class="chip"><kbd>D</kbd><span>Disable</span></span>
+          <span class="chip"><kbd>Esc</kbd><span>Close</span></span>
+        </div>
+      </div>
+
+      <div class="stage">
+        <div class="grid">
+          <div class="card">
+            <div class="title">
+              <strong>Portal</strong>
+              <span>Spark icon + subtle conic energy ring. Feels like “gateway”.</span>
+            </div>
+            <div class="slot">
+              <div class="fabWrap" id="portal" data-open="false" data-disabled="false" data-badge="false">
+                <div class="glow"></div>
+                <div class="badgeDot" aria-hidden="true"></div>
+                <button class="btn btnPortal" id="portalBtn" type="button" aria-label="Action hub" aria-pressed="false">
+                  <svg class="icon rotate" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <path
+                      d="M12 2.8l1.65 5.4 5.55 0.1-4.6 3.2 1.75 5.35-4.35-3.05-4.35 3.05 1.75-5.35-4.6-3.2 5.55-0.1L12 2.8Z"
+                      fill="rgba(255,255,255,.92)"
+                    />
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="title">
+              <strong>Monogram</strong>
+              <span>“G” glyph with a subtle striped field. Reads as “Guru” instantly.</span>
+            </div>
+            <div class="slot">
+              <div class="fabWrap" id="mono" data-open="false" data-disabled="false" data-badge="false">
+                <div class="glow"></div>
+                <div class="badgeDot" aria-hidden="true"></div>
+                <button class="btn btnMonogram" id="monoBtn" type="button" aria-label="Action hub" aria-pressed="false">
+                  <div class="monoline" aria-hidden="true"></div>
+                  <svg class="glyph" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <path
+                      d="M12 3.5c4.55 0 8 3.1 8 8.55 0 5.1-3.25 8.45-8.3 8.45-4.9 0-7.7-3.2-7.7-8.5 0-5.6 3.55-8.5 8-8.5Zm0 3.15c-2.85 0-4.7 1.65-4.7 5.85 0 4.2 1.85 5.8 4.55 5.8 2.6 0 4.25-1.4 4.6-3.85h-3.85v-2.7h6.8c.1 0 .15.05.15.15 0 5.65-3.1 9.1-7.75 9.1-4.7 0-7.75-3.3-7.75-8.55 0-5.9 3.5-8.95 7.95-8.95Z"
+                      fill="rgba(242,242,242,.92)"
+                    />
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="title">
+              <strong>Classic</strong>
+              <span>Plus icon, but with better “surface” detail. Safe default.</span>
+            </div>
+            <div class="slot">
+              <div class="fabWrap" id="classic" data-open="false" data-disabled="false" data-badge="false">
+                <div class="glow"></div>
+                <div class="badgeDot" aria-hidden="true"></div>
+                <button class="btn btnBrand" id="classicBtn" type="button" aria-label="Action hub" aria-pressed="false">
+                  <svg class="icon rotate" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <path
+                      d="M12 5v14M5 12h14"
+                      stroke="rgba(255,255,255,.92)"
+                      stroke-width="2.8"
+                      stroke-linecap="round"
+                    />
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="foot">
+        <span class="state" id="state">State: closed</span>
+        <span class="state">Click any button, or use keys.</span>
+      </div>
+    </div>
+
+    <script>
+      const state = document.getElementById("state");
+      const portal = document.getElementById("portal");
+      const mono = document.getElementById("mono");
+      const classic = document.getElementById("classic");
+      const portalBtn = document.getElementById("portalBtn");
+      const monoBtn = document.getElementById("monoBtn");
+      const classicBtn = document.getElementById("classicBtn");
+
+      function setOpen(wrap, btn, next) {
+        if (wrap.dataset.disabled === "true") return;
+        wrap.dataset.open = next ? "true" : "false";
+        btn.setAttribute("aria-pressed", next ? "true" : "false");
+      }
+
+      function closeAll() {
+        setOpen(portal, portalBtn, false);
+        setOpen(mono, monoBtn, false);
+        setOpen(classic, classicBtn, false);
+      }
+
+      function toggleOne(wrap, btn) {
+        const next = wrap.dataset.open !== "true";
+        closeAll();
+        setOpen(wrap, btn, next);
+        sync();
+      }
+
+      function toggleDisabled() {
+        const next = portal.dataset.disabled !== "true";
+        portal.dataset.disabled = next ? "true" : "false";
+        mono.dataset.disabled = next ? "true" : "false";
+        classic.dataset.disabled = next ? "true" : "false";
+        portalBtn.disabled = next;
+        monoBtn.disabled = next;
+        classicBtn.disabled = next;
+        if (next) closeAll();
+        sync();
+      }
+
+      function toggleBadge() {
+        const next = portal.dataset.badge !== "true";
+        portal.dataset.badge = next ? "true" : "false";
+        mono.dataset.badge = next ? "true" : "false";
+        classic.dataset.badge = next ? "true" : "false";
+        sync();
+      }
+
+      function sync() {
+        const open =
+          portal.dataset.open === "true" ? "Portal" : mono.dataset.open === "true" ? "Monogram" : classic.dataset.open === "true" ? "Classic" : "none";
+        const disabled = portal.dataset.disabled === "true";
+        const badge = portal.dataset.badge === "true";
+        state.textContent = `State: open=${open} · badge=${badge ? "on" : "off"}${disabled ? " · disabled" : ""}`;
+      }
+
+      portalBtn.addEventListener("click", () => toggleOne(portal, portalBtn));
+      monoBtn.addEventListener("click", () => toggleOne(mono, monoBtn));
+      classicBtn.addEventListener("click", () => toggleOne(classic, classicBtn));
+
+      document.addEventListener("keydown", (e) => {
+        const k = e.key.toLowerCase();
+        if (k === "escape") {
+          closeAll();
+          sync();
+          return;
+        }
+        if (k === "1") return toggleOne(portal, portalBtn);
+        if (k === "2") return toggleOne(mono, monoBtn);
+        if (k === "3") return toggleOne(classic, classicBtn);
+        if (k === "d") return toggleDisabled();
+        if (k === "b") return toggleBadge();
+      });
+
+      sync();
+    </script>
+  </body>
+</html>

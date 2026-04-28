@@ -20,7 +20,7 @@ import androidx.compose.runtime.mutableStateOf
 class LoadingOrbView(context: Context, appContext: AppContext) : ExpoView(context, appContext) {
     private val messageState = mutableStateOf("Hey there! Let me think...")
     private val isTurbulentState = mutableStateOf(false)
-    private val pathIntensityState = mutableStateOf(1.0f)
+    private val pathIntensityState = mutableStateOf(0.35f)
     private val breathIntensityState = mutableStateOf(1.0f)
 
     var message: String
@@ -54,15 +54,7 @@ class LoadingOrbView(context: Context, appContext: AppContext) : ExpoView(contex
         }
     }
 
-    private val composeView = object : ComposeView(context) {
-        override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
-            if (!isAttachedToWindow) {
-                setMeasuredDimension(0, 0)
-                return
-            }
-            super.onMeasure(widthMeasureSpec, heightMeasureSpec)
-        }
-    }.apply {
+    private val composeView = ComposeView(context).apply {
         setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnDetachedFromWindowOrReleasedFromPool)
         layoutParams = FrameLayout.LayoutParams(
             FrameLayout.LayoutParams.MATCH_PARENT,
@@ -71,6 +63,10 @@ class LoadingOrbView(context: Context, appContext: AppContext) : ExpoView(contex
     }
 
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
+        if (!isAttachedToWindow) {
+            setMeasuredDimension(0, 0)
+            return
+        }
         super.onMeasure(widthMeasureSpec, heightMeasureSpec)
     }
 

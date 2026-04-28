@@ -19,6 +19,7 @@ const PRIMARY_DESTINATIONS: Array<{
   { route: 'StudyPlan', title: 'Study Plan', icon: 'calendar-outline', tint: n.colors.accent },
   { route: 'Stats', title: 'Stats', icon: 'bar-chart-outline', tint: n.colors.warning },
   { route: 'Flashcards', title: 'Flashcards', icon: 'albums-outline', tint: n.colors.accent },
+  { route: 'MindMap', title: 'Mind Map', icon: 'git-network-outline', tint: '#A78BFA' },
   { route: 'ImageVault', title: 'Image Vault', icon: 'images-outline', tint: '#FFD166' },
   { route: 'NotesVault', title: 'Notes Vault', icon: 'library-outline', tint: '#7ED6A7' },
   {

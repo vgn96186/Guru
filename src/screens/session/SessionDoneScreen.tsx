@@ -353,5 +353,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 40,
     paddingVertical: n.spacing.lg,
     marginTop: 16,
+    width: '100%',
+    alignItems: 'center',
   },
 });

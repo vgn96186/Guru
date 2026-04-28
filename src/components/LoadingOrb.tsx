@@ -116,11 +116,11 @@ export default React.memo(function LoadingOrb({
   }, [message]);
 
   // Core breathing
-  const scaleCore = useSharedValue(0.95);
-  const opacityCore = useSharedValue(0.85);
+  const scaleCore = useSharedValue(1);
+  const opacityCore = useSharedValue(1);
 
   // Ambient glow
-  const opacityGlow = useSharedValue(0.4);
+  const opacityGlow = useSharedValue(0.5);
 
   // Inner tight ring
   const scaleRing0 = useSharedValue(1);
@@ -136,18 +136,14 @@ export default React.memo(function LoadingOrb({
 
   // Specular highlight
   const highlightTranslateY = useSharedValue(0);
-  const highlightOpacity = useSharedValue(0.45);
+  const highlightOpacity = useSharedValue(0.55);
 
   useEffect(() => {
-    const normalCore = { duration: 1800, easing: Easing.inOut(Easing.ease) };
     const normalEmit = { duration: 3500, easing: Easing.out(Easing.quad) };
 
-    // Core breathing
-    scaleCore.value = withRepeat(withTiming(1.06, normalCore), -1, true);
-    opacityCore.value = withRepeat(withTiming(1, normalCore), -1, true);
-
-    // Ambient glow — synced to core
-    opacityGlow.value = withRepeat(withTiming(0.5, normalCore), -1, true);
+    scaleCore.value = 1;
+    opacityCore.value = 1;
+    opacityGlow.value = 0.5;
 
     // Ring 0 — tight inner energy pulse
     scaleRing0.value = withDelay(
@@ -177,9 +173,8 @@ export default React.memo(function LoadingOrb({
       withRepeat(withTiming(0, { ...normalEmit, duration: 4000 }), -1, false),
     );
 
-    // Specular highlight — subtle shift synced to breathing
-    highlightTranslateY.value = withRepeat(withTiming(2, normalCore), -1, true);
-    highlightOpacity.value = withRepeat(withTiming(0.55, normalCore), -1, true);
+    highlightTranslateY.value = 0;
+    highlightOpacity.value = 0.55;
     // Shared values are stable; this effect only seeds repeating worklets on mount.
     // eslint-disable-next-line react-hooks/exhaustive-deps -- highlight* are Reanimated shared values, not React deps
   }, []);
@@ -217,12 +212,15 @@ export default React.memo(function LoadingOrb({
   }));
 
   if (Platform.OS === 'android') {
+    const pathIntensity = isTurbulent ? 0.35 : 0;
     return (
       <View style={styles.container}>
         <NativeLoadingOrbView
           style={{ width: size, height: size }}
           message={message}
           isTurbulent={isTurbulent}
+          pathIntensity={pathIntensity}
+          breathIntensity={0}
         />
       </View>
     );

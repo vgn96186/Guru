@@ -11,7 +11,10 @@ export const geminiGroundingProvider: WebSearchProvider = {
     const vertexProject = params.profile.vertexAiProject?.trim();
     const vertexLocation = params.profile.vertexAiLocation?.trim();
 
-    const useVertex = Boolean(vertexToken);
+    const isVertexApiKey = Boolean(
+      vertexToken && (vertexToken.startsWith('AIza') || vertexToken.startsWith('AQ')),
+    );
+    const useVertex = Boolean(vertexToken && (isVertexApiKey || (vertexProject && vertexLocation)));
     const apiKey = useVertex ? vertexToken : params.profile.geminiKey?.trim();
     if (!apiKey) return [];
 

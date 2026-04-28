@@ -38,7 +38,7 @@ jest.mock('react-native-gesture-handler', () => {
     },
     Gesture: {
       Tap: () => ({
-        config: { callbacks: {} },
+        config: { callbacks: {} as Record<string, unknown> },
         onBegin: function (cb: any) {
           this.config.callbacks.onBegin = cb;
           return this;

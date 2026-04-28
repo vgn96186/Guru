@@ -147,6 +147,7 @@ export async function saveLecturePersistence(opts: {
     });
 
     const subjectId = await findSubjectId(analysis.subject);
+    const db = getDrizzleDb();
 
     // Use runInTransaction instead of manual BEGIN/COMMIT to avoid
     // orphaned recording paths and ensure proper rollback on failure.
@@ -166,8 +167,7 @@ export async function saveLecturePersistence(opts: {
         }
       }
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
-      const result = await (txDb as any)
+      const result = await db
         .insert(lectureNotes)
         .values({
           subjectId: subjectId ?? null,
@@ -185,7 +185,7 @@ export async function saveLecturePersistence(opts: {
         .returning({ id: lectureNotes.id });
       const id = result[0].id;
 
-      await getDrizzleDb()
+      await db
         .update(externalAppLogs)
         .set({ transcriptionStatus: 'completed', lectureNoteId: id })
         .where(eq(externalAppLogs.id, opts.logId));

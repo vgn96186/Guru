@@ -95,9 +95,9 @@ export const sessionsRepositoryDrizzle = {
     durationMinutes: number,
     notes?: string,
   ): Promise<void> {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
-    await runInTransaction(async (tx: any) => {
-      const row = await tx
+    const db = getDrizzleDb();
+    await runInTransaction(async () => {
+      const row = await db
         .select({ endedAt: sessions.endedAt })
         .from(sessions)
         .where(eq(sessions.id, sessionId))
@@ -105,7 +105,7 @@ export const sessionsRepositoryDrizzle = {
 
       if (row[0]?.endedAt != null) return;
 
-      await tx
+      await db
         .update(sessions)
         .set({
           endedAt: Date.now(),
@@ -116,7 +116,7 @@ export const sessionsRepositoryDrizzle = {
         })
         .where(eq(sessions.id, sessionId));
 
-      await tx
+      await db
         .insert(dailyLog)
         .values({
           date: todayStr(),
@@ -143,10 +143,10 @@ export const sessionsRepositoryDrizzle = {
     notes?: string,
   ): Promise<void> {
     const today = todayStr();
+    const db = getDrizzleDb();
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
-    await runInTransaction(async (tx: any) => {
-      const prevRows = await tx
+    await runInTransaction(async () => {
+      const prevRows = await db
         .select({
           durationMinutes: sessions.durationMinutes,
           totalXpEarned: sessions.totalXpEarned,
@@ -162,7 +162,7 @@ export const sessionsRepositoryDrizzle = {
       const deltaMins = Math.max(0, durationMinutes - prevMins);
       const deltaXp = Math.max(0, xpEarned - prevXp);
 
-      await tx
+      await db
         .update(sessions)
         .set({
           completedTopics: JSON.stringify(completedTopics),
@@ -173,7 +173,7 @@ export const sessionsRepositoryDrizzle = {
         .where(eq(sessions.id, sessionId));
 
       if (deltaMins > 0 || deltaXp > 0) {
-        await tx
+        await db
           .insert(dailyLog)
           .values({
             date: today,

@@ -80,6 +80,18 @@ function createMockDrizzleDb(selectRows: unknown[][] = []) {
   return { drizzleDb, updateSetCalls, updateWhere };
 }
 
+function createMockInsert(noteId = 42) {
+  const returning = jest
+    .fn<(payload: Record<string, unknown>) => Promise<Array<{ id: number }>>>()
+    .mockResolvedValue([{ id: noteId }]);
+  const values = jest.fn((payload: Record<string, unknown>) => {
+    void payload;
+    return { returning };
+  });
+  const insert = jest.fn(() => ({ values }));
+  return { insert, values, returning };
+}
+
 function createMockTx(noteId = 42) {
   const returning = jest
     .fn<(payload: Record<string, unknown>) => Promise<Array<{ id: number }>>>()
@@ -107,6 +119,50 @@ describe('persistence service', () => {
     backupModule.runAutoPublicBackup.mockResolvedValue(undefined);
   });
 
+  it('does not treat the expo-sqlite transaction db as a drizzle builder', async () => {
+    const { saveTranscriptToFile } = require('../transcriptStorage');
+    const { saveLecturePersistence } = require('./persistence');
+
+    const { drizzleDb, updateSetCalls } = createMockDrizzleDb([[{ id: 7 }]]);
+    const { insert, values } = createMockInsert(42);
+    drizzleDb.insert = insert;
+
+    (getDrizzleDb as jest.Mock).mockReturnValue(drizzleDb);
+    mockRunInTransaction.mockImplementation((async (fn: (txn: unknown) => Promise<number>) =>
+      fn({ execAsync: jest.fn() })) as never);
+
+    saveTranscriptToFile.mockResolvedValue('file:///mock/transcript.txt');
+
+    await saveLecturePersistence({
+      analysis: {
+        transcript: 'lecture transcript',
+        subject: 'Biochemistry',
+        topics: ['Glycolysis'],
+        keyConcepts: [],
+        highYieldPoints: [],
+        lectureSummary: 'Glycolysis overview',
+        estimatedConfidence: 2,
+      },
+      appName: 'Marrow',
+      durationMinutes: 55,
+      logId: 11,
+      quickNote: 'Quick note',
+      embedding: [0.1, 0.2],
+      recordingPath: '/recordings/raw.m4a',
+    });
+
+    expect(values).toHaveBeenCalledWith(
+      expect.objectContaining({
+        subjectId: 7,
+        recordingPath: '/recordings/raw.m4a',
+        transcript: 'file:///mock/transcript.txt',
+      }),
+    );
+    expect(updateSetCalls).toEqual(
+      expect.arrayContaining([expect.objectContaining({ transcriptionStatus: 'completed' })]),
+    );
+  });
+
   it('stores the original recording path first, then updates both records after rename', async () => {
     const {
       saveTranscriptToFile,
@@ -115,10 +171,11 @@ describe('persistence service', () => {
     const { saveLecturePersistence } = require('./persistence');
 
     const { drizzleDb, updateSetCalls } = createMockDrizzleDb([[{ id: 7 }]]);
-    const { tx, values } = createMockTx(42);
+    const { insert, values } = createMockInsert(42);
+    drizzleDb.insert = insert;
     (getDrizzleDb as jest.Mock).mockReturnValue(drizzleDb);
-    mockRunInTransaction.mockImplementation((async (fn: (txn: typeof tx) => Promise<number>) =>
-      fn(tx)) as never);
+    mockRunInTransaction.mockImplementation((async (fn: (txn: unknown) => Promise<number>) =>
+      fn({ execAsync: jest.fn() })) as never);
 
     saveTranscriptToFile.mockResolvedValue('file:///mock/transcript.txt');
     renameRecordingToLectureIdentity.mockResolvedValue('/recordings/Biochem-Glycolysis.m4a');
@@ -170,10 +227,11 @@ describe('persistence service', () => {
     const { saveLecturePersistence } = require('./persistence');
 
     const { drizzleDb } = createMockDrizzleDb([[{ id: 7 }]]);
-    const { tx, values } = createMockTx(42);
+    const { insert, values } = createMockInsert(42);
+    drizzleDb.insert = insert;
     (getDrizzleDb as jest.Mock).mockReturnValue(drizzleDb);
-    mockRunInTransaction.mockImplementation((async (fn: (txn: typeof tx) => Promise<number>) =>
-      fn(tx)) as never);
+    mockRunInTransaction.mockImplementation((async (fn: (txn: unknown) => Promise<number>) =>
+      fn({ execAsync: jest.fn() })) as never);
     generateEmbedding.mockResolvedValue([0.3, 0.4]);
 
     await saveLecturePersistence({
@@ -202,10 +260,11 @@ describe('persistence service', () => {
     const { saveLecturePersistence } = require('./persistence');
 
     const { drizzleDb } = createMockDrizzleDb([[], [{ id: 10 }]]);
-    const { tx, values } = createMockTx(42);
+    const { insert, values } = createMockInsert(42);
+    drizzleDb.insert = insert;
     (getDrizzleDb as jest.Mock).mockReturnValue(drizzleDb);
-    mockRunInTransaction.mockImplementation((async (fn: (txn: typeof tx) => Promise<number>) =>
-      fn(tx)) as never);
+    mockRunInTransaction.mockImplementation((async (fn: (txn: unknown) => Promise<number>) =>
+      fn({ execAsync: jest.fn() })) as never);
 
     await saveLecturePersistence({
       analysis: { transcript: '', subject: 'anat', topics: [], estimatedConfidence: 1 },

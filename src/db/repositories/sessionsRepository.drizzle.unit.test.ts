@@ -185,15 +185,79 @@ describe('sessionsRepositoryDrizzle', () => {
     await expect(sessionsRepositoryDrizzle.getCompletedSessionCount()).resolves.toBe(0);
   });
 
-  it('endSession runs a transaction', async () => {
-    const db = makeDb();
+  it('endSession runs inside runInTransaction', async () => {
+    const limit = jest.fn().mockResolvedValue([{ endedAt: null }]);
+    const where = jest.fn(() => ({ limit }));
+    const from = jest.fn(() => ({ where }));
+    const select = jest.fn(() => ({ from }));
+
+    const updateWhere = jest.fn().mockResolvedValue(undefined);
+    const set = jest.fn(() => ({ where: updateWhere }));
+    const update = jest.fn(() => ({ set }));
+
+    const onConflictDoUpdate = jest.fn().mockResolvedValue(undefined);
+    const values = jest.fn(() => ({ onConflictDoUpdate }));
+    const insert = jest.fn(() => ({ values }));
+
+    (getDrizzleDb as jest.Mock).mockReturnValue({ select, update, insert });
     (runInTransaction as jest.Mock).mockImplementation(
-      async (callback: (txn: unknown) => Promise<void>) => db.transaction(callback),
+      async (callback: (txn: unknown) => Promise<void>) => callback({ execAsync: jest.fn() }),
     );
-    (getDrizzleDb as jest.Mock).mockReturnValue(db);
 
     await sessionsRepositoryDrizzle.endSession(1, [1, 2], 100, 30, 'test notes');
-    expect(db.transaction).toHaveBeenCalled();
+    expect(runInTransaction).toHaveBeenCalledTimes(1);
+  });
+
+  it('endSession does not treat the expo-sqlite transaction db as a drizzle builder', async () => {
+    const limit = jest.fn().mockResolvedValue([{ endedAt: null }]);
+    const where = jest.fn(() => ({ limit }));
+    const from = jest.fn(() => ({ where }));
+    const select = jest.fn(() => ({ from }));
+
+    const updateWhere = jest.fn().mockResolvedValue(undefined);
+    const set = jest.fn(() => ({ where: updateWhere }));
+    const update = jest.fn(() => ({ set }));
+
+    const onConflictDoUpdate = jest.fn().mockResolvedValue(undefined);
+    const values = jest.fn(() => ({ onConflictDoUpdate }));
+    const insert = jest.fn(() => ({ values }));
+
+    (getDrizzleDb as jest.Mock).mockReturnValue({ select, update, insert });
+    (runInTransaction as jest.Mock).mockImplementation(
+      async (callback: (txn: unknown) => Promise<void>) => callback({ execAsync: jest.fn() }),
+    );
+
+    await expect(sessionsRepositoryDrizzle.endSession(1, [1, 2], 100, 30)).resolves.toBeUndefined();
+    expect(select).toHaveBeenCalledTimes(1);
+    expect(update).toHaveBeenCalledTimes(1);
+    expect(insert).toHaveBeenCalledTimes(1);
+  });
+
+  it('updateSessionProgress does not treat the expo-sqlite transaction db as a drizzle builder', async () => {
+    const limit = jest.fn().mockResolvedValue([{ durationMinutes: 0, totalXpEarned: 0 }]);
+    const where = jest.fn(() => ({ limit }));
+    const from = jest.fn(() => ({ where }));
+    const select = jest.fn(() => ({ from }));
+
+    const updateWhere = jest.fn().mockResolvedValue(undefined);
+    const set = jest.fn(() => ({ where: updateWhere }));
+    const update = jest.fn(() => ({ set }));
+
+    const onConflictDoUpdate = jest.fn().mockResolvedValue(undefined);
+    const values = jest.fn(() => ({ onConflictDoUpdate }));
+    const insert = jest.fn(() => ({ values }));
+
+    (getDrizzleDb as jest.Mock).mockReturnValue({ select, update, insert });
+    (runInTransaction as jest.Mock).mockImplementation(
+      async (callback: (txn: unknown) => Promise<void>) => callback({ execAsync: jest.fn() }),
+    );
+
+    await expect(
+      sessionsRepositoryDrizzle.updateSessionProgress(1, 30, 100, [1, 2]),
+    ).resolves.toBeUndefined();
+    expect(select).toHaveBeenCalledTimes(1);
+    expect(update).toHaveBeenCalledTimes(1);
+    expect(insert).toHaveBeenCalledTimes(1);
   });
 
   it('calculateCurrentStreak computes streak properly', async () => {

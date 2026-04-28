@@ -20,7 +20,7 @@ import {
   mergeGeminiListWithDefaults,
 } from './google/geminiListModels';
 import { getValidAccessToken, getAccountId } from './chatgpt/chatgptTokenStore';
-import { getValidAccessToken as getValidGitHubCopilotAccessToken } from './github/githubTokenStore';
+import { getValidAccessToken as getValidGitHubToken } from './github/githubTokenStore';
 import { buildGitHubCopilotHeaders } from './github/githubCopilotClient';
 import { getGitHubCopilotApiOrigin } from './github/githubCopilotEnv';
 
@@ -304,7 +304,11 @@ export async function fetchChatGptModelIds(
     const data = (await res.json()) as { models?: { slug?: string }[] };
     const raw = (data.models ?? [])
       .map((m) => m.slug)
-      .filter((id): id is string => typeof id === 'string' && id.length > 0);
+      .filter((id): id is string => typeof id === 'string' && id.length > 0)
+      .filter(
+        (id) =>
+          id.startsWith('gpt-') || /^o[1-9]/.test(id) || id.startsWith('chatgpt-'),
+      );
 
     // Fall back to config if live models list is somehow empty
     // Put newest/highest version models at the front of the list by reversing the sorted result
@@ -328,7 +332,7 @@ export async function fetchGitHubCopilotModelIds(
     return { ids: [], source: 'fallback' };
   }
   try {
-    const token = await getValidGitHubCopilotAccessToken();
+    const token = await getValidGitHubToken();
     if (!token) throw new Error('No GitHub Copilot token');
     const headers = buildGitHubCopilotHeaders(token);
 

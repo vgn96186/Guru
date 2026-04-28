@@ -1,6 +1,7 @@
+import { FlashList } from '@shopify/flash-list';
 /* eslint-disable guru/prefer-screen-shell -- topic detail uses custom layout with FlatList */
 import React from 'react';
-import { View, FlatList, StatusBar, Animated } from 'react-native';
+import { View, StatusBar, Animated } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import ScreenHeader from '../components/ScreenHeader';
@@ -99,7 +100,7 @@ export default function TopicDetailScreen() {
           </View>
         ) : null}
 
-        <FlatList
+        <FlashList
           data={ctrl.displayTopics}
           keyExtractor={(t) => t.id.toString()}
           keyboardDismissMode="on-drag"

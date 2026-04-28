@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { View, TouchableOpacity, Image, Modal, Pressable, useWindowDimensions } from 'react-native';
+import { View, Modal, useWindowDimensions, Pressable } from 'react-native';
+import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
 import LinearText from '../../../components/primitives/LinearText';
 
@@ -49,7 +50,7 @@ export const QuestionImage = React.memo(function QuestionImage({
 
   return (
     <>
-      <TouchableOpacity activeOpacity={0.85} onPress={() => setLightboxOpen(true)}>
+      <Pressable onPress={() => setLightboxOpen(true)}>
         <Image
           source={{ uri: url }}
           style={s.questionImage}
@@ -57,7 +58,7 @@ export const QuestionImage = React.memo(function QuestionImage({
           onError={handleError}
         />
         <LinearText style={s.tapToEnlarge}>Tap to enlarge</LinearText>
-      </TouchableOpacity>
+      </Pressable>
       <Modal
         visible={lightboxOpen}
         transparent

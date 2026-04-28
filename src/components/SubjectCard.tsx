@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { TouchableOpacity, View, StyleSheet } from 'react-native';
+import { Pressable, TouchableOpacity, View, StyleSheet } from 'react-native';
 import ReAnimated, {
   useSharedValue,
   useAnimatedStyle,
@@ -109,111 +109,120 @@ export default React.memo(function SubjectCard({
 
   const hasDue = metrics && metrics.due > 0;
 
+  const card = (
+    <LinearSurface compact padded={false}>
+      <View style={styles.row}>
+        <View style={styles.leftHalf}>
+          <View style={[styles.dot, { backgroundColor: subject.colorHex }]} />
+          <View style={styles.body}>
+            <View style={styles.mainLine}>
+              <LinearText style={styles.name} numberOfLines={1} ellipsizeMode="tail" variant="body">
+                {subject.name}
+              </LinearText>
+            </View>
+            <View style={styles.labelRow}>
+              <View style={styles.badgeShortCode}>
+                <LinearText style={styles.labelShortCode}>{subject.shortCode}</LinearText>
+              </View>
+              <View style={styles.coveragePill}>
+                <LinearText style={styles.coverageSeen}>{coverage.seen}</LinearText>
+                <LinearText style={styles.coverageSlash}>/</LinearText>
+                <LinearText style={styles.coverageTotal}>{coverage.total}</LinearText>
+              </View>
+              {hasDue ? (
+                <View style={styles.badgeDue}>
+                  <LinearText style={styles.labelDue}>Due {metrics!.due}</LinearText>
+                </View>
+              ) : null}
+              {metrics && metrics.highYield > 0 ? (
+                <View style={styles.badgeHY}>
+                  <LinearText style={styles.labelHY}>HY {metrics.highYield}</LinearText>
+                </View>
+              ) : null}
+              {metrics && metrics.unseen > 0 ? (
+                <View style={styles.badgeUnseen}>
+                  <LinearText style={styles.labelUnseen}>Unseen {metrics.unseen}</LinearText>
+                </View>
+              ) : null}
+              {metrics && metrics.withNotes > 0 ? (
+                <View style={styles.badgeNotes}>
+                  <LinearText style={styles.labelNotes}>Notes {metrics.withNotes}</LinearText>
+                </View>
+              ) : null}
+            </View>
+          </View>
+        </View>
+
+        <View style={styles.rightHalf}>
+          <View style={styles.trailing}>
+            {matchingTopicsCount !== undefined && matchingTopicsCount > 0 ? (
+              <View style={styles.matchCountContainer}>
+                <LinearText style={styles.matchCount} variant="caption">
+                  {matchingTopicsCount} match
+                </LinearText>
+              </View>
+            ) : null}
+            <View style={styles.pctRow}>
+              <View style={styles.rightProgressTrack}>
+                <ReAnimated.View
+                  style={[
+                    styles.rightProgressFill,
+                    progressAnimatedStyle,
+                    { backgroundColor: subject.colorHex },
+                  ]}
+                />
+              </View>
+              <LinearText
+                style={[
+                  styles.pct,
+                  {
+                    color:
+                      pct >= 80
+                        ? n.colors.success
+                        : pct >= 50
+                          ? n.colors.warning
+                          : n.colors.textPrimary,
+                  },
+                ]}
+                variant="caption"
+              >
+                {pct}%
+              </LinearText>
+              <View style={styles.chevron}>
+                <Icon name="chevron-forward-outline" size="sm" color={n.colors.textMuted} />
+              </View>
+            </View>
+          </View>
+        </View>
+      </View>
+    </LinearSurface>
+  );
+
   return (
     // ReAnimated wrapper carries the UI-thread press-scale animation.
     // When tapped, the card briefly shrinks (scale 0.985) then springs back
     // while the detail screen zooms open — together they read as "card expands".
     <ReAnimated.View style={pressAnimStyle}>
-      <TouchableOpacity
-        onPress={handlePress}
-        activeOpacity={activeOpacity}
-        accessibilityRole="button"
-        accessibilityLabel={`${subject.name} subject`}
-        accessibilityHint={`Coverage: ${coverage.seen} of ${coverage.total} topics (${pct}%).`}
-      >
-        <LinearSurface compact padded={false}>
-          <View style={styles.row}>
-            <View style={styles.leftHalf}>
-              <View style={[styles.dot, { backgroundColor: subject.colorHex }]} />
-              <View style={styles.body}>
-                <View style={styles.mainLine}>
-                  <LinearText
-                    style={styles.name}
-                    numberOfLines={1}
-                    ellipsizeMode="tail"
-                    variant="body"
-                  >
-                    {subject.name}
-                  </LinearText>
-                </View>
-                {/* Metric Badges — organized for instant scannability */}
-                <View style={styles.labelRow}>
-                  <View style={styles.badgeShortCode}>
-                    <LinearText style={styles.labelShortCode}>{subject.shortCode}</LinearText>
-                  </View>
-                  <View style={styles.coveragePill}>
-                    <LinearText style={styles.coverageSeen}>{coverage.seen}</LinearText>
-                    <LinearText style={styles.coverageSlash}>/</LinearText>
-                    <LinearText style={styles.coverageTotal}>{coverage.total}</LinearText>
-                  </View>
-                  {hasDue ? (
-                    <View style={styles.badgeDue}>
-                      <LinearText style={styles.labelDue}>Due {metrics!.due}</LinearText>
-                    </View>
-                  ) : null}
-                  {metrics && metrics.highYield > 0 ? (
-                    <View style={styles.badgeHY}>
-                      <LinearText style={styles.labelHY}>HY {metrics.highYield}</LinearText>
-                    </View>
-                  ) : null}
-                  {metrics && metrics.unseen > 0 ? (
-                    <View style={styles.badgeUnseen}>
-                      <LinearText style={styles.labelUnseen}>Unseen {metrics.unseen}</LinearText>
-                    </View>
-                  ) : null}
-                  {metrics && metrics.withNotes > 0 ? (
-                    <View style={styles.badgeNotes}>
-                      <LinearText style={styles.labelNotes}>Notes {metrics.withNotes}</LinearText>
-                    </View>
-                  ) : null}
-                </View>
-              </View>
-            </View>
-
-            <View style={styles.rightHalf}>
-              <View style={styles.trailing}>
-                {matchingTopicsCount !== undefined && matchingTopicsCount > 0 ? (
-                  <View style={styles.matchCountContainer}>
-                    <LinearText style={styles.matchCount} variant="caption">
-                      {matchingTopicsCount} match
-                    </LinearText>
-                  </View>
-                ) : null}
-                <View style={styles.pctRow}>
-                  <View style={styles.rightProgressTrack}>
-                    <ReAnimated.View
-                      style={[
-                        styles.rightProgressFill,
-                        progressAnimatedStyle,
-                        { backgroundColor: subject.colorHex },
-                      ]}
-                    />
-                  </View>
-                  <LinearText
-                    style={[
-                      styles.pct,
-                      {
-                        color:
-                          pct >= 80
-                            ? n.colors.success
-                            : pct >= 50
-                              ? n.colors.warning
-                              : n.colors.textPrimary,
-                      },
-                    ]}
-                    variant="caption"
-                  >
-                    {pct}%
-                  </LinearText>
-                  <View style={styles.chevron}>
-                    <Icon name="chevron-forward-outline" size="sm" color={n.colors.textMuted} />
-                  </View>
-                </View>
-              </View>
-            </View>
-          </View>
-        </LinearSurface>
-      </TouchableOpacity>
+      {reducedMotion ? (
+        <TouchableOpacity
+          onPress={handlePress}
+          activeOpacity={activeOpacity}
+          accessibilityRole="button"
+          accessibilityLabel={`${subject.name} subject`}
+          accessibilityHint={`Coverage: ${coverage.seen} of ${coverage.total} topics (${pct}%).`}
+        >
+          {card}
+        </TouchableOpacity>
+      ) : (
+        <Pressable
+          onPress={handlePress}
+          accessibilityRole="button"
+          accessibilityLabel={`${subject.name} subject`}
+          accessibilityHint={`Coverage: ${coverage.seen} of ${coverage.total} topics (${pct}%).`}
+        >
+          {card}
+        </Pressable>
+      )}
     </ReAnimated.View>
   );
 });

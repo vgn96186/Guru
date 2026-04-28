@@ -92,7 +92,7 @@ describe('geminiGenerateStructuredJsonSdk', () => {
     } as any);
 
     const schema = z.object({ a: z.number() });
-    const { RateLimitError } = await import('../schemas');
+    const { RateLimitError } = require('../schemas') as typeof import('../schemas');
     await expect(
       geminiGenerateStructuredJsonSdk([{ role: 'user', content: 'x' }], schema, 'k', 'low'),
     ).rejects.toBeInstanceOf(RateLimitError);

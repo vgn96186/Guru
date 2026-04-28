@@ -24,7 +24,8 @@ describe('app launcher module compatibility', () => {
     });
     const consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
 
-    const module = await import('../../modules/app-launcher');
+    const module =
+      require('../../modules/app-launcher') as typeof import('../../modules/app-launcher');
     const result = await module.startRecording('', 'deepgram-key', 'groq-key');
 
     expect(result).toBe('/mock/legacy-recording.m4a');
@@ -48,7 +49,8 @@ describe('app launcher module compatibility', () => {
     });
     const consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
 
-    const module = await import('../../modules/app-launcher');
+    const module =
+      require('../../modules/app-launcher') as typeof import('../../modules/app-launcher');
     const result = await module.startRecording('');
 
     expect(result).toBe('/mock/legacy-recording.m4a');

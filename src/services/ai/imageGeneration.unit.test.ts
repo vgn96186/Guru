@@ -66,7 +66,7 @@ async function loadModule(configOverrides?: {
     }),
   }));
 
-  return import('./imageGeneration');
+  return require('./imageGeneration') as typeof import('./imageGeneration');
 }
 
 describe('ai/imageGeneration', () => {

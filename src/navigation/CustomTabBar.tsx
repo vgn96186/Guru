@@ -112,7 +112,7 @@ export function CustomTabBar({
           <Pressable
             key={tab.name}
             style={styles.tabItem}
-            onPress={() => navigation.navigate(tab.name)}
+            onPress={() => handleTabPress(tab.name, focused)}
             testID={tab.testID}
             accessibilityRole="tab"
             accessibilityState={{ selected: focused }}

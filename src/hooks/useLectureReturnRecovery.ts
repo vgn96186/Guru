@@ -1,7 +1,5 @@
 import { useCallback, useEffect, useRef } from 'react';
-// TODO: Migrate from expo-av to expo-audio/expo-video when available
-// expo-av is deprecated and will be removed in SDK 54
-import { Audio } from 'expo-av';
+import { createAudioPlayer } from 'expo-audio';
 import {
   stopRecording,
   hideOverlay,
@@ -51,27 +49,27 @@ interface PrecomputedLectureInsights {
   };
 }
 
-/** Read actual audio duration from file headers using expo-av. Fast — does not decode audio. */
 async function getAudioDurationMinutes(path: string): Promise<number | null> {
-  let sound: Audio.Sound | null = null;
+  let player: ReturnType<typeof createAudioPlayer> | null = null;
   try {
-    const { sound: s, status } = await Audio.Sound.createAsync(
-      { uri: path },
-      { shouldPlay: false },
-    );
-    sound = s;
-    if (status.isLoaded && status.durationMillis && status.durationMillis > 0) {
-      return Math.max(1, Math.round(status.durationMillis / 60000));
+    player = createAudioPlayer(path, { downloadFirst: false });
+    for (let i = 0; i < 40; i++) {
+      if (player.isLoaded && player.duration > 0) break;
+      await new Promise<void>((resolve) => setTimeout(resolve, 50));
+    }
+
+    if (player.isLoaded && player.duration > 0) {
+      return Math.max(1, Math.round((player.duration * 1000) / 60000));
+    }
+
+    return null;
+  } catch (err) {
+    if (__DEV__) {
+      console.warn('[useLectureReturnRecovery] Failed to read audio duration:', err);
     }
     return null;
-  } catch {
-    return null;
   } finally {
-    sound?.unloadAsync().catch((err) => {
-      if (__DEV__) {
-        console.warn('[useLectureReturnRecovery] Failed to unload sound:', err);
-      }
-    });
+    player?.remove();
   }
 }
 

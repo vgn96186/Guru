@@ -571,7 +571,7 @@ export class AudioRecorder {
   }
 
   private async requestMicPermission(): Promise<boolean> {
-    if (Platform.OS !== 'android') return true; // iOS handled by expo-av
+    if (Platform.OS !== 'android') return true;
 
     try {
       const result = await PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.RECORD_AUDIO, {

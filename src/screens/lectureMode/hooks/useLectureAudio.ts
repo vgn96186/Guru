@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
-import { Audio } from 'expo-av';
+import { useAudioRecorder, useAudioRecorderState, IOSOutputFormat, AudioQuality } from 'expo-audio';
 import * as FileSystem from 'expo-file-system/legacy';
 import * as Haptics from 'expo-haptics';
 import {
@@ -16,6 +16,28 @@ import { pickDocumentOnce } from '../../../services/documentPicker';
 import { showError, showSuccess } from '../../../components/dialogService';
 
 const AUTO_SCRIBE_CHUNK_MS = 3 * 60 * 1000;
+
+const LECTURE_RECORDING_OPTIONS = {
+  extension: '.m4a',
+  sampleRate: 16000,
+  numberOfChannels: 1,
+  bitRate: 128000,
+  android: {
+    outputFormat: 'mpeg4',
+    audioEncoder: 'aac',
+  },
+  ios: {
+    outputFormat: IOSOutputFormat.MPEG4AAC,
+    audioQuality: AudioQuality.HIGH,
+    sampleRate: 16000,
+    numberOfChannels: 1,
+    bitRate: 128000,
+    linearPCMBitDepth: 16,
+    linearPCMIsBigEndian: false,
+    linearPCMIsFloat: false,
+  },
+  web: {},
+} as const;
 
 export function useLectureAudio(options: {
   selectedSubjectId: number | null;
@@ -34,14 +56,14 @@ export function useLectureAudio(options: {
     onProofOfLifeDismissed,
   } = options;
 
-  const [recording, setRecording] = useState<Audio.Recording | null>(null);
-  const recordingRef = useRef<Audio.Recording | null>(null);
   const [isRecordingEnabled, setIsRecordingEnabled] = useState(false);
   const [isTranscribing, setIsTranscribing] = useState(false);
   const [recordingRetryCount, setRecordingRetryCount] = useState(0);
   const previousRecordingEnabledRef = useRef(false);
   const recordingStartTimeRef = useRef<number>(0);
   const elapsedRef = useRef(elapsed);
+  const recorder = useAudioRecorder(LECTURE_RECORDING_OPTIONS);
+  const recorderState = useAudioRecorderState(recorder, 500);
 
   useEffect(() => {
     elapsedRef.current = elapsed;
@@ -49,49 +71,23 @@ export function useLectureAudio(options: {
 
   const startRecording = useCallback(async () => {
     try {
-      if (recordingRef.current) {
+      if (recorderState.isRecording) {
         try {
-          await recordingRef.current.stopAndUnloadAsync();
+          await recorder.stop();
         } catch (e) {
           if (__DEV__) console.warn('[LectureMode] Could not stop previous recording:', e);
         }
-        recordingRef.current = null;
-        setRecording(null);
       }
 
-      const recordingOptions = {
-        android: {
-          extension: '.m4a',
-          outputFormat: Audio.AndroidOutputFormat.MPEG_4,
-          audioEncoder: Audio.AndroidAudioEncoder.AAC,
-          sampleRate: 16000,
-          numberOfChannels: 1,
-          bitRate: 128000,
-        },
-        ios: {
-          extension: '.m4a',
-          outputFormat: Audio.IOSOutputFormat.MPEG4AAC,
-          audioQuality: Audio.IOSAudioQuality.HIGH,
-          sampleRate: 16000,
-          numberOfChannels: 1,
-          bitRate: 128000,
-          linearPCMBitDepth: 16,
-          linearPCMIsBigEndian: false,
-          linearPCMIsFloat: false,
-        },
-        web: {},
-      };
-
-      const { recording: newRec } = await Audio.Recording.createAsync(recordingOptions);
-      recordingRef.current = newRec;
-      setRecording(newRec);
+      await recorder.prepareToRecordAsync();
+      recorder.record();
       recordingStartTimeRef.current = Date.now();
-      if (__DEV__) console.log('[LectureMode] Fresh recording started:', newRec.getURI());
+      if (__DEV__) console.log('[LectureMode] Fresh recording started:', recorder.uri);
     } catch (err) {
       if (__DEV__) console.error('[LectureMode] Failed to start recording:', err);
       showError('Could not start microphone. Check permissions.');
     }
-  }, []);
+  }, [recorder, recorderState.isRecording]);
 
   async function enhanceNoteInBackground(noteId: number) {
     try {
@@ -124,22 +120,13 @@ export function useLectureAudio(options: {
   }
 
   const processRecording = useCallback(async () => {
-    const currentRec = recordingRef.current;
-    if (!currentRec) return;
+    if (!recorderState.isRecording) return;
     setIsTranscribing(true);
 
     try {
-      const status = await currentRec.getStatusAsync();
-      if (!status.canRecord && __DEV__) {
-        console.warn('[LectureMode] Recording instance is not active');
-      }
-
-      await currentRec.stopAndUnloadAsync();
-      const uri = currentRec.getURI();
+      await recorder.stop();
+      const uri = recorder.uri;
       const recordingDuration = (Date.now() - recordingStartTimeRef.current) / 1000;
-
-      recordingRef.current = null;
-      setRecording(null);
 
       if (uri) {
         try {
@@ -204,40 +191,37 @@ export function useLectureAudio(options: {
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [recordingRetryCount, startRecording, selectedSubjectId, shouldContinueAutoScribe]);
+  }, [recordingRetryCount, recorder, recorderState.isRecording, startRecording, selectedSubjectId, shouldContinueAutoScribe]);
 
   useEffect(() => {
     if (!isRecordingEnabled || onBreak || isTranscribing) return;
 
-    if (!recording && !recordingRef.current) {
+    if (!recorderState.isRecording) {
       void startRecording();
       return;
     }
 
-    if (!recording) return;
-
-    const elapsedMs = Math.max(0, Date.now() - recordingStartTimeRef.current);
-    const remainingMs = Math.max(1000, AUTO_SCRIBE_CHUNK_MS - elapsedMs);
+    const remainingMs = Math.max(1000, AUTO_SCRIBE_CHUNK_MS - Math.max(0, recorderState.durationMillis));
     const timeout = setTimeout(() => {
       void processRecording();
     }, remainingMs);
 
     return () => clearTimeout(timeout);
-  }, [isRecordingEnabled, onBreak, isTranscribing, recording, processRecording, startRecording]);
+  }, [isRecordingEnabled, onBreak, isTranscribing, recorderState.durationMillis, recorderState.isRecording, processRecording, startRecording]);
 
   useEffect(() => {
     const wasEnabled = previousRecordingEnabledRef.current;
     previousRecordingEnabledRef.current = isRecordingEnabled;
 
-    if (wasEnabled && !isRecordingEnabled && recordingRef.current && !isTranscribing) {
+    if (wasEnabled && !isRecordingEnabled && recorderState.isRecording && !isTranscribing) {
       void processRecording();
     }
-  }, [isRecordingEnabled, isTranscribing, processRecording]);
+  }, [isRecordingEnabled, isTranscribing, processRecording, recorderState.isRecording]);
 
   useEffect(() => {
-    if (!onBreak || !recordingRef.current || isTranscribing) return;
+    if (!onBreak || !recorderState.isRecording || isTranscribing) return;
     void processRecording();
-  }, [onBreak, isTranscribing, processRecording]);
+  }, [onBreak, isTranscribing, processRecording, recorderState.isRecording]);
 
   async function importAndTranscribeAudio() {
     try {

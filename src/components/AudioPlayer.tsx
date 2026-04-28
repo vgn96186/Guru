@@ -1,61 +1,38 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { StyleSheet, TouchableOpacity, View, Pressable } from 'react-native';
-import { Audio } from 'expo-av';
+import { useAudioPlayer, useAudioPlayerStatus } from 'expo-audio';
 import { Ionicons } from '@expo/vector-icons';
 import LinearText from './primitives/LinearText';
 import LinearSurface from './primitives/LinearSurface';
 import { linearTheme as n } from '../theme/linearTheme';
 
 export default function AudioPlayer({ uri }: { uri: string }) {
-  const [sound, setSound] = useState<Audio.Sound | null>(null);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [position, setPosition] = useState(0);
-  const [duration, setDuration] = useState(0);
+  const player = useAudioPlayer(uri, { updateInterval: 250, downloadFirst: true });
+  const status = useAudioPlayerStatus(player);
   const [barWidth, setBarWidth] = useState(0);
 
-  useEffect(() => {
-    return () => {
-      if (sound) {
-        sound.unloadAsync();
-      }
-    };
-  }, [sound]);
-
   const handlePlayPause = async () => {
-    if (sound) {
-      if (isPlaying) {
-        await sound.pauseAsync();
-        setIsPlaying(false);
-      } else {
-        await sound.playAsync();
-        setIsPlaying(true);
-      }
-    } else {
-      const { sound: newSound } = await Audio.Sound.createAsync(
-        { uri },
-        { shouldPlay: true },
-        (status) => {
-          if (status.isLoaded) {
-            setPosition(status.positionMillis);
-            setDuration(status.durationMillis || 0);
-            setIsPlaying(status.isPlaying);
-          }
-        },
-      );
-      setSound(newSound);
-      setIsPlaying(true);
+    if (status.playing) {
+      player.pause();
+      return;
     }
+
+    if (status.duration > 0 && status.currentTime >= status.duration) {
+      await player.seekTo(0);
+    }
+
+    player.play();
   };
 
   const seekTo = async (targetMs: number) => {
-    if (!sound) return;
-    const clamped = Math.max(0, Math.min(duration, targetMs));
-    await sound.setPositionAsync(clamped);
-    setPosition(clamped);
+    const durationMs = Math.max(0, status.duration * 1000);
+    const clamped = Math.max(0, Math.min(durationMs, targetMs));
+    await player.seekTo(clamped / 1000);
   };
 
   const jumpBy = async (deltaMs: number) => {
-    await seekTo(position + deltaMs);
+    const positionMs = Math.max(0, status.currentTime * 1000);
+    await seekTo(positionMs + deltaMs);
   };
 
   const formatTime = (ms: number) => {
@@ -68,7 +45,11 @@ export default function AudioPlayer({ uri }: { uri: string }) {
   return (
     <LinearSurface padded={false} style={audioStyles.container}>
       <TouchableOpacity onPress={handlePlayPause} style={audioStyles.playBtn}>
-        <Ionicons name={isPlaying ? 'pause' : 'play'} size={24} color={n.colors.textInverse} />
+        <Ionicons
+          name={status.playing ? 'pause' : 'play'}
+          size={24}
+          color={n.colors.textInverse}
+        />
       </TouchableOpacity>
       <TouchableOpacity onPress={() => void jumpBy(-10000)} style={audioStyles.jumpBtn}>
         <LinearText style={audioStyles.jumpBtnText}>-10s</LinearText>
@@ -78,21 +59,32 @@ export default function AudioPlayer({ uri }: { uri: string }) {
           style={audioStyles.progressBar}
           onLayout={(event) => setBarWidth(event.nativeEvent.layout.width)}
           onPress={(event) => {
-            if (!duration || barWidth <= 0) return;
-            const next = (event.nativeEvent.locationX / barWidth) * duration;
+            const durationMs = Math.max(0, status.duration * 1000);
+            if (!durationMs || barWidth <= 0) return;
+            const next = (event.nativeEvent.locationX / barWidth) * durationMs;
             void seekTo(next);
           }}
         >
           <View
             style={[
               audioStyles.progressFill,
-              { width: `${duration > 0 ? (position / duration) * 100 : 0}%` },
+              {
+                width: `${(() => {
+                  const durationMs = Math.max(0, status.duration * 1000);
+                  const positionMs = Math.max(0, status.currentTime * 1000);
+                  return durationMs > 0 ? (positionMs / durationMs) * 100 : 0;
+                })()}%`,
+              },
             ]}
           />
         </Pressable>
         <View style={audioStyles.timeRow}>
-          <LinearText style={audioStyles.timeText}>{formatTime(position)}</LinearText>
-          <LinearText style={audioStyles.timeText}>{formatTime(duration)}</LinearText>
+          <LinearText style={audioStyles.timeText}>
+            {formatTime(Math.max(0, status.currentTime * 1000))}
+          </LinearText>
+          <LinearText style={audioStyles.timeText}>
+            {formatTime(Math.max(0, status.duration * 1000))}
+          </LinearText>
         </View>
       </View>
       <TouchableOpacity onPress={() => void jumpBy(10000)} style={audioStyles.jumpBtn}>

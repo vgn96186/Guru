@@ -23,8 +23,8 @@ const mockRetryFailedTranscriptions = jest.fn();
 const mockRetryPendingNoteEnhancements = jest.fn();
 const mockStopRecordingHealthCheck = jest.fn();
 const mockValidateRecordingWithBackoff = jest.fn();
-const mockCreateAsync = jest.fn();
-const mockUnloadAsync = jest.fn();
+const mockCreateAudioPlayer = jest.fn();
+const mockRemovePlayer = jest.fn();
 
 jest.mock('react-native', () => ({
   AppState: {
@@ -34,12 +34,8 @@ jest.mock('react-native', () => ({
   Alert: { alert: jest.fn() },
 }));
 
-jest.mock('expo-av', () => ({
-  Audio: {
-    Sound: {
-      createAsync: mockCreateAsync,
-    },
-  },
+jest.mock('expo-audio', () => ({
+  createAudioPlayer: (...args: unknown[]) => mockCreateAudioPlayer(...args),
 }));
 
 jest.mock('../../modules/app-launcher', () => ({
@@ -113,11 +109,12 @@ describe('useLectureReturnRecovery', () => {
     mockReadLectureInsights.mockResolvedValue(null);
     mockValidateRecordingWithBackoff.mockResolvedValue({ validated: true, attemptsUsed: 1 });
     mockValidateRecordingFile.mockResolvedValue({ exists: true, size: 1024 });
-    mockCreateAsync.mockResolvedValue({
-      sound: { unloadAsync: mockUnloadAsync },
-      status: { isLoaded: true, durationMillis: 180000 },
+    mockRemovePlayer.mockReset();
+    mockCreateAudioPlayer.mockReturnValue({
+      isLoaded: true,
+      duration: 180,
+      remove: mockRemovePlayer,
     });
-    mockUnloadAsync.mockResolvedValue(undefined);
   });
 
   afterEach(() => {
@@ -475,7 +472,9 @@ describe('useLectureReturnRecovery', () => {
       launchedAt: 1700000000000 - 600000, // 10 minutes ago
       recordingPath: 'path/to/audio',
     });
-    mockCreateAsync.mockRejectedValue(new Error('Audio error'));
+    mockCreateAudioPlayer.mockImplementation(() => {
+      throw new Error('Audio error');
+    });
 
     await act(async () => {
       await hookApi.checkForReturnedSession(true);
@@ -503,9 +502,10 @@ describe('useLectureReturnRecovery', () => {
       recordingPath: 'path/to/audio',
     });
     mockGetRecordingElapsedSeconds.mockResolvedValue(6 * 60);
-    mockCreateAsync.mockResolvedValue({
-      sound: { unloadAsync: mockUnloadAsync },
-      status: { isLoaded: true, durationMillis: 6 * 60000 },
+    mockCreateAudioPlayer.mockReturnValue({
+      isLoaded: true,
+      duration: 6 * 60,
+      remove: mockRemovePlayer,
     });
 
     await act(async () => {

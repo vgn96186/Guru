@@ -16,14 +16,13 @@ export const deepseekWebProvider: WebSearchProvider = {
 
     const result = await generateText({
       model,
-      prompt: [
+      messages: [
         {
           role: 'user',
           content: `Search the web for: ${params.query}. List the top results with their URLs and brief descriptions. Format each result as: - Title: [title]\n  URL: [url]\n  Description: [description]`,
         },
       ],
       maxOutputTokens: 1024,
-      webSearch: true,
     });
 
     const results: WebSearchResult[] = [];

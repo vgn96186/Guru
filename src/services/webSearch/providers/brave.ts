@@ -29,7 +29,7 @@ export const braveProvider: WebSearchProvider = {
     return results.map((r) => ({
       title: r.title ?? '',
       url: r.url ?? '',
-      thumbnailUrl: r.thumbnailUrl,
+      thumbnailUrl: r.imageUrl,
       source: r.source,
       provider: 'brave' as const,
     }));

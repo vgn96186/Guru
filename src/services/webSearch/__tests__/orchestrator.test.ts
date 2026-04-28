@@ -1,5 +1,6 @@
-import type { WebSearchProviderId } from '../../../types';
+import type { UserProfile, WebSearchProviderId } from '../../../types';
 import type { WebSearchResult } from '../types';
+import { createDefaultUserProfile } from '../../../db/utils/drizzleProfileMapper';
 
 const mockSearchText = jest.fn();
 const mockSearchImages = jest.fn();
@@ -36,8 +37,9 @@ jest.mock('../providers/duckduckgo', () => ({
 
 import { searchWeb, searchImages } from '../orchestrator';
 
-function profile(overrides: Record<string, unknown> = {}) {
+function profile(overrides: Partial<UserProfile> = {}): UserProfile {
   return {
+    ...createDefaultUserProfile(),
     braveSearchApiKey: 'brave-key',
     geminiKey: 'gemini-key',
     deepseekKey: 'deepseek-key',

@@ -20,7 +20,7 @@ import {
   mergeGeminiListWithDefaults,
 } from './google/geminiListModels';
 import { getValidAccessToken, getAccountId } from './chatgpt/chatgptTokenStore';
-import { getValidGitHubToken } from './github/githubTokenStore';
+import { getValidAccessToken as getValidGitHubCopilotAccessToken } from './github/githubTokenStore';
 import { buildGitHubCopilotHeaders } from './github/githubCopilotClient';
 import { getGitHubCopilotApiOrigin } from './github/githubCopilotEnv';
 
@@ -328,7 +328,7 @@ export async function fetchGitHubCopilotModelIds(
     return { ids: [], source: 'fallback' };
   }
   try {
-    const token = await getValidGitHubToken();
+    const token = await getValidGitHubCopilotAccessToken();
     if (!token) throw new Error('No GitHub Copilot token');
     const headers = buildGitHubCopilotHeaders(token);
 

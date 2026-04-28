@@ -51,11 +51,11 @@ import { sanitizeActionHubTools } from '../utils/actionHubTools';
 const Tab = createMaterialTopTabNavigator<TabParamList>();
 
 const EXTERNAL_APP_ICON_MAP: Record<string, keyof typeof Ionicons.glyphMap> = {
-  cerebellum: 'school-outline',
-  dbmci: 'medkit-outline',
-  marrow: 'flask-outline',
-  prepladder: 'layers-outline',
-  bhatia: 'person-outline',
+  cerebellum: 'hardware-chip-outline',
+  dbmci: 'medical-outline',
+  marrow: 'bone-outline',
+  prepladder: 'arrow-up-circle-outline',
+  bhatia: 'medical-outline',
   youtube: 'logo-youtube',
 };
 

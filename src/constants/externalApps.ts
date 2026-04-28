@@ -63,7 +63,7 @@ export const EXTERNAL_APPS: ExternalApp[] = [
     packageName: 'com.google.android.youtube',
     webUrl: 'https://www.youtube.com',
     customScheme: 'vnd.youtube://',
-    iconName: 'play-circle-outline',
+    iconName: 'logo-youtube',
     color: '#FF0000',
   },
 ];

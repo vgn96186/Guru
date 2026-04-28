@@ -24,6 +24,8 @@ module.exports = {
   ],
   coveragePathIgnorePatterns: ['/node_modules/', '/e2e/'],
   moduleNameMapper: {
+    '^@expo/vector-icons$': '<rootDir>/shims/expo-vector-icons/index.tsx',
+    '^react-native-svg$': '<rootDir>/__mocks__/react-native-svg.js',
     '^expo-audio$': '<rootDir>/__mocks__/expo-audio.js',
     '^expo-updates$': '<rootDir>/__mocks__/expo-updates.js',
     '^expo-asset$': '<rootDir>/__mocks__/expo-asset.js',
@@ -32,6 +34,7 @@ module.exports = {
     '^whisper.rn$': '<rootDir>/__mocks__/whisper.rn.js',
     '^whisper\\.rn/index\\.js$': '<rootDir>/__mocks__/whisper.rn.js',
     '^expo-sqlite$': '<rootDir>/__mocks__/expo-sqlite.js',
+    '^react-native-pdf$': '<rootDir>/__mocks__/react-native-pdf.js',
     '^react-native-worklets$': '<rootDir>/__mocks__/react-native-worklets.js',
     '^react-native-worklets-core$': '<rootDir>/__mocks__/react-native-worklets.js',
     '^@sentry/react-native$': '<rootDir>/__mocks__/sentry-react-native.js',
@@ -43,6 +46,6 @@ module.exports = {
     '^.+\\.(js|jsx|ts|tsx)$': ['babel-jest', { configFile: './babel.config.js' }],
   },
   transformIgnorePatterns: [
-    'node_modules/(?!(jest-runner|@react-native|react-native|@testing-library|react-native-gesture-handler|react-native-reanimated|react-native-css-interop|react-native-markdown-display|@react-navigation|expo/.*|expo-.*|@expo/.*|@unimodules/.*|unimodules|sentry-expo|native-base|@sentry/.*|jsonrepair)/)',
+    'node_modules/(?!(jest-runner|@react-native|react-native|@testing-library|react-native-gesture-handler|react-native-reanimated|react-native-css-interop|react-native-markdown-display|react-native-remix-icon|@react-navigation|expo/.*|expo-.*|@expo/.*|@unimodules/.*|unimodules|sentry-expo|native-base|@sentry/.*|jsonrepair)/)',
   ],
 };

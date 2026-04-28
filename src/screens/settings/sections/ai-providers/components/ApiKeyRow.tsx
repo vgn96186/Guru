@@ -22,7 +22,7 @@ interface Props extends ApiKeyField {
 /** Maps provider labels to icon names for visual distinction */
 const PROVIDER_ICONS: Record<string, keyof typeof Ionicons.glyphMap> = {
   Groq: 'flash-outline',
-  'AI Studio': 'diamond-outline',
+  'AI Studio': 'star-outline',
   OpenRouter: 'git-network-outline',
   DeepSeek: 'telescope-outline',
   'GitHub Models': 'logo-github',

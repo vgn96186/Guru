@@ -25,7 +25,7 @@ const PROVIDER_META: Record<string, { icon: string; color: string }> = {
   'ChatGPT Codex': { icon: 'logo-electron', color: '#74AA9C' },
   'Qwen (Free)': { icon: 'globe-outline', color: '#6366F1' },
   Groq: { icon: 'flash-outline', color: '#F97316' },
-  OpenRouter: { icon: 'git-branch-outline', color: '#6D99FF' },
+  OpenRouter: { icon: 'git-network-outline', color: '#6D99FF' },
   'Gemini (AI Studio)': { icon: 'star-outline', color: '#8B5CF6' },
   'Vertex AI': { icon: 'server-outline', color: '#4285F4' },
   Cloudflare: { icon: 'cloud-outline', color: '#F48120' },

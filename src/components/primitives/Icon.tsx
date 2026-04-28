@@ -1,5 +1,5 @@
 import React from 'react';
-import { Ionicons } from '@expo/vector-icons';
+import RemixIcon from 'react-native-remix-icon';
 import { linearTheme } from '../../theme/linearTheme';
 import {
   iconSize,
@@ -8,9 +8,10 @@ import {
   type IconSize,
   type IconStyle,
 } from '../../theme/iconography';
+import { resolveRemixIconName } from './remixIconCompat';
 
 interface IconProps {
-  name: keyof typeof Ionicons.glyphMap;
+  name: string;
   size?: IconSize;
   style?: IconStyle;
   color?: string;
@@ -25,24 +26,14 @@ export default function Icon({
   color = linearTheme.colors.textPrimary,
   accessibilityLabel,
 }: IconProps) {
-  const resolved = style === 'filled' ? stripOutline(name) : ensureOutline(name);
+  const resolved = resolveRemixIconName(name, style);
   return (
-    <Ionicons
-      name={resolved}
+    <RemixIcon
+      name={resolved as any}
       size={iconSize[size]}
       color={color}
       accessibilityLabel={accessibilityLabel}
+      fallback={null}
     />
   );
-}
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
-function ensureOutline(n: string): any {
-  if (n.endsWith('-outline')) return n;
-  if (n.startsWith('logo-')) return n;
-  return `${n}-outline`;
-}
-// eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
-function stripOutline(n: string): any {
-  return n.replace(/-outline$/, '');
 }

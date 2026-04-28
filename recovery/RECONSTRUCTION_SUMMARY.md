@@ -25,6 +25,8 @@ Target: `recovery/reconstruction`
 - `dbbb48f` recover(settings): add embedding model section
 - `2f0592a` chore: ignore babel-debug log
 - `8f83b9c` recover(tests): update BrainDumpFab unit test
+- `dbba529` recover(storage): add MMKV backing store
+- `03d9379` recover(pdf): add PdfViewer screen
 
 ## Verification
 

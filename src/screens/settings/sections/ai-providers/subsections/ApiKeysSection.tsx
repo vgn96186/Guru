@@ -387,6 +387,24 @@ export default function ApiKeysSection({
         ),
       },
       {
+        id: 'jina',
+        category: 'search',
+        configured: Boolean(apiKeys.jina.value.trim()),
+        testing: apiKeys.jina.testing,
+        test: apiKeys.jina.test,
+        element: (
+          <ApiKeyRow
+            {...apiKeys.jina}
+            label="Jina AI"
+            placeholder="jina_..."
+            purpose="Embeddings & Search"
+            styles={styles}
+            clearProviderValidated={clearProviderValidated}
+            providerId="jina"
+          />
+        ),
+      },
+      {
         id: 'cloudflare',
         category: 'infra',
         configured: Boolean(

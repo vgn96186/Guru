@@ -25,6 +25,8 @@ export function useApiKeyTesting() {
   const [vertexKeyTestResult, setVertexKeyTestResult] = useState<'ok' | 'fail' | null>(null);
   const [testingFalKey, setTestingFalKey] = useState(false);
   const [falKeyTestResult, setFalKeyTestResult] = useState<'ok' | 'fail' | null>(null);
+  const [testingJinaKey, setTestingJinaKey] = useState(false);
+  const [jinaKeyTestResult, setJinaKeyTestResult] = useState<'ok' | 'fail' | null>(null);
   const [testingBraveSearchKey, setTestingBraveSearchKey] = useState(false);
   const [braveSearchKeyTestResult, setBraveSearchKeyTestResult] = useState<'ok' | 'fail' | null>(
     null,
@@ -135,6 +137,10 @@ export function useApiKeyTesting() {
     setTestingFalKey,
     falKeyTestResult,
     setFalKeyTestResult,
+    testingJinaKey,
+    setTestingJinaKey,
+    jinaKeyTestResult,
+    setJinaKeyTestResult,
     testingBraveSearchKey,
     setTestingBraveSearchKey,
     braveSearchKeyTestResult,

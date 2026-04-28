@@ -256,6 +256,10 @@ export default function SettingsScreen() {
     setTestingFalKey,
     falKeyTestResult,
     setFalKeyTestResult,
+    testingJinaKey,
+    setTestingJinaKey,
+    jinaKeyTestResult,
+    setJinaKeyTestResult,
     testingBraveSearchKey,
     setTestingBraveSearchKey,
     braveSearchKeyTestResult,
@@ -296,6 +300,7 @@ export default function SettingsScreen() {
   const [vertexAiLocation, setVertexAiLocation] = useState('');
   const [vertexAiToken, setVertexAiToken] = useState('');
   const [falApiKey, setFalApiKey] = useState('');
+  const [jinaApiKey, setJinaApiKey] = useState('');
   const [braveSearchApiKey, setBraveSearchApiKey] = useState('');
   const [googleCustomSearchApiKey, setGoogleCustomSearchApiKey] = useState('');
   const [kiloApiKey, setKiloApiKey] = useState('');
@@ -374,6 +379,7 @@ export default function SettingsScreen() {
     testGeminiKey,
     testCloudflareKeys,
     testFalKey,
+    testJinaKey,
     testBraveSearchKey,
   } = useProviderApiKeyTests({
     profile,
@@ -395,6 +401,7 @@ export default function SettingsScreen() {
       cloudflareAccountId: cfAccountId,
       cloudflareApiToken: cfApiToken,
       falApiKey,
+      jinaApiKey,
       braveSearchApiKey,
       googleCustomSearchApiKey,
     },
@@ -424,8 +431,10 @@ export default function SettingsScreen() {
       setTestingCloudflare,
       setCloudflareTestResult,
       setTestingFalKey,
-      setFalKeyTestResult,
-      setTestingBraveSearchKey,
+    setFalKeyTestResult,
+    setTestingJinaKey,
+    setJinaKeyTestResult,
+    setTestingBraveSearchKey,
       setBraveSearchKeyTestResult,
       setTestingGoogleCustomSearchKey: _setTestingGoogleCustomSearchKey,
       setGoogleCustomSearchKeyTestResult,
@@ -856,6 +865,7 @@ export default function SettingsScreen() {
         cloudflareAccountId: currentProfile.cloudflareAccountId ?? '',
         cloudflareApiToken: currentProfile.cloudflareApiToken ?? '',
         falApiKey: currentProfile.falApiKey ?? '',
+        jinaApiKey: currentProfile.jinaApiKey ?? '',
         braveSearchApiKey: currentProfile.braveSearchApiKey ?? '',
         apiValidation: sanitizeApiValidationState(currentProfile.apiValidation),
         chatgptAccounts: sanitizeChatGptAccountSettings(currentProfile.chatgptAccounts),
@@ -937,6 +947,7 @@ export default function SettingsScreen() {
       setVertexAiLocation(profile.vertexAiLocation ?? '');
       setVertexAiToken(profile.vertexAiToken ?? '');
       setFalApiKey(profile.falApiKey ?? '');
+      setJinaApiKey(profile.jinaApiKey ?? '');
       setBraveSearchApiKey(profile.braveSearchApiKey ?? '');
       setGoogleCustomSearchApiKey(profile.googleCustomSearchApiKey ?? '');
       setApiValidation(sanitizeApiValidationState((profile as UserProfile).apiValidation));
@@ -1024,6 +1035,7 @@ export default function SettingsScreen() {
         vertexAiLocation: vertexAiLocation.trim(),
         vertexAiToken: vertexAiToken.trim(),
         falApiKey: falApiKey.trim(),
+        jinaApiKey: jinaApiKey.trim(),
         braveSearchApiKey: braveSearchApiKey.trim(),
         googleCustomSearchApiKey: googleCustomSearchApiKey.trim(),
         apiValidation: sanitizeApiValidationState(apiValidation),
@@ -1102,6 +1114,7 @@ export default function SettingsScreen() {
     cfAccountId,
     cfApiToken,
     falApiKey,
+    jinaApiKey,
     braveSearchApiKey,
     googleCustomSearchApiKey,
     guruChatDefaultModel,
@@ -1254,6 +1267,7 @@ export default function SettingsScreen() {
     cloudflareValidationStatus,
     vertexValidationStatus,
     falValidationStatus,
+    jinaValidationStatus,
     braveValidationStatus,
     hasPomodoroOverlayPermission,
     hasPomodoroGroqKey,
@@ -1275,6 +1289,7 @@ export default function SettingsScreen() {
       cloudflareApiToken: cfApiToken,
       vertexAiToken,
       falApiKey,
+      jinaApiKey,
       braveSearchApiKey,
       googleCustomSearchApiKey,
     },
@@ -1290,6 +1305,7 @@ export default function SettingsScreen() {
       cloudflareTestResult,
       vertexKeyTestResult,
       falKeyTestResult,
+      jinaKeyTestResult,
       braveSearchKeyTestResult,
       googleCustomSearchKeyTestResult,
     },
@@ -1313,6 +1329,7 @@ export default function SettingsScreen() {
       geminiKey,
       deepgramApiKey,
       falApiKey,
+      jinaApiKey,
       braveSearchApiKey,
       cloudflareAccountId: cfAccountId,
       cloudflareApiToken: cfApiToken,
@@ -1542,6 +1559,14 @@ export default function SettingsScreen() {
                 validationStatus: falValidationStatus,
                 test: testFalKey,
                 testing: testingFalKey,
+              },
+              jina: {
+                value: jinaApiKey,
+                setValue: setJinaApiKey,
+                setTestResult: setJinaKeyTestResult,
+                validationStatus: jinaValidationStatus,
+                test: testJinaKey,
+                testing: testingJinaKey,
               },
               braveSearch: {
                 value: braveSearchApiKey,

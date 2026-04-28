@@ -10,6 +10,7 @@ import QwenOAuthSection from './subsections/QwenOAuthSection';
 import ApiKeysSection from './subsections/ApiKeysSection';
 import RoutingSection from './subsections/RoutingSection';
 import ImageGenSection from './subsections/ImageGenSection';
+import EmbeddingSection from './subsections/EmbeddingSection';
 import TranscriptionSection from './subsections/TranscriptionSection';
 import LocalAiSection from './subsections/LocalAiSection';
 import WebSearchSection from './subsections/WebSearchSection';
@@ -70,6 +71,12 @@ export default function AiProvidersSection(props: AiProvidersProps) {
           localModelPath={profile?.localModelPath ?? null}
           SectionToggle={SectionToggle}
           styles={styles}
+        />
+
+        <EmbeddingSection
+          profile={profile}
+          updateUserProfile={updateUserProfile}
+          refreshProfile={refreshProfile}
         />
 
         <ImageGenSection

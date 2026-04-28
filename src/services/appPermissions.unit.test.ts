@@ -1,6 +1,9 @@
 import { Platform } from 'react-native';
 import * as Notifications from 'expo-notifications';
-import { Audio } from 'expo-av';
+import {
+  getRecordingPermissionsAsync,
+  requestRecordingPermissionsAsync,
+} from 'expo-audio';
 import * as NotificationService from './notificationService';
 import * as AppLauncherPermissions from './appLauncher/permissions';
 import {
@@ -14,11 +17,9 @@ jest.mock('expo-notifications', () => ({
   getPermissionsAsync: jest.fn(),
 }));
 
-jest.mock('expo-av', () => ({
-  Audio: {
-    getPermissionsAsync: jest.fn(),
-    requestPermissionsAsync: jest.fn(),
-  },
+jest.mock('expo-audio', () => ({
+  getRecordingPermissionsAsync: jest.fn(),
+  requestRecordingPermissionsAsync: jest.fn(),
 }));
 
 jest.mock('./notificationService', () => ({
@@ -92,27 +93,33 @@ describe('appPermissions', () => {
 
   describe('requestAudio', () => {
     it('returns true if permission is already granted', async () => {
-      (Audio.getPermissionsAsync as jest.Mock).mockResolvedValue({ status: 'granted' });
+      (getRecordingPermissionsAsync as jest.Mock).mockResolvedValue({ status: 'granted' });
 
       const result = await requestAudio();
 
       expect(result).toBe(true);
-      expect(Audio.requestPermissionsAsync).not.toHaveBeenCalled();
+      expect(requestRecordingPermissionsAsync).not.toHaveBeenCalled();
     });
 
     it('requests permissions if not already granted and returns true if successful', async () => {
-      (Audio.getPermissionsAsync as jest.Mock).mockResolvedValue({ status: 'undetermined' });
-      (Audio.requestPermissionsAsync as jest.Mock).mockResolvedValue({ status: 'granted' });
+      (getRecordingPermissionsAsync as jest.Mock).mockResolvedValue({ status: 'undetermined' });
+      (requestRecordingPermissionsAsync as jest.Mock).mockResolvedValue({
+        status: 'granted',
+        granted: true,
+      });
 
       const result = await requestAudio();
 
       expect(result).toBe(true);
-      expect(Audio.requestPermissionsAsync).toHaveBeenCalled();
+      expect(requestRecordingPermissionsAsync).toHaveBeenCalled();
     });
 
     it('returns false if permission request is denied', async () => {
-      (Audio.getPermissionsAsync as jest.Mock).mockResolvedValue({ status: 'undetermined' });
-      (Audio.requestPermissionsAsync as jest.Mock).mockResolvedValue({ status: 'denied' });
+      (getRecordingPermissionsAsync as jest.Mock).mockResolvedValue({ status: 'undetermined' });
+      (requestRecordingPermissionsAsync as jest.Mock).mockResolvedValue({
+        status: 'denied',
+        granted: false,
+      });
 
       const result = await requestAudio();
 
@@ -120,7 +127,7 @@ describe('appPermissions', () => {
     });
 
     it('returns false if getPermissionsAsync throws', async () => {
-      (Audio.getPermissionsAsync as jest.Mock).mockRejectedValue(new Error('fail'));
+      (getRecordingPermissionsAsync as jest.Mock).mockRejectedValue(new Error('fail'));
       const result = await requestAudio();
       expect(result).toBe(false);
     });
@@ -148,7 +155,7 @@ describe('appPermissions', () => {
   describe('requestAllPermissions', () => {
     it('calls all individual request functions and returns aggregated result', async () => {
       (Notifications.getPermissionsAsync as jest.Mock).mockResolvedValue({ status: 'granted' });
-      (Audio.getPermissionsAsync as jest.Mock).mockResolvedValue({ status: 'granted' });
+      (getRecordingPermissionsAsync as jest.Mock).mockResolvedValue({ status: 'granted' });
       Platform.OS = 'ios';
 
       const result = await requestAllPermissions();
@@ -163,7 +170,7 @@ describe('appPermissions', () => {
     it('handles partial failures', async () => {
       (Notifications.getPermissionsAsync as jest.Mock).mockResolvedValue({ status: 'denied' });
       (NotificationService.requestNotificationPermissions as jest.Mock).mockResolvedValue(false);
-      (Audio.getPermissionsAsync as jest.Mock).mockResolvedValue({ status: 'granted' });
+      (getRecordingPermissionsAsync as jest.Mock).mockResolvedValue({ status: 'granted' });
       Platform.OS = 'android';
       (AppLauncherPermissions.requestRecordingPermissions as jest.Mock).mockResolvedValue(true);
 

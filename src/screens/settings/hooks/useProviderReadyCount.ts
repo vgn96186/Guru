@@ -20,6 +20,7 @@ type UseProviderReadyCountParams = {
     geminiKey: string;
     deepgramApiKey: string;
     falApiKey: string;
+    jinaApiKey: string;
     braveSearchApiKey: string;
     cloudflareAccountId: string;
     cloudflareApiToken: string;
@@ -57,6 +58,7 @@ export function useProviderReadyCount({
       hasValue(keys.geminiKey),
       hasValue(keys.deepgramApiKey),
       hasValue(keys.falApiKey),
+      hasValue(keys.jinaApiKey),
       hasValue(keys.braveSearchApiKey),
       hasValue(keys.cloudflareAccountId) && hasValue(keys.cloudflareApiToken),
       localAiEnabled && (localLlmReady || localWhisperReady || (profile?.useNano ?? true)),

@@ -166,6 +166,7 @@ export interface AiProvidersProps {
     huggingface: ApiKeyField;
     cloudflare: CloudflareKeyField;
     fal: ApiKeyField;
+    jina: ApiKeyField;
     braveSearch: ApiKeyField;
   };
 

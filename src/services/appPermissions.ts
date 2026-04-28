@@ -5,9 +5,7 @@
  */
 import { Platform } from 'react-native';
 import * as Notifications from 'expo-notifications';
-// TODO: Migrate from expo-av to expo-audio/expo-video when available
-// expo-av is deprecated and will be removed in SDK 54
-import { Audio } from 'expo-av';
+import { getRecordingPermissionsAsync, requestRecordingPermissionsAsync } from 'expo-audio';
 import {
   requestNotificationPermissions,
   refreshAccountabilityNotificationsSafely,
@@ -50,10 +48,10 @@ export async function requestNotifications(): Promise<boolean> {
  */
 export async function requestAudio(): Promise<boolean> {
   try {
-    const { status } = await Audio.getPermissionsAsync();
+    const { status } = await getRecordingPermissionsAsync();
     if (status === 'granted') return true;
-    const { status: newStatus } = await Audio.requestPermissionsAsync();
-    return newStatus === 'granted';
+    const { status: newStatus, granted } = await requestRecordingPermissionsAsync();
+    return granted || newStatus === 'granted';
   } catch (e) {
     if (__DEV__) console.warn('[AppPermissions] Audio request failed:', e);
     return false;

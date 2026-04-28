@@ -22,6 +22,7 @@ Target: `recovery/reconstruction`
 - `ea95a0c` recover(notes-vault): restore decomposed notes vault
 - `3828774` recover(stash4): add mindmap/studyplan/transcripts scaffolding
 - `f4ef9de` recover(navigation): unify tab retap behavior
+- `dbbb48f` recover(settings): add embedding model section
 
 ## Verification
 

@@ -24,6 +24,7 @@ module.exports = {
   ],
   coveragePathIgnorePatterns: ['/node_modules/', '/e2e/'],
   moduleNameMapper: {
+    '^expo-audio$': '<rootDir>/__mocks__/expo-audio.js',
     '^expo-updates$': '<rootDir>/__mocks__/expo-updates.js',
     '^expo-asset$': '<rootDir>/__mocks__/expo-asset.js',
     '^expo-image$': '<rootDir>/__mocks__/expo-image.js',

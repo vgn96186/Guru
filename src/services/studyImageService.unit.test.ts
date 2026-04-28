@@ -45,8 +45,9 @@ describe('studyImageService', () => {
     }));
   });
 
-  it('builds an illustration prompt with the topic and source text', async () => {
-    const { buildStudyImagePrompt } = await import('./studyImageService');
+  it('builds an illustration prompt with the topic and source text', () => {
+    const { buildStudyImagePrompt } =
+      require('./studyImageService') as typeof import('./studyImageService');
 
     const prompt = buildStudyImagePrompt({
       topicName: 'Renin Angiotensin Aldosterone System',
@@ -61,7 +62,8 @@ describe('studyImageService', () => {
   });
 
   it('persists generated image metadata for chat context', async () => {
-    const { generateStudyImage } = await import('./studyImageService');
+    const { generateStudyImage } =
+      require('./studyImageService') as typeof import('./studyImageService');
     const result = await generateStudyImage({
       contextType: 'chat',
       contextKey: 'General Medicine:100',
@@ -99,7 +101,8 @@ describe('studyImageService', () => {
       mimeType: 'image/png',
     });
 
-    const { generateStudyImage } = await import('./studyImageService');
+    const { generateStudyImage } =
+      require('./studyImageService') as typeof import('./studyImageService');
     const result = await generateStudyImage({
       contextType: 'topic_note',
       contextKey: 'topic:77',

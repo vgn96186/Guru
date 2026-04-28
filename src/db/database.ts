@@ -526,7 +526,7 @@ export async function ensureCriticalColumns(db: SQLite.SQLiteDatabase): Promise<
       ['image_generation_order', "TEXT NOT NULL DEFAULT '[]'"],
       ['transcription_order', "TEXT NOT NULL DEFAULT '[]'"],
       ['embedding_provider', "TEXT NOT NULL DEFAULT 'gemini'"],
-      ['embedding_model', "TEXT NOT NULL DEFAULT 'models/text-embedding-004'"],
+      ['embedding_model', "TEXT NOT NULL DEFAULT 'models/gemini-embedding-001'"],
     ],
     topics: [
       ['parent_topic_id', 'INTEGER REFERENCES topics(id) ON DELETE SET NULL'],

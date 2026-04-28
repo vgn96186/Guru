@@ -653,6 +653,6 @@ export function createDefaultUserProfile(): UserProfile {
     samsungBatteryPromptShownAt: undefined,
     orbEffect: 'ripple',
     embeddingProvider: 'gemini',
-    embeddingModel: 'models/text-embedding-004',
+    embeddingModel: 'models/gemini-embedding-001',
   };
 }

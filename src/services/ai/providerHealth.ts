@@ -613,8 +613,9 @@ export async function testVertexConnection(
       };
     }
     try {
+      const modelId = GEMINI_MODELS[0];
       const res = await fetch(
-        `https://aiplatform.googleapis.com/v1beta/publishers/google/models/gemini-2.0-flash:generateContent?key=${t}`,
+        `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${t}`,
         {
           method: 'POST',
           headers,
@@ -636,8 +637,9 @@ export async function testVertexConnection(
 
   // Service Account / Full Vertex mode: test via Vertex AI endpoint
   try {
+    const modelId = GEMINI_MODELS[0];
     const res = await fetch(
-      `https://${l}-aiplatform.googleapis.com/v1/projects/${p}/locations/${l}/publishers/google/models/gemini-2.0-flash:generateContent`,
+      `https://${l}-aiplatform.googleapis.com/v1/projects/${p}/locations/${l}/publishers/google/models/${modelId}:generateContent`,
       {
         method: 'POST',
         headers,

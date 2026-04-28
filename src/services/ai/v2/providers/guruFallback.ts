@@ -63,8 +63,8 @@ const DEFAULT_MODEL_IDS: Record<ProviderId, string> = {
   deepseek: 'deepseek-chat',
   cloudflare: '@cf/meta/llama-3.3-70b-instruct-fp8-fast',
   github: 'gpt-4o-mini',
-  gemini: 'gemini-2.0-flash',
-  gemini_fallback: 'gemini-2.0-flash',
+  gemini: 'gemini-3.1-flash-lite',
+  gemini_fallback: 'gemini-3.1-flash-lite',
   agentrouter: 'gpt-4o-mini',
   kilo: 'gpt-4o-mini',
   chatgpt: 'gpt-4o',
@@ -72,7 +72,7 @@ const DEFAULT_MODEL_IDS: Record<ProviderId, string> = {
   gitlab_duo: 'gpt-4o',
   poe: 'GPT-4o-Mini',
   qwen: 'qwen2.5-72b-instruct',
-  vertex: 'gemini-2.5-flash',
+  vertex: 'gemini-3.1-flash-lite',
   local: '',
 };
 

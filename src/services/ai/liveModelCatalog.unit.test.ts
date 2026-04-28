@@ -101,7 +101,7 @@ describe('liveModelCatalog', () => {
         json: async () => ({
           models: [
             {
-              name: 'models/gemini-2.0-flash',
+              name: 'models/gemini-3.1-flash-lite',
               supportedGenerationMethods: ['generateContent'],
             },
             { name: 'models/embedding-001', supportedGenerationMethods: ['embedContent'] },
@@ -110,7 +110,7 @@ describe('liveModelCatalog', () => {
       });
       const r = await fetchGeminiChatModelIds('AIza');
       expect(r.source).toBe('live');
-      expect(r.ids).toContain('gemini-2.0-flash');
+      expect(r.ids).toContain('gemini-3.1-flash-lite');
       expect(r.ids.some((id) => id.includes('embedding'))).toBe(false);
     });
   });

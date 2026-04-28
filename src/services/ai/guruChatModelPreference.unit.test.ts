@@ -38,7 +38,7 @@ describe('guruChatModelPreference', () => {
       expect(formatGuruChatModelChipLabel('auto')).toBe('Auto');
       expect(formatGuruChatModelChipLabel('local')).toBe('On-device');
       expect(formatGuruChatModelChipLabel('groq/llama-3.3-70b-versatile')).toContain('llama');
-      expect(formatGuruChatModelChipLabel('gemini/gemini-2.0-flash')).toContain('gemini');
+      expect(formatGuruChatModelChipLabel('gemini/gemini-3.1-flash-lite')).toContain('gemini');
       expect(formatGuruChatModelChipLabel('cf/@cf/meta/llama-3.1-8b-instruct')).toBeTruthy();
       expect(formatGuruChatModelChipLabel('github_copilot/gpt-4o')).toBe('gpt-4o');
       expect(formatGuruChatModelChipLabel('gitlab_duo/gpt-4o')).toBe('gpt-4o');
@@ -61,8 +61,8 @@ describe('guruChatModelPreference', () => {
 
   describe('guruChatPickerNameForOpenRouterSlug', () => {
     it('extracts middle segment or falls back to slug', () => {
-      expect(guruChatPickerNameForOpenRouterSlug('google/gemini-2.0-flash:free')).toBe(
-        'GEMINI-2.0-FLASH',
+      expect(guruChatPickerNameForOpenRouterSlug('google/gemini-3.1-flash-lite:free')).toBe(
+        'GEMINI-3.1-FLASH-LITE',
       );
       expect(guruChatPickerNameForOpenRouterSlug('nonslug')).toBe('NONSLUG');
     });
@@ -70,7 +70,7 @@ describe('guruChatModelPreference', () => {
 
   describe('guruChatPickerNameForGeminiModel', () => {
     it('returns model string without gemini- prefix', () => {
-      expect(guruChatPickerNameForGeminiModel('gemini-2.0-flash')).toBe('2.0-flash');
+      expect(guruChatPickerNameForGeminiModel('gemini-3.1-flash-lite')).toBe('3.1-flash-lite');
       expect(guruChatPickerNameForGeminiModel('gemini-1.5-pro')).toBe('1.5-pro');
       expect(guruChatPickerNameForGeminiModel('other-model')).toBe('other-model');
     });

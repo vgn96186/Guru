@@ -72,6 +72,11 @@ async function generateEmbeddingCore(text: string): Promise<number[] | null> {
 
   const preferredProvider = profile.embeddingProvider || 'gemini';
   const preferredModel = profile.embeddingModel || 'models/text-embedding-004';
+  const geminiFallbackModels = [
+    'models/gemini-embedding-001',
+    'models/text-embedding-004',
+  ] as const;
+  let stopGeminiForThisCall = false;
 
   const tryGemini = async (modelToUse: string): Promise<number[] | null> => {
     if (!geminiKey || _geminiEmbeddingQuotaExceeded) return null;
@@ -102,6 +107,7 @@ async function generateEmbeddingCore(text: string): Promise<number[] | null> {
         }
       } else {
         if (response.status === 429) {
+          stopGeminiForThisCall = true;
           _geminiEmbeddingFailCount++;
           if (_geminiEmbeddingFailCount >= GEMINI_EMBEDDING_FAIL_THRESHOLD) {
             _geminiEmbeddingQuotaExceeded = true;
@@ -217,7 +223,15 @@ async function generateEmbeddingCore(text: string): Promise<number[] | null> {
 
   // 1. Try Preferred Provider
   if (preferredProvider === 'gemini' && geminiKey) {
-    result = await tryGemini(preferredModel);
+    const candidates =
+      preferredModel === 'models/text-embedding-004'
+        ? ['models/gemini-embedding-001', preferredModel]
+        : [preferredModel, ...geminiFallbackModels.filter((m) => m !== preferredModel)];
+
+    for (const modelId of candidates) {
+      result = await tryGemini(modelId);
+      if (result || stopGeminiForThisCall || _geminiEmbeddingQuotaExceeded) break;
+    }
   } else if (preferredProvider === 'openrouter' && orKey) {
     result = await tryOpenRouter(preferredModel);
   } else if (preferredProvider === 'jina') {
@@ -228,8 +242,11 @@ async function generateEmbeddingCore(text: string): Promise<number[] | null> {
 
   // 2. Fallbacks (if primary failed or key missing)
   if (preferredProvider !== 'gemini' && geminiKey && !_geminiEmbeddingQuotaExceeded) {
-    result = await tryGemini('models/text-embedding-004');
-    if (result) return result;
+    for (const modelId of geminiFallbackModels) {
+      result = await tryGemini(modelId);
+      if (result) return result;
+      if (stopGeminiForThisCall) break;
+    }
   }
 
   if (

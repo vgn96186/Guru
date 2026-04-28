@@ -16,7 +16,7 @@ interface Props {
 
 export default function EmbeddingSection({ profile, updateUserProfile, refreshProfile }: Props) {
   const currentProvider = profile.embeddingProvider || 'gemini';
-  const currentModel = profile.embeddingModel || 'models/text-embedding-004';
+  const currentModel = profile.embeddingModel || 'models/gemini-embedding-001';
   const currentValue = `${currentProvider}|${currentModel}`;
 
   const options = useMemo(() => {

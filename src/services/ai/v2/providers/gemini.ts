@@ -106,13 +106,13 @@ export function createGeminiModel(config: GeminiConfig): LanguageModelV2 {
         if (!isApiKey) {
           throw new Error('[gemini] Vertex token requires vertexProject and vertexLocation');
         }
-        // Agent Platform API Key (Vertex Express mode)
         const version =
           config.modelId.includes('preview') || config.modelId.includes('exp')
             ? 'v1alpha'
             : 'v1beta';
         const separator = path.includes('?') ? '&' : '?';
-        url = `https://aiplatform.googleapis.com/${version}/publishers/google/models/${config.modelId}:${path}${separator}key=${config.apiKey}`;
+        const base = config.baseUrl ?? `https://generativelanguage.googleapis.com/${version}`;
+        url = `${base}/models/${config.modelId}:${path}${separator}key=${config.apiKey}`;
       }
       if (isApiKey) {
         headers['x-goog-api-key'] = config.apiKey;

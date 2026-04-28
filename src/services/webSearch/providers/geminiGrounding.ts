@@ -11,17 +11,12 @@ export const geminiGroundingProvider: WebSearchProvider = {
     const vertexProject = params.profile.vertexAiProject?.trim();
     const vertexLocation = params.profile.vertexAiLocation?.trim();
 
-    const isVertexApiKey = Boolean(
-      vertexToken && (vertexToken.startsWith('AIza') || vertexToken.startsWith('AQ')),
-    );
-    const useVertex = Boolean(vertexToken && (isVertexApiKey || (vertexProject && vertexLocation)));
-    const apiKey = useVertex ? vertexToken : params.profile.geminiKey?.trim();
+    const useVertex = Boolean(vertexToken && vertexProject && vertexLocation);
+    const apiKey = params.profile.geminiKey?.trim() || vertexToken;
     if (!apiKey) return [];
 
     const modelIds = useVertex
-      ? (['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-2.5-pro'] as const).filter((m) =>
-          (VERTEX_MODELS as readonly string[]).includes(m),
-        )
+      ? GEMINI_MODELS.filter((m) => (VERTEX_MODELS as readonly string[]).includes(m))
       : [...GEMINI_MODELS];
 
     for (const modelId of modelIds) {

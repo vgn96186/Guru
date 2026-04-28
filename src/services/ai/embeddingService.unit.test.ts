@@ -117,7 +117,7 @@ describe('embeddingService', () => {
           expect.objectContaining({
             method: 'POST',
             body: expect.stringContaining('my-jina-model'),
-          })
+          }),
         );
       });
 
@@ -144,7 +144,14 @@ describe('embeddingService', () => {
           text: async () => 'error',
         });
 
-        // 3. Fallback 2 (Jina) -> succeeds
+        // 3. Fallback 1b (Gemini alternate model) -> fails
+        fetchMock.mockResolvedValueOnce({
+          ok: false,
+          status: 500,
+          text: async () => 'error',
+        });
+
+        // 4. Fallback 2 (Jina) -> succeeds
         fetchMock.mockResolvedValueOnce({
           ok: true,
           json: async () => ({ data: [{ embedding: [0.5] }] }),
@@ -153,13 +160,14 @@ describe('embeddingService', () => {
         const vec = await generateEmbedding('test');
         expect(vec).toEqual([0.5]);
 
-        expect(fetchMock).toHaveBeenCalledTimes(3);
+        expect(fetchMock).toHaveBeenCalledTimes(4);
         // Call 1: OpenRouter
         expect(fetchMock.mock.calls[0][0]).toBe('https://openrouter.ai/api/v1/embeddings');
-        // Call 2: Gemini fallback
+        // Call 2-3: Gemini fallback (tries alternate model list)
         expect(fetchMock.mock.calls[1][0]).toContain('generativelanguage.googleapis.com');
-        // Call 3: Jina fallback
-        expect(fetchMock.mock.calls[2][0]).toBe('https://api.jina.ai/v1/embeddings');
+        expect(fetchMock.mock.calls[2][0]).toContain('generativelanguage.googleapis.com');
+        // Call 4: Jina fallback
+        expect(fetchMock.mock.calls[3][0]).toBe('https://api.jina.ai/v1/embeddings');
       });
 
       it('skips fallback for provider if it was already the preferred one', async () => {
@@ -177,7 +185,13 @@ describe('embeddingService', () => {
           text: async () => 'error',
         });
 
-        // 2. Fallback 1 (Gemini) -> Skipped
+        // 2. Preferred provider alternate model (Gemini) -> fails
+        fetchMock.mockResolvedValueOnce({
+          ok: false,
+          status: 500,
+          text: async () => 'error',
+        });
+
         // 3. Fallback 2 (OpenRouter) -> Succeeds
         fetchMock.mockResolvedValueOnce({
           ok: true,
@@ -187,9 +201,10 @@ describe('embeddingService', () => {
         const vec = await generateEmbedding('test');
         expect(vec).toEqual([0.6]);
 
-        expect(fetchMock).toHaveBeenCalledTimes(2);
+        expect(fetchMock).toHaveBeenCalledTimes(3);
         expect(fetchMock.mock.calls[0][0]).toContain('generativelanguage.googleapis.com');
-        expect(fetchMock.mock.calls[1][0]).toBe('https://openrouter.ai/api/v1/embeddings');
+        expect(fetchMock.mock.calls[1][0]).toContain('generativelanguage.googleapis.com');
+        expect(fetchMock.mock.calls[2][0]).toBe('https://openrouter.ai/api/v1/embeddings');
       });
 
       it('handles Gemini 429 quota exhausted by not retrying Gemini', async () => {

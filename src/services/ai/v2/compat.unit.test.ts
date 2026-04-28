@@ -116,11 +116,11 @@ describe('compat chosen-model forwarding', () => {
 
   it('passes chosenModel into generateJSONV2', async () => {
     await generateJSONV2([{ role: 'user', content: 'Hi' }], z.object({ ok: z.boolean() }), {
-      chosenModel: 'gemini/gemini-2.5-flash',
+      chosenModel: 'gemini/gemini-3.1-flash-lite',
     });
 
     expect(createGuruFallbackModel).toHaveBeenCalledWith(
-      expect.objectContaining({ chosenModel: 'gemini/gemini-2.5-flash' }),
+      expect.objectContaining({ chosenModel: 'gemini/gemini-3.1-flash-lite' }),
     );
   });
 

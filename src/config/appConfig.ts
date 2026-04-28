@@ -221,10 +221,9 @@ export const CHATGPT_MODELS = [
 
 /**
  * Gemini text chat / streaming — fallback order.
- * Prefer stable **2.5 / 2.0 Flash** first (better free-tier behavior and fewer surprises than preview).
- * **Preview** last so it only runs if listed models fail (saves quota for experimental IDs).
+ * Prefer the latest Flash tier first; preview last so it only runs if stable IDs fail.
  */
-export const GEMINI_MODELS = ['gemini-2.5-flash', 'gemini-2.0-flash'] as const;
+export const GEMINI_MODELS = ['gemini-3.1-flash-lite', 'gemini-3.0-flash-preview'] as const;
 
 /**
  * Native JSON + `responseJsonSchema` — stable IDs only (no preview) so quizzes/plans/catalyst
@@ -232,9 +231,9 @@ export const GEMINI_MODELS = ['gemini-2.5-flash', 'gemini-2.0-flash'] as const;
  */
 export const GEMINI_STRUCTURED_JSON_MODELS = {
   /** Faster / cheaper structured calls (keypoints, small JSON). */
-  low: 'gemini-2.0-flash',
+  low: 'gemini-3.1-flash-lite',
   /** Heavier structured output (daily agenda, catalyst, long JSON). */
-  high: 'gemini-2.5-flash',
+  high: 'gemini-3.0-flash-preview',
 } as const;
 
 /** Cloudflare Workers AI models — tried in order. Free: 10K neurons/day. */
@@ -365,7 +364,11 @@ export const MOCK_EXTERNAL_LECTURE_AUDIO_URL =
 /** Enable quiet dot-dither texture on empty states + e0 backgrounds (`EmptyState` mounts `Texture`). */
 export const FEATURE_TEXTURE = false;
 
-export const VERTEX_MODELS = ['gemini-2.5-pro', 'gemini-2.5-flash', 'gemini-2.0-flash'] as const;
+export const VERTEX_MODELS = [
+  'gemini-3.1-flash-lite',
+  'gemini-3.0-flash-preview',
+  'gemini-2.5-pro',
+] as const;
 
 export const JINA_EMBEDDING_MODELS = ['jina-embeddings-v3', 'jina-embeddings-v2-base-en'] as const;
 
@@ -375,6 +378,6 @@ export const OPENROUTER_EMBEDDING_MODELS = [
 ] as const;
 
 export const GEMINI_EMBEDDING_MODELS = [
-  'models/text-embedding-004',
   'models/gemini-embedding-001',
+  'models/text-embedding-004',
 ] as const;

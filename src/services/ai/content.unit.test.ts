@@ -226,7 +226,7 @@ describe('ai content prefetching', () => {
       provider: 'fallback',
       modelId: 'groq/a|gemini/b',
       doGenerate: jest.fn(async () => {
-        opts?.onProviderSuccess?.('gemini', 'gemini-2.0-flash');
+        opts?.onProviderSuccess?.('gemini', 'gemini-3.1-flash-lite');
         return { content: [], rawResponse: null };
       }),
       doStream: jest.fn(),
@@ -262,7 +262,7 @@ describe('ai content prefetching', () => {
       topic.id,
       'must_know',
       expect.any(Object),
-      'gemini/gemini-2.0-flash',
+      'gemini/gemini-3.1-flash-lite',
     );
   });
 

@@ -211,12 +211,14 @@ describe('createGuruFallbackModel', () => {
         geminiKey: 'gem-key',
         providerOrder: ['groq', 'gemini', 'openrouter'],
       }),
-      chosenModel: 'gemini/gemini-2.5-flash',
+      chosenModel: 'gemini/gemini-3.1-flash-lite',
     });
 
     expect(createLocalLlmModel).not.toHaveBeenCalled();
     expect(createNanoModel).not.toHaveBeenCalled();
-    expect(getFallbackTargets()).toEqual([{ provider: 'gemini', modelId: 'gemini-2.5-flash' }]);
+    expect(getFallbackTargets()).toEqual([
+      { provider: 'gemini', modelId: 'gemini-3.1-flash-lite' },
+    ]);
   });
 
   it('routes chatgpt-prefixed selections only through ChatGPT', () => {

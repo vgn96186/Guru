@@ -41,10 +41,10 @@ describe('geminiGenerateStructuredJsonSdk', () => {
     );
 
     expect(out.parsed).toEqual(sampleKeypoints);
-    expect(out.modelUsed).toBe('gemini/gemini-2.0-flash');
+    expect(out.modelUsed).toBe('gemini/gemini-3.1-flash-lite');
     expect(generateContent).toHaveBeenCalledWith(
       expect.objectContaining({
-        model: 'gemini-2.0-flash',
+        model: 'gemini-3.1-flash-lite',
         config: expect.objectContaining({ maxOutputTokens: 4096 }),
       }),
     );
@@ -63,7 +63,7 @@ describe('geminiGenerateStructuredJsonSdk', () => {
 
     expect(generateContent).toHaveBeenCalledWith(
       expect.objectContaining({
-        model: 'gemini-2.5-flash',
+        model: 'gemini-3.0-flash-preview',
         config: expect.objectContaining({ maxOutputTokens: 8192 }),
       }),
     );

@@ -47,7 +47,8 @@ describe('deviceSyncService', () => {
       clearKeyCache: jest.fn(),
     }));
 
-    const { connectToRoom, normalizeSyncCode } = await import('./deviceSyncService');
+    const { connectToRoom, normalizeSyncCode } =
+      require('./deviceSyncService') as typeof import('./deviceSyncService');
 
     expect(normalizeSyncCode(' neet-2026 ')).toBe('NEET2026');
 
@@ -97,7 +98,8 @@ describe('deviceSyncService', () => {
       clearKeyCache: clearKeyCacheMock,
     }));
 
-    const { connectToRoom } = await import('./deviceSyncService');
+    const { connectToRoom } =
+      require('./deviceSyncService') as typeof import('./deviceSyncService');
     const listenerA = jest.fn();
     const listenerB = jest.fn();
 

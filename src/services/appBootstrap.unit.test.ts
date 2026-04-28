@@ -1,6 +1,7 @@
 describe('appBootstrap lazy bundle guard', () => {
   test('treats Metro lazy bundle failures as skippable optional startup errors', async () => {
-    const { isSkippableOptionalStartupError } = await import('./appBootstrapErrors');
+    const { isSkippableOptionalStartupError } =
+      require('./appBootstrapErrors') as typeof import('./appBootstrapErrors');
 
     expect(
       isSkippableOptionalStartupError({
@@ -11,7 +12,8 @@ describe('appBootstrap lazy bundle guard', () => {
   });
 
   test('does not swallow unrelated startup errors', async () => {
-    const { isSkippableOptionalStartupError } = await import('./appBootstrapErrors');
+    const { isSkippableOptionalStartupError } =
+      require('./appBootstrapErrors') as typeof import('./appBootstrapErrors');
 
     expect(isSkippableOptionalStartupError(new Error('disk full'))).toBe(false);
   });

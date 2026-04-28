@@ -25,7 +25,7 @@ async function loadLocalLlmInfra() {
     resetSession: resetSessionMock,
   }));
 
-  const module = await import('./localLlmInfra');
+  const module = require('./localLlmInfra') as typeof import('./localLlmInfra');
   return {
     module,
     initializeMock,
@@ -118,7 +118,7 @@ describe('localLlmInfra', () => {
       resetSession: resetSessionMock,
     }));
 
-    const module = await import('./localLlmInfra');
+    const module = require('./localLlmInfra') as typeof import('./localLlmInfra');
 
     // Start a generation (it will be in flight)
     let resolveGenerate: (val: {

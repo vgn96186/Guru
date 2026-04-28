@@ -30,7 +30,8 @@ describe('offlineQueueBootstrap', () => {
   });
 
   it('registers processors that fail safely for legacy queued work', async () => {
-    const { registerOfflineQueueProcessors } = await import('./offlineQueueBootstrap');
+    const { registerOfflineQueueProcessors } =
+      require('./offlineQueueBootstrap') as typeof import('./offlineQueueBootstrap');
     registerOfflineQueueProcessors();
 
     const processors = Object.fromEntries(
@@ -52,7 +53,8 @@ describe('offlineQueueBootstrap', () => {
 
   it('retries queued transcription work and marks it complete on success', async () => {
     mockRunFullTranscriptionPipeline.mockResolvedValue({ success: true });
-    const { registerOfflineQueueProcessors } = await import('./offlineQueueBootstrap');
+    const { registerOfflineQueueProcessors } =
+      require('./offlineQueueBootstrap') as typeof import('./offlineQueueBootstrap');
     registerOfflineQueueProcessors();
 
     const processors = Object.fromEntries(
@@ -73,7 +75,8 @@ describe('offlineQueueBootstrap', () => {
       success: false,
       error: 'pipeline failed',
     });
-    const { registerOfflineQueueProcessors } = await import('./offlineQueueBootstrap');
+    const { registerOfflineQueueProcessors } =
+      require('./offlineQueueBootstrap') as typeof import('./offlineQueueBootstrap');
     registerOfflineQueueProcessors();
 
     const processors = Object.fromEntries(

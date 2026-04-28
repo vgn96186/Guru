@@ -1,8 +1,9 @@
 import { getDrizzleDb } from '../../db/drizzle';
+import { getDb } from '../../db/database';
 import { topics, subjects } from '../../db/drizzleSchema';
 import { sql, like, eq, inArray, isNotNull, and } from 'drizzle-orm';
 import { queueTopicSuggestionInTx, updateTopicProgressInTx } from '../../db/queries/topics';
-import { generateEmbedding, cosineSimilarity, blobToEmbedding } from '../ai/embeddingService';
+import { generateEmbedding, blobToEmbedding, embeddingToBlob } from '../ai/embeddingService';
 
 /**
  * markTopicsFromLecture matching strategy:
@@ -175,45 +176,55 @@ async function yieldToEventLoop(): Promise<void> {
 }
 
 async function findSemanticMatches(
-  db: ReturnType<typeof getDrizzleDb>,
+  _db: ReturnType<typeof getDrizzleDb>,
   targetEmbedding: number[],
   subjectName?: string,
   threshold = 0.82,
 ): Promise<number[]> {
-  let query = db.select({ id: topics.id, embedding: topics.embedding }).from(topics);
+  const rawDb = getDb();
+  
+  // Note: vec_distance_cosine returns distance (0 = identical, 2 = opposite)
+  // We want similarity >= threshold, which means distance <= (1 - threshold)
+  // For safety against floating point math, add a tiny epsilon or just use <=.
+  const maxDistance = 1.0 - threshold;
+  
+  let sqlQuery = `
+    SELECT v.id, vec_distance_cosine(v.embedding, ?) as distance
+    FROM vss_topics v
+  `;
+  const params: any[] = [embeddingToBlob(targetEmbedding)];
+  
   if (subjectName) {
-    query = query.innerJoin(subjects, eq(topics.subjectId, subjects.id)).where(
-      and(sql`LOWER(${subjects.name}) = ${subjectName.toLowerCase()}`, isNotNull(topics.embedding)),
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
-    ) as any;
+    sqlQuery += `
+      INNER JOIN topics t ON t.id = v.id
+      INNER JOIN subjects s ON s.id = t.subject_id
+      WHERE v.embedding MATCH ? AND LOWER(s.name) = ?
+    `;
+    params.push(embeddingToBlob(targetEmbedding));
+    params.push(subjectName.toLowerCase());
   } else {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
-    query = query.where(isNotNull(topics.embedding)) as any;
+    sqlQuery += ` WHERE v.embedding MATCH ? `;
+    params.push(embeddingToBlob(targetEmbedding));
   }
-
-  const rows = await query.limit(MAX_SEMANTIC_CANDIDATES);
-  const scored: Array<{ id: number; sim: number }> = [];
-
-  for (let index = 0; index < rows.length; index++) {
-    const row = rows[index];
-    if (!row.embedding) continue;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic/trusted type
-    const topicVec = blobToEmbedding(row.embedding as any);
-    const sim = cosineSimilarity(targetEmbedding, topicVec);
-    if (sim >= threshold) {
-      scored.push({ id: row.id, sim });
-    }
-
-    if ((index + 1) % SEMANTIC_YIELD_EVERY === 0) {
-      await yieldToEventLoop();
-    }
+  
+  sqlQuery += `
+    ORDER BY distance ASC
+    LIMIT ?
+  `;
+  params.push(MAX_SEMANTIC_CANDIDATES); // Grab top N before filtering
+  
+  try {
+    const results = await rawDb.getAllAsync<{ id: number; distance: number }>(sqlQuery, params);
+    
+    // Return top matches sorted by similarity (highest first), capped to avoid memory spikes
+    return results
+      .filter((r) => r.distance <= maxDistance)
+      .slice(0, MAX_SEMANTIC_MATCHES)
+      .map((r) => r.id);
+  } catch (err) {
+    if (__DEV__) console.warn('[DB] findSemanticMatches failed:', err);
+    return [];
   }
-
-  // Return top matches sorted by similarity (highest first), capped to avoid memory spikes
-  return scored
-    .sort((a, b) => b.sim - a.sim)
-    .slice(0, MAX_SEMANTIC_MATCHES)
-    .map((s) => s.id);
 }
 
 async function applyLectureProgressToTopic(

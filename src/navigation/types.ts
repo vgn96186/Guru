@@ -94,6 +94,7 @@ export type MenuStackParamList = {
   NotesSearch: undefined;
   ManualNoteCreation: undefined;
   TranscriptHistory: { noteId?: number } | undefined;
+  PdfViewer: { uri: string; title?: string };
   RecordingVault: undefined;
   ImageVault: undefined;
   NotesVault: undefined;

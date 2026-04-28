@@ -38,6 +38,7 @@ import RecordingVaultScreen from '../screens/RecordingVaultScreen';
 import ImageVaultScreen from '../screens/ImageVaultScreen';
 import NotesVaultScreen from '../screens/NotesVaultScreen';
 import TranscriptVaultScreen from '../screens/TranscriptVaultScreen';
+import PdfViewerScreen from '../screens/PdfViewerScreen';
 
 const HomeStack = createNativeStackNavigator<HomeStackParamList>();
 const SyllabusStack = createNativeStackNavigator<SyllabusStackParamList>();
@@ -106,6 +107,7 @@ export function MenuStackNav() {
       <MenuStack.Screen name="NotesSearch" component={NotesSearchScreen} />
       <MenuStack.Screen name="ManualNoteCreation" component={ManualNoteCreationScreen} />
       <MenuStack.Screen name="TranscriptHistory" component={TranscriptHistoryScreen} />
+      <MenuStack.Screen name="PdfViewer" component={PdfViewerScreen} />
       <MenuStack.Screen name="QuestionBank" component={QuestionBankScreen} />
       <MenuStack.Screen name="FlaggedContent" component={FlaggedContentScreen} />
       <MenuStack.Screen name="RecordingVault" component={RecordingVaultScreen} />

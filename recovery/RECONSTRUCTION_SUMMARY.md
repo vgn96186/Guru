@@ -23,6 +23,8 @@ Target: `recovery/reconstruction`
 - `3828774` recover(stash4): add mindmap/studyplan/transcripts scaffolding
 - `f4ef9de` recover(navigation): unify tab retap behavior
 - `dbbb48f` recover(settings): add embedding model section
+- `2f0592a` chore: ignore babel-debug log
+- `8f83b9c` recover(tests): update BrainDumpFab unit test
 
 ## Verification
 

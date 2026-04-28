@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, Pressable, StyleSheet } from 'react-native';
 import type { GuruChatState } from '../types';
 import { GuruChatModelSelector } from '../../../../../components/chat/GuruChatModelSelector';
+import { useGuruChatModels } from '../../../../../hooks/useGuruChatModels';
 import SettingsLabel from '../../../components/SettingsLabel';
 import LinearText from '../../../../../components/primitives/LinearText';
 import { linearTheme as n } from '../../../../../theme/linearTheme';
@@ -23,14 +24,13 @@ export default function ChatModelSection({
   styles,
 }: Props) {
   const {
-    models: liveGuruChatModels,
     defaultModel: guruChatDefaultModel,
     setDefaultModel: setGuruChatDefaultModel,
   } = guruChat;
 
   const [pickerVisible, setPickerVisible] = useState(false);
 
-  const availableModels = React.useMemo(() => liveGuruChatModels, [liveGuruChatModels]);
+  const { availableModels } = useGuruChatModels({ profile });
 
   const selectedModel = availableModels.find((m) => m.id === guruChatDefaultModel);
   const displayLabel = selectedModel ? selectedModel.name : guruChatDefaultModel;

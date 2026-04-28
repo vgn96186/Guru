@@ -366,3 +366,15 @@ export const MOCK_EXTERNAL_LECTURE_AUDIO_URL =
 export const FEATURE_TEXTURE = false;
 
 export const VERTEX_MODELS = ['gemini-2.5-pro', 'gemini-2.5-flash', 'gemini-2.0-flash'] as const;
+
+export const JINA_EMBEDDING_MODELS = ['jina-embeddings-v3', 'jina-embeddings-v2-base-en'] as const;
+
+export const OPENROUTER_EMBEDDING_MODELS = [
+  'openai/text-embedding-3-small',
+  'openai/text-embedding-3-large',
+] as const;
+
+export const GEMINI_EMBEDDING_MODELS = [
+  'models/text-embedding-004',
+  'models/gemini-embedding-001',
+] as const;

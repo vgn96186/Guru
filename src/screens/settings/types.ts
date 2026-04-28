@@ -30,7 +30,7 @@ export interface AppBackup {
   brain_dumps?: BackupRow[];
 }
 
-export type ValidationProviderId = ProviderId | 'deepgram' | 'fal' | 'brave' | 'google';
+export type ValidationProviderId = ProviderId | 'deepgram' | 'fal' | 'brave' | 'google' | 'jina';
 export type ApiValidationEntry = { verified: boolean; verifiedAt: number; fingerprint: string };
 export type ApiValidationState = Partial<Record<ValidationProviderId, ApiValidationEntry>>;
 

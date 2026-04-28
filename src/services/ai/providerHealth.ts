@@ -56,6 +56,39 @@ export async function testGroqConnection(key: string): Promise<ProviderHealthRes
   }
 }
 
+export async function testJinaConnection(key: string): Promise<ProviderHealthResult> {
+  const trimmed = key.trim();
+  if (!trimmed) {
+    return { ok: false, status: 0, message: 'empty key' };
+  }
+  try {
+    const res = await fetch('https://api.jina.ai/v1/embeddings', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${trimmed}`,
+      },
+      body: JSON.stringify({
+        model: 'jina-embeddings-v3',
+        task: 'text-matching',
+        input: ['test'],
+        dimensions: 768,
+      }),
+    });
+    return {
+      ok: res.ok,
+      status: res.status,
+      message: res.ok ? undefined : await res.text(),
+    };
+  } catch (error) {
+    return {
+      ok: false,
+      status: 0,
+      message: error instanceof Error ? error.message : 'Unknown connection error',
+    };
+  }
+}
+
 export async function testOpenRouterConnection(key: string): Promise<ProviderHealthResult> {
   try {
     const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {

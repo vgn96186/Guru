@@ -12,7 +12,7 @@ import {
 } from '../repositories/guruChatRepository.drizzle';
 import { getDrizzleDb } from '../drizzle';
 import { runInTransaction } from '../database';
-import { eq, sql, desc, or, like, and } from 'drizzle-orm';
+import { eq, sql, desc, or, like, and, inArray } from 'drizzle-orm';
 import {
   lectureNotes,
   subjects,
@@ -328,10 +328,15 @@ export async function getLectureHistory(limit = 50): Promise<LectureHistoryItem[
   }));
 }
 
+import { generateEmbedding } from '../../services/ai/embeddingService';
+import { getDb } from '../database';
+
 export async function searchLectureNotes(query: string, limit = 20): Promise<LectureHistoryItem[]> {
   const db = getDrizzleDb();
   const likeQuery = `%${query}%`;
-  const rows = await db
+  
+  // 1. LIKE search
+  const likeRows = await db
     .select({
       id: lectureNotes.id,
       subjectId: lectureNotes.subjectId,
@@ -359,7 +364,66 @@ export async function searchLectureNotes(query: string, limit = 20): Promise<Lec
     .orderBy(desc(lectureNotes.createdAt))
     .limit(limit);
 
-  return rows.map((row) => ({
+  // 2. Semantic search
+  const vector = await generateEmbedding(query);
+  let vssRows: typeof likeRows = [];
+  
+  if (vector) {
+    try {
+      const rawDb = getDb();
+      const vssResults = await rawDb.getAllAsync<{ id: number; distance: number }>(
+        `SELECT id, vec_distance_cosine(embedding, ?) as distance
+         FROM vss_lecture_notes
+         WHERE embedding MATCH ? AND k = ?
+         ORDER BY distance ASC`,
+        [embeddingToBlob(vector), embeddingToBlob(vector), limit]
+      );
+      
+      const vssIds = vssResults.map((r) => r.id);
+      
+      if (vssIds.length > 0) {
+        // Fetch full rows for semantic hits
+        const semanticRows = await db
+          .select({
+            id: lectureNotes.id,
+            subjectId: lectureNotes.subjectId,
+            subjectName: subjects.name,
+            note: lectureNotes.note,
+            transcript: lectureNotes.transcript,
+            summary: lectureNotes.summary,
+            topicsJson: lectureNotes.topicsJson,
+            appName: lectureNotes.appName,
+            durationMinutes: lectureNotes.durationMinutes,
+            confidence: lectureNotes.confidence,
+            createdAt: lectureNotes.createdAt,
+            recordingPath: lectureNotes.recordingPath,
+          })
+          .from(lectureNotes)
+          .leftJoin(subjects, eq(lectureNotes.subjectId, subjects.id))
+          .where(inArray(lectureNotes.id, vssIds));
+          
+        // Sort by the VSS distance order
+        vssRows = vssIds
+          .map((id) => semanticRows.find((r) => r.id === id))
+          .filter((r): r is NonNullable<typeof r> => !!r);
+      }
+    } catch (err) {
+      if (__DEV__) console.warn('[DB] Semantic search failed:', err);
+    }
+  }
+
+  // 3. Merge results (LIKE hits first, then VSS hits, deduplicated)
+  const mergedMap = new Map<number, typeof likeRows[0]>();
+  for (const row of likeRows) {
+    if (!mergedMap.has(row.id)) mergedMap.set(row.id, row);
+  }
+  for (const row of vssRows) {
+    if (!mergedMap.has(row.id)) mergedMap.set(row.id, row);
+  }
+
+  const combinedRows = Array.from(mergedMap.values()).slice(0, limit);
+
+  return combinedRows.map((row) => ({
     id: row.id,
     subjectId: row.subjectId,
     subjectName: row.subjectName,

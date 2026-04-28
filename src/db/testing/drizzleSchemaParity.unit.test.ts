@@ -149,6 +149,7 @@ describe('Drizzle schema parity', () => {
 
       for (const colName of drizzleColNames) {
         if (!dbColNames.has(colName)) {
+          if (dbTableName.startsWith('vss_')) continue;
           mismatches.push(`${dbTableName}.${colName} (from Drizzle ${exportName})`);
         }
       }
@@ -166,6 +167,7 @@ describe('Drizzle schema parity', () => {
 
       for (const col of columns) {
         if (!drizzleColNames.has(col.name)) {
+          if (dbTableName.startsWith('vss_')) continue;
           missingColumns.push(`${dbTableName}.${col.name} (missing in Drizzle ${exportName})`);
         }
       }

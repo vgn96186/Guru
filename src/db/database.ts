@@ -164,6 +164,20 @@ async function initDatabaseInternal(forceSeed = false): Promise<void> {
     }
 
     _db = await SQLite.openDatabaseAsync(DB_NAME);
+    
+    // Load sqlite-vec extension if available
+    if (SQLite.bundledExtensions && SQLite.bundledExtensions['sqlite-vec']) {
+      const ext = SQLite.bundledExtensions['sqlite-vec'];
+      try {
+        if (ext.libPath && ext.entryPoint) {
+          await _db.loadExtensionAsync(ext.libPath, ext.entryPoint);
+          if (__DEV__) console.log('[DB] sqlite-vec extension loaded successfully');
+        }
+      } catch (err) {
+        console.warn('[DB] Failed to load sqlite-vec extension:', err);
+      }
+    }
+    
     // Enable WAL mode for better concurrency (simultaneous reads and writes)
     await _db.execAsync('PRAGMA journal_mode = WAL');
     await _db.execAsync('PRAGMA busy_timeout = 5000');
@@ -327,7 +341,7 @@ export async function seedTopics(_db: SQLite.SQLiteDatabase): Promise<void> {
     await db.execAsync('DELETE FROM tmp_parent_mapping');
 
     // Batched multi-VALUES INSERTs for the parent mapping.
-    const withParent = TOPICS_SEED.filter((t) => t[4] !== undefined) as Array<
+    const withParent = TOPICS_SEED.filter((t: any) => t[4] !== undefined) as Array<
       [number, string, number, number, string]
     >;
     for (let i = 0; i < withParent.length; i += SEED_INSERT_CHUNK) {
@@ -363,7 +377,7 @@ export async function seedTopics(_db: SQLite.SQLiteDatabase): Promise<void> {
 async function seedVaultTopics(_db: SQLite.SQLiteDatabase): Promise<void> {
   await runInTransaction(async (db) => {
     // Batch insert all vault topics in one statement
-    if (VAULT_TOPICS_SEED.length === 0) return;
+    if (!VAULT_TOPICS_SEED || VAULT_TOPICS_SEED.length === 0) return;
 
     const placeholders = VAULT_TOPICS_SEED.map(() => '(?, ?, ?, ?)').join(',');
     const values = VAULT_TOPICS_SEED.flatMap(([subjectId, name, priority, minutes]) => [
@@ -504,6 +518,12 @@ export async function ensureCriticalColumns(db: SQLite.SQLiteDatabase): Promise<
       ['orb_effect', "TEXT NOT NULL DEFAULT 'ripple'"],
       ['web_search_order', 'TEXT DEFAULT NULL'],
       ['disabled_web_search_providers', "TEXT NOT NULL DEFAULT '[]'"],
+      ['doomscroll_shield_enabled', 'INTEGER NOT NULL DEFAULT 1'],
+      ['use_nano', 'INTEGER NOT NULL DEFAULT 0'],
+      ['image_generation_order', "TEXT NOT NULL DEFAULT '[]'"],
+      ['transcription_order', "TEXT NOT NULL DEFAULT '[]'"],
+      ['embedding_provider', "TEXT NOT NULL DEFAULT 'gemini'"],
+      ['embedding_model', "TEXT NOT NULL DEFAULT 'models/text-embedding-004'"],
     ],
     topics: [
       ['parent_topic_id', 'INTEGER REFERENCES topics(id) ON DELETE SET NULL'],
@@ -625,8 +645,85 @@ export async function ensureCriticalColumns(db: SQLite.SQLiteDatabase): Promise<
       );
       if (__DEV__) console.log('[DB] Added idx_topics_subject_priority for search optimization');
     }
+
+    // Ensure virtual tables for vector search
+    await db.execAsync(
+      'CREATE VIRTUAL TABLE IF NOT EXISTS vss_lecture_notes USING vec0(id INTEGER PRIMARY KEY, embedding float[768])'
+    );
+    
+    await db.execAsync(
+      'CREATE VIRTUAL TABLE IF NOT EXISTS vss_topics USING vec0(id INTEGER PRIMARY KEY, embedding float[768])'
+    );
+
+    // Sync missing embeddings
+    await db.execAsync(`
+      INSERT INTO vss_lecture_notes(id, embedding)
+      SELECT id, embedding FROM lecture_notes 
+      WHERE embedding IS NOT NULL 
+        AND id NOT IN (SELECT id FROM vss_lecture_notes)
+    `);
+    
+    await db.execAsync(`
+      INSERT INTO vss_topics(id, embedding)
+      SELECT id, embedding FROM topics 
+      WHERE embedding IS NOT NULL 
+        AND id NOT IN (SELECT id FROM vss_topics)
+    `);
+
+    // Triggers for keeping vector index in sync
+    await db.execAsync(`
+      CREATE TRIGGER IF NOT EXISTS lecture_notes_ai_insert
+      AFTER INSERT ON lecture_notes
+      WHEN new.embedding IS NOT NULL
+      BEGIN
+        INSERT INTO vss_lecture_notes(id, embedding) VALUES (new.id, new.embedding);
+      END;
+    `);
+    
+    await db.execAsync(`
+      CREATE TRIGGER IF NOT EXISTS lecture_notes_ai_update
+      AFTER UPDATE ON lecture_notes
+      WHEN new.embedding IS NOT NULL
+      BEGIN
+        INSERT OR REPLACE INTO vss_lecture_notes(id, embedding) VALUES (new.id, new.embedding);
+      END;
+    `);
+    
+    await db.execAsync(`
+      CREATE TRIGGER IF NOT EXISTS lecture_notes_ai_delete
+      AFTER DELETE ON lecture_notes
+      BEGIN
+        DELETE FROM vss_lecture_notes WHERE id = old.id;
+      END;
+    `);
+    
+    await db.execAsync(`
+      CREATE TRIGGER IF NOT EXISTS topics_ai_insert
+      AFTER INSERT ON topics
+      WHEN new.embedding IS NOT NULL
+      BEGIN
+        INSERT INTO vss_topics(id, embedding) VALUES (new.id, new.embedding);
+      END;
+    `);
+    
+    await db.execAsync(`
+      CREATE TRIGGER IF NOT EXISTS topics_ai_update
+      AFTER UPDATE ON topics
+      WHEN new.embedding IS NOT NULL
+      BEGIN
+        INSERT OR REPLACE INTO vss_topics(id, embedding) VALUES (new.id, new.embedding);
+      END;
+    `);
+    
+    await db.execAsync(`
+      CREATE TRIGGER IF NOT EXISTS topics_ai_delete
+      AFTER DELETE ON topics
+      BEGIN
+        DELETE FROM vss_topics WHERE id = old.id;
+      END;
+    `);
   } catch (err) {
-    if (__DEV__) console.warn('[DB] Failed to add search index:', err);
+    if (__DEV__) console.warn('[DB] Failed to add search index / vec0 table:', err);
   }
 }
 

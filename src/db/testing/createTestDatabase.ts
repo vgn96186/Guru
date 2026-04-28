@@ -19,6 +19,14 @@ export function createTestDatabase(_seedWithData = false): SQLiteDatabase {
   const raw = new Database(':memory:');
   raw.pragma('journal_mode = DELETE');
   raw.pragma('foreign_keys = ON');
+  
+  // Mock sqlite-vec functions for tests
+  raw.function('vec_distance_cosine', (a, b) => {
+    // For tests, return a mocked distance of 0.1 (high similarity)
+    // so that queries using it can pass without native sqlite-vec
+    return 0.1;
+  });
+
   const baselineSql = readFileSync(
     join(__dirname, '..', 'drizzle-migrations', '0000_baseline_v164.sql'),
     'utf8',

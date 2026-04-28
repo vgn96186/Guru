@@ -1,0 +1,16 @@
+1. expo-av to expo-audio migration
+2. SQLite-vec semantic search
+3. Jina AI embedding implementation
+4. Model/provider UI improvements
+5. App transparency fixes
+6. Header size standardization
+7. Codebase monolith refactors
+8. FlashList v2 migration
+9. expo-sqlite/kv-store migration
+10. Logging service improvements
+11. Android edge-to-edge fixes
+12. useDeferredValue search optimization
+13. TouchableOpacity migration
+14. JS bottom tabs fix
+15. Falsy rendering crash fixes
+16. npm audit/test/CI fixes

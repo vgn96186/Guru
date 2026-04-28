@@ -1,0 +1,233 @@
+=== TERM: expo-av ===
+f8e83c8 Show actual audio duration on lecture return sheet
+57b4857 recover(notes): restore NotesHub tweaks
+82b2407 recover(audio): restore lecture return + audio recorder
+2f592cb recover(settings): restore provider status + permissions
+fd32641 (rescue/stash5-49d89a6) rescue: snapshot stash@{0} 49d89a6
+9481cb0 (rescue/stash4-4aaf10e) rescue: snapshot stash@{4} 4aaf10e
+38550b4 (rescue/stash1-61fca63) rescue: snapshot stash@{1} 61fca63
+1973d80 Cascade snapshot 2026-04-27T09:52:51.640588Z
+8c80d2b Cascade snapshot 2026-04-27T09:33:12.370097Z
+d8570b5 (origin/debug-3) Refactor Settings UI, add category summaries, and update Local AI models screen
+7a1fb76 debug 3: refactor AI v2, clean up settings dashboard, and fix tests
+
+=== TERM: expo-audio ===
+57b4857 recover(notes): restore NotesHub tweaks
+6b158ca recover(ai): restore embedding service unit tests
+82b2407 recover(audio): restore lecture return + audio recorder
+2f592cb recover(settings): restore provider status + permissions
+fd32641 (rescue/stash5-49d89a6) rescue: snapshot stash@{0} 49d89a6
+a4a9d5f untracked files on debug-4: 027bd15 refactor(notes-vault): add feature folder skeleton
+9481cb0 (rescue/stash4-4aaf10e) rescue: snapshot stash@{4} 4aaf10e
+38550b4 (rescue/stash1-61fca63) rescue: snapshot stash@{1} 61fca63
+1973d80 Cascade snapshot 2026-04-27T09:52:51.640588Z
+8c80d2b Cascade snapshot 2026-04-27T09:33:12.370097Z
+
+=== TERM: sqlite-vec ===
+458826b recover(db): restore aiCache helpers + test db setup
+fd32641 (rescue/stash5-49d89a6) rescue: snapshot stash@{0} 49d89a6
+38550b4 (rescue/stash1-61fca63) rescue: snapshot stash@{1} 61fca63
+
+=== TERM: sqlite_vec ===
+
+=== TERM: vec0 ===
+458826b recover(db): restore aiCache helpers + test db setup
+fd32641 (rescue/stash5-49d89a6) rescue: snapshot stash@{0} 49d89a6
+38550b4 (rescue/stash1-61fca63) rescue: snapshot stash@{1} 61fca63
+
+=== TERM: jina ===
+4e55f7f (rescue/dangling-4e55f7f) WIP on debug-4: 58902fe feat(ai): add Jina embedding health check and model constants
+bdd9448 index on debug-4: 58902fe feat(ai): add Jina embedding health check and model constants
+58902fe feat(ai): add Jina embedding health check and model constants
+6b158ca recover(ai): restore embedding service unit tests
+ea01928 recover(settings): add embedding section
+2f592cb recover(settings): restore provider status + permissions
+fd32641 (rescue/stash5-49d89a6) rescue: snapshot stash@{0} 49d89a6
+a4a9d5f untracked files on debug-4: 027bd15 refactor(notes-vault): add feature folder skeleton
+9481cb0 (rescue/stash4-4aaf10e) rescue: snapshot stash@{4} 4aaf10e
+b176d13 (rescue/stash2-040266c) rescue: snapshot stash@{2} 040266c
+38550b4 (rescue/stash1-61fca63) rescue: snapshot stash@{1} 61fca63
+dedf53f (rescue/stash0-3199411) rescue: snapshot stash@{0} 3199411
+58902fe feat(ai): add Jina embedding health check and model constants
+
+=== TERM: embedding_provider ===
+dd7f636 (rescue/dangling-dd7f636) WIP on debug-4: e0c529c feat(db): add embedding_provider and embedding_model columns
+8994696 index on debug-4: e0c529c feat(db): add embedding_provider and embedding_model columns
+e0c529c feat(db): add embedding_provider and embedding_model columns
+458826b recover(db): restore aiCache helpers + test db setup
+fd32641 (rescue/stash5-49d89a6) rescue: snapshot stash@{0} 49d89a6
+a4a9d5f untracked files on debug-4: 027bd15 refactor(notes-vault): add feature folder skeleton
+b176d13 (rescue/stash2-040266c) rescue: snapshot stash@{2} 040266c
+38550b4 (rescue/stash1-61fca63) rescue: snapshot stash@{1} 61fca63
+e0c529c feat(db): add embedding_provider and embedding_model columns
+01c0006 index on debug-4: 7acda83 feat: add console and network interceptors
+
+=== TERM: providerHealth ===
+697eac8 feat(ai): Add Vertex AI as an LLM provider
+9481cb0 (rescue/stash4-4aaf10e) rescue: snapshot stash@{4} 4aaf10e
+b176d13 (rescue/stash2-040266c) rescue: snapshot stash@{2} 040266c
+58902fe feat(ai): add Jina embedding health check and model constants
+8994696 index on debug-4: e0c529c feat(db): add embedding_provider and embedding_model columns
+d8570b5 (origin/debug-3) Refactor Settings UI, add category summaries, and update Local AI models screen
+7a1fb76 debug 3: refactor AI v2, clean up settings dashboard, and fix tests
+159d258 Save work from Guru/debug before moving to Guru-3
+b0d1cc9 chore: save local changes
+697eac8 feat(ai): Add Vertex AI as an LLM provider
+e791197 chore: snapshot current debug-3 worktree
+
+=== TERM: transparency ===
+e791197 chore: snapshot current debug-3 worktree
+7f2ec3c fix: test types
+871728e WIP: checkpoint current app changes
+d78833f chore: clean up root directory clutter and untrack artifacts
+052cb39 Checkpoint current app snapshot
+b3e9f99 Update app implementation, refactor multiple screens and services, and add master implementation document
+5c1b189 fix(deps): resolve all expo doctor dependency issues
+
+=== TERM: header ===
+e318b32 feat: AgentRouter/DeepSeek providers, customizable routing, ADHD session shuffle
+c30aa86 feat: add "I dont know - Explain" button and structured quiz explanations
+2303fde fix: HomeScreen UI polish + responsive StartButton + transaction crash fix
+1948e06 fix: UI/UX audit — theme compliance, contrast, touch targets, transitions
+f8e83c8 Show actual audio duration on lecture return sheet
+5614e6b Add consistent back headers to menu screens
+b628d8b feat(ux): exam toggle, feature wiring, UX softening, and progressive disclosure
+82b2407 recover(audio): restore lecture return + audio recorder
+fd32641 (rescue/stash5-49d89a6) rescue: snapshot stash@{0} 49d89a6
+a4a9d5f untracked files on debug-4: 027bd15 refactor(notes-vault): add feature folder skeleton
+9481cb0 (rescue/stash4-4aaf10e) rescue: snapshot stash@{4} 4aaf10e
+b176d13 (rescue/stash2-040266c) rescue: snapshot stash@{2} 040266c
+38550b4 (rescue/stash1-61fca63) rescue: snapshot stash@{1} 61fca63
+dedf53f (rescue/stash0-3199411) rescue: snapshot stash@{0} 3199411
+58902fe feat(ai): add Jina embedding health check and model constants
+8994696 index on debug-4: e0c529c feat(db): add embedding_provider and embedding_model columns
+2a7387a (origin/debug-4) fix: gemini and vertex ai integration improvements
+
+=== TERM: monolith ===
+3e58563 refactor: apply monolith screen template to HomeScreen
+106c4e2 refactor: apply monolith screen template to TopicDetailScreen
+16a3213 refactor: extract LectureModeScreen components and logic
+6dc30fb refactor: extract LectureReturnSheet presentational logic
+52b8476 refactor: extract SessionScreen components and logic
+6688b6e refactor: extract shared vault logic and cards
+d952ec1 refactor: extract GuruChatScreen logic
+0afabcb refactor: decouple MindMapScreen into focused components
+8388b91 refactor: extract TranscriptHistoryScreen components
+9cf677b refactor: split chat.ts into modular files
+b176d13 (rescue/stash2-040266c) rescue: snapshot stash@{2} 040266c
+9418a91 refactor: extract StudyPlanScreen sub-cards to separate files
+e791197 chore: snapshot current debug-3 worktree
+7f2ec3c fix: test types
+5559e15 wip: snapshot in-progress work across native modules, AI v2, chat refactor
+3aac116 feat: apply patches 01-14, migrate theme & button variants
+d78833f chore: clean up root directory clutter and untrack artifacts
+2f74fca Enhance study session formatting, add pulsing animation to exam countdown, and fix exam date sync
+b494c0b chore: consolidate inner repo changes safely
+b3e9f99 Update app implementation, refactor multiple screens and services, and add master implementation document
+
+=== TERM: FlashList ===
+a695740 chore: standardize UI primitives, color tokens, and async patterns
+fd32641 (rescue/stash5-49d89a6) rescue: snapshot stash@{0} 49d89a6
+a4a9d5f untracked files on debug-4: 027bd15 refactor(notes-vault): add feature folder skeleton
+9481cb0 (rescue/stash4-4aaf10e) rescue: snapshot stash@{4} 4aaf10e
+38550b4 (rescue/stash1-61fca63) rescue: snapshot stash@{1} 61fca63
+dedf53f (rescue/stash0-3199411) rescue: snapshot stash@{0} 3199411
+284e951 fix: resolve navigation swipes, LoadingOrb physics, and ui tweaks
+1973d80 Cascade snapshot 2026-04-27T09:52:51.640588Z
+8c80d2b Cascade snapshot 2026-04-27T09:33:12.370097Z
+159d258 Save work from Guru/debug before moving to Guru-3
+d952ec1 refactor: extract GuruChatScreen logic
+
+=== TERM: flash-list ===
+fd32641 (rescue/stash5-49d89a6) rescue: snapshot stash@{0} 49d89a6
+a4a9d5f untracked files on debug-4: 027bd15 refactor(notes-vault): add feature folder skeleton
+9481cb0 (rescue/stash4-4aaf10e) rescue: snapshot stash@{4} 4aaf10e
+b176d13 (rescue/stash2-040266c) rescue: snapshot stash@{2} 040266c
+38550b4 (rescue/stash1-61fca63) rescue: snapshot stash@{1} 61fca63
+dedf53f (rescue/stash0-3199411) rescue: snapshot stash@{0} 3199411
+284e951 fix: resolve navigation swipes, LoadingOrb physics, and ui tweaks
+1973d80 Cascade snapshot 2026-04-27T09:52:51.640588Z
+8c80d2b Cascade snapshot 2026-04-27T09:33:12.370097Z
+159d258 Save work from Guru/debug before moving to Guru-3
+
+=== TERM: mmkv ===
+fd32641 (rescue/stash5-49d89a6) rescue: snapshot stash@{0} 49d89a6
+a4a9d5f untracked files on debug-4: 027bd15 refactor(notes-vault): add feature folder skeleton
+9481cb0 (rescue/stash4-4aaf10e) rescue: snapshot stash@{4} 4aaf10e
+b176d13 (rescue/stash2-040266c) rescue: snapshot stash@{2} 040266c
+c59ecd9 Feat: Complete app implementation with dynamic planning, external app integration, active study tracking, and bug fixes.
+
+=== TERM: kv ===
+fd32641 (rescue/stash5-49d89a6) rescue: snapshot stash@{0} 49d89a6
+a4a9d5f untracked files on debug-4: 027bd15 refactor(notes-vault): add feature folder skeleton
+9481cb0 (rescue/stash4-4aaf10e) rescue: snapshot stash@{4} 4aaf10e
+b176d13 (rescue/stash2-040266c) rescue: snapshot stash@{2} 040266c
+38550b4 (rescue/stash1-61fca63) rescue: snapshot stash@{1} 61fca63
+284e951 fix: resolve navigation swipes, LoadingOrb physics, and ui tweaks
+1973d80 Cascade snapshot 2026-04-27T09:52:51.640588Z
+8c80d2b Cascade snapshot 2026-04-27T09:33:12.370097Z
+d8570b5 (origin/debug-3) Refactor Settings UI, add category summaries, and update Local AI models screen
+7a1fb76 debug 3: refactor AI v2, clean up settings dashboard, and fix tests
+
+=== TERM: edge-to-edge ===
+e791197 chore: snapshot current debug-3 worktree
+7f2ec3c fix: test types
+bb31360 debug: sync local workspace (CI/unit tests, tooling, UI, services)
+a695740 chore: standardize UI primitives, color tokens, and async patterns
+d78833f chore: clean up root directory clutter and untrack artifacts
+052cb39 Checkpoint current app snapshot
+4127fe0 chore: apply full workspace updates
+02a4f04 refactor(ui): update stats, session, and home screens for adhd audience
+c59ecd9 Feat: Complete app implementation with dynamic planning, external app integration, active study tracking, and bug fixes.
+
+=== TERM: useDeferredValue ===
+38550b4 (rescue/stash1-61fca63) rescue: snapshot stash@{1} 61fca63
+
+=== TERM: TouchableOpacity ===
+9481cb0 (rescue/stash4-4aaf10e) rescue: snapshot stash@{4} 4aaf10e
+38550b4 (rescue/stash1-61fca63) rescue: snapshot stash@{1} 61fca63
+dedf53f (rescue/stash0-3199411) rescue: snapshot stash@{0} 3199411
+284e951 fix: resolve navigation swipes, LoadingOrb physics, and ui tweaks
+1973d80 Cascade snapshot 2026-04-27T09:52:51.640588Z
+8c80d2b Cascade snapshot 2026-04-27T09:33:12.370097Z
+d8570b5 (origin/debug-3) Refactor Settings UI, add category summaries, and update Local AI models screen
+7a1fb76 debug 3: refactor AI v2, clean up settings dashboard, and fix tests
+159d258 Save work from Guru/debug before moving to Guru-3
+b0d1cc9 chore: save local changes
+
+=== TERM: BottomTabs ===
+159d258 Save work from Guru/debug before moving to Guru-3
+
+=== TERM: tab bar ===
+e791197 chore: snapshot current debug-3 worktree
+7f2ec3c fix: test types
+bb31360 debug: sync local workspace (CI/unit tests, tooling, UI, services)
+35236ec feat: update debug workspace state
+1444c93 Optimize page transitions and resolve frame dropping issues
+b420746 chore: UI/UX polish, permissions, and DB consistency
+4127fe0 chore: apply full workspace updates
+
+=== TERM: falsy ===
+86ecb6b test: add comprehensive tests for loadTranscriptFromFile
+7a1fb76 debug 3: refactor AI v2, clean up settings dashboard, and fix tests
+697eac8 feat(ai): Add Vertex AI as an LLM provider
+6696d2b test: safely introduce 60+ passing characterization tests across app layers
+86ecb6b test: add comprehensive tests for loadTranscriptFromFile
+
+=== TERM: npm audit ===
+4127fe0 chore: apply full workspace updates
+dc0f866 Add new features: Guru Chat, Break Enforcer, Device Sync, FSRS, and UI improvements
+
+=== TERM: verify:ci ===
+bb31360 debug: sync local workspace (CI/unit tests, tooling, UI, services)
+b176d13 (rescue/stash2-040266c) rescue: snapshot stash@{2} 040266c
+cd9022d refactor(settings): extract backup and danger operations from SettingsScreen.tsx
+9418a91 refactor: extract StudyPlanScreen sub-cards to separate files
+e791197 chore: snapshot current debug-3 worktree
+7f2ec3c fix: test types
+99d56e5 chore: add .factory directory with Drizzle ORM migration mission infrastructure
+3aac116 feat: apply patches 01-14, migrate theme & button variants
+3b40489 WIP: snapshot current state
+25cadb7 debug: sync local workspace changes
+bb31360 debug: sync local workspace (CI/unit tests, tooling, UI, services)
+

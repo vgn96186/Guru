@@ -101,5 +101,8 @@ Floating Overlay Widget Design.zip
 *.swo
 *~
 
+# Local git worktrees (do not commit)
+.worktrees/
+
 # Jest coverage output
 coverage/

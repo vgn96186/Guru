@@ -16,10 +16,14 @@ Target: `recovery/reconstruction`
 - `d18e523` recover(transcription): restore matching improvements
 - `6b158ca` recover(ai): restore embedding service unit tests
 - `57b4857` recover(notes): restore NotesHub tweaks
+- `579c240` recover(docs): add typecheck blockers audit
+- `2769d18` recover(audio): complete expo-audio migration blockers
+- `db0ba13` recover(types): fix webSearch typecheck blockers
 
 ## Verification
 
 - `npm run test:unit -- src/hooks/useLectureReturnRecovery.unit.test.ts` (pass)
+- `npm run typecheck` (pass)
 
 ## Next Candidates
 

@@ -19,6 +19,7 @@ Target: `recovery/reconstruction`
 - `579c240` recover(docs): add typecheck blockers audit
 - `2769d18` recover(audio): complete expo-audio migration blockers
 - `db0ba13` recover(types): fix webSearch typecheck blockers
+- `ea95a0c` recover(notes-vault): restore decomposed notes vault
 
 ## Verification
 

@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { View, Pressable, StyleSheet } from 'react-native';
 import type { GuruChatState } from '../types';
-import { buildAvailableGuruChatModels } from '../../../../../hooks/useGuruChatModels';
 import { GuruChatModelSelector } from '../../../../../components/chat/GuruChatModelSelector';
 import SettingsLabel from '../../../components/SettingsLabel';
 import LinearText from '../../../../../components/primitives/LinearText';
@@ -31,10 +30,7 @@ export default function ChatModelSection({
 
   const [pickerVisible, setPickerVisible] = useState(false);
 
-  // Derive available models strictly using API keys (same logic as GuruChat)
-  const availableModels = React.useMemo(() => {
-    return buildAvailableGuruChatModels(profile, liveGuruChatModels);
-  }, [profile, liveGuruChatModels]);
+  const availableModels = React.useMemo(() => liveGuruChatModels, [liveGuruChatModels]);
 
   const selectedModel = availableModels.find((m) => m.id === guruChatDefaultModel);
   const displayLabel = selectedModel ? selectedModel.name : guruChatDefaultModel;

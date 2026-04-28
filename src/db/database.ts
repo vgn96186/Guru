@@ -164,7 +164,7 @@ async function initDatabaseInternal(forceSeed = false): Promise<void> {
     }
 
     _db = await SQLite.openDatabaseAsync(DB_NAME);
-    
+
     // Load sqlite-vec extension if available
     if (SQLite.bundledExtensions && SQLite.bundledExtensions['sqlite-vec']) {
       const ext = SQLite.bundledExtensions['sqlite-vec'];
@@ -177,7 +177,7 @@ async function initDatabaseInternal(forceSeed = false): Promise<void> {
         console.warn('[DB] Failed to load sqlite-vec extension:', err);
       }
     }
-    
+
     // Enable WAL mode for better concurrency (simultaneous reads and writes)
     await _db.execAsync('PRAGMA journal_mode = WAL');
     await _db.execAsync('PRAGMA busy_timeout = 5000');
@@ -204,6 +204,8 @@ async function initDatabaseInternal(forceSeed = false): Promise<void> {
   } catch (migErr) {
     console.error('[DB] Drizzle migration failed:', migErr);
   }
+
+  await ensureSearchOptimizations(db);
 
   // Ensure all subjects exist on every boot (safe due to INSERT OR IGNORE)
   await seedSubjects(db);
@@ -476,6 +478,7 @@ export async function ensureCriticalColumns(db: SQLite.SQLiteDatabase): Promise<
       ['image_generation_model', "TEXT NOT NULL DEFAULT 'auto'"],
       ['image_generation_order', "TEXT NOT NULL DEFAULT '[]'"],
       ['transcription_order', "TEXT NOT NULL DEFAULT '[]'"],
+      ['action_hub_tools', "TEXT NOT NULL DEFAULT '[]'"],
       ['exam_type', "TEXT NOT NULL DEFAULT 'INICET'"],
       ['prefer_gemini_structured_json', 'INTEGER NOT NULL DEFAULT 1'],
       ['github_models_pat', "TEXT NOT NULL DEFAULT ''"],
@@ -625,16 +628,10 @@ export async function ensureCriticalColumns(db: SQLite.SQLiteDatabase): Promise<
   if (totalAdded > 0 && !__DEV__) {
     console.log(`[DB] Recovered ${totalAdded} missing column(s) across standard tables`);
   }
+}
 
-  // ─── Search Optimization Indexes ─────────────────────────────────────────────
-  // topics.name is queried with LOWER() LIKE — an index on subject_id+inicet_priority
-  // speeds the JOIN + ORDER BY in SyllabusScreen search queries.
-  // topics_search_subject_priority index covers:
-  //   WHERE LOWER(name) LIKE ? → subject_id filter (idx_topics_subject)
-  //   ORDER BY inicet_priority DESC → idx_topics_subject covers the subject scan
-  // We add the composite index on (subject_id, inicet_priority) if not present.
+export async function ensureSearchOptimizations(db: SQLite.SQLiteDatabase): Promise<void> {
   try {
-    const db = _db!;
     const existingIndexes = await db.getAllAsync<{ name: string }>(
       "SELECT name FROM sqlite_master WHERE type='index' AND tbl_name='topics'",
     );
@@ -645,24 +642,46 @@ export async function ensureCriticalColumns(db: SQLite.SQLiteDatabase): Promise<
       );
       if (__DEV__) console.log('[DB] Added idx_topics_subject_priority for search optimization');
     }
+  } catch (err) {
+    if (__DEV__) console.warn('[DB] Failed to add search index:', err);
+  }
 
-    // Ensure virtual tables for vector search
+  let vec0Ready = true;
+  try {
     await db.execAsync(
-      'CREATE VIRTUAL TABLE IF NOT EXISTS vss_lecture_notes USING vec0(id INTEGER PRIMARY KEY, embedding float[768])'
+      'CREATE VIRTUAL TABLE IF NOT EXISTS vss_lecture_notes USING vec0(id INTEGER PRIMARY KEY, embedding float[768] distance_metric=cosine)',
     );
-    
     await db.execAsync(
-      'CREATE VIRTUAL TABLE IF NOT EXISTS vss_topics USING vec0(id INTEGER PRIMARY KEY, embedding float[768])'
+      'CREATE VIRTUAL TABLE IF NOT EXISTS vss_topics USING vec0(id INTEGER PRIMARY KEY, embedding float[768] distance_metric=cosine)',
     );
+  } catch (err) {
+    vec0Ready = false;
+    const msg = (err instanceof Error ? err.message : String(err)).toLowerCase();
+    const looksLikeMissingVec0 = msg.includes('no such module') && msg.includes('vec0');
+    if (!looksLikeMissingVec0) {
+      if (__DEV__) console.warn('[DB] Failed to create vec0 virtual tables:', err);
+      return;
+    }
+    try {
+      await db.execAsync(
+        'CREATE TABLE IF NOT EXISTS vss_lecture_notes (id INTEGER PRIMARY KEY, embedding BLOB)',
+      );
+      await db.execAsync(
+        'CREATE TABLE IF NOT EXISTS vss_topics (id INTEGER PRIMARY KEY, embedding BLOB)',
+      );
+    } catch (fallbackErr) {
+      if (__DEV__) console.warn('[DB] Failed to create vector fallback tables:', fallbackErr);
+      return;
+    }
+  }
 
-    // Sync missing embeddings
+  try {
     await db.execAsync(`
       INSERT INTO vss_lecture_notes(id, embedding)
       SELECT id, embedding FROM lecture_notes 
       WHERE embedding IS NOT NULL 
         AND id NOT IN (SELECT id FROM vss_lecture_notes)
     `);
-    
     await db.execAsync(`
       INSERT INTO vss_topics(id, embedding)
       SELECT id, embedding FROM topics 
@@ -670,7 +689,6 @@ export async function ensureCriticalColumns(db: SQLite.SQLiteDatabase): Promise<
         AND id NOT IN (SELECT id FROM vss_topics)
     `);
 
-    // Triggers for keeping vector index in sync
     await db.execAsync(`
       CREATE TRIGGER IF NOT EXISTS lecture_notes_ai_insert
       AFTER INSERT ON lecture_notes
@@ -679,7 +697,6 @@ export async function ensureCriticalColumns(db: SQLite.SQLiteDatabase): Promise<
         INSERT INTO vss_lecture_notes(id, embedding) VALUES (new.id, new.embedding);
       END;
     `);
-    
     await db.execAsync(`
       CREATE TRIGGER IF NOT EXISTS lecture_notes_ai_update
       AFTER UPDATE ON lecture_notes
@@ -688,7 +705,6 @@ export async function ensureCriticalColumns(db: SQLite.SQLiteDatabase): Promise<
         INSERT OR REPLACE INTO vss_lecture_notes(id, embedding) VALUES (new.id, new.embedding);
       END;
     `);
-    
     await db.execAsync(`
       CREATE TRIGGER IF NOT EXISTS lecture_notes_ai_delete
       AFTER DELETE ON lecture_notes
@@ -696,7 +712,7 @@ export async function ensureCriticalColumns(db: SQLite.SQLiteDatabase): Promise<
         DELETE FROM vss_lecture_notes WHERE id = old.id;
       END;
     `);
-    
+
     await db.execAsync(`
       CREATE TRIGGER IF NOT EXISTS topics_ai_insert
       AFTER INSERT ON topics
@@ -705,7 +721,6 @@ export async function ensureCriticalColumns(db: SQLite.SQLiteDatabase): Promise<
         INSERT INTO vss_topics(id, embedding) VALUES (new.id, new.embedding);
       END;
     `);
-    
     await db.execAsync(`
       CREATE TRIGGER IF NOT EXISTS topics_ai_update
       AFTER UPDATE ON topics
@@ -714,7 +729,6 @@ export async function ensureCriticalColumns(db: SQLite.SQLiteDatabase): Promise<
         INSERT OR REPLACE INTO vss_topics(id, embedding) VALUES (new.id, new.embedding);
       END;
     `);
-    
     await db.execAsync(`
       CREATE TRIGGER IF NOT EXISTS topics_ai_delete
       AFTER DELETE ON topics
@@ -722,8 +736,12 @@ export async function ensureCriticalColumns(db: SQLite.SQLiteDatabase): Promise<
         DELETE FROM vss_topics WHERE id = old.id;
       END;
     `);
+
+    if (__DEV__ && !vec0Ready) {
+      console.warn('[DB] sqlite-vec not available; using non-ANN fallback tables for vss_*');
+    }
   } catch (err) {
-    if (__DEV__) console.warn('[DB] Failed to add search index / vec0 table:', err);
+    if (__DEV__) console.warn('[DB] Failed to backfill/trigger vector tables:', err);
   }
 }
 

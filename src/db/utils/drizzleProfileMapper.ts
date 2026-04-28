@@ -250,6 +250,13 @@ export function mapUserProfileRow(row: UserProfileRow | undefined): UserProfile 
         return [];
       }
     })(),
+    actionHubTools: (() => {
+      try {
+        return JSON.parse(row.actionHubTools ?? '[]') as string[];
+      } catch {
+        return [];
+      }
+    })(),
     guruMemoryNotes: row.guruMemoryNotes ?? '',
     preferGeminiStructuredJson: row.preferGeminiStructuredJson === 1,
     githubModelsPat: row.githubModelsPat ?? '',
@@ -506,6 +513,9 @@ export function mapToDrizzleUpdate(updates: Partial<UserProfile>): Partial<NewUs
   }
   if ('transcriptionOrder' in updates) {
     drizzleUpdate.transcriptionOrder = JSON.stringify(updates.transcriptionOrder ?? []);
+  }
+  if ('actionHubTools' in updates) {
+    drizzleUpdate.actionHubTools = JSON.stringify(updates.actionHubTools ?? []);
   }
   if ('disabledProviders' in updates) {
     drizzleUpdate.disabledProviders = JSON.stringify(updates.disabledProviders ?? []);

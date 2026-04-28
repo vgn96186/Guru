@@ -45,6 +45,8 @@ import Icon from '../components/primitives/Icon';
 import { navigationRef } from './navigationRef';
 import { HOME_GRID_STACK_BREAKPOINT } from '../components/home/homeLayout';
 import { motion } from '../motion/presets';
+import { ACTION_HUB_TOOL_META, type ActionHubToolId } from '../constants/actionHubTools';
+import { sanitizeActionHubTools } from '../utils/actionHubTools';
 
 const Tab = createMaterialTopTabNavigator<TabParamList>();
 
@@ -97,6 +99,26 @@ export default function TabNavigator() {
       chipWidth: windowWidth >= 520 ? ('16.66%' as const) : ('31.5%' as const),
     };
   }, [windowWidth, externalAppsTwoRowLayout]);
+
+  const toolsChipLayout = useMemo(() => {
+    const gridGap = 12;
+    const cols = 3;
+    const sheetPadX = (windowWidth < HOME_GRID_STACK_BREAKPOINT ? n.spacing.xl : n.spacing.lg) * 2;
+    const sheetOuterW = Math.min(windowWidth * 0.94, 680);
+    const innerW = Math.max(0, sheetOuterW - sheetPadX);
+    const w = (innerW - gridGap * (cols - 1)) / cols;
+    return { chipWidth: Math.max(92, w) };
+  }, [windowWidth]);
+
+  const quickChipLayout = useMemo(() => {
+    const gridGap = 12;
+    const cols = 2;
+    const sheetPadX = (windowWidth < HOME_GRID_STACK_BREAKPOINT ? n.spacing.xl : n.spacing.lg) * 2;
+    const sheetOuterW = Math.min(windowWidth * 0.94, 680);
+    const innerW = Math.max(0, sheetOuterW - sheetPadX);
+    const w = (innerW - gridGap * (cols - 1)) / cols;
+    return { chipWidth: Math.max(140, w) };
+  }, [windowWidth]);
 
   const refreshDueCount = useCallback(() => {
     getDb()
@@ -288,6 +310,10 @@ export default function TabNavigator() {
   }
 
   const actionHubExternalApps = EXTERNAL_APPS.slice(0, 6);
+  const actionHubTools = useMemo(
+    () => sanitizeActionHubTools(profile?.actionHubTools) as ActionHubToolId[],
+    [profile?.actionHubTools],
+  );
   const renderActionHubExternalChip = (app: (typeof EXTERNAL_APPS)[number]) => (
     <Pressable
       key={app.id}
@@ -321,6 +347,32 @@ export default function TabNavigator() {
       </LinearText>
     </Pressable>
   );
+
+  const renderActionHubTool = (id: ActionHubToolId) => {
+    const meta = ACTION_HUB_TOOL_META[id];
+    return (
+      <Pressable
+        key={id}
+        style={({ pressed }) => [
+          styles.toolChip,
+          { width: toolsChipLayout.chipWidth },
+          pressed && styles.actionPressed,
+        ]}
+        android_ripple={{ color: '#ffffff18' }}
+        onPress={() => openRoute(meta.tab, meta.screen)}
+        testID={`action-hub-tool-${id}`}
+        accessibilityRole="button"
+        accessibilityLabel={`Open ${meta.label}`}
+      >
+        <View style={styles.toolIconCircle}>
+          <Icon name={meta.icon} size="md" color={n.colors.textPrimary} />
+        </View>
+        <LinearText variant="meta" style={styles.toolChipLabel} numberOfLines={1} centered>
+          {meta.label}
+        </LinearText>
+      </Pressable>
+    );
+  };
 
   return (
     <View style={styles.flex}>
@@ -423,117 +475,6 @@ export default function TabNavigator() {
             >
               ACTION HUB
             </LinearText>
-            <View style={styles.topActionRow}>
-              <Pressable
-                style={({ pressed }) => [styles.topActionTile, pressed && styles.actionPressed]}
-                android_ripple={{ color: '#ffffff18' }}
-                onPress={() => openRoute('HomeTab', 'LectureMode', {})}
-                testID="action-hub-record-lecture"
-                accessibilityRole="button"
-                accessibilityLabel="Record lecture"
-              >
-                <Icon name="mic-outline" size="md" color={n.colors.textPrimary} />
-                <LinearText variant="body" style={styles.topActionTitle}>
-                  Record Lecture
-                </LinearText>
-              </Pressable>
-
-              <Pressable
-                style={({ pressed }) => [styles.topActionTile, pressed && styles.actionPressed]}
-                android_ripple={{ color: '#ffffff18' }}
-                onPress={() => openRoute('HomeTab', 'GlobalTopicSearch')}
-                testID="action-hub-search-topics"
-                accessibilityRole="button"
-                accessibilityLabel="Search any topic"
-              >
-                <Icon name="search-outline" size="md" color={n.colors.textPrimary} />
-                <LinearText variant="body" style={styles.topActionTitle}>
-                  Search Topics
-                </LinearText>
-              </Pressable>
-
-              <Pressable
-                style={({ pressed }) => [styles.topActionTile, pressed && styles.actionPressed]}
-                android_ripple={{ color: '#ffffff18' }}
-                onPress={() => openRoute('MenuTab', 'NotesVault')}
-                testID="action-hub-notes-vault"
-                accessibilityRole="button"
-                accessibilityLabel="Open notes vault"
-              >
-                <Icon name="library-outline" size="md" color={n.colors.textPrimary} />
-                <LinearText variant="body" style={styles.topActionTitle}>
-                  Notes Vault
-                </LinearText>
-              </Pressable>
-            </View>
-
-            <View style={styles.manualActionsContainer}>
-              <Pressable
-                style={({ pressed }) => [styles.topActionTile, pressed && styles.actionPressed]}
-                onPress={() => openRoute('HomeTab', 'DailyChallenge')}
-                testID="action-hub-daily-challenge"
-                accessibilityRole="button"
-                accessibilityLabel="Open daily challenge"
-              >
-                <Icon name="flash-outline" size="sm" color={n.colors.textSecondary} />
-                <LinearText variant="bodySmall" style={styles.manualActionText}>
-                  Daily Challenge
-                </LinearText>
-              </Pressable>
-
-              <Pressable
-                style={({ pressed }) => [styles.topActionTile, pressed && styles.actionPressed]}
-                onPress={() => openRoute('HomeTab', 'BossBattle')}
-                testID="action-hub-boss-battle"
-                accessibilityRole="button"
-                accessibilityLabel="Open boss battle"
-              >
-                <Icon name="shield-half-outline" size="sm" color={n.colors.textSecondary} />
-                <LinearText variant="bodySmall" style={styles.manualActionText}>
-                  Boss Battle
-                </LinearText>
-              </Pressable>
-
-              <Pressable
-                style={({ pressed }) => [styles.topActionTile, pressed && styles.actionPressed]}
-                onPress={() => openRoute('MenuTab', 'RecordingVault')}
-                testID="action-hub-recording-vault"
-                accessibilityRole="button"
-                accessibilityLabel="Open recording vault"
-              >
-                <Icon name="mic-outline" size="sm" color={n.colors.textSecondary} />
-                <LinearText variant="bodySmall" style={styles.manualActionText}>
-                  Upload Audio
-                </LinearText>
-              </Pressable>
-
-              <Pressable
-                style={({ pressed }) => [styles.topActionTile, pressed && styles.actionPressed]}
-                onPress={() => openRoute('MenuTab', 'TranscriptVault')}
-                testID="action-hub-transcript-vault"
-                accessibilityRole="button"
-                accessibilityLabel="Open transcript vault"
-              >
-                <Icon name="clipboard-outline" size="sm" color={n.colors.textSecondary} />
-                <LinearText variant="bodySmall" style={styles.manualActionText}>
-                  Transcript Tools
-                </LinearText>
-              </Pressable>
-
-              <Pressable
-                style={({ pressed }) => [styles.topActionTile, pressed && styles.actionPressed]}
-                onPress={() => navigation.navigate('BrainDumpReview' as never)}
-                testID="action-hub-parked-thoughts"
-                accessibilityRole="button"
-                accessibilityLabel="Review parked thoughts"
-              >
-                <Icon name="bulb-outline" size="sm" color={n.colors.textSecondary} />
-                <LinearText variant="bodySmall" style={styles.manualActionText}>
-                  Parked thoughts
-                </LinearText>
-              </Pressable>
-            </View>
-
             <View
               style={[
                 styles.externalHeader,
@@ -564,6 +505,100 @@ export default function TabNavigator() {
                 {actionHubExternalApps.map(renderActionHubExternalChip)}
               </View>
             )}
+
+            <View style={[styles.toolsHeader, actionHubNarrow && styles.externalHeaderNarrow]}>
+              <LinearText variant="meta" style={styles.externalTitle}>
+                Tools
+              </LinearText>
+            </View>
+            <View style={styles.toolsGrid}>{actionHubTools.map(renderActionHubTool)}</View>
+
+            <View style={[styles.toolsHeader, actionHubNarrow && styles.externalHeaderNarrow]}>
+              <LinearText variant="meta" style={styles.externalTitle}>
+                Quick Actions
+              </LinearText>
+            </View>
+            <View style={styles.quickGrid}>
+              <Pressable
+                style={({ pressed }) => [
+                  styles.quickChip,
+                  { width: quickChipLayout.chipWidth },
+                  pressed && styles.actionPressed,
+                ]}
+                android_ripple={{ color: '#ffffff18' }}
+                onPress={() => openRoute('HomeTab', 'LectureMode', {})}
+                testID="action-hub-record-lecture"
+                accessibilityRole="button"
+                accessibilityLabel="Record lecture"
+              >
+                <View style={styles.quickIconCircle}>
+                  <Icon name="mic-outline" size="md" color={n.colors.textPrimary} />
+                </View>
+                <LinearText variant="label" style={styles.quickChipText}>
+                  Record Lecture
+                </LinearText>
+              </Pressable>
+
+              <Pressable
+                style={({ pressed }) => [
+                  styles.quickChip,
+                  { width: quickChipLayout.chipWidth },
+                  pressed && styles.actionPressed,
+                ]}
+                android_ripple={{ color: '#ffffff18' }}
+                onPress={() => openRoute('HomeTab', 'GlobalTopicSearch')}
+                testID="action-hub-search-topics"
+                accessibilityRole="button"
+                accessibilityLabel="Search any topic"
+              >
+                <View style={styles.quickIconCircle}>
+                  <Icon name="search-outline" size="md" color={n.colors.textPrimary} />
+                </View>
+                <LinearText variant="label" style={styles.quickChipText}>
+                  Search Topics
+                </LinearText>
+              </Pressable>
+
+              <Pressable
+                style={({ pressed }) => [
+                  styles.quickChip,
+                  { width: quickChipLayout.chipWidth },
+                  pressed && styles.actionPressed,
+                ]}
+                android_ripple={{ color: '#ffffff18' }}
+                onPress={() => openRoute('HomeTab', 'DailyChallenge')}
+                testID="action-hub-daily-challenge"
+                accessibilityRole="button"
+                accessibilityLabel="Open daily challenge"
+              >
+                <View style={styles.quickIconCircle}>
+                  <Icon name="flash-outline" size="md" color={n.colors.textPrimary} />
+                </View>
+                <LinearText variant="label" style={styles.quickChipText}>
+                  Daily Challenge
+                </LinearText>
+              </Pressable>
+
+              <Pressable
+                style={({ pressed }) => [
+                  styles.quickChip,
+                  { width: quickChipLayout.chipWidth },
+                  pressed && styles.actionPressed,
+                ]}
+                android_ripple={{ color: '#ffffff18' }}
+                onPress={() => openRoute('HomeTab', 'BossBattle')}
+                testID="action-hub-boss-battle"
+                accessibilityRole="button"
+                accessibilityLabel="Open boss battle"
+              >
+                <View style={styles.quickIconCircle}>
+                  <Icon name="shield-half-outline" size="md" color={n.colors.textPrimary} />
+                </View>
+                <LinearText variant="label" style={styles.quickChipText}>
+                  Boss Battle
+                </LinearText>
+              </Pressable>
+            </View>
           </View>
         </Animated.View>
       </View>
@@ -749,7 +784,7 @@ const styles = StyleSheet.create({
   },
   sheet: {
     position: 'absolute',
-    backgroundColor: 'rgba(10, 12, 16, 0.98)',
+    backgroundColor: 'rgba(0, 0, 0, 0.94)',
     borderRadius: 24,
     borderWidth: 1,
     borderColor: n.colors.borderHighlight,
@@ -762,7 +797,7 @@ const styles = StyleSheet.create({
   },
   sheetFrostLayer: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: n.colors.surfaceInset,
+    backgroundColor: 'rgba(255, 255, 255, 0.01)',
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: n.colors.borderHighlight,
   },
@@ -869,9 +904,16 @@ const styles = StyleSheet.create({
   },
   externalHeader: {
     gap: 2,
+    alignItems: 'center',
   },
   externalHeaderNarrow: {
     alignSelf: 'stretch',
+    alignItems: 'flex-start',
+  },
+  toolsHeader: {
+    gap: 2,
+    marginTop: 2,
+    alignItems: 'center',
   },
   externalTitle: {
     ...n.typography.meta,
@@ -897,7 +939,14 @@ const styles = StyleSheet.create({
   externalGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    justifyContent: 'flex-start',
+    justifyContent: 'center',
+    alignItems: 'flex-start',
+    gap: 12,
+  },
+  toolsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
     alignItems: 'flex-start',
     gap: 12,
   },
@@ -905,6 +954,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 4,
+    minWidth: 0,
+  },
+  toolChip: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
     minWidth: 0,
   },
   externalIconCircle: {
@@ -917,6 +972,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  toolIconCircle: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: n.colors.borderHighlight,
+    backgroundColor: n.colors.surface,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   externalChipLabel: {
     ...n.typography.meta,
     color: n.colors.textSecondary,
@@ -924,5 +989,44 @@ const styles = StyleSheet.create({
     width: '100%',
     fontSize: 11,
     lineHeight: 14,
+  },
+  toolChipLabel: {
+    ...n.typography.meta,
+    color: n.colors.textSecondary,
+    textAlign: 'center',
+    width: '100%',
+    fontSize: 11,
+    lineHeight: 14,
+  },
+  quickGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    alignItems: 'flex-start',
+    gap: 12,
+  },
+  quickChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    borderRadius: 16,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: n.colors.border,
+    backgroundColor: n.colors.surface,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+  },
+  quickIconCircle: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: n.colors.borderHighlight,
+    backgroundColor: n.colors.surfaceHover,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  quickChipText: {
+    color: n.colors.textPrimary,
   },
 });

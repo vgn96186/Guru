@@ -42,6 +42,8 @@ export default function SettingsCategoryContent(props: any) {
     setName,
     loadingOrbStyle,
     setLoadingOrbStyle,
+    actionHubTools,
+    setActionHubTools,
     liveGuruChatModels,
     guruChatDefaultModel,
     setGuruChatDefaultModel,
@@ -186,10 +188,33 @@ export default function SettingsCategoryContent(props: any) {
 
   const content = (() => {
     switch (activeCategory as SettingsCategory) {
-    case 'dashboard':
-      return (
-        <>
-          <DashboardOverview isTablet={isTabletLayout} setActiveCategory={setActiveCategory} />
+      case 'dashboard':
+        return (
+          <>
+            <DashboardOverview isTablet={isTabletLayout} setActiveCategory={setActiveCategory} />
+            <GeneralOverviewSection
+              styles={styles}
+              SectionToggle={SectionToggle}
+              navigation={navigation}
+              name={name}
+              setName={setName}
+              loadingOrbStyle={loadingOrbStyle}
+              setLoadingOrbStyle={setLoadingOrbStyle}
+            />
+          </>
+        );
+      case 'appearance':
+        return (
+          <AppearanceSection
+            SectionToggle={SectionToggle}
+            loadingOrbStyle={loadingOrbStyle}
+            setLoadingOrbStyle={setLoadingOrbStyle}
+            actionHubTools={actionHubTools}
+            setActionHubTools={setActionHubTools}
+          />
+        );
+      case 'profile':
+        return (
           <GeneralOverviewSection
             styles={styles}
             SectionToggle={SectionToggle}
@@ -199,295 +224,274 @@ export default function SettingsCategoryContent(props: any) {
             loadingOrbStyle={loadingOrbStyle}
             setLoadingOrbStyle={setLoadingOrbStyle}
           />
-        </>
-      );
-    case 'appearance':
-      return (
-        <AppearanceSection
-          SectionToggle={SectionToggle}
-          loadingOrbStyle={loadingOrbStyle}
-          setLoadingOrbStyle={setLoadingOrbStyle}
-        />
-      );
-    case 'profile':
-      return (
-        <GeneralOverviewSection
-          styles={styles}
-          SectionToggle={SectionToggle}
-          navigation={navigation}
-          name={name}
-          setName={setName}
-          loadingOrbStyle={loadingOrbStyle}
-          setLoadingOrbStyle={setLoadingOrbStyle}
-        />
-      );
-    case 'ai':
-      return (
-        <AiProvidersSection
-          styles={styles}
-          SectionToggle={SectionToggle}
-          SubSectionToggle={SubSectionToggle}
-          navigation={navigation}
-          profile={profile}
-          guruChat={{
-            models: liveGuruChatModels,
-            defaultModel: guruChatDefaultModel,
-            setDefaultModel: setGuruChatDefaultModel,
-            formatModelChipLabel: formatGuruChatModelChipLabel,
-          }}
-          guruMemory={{ notes: guruMemoryNotes, setNotes: setGuruMemoryNotes }}
-          chatgpt={{
-            connectingSlot: chatgptConnectingSlot,
-            deviceCode: chatgptDeviceCode,
-            accounts: chatgptAccounts,
-            setAccounts: setChatgptAccounts,
-            connect: connectChatGpt,
-            disconnect: disconnectChatGpt,
-          }}
-          githubCopilot={{
-            connecting: githubCopilotConnecting,
-            deviceCode: githubCopilotDeviceCode,
-            connected: githubCopilotConnected,
-            connect: connectGitHubCopilot,
-            disconnect: disconnectGitHubCopilot,
-            testResult: githubCopilotOAuthTestResult,
-            validateConnection: validateGitHubCopilotConnection,
-            testingOAuth: testingGitHubCopilotOAuth,
-            preferredModel: githubCopilotPreferredModel,
-            setPreferredModel: setGithubCopilotPreferredModel,
-          }}
-          gitlabDuo={{
-            connecting: gitlabDuoConnecting,
-            connected: gitlabDuoConnected,
-            connect: connectGitLabDuo,
-            disconnect: disconnectGitLabDuo,
-            clientId: gitlabOauthClientId,
-            setClientId: setGitlabOauthClientId,
-            clientSecret: gitlabOauthClientSecret,
-            setClientSecret: setGitlabOauthClientSecret,
-            testResult: gitlabDuoOAuthTestResult,
-            validateConnection: validateGitLabDuoConnection,
-            testingOAuth: testingGitLabDuoOAuth,
-            preferredModel: gitlabDuoPreferredModel,
-            setPreferredModel: setGitlabDuoPreferredModel,
-            pasteModalVisible: gitlabPasteModalVisible,
-            setPasteModalVisible: setGitlabPasteModalVisible,
-            pasteUrl: gitlabPasteUrl,
-            setPasteUrl: setGitlabPasteUrl,
-            submitPasteUrl: submitGitLabPasteUrl,
-            pasteSubmitting: gitlabPasteSubmitting,
-          }}
-          poe={{
-            connecting: poeConnecting,
-            deviceCode: poeDeviceCode,
-            connected: poeConnected,
-            connect: connectPoe,
-            disconnect: disconnectPoe,
-          }}
-          qwen={{
-            connecting: qwenConnecting,
-            deviceCode: qwenDeviceCode,
-            connected: qwenConnected,
-            connect: connectQwen,
-            disconnect: disconnectQwen,
-          }}
-          transcriptionProvider={transcriptionProvider}
-          setTranscriptionProvider={setTranscriptionProvider}
-          apiKeys={{
-            groq: {
-              ...apiKeys.groq,
-              validationStatus: toFieldValidationStatus(apiKeys.groq.validationStatus),
-            },
-            githubModelsPat: {
-              ...apiKeys.githubModelsPat,
-              validationStatus: toFieldValidationStatus(apiKeys.githubModelsPat.validationStatus),
-            },
-            openrouter: {
-              ...apiKeys.openrouter,
-              validationStatus: toFieldValidationStatus(apiKeys.openrouter.validationStatus),
-            },
-            kilo: {
-              ...apiKeys.kilo,
-              validationStatus: toFieldValidationStatus(apiKeys.kilo.validationStatus),
-            },
-            deepseek: {
-              ...apiKeys.deepseek,
-              validationStatus: toFieldValidationStatus(apiKeys.deepseek.validationStatus),
-            },
-            agentRouter: {
-              ...apiKeys.agentRouter,
-              validationStatus: toFieldValidationStatus(apiKeys.agentRouter.validationStatus),
-            },
-            gemini: {
-              ...apiKeys.gemini,
-              validationStatus: toFieldValidationStatus(apiKeys.gemini.validationStatus),
-            },
-            huggingface: {
-              ...apiKeys.huggingface,
-              validationStatus: toFieldValidationStatus(apiKeys.huggingface.validationStatus),
-            },
-            deepgram: {
-              ...apiKeys.deepgram,
-              validationStatus: toFieldValidationStatus(apiKeys.deepgram.validationStatus),
-            },
-            vertex: {
-              ...apiKeys.vertex,
-              validationStatus: toFieldValidationStatus(apiKeys.vertex.validationStatus),
-            },
-            cloudflare: {
-              ...apiKeys.cloudflare,
-              validationStatus: toFieldValidationStatus(apiKeys.cloudflare.validationStatus),
-            },
-            fal: {
-              ...apiKeys.fal,
-              validationStatus: toFieldValidationStatus(apiKeys.fal.validationStatus),
-            },
-            braveSearch: {
-              ...apiKeys.braveSearch,
-              validationStatus: toFieldValidationStatus(apiKeys.braveSearch.validationStatus),
-            },
-          }}
-          gemini={{
-            preferStructuredJson: preferGeminiStructuredJson,
-            setPrefer: setPreferGeminiStructuredJson,
-          }}
-          routing={{ providerOrder, moveProvider, setProviderOrder }}
-          imageGen={{
-            options: imageGenerationOptions,
-            model: imageGenerationModel,
-            setModel: setImageGenerationModel,
-            order: imageGenerationOrder,
-            setOrder: setImageGenerationOrder,
-          }}
-          transcriptionOrder={transcriptionOrder}
-          setTranscriptionOrder={setTranscriptionOrder}
-          localAi={{
-            enabled: localAiEnabled,
-            llmReady: localLlmReady,
-            llmFileName: localLlmFileName,
-            whisperReady: localWhisperReady,
-            whisperFileName: localWhisperFileName,
-            llmAllowed: localLlmAllowed,
-            llmWarning: localLlmWarning ?? '',
-            useNano: profile?.useNano ?? true,
-          }}
-          updateUserProfile={updateUserProfile}
-          refreshProfile={refreshProfile}
-          clearProviderValidated={clearProviderValidated}
-        />
-      );
-    case 'interventions':
-      return (
-        <InterventionsSection
-          styles={styles}
-          SectionToggle={SectionToggle}
-          strictMode={strictMode}
-          setStrictMode={setStrictMode}
-          bodyDoubling={bodyDoubling}
-          setBodyDoubling={setBodyDoubling}
-          blockedTypes={blockedTypes}
-          setBlockedTypes={setBlockedTypes}
-          subjects={subjects}
-          focusSubjectIds={focusSubjectIds}
-          setFocusSubjectIds={setFocusSubjectIds}
-          idleTimeout={idleTimeout}
-          setIdleTimeout={setIdleTimeout}
-          breakDuration={breakDuration}
-          setBreakDuration={setBreakDuration}
-          pomodoroEnabled={pomodoroEnabled}
-          setPomodoroEnabled={setPomodoroEnabled}
-          pomodoroLectureQuizReady={pomodoroLectureQuizReady}
-          hasPomodoroOverlayPermission={hasPomodoroOverlayPermission}
-          hasPomodoroGroqKey={hasPomodoroGroqKey}
-          hasPomodoroDeepgramKey={hasPomodoroDeepgramKey}
-          requestPomodoroOverlay={requestPomodoroOverlay}
-          pomodoroInterval={pomodoroInterval}
-          setPomodoroInterval={setPomodoroInterval}
-        />
-      );
-    case 'integrations':
-      return (
-        <>
-          <AppIntegrationsSection
+        );
+      case 'ai':
+        return (
+          <AiProvidersSection
             styles={styles}
             SectionToggle={SectionToggle}
-            permStatus={permStatus}
-            onRequestNotifications={onRequestNotifications}
-            onRequestMic={onRequestMic}
-            onRequestLocalFiles={onRequestLocalFiles}
-            onRequestOverlay={onRequestOverlay}
+            SubSectionToggle={SubSectionToggle}
+            navigation={navigation}
+            profile={profile}
+            guruChat={{
+              models: liveGuruChatModels,
+              defaultModel: guruChatDefaultModel,
+              setDefaultModel: setGuruChatDefaultModel,
+              formatModelChipLabel: formatGuruChatModelChipLabel,
+            }}
+            guruMemory={{ notes: guruMemoryNotes, setNotes: setGuruMemoryNotes }}
+            chatgpt={{
+              connectingSlot: chatgptConnectingSlot,
+              deviceCode: chatgptDeviceCode,
+              accounts: chatgptAccounts,
+              setAccounts: setChatgptAccounts,
+              connect: connectChatGpt,
+              disconnect: disconnectChatGpt,
+            }}
+            githubCopilot={{
+              connecting: githubCopilotConnecting,
+              deviceCode: githubCopilotDeviceCode,
+              connected: githubCopilotConnected,
+              connect: connectGitHubCopilot,
+              disconnect: disconnectGitHubCopilot,
+              testResult: githubCopilotOAuthTestResult,
+              validateConnection: validateGitHubCopilotConnection,
+              testingOAuth: testingGitHubCopilotOAuth,
+              preferredModel: githubCopilotPreferredModel,
+              setPreferredModel: setGithubCopilotPreferredModel,
+            }}
+            gitlabDuo={{
+              connecting: gitlabDuoConnecting,
+              connected: gitlabDuoConnected,
+              connect: connectGitLabDuo,
+              disconnect: disconnectGitLabDuo,
+              clientId: gitlabOauthClientId,
+              setClientId: setGitlabOauthClientId,
+              clientSecret: gitlabOauthClientSecret,
+              setClientSecret: setGitlabOauthClientSecret,
+              testResult: gitlabDuoOAuthTestResult,
+              validateConnection: validateGitLabDuoConnection,
+              testingOAuth: testingGitLabDuoOAuth,
+              preferredModel: gitlabDuoPreferredModel,
+              setPreferredModel: setGitlabDuoPreferredModel,
+              pasteModalVisible: gitlabPasteModalVisible,
+              setPasteModalVisible: setGitlabPasteModalVisible,
+              pasteUrl: gitlabPasteUrl,
+              setPasteUrl: setGitlabPasteUrl,
+              submitPasteUrl: submitGitLabPasteUrl,
+              pasteSubmitting: gitlabPasteSubmitting,
+            }}
+            poe={{
+              connecting: poeConnecting,
+              deviceCode: poeDeviceCode,
+              connected: poeConnected,
+              connect: connectPoe,
+              disconnect: disconnectPoe,
+            }}
+            qwen={{
+              connecting: qwenConnecting,
+              deviceCode: qwenDeviceCode,
+              connected: qwenConnected,
+              connect: connectQwen,
+              disconnect: disconnectQwen,
+            }}
+            transcriptionProvider={transcriptionProvider}
+            setTranscriptionProvider={setTranscriptionProvider}
+            apiKeys={{
+              groq: {
+                ...apiKeys.groq,
+                validationStatus: toFieldValidationStatus(apiKeys.groq.validationStatus),
+              },
+              githubModelsPat: {
+                ...apiKeys.githubModelsPat,
+                validationStatus: toFieldValidationStatus(apiKeys.githubModelsPat.validationStatus),
+              },
+              openrouter: {
+                ...apiKeys.openrouter,
+                validationStatus: toFieldValidationStatus(apiKeys.openrouter.validationStatus),
+              },
+              kilo: {
+                ...apiKeys.kilo,
+                validationStatus: toFieldValidationStatus(apiKeys.kilo.validationStatus),
+              },
+              deepseek: {
+                ...apiKeys.deepseek,
+                validationStatus: toFieldValidationStatus(apiKeys.deepseek.validationStatus),
+              },
+              agentRouter: {
+                ...apiKeys.agentRouter,
+                validationStatus: toFieldValidationStatus(apiKeys.agentRouter.validationStatus),
+              },
+              gemini: {
+                ...apiKeys.gemini,
+                validationStatus: toFieldValidationStatus(apiKeys.gemini.validationStatus),
+              },
+              huggingface: {
+                ...apiKeys.huggingface,
+                validationStatus: toFieldValidationStatus(apiKeys.huggingface.validationStatus),
+              },
+              deepgram: {
+                ...apiKeys.deepgram,
+                validationStatus: toFieldValidationStatus(apiKeys.deepgram.validationStatus),
+              },
+              vertex: {
+                ...apiKeys.vertex,
+                validationStatus: toFieldValidationStatus(apiKeys.vertex.validationStatus),
+              },
+              cloudflare: {
+                ...apiKeys.cloudflare,
+                validationStatus: toFieldValidationStatus(apiKeys.cloudflare.validationStatus),
+              },
+              fal: {
+                ...apiKeys.fal,
+                validationStatus: toFieldValidationStatus(apiKeys.fal.validationStatus),
+              },
+              braveSearch: {
+                ...apiKeys.braveSearch,
+                validationStatus: toFieldValidationStatus(apiKeys.braveSearch.validationStatus),
+              },
+            }}
+            gemini={{
+              preferStructuredJson: preferGeminiStructuredJson,
+              setPrefer: setPreferGeminiStructuredJson,
+            }}
+            routing={{ providerOrder, moveProvider, setProviderOrder }}
+            imageGen={{
+              options: imageGenerationOptions,
+              model: imageGenerationModel,
+              setModel: setImageGenerationModel,
+              order: imageGenerationOrder,
+              setOrder: setImageGenerationOrder,
+            }}
+            transcriptionOrder={transcriptionOrder}
+            setTranscriptionOrder={setTranscriptionOrder}
+            localAi={{
+              enabled: localAiEnabled,
+              llmReady: localLlmReady,
+              llmFileName: localLlmFileName,
+              whisperReady: localWhisperReady,
+              whisperFileName: localWhisperFileName,
+              llmAllowed: localLlmAllowed,
+              llmWarning: localLlmWarning ?? '',
+              useNano: profile?.useNano ?? true,
+            }}
+            updateUserProfile={updateUserProfile}
+            refreshProfile={refreshProfile}
+            clearProviderValidated={clearProviderValidated}
           />
-          <SamsungBackgroundRow />
-        </>
-      );
-    case 'planning':
-      return (
-        <PlanningAlertsSection
-          styles={styles}
-          SectionToggle={SectionToggle}
-          dbmciClassStartDate={dbmciClassStartDate}
-          setDbmciClassStartDate={setDbmciClassStartDate}
-          btrStartDate={btrStartDate}
-          setBtrStartDate={setBtrStartDate}
-          homeNoveltyCooldownHours={homeNoveltyCooldownHours}
-          setHomeNoveltyCooldownHours={setHomeNoveltyCooldownHours}
-          sessionLength={sessionLength}
-          setSessionLength={setSessionLength}
-          dailyGoal={dailyGoal}
-          setDailyGoal={setDailyGoal}
-          notifs={notifs}
-          setNotifs={setNotifs}
-          notifHour={notifHour}
-          setNotifHour={setNotifHour}
-          testNotification={testNotification}
-          guruFrequency={guruFrequency}
-          setGuruFrequency={setGuruFrequency}
-        />
-      );
-    case 'sync':
-      return <DeviceSyncSection SectionToggle={SectionToggle} />;
-    case 'storage':
-      return (
-        <StorageSections
-          styles={styles}
-          SectionToggle={SectionToggle}
-          navigation={navigation}
-          profile={profile}
-          backupBusy={backupBusy}
-          setBackupBusy={setBackupBusy}
-          refreshProfile={refreshProfile}
-          clearAiCache={clearAiCache}
-          resetStudyProgress={resetStudyProgress}
-          exportUnifiedBackup={exportUnifiedBackup}
-          importUnifiedBackup={importUnifiedBackup}
-          updateUserProfile={updateUserProfile}
-          autoBackupFrequency={autoBackupFrequency}
-          setAutoBackupFrequency={setAutoBackupFrequency}
-          runAutoBackup={runAutoBackup}
-          cleanupOldBackups={cleanupOldBackups}
-          profileRepository={profileRepository}
-          gdriveWebClientId={gdriveWebClientId}
-          setGdriveWebClientId={setGdriveWebClientId}
-          GOOGLE_WEB_CLIENT_ID={GOOGLE_WEB_CLIENT_ID}
-          signInToGDrive={signInToGDrive}
-          signOutGDrive={signOutGDrive}
-          maintenanceBusy={maintenanceBusy}
-          runMaintenanceTask={runMaintenanceTask}
-          getUserProfile={getUserProfile}
-        />
-      );
-    case 'advanced':
-      return (
-        <AdvancedSettingsSection
-          SectionToggle={SectionToggle}
-          styles={styles}
-          onOpenSystemSettings={onOpenSystemSettings}
-          onOpenDevConsole={onOpenDevConsole}
-        />
-      );
-    default:
-      return null;
-  }
+        );
+      case 'interventions':
+        return (
+          <InterventionsSection
+            styles={styles}
+            SectionToggle={SectionToggle}
+            strictMode={strictMode}
+            setStrictMode={setStrictMode}
+            bodyDoubling={bodyDoubling}
+            setBodyDoubling={setBodyDoubling}
+            blockedTypes={blockedTypes}
+            setBlockedTypes={setBlockedTypes}
+            subjects={subjects}
+            focusSubjectIds={focusSubjectIds}
+            setFocusSubjectIds={setFocusSubjectIds}
+            idleTimeout={idleTimeout}
+            setIdleTimeout={setIdleTimeout}
+            breakDuration={breakDuration}
+            setBreakDuration={setBreakDuration}
+            pomodoroEnabled={pomodoroEnabled}
+            setPomodoroEnabled={setPomodoroEnabled}
+            pomodoroLectureQuizReady={pomodoroLectureQuizReady}
+            hasPomodoroOverlayPermission={hasPomodoroOverlayPermission}
+            hasPomodoroGroqKey={hasPomodoroGroqKey}
+            hasPomodoroDeepgramKey={hasPomodoroDeepgramKey}
+            requestPomodoroOverlay={requestPomodoroOverlay}
+            pomodoroInterval={pomodoroInterval}
+            setPomodoroInterval={setPomodoroInterval}
+          />
+        );
+      case 'integrations':
+        return (
+          <>
+            <AppIntegrationsSection
+              styles={styles}
+              SectionToggle={SectionToggle}
+              permStatus={permStatus}
+              onRequestNotifications={onRequestNotifications}
+              onRequestMic={onRequestMic}
+              onRequestLocalFiles={onRequestLocalFiles}
+              onRequestOverlay={onRequestOverlay}
+            />
+            <SamsungBackgroundRow />
+          </>
+        );
+      case 'planning':
+        return (
+          <PlanningAlertsSection
+            styles={styles}
+            SectionToggle={SectionToggle}
+            dbmciClassStartDate={dbmciClassStartDate}
+            setDbmciClassStartDate={setDbmciClassStartDate}
+            btrStartDate={btrStartDate}
+            setBtrStartDate={setBtrStartDate}
+            homeNoveltyCooldownHours={homeNoveltyCooldownHours}
+            setHomeNoveltyCooldownHours={setHomeNoveltyCooldownHours}
+            sessionLength={sessionLength}
+            setSessionLength={setSessionLength}
+            dailyGoal={dailyGoal}
+            setDailyGoal={setDailyGoal}
+            notifs={notifs}
+            setNotifs={setNotifs}
+            notifHour={notifHour}
+            setNotifHour={setNotifHour}
+            testNotification={testNotification}
+            guruFrequency={guruFrequency}
+            setGuruFrequency={setGuruFrequency}
+          />
+        );
+      case 'sync':
+        return <DeviceSyncSection SectionToggle={SectionToggle} />;
+      case 'storage':
+        return (
+          <StorageSections
+            styles={styles}
+            SectionToggle={SectionToggle}
+            navigation={navigation}
+            profile={profile}
+            backupBusy={backupBusy}
+            setBackupBusy={setBackupBusy}
+            refreshProfile={refreshProfile}
+            clearAiCache={clearAiCache}
+            resetStudyProgress={resetStudyProgress}
+            exportUnifiedBackup={exportUnifiedBackup}
+            importUnifiedBackup={importUnifiedBackup}
+            updateUserProfile={updateUserProfile}
+            autoBackupFrequency={autoBackupFrequency}
+            setAutoBackupFrequency={setAutoBackupFrequency}
+            runAutoBackup={runAutoBackup}
+            cleanupOldBackups={cleanupOldBackups}
+            profileRepository={profileRepository}
+            gdriveWebClientId={gdriveWebClientId}
+            setGdriveWebClientId={setGdriveWebClientId}
+            GOOGLE_WEB_CLIENT_ID={GOOGLE_WEB_CLIENT_ID}
+            signInToGDrive={signInToGDrive}
+            signOutGDrive={signOutGDrive}
+            maintenanceBusy={maintenanceBusy}
+            runMaintenanceTask={runMaintenanceTask}
+            getUserProfile={getUserProfile}
+          />
+        );
+      case 'advanced':
+        return (
+          <AdvancedSettingsSection
+            SectionToggle={SectionToggle}
+            styles={styles}
+            onOpenSystemSettings={onOpenSystemSettings}
+            onOpenDevConsole={onOpenDevConsole}
+          />
+        );
+      default:
+        return null;
+    }
   })();
 
   if (!content) return null;

@@ -93,6 +93,16 @@ export const lectureNotes = sqliteTable('lecture_notes', {
   lastError: text('last_error'),
 });
 
+export const vssTopics = sqliteTable('vss_topics', {
+  id: integer('id').primaryKey(),
+  embedding: blob('embedding'),
+});
+
+export const vssLectureNotes = sqliteTable('vss_lecture_notes', {
+  id: integer('id').primaryKey(),
+  embedding: blob('embedding'),
+});
+
 export const lectureLearnedTopics = sqliteTable(
   'lecture_learned_topics',
   {
@@ -200,6 +210,7 @@ export const userProfile = sqliteTable('user_profile', {
   imageGenerationModel: text('image_generation_model').notNull().default('auto'),
   imageGenerationOrder: text('image_generation_order').notNull().default('[]'),
   transcriptionOrder: text('transcription_order').notNull().default('[]'),
+  actionHubTools: text('action_hub_tools').notNull().default('[]'),
   examType: text('exam_type').notNull().default('INICET'),
   preferGeminiStructuredJson: integer('prefer_gemini_structured_json').notNull().default(1),
   githubModelsPat: text('github_models_pat').notNull().default(''),

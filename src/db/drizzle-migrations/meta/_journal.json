@@ -29,6 +29,13 @@
       "when": 1777460000000,
       "tag": "0003_embedding_provider",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1777632000000,
+      "tag": "0004_action_hub_tools",
+      "breakpoints": true
     }
   ]
 }

@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Linking, Platform, useWindowDimensions } from 'react-native';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { Linking, useWindowDimensions } from 'react-native';
 import {
   useNavigation,
   useIsFocused,
@@ -14,7 +14,11 @@ import {
   showError,
   confirmDestructive,
 } from '../../../components/dialogService';
-import { useProfileQuery, useRefreshProfile, PROFILE_QUERY_KEY } from '../../../hooks/queries/useProfile';
+import {
+  useProfileQuery,
+  useRefreshProfile,
+  PROFILE_QUERY_KEY,
+} from '../../../hooks/queries/useProfile';
 import { queryClient } from '../../../services/queryClient';
 import {
   updateUserProfile,
@@ -34,6 +38,7 @@ import {
 import type { ChatGptAccountSlot, ContentType, Subject, UserProfile } from '../../../types';
 import { PROVIDER_DISPLAY_NAMES } from '../../../types';
 import { sanitizeProviderOrder } from '../../../utils/providerOrder';
+import { sanitizeActionHubTools } from '../../../utils/actionHubTools';
 import {
   requestDeviceCode,
   pollForAuthorization,
@@ -308,12 +313,13 @@ export function useSettingsController() {
   );
   const [imageGenerationOrder, setImageGenerationOrder] = useState<string[]>([]);
   const [transcriptionOrder, setTranscriptionOrder] = useState<string[]>([]);
+  const [actionHubTools, setActionHubTools] = useState<string[]>([]);
   const [guruMemoryNotes, setGuruMemoryNotes] = useState('');
   const [preferGeminiStructuredJson, setPreferGeminiStructuredJson] = useState(true);
   const [providerOrder, setProviderOrder] = useState<import('../../../types').ProviderId[]>([]);
-  const [disabledProviders, setDisabledProviders] = useState<Set<import('../../../types').ProviderId>>(
-    new Set(),
-  );
+  const [disabledProviders, setDisabledProviders] = useState<
+    Set<import('../../../types').ProviderId>
+  >(new Set());
   const profileHydrationSignatureRef = useRef<string | null>(null);
 
   const liveGuruChatModels = useLiveGuruChatModels(profile ?? null, {
@@ -757,8 +763,6 @@ export function useSettingsController() {
     refreshProfile();
   }
 
-
-
   function onOpenSystemSettings() {
     Linking.openSettings();
   }
@@ -884,6 +888,7 @@ export function useSettingsController() {
       setImageGenerationModel(profile.imageGenerationModel ?? DEFAULT_IMAGE_GENERATION_MODEL);
       setImageGenerationOrder(profile.imageGenerationOrder ?? []);
       setTranscriptionOrder(profile.transcriptionOrder ?? []);
+      setActionHubTools(profile.actionHubTools ?? []);
       setGuruMemoryNotes(profile.guruMemoryNotes ?? '');
       setPreferGeminiStructuredJson(profile.preferGeminiStructuredJson !== false);
       setHuggingFaceToken(profile.huggingFaceToken ?? '');
@@ -978,6 +983,7 @@ export function useSettingsController() {
         imageGenerationModel: normalizeImageGenerationModel(imageGenerationModel),
         imageGenerationOrder,
         transcriptionOrder,
+        actionHubTools: sanitizeActionHubTools(actionHubTools),
         guruMemoryNotes: guruMemoryNotes.trim(),
         preferGeminiStructuredJson,
         huggingFaceToken: huggingFaceToken.trim(),
@@ -1046,6 +1052,7 @@ export function useSettingsController() {
     imageGenerationModel,
     imageGenerationOrder,
     transcriptionOrder,
+    actionHubTools,
     guruMemoryNotes,
     preferGeminiStructuredJson,
     chatgptAccounts,
@@ -1288,6 +1295,8 @@ export function useSettingsController() {
     setName,
     loadingOrbStyle,
     setLoadingOrbStyle,
+    actionHubTools,
+    setActionHubTools,
     liveGuruChatModels,
     guruChatDefaultModel,
     setGuruChatDefaultModel,
@@ -1402,7 +1411,7 @@ export function useSettingsController() {
         validationStatus: null,
         test: async () => {
           const { testHuggingFaceConnection } = await import('../../../services/ai/providerHealth');
-                  const r = await testHuggingFaceConnection(huggingFaceToken, huggingFaceModel);
+          const r = await testHuggingFaceConnection(huggingFaceToken, huggingFaceModel);
           if (!r.ok) throw new Error('Hugging Face test failed');
         },
         testing: false,
@@ -1414,7 +1423,7 @@ export function useSettingsController() {
         validationStatus: deepgramValidationStatus,
         test: async () => {
           const { testDeepgramConnection } = await import('../../../services/ai/providerHealth');
-                  const r = await testDeepgramConnection(deepgramApiKey);
+          const r = await testDeepgramConnection(deepgramApiKey);
           if (!r.ok) throw new Error('Deepgram test failed');
         },
         testing: false,

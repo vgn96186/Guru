@@ -9,6 +9,7 @@ import type {
   GuruFrequency,
   DailyLog,
 } from '../schemas';
+import type { ActionHubToolId } from '../constants/actionHubTools';
 export type {
   ContentType,
   TopicStatus,
@@ -209,6 +210,7 @@ export interface UserProfile {
   embeddingProvider?: string;
   /** Preferred embedding model id. */
   embeddingModel?: string;
+  actionHubTools?: ActionHubToolId[];
   /** Persisted provider validation metadata used by Settings key status indicators. */
   apiValidation?: Partial<
     Record<

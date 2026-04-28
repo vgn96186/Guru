@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState, useRef } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   View,
   StyleSheet,
@@ -98,7 +98,7 @@ import { useAppStore } from '../store/useAppStore';
 import type { UserProfile } from '../types';
 import { dbEvents, DB_EVENT_KEYS } from '../services/databaseEvents';
 import { runFullTranscriptionPipeline } from '../services/lecture/lectureSessionMonitor';
-import { Audio } from 'expo-av';
+import { createAudioPlayer, useAudioPlayerStatus } from 'expo-audio';
 import { showError, showWarning } from '../components/dialogService';
 
 export default function NotesHubScreen() {
@@ -116,38 +116,35 @@ export default function NotesHubScreen() {
   const [pendingSessions, setPendingSessions] = useState<ExternalAppLog[]>([]);
   const [isRetrying, setIsRetrying] = useState<number | null>(null);
   const [activePlaybackId, setActivePlaybackId] = useState<number | null>(null);
-  const soundRef = useRef<Audio.Sound | null>(null);
+  const player = useMemo(() => createAudioPlayer(null, { updateInterval: 250, downloadFirst: false }), []);
+  const playbackStatus = useAudioPlayerStatus(player);
 
   useEffect(() => {
     return () => {
-      if (soundRef.current) {
-        soundRef.current.unloadAsync();
-      }
+      player.remove();
     };
-  }, []);
+  }, [player]);
+
+  useEffect(() => {
+    if (!activePlaybackId) return;
+    if (playbackStatus.didJustFinish) {
+      setActivePlaybackId(null);
+    }
+  }, [activePlaybackId, playbackStatus.didJustFinish]);
 
   const handlePlayPending = async (session: ExternalAppLog) => {
     if (!session.id || !session.recordingPath) return;
 
     if (activePlaybackId === session.id) {
-      await soundRef.current?.unloadAsync();
-      soundRef.current = null;
+      player.pause();
+      await player.seekTo(0);
       setActivePlaybackId(null);
       return;
     }
 
     try {
-      if (soundRef.current) await soundRef.current.unloadAsync();
-      const { sound } = await Audio.Sound.createAsync(
-        { uri: session.recordingPath },
-        { shouldPlay: true },
-        (status) => {
-          if (status.isLoaded && !status.isPlaying && status.didJustFinish) {
-            setActivePlaybackId(null);
-          }
-        },
-      );
-      soundRef.current = sound;
+      player.replace(session.recordingPath);
+      player.play();
       setActivePlaybackId(session.id);
     } catch {
       showError('Playback Error', 'Could not play this audio file.');

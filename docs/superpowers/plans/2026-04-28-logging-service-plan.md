@@ -241,7 +241,7 @@ git commit -m "feat: add Sentry and SQLite sinks"
 - Create: `src/services/logging/interceptors/consoleInterceptor.ts`
 - Create: `src/services/logging/interceptors/networkInterceptor.ts`
 
-- [ ] **Step 1: Create Console Interceptor**
+- [x] **Step 1: Create Console Interceptor**
       Create `src/services/logging/interceptors/consoleInterceptor.ts`:
 
 ```typescript
@@ -297,7 +297,7 @@ export function installConsoleInterceptor() {
 }
 ```
 
-- [ ] **Step 2: Create Network Interceptor**
+- [x] **Step 2: Create Network Interceptor**
       Create `src/services/logging/interceptors/networkInterceptor.ts`:
 
 ```typescript
@@ -335,7 +335,7 @@ export function installNetworkInterceptor() {
 }
 ```
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add src/services/logging/interceptors

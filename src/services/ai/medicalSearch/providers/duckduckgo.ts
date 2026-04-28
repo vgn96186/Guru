@@ -23,7 +23,7 @@ export async function searchDuckDuckGo(
       FirstURL?: string;
       Result?: string;
     }>;
-  }>(url);
+  }>(url, 8000);
 
   const results: MedicalGroundingSource[] = [];
 

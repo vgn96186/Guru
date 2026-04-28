@@ -14,14 +14,19 @@ export const duckduckgoProvider: WebSearchProvider = {
   id: 'duckduckgo',
 
   async searchText(params: WebSearchParams): Promise<WebSearchResult[]> {
-    const results = await searchDuckDuckGo(params.query, params.maxResults ?? 8);
-    return results.map((r) => ({
-      title: r.title ?? '',
-      url: r.url ?? '',
-      snippet: r.snippet ?? '',
-      source: r.source,
-      provider: 'duckduckgo' as const,
-    }));
+    try {
+      const results = await searchDuckDuckGo(params.query, params.maxResults ?? 8);
+      return results.map((r) => ({
+        title: r.title ?? '',
+        url: r.url ?? '',
+        snippet: r.snippet ?? '',
+        source: r.source,
+        provider: 'duckduckgo' as const,
+      }));
+    } catch (error) {
+      if (error instanceof Error && error.name === 'TimeoutError') return [];
+      throw error;
+    }
   },
 
   async searchImages(params: ImageSearchParams): Promise<ImageSearchResult[]> {

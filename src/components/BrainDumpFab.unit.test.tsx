@@ -51,9 +51,9 @@ jest.mock('react-native-gesture-handler', () => {
           this.config.callbacks.onEnd = cb;
           return this;
         },
-        runOnJS: function (cb: any) {
-          this.config.callbacks.runOnJS = cb;
-          return cb;
+        runOnJS: function (value: any) {
+          this.config.callbacks.runOnJS = value;
+          return this;
         },
       }),
     },

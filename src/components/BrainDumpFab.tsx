@@ -3,14 +3,16 @@ import {
   View,
   Text,
   TextInput,
-  TouchableOpacity,
   StyleSheet,
   Modal,
   KeyboardAvoidingView,
   Platform,
+  Pressable,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import Animated, { useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated';
+import { GestureDetector, Gesture } from 'react-native-gesture-handler';
 import { addBrainDump } from '../db/queries/brainDumps';
 import { linearTheme as n } from '../theme/linearTheme';
 import { navigationRef } from '../navigation/navigationRef';
@@ -20,6 +22,26 @@ export default function BrainDumpFab() {
   const bottomOffset = Math.max(insets.bottom, 0) + 72;
   const [modalVisible, setModalVisible] = useState(false);
   const [note, setNote] = useState('');
+
+  const scale = useSharedValue(1);
+
+  const tapGesture = Gesture.Tap()
+    .runOnJS(true)
+    .onBegin(() => {
+      scale.value = withSpring(0.9, { damping: 15, stiffness: 200 });
+    })
+    .onFinalize(() => {
+      scale.value = withSpring(1, { damping: 15, stiffness: 200 });
+    })
+    .onEnd(() => {
+      setModalVisible(true);
+    });
+
+  const animatedStyle = useAnimatedStyle(() => {
+    return {
+      transform: [{ scale: scale.value }],
+    };
+  });
 
   const handleSave = async () => {
     if (note.trim().length > 0) {
@@ -31,14 +53,15 @@ export default function BrainDumpFab() {
 
   return (
     <>
-      <TouchableOpacity
-        style={[styles.fab, { bottom: bottomOffset }]}
-        onPress={() => setModalVisible(true)}
-        accessibilityRole="button"
-        accessibilityLabel="Add quick note"
-      >
-        <Ionicons name="bulb" size={24} color={n.colors.textPrimary} />
-      </TouchableOpacity>
+      <GestureDetector gesture={tapGesture}>
+        <Animated.View
+          style={[styles.fab, { bottom: bottomOffset }, animatedStyle]}
+          accessibilityRole="button"
+          accessibilityLabel="Add quick note"
+        >
+          <Ionicons name="bulb" size={24} color={n.colors.textPrimary} />
+        </Animated.View>
+      </GestureDetector>
 
       <Modal
         visible={modalVisible}
@@ -57,20 +80,20 @@ export default function BrainDumpFab() {
                 <Text style={styles.title}>Park a Thought</Text>
                 <Ionicons name="hardware-chip-outline" size={22} color={n.colors.textPrimary} />
               </View>
-              <TouchableOpacity
+              <Pressable
                 onPress={() => setModalVisible(false)}
                 accessibilityRole="button"
                 accessibilityLabel="Close"
               >
                 <Ionicons name="close" size={24} color={n.colors.textMuted} />
-              </TouchableOpacity>
+              </Pressable>
             </View>
 
             <Text style={styles.subtitle}>
               Offload distracting thoughts here. You can review them after your session.
             </Text>
 
-            <TouchableOpacity
+            <Pressable
               style={styles.reviewLink}
               onPress={() => {
                 setModalVisible(false);
@@ -83,7 +106,7 @@ export default function BrainDumpFab() {
             >
               <Ionicons name="list-outline" size={18} color={n.colors.accent} />
               <Text style={styles.reviewLinkText}>Review parked thoughts</Text>
-            </TouchableOpacity>
+            </Pressable>
 
             <TextInput
               style={styles.input}
@@ -95,7 +118,7 @@ export default function BrainDumpFab() {
               autoFocus
             />
 
-            <TouchableOpacity
+            <Pressable
               style={[styles.saveButton, !note.trim() && styles.saveButtonDisabled]}
               onPress={handleSave}
               disabled={!note.trim()}
@@ -103,7 +126,7 @@ export default function BrainDumpFab() {
               accessibilityLabel="Save and park thought"
             >
               <Text style={styles.saveText}>Park It</Text>
-            </TouchableOpacity>
+            </Pressable>
           </View>
         </KeyboardAvoidingView>
       </Modal>

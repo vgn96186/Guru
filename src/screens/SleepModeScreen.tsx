@@ -6,7 +6,6 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useKeepAwake } from 'expo-keep-awake';
 import { Accelerometer } from 'expo-sensors';
 import * as Haptics from 'expo-haptics';
-import { Audio } from 'expo-av';
 import * as Notifications from 'expo-notifications';
 import { ResponsiveContainer } from '../hooks/useResponsive';
 import { linearTheme as n } from '../theme/linearTheme';
@@ -37,7 +36,6 @@ export default function SleepModeScreen() {
   const [hoursToAdd, setHoursToAdd] = useState(8);
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
-  const soundRef = useRef<Audio.Sound | null>(null);
   const vibrateIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Keep the nightstand clock accurate to the actual minute boundary.
@@ -123,11 +121,6 @@ export default function SleepModeScreen() {
       clearInterval(vibrateIntervalRef.current);
       vibrateIntervalRef.current = null;
     }
-    if (soundRef.current) {
-      await soundRef.current.stopAsync();
-      await soundRef.current.unloadAsync();
-      soundRef.current = null;
-    }
     setAlarmRinging(false);
     navigation.replace('WakeUp');
   }
@@ -136,11 +129,6 @@ export default function SleepModeScreen() {
     if (vibrateIntervalRef.current) {
       clearInterval(vibrateIntervalRef.current);
       vibrateIntervalRef.current = null;
-    }
-    if (soundRef.current) {
-      await soundRef.current.stopAsync();
-      await soundRef.current.unloadAsync();
-      soundRef.current = null;
     }
     setAlarmRinging(false);
 
